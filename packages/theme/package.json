@@ -1,0 +1,19 @@
+{
+  "name": "@taskflow/theme",
+  "version": "0.0.0",
+  "description": "Design tokens and theming for TaskFlow",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./tokens.json": "./tokens.json",
+    "./provider": "./ThemeProvider.tsx"
+  },
+  "dependencies": {
+    "react": "^18.2.0"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
