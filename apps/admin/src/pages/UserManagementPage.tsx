@@ -1,4 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { 
+  fetchUsers, 
+  createUser, 
+  updateUser, 
+  deleteUser, 
+  banUser, 
+  activateUser, 
+  resetUserPassword,
+  setFilters,
+  clearFilters,
+  setShowAddUserModal,
+  setSelectedUser
+} from '../../store/slices/userManagementSlice';
 import { 
   Card, 
   CardContent, 
@@ -22,103 +36,93 @@ import {
   UserPlusIcon
 } from '@heroicons/react/24/outline';
 
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  role: 'Admin' | 'Manager' | 'User';
-  status: 'Active' | 'Suspended' | 'Inactive';
-  lastLoginAt: string;
-  createdAt: string;
-  avatar?: string;
-}
-
-const mockUsers: User[] = [
-  {
-    id: '1',
-    username: 'john.doe',
-    email: 'john.doe@company.com',
-    role: 'Admin',
-    status: 'Active',
-    lastLoginAt: '2 hours ago',
-    createdAt: '2024-01-15'
-  },
-  {
-    id: '2',
-    username: 'jane.smith',
-    email: 'jane.smith@company.com',
-    role: 'Manager',
-    status: 'Active',
-    lastLoginAt: '1 day ago',
-    createdAt: '2024-01-10'
-  },
-  {
-    id: '3',
-    username: 'mike.wilson',
-    email: 'mike.wilson@company.com',
-    role: 'User',
-    status: 'Suspended',
-    lastLoginAt: '1 week ago',
-    createdAt: '2024-01-05'
-  },
-  {
-    id: '4',
-    username: 'sarah.jones',
-    email: 'sarah.jones@company.com',
-    role: 'User',
-    status: 'Active',
-    lastLoginAt: '3 hours ago',
-    createdAt: '2024-01-20'
-  }
-];
-
 const UserManagementPage: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const dispatch = useAppDispatch();
+  const { 
+    users, 
+    filteredUsers, 
+    isLoading, 
+    error, 
+    filters, 
+    showAddUserModal 
+  } = useAppSelector(state => state.userManagement);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('All Roles');
   const [statusFilter, setStatusFilter] = useState<string>('All Statuses');
-  const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [resetEmail, setResetEmail] = useState('');
-
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'All Roles' || user.role === roleFilter;
-    const matchesStatus = statusFilter === 'All Statuses' || user.status === statusFilter;
-    
-    return matchesSearch && matchesRole && matchesStatus;
+  const [newUserData, setNewUserData] = useState({
+    username: '',
+    email: '',
+    role: 'User' as const
   });
 
-  const handleBanUser = (userId: string) => {
-    setUsers(prev => prev.map(user => 
-      user.id === userId 
-        ? { ...user, status: user.status === 'Suspended' ? 'Active' : 'Suspended' }
-        : user
-    ));
+  // Fetch users on component mount
+  useEffect(() => {
+    dispatch(fetchUsers());
+  }, [dispatch]);
+
+  // Apply filters locally
+  useEffect(() => {
+    const filtered = users.filter(user => {
+      const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesRole = roleFilter === 'All Roles' || user.role === roleFilter;
+      const matchesStatus = statusFilter === 'All Statuses' || user.status === statusFilter;
+      
+      return matchesSearch && matchesRole && matchesStatus;
+    });
+
+    dispatch(setFilters({ searchTerm, role: roleFilter, status: statusFilter }));
+  }, [users, searchTerm, roleFilter, statusFilter, dispatch]);
+
+  const handleBanUser = async (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    try {
+      if (user.status === 'Suspended') {
+        await dispatch(activateUser(userId)).unwrap();
+      } else {
+        await dispatch(banUser({ userId, reason: 'Admin action' })).unwrap();
+      }
+    } catch (error) {
+      console.error('Failed to update user status:', error);
+    }
   };
 
-  const handleDeleteUser = (userId: string) => {
-    setUsers(prev => prev.filter(user => user.id !== userId));
+  const handleDeleteUser = async (userId: string) => {
+    if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      try {
+        await dispatch(deleteUser(userId)).unwrap();
+      } catch (error) {
+        console.error('Failed to delete user:', error);
+      }
+    }
   };
 
   const handlePasswordReset = async () => {
     if (!resetEmail) return;
     
     try {
-      // TODO: Implement actual password reset logic
-      console.log('Password reset requested for:', resetEmail);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await dispatch(resetUserPassword(resetEmail)).unwrap();
       alert('Password reset email sent successfully!');
       setShowPasswordResetModal(false);
       setResetEmail('');
     } catch (error) {
       console.error('Password reset failed:', error);
       alert('Failed to send password reset email. Please try again.');
+    }
+  };
+
+  const handleCreateUser = async () => {
+    try {
+      await dispatch(createUser(newUserData)).unwrap();
+      setNewUserData({ username: '', email: '', role: 'User' });
+      dispatch(setShowAddUserModal(false));
+    } catch (error) {
+      console.error('Failed to create user:', error);
     }
   };
 
@@ -148,6 +152,19 @@ const UserManagementPage: React.FC = () => {
     }
   };
 
+  if (isLoading && users.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <Typography variant="body-medium" className="text-muted-foreground">
+            Loading users...
+          </Typography>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -163,12 +180,21 @@ const UserManagementPage: React.FC = () => {
         <Button 
           variant="default" 
           size="default"
-          onClick={() => setShowAddUserModal(true)}
+          onClick={() => dispatch(setShowAddUserModal(true))}
         >
           <UserPlusIcon className="w-5 h-5 mr-2" />
           Add User
         </Button>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="p-4 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <Typography variant="body-medium" className="text-red-600 dark:text-red-400">
+            {error}
+          </Typography>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <Card>
@@ -206,7 +232,17 @@ const UserManagementPage: React.FC = () => {
               ]}
             />
             
-            <Button variant="outline" size="default" className="flex items-center justify-center">
+            <Button 
+              variant="outline" 
+              size="default" 
+              className="flex items-center justify-center"
+              onClick={() => {
+                setSearchTerm('');
+                setRoleFilter('All Roles');
+                setStatusFilter('All Statuses');
+                dispatch(clearFilters());
+              }}
+            >
               <FunnelIcon className="w-5 h-5 mr-2" />
               Clear Filters
             </Button>
@@ -217,7 +253,7 @@ const UserManagementPage: React.FC = () => {
       {/* User Accounts Table */}
       <Card>
         <CardHeader>
-          <CardTitle>User Accounts</CardTitle>
+          <CardTitle>User Accounts ({filteredUsers.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -276,10 +312,7 @@ const UserManagementPage: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            // TODO: Implement edit user modal
-                          }}
+                          onClick={() => dispatch(setSelectedUser(user))}
                         >
                           <PencilIcon className="w-4 h-4" />
                         </Button>
@@ -346,7 +379,7 @@ const UserManagementPage: React.FC = () => {
       {/* Add User Modal */}
       <Modal
         isOpen={showAddUserModal}
-        onClose={() => setShowAddUserModal(false)}
+        onClose={() => dispatch(setShowAddUserModal(false))}
         title="Add New User"
       >
         <div className="space-y-4">
@@ -354,19 +387,30 @@ const UserManagementPage: React.FC = () => {
             <label className="block text-sm font-medium text-foreground mb-2">
               Username
             </label>
-            <Input placeholder="Enter username" />
+            <Input 
+              placeholder="Enter username" 
+              value={newUserData.username}
+              onChange={(e) => setNewUserData(prev => ({ ...prev, username: e.target.value }))}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
               Email
             </label>
-            <Input type="email" placeholder="Enter email address" />
+            <Input 
+              type="email" 
+              placeholder="Enter email address" 
+              value={newUserData.email}
+              onChange={(e) => setNewUserData(prev => ({ ...prev, email: e.target.value }))}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
               Role
             </label>
             <Select
+              value={newUserData.role}
+              onChange={(value) => setNewUserData(prev => ({ ...prev, role: value as any }))}
               options={[
                 { value: 'User', label: 'User' },
                 { value: 'Manager', label: 'Manager' },
@@ -377,16 +421,14 @@ const UserManagementPage: React.FC = () => {
           <div className="flex justify-end space-x-3 pt-4">
             <Button
               variant="outline"
-              onClick={() => setShowAddUserModal(false)}
+              onClick={() => dispatch(setShowAddUserModal(false))}
             >
               Cancel
             </Button>
             <Button
               variant="default"
-              onClick={() => {
-                // TODO: Implement add user logic
-                setShowAddUserModal(false);
-              }}
+              onClick={handleCreateUser}
+              disabled={!newUserData.username || !newUserData.email}
             >
               Add User
             </Button>

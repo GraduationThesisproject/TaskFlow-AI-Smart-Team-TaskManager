@@ -14,6 +14,7 @@ const { fileServeMiddleware } = require('./middlewares/serve.middleware');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
+const adminRoutes = require('./routes/admin.routes');
 const workspaceRoutes = require('./routes/workspace.routes');
 const spaceRoutes = require('./routes/space.routes');
 const boardRoutes = require('./routes/board.routes');
@@ -57,6 +58,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/workspaces', authMiddleware, workspaceRoutes);
 app.use('/api/spaces', authMiddleware, spaceRoutes);
 app.use('/api/boards', authMiddleware, boardRoutes);
