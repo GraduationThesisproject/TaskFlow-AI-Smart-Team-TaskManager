@@ -47,6 +47,7 @@ function App() {
         <AppContent />
       </Router>
     </ThemeProvider>
+
   );
 }
 
