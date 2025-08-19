@@ -97,6 +97,8 @@ const AdminPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { currentAdmin, isAuthenticated, isLoading } = useAppSelector(state => state.admin);
 
+
+
   // Check authentication on mount
   React.useEffect(() => {
     if (!isAuthenticated && !isLoading) {
@@ -222,21 +224,21 @@ const AdminPage: React.FC = () => {
             
             <Dropdown
               trigger={
-                <button className="flex items-center space-x-2 hover:bg-muted p-2 rounded-lg transition-colors">
+                <div className="flex items-center space-x-2 hover:bg-muted p-2 rounded-lg transition-colors cursor-pointer">
                   <Avatar size="sm" className="bg-primary text-primary-foreground">
                     <span className="text-sm font-medium">
-                      {currentAdmin?.firstName?.charAt(0).toUpperCase() || 'A'}
+                      {currentAdmin?.name?.charAt(0).toUpperCase() || 'A'}
                     </span>
                   </Avatar>
                   <div className="text-left">
                     <Typography variant="body-medium" className="text-foreground">
-                      {currentAdmin ? `${currentAdmin.firstName} ${currentAdmin.lastName}` : 'Admin User'}
+                      {currentAdmin?.name || currentAdmin?.email || 'Admin User'}
                     </Typography>
                     <Typography variant="body-small" className="text-muted-foreground">
                       {currentAdmin?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
                     </Typography>
                   </div>
-                </button>
+                </div>
               }
             >
               {userMenuItems.map((item, index) => (

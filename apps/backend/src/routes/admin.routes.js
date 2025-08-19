@@ -6,12 +6,14 @@ const validateMiddleware = require('../middlewares/validate.middleware');
 
 const router = express.Router();
 
-// Apply admin authentication middleware to all routes
+// Admin authentication routes (public)
+router.post('/auth/login', adminController.login);
+
+// Apply admin authentication middleware to protected routes
 router.use(authMiddleware);
 router.use(requireSystemAdmin);
 
-// Admin authentication routes
-router.post('/auth/login', adminController.login);
+// Protected admin routes
 router.post('/auth/logout', adminController.logout);
 router.get('/auth/me', adminController.getCurrentAdmin);
 
