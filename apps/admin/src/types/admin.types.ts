@@ -1,13 +1,16 @@
 export interface Admin {
   id: string;
+  userId?: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  name: string; // Backend returns 'name' instead of firstName/lastName
   role: AdminRole;
   permissions: Permission[];
-  lastLoginAt: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  avatar?: string;
+  isActive?: boolean;
+  lastActivity?: Date;
+  lastLoginAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export enum AdminRole {

@@ -113,13 +113,16 @@ const adminSlice = createSlice({
       .addCase(loginAdmin.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = true;
-        state.currentAdmin = action.payload.admin;
-        state.permissions = action.payload.admin.permissions || [];
+        // Handle the response format from sendResponse utility
+        const responseData = action.payload.data || action.payload;
+
+        state.currentAdmin = responseData.admin || responseData;
+        state.permissions = (responseData.admin?.permissions || responseData.permissions) || [];
         state.error = null;
         
         // Store token in localStorage
-        if (action.payload.token) {
-          localStorage.setItem('adminToken', action.payload.token);
+        if (responseData.token) {
+          localStorage.setItem('adminToken', responseData.token);
         }
       })
       .addCase(loginAdmin.rejected, (state, action) => {
@@ -143,8 +146,11 @@ const adminSlice = createSlice({
       .addCase(getCurrentAdmin.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = true;
-        state.currentAdmin = action.payload.admin;
-        state.permissions = action.payload.admin.permissions || [];
+        // Handle the response format from sendResponse utility
+        const responseData = action.payload.data || action.payload;
+
+        state.currentAdmin = responseData.admin || responseData;
+        state.permissions = (responseData.admin?.permissions || responseData.permissions) || [];
         state.error = null;
       })
       .addCase(getCurrentAdmin.rejected, (state, action) => {

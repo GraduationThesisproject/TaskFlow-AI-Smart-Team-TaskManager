@@ -1,8 +1,9 @@
 const Admin = require('../models/Admin');
 const User = require('../models/User');
 const UserRoles = require('../models/UserRoles');
-const sendResponse = require('../utils/response');
+const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
+const { generateToken } = require('../utils/jwt');
 
 // Admin Authentication
 const login = async (req, res) => {
@@ -28,7 +29,7 @@ const login = async (req, res) => {
     }
 
     // Generate JWT token
-    const token = user.generateAuthToken();
+    const token = generateToken(user._id);
     
     // Update admin activity
     admin.updateActivity();
