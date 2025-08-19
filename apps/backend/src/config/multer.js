@@ -257,3 +257,33 @@ const deleteFile = async (filePath) => {
   }
 };
 
+// Get file stats
+const getFileStats = async (filePath) => {
+  try {
+    const stats = await fs.stat(filePath);
+    return {
+      size: stats.size,
+      created: stats.birthtime,
+      modified: stats.mtime
+    };
+  } catch (error) {
+    logger.error(`Failed to get file stats for ${filePath}:`, error);
+    return null;
+  }
+};
+
+// Initialize storage directories
+const initializeStorage = async () => {
+  await ensureDirectoriesExist();
+  logger.info('Storage directories initialized');
+};
+
+module.exports = {
+  createMulterUpload,
+  generateThumbnails,
+  getFileStats,
+  deleteFile,
+  initializeStorage,
+  fileTypeConfigs
+};
+

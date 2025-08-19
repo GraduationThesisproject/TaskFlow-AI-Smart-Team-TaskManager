@@ -1,5 +1,4 @@
 const User = require('../models/User');
-const Project = require('../models/Project');
 const Workspace = require('../models/Workspace');
 const Space = require('../models/Space');
 const Board = require('../models/Board');
@@ -7,21 +6,23 @@ const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
 
 // Require system admin role
-const requireSystemAdmin = async (req, res, next) => {
-    try {
-        const userId = req.user.id;
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
+const requireSystemAdmin = (req, res, next) => {
+    (async () => {
+        try {
+            const userId = req.user.id;
+            const user = await User.findById(userId);
+            const userRoles = await user.getRoles();
 
-        if (userRoles.systemRole !== 'admin' && userRoles.systemRole !== 'super_admin') {
-            return sendResponse(res, 403, false, 'System admin permissions required');
+            if (userRoles.systemRole !== 'admin' && userRoles.systemRole !== 'super_admin') {
+                return sendResponse(res, 403, false, 'System admin permissions required');
+            }
+
+            next();
+        } catch (error) {
+            logger.error('System admin check error:', error);
+            sendResponse(res, 500, false, 'Server error checking admin permissions');
         }
-
-        next();
-    } catch (error) {
-        logger.error('System admin check error:', error);
-        sendResponse(res, 500, false, 'Server error checking admin permissions');
-    }
+    })();
 };
 
 // Require workspace permission
@@ -57,15 +58,15 @@ const requireWorkspacePermission = (role = 'member') => {
     };
 };
 
-// Require project permission
-const requireProjectPermission = (roleOrPermission = 'member') => {
+// Require space permission (formerly project permission)
+const requireSpacePermission = (roleOrPermission = 'member') => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
-            const projectId = req.params.id || req.params.projectId || req.body.projectId;
+            const spaceId = req.params.id || req.params.spaceId || req.body.spaceId;
 
-            if (!projectId) {
-                return sendResponse(res, 400, false, 'Project ID required');
+            if (!spaceId) {
+                return sendResponse(res, 400, false, 'Space ID required');
             }
 
             const user = await User.findById(userId);
@@ -73,26 +74,26 @@ const requireProjectPermission = (roleOrPermission = 'member') => {
 
             // Check if it's a permission (starts with 'can') or a role
             if (roleOrPermission.startsWith('can')) {
-                if (!userRoles.hasProjectPermission(projectId, roleOrPermission)) {
+                if (!userRoles.hasSpacePermission(spaceId, roleOrPermission)) {
                     return sendResponse(res, 403, false, `Permission '${roleOrPermission}' required`);
                 }
             } else {
-                if (!userRoles.hasProjectRole(projectId, roleOrPermission)) {
-                    return sendResponse(res, 403, false, `Project ${roleOrPermission} role required`);
+                if (!userRoles.hasSpaceRole(spaceId, roleOrPermission)) {
+                    return sendResponse(res, 403, false, `Space ${roleOrPermission} role required`);
                 }
             }
 
-            req.project = await Project.findById(projectId);
+            req.space = await Space.findById(spaceId);
             next();
         } catch (error) {
-            logger.error('Project permission check error:', error);
-            sendResponse(res, 500, false, 'Server error checking project permissions');
+            logger.error('Space permission check error:', error);
+            sendResponse(res, 500, false, 'Server error checking space permissions');
         }
     };
 };
 
-// Require space permission
-const requireSpacePermission = (permission) => {
+// Require specific space permission
+const requireSpaceSpecificPermission = (permission) => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
@@ -338,16 +339,16 @@ const requireWhitelistedIP = (whitelist = []) => {
 };
 
 // Combined middleware for common permission patterns
-const requireProjectMember = requireProjectPermission('member');
-const requireProjectAdmin = requireProjectPermission('admin');
+const requireSpaceMember = requireSpacePermission('member');
+const requireSpaceAdmin = requireSpacePermission('admin');
 const requireWorkspaceMember = requireWorkspacePermission('member');
 const requireWorkspaceAdmin = requireWorkspacePermission('admin');
 
 module.exports = {
     requireSystemAdmin,
     requireWorkspacePermission,
-    requireProjectPermission,
     requireSpacePermission,
+    requireSpaceSpecificPermission,
     requireBoardPermission,
     requireResourceOwner,
     requireAnyPermission,
@@ -357,8 +358,8 @@ module.exports = {
     requireFeatureFlag,
     requireWhitelistedIP,
     // Common combinations
-    requireProjectMember,
-    requireProjectAdmin,
+    requireSpaceMember,
+    requireSpaceAdmin,
     requireWorkspaceMember,
     requireWorkspaceAdmin
 };
