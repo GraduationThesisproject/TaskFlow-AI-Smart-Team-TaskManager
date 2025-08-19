@@ -1,6 +1,6 @@
 const Reminder = require('../models/Reminder');
 const Task = require('../models/Task');
-const Project = require('../models/Project');
+const Space = require('../models/Space');
 const User = require('../models/User');
 const ActivityLog = require('../models/ActivityLog');
 const { sendResponse } = require('../utils/response');
@@ -10,36 +10,69 @@ const logger = require('../config/logger');
 // Get user reminders
 exports.getReminders = async (req, res) => {
     try {
-        const { upcoming = false, limit = 50 } = req.query;
         const userId = req.user.id;
+        const { status, type, entityType, entityId } = req.query;
 
-        let query = { user: userId, status: 'pending' };
-        
-        if (upcoming === 'true') {
-            const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-            query.reminderDate = { $lte: nextWeek };
+        let query = { userId };
+
+        // Apply filters
+        if (status) {
+            if (status === 'active') {
+                query.isActive = true;
+            } else if (status === 'inactive') {
+                query.isActive = false;
+            }
+        }
+
+        if (type) {
+            query.method = { $in: [type] };
+        }
+
+        if (entityType) {
+            query.entityType = entityType;
+        }
+
+        if (entityId) {
+            query.entityId = entityId;
         }
 
         const reminders = await Reminder.find(query)
-            .populate('task', 'title status')
-            .populate('project', 'name status')
-            .sort({ reminderDate: 1 })
-            .limit(parseInt(limit));
-
-        const upcomingCount = await Reminder.countDocuments({
-            user: userId,
-            status: 'pending',
-            reminderDate: { $lte: new Date(Date.now() + 24 * 60 * 60 * 1000) } // Next 24 hours
-        });
+            .populate('entityId', 'title name')
+            .sort({ scheduledAt: 1 });
 
         sendResponse(res, 200, true, 'Reminders retrieved successfully', {
             reminders,
-            count: reminders.length,
-            upcomingIn24h: upcomingCount
+            count: reminders.length
         });
     } catch (error) {
         logger.error('Get reminders error:', error);
         sendResponse(res, 500, false, 'Server error retrieving reminders');
+    }
+};
+
+// Get single reminder
+exports.getReminder = async (req, res) => {
+    try {
+        const { id: reminderId } = req.params;
+        const userId = req.user.id;
+
+        const reminder = await Reminder.findById(reminderId)
+            .populate('entityId', 'title name');
+
+        if (!reminder) {
+            return sendResponse(res, 404, false, 'Reminder not found');
+        }
+
+        if (reminder.userId.toString() !== userId.toString()) {
+            return sendResponse(res, 403, false, 'Access denied');
+        }
+
+        sendResponse(res, 200, true, 'Reminder retrieved successfully', {
+            reminder
+        });
+    } catch (error) {
+        logger.error('Get reminder error:', error);
+        sendResponse(res, 500, false, 'Server error retrieving reminder');
     }
 };
 
@@ -52,12 +85,19 @@ exports.createReminder = async (req, res) => {
             reminderDate, 
             type = 'both', 
             taskId, 
-            projectId,
+            spaceId,
+            entityType, 
+            entityId, 
             recurring 
         } = req.body;
         const userId = req.user.id;
 
-        // Validate access to task/project if provided
+        // Validate required fields
+        if (!title || !reminderDate) {
+            return sendResponse(res, 400, false, 'Title and reminder date are required');
+        }
+
+        // Check access permissions
         if (taskId) {
             const task = await Task.findById(taskId);
             if (!task) {
@@ -67,56 +107,55 @@ exports.createReminder = async (req, res) => {
             const user = await User.findById(userId);
             const userRoles = await user.getRoles();
             
-            const hasAccess = task.assignees.some(a => a.toString() === userId) ||
-                             task.reporter.toString() === userId ||
-                             task.watchers.some(w => w.toString() === userId) ||
-                             userRoles.hasBoardPermission(task.board, 'canView');
+            const hasAccess = userRoles.hasBoardPermission(task.board, 'canView') ||
+                             userRoles.hasSpaceRole(task.space, 'member');
 
             if (!hasAccess) {
                 return sendResponse(res, 403, false, 'Access denied to this task');
             }
         }
 
-        if (projectId) {
+        if (spaceId) {
             const user = await User.findById(userId);
             const userRoles = await user.getRoles();
             
-            if (!userRoles.hasProjectRole(projectId)) {
-                return sendResponse(res, 403, false, 'Access denied to this project');
+            if (!userRoles.hasSpaceRole(spaceId)) {
+                return sendResponse(res, 403, false, 'Access denied to this space');
             }
+        }
+
+        // Determine entity type and ID from either format
+        let finalEntityType = entityType;
+        let finalEntityId = entityId;
+        
+        if (taskId) {
+            finalEntityType = 'task';
+            finalEntityId = taskId;
+        } else if (spaceId) {
+            finalEntityType = 'space';
+            finalEntityId = spaceId;
+        } else if (!entityType && !entityId) {
+            finalEntityType = 'user';
+            finalEntityId = userId;
         }
 
         const reminder = await Reminder.create({
             title,
             description,
-            user: userId,
-            task: taskId || null,
-            project: projectId || null,
-            reminderDate: new Date(reminderDate),
-            type,
-            recurring: recurring || { enabled: false }
-        });
-
-        await reminder.populate('task', 'title');
-        await reminder.populate('project', 'name');
-
-        // Log activity
-        await ActivityLog.logActivity({
             userId,
-            action: 'reminder_create',
-            description: `Created reminder: ${title}`,
-            entity: { type: 'Reminder', id: reminder._id, name: title },
-            relatedEntities: [
-                ...(taskId ? [{ type: 'Task', id: taskId, name: 'Task' }] : []),
-                ...(projectId ? [{ type: 'Project', id: projectId, name: 'Project' }] : [])
-            ],
-            metadata: {
-                reminderDate,
-                type,
-                isRecurring: recurring?.enabled || false,
-                ipAddress: req.ip
-            }
+            entityType: finalEntityType,
+            entityId: finalEntityId,
+            scheduledAt: new Date(reminderDate),
+            method: type === 'email' ? ['email'] : type === 'push' ? ['push'] : ['email', 'push'],
+            repeat: recurring ? {
+                enabled: recurring.enabled !== undefined ? recurring.enabled : true,
+                frequency: recurring.pattern || recurring.frequency || 'daily',
+                interval: recurring.interval || 1,
+                endDate: recurring.endDate
+            } : { enabled: false, frequency: 'daily', interval: 1 }
         });
+
+        await reminder.populate('entityId', 'title name');
 
         logger.info(`Reminder created: ${title} for user ${userId}`);
 
@@ -125,6 +164,13 @@ exports.createReminder = async (req, res) => {
         });
     } catch (error) {
         logger.error('Create reminder error:', error);
+        
+        // Handle validation errors
+        if (error.name === 'ValidationError') {
+            const errorMessages = Object.values(error.errors).map(err => err.message).join(', ');
+            return sendResponse(res, 400, false, `Validation error: ${errorMessages}`);
+        }
+        
         sendResponse(res, 500, false, 'Server error creating reminder');
     }
 };
@@ -136,28 +182,26 @@ exports.updateReminder = async (req, res) => {
         const { title, description, reminderDate, type, recurring } = req.body;
         const userId = req.user.id;
 
-        const reminder = await Reminder.findOne({ _id: reminderId, user: userId });
+        const reminder = await Reminder.findById(reminderId);
         if (!reminder) {
             return sendResponse(res, 404, false, 'Reminder not found');
         }
 
+        if (reminder.userId.toString() !== userId.toString()) {
+            return sendResponse(res, 403, false, 'Access denied');
+        }
+
         // Update fields
         if (title) reminder.title = title;
-        if (description) reminder.description = description;
-        if (reminderDate) reminder.reminderDate = new Date(reminderDate);
-        if (type) reminder.type = type;
-        if (recurring) reminder.recurring = recurring;
+        if (description) reminder.message = description;
+        if (reminderDate) reminder.scheduledAt = new Date(reminderDate);
+        if (type) reminder.method = type === 'email' ? ['email'] : type === 'push' ? ['push'] : ['email', 'push'];
+        if (recurring) reminder.repeat = { ...reminder.repeat, ...recurring };
+        
+        // Handle priority update (from request body)
+        if (req.body.priority) reminder.priority = req.body.priority;
 
         await reminder.save();
-
-        // Log activity
-        await ActivityLog.logActivity({
-            userId,
-            action: 'reminder_update',
-            description: `Updated reminder: ${reminder.title}`,
-            entity: { type: 'Reminder', id: reminderId, name: reminder.title },
-            metadata: { ipAddress: req.ip }
-        });
 
         sendResponse(res, 200, true, 'Reminder updated successfully', {
             reminder
@@ -174,22 +218,16 @@ exports.deleteReminder = async (req, res) => {
         const { id: reminderId } = req.params;
         const userId = req.user.id;
 
-        const reminder = await Reminder.findOne({ _id: reminderId, user: userId });
+        const reminder = await Reminder.findById(reminderId);
         if (!reminder) {
             return sendResponse(res, 404, false, 'Reminder not found');
         }
 
-        await Reminder.findByIdAndDelete(reminderId);
+        if (reminder.userId.toString() !== userId.toString()) {
+            return sendResponse(res, 403, false, 'Access denied');
+        }
 
-        // Log activity
-        await ActivityLog.logActivity({
-            userId,
-            action: 'reminder_delete',
-            description: `Deleted reminder: ${reminder.title}`,
-            entity: { type: 'Reminder', id: reminderId, name: reminder.title },
-            metadata: { ipAddress: req.ip },
-            severity: 'warning'
-        });
+        await Reminder.findByIdAndDelete(reminderId);
 
         sendResponse(res, 200, true, 'Reminder deleted successfully');
     } catch (error) {
@@ -202,26 +240,55 @@ exports.deleteReminder = async (req, res) => {
 exports.snoozeReminder = async (req, res) => {
     try {
         const { id: reminderId } = req.params;
-        const { minutes = 60 } = req.body; // Default snooze for 1 hour
+        const { snoozeUntil } = req.body;
         const userId = req.user.id;
 
-        const reminder = await Reminder.findOne({ _id: reminderId, user: userId });
+        const reminder = await Reminder.findById(reminderId);
         if (!reminder) {
             return sendResponse(res, 404, false, 'Reminder not found');
         }
 
-        // Update reminder date
-        const newReminderDate = new Date(Date.now() + minutes * 60 * 1000);
-        reminder.reminderDate = newReminderDate;
+        if (reminder.userId.toString() !== userId.toString()) {
+            return sendResponse(res, 403, false, 'Access denied');
+        }
+
+        reminder.scheduledAt = new Date(snoozeUntil);
         await reminder.save();
 
         sendResponse(res, 200, true, 'Reminder snoozed successfully', {
-            reminder,
-            snoozedUntil: newReminderDate
+            reminder
         });
     } catch (error) {
         logger.error('Snooze reminder error:', error);
         sendResponse(res, 500, false, 'Server error snoozing reminder');
+    }
+};
+
+// Dismiss reminder
+exports.dismissReminder = async (req, res) => {
+    try {
+        const { id: reminderId } = req.params;
+        const userId = req.user.id;
+
+        const reminder = await Reminder.findById(reminderId);
+        if (!reminder) {
+            return sendResponse(res, 404, false, 'Reminder not found');
+        }
+
+        if (reminder.userId.toString() !== userId.toString()) {
+            return sendResponse(res, 403, false, 'Access denied');
+        }
+
+        reminder.isActive = false;
+        reminder.dismissedAt = new Date();
+        await reminder.save();
+
+        sendResponse(res, 200, true, 'Reminder dismissed successfully', {
+            reminder
+        });
+    } catch (error) {
+        logger.error('Dismiss reminder error:', error);
+        sendResponse(res, 500, false, 'Server error dismissing reminder');
     }
 };
 
@@ -231,59 +298,58 @@ exports.processDueReminders = async (req, res) => {
         const now = new Date();
         
         const dueReminders = await Reminder.find({
-            reminderDate: { $lte: now },
-            status: 'pending'
+            scheduledAt: { $lte: now },
+            status: 'scheduled'
         })
-        .populate('user', 'name email')
-        .populate('task', 'title board')
-        .populate('project', 'name');
+        .populate('userId', 'name email')
+        .populate('entityId', 'title board name');
 
         const processedReminders = [];
 
         for (const reminder of dueReminders) {
             try {
                 // Check user notification preferences
-                const userPrefs = await reminder.user.getPreferences();
+                const userPrefs = await reminder.userId.getPreferences();
                 
                 // Send email if enabled
-                if ((reminder.type === 'email' || reminder.type === 'both') && 
+                if (reminder.method.includes('email') && 
                     userPrefs.shouldReceiveNotification('reminder', 'dueDateReminders', 'email')) {
                     
                     await sendEmail({
-                        to: reminder.user.email,
+                        to: reminder.userId.email,
                         subject: `Reminder: ${reminder.title}`,
                         template: 'reminder',
                         data: {
-                            name: reminder.user.name,
+                            name: reminder.userId.name,
                             title: reminder.title,
-                            description: reminder.description,
-                            taskTitle: reminder.task ? reminder.task.title : null,
-                            projectName: reminder.project ? reminder.project.name : null
+                            description: reminder.message,
+                            taskTitle: reminder.entityType === 'task' ? reminder.entityId.title : null,
+                            spaceName: reminder.entityType === 'space' ? reminder.entityId.name : null
                         }
                     });
                 }
 
                 // Send push notification if enabled
-                if ((reminder.type === 'push' || reminder.type === 'both') &&
+                if (reminder.method.includes('push') &&
                     userPrefs.shouldReceiveNotification('reminder', 'dueDateReminders', 'push')) {
                     
                     // Create in-app notification
                     const Notification = require('../models/Notification');
                     await Notification.create({
                         title: `Reminder: ${reminder.title}`,
-                        message: reminder.description || 'You have a reminder due',
+                        message: reminder.message || 'You have a reminder due',
                         type: 'due_date_reminder',
-                        recipient: reminder.user._id,
+                        recipient: reminder.userId._id,
                         relatedEntity: {
-                            entityType: reminder.task ? 'Task' : (reminder.project ? 'Project' : 'Reminder'),
-                            entityId: reminder.task || reminder.project || reminder._id
+                            entityType: reminder.entityType === 'task' ? 'Task' : (reminder.entityType === 'space' ? 'Space' : 'Reminder'),
+                            entityId: reminder.entityId || reminder._id
                         }
                     });
 
                     // Send real-time notification
                     const io = req.app.get('io');
                     if (io) {
-                        io.notifyUser(reminder.user._id, 'reminder:due', {
+                        io.notifyUser(reminder.userId._id, 'reminder:due', {
                             reminder: reminder.toObject()
                         });
                     }
@@ -294,36 +360,36 @@ exports.processDueReminders = async (req, res) => {
                 reminder.sentAt = new Date();
 
                 // Handle recurring reminders
-                if (reminder.recurring.enabled) {
-                    const nextDate = new Date(reminder.reminderDate);
+                if (reminder.repeat.enabled) {
+                    const nextDate = new Date(reminder.scheduledAt);
                     
-                    switch (reminder.recurring.pattern) {
+                    switch (reminder.repeat.frequency) {
                         case 'daily':
-                            nextDate.setDate(nextDate.getDate() + reminder.recurring.interval);
+                            nextDate.setDate(nextDate.getDate() + reminder.repeat.interval);
                             break;
                         case 'weekly':
-                            nextDate.setDate(nextDate.getDate() + (7 * reminder.recurring.interval));
+                            nextDate.setDate(nextDate.getDate() + (7 * reminder.repeat.interval));
                             break;
                         case 'monthly':
-                            nextDate.setMonth(nextDate.getMonth() + reminder.recurring.interval);
+                            nextDate.setMonth(nextDate.getMonth() + reminder.repeat.interval);
                             break;
                         case 'yearly':
-                            nextDate.setFullYear(nextDate.getFullYear() + reminder.recurring.interval);
+                            nextDate.setFullYear(nextDate.getFullYear() + reminder.repeat.interval);
                             break;
                     }
 
                     // Check if recurring should continue
-                    if (!reminder.recurring.endDate || nextDate <= reminder.recurring.endDate) {
+                    if (!reminder.repeat.endDate || nextDate <= reminder.repeat.endDate) {
                         // Create new reminder for next occurrence
                         await Reminder.create({
                             title: reminder.title,
-                            description: reminder.description,
-                            user: reminder.user._id,
-                            task: reminder.task,
-                            project: reminder.project,
-                            reminderDate: nextDate,
-                            type: reminder.type,
-                            recurring: reminder.recurring
+                            message: reminder.message,
+                            userId: reminder.userId._id,
+                            entityType: reminder.entityType,
+                            entityId: reminder.entityId,
+                            scheduledAt: nextDate,
+                            method: reminder.method,
+                            repeat: reminder.repeat
                         });
                     }
                 }

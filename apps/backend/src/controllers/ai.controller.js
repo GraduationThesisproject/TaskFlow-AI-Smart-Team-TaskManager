@@ -2,18 +2,18 @@ const aiService = require('../services/ai.service');
 const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
 
-// Generate task suggestions based on project goal
+// Generate task suggestions based on space goal
 exports.generateTaskSuggestions = async (req, res) => {
     try {
-        const { projectGoal, projectContext, boardType = 'kanban' } = req.body;
+        const { spaceGoal, spaceContext, boardType = 'kanban' } = req.body;
 
-        if (!projectGoal) {
-            return sendResponse(res, 400, false, 'Project goal is required');
+        if (!spaceGoal) {
+            return sendResponse(res, 400, false, 'Space goal is required');
         }
 
         const suggestions = await aiService.generateTaskSuggestions({
-            goal: projectGoal,
-            context: projectContext,
+            goal: spaceGoal,
+            context: spaceContext,
             boardType
         });
 
@@ -21,7 +21,7 @@ exports.generateTaskSuggestions = async (req, res) => {
 
         sendResponse(res, 200, true, 'Task suggestions generated successfully', {
             suggestions,
-            goal: projectGoal
+            goal: spaceGoal
         });
     } catch (error) {
         logger.error('Generate task suggestions error:', error);
@@ -32,15 +32,15 @@ exports.generateTaskSuggestions = async (req, res) => {
 // Analyze tasks for potential delays and risks
 exports.analyzeTaskRisks = async (req, res) => {
     try {
-        const { projectId, boardId } = req.params;
+        const { spaceId, boardId } = req.params;
 
         const riskAnalysis = await aiService.analyzeTaskRisks({
-            projectId,
+            spaceId,
             boardId,
             userId: req.user.id
         });
 
-        logger.info(`AI risk analysis completed for project: ${projectId}`);
+        logger.info(`AI risk analysis completed for space: ${spaceId}`);
 
         sendResponse(res, 200, true, 'Risk analysis completed successfully', {
             analysis: riskAnalysis
@@ -78,69 +78,69 @@ exports.parseNaturalLanguage = async (req, res) => {
     }
 };
 
-// Generate project timeline and milestones
-exports.generateProjectTimeline = async (req, res) => {
+// Generate space timeline and milestones
+exports.generateSpaceTimeline = async (req, res) => {
     try {
-        const { projectId } = req.params;
+        const { spaceId } = req.params;
         const { startDate, targetEndDate, priorities } = req.body;
 
-        const timeline = await aiService.generateProjectTimeline({
-            projectId,
+        const timeline = await aiService.generateSpaceTimeline({
+            spaceId,
             startDate: startDate ? new Date(startDate) : new Date(),
             targetEndDate: targetEndDate ? new Date(targetEndDate) : null,
             priorities: priorities || []
         });
 
-        logger.info(`AI timeline generated for project: ${projectId}`);
+        logger.info(`AI timeline generated for space: ${spaceId}`);
 
-        sendResponse(res, 200, true, 'Project timeline generated successfully', {
+        sendResponse(res, 200, true, 'Space timeline generated successfully', {
             timeline
         });
     } catch (error) {
-        logger.error('Generate project timeline error:', error);
-        sendResponse(res, 500, false, 'Server error generating project timeline');
+        logger.error('Generate space timeline error:', error);
+        sendResponse(res, 500, false, 'Server error generating space timeline');
     }
 };
 
-// Get smart task recommendations based on user behavior
+// Get smart recommendations for space
 exports.getSmartRecommendations = async (req, res) => {
     try {
-        const { projectId } = req.params;
-        const { type = 'next_tasks' } = req.query;
+        const { spaceId } = req.params;
+        const { type = 'all' } = req.query;
 
         const recommendations = await aiService.getSmartRecommendations({
-            userId: req.user.id,
-            projectId,
-            type
-        });
-
-        sendResponse(res, 200, true, 'Smart recommendations retrieved successfully', {
-            recommendations,
-            type
-        });
-    } catch (error) {
-        logger.error('Get smart recommendations error:', error);
-        sendResponse(res, 500, false, 'Server error getting smart recommendations');
-    }
-};
-
-// Analyze team performance and provide insights
-exports.analyzeTeamPerformance = async (req, res) => {
-    try {
-        const { projectId } = req.params;
-        const { timeframe = '30d' } = req.query;
-
-        const analysis = await aiService.analyzeTeamPerformance({
-            projectId,
-            timeframe,
+            spaceId,
+            type,
             userId: req.user.id
         });
 
-        logger.info(`AI team performance analysis for project: ${projectId}`);
+        logger.info(`AI recommendations generated for space: ${spaceId}`);
 
-        sendResponse(res, 200, true, 'Team performance analysis completed', {
-            analysis,
-            timeframe
+        sendResponse(res, 200, true, 'Smart recommendations generated successfully', {
+            recommendations
+        });
+    } catch (error) {
+        logger.error('Get smart recommendations error:', error);
+        sendResponse(res, 500, false, 'Server error generating smart recommendations');
+    }
+};
+
+// Analyze team performance
+exports.analyzeTeamPerformance = async (req, res) => {
+    try {
+        const { spaceId } = req.params;
+        const { period = '30d' } = req.query;
+
+        const performance = await aiService.analyzeTeamPerformance({
+            spaceId,
+            period,
+            userId: req.user.id
+        });
+
+        logger.info(`AI team performance analysis completed for space: ${spaceId}`);
+
+        sendResponse(res, 200, true, 'Team performance analysis completed successfully', {
+            performance
         });
     } catch (error) {
         logger.error('Analyze team performance error:', error);
@@ -148,10 +148,10 @@ exports.analyzeTeamPerformance = async (req, res) => {
     }
 };
 
-// Generate automated task descriptions based on title
+// Generate task description
 exports.generateTaskDescription = async (req, res) => {
     try {
-        const { title, projectContext, taskType } = req.body;
+        const { title, spaceContext, taskType } = req.body;
 
         if (!title) {
             return sendResponse(res, 400, false, 'Task title is required');
@@ -159,9 +159,11 @@ exports.generateTaskDescription = async (req, res) => {
 
         const description = await aiService.generateTaskDescription({
             title,
-            projectContext,
+            context: spaceContext,
             taskType
         });
+
+        logger.info(`AI task description generated for: "${title}"`);
 
         sendResponse(res, 200, true, 'Task description generated successfully', {
             description,

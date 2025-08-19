@@ -1,7 +1,7 @@
 const express = require('express');
 const workspaceController = require('../controllers/workspace.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { requireWorkspacePermission, requireMembership } = require('../middlewares/permission.middleware');
+const { requireWorkspacePermission, requireWorkspaceMember, requireWorkspaceAdmin } = require('../middlewares/permission.middleware');
 
 const router = express.Router();
 
@@ -37,7 +37,7 @@ const transferOwnershipSchema = {
 router.get('/', workspaceController.getAllWorkspaces);
 
 router.get('/:id', 
-    requireMembership('Workspace'),
+    requireWorkspaceMember,
     workspaceController.getWorkspace
 );
 
@@ -63,7 +63,7 @@ router.post('/accept-invitation/:token',
 );
 
 router.get('/:id/members',
-    requireMembership('Workspace'),
+    requireWorkspaceMember,
     workspaceController.getWorkspaceMembers
 );
 
@@ -79,7 +79,7 @@ router.put('/:id/settings',
 );
 
 router.get('/:id/analytics',
-    requireMembership('Workspace'),
+    requireWorkspaceMember,
     workspaceController.getWorkspaceAnalytics
 );
 

@@ -13,7 +13,6 @@ const Board = require('../models/Board');
 const Column = require('../models/Column');
 const Task = require('../models/Task');
 const Comment = require('../models/Comment');
-const Project = require('../models/Project');
 const Notification = require('../models/Notification');
 const ActivityLog = require('../models/ActivityLog');
 const Analytics = require('../models/Analytics');
@@ -29,7 +28,6 @@ class DatabaseSeeder {
     this.createdWorkspaces = [];
     this.createdSpaces = [];
     this.createdBoards = [];
-    this.createdProjects = [];
     this.createdTasks = [];
     this.createdColumns = [];
     this.createdTags = [];
@@ -129,7 +127,7 @@ class DatabaseSeeder {
             taskOverdue: true,
             commentAdded: faker.datatype.boolean(),
             mentionReceived: true,
-            projectUpdates: faker.datatype.boolean(),
+            spaceUpdates: faker.datatype.boolean(),
             weeklyDigest: faker.datatype.boolean()
           },
           push: {
@@ -138,7 +136,7 @@ class DatabaseSeeder {
             taskOverdue: true,
             commentAdded: faker.datatype.boolean(),
             mentionReceived: true,
-            projectUpdates: faker.datatype.boolean()
+            spaceUpdates: faker.datatype.boolean()
           },
           inApp: {
             taskAssigned: true,
@@ -146,7 +144,7 @@ class DatabaseSeeder {
             taskOverdue: true,
             commentAdded: true,
             mentionReceived: true,
-            projectUpdates: true
+            spaceUpdates: true
           }
         },
         ai: {
@@ -344,61 +342,6 @@ class DatabaseSeeder {
     return spaces;
   }
 
-  // Create projects
-  async createProjects() {
-    console.log('📋 Creating projects...');
-    
-    const projects = [];
-    
-    for (let i = 0; i < 10; i++) {
-      const owner = faker.helpers.arrayElement(this.createdUsers);
-      const teamMembers = faker.helpers.arrayElements(this.createdUsers, { min: 2, max: 6 })
-        .filter(u => u.user._id.toString() !== owner.user._id.toString());
-
-      const startDate = faker.date.past();
-      const endDate = faker.date.future();
-
-      const project = await Project.create({
-        name: faker.commerce.productName(),
-        description: faker.lorem.paragraphs(2),
-        goal: faker.lorem.sentence(),
-        status: faker.helpers.arrayElement(['planning', 'active', 'on_hold', 'completed', 'cancelled']),
-        startDate,
-        targetEndDate: endDate,
-        actualEndDate: faker.datatype.boolean() ? faker.date.between({ from: startDate, to: endDate }) : null,
-        priority: faker.helpers.arrayElement(['low', 'medium', 'high', 'critical']),
-        owner: owner.user._id,
-        team: teamMembers.map(m => ({
-          user: m.user._id,
-          role: faker.helpers.arrayElement(['member', 'contributor', 'reviewer']),
-          joinedAt: faker.date.between({ from: startDate, to: new Date() })
-        })),
-        tags: faker.helpers.arrayElements(['web', 'mobile', 'backend', 'frontend', 'design', 'testing'], { min: 1, max: 3 }),
-        budget: {
-          amount: faker.number.int({ min: 5000, max: 100000 }),
-          currency: faker.helpers.arrayElement(['USD', 'EUR', 'GBP'])
-        },
-        progress: {
-          completedTasks: 0,
-          totalTasks: 0,
-          completionPercentage: 0
-        }
-      });
-
-      // Add project roles
-      await owner.roles.addProjectRole(project._id, 'owner');
-      for (let member of teamMembers) {
-        await member.roles.addProjectRole(project._id, faker.helpers.arrayElement(['member', 'contributor']));
-      }
-
-      projects.push(project);
-    }
-
-    this.createdProjects = projects;
-    console.log(`✅ Created ${projects.length} projects`);
-    return projects;
-  }
-
   // Create boards and columns
   async createBoardsAndColumns() {
     console.log('📋 Creating boards and columns...');
@@ -410,12 +353,10 @@ class DatabaseSeeder {
       const boardCount = faker.number.int({ min: 1, max: 4 });
       
       for (let i = 0; i < boardCount; i++) {
-        const project = faker.helpers.arrayElement(this.createdProjects);
-        
         const board = await Board.create({
           name: faker.lorem.words(2),
           description: faker.lorem.paragraph(),
-          project: project._id,
+          space: space._id,
           owner: faker.helpers.arrayElement(space.members).user,
           members: space.members.map(m => ({
             user: m.user,
@@ -556,6 +497,28 @@ class DatabaseSeeder {
       }
     }
 
+    // Space-specific tags
+    for (let space of this.createdSpaces) {
+      const spaceTags = [
+        { name: `${space.name}-Task`, color: '#3B82F6', category: 'type' },
+        { name: 'In-Progress', color: '#F59E0B', category: 'status' },
+        { name: 'Completed', color: '#10B981', category: 'status' }
+      ];
+
+      for (let tagData of spaceTags) {
+        const tag = await Tag.create({
+          name: tagData.name,
+          color: tagData.color,
+          textColor: '#FFFFFF',
+          scope: 'space',
+          space: space._id,
+          createdBy: space.members[0].user,
+          category: tagData.category
+        });
+        tags.push(tag);
+      }
+    }
+
     this.createdTags = tags;
     console.log(`✅ Created ${tags.length} tags`);
     return tags;
@@ -580,7 +543,7 @@ class DatabaseSeeder {
           title: faker.lorem.sentence(),
           description: faker.lorem.paragraphs(2),
           board: board._id,
-          project: board.project,
+          space: board.space,
           column: column._id,
           status: faker.helpers.arrayElement(['todo', 'in_progress', 'review', 'done']),
           priority: faker.helpers.arrayElement(['low', 'medium', 'high', 'critical']),
@@ -792,7 +755,7 @@ class DatabaseSeeder {
         user: user.user._id,
         action: faker.helpers.arrayElement([
           'task_create', 'task_update', 'task_complete',
-          'comment_create', 'board_create', 'project_create'
+          'comment_create', 'board_create', 'space_create'
         ]),
         description: faker.lorem.sentence(),
         entity: {
@@ -801,7 +764,7 @@ class DatabaseSeeder {
           name: task.title
         },
         workspace: workspace._id,
-        project: task.project,
+        space: task.space,
         board: task.board,
         severity: faker.helpers.arrayElement(['info', 'warning', 'error']),
         isSuccessful: faker.datatype.boolean(0.9)
@@ -825,27 +788,26 @@ class DatabaseSeeder {
       const task = faker.helpers.arrayElement(this.createdTasks);
       
       const file = await File.create({
-        publicId: faker.string.uuid(),
-        url: faker.image.url(),
-        secureUrl: faker.image.url(),
+        filename: faker.system.fileName(),
         originalName: faker.system.fileName(),
         mimeType: faker.system.mimeType(),
         size: faker.number.int({ min: 1000, max: 10000000 }),
-        format: faker.system.fileExt(),
-        resourceType: faker.helpers.arrayElement(['image', 'video', 'raw', 'auto']),
+        path: `/uploads/${faker.string.uuid()}.${faker.system.fileExt()}`,
+        extension: faker.system.fileExt(),
+        checksum: faker.string.alphanumeric(64),
         category: faker.helpers.arrayElement(['task_attachment', 'comment_attachment', 'avatar', 'general']),
         uploadedBy: uploader.user._id,
-        attachedTo: [{
-          entityType: 'Task',
-          entityId: task._id,
+        space: task.space,
+        attachedTo: {
+          model: 'Task',
+          objectId: task._id,
           attachedAt: faker.date.recent()
-        }],
+        },
         dimensions: {
           width: faker.number.int({ min: 100, max: 2000 }),
           height: faker.number.int({ min: 100, max: 2000 })
         },
-        isPublic: faker.datatype.boolean(),
-        downloadCount: faker.number.int({ min: 0, max: 100 })
+        isPublic: faker.datatype.boolean()
       });
 
       files.push(file);
@@ -868,7 +830,7 @@ class DatabaseSeeder {
         const inviter = faker.helpers.arrayElement(this.createdUsers);
         
         const invitation = await Invitation.create({
-          type: faker.helpers.arrayElement(['workspace', 'project', 'space', 'board']),
+          type: faker.helpers.arrayElement(['workspace', 'space', 'board']),
           invitedBy: inviter.user._id,
           invitedUser: {
             email: faker.internet.email(),
@@ -899,40 +861,24 @@ class DatabaseSeeder {
     
     const analytics = [];
     
-    for (let project of this.createdProjects) {
+    for (let space of this.createdSpaces) {
       const analytic = await Analytics.create({
-        project: project._id,
-        period: {
-          startDate: faker.date.past(),
-          endDate: faker.date.recent(),
-          type: faker.helpers.arrayElement(['daily', 'weekly', 'monthly'])
-        },
-        taskMetrics: {
-          total: faker.number.int({ min: 10, max: 100 }),
-          completed: faker.number.int({ min: 5, max: 50 }),
-          inProgress: faker.number.int({ min: 2, max: 20 }),
-          overdue: faker.number.int({ min: 0, max: 10 }),
+        scopeType: 'space',
+        scopeId: space._id,
+        kind: faker.helpers.arrayElement(['velocity', 'wip', 'leadTime', 'cycleTime', 'burndown']),
+        data: {
+          totalTasks: faker.number.int({ min: 10, max: 100 }),
+          completedTasks: faker.number.int({ min: 5, max: 50 }),
+          inProgressTasks: faker.number.int({ min: 2, max: 20 }),
+          overdueTasks: faker.number.int({ min: 0, max: 10 }),
           completionRate: faker.number.int({ min: 40, max: 90 }),
           averageCompletionTime: faker.number.int({ min: 2, max: 48 }),
           velocity: faker.number.int({ min: 1, max: 10 })
         },
-        timeMetrics: {
-          totalEstimated: faker.number.int({ min: 100, max: 1000 }),
-          totalActual: faker.number.int({ min: 80, max: 1200 }),
-          averageAccuracy: faker.number.int({ min: 60, max: 95 })
-        },
-        teamMetrics: {
-          totalMembers: project.team.length + 1,
-          activeMembers: faker.number.int({ min: 1, max: project.team.length + 1 }),
-          memberProductivity: project.team.map(member => ({
-            user: member.user,
-            tasksCompleted: faker.number.int({ min: 1, max: 20 }),
-            totalHours: faker.number.int({ min: 10, max: 160 }),
-            averageTaskTime: faker.number.int({ min: 2, max: 24 }),
-            onTimeCompletion: faker.number.int({ min: 60, max: 100 })
-          }))
-        },
-        isCalculated: true
+        period: {
+          start: faker.date.past(),
+          end: faker.date.recent()
+        }
       });
 
       analytics.push(analytic);
@@ -942,27 +888,33 @@ class DatabaseSeeder {
     return analytics;
   }
 
-  // Update project progress
-  async updateProjectProgress() {
-    console.log('🔄 Updating project progress...');
+  // Update space statistics
+  async updateSpaceStatistics() {
+    console.log('🔄 Updating space statistics...');
     
-    for (let project of this.createdProjects) {
-      const projectTasks = this.createdTasks.filter(task => 
-        task.project.toString() === project._id.toString()
+    for (let space of this.createdSpaces) {
+      const spaceTasks = this.createdTasks.filter(task => 
+        task.space.toString() === space._id.toString()
       );
       
-      const completedTasks = projectTasks.filter(task => task.status === 'done');
+      const completedTasks = spaceTasks.filter(task => task.status === 'done');
+      const overdueTasks = spaceTasks.filter(task => 
+        task.dueDate && task.dueDate < new Date() && task.status !== 'done'
+      );
       
-      project.progress.totalTasks = projectTasks.length;
-      project.progress.completedTasks = completedTasks.length;
-      project.progress.completionPercentage = projectTasks.length > 0 
-        ? Math.round((completedTasks.length / projectTasks.length) * 100)
-        : 0;
+      space.stats.totalTasks = spaceTasks.length;
+      space.stats.completedTasks = completedTasks.length;
+      space.stats.overdueTasks = overdueTasks.length;
+      space.stats.totalBoards = this.createdBoards.filter(board => 
+        board.space.toString() === space._id.toString()
+      ).length;
+      space.stats.activeMembersCount = space.members.length;
+      space.stats.lastActivityAt = faker.date.recent();
       
-      await project.save();
+      await space.save();
     }
     
-    console.log('✅ Updated project progress');
+    console.log('✅ Updated space statistics');
   }
 
   // Main seeding method
@@ -975,7 +927,6 @@ class DatabaseSeeder {
       await this.createTestUsers();
       await this.createWorkspaces();
       await this.createSpaces();
-      await this.createProjects();
       await this.createBoardsAndColumns();
       await this.createTags();
       await this.createTasks();
@@ -987,7 +938,7 @@ class DatabaseSeeder {
       await this.createFiles();
       await this.createInvitations();
       await this.createAnalytics();
-      await this.updateProjectProgress();
+      await this.updateSpaceStatistics();
       
       console.log('==========================================');
       console.log('🎉 Database seeding completed successfully!');
@@ -1004,7 +955,6 @@ class DatabaseSeeder {
       console.log(`  • Users: ${this.createdUsers.length}`);
       console.log(`  • Workspaces: ${this.createdWorkspaces.length}`);
       console.log(`  • Spaces: ${this.createdSpaces.length}`);
-      console.log(`  • Projects: ${this.createdProjects.length}`);
       console.log(`  • Boards: ${this.createdBoards.length}`);
       console.log(`  • Tasks: ${this.createdTasks.length}`);
       console.log(`  • Tags: ${this.createdTags.length}`);

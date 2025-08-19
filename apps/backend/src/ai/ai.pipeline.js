@@ -82,7 +82,7 @@ class AIPipeline {
 
 // Pre-built pipeline processors
 const processors = {
-    // Analyze project requirements
+    // Analyze space requirements
     analyzeRequirements: async (context, results, options) => {
         const { requirements } = context;
         
@@ -91,7 +91,7 @@ const processors = {
         }
 
         const prompt = `
-            Analyze these project requirements and extract:
+            Analyze these space requirements and extract:
             1. Core objectives (3-5 main goals)
             2. Key deliverables (specific outcomes)
             3. Success metrics (how to measure success)
@@ -136,13 +136,13 @@ const processors = {
         return JSON.parse(response);
     },
 
-    // Estimate project timeline
+    // Estimate space timeline
     estimateTimeline: async (context, results, options) => {
         const wbs = results.generateWBS;
         const { teamSize = 3, workHoursPerDay = 8 } = options;
 
         const prompt = `
-            Create a realistic project timeline based on this WBS:
+            Create a realistic space timeline based on this WBS:
             ${JSON.stringify(wbs, null, 2)}
             
             Assumptions:
@@ -172,7 +172,7 @@ const processors = {
         const timeline = results.estimateTimeline;
 
         const prompt = `
-            Perform risk analysis for this project:
+            Perform risk analysis for this space:
             Requirements: ${JSON.stringify(requirements, null, 2)}
             Timeline: ${JSON.stringify(timeline, null, 2)}
             
@@ -231,8 +231,8 @@ const processors = {
 
 // Pre-built pipelines
 const pipelines = {
-    // Complete project analysis pipeline
-    projectAnalysis: () => {
+    // Complete space analysis pipeline
+    spaceAnalysis: () => {
         return new AIPipeline()
             .addStep('requirements', processors.analyzeRequirements)
             .addStep('wbs', processors.generateWBS, { dependencies: ['requirements'] })

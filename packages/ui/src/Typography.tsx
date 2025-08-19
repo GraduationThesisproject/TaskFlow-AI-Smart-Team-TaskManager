@@ -21,7 +21,7 @@ const typographyVariants = cva("", {
       muted: "text-sm text-muted-foreground",
       caption: "text-xs text-muted-foreground",
     },
-    color: {
+    textColor: {
       default: "text-foreground",
       muted: "text-muted-foreground",
       primary: "text-primary",
@@ -34,27 +34,26 @@ const typographyVariants = cva("", {
   },
   defaultVariants: {
     variant: "p",
-    color: "default",
+    textColor: "default",
   },
 });
 
 export interface TypographyProps
-  extends React.HTMLAttributes<HTMLParagraphElement>,
+  extends Omit<React.HTMLAttributes<HTMLParagraphElement>, 'color'>,
     VariantProps<typeof typographyVariants> {
   as?: keyof JSX.IntrinsicElements;
 }
 
-const Typography = React.forwardRef<HTMLElement, TypographyProps>(
-  ({ className, variant, color, as, ...props }, ref) => {
+const Typography = React.forwardRef<HTMLParagraphElement, TypographyProps>(
+  ({ className, variant, textColor, as, ...props }, ref) => {
     const Component = as || getDefaultTag(variant) || "p";
+    const classes = cn(typographyVariants({ variant, textColor, className }));
     
-    return (
-      <Component
-        className={cn(typographyVariants({ variant, color, className }))}
-        ref={ref}
-        {...props}
-      />
-    );
+    return React.createElement(Component, {
+      className: classes,
+      ref,
+      ...props
+    });
   }
 );
 
