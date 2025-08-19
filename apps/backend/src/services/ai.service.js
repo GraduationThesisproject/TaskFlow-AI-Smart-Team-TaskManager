@@ -1,19 +1,19 @@
 const openaiClient = require('../ai/openai.client');
 const Task = require('../models/Task');
-const Project = require('../models/Project');
+const Space = require('../models/Space');
 const Analytics = require('../models/Analytics');
 const logger = require('../config/logger');
 
 class AIService {
-    // Generate task suggestions based on project goal
+    // Generate task suggestions based on space goal
     async generateTaskSuggestions({ goal, context, boardType = 'kanban' }) {
         try {
             const prompt = `
-                Project Goal: ${goal}
-                Context: ${context || 'General project management'}
+                Space Goal: ${goal}
+                Context: ${context || 'General space management'}
                 Board Type: ${boardType}
                 
-                Generate a list of 5-8 specific, actionable tasks to achieve this project goal.
+                Generate a list of 5-8 specific, actionable tasks to achieve this space goal.
                 For each task, provide:
                 1. Title (concise, action-oriented)
                 2. Description (2-3 sentences explaining what needs to be done)
@@ -48,11 +48,11 @@ class AIService {
     }
 
     // Analyze tasks for potential risks and delays
-    async analyzeTaskRisks({ projectId, boardId, userId }) {
+    async analyzeTaskRisks({ spaceId, boardId, userId }) {
         try {
-            // Get project tasks
+            // Get space tasks
             const tasks = await Task.find({
-                project: projectId,
+                space: spaceId,
                 ...(boardId && { board: boardId }),
                 archived: false
             }).populate('assignees', 'name');
@@ -168,7 +168,7 @@ class AIService {
     async getAIRiskAnalysis(taskSummary) {
         try {
             const prompt = `
-                Analyze these project tasks for potential risks and provide recommendations:
+                Analyze these space tasks for potential risks and provide recommendations:
                 ${JSON.stringify(taskSummary, null, 2)}
                 
                 Identify patterns that might indicate:
@@ -232,17 +232,17 @@ class AIService {
         }
     }
 
-    // Generate project timeline with AI optimization
-    async generateProjectTimeline({ projectId, startDate, targetEndDate, priorities }) {
+    // Generate space timeline with AI optimization
+    async generateSpaceTimeline({ spaceId, startDate, targetEndDate, priorities }) {
         try {
-            const tasks = await Task.find({ project: projectId, archived: false });
+            const tasks = await Task.find({ space: spaceId, archived: false });
             
             if (tasks.length === 0) {
                 return { message: 'No tasks found for timeline generation' };
             }
 
             const prompt = `
-                Generate an optimized project timeline for these tasks:
+                Generate an optimized space timeline for these tasks:
                 ${JSON.stringify(tasks.map(t => ({
                     id: t._id,
                     title: t.title,
@@ -252,7 +252,7 @@ class AIService {
                     dependencies: t.dependencies || []
                 })), null, 2)}
                 
-                Project constraints:
+                Space constraints:
                 - Start date: ${startDate.toISOString()}
                 ${targetEndDate ? `- Target end date: ${targetEndDate.toISOString()}` : ''}
                 - Priorities: ${JSON.stringify(priorities)}
@@ -281,22 +281,22 @@ class AIService {
 
         } catch (error) {
             logger.error('Timeline generation error:', error);
-            throw new Error('Failed to generate project timeline');
+            throw new Error('Failed to generate space timeline');
         }
     }
 
     // Get smart recommendations based on user behavior
-    async getSmartRecommendations({ userId, projectId, type }) {
+    async getSmartRecommendations({ userId, spaceId, type }) {
         try {
             // Get user's task patterns from analytics
             const userAnalytics = await Analytics.find({
                 user: userId,
-                project: projectId,
+                space: spaceId,
                 date: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } // Last 30 days
             });
 
             const currentTasks = await Task.find({
-                project: projectId,
+                space: spaceId,
                 assignees: userId,
                 status: { $ne: 'completed' },
                 archived: false
@@ -318,12 +318,12 @@ class AIService {
     }
 
     // Generate task description based on title
-    async generateTaskDescription({ title, projectContext, taskType }) {
+    async generateTaskDescription({ title, spaceContext, taskType }) {
         try {
             const prompt = `
                 Generate a detailed description for this task:
                 Title: "${title}"
-                Project context: ${projectContext || 'General project'}
+                Space context: ${spaceContext || 'General space'}
                 Task type: ${taskType || 'General task'}
                 
                 Create a description that includes:
@@ -398,6 +398,70 @@ class AIService {
         }
 
         return reasons.join(', ') || 'Recommended for completion';
+    }
+
+    // Analyze space metrics and generate AI insights
+    async analyzeSpaceMetrics(spaceId, analytics) {
+        try {
+            const space = await Space.findById(spaceId);
+            if (!space) {
+                throw new Error('Space not found');
+            }
+
+            const prompt = `
+                Analyze this space's performance metrics:
+                
+                Space: ${space.name}
+                Goal: ${space.goal}
+                
+                Metrics:
+                - Total Tasks: ${analytics.totalTasks || 0}
+                - Completed Tasks: ${analytics.completedTasks || 0}
+                - In Progress Tasks: ${analytics.inProgressTasks || 0}
+                - Overdue Tasks: ${analytics.overdueTasks || 0}
+                - Completion Rate: ${analytics.completionRate || 0}%
+                
+                Generate 3-5 actionable insights and recommendations to improve space performance.
+                Focus on:
+                1. Task completion efficiency
+                2. Risk mitigation
+                3. Team productivity
+                4. Space timeline optimization
+                
+                Format as JSON with array of insight objects containing: title, description, priority, action
+            `;
+
+            const response = await openaiClient.generateCompletion(prompt);
+            const insights = JSON.parse(response);
+
+            // Validate and clean insights
+            const cleanedInsights = insights.map(insight => ({
+                title: insight.title?.substring(0, 100) || 'Performance Insight',
+                description: insight.description?.substring(0, 500) || '',
+                priority: ['low', 'medium', 'high'].includes(insight.priority) 
+                    ? insight.priority : 'medium',
+                action: insight.action?.substring(0, 200) || '',
+                aiGenerated: true,
+                timestamp: new Date()
+            }));
+
+            logger.info('AI space metrics analysis completed');
+            return cleanedInsights;
+
+        } catch (error) {
+            logger.error('AI space metrics analysis error:', error);
+            // Return default insights if AI analysis fails
+            return [
+                {
+                    title: 'Monitor Task Completion',
+                    description: 'Track task completion rates to identify bottlenecks',
+                    priority: 'medium',
+                    action: 'Review task assignments and deadlines',
+                    aiGenerated: true,
+                    timestamp: new Date()
+                }
+            ];
+        }
     }
 }
 

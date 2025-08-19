@@ -1,7 +1,7 @@
 const Invitation = require('../models/Invitation');
 const User = require('../models/User');
 const Workspace = require('../models/Workspace');
-const Project = require('../models/Project');
+const Space = require('../models/Space');
 const NotificationService = require('./notification.service');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
@@ -94,14 +94,14 @@ class InvitationService {
         }
     }
 
-    // Create and send project invitation
-    static async inviteToProject(projectId, invitedEmail, role, inviterId, options = {}) {
+    // Create and send space invitation
+    static async inviteToSpace(spaceId, invitedEmail, role, inviterId, options = {}) {
         try {
             const { message, expiresInDays = 7 } = options;
 
-            const project = await Project.findById(projectId);
-            if (!project) {
-                throw new Error('Project not found');
+            const space = await Space.findById(spaceId);
+            if (!space) {
+                throw new Error('Space not found');
             }
 
             const inviter = await User.findById(inviterId);
@@ -114,27 +114,27 @@ class InvitationService {
             
             // Check if already a member
             if (existingUser) {
-                const isMember = project.team.some(member => 
+                const isMember = space.members.some(member => 
                     member.user.toString() === existingUser._id.toString()
-                ) || project.owner.toString() === existingUser._id.toString();
+                ) || space.owner.toString() === existingUser._id.toString();
 
                 if (isMember) {
-                    throw new Error('User is already a member of this project');
+                    throw new Error('User is already a member of this space');
                 }
             }
 
             // Create invitation
             const invitation = await Invitation.create({
-                type: 'project',
+                type: 'space',
                 invitedBy: inviterId,
                 invitedUser: {
                     email: invitedEmail,
                     userId: existingUser ? existingUser._id : null
                 },
                 targetEntity: {
-                    type: 'Project',
-                    id: projectId,
-                    name: project.name
+                    type: 'Space',
+                    id: spaceId,
+                    name: space.name
                 },
                 role,
                 message,
@@ -142,19 +142,19 @@ class InvitationService {
             });
 
             // Send invitation email
-            await this.sendInvitationEmail(invitation, inviter, project);
+            await this.sendInvitationEmail(invitation, inviter, space);
 
             // Create notification for existing user
             if (existingUser) {
                 await NotificationService.createNotification({
-                    title: `Project invitation: ${project.name}`,
-                    message: `${inviter.name} invited you to join project "${project.name}"`,
-                    type: 'project_invitation',
+                    title: `Space invitation: ${space.name}`,
+                    message: `${inviter.name} invited you to join space "${space.name}"`,
+                    type: 'space_invitation',
                     recipient: existingUser._id,
                     sender: inviterId,
                     relatedEntity: {
-                        entityType: 'Project',
-                        entityId: projectId
+                        entityType: 'Space',
+                        entityId: spaceId
                     },
                     deliveryMethods: { inApp: true }
                 });
@@ -163,7 +163,7 @@ class InvitationService {
             return invitation;
 
         } catch (error) {
-            logger.error('Invite to project error:', error);
+            logger.error('Invite to space error:', error);
             throw error;
         }
     }
@@ -211,9 +211,6 @@ class InvitationService {
                 case 'Workspace':
                     await this.addToWorkspace(invitation, userId, userRoles);
                     break;
-                case 'Project':
-                    await this.addToProject(invitation, userId, userRoles);
-                    break;
                 case 'Space':
                     await this.addToSpace(invitation, userId, userRoles);
                     break;
@@ -255,16 +252,7 @@ class InvitationService {
         await userRoles.addWorkspaceRole(workspace._id, invitation.role);
     }
 
-    // Add user to project
-    static async addToProject(invitation, userId, userRoles) {
-        const project = await Project.findById(invitation.targetEntity.id);
-        if (!project) {
-            throw new Error('Project not found');
-        }
 
-        await project.addTeamMember(userId, invitation.role);
-        await userRoles.addProjectRole(project._id, invitation.role);
-    }
 
     // Add user to space
     static async addToSpace(invitation, userId, userRoles) {
@@ -298,8 +286,8 @@ class InvitationService {
                         case 'workspace':
                             invitation = await this.inviteToWorkspace(entityId, email, role, inviterId, options);
                             break;
-                        case 'project':
-                            invitation = await this.inviteToProject(entityId, email, role, inviterId, options);
+                        case 'space':
+                            invitation = await this.inviteToSpace(entityId, email, role, inviterId, options);
                             break;
                         default:
                             throw new Error('Unsupported entity type for bulk invite');

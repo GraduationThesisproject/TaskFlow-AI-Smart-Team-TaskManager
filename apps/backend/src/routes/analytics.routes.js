@@ -1,7 +1,7 @@
 const express = require('express');
 const analyticsController = require('../controllers/analytics.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { requireProjectPermission, requireWorkspacePermission } = require('../middlewares/permission.middleware');
+const { requireSpacePermission, requireWorkspacePermission } = require('../middlewares/permission.middleware');
 
 const router = express.Router();
 
@@ -13,21 +13,21 @@ const generateAnalyticsSchema = {
     includeAI: { boolean: true }
 };
 
-// Project analytics routes
-router.get('/project/:projectId',
-    analyticsController.getProjectAnalytics
+// Space analytics routes
+router.get('/space/:spaceId',
+    analyticsController.getSpaceAnalytics
 );
 
-router.post('/project/:projectId/generate',
+router.post('/space/:spaceId/generate',
     validateMiddleware(generateAnalyticsSchema),
-    analyticsController.generateProjectAnalytics
+    analyticsController.generateSpaceAnalytics
 );
 
-router.get('/project/:projectId/export',
+router.get('/space/:spaceId/export',
     analyticsController.exportAnalytics
 );
 
-router.get('/project/:projectId/team-performance',
+router.get('/space/:spaceId/team-performance',
     analyticsController.getTeamPerformance
 );
 

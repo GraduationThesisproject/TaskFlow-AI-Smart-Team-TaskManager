@@ -23,9 +23,8 @@ module.exports = {
     // AI
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     
-    // Cloudinary File Upload
-    CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || 'dodvvsdzt',
-    CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '275559436125618',
-    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || 'DTPID8ww2iUvjgGU83618lRP9QY',
-    CLOUDINARY_URL: process.env.CLOUDINARY_URL || 'cloudinary://275559436125618:DTPID8ww2iUvjgGU83618lRP9QY@dodvvsdzt',
+    // File Upload (Local Storage)
+    BASE_URL: process.env.BASE_URL || 'http://localhost:3001',
+    UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
+    MAX_FILE_SIZE: process.env.MAX_FILE_SIZE || '10485760', // 10MB in bytes
 };
