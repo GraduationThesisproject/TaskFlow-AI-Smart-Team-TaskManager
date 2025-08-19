@@ -111,11 +111,7 @@ jest.mock('../utils/email', () => ({
 // Suppress MongoDB deprecation warnings in tests
 const originalConsoleWarn = console.warn;
 console.warn = (...args) => {
-  if (typeof args[0] === 'string' && (
-    args[0].includes('DeprecationWarning') ||
-    args[0].includes('useNewUrlParser') ||
-    args[0].includes('useUnifiedTopology')
-  )) {
+  if (typeof args[0] === 'string' && args[0].includes('DeprecationWarning')) {
     return;
   }
   originalConsoleWarn.apply(console, args);
