@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { fetchAnalytics, fetchSystemHealth } from '../../store/slices/analyticsSlice';
 import { 
   Card, 
   CardContent, 
@@ -95,6 +97,14 @@ const MetricCard: React.FC<MetricCardProps> = ({
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { data: analyticsData, isLoading, error } = useAppSelector(state => state.analytics);
+
+  // Fetch analytics and system health data on component mount
+  useEffect(() => {
+    dispatch(fetchAnalytics('6-months'));
+    dispatch(fetchSystemHealth());
+  }, [dispatch]);
 
   const quickActions = [
     {
@@ -123,6 +133,19 @@ const DashboardPage: React.FC = () => {
     }
   ];
 
+  if (isLoading && !analyticsData) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <Typography variant="body-medium" className="text-muted-foreground">
+            Loading dashboard data...
+          </Typography>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -135,11 +158,20 @@ const DashboardPage: React.FC = () => {
         </Typography>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="p-4 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <Typography variant="body-medium" className="text-red-600 dark:text-red-400">
+            {error}
+          </Typography>
+        </div>
+      )}
+
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Total Users"
-          value="12,847"
+          value={analyticsData?.totalUsers?.toLocaleString() || '0'}
           change={2.1}
           icon={UsersIcon}
           variant="default"
@@ -147,7 +179,7 @@ const DashboardPage: React.FC = () => {
         />
         <MetricCard
           title="Active Projects"
-          value="1,293"
+          value={analyticsData?.activeProjects?.toLocaleString() || '0'}
           change={12.5}
           icon={FolderIcon}
           variant="success"
@@ -155,7 +187,7 @@ const DashboardPage: React.FC = () => {
         />
         <MetricCard
           title="Task Completion"
-          value="87.3%"
+          value={`${analyticsData?.completionRate || 0}%`}
           change={3.1}
           icon={CheckCircleIcon}
           variant="success"
@@ -181,15 +213,19 @@ const DashboardPage: React.FC = () => {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <Typography variant="body-medium">Server Uptime</Typography>
-                <Typography variant="body-medium" className="text-success">99.97%</Typography>
+                <Typography variant="body-medium" className="text-success">
+                  {analyticsData?.systemPerformance?.serverUptime || 99.97}%
+                </Typography>
               </div>
-              <Progress value={99.97} variant="success" />
+              <Progress value={analyticsData?.systemPerformance?.serverUptime || 99.97} variant="success" />
             </div>
             
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <Typography variant="body-medium">API Response Time</Typography>
-                <Typography variant="body-medium">142ms</Typography>
+                <Typography variant="body-medium">
+                  {analyticsData?.systemPerformance?.apiResponseTime || 142}ms
+                </Typography>
               </div>
               <Progress value={85} variant="default" />
             </div>
@@ -199,7 +235,7 @@ const DashboardPage: React.FC = () => {
                 <Typography variant="body-medium">Database Health</Typography>
                 <Typography variant="body-medium" className="text-success">Excellent</Typography>
               </div>
-              <Progress value={95} variant="success" />
+              <Progress value={analyticsData?.systemPerformance?.databaseHealth || 95} variant="success" />
             </div>
           </CardContent>
         </Card>
