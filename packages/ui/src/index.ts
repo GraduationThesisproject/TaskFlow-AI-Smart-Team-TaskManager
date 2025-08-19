@@ -1,5 +1,7 @@
 export * from './Button';
 export * from './Card';
+export * from './Container';
+export * from './Gradient';
 export * from './Input';
 export * from './Typography';
 export * from './Badge';
@@ -14,4 +16,5 @@ export * from './Dropdown';
 export * from './Checkbox';
 export * from './Loading';
 export * from './Form';
+export * from './Scrollbar';
 export * from './utils';
