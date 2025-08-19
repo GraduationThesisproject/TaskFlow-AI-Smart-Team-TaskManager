@@ -3,7 +3,8 @@ import { ThemeProvider } from '@taskflow/theme';
 import { useTheme } from './hooks/useTheme';
 
 import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
-import { SpacePage } from './pages/space.page';
+// import { SpacePage } from './pages/space.page';
+import WorkSpace from './pages/workSpace';
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
@@ -33,7 +34,8 @@ function AppContent() {
       {/* Main Content with Gradient Background */}
       <main className="bg-gradient-to-br from-background via-muted/50 to-background">
         <Routes>
-          <Route path="/space/*" element={<SpacePage />} />
+          {/* <Route path="/space/*" element={<SpacePage />} /> */}
+          <Route path="/workspace/*" element={<WorkSpace />} />
         </Routes>
       </main>
     </div>
