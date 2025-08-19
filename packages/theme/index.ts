@@ -1,6 +1,6 @@
 export const themes = {
   light: {
-    '--background': '0 0% 100%',
+    '--background': '0 0% 70%',
     '--foreground': '222.2 84% 4.9%',
     '--card': '0 0% 100%',
     '--card-foreground': '222.2 84% 4.9%',
@@ -24,9 +24,19 @@ export const themes = {
     '--neutral-100': '0 0% 10%',
     '--neutral-200': '0 0% 16%',
     '--neutral-1000': '0 0% 100%',
+    // Scrollbar colors for light theme
+    '--scrollbar-track': '210 40% 96%', // Light gray track
+    '--scrollbar-thumb': '215 20% 65%', // Medium gray thumb
+    '--scrollbar-thumb-hover': '215 25% 55%', // Darker on hover
+    '--scrollbar-corner': '210 40% 96%', // Light gray corner
+    // Gradient colors for light theme
+    '--gradient-primary': '201 100% 44%', // Primary blue
+    '--gradient-secondary': '170 100% 45%', // Accent cyan
+    '--gradient-accent': '215 20% 65%', // Medium gray
+    '--gradient-muted': '210 40% 96%', // Light gray
   },
   dark: {
-    '--background': '0 0% 0%', // Pure black background
+    '--background': '0 0% 10%', // Layout background
     '--foreground': '0 0% 100%', // White text
     '--card': '0 0% 10%', // #1A1A1A for cards
     '--card-foreground': '0 0% 100%',
@@ -54,6 +64,16 @@ export const themes = {
     '--warning': '38 92% 50%', // Orange
     '--error': '0 84% 60%', // Red
     '--info': '201 100% 44%', // Blue
+    // Scrollbar colors for dark theme
+    '--scrollbar-track': '0 0% 16%', // Dark gray track
+    '--scrollbar-thumb': '0 0% 30%', // Medium gray thumb
+    '--scrollbar-thumb-hover': '0 0% 40%', // Lighter on hover
+    '--scrollbar-corner': '0 0% 16%', // Dark gray corner
+    // Gradient colors for dark theme
+    '--gradient-primary': '201 100% 44%', // Primary blue
+    '--gradient-secondary': '170 100% 45%', // Accent cyan
+    '--gradient-accent': '0 0% 30%', // Medium gray
+    '--gradient-muted': '0 0% 16%', // Dark gray
   },
 };
 
@@ -66,4 +86,52 @@ export const applyTheme = (theme: 'light' | 'dark') => {
   });
   
   root.setAttribute('data-theme', theme);
+  
+  // Apply scrollbar styles
+  const scrollbarStyles = `
+    ::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: hsl(var(--scrollbar-track));
+      border-radius: 6px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: hsl(var(--scrollbar-thumb));
+      border-radius: 6px;
+      border: 2px solid hsl(var(--scrollbar-track));
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: hsl(var(--scrollbar-thumb-hover));
+    }
+    
+    ::-webkit-scrollbar-corner {
+      background: hsl(var(--scrollbar-corner));
+    }
+    
+    /* Firefox scrollbar */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: hsl(var(--scrollbar-thumb)) hsl(var(--scrollbar-track));
+    }
+  `;
+  
+  // Remove existing scrollbar styles
+  const existingStyle = document.getElementById('theme-scrollbar-styles');
+  if (existingStyle) {
+    existingStyle.remove();
+  }
+  
+  // Add new scrollbar styles
+  const styleElement = document.createElement('style');
+  styleElement.id = 'theme-scrollbar-styles';
+  styleElement.textContent = scrollbarStyles;
+  document.head.appendChild(styleElement);
 };
+
+// Export ThemeProvider from the main index
+export { ThemeProvider, useTheme } from './ThemeProvider';
