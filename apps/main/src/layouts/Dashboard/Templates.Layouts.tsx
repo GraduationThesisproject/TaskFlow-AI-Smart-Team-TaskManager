@@ -11,7 +11,6 @@ import {
   Layers,
   Trash,
   Settings,
-  User,
   Heart,
   Eye,
 } from "lucide-react";
