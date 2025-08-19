@@ -4,6 +4,7 @@ import { useTheme } from './hooks/useTheme';
 
 import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 import { SpacePage } from './pages/space.page';
+import Dashboard from './pages/Dashboard';  
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
@@ -32,18 +33,18 @@ function AppContent() {
 
       {/* Main Content with Gradient Background */}
       <main className="bg-gradient-to-br from-background via-muted/50 to-background">
+
         <Routes>
           <Route path="/space/*" element={<SpacePage />} />
+          <Route path="/dashboard/*" element={<Dashboard/>} />
         </Routes>
       </main>
     </div>
   );
 }
 
-import { BrowserRouter ,  Routes, Route  } from 'react-router-dom'
-import WorkSpace from './pages/workSpace';
-import Home from './layouts/CCWork/HomePage';
-import Templates from './layouts/CCWork/TemplatePage';
+
+
 function App() {
   return (
     <ThemeProvider>
@@ -51,15 +52,6 @@ function App() {
         <AppContent />
       </Router>
     </ThemeProvider>
-
-
-      <BrowserRouter>
-        <Routes >
-          <Route path="/workspace/*" element={<WorkSpace/>} />
-          <Route path="/home/*" element={<Home/>} />
-          <Route path="/Templates/*" element={<Templates/>} />
-        </Routes >
-      </BrowserRouter>
    
   );
 }
