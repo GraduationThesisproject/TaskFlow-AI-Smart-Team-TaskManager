@@ -21,6 +21,7 @@ const File = require('../models/File');
 const Invitation = require('../models/Invitation');
 const Reminder = require('../models/Reminder');
 const Tag = require('../models/Tag');
+const Admin = require('../models/Admin');
 
 class DatabaseSeeder {
   constructor() {
@@ -50,6 +51,13 @@ class DatabaseSeeder {
     console.log('👥 Creating test users...');
     
     const testUsers = [
+      {
+        name: 'System Administrator',
+        email: 'admin@admin.com',
+        password: 'admin123!',
+        systemRole: 'super_admin',
+        emailVerified: true
+      },
       {
         name: 'Super Admin User',
         email: 'superadmin.test@gmail.com',
@@ -175,6 +183,38 @@ class DatabaseSeeder {
         userId: user._id,
         systemRole: userData.systemRole
       });
+
+      // Create Admin model for admin users
+      if (userData.systemRole === 'super_admin' || userData.systemRole === 'admin') {
+        const adminPermissions = userData.systemRole === 'super_admin' ? {
+          manageUsers: true,
+          manageWorkspaces: true,
+          manageTemplates: true,
+          viewAnalytics: true,
+          systemSettings: true,
+          manageAdmins: true,
+          viewSystemLogs: true,
+          manageQuotas: true,
+          manageAIJobs: true
+        } : {
+          manageUsers: true,
+          manageWorkspaces: true,
+          manageTemplates: false,
+          viewAnalytics: true,
+          systemSettings: false,
+          manageAdmins: false,
+          viewSystemLogs: false,
+          manageQuotas: false,
+          manageAIJobs: false
+        };
+
+        await Admin.create({
+          userId: user._id,
+          role: userData.systemRole === 'super_admin' ? 'superadmin' : 'admin',
+          permissions: adminPermissions,
+          isActive: true
+        });
+      }
 
       // Create UserSessions
       const sessions = await UserSessions.create({
@@ -944,6 +984,7 @@ class DatabaseSeeder {
       console.log('🎉 Database seeding completed successfully!');
       console.log('');
       console.log('📋 Test Users Created:');
+      console.log('  • admin@admin.com (password: admin123!) - System Administrator');
       console.log('  • superadmin.test@gmail.com (password: 12345678A!)');
       console.log('  • admin.test@gmail.com (password: 12345678A!)');
       console.log('  • user.test@gmail.com (password: 12345678A!)');
