@@ -19,4 +19,8 @@ export * from './Checkbox';
 export * from './Loading';
 export * from './Form';
 export * from './Scrollbar';
+export * from './Grid';
+export * from './Switch';
+export * from './Textarea';
+export * from './Tabs';
 export * from './utils';

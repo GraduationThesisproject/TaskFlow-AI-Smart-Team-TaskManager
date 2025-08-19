@@ -1,13 +1,13 @@
 import React from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store';
 import { logoutAdmin, getCurrentAdmin } from '../store/slices/adminSlice';
-import { Button, Typography, Avatar, Dropdown } from '@taskflow/ui';
-import { ThemeToggle } from '@taskflow/theme/ThemeProvider';
+import { Button, Typography, Avatar, Dropdown, DropdownItem } from '@taskflow/ui';
+import { ThemeToggle } from '@taskflow/theme';
 import { 
   HomeIcon, 
   UsersIcon, 
-  TemplateIcon, 
+  DocumentTextIcon, 
   ChartBarIcon, 
   CogIcon, 
   BellIcon,
@@ -15,11 +15,21 @@ import {
   PuzzlePieceIcon
 } from '@heroicons/react/24/outline';
 
+// Import layouts instead of individual pages
+import DashboardLayout from '../layouts/DashboardLayout';
+import UserManagementLayout from '../layouts/UserManagementLayout';
+import TemplatesLayout from '../layouts/TemplatesLayout';
+import AnalyticsLayout from '../layouts/AnalyticsLayout';
+import IntegrationsLayout from '../layouts/IntegrationsLayout';
+import SystemHealthLayout from '../layouts/SystemHealthLayout';
+import NotificationsLayout from '../layouts/NotificationsLayout';
+
 interface NavigationItem {
   name: string;
   path: string;
   icon: React.ComponentType<{ className?: string }>;
   description: string;
+  layout: React.ComponentType;
 }
 
 const navigationItems: NavigationItem[] = [
@@ -27,53 +37,61 @@ const navigationItems: NavigationItem[] = [
     name: 'Dashboard',
     path: '/dashboard',
     icon: HomeIcon,
-    description: 'Overview and key metrics'
+    description: 'Overview and key metrics',
+    layout: DashboardLayout
   },
   {
     name: 'Users & Roles',
     path: '/users',
     icon: UsersIcon,
-    description: 'Manage user accounts and permissions'
+    description: 'Manage user accounts and permissions',
+    layout: UserManagementLayout
   },
   {
     name: 'Templates',
     path: '/templates',
-    icon: TemplateIcon,
-    description: 'System templates and configurations'
+    icon: DocumentTextIcon,
+    description: 'System templates and configurations',
+    layout: TemplatesLayout
   },
   {
     name: 'Analytics',
     path: '/analytics',
     icon: ChartBarIcon,
-    description: 'Global statistics and insights'
+    description: 'Global statistics and insights',
+    layout: AnalyticsLayout
   },
   {
     name: 'Integrations',
     path: '/integrations',
     icon: PuzzlePieceIcon,
-    description: 'Third-party integrations and API keys'
+    description: 'Third-party integrations and API keys',
+    layout: IntegrationsLayout
   },
   {
     name: 'System Health',
     path: '/system-health',
     icon: HeartIcon,
-    description: 'Monitor system performance and health'
+    description: 'Monitor system performance and health',
+    layout: SystemHealthLayout
   },
   {
     name: 'Notifications',
     path: '/notifications',
     icon: BellIcon,
-    description: 'System announcements and communication'
+    description: 'System announcements and communication',
+    layout: NotificationsLayout
   },
   {
     name: 'Settings',
     path: '/settings',
     icon: CogIcon,
-    description: 'System configuration and preferences'
+    description: 'System configuration and preferences',
+    layout: DashboardLayout // Default to dashboard for now
   }
 ];
 
-const AdminLayout: React.FC = () => {
+const AdminPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -128,6 +146,10 @@ const AdminLayout: React.FC = () => {
     return null; // Will redirect in useEffect
   }
 
+  // Get current navigation item and layout
+  const currentNavItem = navigationItems.find(item => item.path === location.pathname) || navigationItems[0];
+  const CurrentLayout = currentNavItem.layout;
+
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
@@ -138,7 +160,7 @@ const AdminLayout: React.FC = () => {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">TF</span>
             </div>
-            <Typography variant="heading-medium" className="text-foreground">
+            <Typography variant="heading-large" className="text-foreground">
               TaskFlow Admin
             </Typography>
           </div>
@@ -184,10 +206,10 @@ const AdminLayout: React.FC = () => {
         <header className="h-16 bg-card border-b border-border px-6 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Typography variant="heading-large" className="text-foreground">
-              {navigationItems.find(item => item.path === location.pathname)?.name || 'Dashboard'}
+              {currentNavItem.name}
             </Typography>
             <Typography variant="body-medium" className="text-muted-foreground">
-              {navigationItems.find(item => item.path === location.pathname)?.description || ''}
+              {currentNavItem.description}
             </Typography>
           </div>
 
@@ -202,36 +224,37 @@ const AdminLayout: React.FC = () => {
               trigger={
                 <button className="flex items-center space-x-2 hover:bg-muted p-2 rounded-lg transition-colors">
                   <Avatar size="sm" className="bg-primary text-primary-foreground">
-                    {currentAdmin?.avatar ? (
-                      <img src={currentAdmin.avatar} alt={currentAdmin.name || 'Admin'} />
-                    ) : (
-                      <span className="text-sm font-medium">
-                        {currentAdmin?.name?.charAt(0).toUpperCase() || 'A'}
-                      </span>
-                    )}
+                    <span className="text-sm font-medium">
+                      {currentAdmin?.firstName?.charAt(0).toUpperCase() || 'A'}
+                    </span>
                   </Avatar>
                   <div className="text-left">
                     <Typography variant="body-medium" className="text-foreground">
-                      {currentAdmin?.name || 'Admin User'}
+                      {currentAdmin ? `${currentAdmin.firstName} ${currentAdmin.lastName}` : 'Admin User'}
                     </Typography>
                     <Typography variant="body-small" className="text-muted-foreground">
-                      {currentAdmin?.role === 'superadmin' ? 'Super Admin' : 'Admin'}
+                      {currentAdmin?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
                     </Typography>
                   </div>
                 </button>
               }
-              items={userMenuItems}
-            />
+            >
+              {userMenuItems.map((item, index) => (
+                <DropdownItem key={index} onClick={item.action}>
+                  {item.label}
+                </DropdownItem>
+              ))}
+            </Dropdown>
           </div>
         </header>
 
-        {/* Page Content */}
+        {/* Page Content - Render the current layout */}
         <main className="flex-1 overflow-auto p-6">
-          <Outlet />
+          <CurrentLayout />
         </main>
       </div>
     </div>
   );
 };
 
-export default AdminLayout;
+export default AdminPage;

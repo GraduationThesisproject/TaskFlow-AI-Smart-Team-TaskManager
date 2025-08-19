@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store';
 import { loginAdmin, clearError } from '../store/slices/adminSlice';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Typography } from '@taskflow/ui';
-import { ThemeToggle } from '@taskflow/theme/ThemeProvider';
+import { ThemeToggle } from '@taskflow/theme';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 const LoginPage: React.FC = () => {

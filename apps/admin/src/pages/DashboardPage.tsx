@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../store';
+import { useAppDispatch, useAppSelector } from '../store';
 import { fetchAnalytics, fetchSystemHealth } from '../../store/slices/analyticsSlice';
 import { 
   Card, 

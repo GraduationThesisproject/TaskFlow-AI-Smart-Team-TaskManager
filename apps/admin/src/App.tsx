@@ -1,22 +1,15 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store';
-import { ThemeProvider } from '@taskflow/theme/ThemeProvider';
+import { ThemeProvider } from '@taskflow/theme';
 import './App.css';
 
-// Layout Components
-import AdminLayout from './layouts/AdminLayout';
+// Main Admin Page Component
+import AdminPage from './pages/AdminPage';
 
-// Pages
+// Login Page
 import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import UserManagementPage from './pages/UserManagementPage';
-import TemplatesPage from './pages/TemplatesPage';
-import AnalyticsPage from './pages/AnalyticsPage';
-import IntegrationsPage from './pages/IntegrationsPage';
-import SystemHealthPage from './pages/SystemHealthPage';
-import NotificationsPage from './pages/NotificationsPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -39,24 +32,12 @@ function App() {
               {/* Public Routes */}
               <Route path="/login" element={<LoginPage />} />
               
-              {/* Protected Admin Routes */}
-              <Route path="/" element={
+              {/* Protected Admin Routes - All handled by AdminPage */}
+              <Route path="/*" element={
                 <ProtectedRoute>
-                  <AdminLayout />
+                  <AdminPage />
                 </ProtectedRoute>
-              }>
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="dashboard" element={<DashboardPage />} />
-                <Route path="users" element={<UserManagementPage />} />
-                <Route path="templates" element={<TemplatesPage />} />
-                <Route path="analytics" element={<AnalyticsPage />} />
-                <Route path="integrations" element={<IntegrationsPage />} />
-                <Route path="system-health" element={<SystemHealthPage />} />
-                <Route path="notifications" element={<NotificationsPage />} />
-              </Route>
-              
-              {/* Catch all route */}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              } />
             </Routes>
           </div>
         </Router>
