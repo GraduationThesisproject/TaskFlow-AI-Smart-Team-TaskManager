@@ -105,6 +105,44 @@ const requireSpacePermission = (roleOrPermission = 'member') => {
     };
 };
 
+// Require specific space permission
+const requireSpaceSpecificPermission = (permission) => {
+    return async (req, res, next) => {
+        try {
+            const userId = req.user.id;
+            const spaceId = req.params.id || req.params.spaceId || req.body.spaceId;
+
+            if (!spaceId) {
+                return sendResponse(res, 400, false, 'Space ID required');
+            }
+
+            const [user, space] = await Promise.all([
+                User.findById(userId),
+                Space.findById(spaceId)
+            ]);
+
+            if (!space) {
+                return sendResponse(res, 404, false, 'Space not found');
+            }
+
+            const userRoles = await user.getRoles();
+            
+            // Check if user has the specific permission
+            const hasPermission = userRoles.hasSpacePermission(spaceId, permission);
+            
+            if (!hasPermission) {
+                return sendResponse(res, 403, false, `Permission '${permission}' required`);
+            }
+
+            req.space = space;
+            next();
+        } catch (error) {
+            logger.error('Space specific permission check error:', error);
+            sendResponse(res, 500, false, 'Server error checking space specific permissions');
+        }
+    };
+};
+
 
 
 // Require board permission
@@ -317,8 +355,6 @@ const requireWhitelistedIP = (whitelist = []) => {
 // Combined middleware for common permission patterns
 const requireSpaceMember = requireSpacePermission('member');
 const requireSpaceAdmin = requireSpacePermission('admin');
-const requireSpaceMember = requireSpacePermission('member');
-const requireSpaceAdmin = requireSpacePermission('admin');
 const requireWorkspaceMember = requireWorkspacePermission('member');
 const requireWorkspaceAdmin = requireWorkspacePermission('admin');
 
@@ -336,8 +372,6 @@ module.exports = {
     requireFeatureFlag,
     requireWhitelistedIP,
     // Common combinations
-    requireSpaceMember,
-    requireSpaceAdmin,
     requireSpaceMember,
     requireSpaceAdmin,
     requireWorkspaceMember,
