@@ -3,10 +3,7 @@ const logger = require('./logger');
 
 const connectDB = async () => {
     try {
-        const conn = await mongoose.connect(process.env.DATABASE_URL || 'mongodb://localhost:27017/taskflow', {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
+        const conn = await mongoose.connect(process.env.DATABASE_URL || 'mongodb://localhost:27017/taskflow');
 
         logger.info(`🗄️  MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {
