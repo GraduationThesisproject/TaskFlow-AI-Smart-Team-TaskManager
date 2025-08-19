@@ -40,8 +40,7 @@ const snoozeReminderSchema = {
 
 // Routes
 router.get('/', reminderController.getReminders);
-router.get('/stats', reminderController.getReminderStats);
-router.get('/:id', reminderController.getReminderById);
+router.get('/:id', reminderController.getReminder);
 
 router.post('/',
     validateMiddleware(createReminderSchema),
