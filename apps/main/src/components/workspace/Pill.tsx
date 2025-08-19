@@ -1,15 +1,28 @@
 import React from 'react';
+import { Badge } from '@taskflow/ui';
 
-export default function Pill({ children, colorVar }: { children: React.ReactNode; colorVar: string }) {
+// Narrow set of variants we use across the workspace
+export type PillVariant =
+  | 'default'
+  | 'secondary'
+  | 'destructive'
+  | 'outline'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'info'
+  | 'accent';
+
+export default function Pill({
+  children,
+  variant = 'default',
+}: {
+  children: React.ReactNode;
+  variant?: PillVariant;
+}) {
   return (
-    <span
-      className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium"
-      style={{
-        backgroundColor: `hsl(${colorVar})`,
-        color: 'hsl(var(--primary-foreground))',
-      }}
-    >
+    <Badge variant={variant} size="sm">
       {children}
-    </span>
+    </Badge>
   );
 }

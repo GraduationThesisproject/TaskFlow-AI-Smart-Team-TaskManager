@@ -1,4 +1,5 @@
 import type { Member } from './types';
+import type { PillVariant } from './Pill';
 
 export const MEMBERS: Member[] = [
   {
@@ -30,5 +31,28 @@ export const MEMBERS: Member[] = [
   },
 ];
 
-export const roleColor = (role: Member['role']) => (role === 'Admin' ? 'var(--info)' : role === 'Member' ? 'var(--accent)' : 'var(--muted)');
-export const statusColor = (status: Member['status']) => (status === 'Active' ? 'var(--success)' : status === 'Pending' ? 'var(--warning)' : 'var(--error)');
+export const roleBadgeVariant = (role: Member['role']): PillVariant => {
+  switch (role) {
+    case 'Admin':
+      return 'info';
+    case 'Member':
+      return 'accent';
+    case 'Guest':
+      return 'secondary';
+    default:
+      return 'secondary';
+  }
+};
+
+export const statusBadgeVariant = (status: Member['status']): PillVariant => {
+  switch (status) {
+    case 'Active':
+      return 'success';
+    case 'Pending':
+      return 'warning';
+    case 'Disabled':
+      return 'error';
+    default:
+      return 'secondary';
+  }
+};
