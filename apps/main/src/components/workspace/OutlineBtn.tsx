@@ -1,16 +1,10 @@
 import React from 'react';
+import { Button } from '@taskflow/ui';
 
-export default function OutlineBtn({ children }: { children: React.ReactNode }) {
+export default function OutlineBtn({ children, ...props }: { children: React.ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button
-      className="rounded-md border px-3 py-1.5 text-sm"
-      style={{
-        borderColor: 'hsl(var(--border))',
-        color: 'hsl(var(--primary-foreground))',
-        backgroundColor: 'hsl(var(--neutral-100))',
-      }}
-    >
+    <Button className="bg-neutral-200 " variant="outline" size="sm" {...props}>
       {children}
-    </button>
+    </Button>
   );
 }

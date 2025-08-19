@@ -2,13 +2,10 @@
 import Main from '../layouts/workSpace/MainPage';
 
 const WorkSpace = () => {
-  return (
-    <div>
-      
+  return (      
       <Routes>
         <Route path="main" element={<Main/>} />
       </Routes>
-    </div>
    );
  };
 

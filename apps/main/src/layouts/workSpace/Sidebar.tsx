@@ -1,17 +1,18 @@
 const Sidebar = () => {
   return (
-    <aside className="h-screen w-64 border-r border-border bg-[hsl(var(--neutral-200))] text-foreground/90">
+    <aside className="h-screen w-64 border-r border-border bg-[hsl(var(--neutral-200))] text-foreground/90 shadow-[0_0_10px_hsl(var(--accent))] 
+             ring-1 ring-primary/20 
+             backdrop-blur bg-neutral-100" >
       <div className="flex flex-col gap-3 p-4 ">
          {/* Section title */}
          <h3 className="px-2 text-[13px] font-medium tracking-wide text-primary-400" style={{color: "hsl(var(--accent))"}}>Workspace</h3>
 
          {/* Workspace card */}
-         <div className="rounded-xl bg-muted/30 p-3 
+         <div className="bg-neutral-200 rounded-xl p-3 
              shadow-[0_0_10px_hsl(var(--accent))] 
-             ring-1 ring-primary/20 
-             backdrop-blur bg-neutral-200">
+             backdrop-blur">
            <div className="flex items-center gap-3" >
-             <div className="flex h-9 w-9 items-center justify-center rounded-full text-primary-500" >
+             <div className="flex h-9 w-9 items-center justify-center rounded-full text-primary-500" style={{background: 'linear-gradient(90deg, hsl(var(--info)) 0%, hsl(var(--accent)) 100%)'}}>
              <svg width="10" height="16" viewBox="0 0 10 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M9.84375 16H0.84375V0H9.84375V16Z" stroke="#E5E7EB"/>
 <g clip-path="url(#clip0_222_498)">
@@ -62,9 +63,9 @@ const Sidebar = () => {
                 href="#/workspace/members"
                 className="mx-1 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/20 px-3 py-2 text-sm text-foreground shadow-[0_0_0_1px_rgba(0,232,198,0.15),_0_8px_30px_-12px_rgba(0,232,198,0.35)] ring-1 ring-accent/30"
               >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg className="outline-none [&>path:first-of-type]:hidden" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M20 20H0V0H20V20Z" stroke="#E5E7EB"/>
-<g clip-path="url(#clip0_222_442)">
+<g >
 <path d="M4.5 2C5.16304 2 5.79893 2.26339 6.26777 2.73223C6.73661 3.20107 7 3.83696 7 4.5C7 5.16304 6.73661 5.79893 6.26777 6.26777C5.79893 6.73661 5.16304 7 4.5 7C3.83696 7 3.20107 6.73661 2.73223 6.26777C2.26339 5.79893 2 5.16304 2 4.5C2 3.83696 2.26339 3.20107 2.73223 2.73223C3.20107 2.26339 3.83696 2 4.5 2ZM16 2C16.663 2 17.2989 2.26339 17.7678 2.73223C18.2366 3.20107 18.5 3.83696 18.5 4.5C18.5 5.16304 18.2366 5.79893 17.7678 6.26777C17.2989 7.73661 16.663 7 16 7C15.337 7 14.7011 6.73661 14.2322 6.26777C13.7634 5.79893 13.5 5.16304 13.5 4.5C13.5 3.83696 13.7634 3.20107 14.2322 2.73223C14.7011 2.26339 15.337 2 16 2ZM0 11.3344C0 9.49375 1.49375 8 3.33437 8H4.66875C5.16562 8 5.6375 8.10938 6.0625 8.30312C6.02187 8.52812 6.00313 8.7625 6.00313 9C6.00313 10.1938 6.52812 11.2656 7.35625 12C7.35 12 7.34375 12 7.33437 12H0.665625C0.3 12 0 11.7 0 11.3344ZM12.6656 12C12.6594 12 12.6531 12 12.6438 12C13.475 11.2656 13.9969 10.1938 13.9969 9C13.9969 8.7625 13.975 8.53125 13.9375 8.30312C14.3625 8.10625 14.8344 8 15.3313 8H16.6656C18.5063 8 20 9.49375 20 11.3344C20 11.7031 19.7 12 19.3344 12H12.6656ZM7 9C7 8.20435 7.31607 7.44129 7.87868 6.87868C8.44129 6.31607 9.20435 6 10 6C10.7956 6 11.5587 6.31607 12.1213 6.87868C12.6839 7.44129 13 8.20435 13 9C13 9.79565 12.6839 10.5587 12.1213 11.1213C11.5587 11.6839 10.7956 12 10 12C9.20435 12 8.44129 11.6839 7.87868 11.1213C7.31607 10.5587 7 9.79565 7 9ZM4 17.1656C4 14.8656 5.86562 13 8.16562 13H11.8344C14.1344 13 16 14.8656 16 17.1656C16 17.625 15.6281 18 15.1656 18H4.83437C4.375 18 4 17.6281 4 17.1656Z" fill="#00EBCB"/>
 </g>
 <defs>
