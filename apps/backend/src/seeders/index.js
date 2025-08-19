@@ -875,10 +875,10 @@ class DatabaseSeeder {
           averageCompletionTime: faker.number.int({ min: 2, max: 48 }),
           velocity: faker.number.int({ min: 1, max: 10 })
         },
-        period: {
-          start: faker.date.past(),
-          end: faker.date.recent()
-        }
+                 period: {
+           startDate: faker.date.past(),
+           endDate: faker.date.recent()
+         }
       });
 
       analytics.push(analytic);
