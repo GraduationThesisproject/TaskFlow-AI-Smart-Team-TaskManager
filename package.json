@@ -4,7 +4,8 @@
   "description": "TaskFlow AI Smart Team Task Manager ",
   "private": true,
   "workspaces": [
-    "apps/*",
+    "apps/admin",
+    "apps/main",
     "packages/*"
   ],
   "scripts": {
