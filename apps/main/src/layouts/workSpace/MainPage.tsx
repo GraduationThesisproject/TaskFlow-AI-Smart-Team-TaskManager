@@ -1,6 +1,6 @@
 import React from 'react';
 import Sidebar from "./Sidebar";
-import { Button, Input } from '@taskflow/ui';
+import { Button, Input, Dropdown, DropdownItem } from '@taskflow/ui';
 import Pill from '../../components/workspace/Pill';
 import OutlineBtn from '../../components/workspace/OutlineBtn';
 import GhostIconBtn from '../../components/workspace/GhostIconBtn';
@@ -8,6 +8,18 @@ import Section from '../../components/workspace/Section';
 import { MEMBERS, roleBadgeVariant, statusBadgeVariant } from '../../components/workspace/data';
 
 const Main = () => {
+  const [role, setRole] = React.useState<'all' | 'owner' | 'admin' | 'member'>('all');
+  const roleLabel = role === 'all' ? 'All Roles' : role.charAt(0).toUpperCase() + role.slice(1);
+  const filteredMembers = React.useMemo(() => {
+    if (role === 'all') return MEMBERS;
+    const roleMap: Record<'owner' | 'admin' | 'member', string> = {
+      owner: 'Owner',
+      admin: 'Admin',
+      member: 'Member',
+    };
+    return MEMBERS.filter(m => m.role === roleMap[role]);
+  }, [role]);
+
   return (
     <div className="flex min-h-screen bg-neutral-0">
       <Sidebar />
@@ -59,14 +71,18 @@ const Main = () => {
               <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
             </svg>
           </div>
-          <Button
-            className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm"
+          <Dropdown
+            trigger={<span className="flex items-center justify-between gap-3">{roleLabel}</span>}
             variant="outline"
             size="sm"
+            className="rounded-lg px-3 py-2 text-sm"
+            contentClassName="min-w-[160px]"
           >
-            All Roles
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6L8 11L13 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-          </Button>
+            <DropdownItem onClick={() => setRole('all')}>All Roles</DropdownItem>
+            <DropdownItem onClick={() => setRole('owner')}>Owner</DropdownItem>
+            <DropdownItem onClick={() => setRole('admin')}>Admin</DropdownItem>
+            <DropdownItem onClick={() => setRole('member')}>Member</DropdownItem>
+          </Dropdown>
         </div>
 
         {/* Members Section */}
@@ -78,7 +94,7 @@ const Main = () => {
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
               <h3 className="text-base font-semibold" style={{ color: 'hsl(var(--primary-foreground))' }}>
-                Workspace Members ({MEMBERS.length})
+                Workspace Members ({filteredMembers.length})
               </h3>
               <p className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
                 Workspace members can view and join all Workspace visible boards and create new boards in the Workspace.
@@ -106,7 +122,7 @@ const Main = () => {
                 </tr>
               </thead>
               <tbody>
-                {MEMBERS.map((m, idx) => (
+                {filteredMembers.map((m, idx) => (
                   <tr key={m.id} className="rounded-lg">
                     <td className="px-3 py-2 border-b border-neutral-100">
                       <div className="flex items-center gap-3 ">
