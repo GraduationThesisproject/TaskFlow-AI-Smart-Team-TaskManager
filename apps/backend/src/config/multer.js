@@ -228,6 +228,23 @@ const getFileMimeType = async (filePath) => {
   return 'application/octet-stream';
 };
 
+// Get file statistics
+const getFileStats = async (filePath) => {
+  try {
+    const stats = await fs.stat(filePath);
+    return {
+      size: stats.size,
+      created: stats.birthtime,
+      modified: stats.mtime,
+      isFile: stats.isFile(),
+      isDirectory: stats.isDirectory()
+    };
+  } catch (error) {
+    logger.error(`Failed to get file stats for ${filePath}:`, error);
+    return null;
+  }
+};
+
 // Delete file and its thumbnails
 const deleteFile = async (filePath) => {
   try {
@@ -255,5 +272,14 @@ const deleteFile = async (filePath) => {
   } catch (error) {
     logger.error(`Failed to delete file ${filePath}:`, error);
   }
+};
+
+// Export functions
+module.exports = {
+  createMulterUpload,
+  generateThumbnails,
+  getFileStats,
+  deleteFile,
+  ensureDirectoriesExist
 };
 

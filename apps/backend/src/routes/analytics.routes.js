@@ -31,8 +31,8 @@ router.get('/space/:spaceId/team-performance',
     analyticsController.getTeamPerformance
 );
 
-// User analytics routes
-router.get('/user/me', analyticsController.getUserAnalytics);
+// User analytics routes - temporarily disabled
+// router.get('/user/me', analyticsController.getUserAnalytics);
 
 // Workspace analytics routes
 router.get('/workspace/:workspaceId',
