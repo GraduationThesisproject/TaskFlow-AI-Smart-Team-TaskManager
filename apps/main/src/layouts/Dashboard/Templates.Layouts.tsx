@@ -11,9 +11,14 @@ import {
   Layers,
   Trash,
   Settings,
-  Heart,
-  Eye,
 } from "lucide-react";
+
+import { NavItem } from "../../components/Templates.Components/NavItem.Component";
+import { TeamItem } from "../../components/Templates.Components/TeamItem.Component";
+import { ProjectItem } from "../../components/Templates.Components/ProjectItem.Component";
+import { CategoryButton } from "../../components/Templates.Components/CategoryButton.Component";
+import { TemplateSection } from "../../components/Templates.Components/TemplateSelection.Component";
+import { Input, Typography } from "@taskflow/ui";
 
 const Templates: React.FC = () => {
   return (
@@ -30,11 +35,7 @@ const Templates: React.FC = () => {
 
         {/* Search */}
         <div className="px-4 py-2">
-          <input
-            type="text"
-            placeholder="Search..."
-            className="w-full px-3 py-2 text-sm rounded-md bg-neutral-900 border border-neutral-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
-          />
+          <Input placeholder="Search..." />
         </div>
 
         {/* Nav */}
@@ -85,11 +86,10 @@ const Templates: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 px-8 py-6 overflow-y-auto">
         {/* Header */}
-        <h1 className="text-2xl font-bold mb-4">Templates</h1>
-        <input
-          type="text"
+        <Typography variant="h2" className="mb-4">Templates</Typography>
+        <Input
           placeholder="Search templates..."
-          className="w-full px-4 py-2 mb-6 text-sm rounded-md bg-neutral-900 border border-neutral-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+          className="mb-6"
         />
 
         {/* Categories */}
@@ -179,83 +179,5 @@ const Templates: React.FC = () => {
   );
 };
 
-/* ---------------- Components ---------------- */
-
-const NavItem: React.FC<{ icon: React.ReactNode; label: string }> = ({
-  icon,
-  label,
-}) => (
-  <div className="flex items-center gap-2 text-gray-300 hover:text-white cursor-pointer text-sm">
-    <span className="w-4 h-4">{icon}</span>
-    {label}
-  </div>
-);
-
-const TeamItem: React.FC<{ name: string; status: "online" | "away" | "offline" }> = ({
-  name,
-  status,
-}) => {
-  const statusColor =
-    status === "online"
-      ? "bg-green-500"
-      : status === "away"
-      ? "bg-yellow-500"
-      : "bg-gray-500";
-  return (
-    <div className="flex items-center gap-2 text-sm text-gray-300">
-      <div className="relative">
-        <img src="https://i.pravatar.cc/32" alt="" className="w-6 h-6 rounded-full" />
-        <span
-          className={`absolute bottom-0 right-0 w-2 h-2 rounded-full ${statusColor}`}
-        ></span>
-      </div>
-      {name}
-    </div>
-  );
-};
-
-const ProjectItem: React.FC<{ label: string; color: string }> = ({ label, color }) => (
-  <div className="flex items-center gap-2 text-sm text-gray-300">
-    <div className={`w-3 h-3 rounded-full ${color}`}></div>
-    {label}
-  </div>
-);
-
-const CategoryButton: React.FC<{ label: string; icon: React.ReactNode }> = ({
-  label,
-  icon,
-}) => (
-  <button className="flex flex-col items-center justify-center w-28 h-20 bg-neutral-900 rounded-lg hover:bg-neutral-800 transition">
-    <div className="w-8 h-8 flex items-center justify-center bg-neutral-800 rounded-lg mb-2">
-      {icon}
-    </div>
-    <span className="text-sm">{label}</span>
-  </button>
-);
-
-const TemplateSection: React.FC<{
-  title: string;
-  templates: { title: string; desc: string; views: number; likes: number }[];
-}> = ({ title, templates }) => (
-  <div className="mb-10">
-    <h2 className="text-lg font-semibold mb-4">{title}</h2>
-    <div className="grid grid-cols-3 gap-5">
-      {templates.map((t, i) => (
-        <div key={i} className="bg-neutral-900 rounded-lg p-4">
-          <h3 className="font-medium">{t.title}</h3>
-          <p className="text-gray-500 text-sm mt-1">{t.desc}</p>
-          <div className="flex gap-4 text-xs text-gray-400 mt-3">
-            <span className="flex items-center gap-1">
-              <Eye className="w-3 h-3" /> {t.views / 1000}k
-            </span>
-            <span className="flex items-center gap-1">
-              <Heart className="w-3 h-3" /> {t.likes}
-            </span>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
 
 export default Templates;
