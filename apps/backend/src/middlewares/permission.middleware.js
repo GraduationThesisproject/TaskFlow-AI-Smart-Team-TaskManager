@@ -1,5 +1,4 @@
 const User = require('../models/User');
-const Project = require('../models/Project');
 const Workspace = require('../models/Workspace');
 const Space = require('../models/Space');
 const Board = require('../models/Board');
@@ -57,42 +56,8 @@ const requireWorkspacePermission = (role = 'member') => {
     };
 };
 
-// Require project permission
-const requireProjectPermission = (roleOrPermission = 'member') => {
-    return async (req, res, next) => {
-        try {
-            const userId = req.user.id;
-            const projectId = req.params.id || req.params.projectId || req.body.projectId;
-
-            if (!projectId) {
-                return sendResponse(res, 400, false, 'Project ID required');
-            }
-
-            const user = await User.findById(userId);
-            const userRoles = await user.getRoles();
-
-            // Check if it's a permission (starts with 'can') or a role
-            if (roleOrPermission.startsWith('can')) {
-                if (!userRoles.hasProjectPermission(projectId, roleOrPermission)) {
-                    return sendResponse(res, 403, false, `Permission '${roleOrPermission}' required`);
-                }
-            } else {
-                if (!userRoles.hasProjectRole(projectId, roleOrPermission)) {
-                    return sendResponse(res, 403, false, `Project ${roleOrPermission} role required`);
-                }
-            }
-
-            req.project = await Project.findById(projectId);
-            next();
-        } catch (error) {
-            logger.error('Project permission check error:', error);
-            sendResponse(res, 500, false, 'Server error checking project permissions');
-        }
-    };
-};
-
-// Require space permission
-const requireSpacePermission = (permission) => {
+// Require space permission (replaces project permission)
+const requireSpacePermission = (roleOrPermission = 'member') => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
@@ -112,13 +77,21 @@ const requireSpacePermission = (permission) => {
             }
 
             const userRoles = await user.getRoles();
-            const hasRolePermission = userRoles.hasSpacePermission(spaceId, permission);
-            const hasMemberPermission = (typeof space.hasPermission === 'function')
-                ? space.hasPermission(userId, permission)
-                : false;
+            
+            // Check if it's a permission (starts with 'can') or a role
+            if (roleOrPermission.startsWith('can')) {
+                const hasRolePermission = userRoles.hasSpacePermission(spaceId, roleOrPermission);
+                const hasMemberPermission = (typeof space.hasPermission === 'function')
+                    ? space.hasPermission(userId, roleOrPermission)
+                    : false;
 
-            if (!hasRolePermission && !hasMemberPermission) {
-                return sendResponse(res, 403, false, `Space permission '${permission}' required`);
+                if (!hasRolePermission && !hasMemberPermission) {
+                    return sendResponse(res, 403, false, `Permission '${roleOrPermission}' required`);
+                }
+            } else {
+                if (!userRoles.hasSpaceRole(spaceId, roleOrPermission)) {
+                    return sendResponse(res, 403, false, `Space ${roleOrPermission} role required`);
+                }
             }
 
             req.space = space;
@@ -129,6 +102,8 @@ const requireSpacePermission = (permission) => {
         }
     };
 };
+
+
 
 // Require board permission
 const requireBoardPermission = (permission) => {
@@ -338,15 +313,14 @@ const requireWhitelistedIP = (whitelist = []) => {
 };
 
 // Combined middleware for common permission patterns
-const requireProjectMember = requireProjectPermission('member');
-const requireProjectAdmin = requireProjectPermission('admin');
+const requireSpaceMember = requireSpacePermission('member');
+const requireSpaceAdmin = requireSpacePermission('admin');
 const requireWorkspaceMember = requireWorkspacePermission('member');
 const requireWorkspaceAdmin = requireWorkspacePermission('admin');
 
 module.exports = {
     requireSystemAdmin,
     requireWorkspacePermission,
-    requireProjectPermission,
     requireSpacePermission,
     requireBoardPermission,
     requireResourceOwner,
@@ -357,8 +331,8 @@ module.exports = {
     requireFeatureFlag,
     requireWhitelistedIP,
     // Common combinations
-    requireProjectMember,
-    requireProjectAdmin,
+    requireSpaceMember,
+    requireSpaceAdmin,
     requireWorkspaceMember,
     requireWorkspaceAdmin
 };

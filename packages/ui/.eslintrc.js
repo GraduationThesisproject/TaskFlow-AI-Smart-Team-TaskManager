@@ -1,5 +1,4 @@
 module.exports = {
-  root: true,
   extends: [
     "eslint:recommended",
     "@typescript-eslint/recommended",
@@ -18,17 +17,16 @@ module.exports = {
       version: "detect"
     }
   },
-  env: {
-    browser: true,
-    es6: true,
-    node: true
+  parserOptions: {
+    ecmaVersion: 2020,
+    sourceType: "module",
+    ecmaFeatures: {
+      jsx: true
+    }
   },
-  ignorePatterns: [
-    "node_modules/",
-    "dist/",
-    "build/",
-    ".next/",
-    "coverage/",
-    "*.config.js"
-  ]
+  env: {
+    es6: true,
+    browser: true,
+    node: true
+  }
 };
