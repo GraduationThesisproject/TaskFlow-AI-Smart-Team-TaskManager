@@ -150,7 +150,7 @@ class NotificationService {
                 recipient: recipientId,
                 sender: triggeredBy,
                 relatedEntity: {
-                    entityType: 'Task',
+                    entityType: 'task',
                     entityId: task._id
                 },
                 priority: task.priority === 'high' ? 'high' : 'medium',
@@ -165,16 +165,16 @@ class NotificationService {
         }
     }
 
-    // Create notification for project events
-    static async notifyProjectEvent(eventType, project, triggeredBy, additionalData = {}) {
+    // Create notification for space events
+    static async notifySpaceEvent(eventType, space, triggeredBy, additionalData = {}) {
         try {
             const recipients = new Set();
             
-            // Add project team members
-            project.team.forEach(member => recipients.add(member.user.toString()));
+            // Add space members
+            space.members.forEach(member => recipients.add(member.user.toString()));
             
-            // Add project owner
-            if (project.owner) recipients.add(project.owner.toString());
+            // Add space owner
+            if (space.owner) recipients.add(space.owner.toString());
             
             // Remove the person who triggered the event
             recipients.delete(triggeredBy.toString());
@@ -182,14 +182,14 @@ class NotificationService {
             if (recipients.size === 0) return;
             
             const notifications = Array.from(recipients).map(recipientId => ({
-                title: this.getProjectEventTitle(eventType, project.name),
-                message: this.getProjectEventMessage(eventType, project, triggeredBy),
-                type: 'project_update',
+                title: this.getSpaceEventTitle(eventType, space.name),
+                message: this.getSpaceEventMessage(eventType, space, triggeredBy),
+                type: 'space_update',
                 recipient: recipientId,
                 sender: triggeredBy,
                 relatedEntity: {
-                    entityType: 'Project',
-                    entityId: project._id
+                    entityType: 'Space',
+                    entityId: space._id
                 },
                 priority: 'medium',
                 deliveryMethods: { inApp: true, email: true },
@@ -198,7 +198,7 @@ class NotificationService {
             
             return await this.createBulkNotifications(notifications);
         } catch (error) {
-            logger.error('Notify project event error:', error);
+            logger.error('Notify space event error:', error);
             throw error;
         }
     }
@@ -238,7 +238,7 @@ class NotificationService {
                         type: 'due_date_reminder',
                         recipient: recipientId,
                         relatedEntity: {
-                            entityType: 'Task',
+                            entityType: 'task',
                             entityId: task._id
                         },
                         priority: 'high',
@@ -296,27 +296,27 @@ class NotificationService {
         return typeMap[eventType] || 'task_updated';
     }
 
-    static getProjectEventTitle(eventType, projectName) {
+    static getSpaceEventTitle(eventType, spaceName) {
         const titles = {
-            'project_created': `New project: ${projectName}`,
-            'project_updated': `Project updated: ${projectName}`,
-            'member_added': `Added to project: ${projectName}`,
-            'member_removed': `Removed from project: ${projectName}`
+            'space_created': `New space: ${spaceName}`,
+            'space_updated': `Space updated: ${spaceName}`,
+            'member_added': `Added to space: ${spaceName}`,
+            'member_removed': `Removed from space: ${spaceName}`
         };
         
-        return titles[eventType] || `Project notification: ${projectName}`;
+        return titles[eventType] || `Space notification: ${spaceName}`;
     }
 
-    static getProjectEventMessage(eventType, project, triggeredBy) {
+    static getSpaceEventMessage(eventType, space, triggeredBy) {
         const user = triggeredBy.name || 'Someone';
         const messages = {
-            'project_created': `${user} created project "${project.name}"`,
-            'project_updated': `${user} updated project "${project.name}"`,
-            'member_added': `${user} added you to project "${project.name}"`,
-            'member_removed': `${user} removed you from project "${project.name}"`
+            'space_created': `${user} created space "${space.name}"`,
+            'space_updated': `${user} updated space "${space.name}"`,
+            'member_added': `${user} added you to space "${space.name}"`,
+            'member_removed': `${user} removed you from space "${space.name}"`
         };
         
-        return messages[eventType] || `${user} performed an action on project "${project.name}"`;
+        return messages[eventType] || `${user} performed an action on space "${space.name}"`;
     }
 
     static mapNotificationTypeToPreference(notificationType) {
@@ -325,7 +325,7 @@ class NotificationService {
             'task_completed': 'taskUpdates',
             'comment_added': 'comments',
             'due_date_reminder': 'dueDateReminders',
-            'project_update': 'projectUpdates',
+            'space_update': 'spaceUpdates',
             'mention': 'mentions'
         };
         
@@ -338,7 +338,7 @@ class NotificationService {
             'task_completed': 'task-completed',
             'comment_added': 'comment-added',
             'due_date_reminder': 'due-date-reminder',
-            'project_update': 'project-update',
+            'space_update': 'space-update',
             'mention': 'mention'
         };
         
@@ -363,8 +363,8 @@ class NotificationService {
             switch (notification.relatedEntity.entityType) {
                 case 'Task':
                     return `${baseUrl}/tasks/${notification.relatedEntity.entityId}`;
-                case 'Project':
-                    return `${baseUrl}/projects/${notification.relatedEntity.entityId}`;
+                case 'Space':
+                    return `${baseUrl}/spaces/${notification.relatedEntity.entityId}`;
                 case 'Board':
                     return `${baseUrl}/boards/${notification.relatedEntity.entityId}`;
                 default:

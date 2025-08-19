@@ -134,7 +134,7 @@ const validateField = (fieldName, value, rules) => {
     }
 
     // Pattern validation
-    if (rules.pattern && !rules.pattern.test(value)) {
+    if (rules.pattern && rules.pattern instanceof RegExp && !rules.pattern.test(value)) {
         errors.push({
             field: fieldName,
             message: `${fieldName} format is invalid`

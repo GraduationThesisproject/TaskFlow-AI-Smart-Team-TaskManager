@@ -189,7 +189,6 @@ class BoardService {
             description: originalBoard.description,
             type: originalBoard.type,
             space: targetSpaceId || originalBoard.space,
-            project: originalBoard.project,
             settings: originalBoard.settings
         });
 

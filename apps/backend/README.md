@@ -24,21 +24,21 @@ Express.js API server for TaskFlow - AI-Powered Smart Team Task Manager
 ### Core Features
 - **Advanced Authentication** - JWT-based auth with session management, account lockout, and OAuth support
 - **Multi-tenant Workspaces** - Enterprise-grade workspace management with billing and usage limits
-- **Space Organization** - Project spaces with granular permissions and member management
-- **Project Management** - Enhanced projects with goals, progress tracking, and AI suggestions
+- **Space Organization** - Workspace spaces with granular permissions and member management
+- **Space Management** - Enhanced spaces with goals, progress tracking, and AI suggestions
 - **Task Management** - Full lifecycle management with multiple assignees, watchers, comments, and checklists
 - **Board Management** - Advanced Kanban boards with WIP limits and automation
 - **Real-time Collaboration** - WebSocket integration with typing indicators and presence
 
 ### Advanced Features
 - **AI Integration** - OpenAI-powered task suggestions, risk analysis, and natural language processing
-- **Analytics & Insights** - Detailed project metrics, team performance, and AI-driven recommendations
+- **Analytics & Insights** - Detailed space metrics, team performance, and AI-driven recommendations
 - **File Upload System** - Cloudinary integration for avatars, attachments, and media with automatic optimization
-- **Permission System** - Granular role-based permissions at workspace, project, space, and board levels
+- **Permission System** - Granular role-based permissions at workspace, space, and board levels
 - **Activity Logging** - Comprehensive audit trail for all user actions
 - **Email System** - Automated notifications with template support and bulk sending
 - **Session Management** - Multi-device session tracking with security monitoring
-- **Invitation System** - Secure invitation workflow for workspace and project access
+- **Invitation System** - Secure invitation workflow for workspace and space access
 
 ## 🏗 Architecture
 
@@ -59,7 +59,7 @@ src/
 │   ├── UserSessions.js  # Multi-device session management
 │   ├── Workspace.js     # Multi-tenant workspace management
 │   ├── Space.js         # Organization spaces within workspaces
-│   ├── Project.js       # Project management with teams
+│   ├── Space.js         # Space management with teams
 │   ├── Board.js         # Kanban boards with settings
 │   ├── Column.js        # Board columns with WIP limits
 │   ├── Task.js          # Tasks with assignments and tracking
@@ -68,8 +68,8 @@ src/
 │   ├── File.js          # File attachments with Cloudinary
 │   ├── Notification.js  # Multi-channel notifications
 │   ├── Reminder.js      # Due date and custom reminders
-│   ├── Analytics.js     # Project metrics and AI insights
-│   ├── Tag.js           # Project tags with analytics
+│   ├── Analytics.js     # Space metrics and AI insights
+│   ├── Tag.js           # Space tags with analytics
 │   ├── Invitation.js    # Secure invitation system
 │   └── ActivityLog.js   # Comprehensive audit trail
 ├── controllers/          # Request handlers (14 total)
@@ -99,7 +99,7 @@ Workspace (Multi-tenant)
 │           ├── Checklists (Progress tracking)
 │           ├── Files (Cloudinary attachments)
 │           └── Time Entries (Time tracking)
-├── Projects (With goals and teams)
+├── Spaces (With goals and teams)
 │   ├── Analytics (Performance metrics)
 │   └── AI Suggestions (Task recommendations)
 └── Invitations (Secure member invites)
@@ -107,7 +107,7 @@ Workspace (Multi-tenant)
 Users
 ├── Preferences (Theme, notifications, AI settings)
 ├── Sessions (Multi-device tracking)
-├── Roles (Workspace/project/space permissions)
+├── Roles (Workspace/space permissions)
 └── Activity Logs (Audit trail)
 
 System
@@ -122,12 +122,12 @@ System
 - **User**: Core user profile with authentication
 - **UserPreferences**: Theme, notifications, AI settings, dashboard widgets
 - **UserSessions**: Multi-device session tracking with security monitoring
-- **UserRoles**: Granular permissions at workspace/project/space/board levels
+- **UserRoles**: Granular permissions at workspace/space/board levels
 
 #### **Workspace Models**
 - **Workspace**: Multi-tenant workspace with billing and usage limits
 - **Space**: Organizational units within workspaces with member permissions
-- **Project**: Projects with goals, teams, progress tracking, and AI suggestions
+- **Space**: Spaces with goals, teams, progress tracking, and AI suggestions
 - **Board**: Kanban boards with columns, settings, and automation
 - **Column**: Board columns with WIP limits and task positioning
 
@@ -140,7 +140,7 @@ System
 #### **System Models**
 - **Notification**: Multi-channel notifications with delivery tracking
 - **Reminder**: Due date and custom reminders with recurrence
-- **Analytics**: Project metrics with AI insights and trend analysis
+- **Analytics**: Space metrics with AI insights and trend analysis
 - **Tag**: Content tags with usage analytics and relationships
 - **Invitation**: Secure invitation workflow with expiration
 - **ActivityLog**: Comprehensive audit trail for all actions
@@ -181,22 +181,22 @@ System
 - `POST /api/spaces/:id/members` - Add member to space
 - `POST /api/spaces/:id/archive` - Archive space
 
-### **Project Management (12 endpoints)**
-- `GET /api/projects` - Get all projects for user
-- `POST /api/projects` - Create project (with goal and AI features)
-- `GET /api/projects/:id` - Get single project with statistics
-- `PUT /api/projects/:id` - Update project
-- `DELETE /api/projects/:id` - Delete project
-- `POST /api/projects/:id/members` - Add member to project
-- `DELETE /api/projects/:id/members/:memberId` - Remove member
-- `PUT /api/projects/:id/members/:memberId/role` - Update member role
-- `GET /api/projects/:id/members` - Get project members with statistics
-- `GET /api/projects/:id/insights` - Get project insights and analytics
-- `POST /api/projects/:id/archive` - Archive project
-- `POST /api/projects/:id/clone` - Clone project
+### **Space Management (12 endpoints)**
+- `GET /api/spaces` - Get all spaces for user
+- `POST /api/spaces` - Create space (with goal and AI features)
+- `GET /api/spaces/:id` - Get single space with statistics
+- `PUT /api/spaces/:id` - Update space
+- `DELETE /api/spaces/:id` - Delete space
+- `POST /api/spaces/:id/members` - Add member to space
+- `DELETE /api/spaces/:id/members/:memberId` - Remove member
+- `PUT /api/spaces/:id/members/:memberId/role` - Update member role
+- `GET /api/spaces/:id/members` - Get space members with statistics
+- `GET /api/spaces/:id/insights` - Get space insights and analytics
+- `POST /api/spaces/:id/archive` - Archive space
+- `POST /api/spaces/:id/clone` - Clone space
 
 ### **Board & Column Management (8 endpoints)**
-- `GET /api/boards/project/:projectId` - Get project boards
+- `GET /api/boards/space/:spaceId` - Get space boards
 - `POST /api/boards` - Create board with default columns
 - `GET /api/boards/:id` - Get board with columns and tasks
 - `PUT /api/boards/:id` - Update board
@@ -226,7 +226,7 @@ System
 - `POST /api/files/avatar` - Upload user avatar
 - `POST /api/files/tasks/:taskId/attachments` - Upload task attachments (max 5 files)
 - `POST /api/files/comments/:commentId/attachments` - Upload comment attachments (max 3 files)
-- `POST /api/files/logo/:entityType/:entityId` - Upload workspace/project logo
+- `POST /api/files/logo/:entityType/:entityId` - Upload workspace/space logo
 - `GET /api/files/:id` - Get file details and download
 - `DELETE /api/files/:id` - Delete file from Cloudinary and database
 - `GET /api/files/entity/:entityType/:entityId` - Get all files for an entity
@@ -244,25 +244,25 @@ System
 - `PUT /api/notifications/bulk-mark-read` - Bulk mark notifications as read
 
 ### **AI Features (6 endpoints)**
-- `POST /api/ai/suggestions` - Generate task suggestions from project goals
-- `GET /api/ai/risks/project/:projectId` - Analyze project risks with AI
+- `POST /api/ai/suggestions` - Generate task suggestions from space goals
+- `GET /api/ai/risks/space/:spaceId` - Analyze space risks with AI
 - `GET /api/ai/risks/board/:boardId` - Analyze board-specific risks
 - `POST /api/ai/parse` - Parse natural language to structured task
-- `POST /api/ai/timeline/:projectId` - Generate optimized project timeline
-- `GET /api/ai/recommendations/:projectId` - Get smart task recommendations
+- `POST /api/ai/timeline/:spaceId` - Generate optimized space timeline
+- `GET /api/ai/recommendations/:spaceId` - Get smart task recommendations
 
 ### **Analytics (6 endpoints)**
-- `GET /api/analytics/project/:projectId` - Get project analytics
-- `POST /api/analytics/project/:projectId/generate` - Generate new analytics
+- `GET /api/analytics/space/:spaceId` - Get space analytics
+- `POST /api/analytics/space/:spaceId/generate` - Generate new analytics
 - `GET /api/analytics/user` - Get user analytics
 - `GET /api/analytics/workspace/:workspaceId` - Get workspace analytics
-- `GET /api/analytics/team/:projectId` - Get team performance analytics
-- `GET /api/analytics/export/:projectId` - Export analytics data
+- `GET /api/analytics/team/:spaceId` - Get team performance analytics
+- `GET /api/analytics/export/:spaceId` - Export analytics data
 
 ### **Additional Features**
 - **Checklists (9 endpoints)** - Task checklist management
 - **Reminders (6 endpoints)** - Due date and custom reminder system
-- **Tags (6 endpoints)** - Project tag management with analytics
+- **Tags (6 endpoints)** - Space tag management with analytics
 - **Invitations (10 endpoints)** - Secure invitation workflow
 
 ## 🔐 Authentication & Security
@@ -302,12 +302,12 @@ System
 - `admin` - Member management, settings, space creation
 - `member` - Basic workspace access and space creation
 
-#### **Project Roles**
-- `owner` - Full project control including deletion
-- `admin` - Project management and member administration
-- `member` - Project participation and board creation
+#### **Space Roles**
+- `owner` - Full space control including deletion
+- `admin` - Space management and member administration
+- `member` - Space participation and board creation
 - `contributor` - Task creation and editing
-- `viewer` - Read-only project access
+- `viewer` - Read-only space access
 
 #### **Space Roles**
 - `admin` - Full space management including settings and members
@@ -321,7 +321,7 @@ System
 
 ### Permission Matrix
 
-| Permission | Workspace Admin | Project Admin | Space Admin | Board Admin |
+| Permission | Workspace Admin | Space Admin | Board Admin |
 |------------|----------------|---------------|-------------|-------------|
 | Manage Members | ✅ | ✅ | ✅ | ✅ |
 | Create Boards | ✅ | ✅ | ✅ | ✅ |
@@ -343,7 +343,7 @@ System
 ### **Permission Middleware**
 - `requireSystemAdmin` - System administrator access
 - `requireWorkspacePermission(role)` - Workspace role requirements
-- `requireProjectPermission(role)` - Project role requirements
+- `requireSpacePermission(role)` - Space role requirements
 - `requireSpacePermission(permission)` - Space-specific permissions
 - `requireBoardPermission(permission)` - Board-specific permissions
 - `requireResourceOwner(field)` - Resource ownership validation
@@ -359,7 +359,7 @@ System
 - `avatarUpload` - User avatar upload (2MB limit, JPG/PNG/WebP)
 - `taskAttachmentUpload` - Task file attachments (10MB limit, 5 files max)
 - `commentAttachmentUpload` - Comment attachments (5MB limit, 3 files max)
-- `logoUpload` - Workspace/project logos (1MB limit)
+- `logoUpload` - Workspace/space logos (1MB limit)
 - `boardBackgroundUpload` - Board backgrounds (3MB limit)
 
 ### **Error Middleware**
@@ -386,7 +386,7 @@ taskflow/
 ├── avatars/          # User profile pictures (200x200, face detection)
 ├── tasks/            # Task attachments (up to 10MB, 5 files)
 ├── comments/         # Comment attachments (up to 5MB, 3 files)
-├── logos/            # Workspace & project logos (400x400 optimized)
+├── logos/            # Workspace & space logos (400x400 optimized)
 └── boards/           # Board background images (1920x1080 optimized)
 ```
 
@@ -409,10 +409,10 @@ taskflow/
 ## 🤖 AI Integration
 
 ### OpenAI Features
-- **Task Generation**: AI-powered task suggestions from project goals
-- **Risk Analysis**: Predictive warnings for project delays and bottlenecks
+- **Task Generation**: AI-powered task suggestions from space goals
+- **Risk Analysis**: Predictive warnings for space delays and bottlenecks
 - **Natural Language Processing**: Convert text to structured tasks
-- **Timeline Optimization**: AI-generated project timelines
+- **Timeline Optimization**: AI-generated space timelines
 - **Performance Analysis**: Team productivity insights
 - **Content Moderation**: Automatic content filtering
 
@@ -433,13 +433,13 @@ const results = await pipeline.execute(context);
 // Generate task suggestions
 POST /api/ai/suggestions
 {
-  "projectGoal": "Build a mobile app for task management",
-  "projectContext": "React Native, team of 3 developers",
+  "spaceGoal": "Build a mobile app for task management",
+  "spaceContext": "React Native, team of 3 developers",
   "boardType": "kanban"
 }
 
-// Analyze project risks
-GET /api/ai/risks/project/:projectId
+// Analyze space risks
+GET /api/ai/risks/space/:spaceId
 
 // Parse natural language
 POST /api/ai/parse
@@ -457,7 +457,7 @@ POST /api/ai/parse
 ### Real-time Events
 ```javascript
 // Connection Events
-socket.emit('join:project', { projectId })
+socket.emit('join:space', { spaceId })
 socket.emit('join:board', { boardId })
 socket.emit('join:workspace', { workspaceId })
 
@@ -497,7 +497,7 @@ npm run seed
 # Partial seeding for development
 npm run seed:partial users
 npm run seed:partial workspaces
-npm run seed:partial projects
+npm run seed:partial spaces
 
 # Clear database
 npm run seed:clear
@@ -519,7 +519,7 @@ npm run seed:users
 - **20 Users** (5 test users + 15 random users)
 - **5 Workspaces** with members and settings
 - **10-25 Spaces** across workspaces
-- **10 Projects** with teams and progress
+- **10-25 Spaces** with teams and progress
 - **15-50 Boards** with columns and settings
 - **75-750 Tasks** with assignments and time tracking
 - **100-600 Comments** with mentions and reactions
@@ -678,7 +678,7 @@ docker run -p 3001:3001 -e DATABASE_URL=your-db-url taskflow-api
 ### Built-in Monitoring
 - **Activity Logs**: Complete audit trail for all user actions
 - **Performance Metrics**: Response times and error rates
-- **Usage Analytics**: Workspace and project utilization
+- **Usage Analytics**: Workspace and space utilization
 - **Storage Tracking**: File upload and storage usage
 - **Session Monitoring**: Active sessions and security events
 
@@ -692,8 +692,8 @@ docker run -p 3001:3001 -e DATABASE_URL=your-db-url taskflow-api
 
 ### Connection Management
 ```javascript
-// Join project room for updates
-socket.emit('join:project', { projectId })
+// Join space room for updates
+socket.emit('join:space', { spaceId })
 
 // Join board room for real-time collaboration
 socket.emit('join:board', { boardId })

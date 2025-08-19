@@ -2,7 +2,7 @@ const express = require('express');
 const taskController = require('../controllers/task.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const { requireBoardPermission } = require('../middlewares/permission.middleware');
-const { taskAttachmentUpload, commentAttachmentUpload } = require('../middlewares/upload.middleware');
+const { uploadMiddlewares } = require('../middlewares/upload.middleware');
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ const createTaskSchema = {
     description: { maxLength: 2000 },
     boardId: { required: true, objectId: true },
     columnId: { required: true, objectId: true },
-    priority: { enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' },
+    priority: { enum: ['low', 'medium', 'high', 'critical'], default: 'medium' },
     assignees: { array: true, arrayOf: 'objectId' },
     labels: { array: true },
     estimatedHours: { number: true, min: 0 },
@@ -24,8 +24,8 @@ const createTaskSchema = {
 const updateTaskSchema = {
     title: { minLength: 2, maxLength: 200 },
     description: { maxLength: 2000 },
-    priority: { enum: ['low', 'medium', 'high', 'urgent'] },
-    status: { enum: ['todo', 'in-progress', 'review', 'completed', 'cancelled'] },
+    priority: { enum: ['low', 'medium', 'high', 'critical'] },
+    status: { enum: ['todo', 'in_progress', 'review', 'done', 'archived'] },
     assignees: { array: true, arrayOf: 'objectId' },
     labels: { array: true },
     estimatedHours: { number: true, min: 0 },
@@ -69,7 +69,7 @@ router.get('/overdue', taskController.getOverdueTasks);
 router.get('/:id', taskController.getTask);
 
 router.post('/', 
-    taskAttachmentUpload,
+    uploadMiddlewares.taskAttachment,
     validateMiddleware(createTaskSchema),
     taskController.createTask
 );
@@ -91,9 +91,23 @@ router.patch('/bulk-update',
     taskController.bulkUpdateTasks
 );
 
+// Time tracking routes
+router.post('/:id/time-tracking', taskController.startTimeTracking);
+router.post('/:id/time-tracking/stop', taskController.stopTimeTracking);
+
+// Duplicate route
+router.post('/:id/duplicate', taskController.duplicateTask);
+
+// History route
+router.get('/:id/history', taskController.getTaskHistory);
+
+// Dependencies route
+router.post('/:id/dependencies', taskController.addTaskDependency);
+router.delete('/:id/dependencies/:dependencyId', taskController.removeTaskDependency);
+
 // Comment routes
 router.post('/:id/comments',
-    commentAttachmentUpload,
+    uploadMiddlewares.commentAttachment,
     validateMiddleware(addCommentSchema),
     taskController.addComment
 );

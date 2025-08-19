@@ -1,7 +1,6 @@
 const Workspace = require('../models/Workspace');
 const User = require('../models/User');
 const Space = require('../models/Space');
-const Project = require('../models/Project');
 const ActivityLog = require('../models/ActivityLog');
 
 class WorkspaceService {
@@ -12,10 +11,7 @@ class WorkspaceService {
             throw new Error('Workspace not found');
         }
 
-        const [spaces, projects] = await Promise.all([
-            Space.find({ workspace: workspaceId, isActive: true }),
-            Project.find({ workspace: workspaceId })
-        ]);
+        const spaces = await Space.find({ workspace: workspaceId, isActive: true });
 
         // Calculate detailed statistics
         const stats = {
@@ -26,12 +22,6 @@ class WorkspaceService {
                 total: spaces.length,
                 active: spaces.filter(s => !s.isArchived).length,
                 needingAttention: spaces.filter(s => s.healthStatus === 'needs_attention').length
-            },
-            projects: {
-                total: projects.length,
-                active: projects.filter(p => p.status === 'active').length,
-                completed: projects.filter(p => p.status === 'completed').length,
-                overdue: projects.filter(p => p.isOverdue).length
             }
         };
 
@@ -98,23 +88,17 @@ class WorkspaceService {
             completedTasks,
             spacesCount
         ] = await Promise.all([
-            Task.countDocuments({ 
-                assignees: userId,
-                board: { $in: spaceIds }
-            }),
-            Task.countDocuments({ 
-                assignees: userId,
-                status: 'completed',
-                board: { $in: spaceIds }
-            }),
-            spaces.length
+            Task.countDocuments({ space: { $in: spaceIds } }),
+            Task.countDocuments({ space: { $in: spaceIds }, status: 'done' }),
+            Space.countDocuments({ workspace: workspaceId, 'members.user': userId })
         ]);
 
         return {
             totalTasks,
             completedTasks,
+            completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
             spacesCount,
-            completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+            lastActivity: new Date() // This could be enhanced with actual last activity
         };
     }
 
@@ -255,11 +239,11 @@ class WorkspaceService {
             });
         }
 
-        if (stats.projects.overdue > 0) {
+        if (stats.spaces.overdue > 0) {
             recommendations.push({
-                type: 'overdue_projects',
+                type: 'overdue_spaces',
                 priority: 'high',
-                message: `${stats.projects.overdue} projects are overdue`,
+                message: `${stats.spaces.overdue} spaces are overdue`,
                 action: 'review_deadlines'
             });
         }
