@@ -42,7 +42,7 @@ describe('Board Endpoints', () => {
         const userData = {
             name: 'Test User',
             email: 'test@example.com',
-            password: 'password123'
+            password: 'TestPass123!'
         };
 
         const registerResponse = await request(app)
@@ -55,8 +55,10 @@ describe('Board Endpoints', () => {
         // Create test project
         testProject = await Project.create({
             name: 'Test Project',
-            owner: testUser.id,
-            members: [{ user: testUser.id, role: 'admin' }]
+            owner: testUser._id,
+            goal: 'Test project goal for AI assistance',
+            targetEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            team: [{ user: testUser._id, role: 'member' }]
         });
     });
 
@@ -224,7 +226,8 @@ describe('Board Endpoints', () => {
 
             expect(response.body.success).toBe(true);
             expect(response.body.data.column.name).toBe('New Column');
-            expect(response.body.data.column.color).toBe('#FF5733');
+            // color stored under style.color in schema
+            expect(response.body.data.column.style.color).toBe('#FF5733');
         });
     });
 

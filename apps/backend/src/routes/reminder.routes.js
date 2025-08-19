@@ -12,7 +12,7 @@ const createReminderSchema = {
     reminderDate: { required: true, date: true },
     type: { enum: ['email', 'push', 'both'], default: 'both' },
     taskId: { objectId: true },
-    projectId: { objectId: true },
+    spaceId: { objectId: true },
     recurring: {
         enabled: { boolean: true },
         pattern: { enum: ['daily', 'weekly', 'monthly', 'yearly'] },
@@ -40,6 +40,8 @@ const snoozeReminderSchema = {
 
 // Routes
 router.get('/', reminderController.getReminders);
+router.get('/stats', reminderController.getReminderStats);
+router.get('/:id', reminderController.getReminderById);
 
 router.post('/',
     validateMiddleware(createReminderSchema),

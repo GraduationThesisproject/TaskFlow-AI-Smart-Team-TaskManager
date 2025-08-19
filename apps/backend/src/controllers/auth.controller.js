@@ -56,8 +56,8 @@ exports.register = async (req, res) => {
                 case 'Workspace':
                     await userRoles.addWorkspaceRole(invitation.targetEntity.id, invitation.role);
                     break;
-                case 'Project':
-                    await userRoles.addProjectRole(invitation.targetEntity.id, invitation.role);
+                case 'Space':
+                    await userRoles.addSpaceRole(invitation.targetEntity.id, invitation.role);
                     break;
             }
         }
@@ -229,7 +229,6 @@ exports.getMe = async (req, res) => {
             },
             roles: {
                 workspaces: roles.workspaces.length,
-                projects: roles.projects.length,
                 spaces: roles.spaces.length
             }
         });

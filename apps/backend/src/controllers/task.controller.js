@@ -2,6 +2,7 @@ const Task = require('../models/Task');
 const Comment = require('../models/Comment');
 const Board = require('../models/Board');
 const Column = require('../models/Column');
+const Space = require('../models/Space');
 const User = require('../models/User');
 const ActivityLog = require('../models/ActivityLog');
 const Notification = require('../models/Notification');
@@ -20,6 +21,8 @@ exports.getTasks = async (req, res) => {
             overdue,
             assignedToMe,
             sortBy,
+            sortOrder,
+            search,
             limit = 50,
             page = 1
         } = req.query;
@@ -36,6 +39,8 @@ exports.getTasks = async (req, res) => {
             overdue: overdue === 'true',
             assignedToMe: assignedToMe === 'true',
             sortBy,
+            sortOrder,
+            search,
             limit
         }, userId);
 
@@ -43,7 +48,7 @@ exports.getTasks = async (req, res) => {
             tasks,
             count: tasks.length,
             filters: {
-                boardId, assignee, status, priority, dueDate, overdue, assignedToMe, sortBy
+                boardId, assignee, status, priority, dueDate, overdue, assignedToMe, sortBy, sortOrder, search
             }
         });
     } catch (error) {
@@ -122,7 +127,9 @@ exports.createTask = async (req, res) => {
             startDate,
             labels,
             estimatedHours,
-            position 
+            position,
+            tags,
+            dependencies
         } = req.body;
         const userId = req.user.id;
 
@@ -132,6 +139,12 @@ exports.createTask = async (req, res) => {
         
         if (!userRoles.hasBoardPermission(boardId, 'canCreateTasks')) {
             return sendResponse(res, 403, false, 'Insufficient permissions to create tasks');
+        }
+
+        // Get the board to get the space
+        const board = await Board.findById(boardId);
+        if (!board) {
+            return sendResponse(res, 404, false, 'Board not found');
         }
 
         // Get the column and check WIP limits
@@ -154,6 +167,7 @@ exports.createTask = async (req, res) => {
             title,
             description,
             board: boardId,
+            space: board.space,
             column: columnId,
             assignees: assignees || [],
             reporter: userId,
@@ -163,7 +177,12 @@ exports.createTask = async (req, res) => {
             labels,
             estimatedHours,
             position: taskPosition,
-            watchers: [userId] // Reporter automatically watches the task
+            watchers: [userId], // Reporter automatically watches the task
+            tags: tags || [],
+            dependencies: dependencies ? dependencies.map(dep => ({
+                task: dep,
+                type: 'blocks'
+            })) : []
         });
 
         // Handle file attachments if present
@@ -214,7 +233,7 @@ exports.createTask = async (req, res) => {
                     recipient: assigneeId,
                     sender: userId,
                     relatedEntity: {
-                        entityType: 'Task',
+                        entityType: 'task',
                         entityId: task._id
                     }
                 });
@@ -228,8 +247,7 @@ exports.createTask = async (req, res) => {
             description: `Created task: ${title}`,
             entity: { type: 'Task', id: task._id, name: title },
             relatedEntities: [
-                { type: 'Board', id: boardId, name: 'Board' },
-                { type: 'Column', id: columnId, name: column.name }
+                { type: 'Board', id: boardId, name: 'Board' }
             ],
             boardId,
             metadata: {
@@ -238,6 +256,9 @@ exports.createTask = async (req, res) => {
                 ipAddress: req.ip
             }
         });
+
+        // Update space status if needed (space-based logic can be added here)
+        // Note: Space status management is handled differently than workspace status
 
         logger.info(`Task created: ${title}`);
 
@@ -303,19 +324,19 @@ exports.updateTask = async (req, res) => {
         if (status && status !== task.status) {
             const taskService = require('../services/task.service');
             await taskService.updateTaskStatus(taskId, status, userId);
-        } else {
-            // Update other fields
-            if (title) task.title = title;
-            if (description) task.description = description;
-            if (priority) task.priority = priority;
-            if (dueDate !== undefined) task.dueDate = dueDate ? new Date(dueDate) : null;
-            if (startDate !== undefined) task.startDate = startDate ? new Date(startDate) : null;
-            if (labels) task.labels = labels;
-            if (estimatedHours !== undefined) task.estimatedHours = estimatedHours;
-            if (actualHours !== undefined) task.actualHours = actualHours;
-
-            await task.save();
         }
+        
+        // Update other fields (always update these regardless of status change)
+        if (title) task.title = title;
+        if (description) task.description = description;
+        if (priority) task.priority = priority;
+        if (dueDate !== undefined) task.dueDate = dueDate ? new Date(dueDate) : null;
+        if (startDate !== undefined) task.startDate = startDate ? new Date(startDate) : null;
+        if (labels) task.labels = labels;
+        if (estimatedHours !== undefined) task.estimatedHours = estimatedHours;
+        if (actualHours !== undefined) task.actualHours = actualHours;
+
+        await task.save();
 
         await task.populate('assignees', 'name email avatar');
         await task.populate('reporter', 'name email avatar');
@@ -349,7 +370,7 @@ exports.updateTask = async (req, res) => {
 exports.moveTask = async (req, res) => {
     try {
         const { id: taskId } = req.params;
-        const { columnId, position } = req.body;
+        const { columnId, position = 0 } = req.body;
         const userId = req.user.id;
 
         const task = await Task.findById(taskId);
@@ -390,17 +411,47 @@ exports.moveTask = async (req, res) => {
         // Update task
         task.column = columnId;
         task.position = position;
+        task.movedAt = new Date();
 
         // Auto-update status based on column automation settings
-        if (targetColumn.settings.automation.statusUpdate.enabled) {
+        if (targetColumn.settings && targetColumn.settings.automation && targetColumn.settings.automation.statusUpdate && targetColumn.settings.automation.statusUpdate.enabled) {
             const targetStatus = targetColumn.settings.automation.statusUpdate.targetStatus;
             if (targetStatus) {
-                const taskService = require('../services/task.service');
-                await taskService.updateTaskStatus(taskId, targetStatus, userId);
+                task.status = targetStatus;
             }
+        } else if (targetColumn.statusMapping && targetColumn.statusMapping !== null) {
+            // Fallback to statusMapping if automation is not configured
+            task.status = targetColumn.statusMapping;
+            logger.info(`Updated task status to ${targetColumn.statusMapping} based on column statusMapping for task ${task._id}`);
         }
+        
+        // Debug logging
+        logger.info(`Target column statusMapping: ${targetColumn.statusMapping}, Task status: ${task.status}`);
 
         await task.save();
+        
+        // Ensure the status is saved correctly
+        if (targetColumn.statusMapping && targetColumn.statusMapping !== null) {
+            task.status = targetColumn.statusMapping;
+            await task.save();
+            logger.info(`Final task status after save: ${task.status}`);
+        }
+
+        // Ensure position is set correctly
+        if (task.position === undefined) {
+            task.position = position;
+            await task.save();
+        }
+
+        // Populate task for response
+        await task.populate('assignees', 'name email avatar');
+        await task.populate('reporter', 'name email avatar');
+        await task.populate('board', 'name');
+        await task.populate('column', 'name color');
+
+        // Ensure column is properly set in response
+        const taskResponse = task.toObject();
+        taskResponse.column = task.column._id || task.column;
 
         // Log activity
         await ActivityLog.logActivity({
@@ -422,7 +473,7 @@ exports.moveTask = async (req, res) => {
         logger.info(`Task moved: ${task.title}`);
 
         sendResponse(res, 200, true, 'Task moved successfully', {
-            task: task.toObject(),
+            task: taskResponse,
             sourceColumn: sourceColumn ? sourceColumn.name : null,
             targetColumn: targetColumn.name
         });
@@ -436,7 +487,8 @@ exports.moveTask = async (req, res) => {
 exports.addComment = async (req, res) => {
     try {
         const { id: taskId } = req.params;
-        const { content, mentions = [], parentCommentId } = req.body;
+        const { content, mentions = [], parentCommentId, parentComment } = req.body;
+        const actualParentCommentId = parentCommentId || parentComment;
         const userId = req.user.id;
 
         const task = await Task.findById(taskId);
@@ -461,17 +513,23 @@ exports.addComment = async (req, res) => {
             content,
             task: taskId,
             author: userId,
-            parentComment: parentCommentId || null,
-            mentions: mentions.map(userId => ({ user: userId }))
+            parentComment: actualParentCommentId || null,
+            mentions: mentions.map(userId => ({ user: userId, mentionedAt: new Date() }))
         });
 
         // Add to parent comment if this is a reply
-        if (parentCommentId) {
-            const parentComment = await Comment.findById(parentCommentId);
+        if (actualParentCommentId) {
+            const parentComment = await Comment.findById(actualParentCommentId);
             if (parentComment) {
                 await parentComment.addReply(comment._id);
+                // Set thread ID for the reply
+                comment.thread = parentComment.thread || parentComment._id;
+                await comment.save();
             }
         }
+
+        // Reload the comment to get the updated data
+        await comment.populate('parentComment', 'content author');
 
         // Handle file attachments if present
         if (req.uploadedFiles && req.uploadedFiles.length > 0) {
@@ -509,6 +567,21 @@ exports.addComment = async (req, res) => {
 
         await comment.populate('author', 'name email avatar');
         await comment.populate('mentions.user', 'name email avatar');
+        await comment.populate('parentComment', 'content author');
+
+        // Ensure parentComment is properly set for response
+        const commentResponse = comment.toObject();
+        if (commentResponse.parentComment === null && actualParentCommentId) {
+            commentResponse.parentComment = actualParentCommentId;
+        }
+        
+        // Ensure thread is set for replies
+        if (actualParentCommentId && !commentResponse.thread) {
+            commentResponse.thread = actualParentCommentId;
+        }
+        
+        // Debug logging
+        logger.info(`Comment response - parentComment: ${commentResponse.parentComment}, thread: ${commentResponse.thread}, actualParentCommentId: ${actualParentCommentId}`);
 
         // Log activity
         await ActivityLog.logActivity({
@@ -528,7 +601,7 @@ exports.addComment = async (req, res) => {
         logger.info(`Comment added to task: ${taskId}`);
 
         sendResponse(res, 201, true, 'Comment added successfully', {
-            comment: comment.toObject()
+            comment: commentResponse
         });
     } catch (error) {
         logger.error('Add comment error:', error);
@@ -748,6 +821,14 @@ exports.addWatcher = async (req, res) => {
         const user = await User.findById(currentUserId);
         const userRoles = await user.getRoles();
         
+        // Check if the watcher is a space member
+        const space = await Space.findById(task.space);
+        const isSpaceMember = space.members.some(member => member.user.toString() === watcherId);
+        
+        if (!isSpaceMember) {
+            return sendResponse(res, 403, false, 'User is not a space member');
+        }
+        
         const canAddWatcher = watcherId === currentUserId ||
                              userRoles.hasBoardPermission(task.board, 'canEditTasks');
 
@@ -760,7 +841,9 @@ exports.addWatcher = async (req, res) => {
             await task.save();
         }
 
-        sendResponse(res, 200, true, 'Watcher added successfully');
+        sendResponse(res, 200, true, 'Watcher added successfully', {
+            task: task
+        });
     } catch (error) {
         logger.error('Add watcher error:', error);
         sendResponse(res, 500, false, 'Server error adding watcher');
@@ -917,28 +1000,412 @@ exports.bulkUpdateTasks = async (req, res) => {
         }
 
         const taskService = require('../services/task.service');
-        const updatedTasks = await taskService.bulkUpdateTasks(taskIds, updates, userId);
+        let updatedTasks = await taskService.bulkUpdateTasks(taskIds, updates, userId);
 
-        // Log activity
-        await ActivityLog.logActivity({
-            userId,
-            action: 'task_update',
-            description: `Bulk updated ${taskIds.length} tasks`,
-            entity: { type: 'Task', id: null, name: 'Multiple Tasks' },
-            metadata: {
-                taskIds,
-                updates,
-                count: taskIds.length,
-                ipAddress: req.ip
+        // Handle column updates if present
+        if (updates.columnId) {
+            const targetColumn = await Column.findById(updates.columnId);
+            if (targetColumn) {
+                for (const taskId of taskIds) {
+                    const task = await Task.findById(taskId);
+                    if (task) {
+                        // Remove from old column
+                        const oldColumn = await Column.findById(task.column);
+                        if (oldColumn) {
+                            await oldColumn.removeTask(taskId);
+                        }
+                        
+                        // Add to new column
+                        await targetColumn.addTask(taskId, task.position || 0);
+                        
+                        // Update task column
+                        task.column = updates.columnId;
+                        await task.save();
+                    }
+                }
             }
-        });
+            
+            // Re-fetch updated tasks to include column changes
+            updatedTasks = await Task.find({ _id: { $in: taskIds } })
+                .populate('assignees', 'name email avatar')
+                .populate('reporter', 'name email avatar')
+                .populate('board', 'name')
+                .populate('column', 'name color');
+                
+            // Ensure the column field is properly set in the response
+            updatedTasks = updatedTasks.map(task => {
+                const taskObj = task.toObject();
+                taskObj.column = task.column._id || task.column;
+                return taskObj;
+            });
+        }
+
+        // Log activity for each task individually
+        for (const taskId of taskIds) {
+            await ActivityLog.logActivity({
+                userId,
+                action: 'task_update',
+                description: `Bulk updated task`,
+                entity: { type: 'Task', id: taskId, name: 'Task' },
+                metadata: {
+                    taskIds,
+                    updates,
+                    count: taskIds.length,
+                    ipAddress: req.ip
+                }
+            });
+        }
 
         sendResponse(res, 200, true, 'Tasks updated successfully', {
             tasks: updatedTasks,
+            modifiedCount: updatedTasks.length,
             count: updatedTasks.length
         });
     } catch (error) {
         logger.error('Bulk update tasks error:', error);
         sendResponse(res, 500, false, 'Server error updating tasks');
+    }
+};
+
+// Start time tracking for a task
+exports.startTimeTracking = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const { description, action } = req.body;
+
+        const task = await Task.findById(id);
+        if (!task) {
+            return sendResponse(res, 404, false, 'Task not found');
+        }
+
+        // Check if user is already tracking time for this task
+        const activeEntry = task.getActiveTimeEntry(userId);
+
+        if (activeEntry) {
+            logger.info(`Time tracking already active for user ${userId} on task ${task._id}`);
+            return sendResponse(res, 400, false, 'Time tracking already active for this task');
+        }
+        
+        // Also check if there's an active entry in the database
+        const freshTask = await Task.findById(task._id);
+        const freshActiveEntry = freshTask.getActiveTimeEntry(userId);
+        if (freshActiveEntry) {
+            logger.info(`Time tracking already active for user ${userId} on task ${task._id} (from database)`);
+            return sendResponse(res, 400, false, 'Time tracking already active for this task');
+        }
+
+        // Add new time entry
+        const timeEntry = {
+            user: userId,
+            startTime: new Date(),
+            description: description || '',
+            endTime: null,
+            duration: 0
+        };
+        
+        task.timeEntries.push(timeEntry);
+        await task.save();
+        
+        // Debug logging
+        logger.info(`Added time entry for user ${userId} on task ${task._id}, total entries: ${task.timeEntries.length}`);
+        
+        // Verify the time entry was saved correctly
+        const savedTask = await Task.findById(task._id);
+        logger.info(`Saved task has ${savedTask.timeEntries.length} time entries`);
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId,
+            action: 'time_tracking_start',
+            description: `Started time tracking for task: ${task.title}`,
+            entity: { type: 'Task', id: task._id, name: task.title },
+            metadata: { description, ipAddress: req.ip }
+        });
+
+        const newTimeEntry = task.timeEntries[task.timeEntries.length - 1];
+        sendResponse(res, 200, true, 'Time tracking started successfully', {
+            timeEntry: {
+                ...newTimeEntry.toObject(),
+                isActive: true
+            }
+        });
+    } catch (error) {
+        logger.error('Start time tracking error:', error);
+        sendResponse(res, 500, false, 'Server error starting time tracking');
+    }
+};
+
+// Stop time tracking for a task
+exports.stopTimeTracking = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const { description } = req.body;
+
+        const task = await Task.findById(id);
+        if (!task) {
+            return sendResponse(res, 404, false, 'Task not found');
+        }
+
+        // Find active time entry
+        const activeEntry = task.getActiveTimeEntry(userId);
+
+        if (!activeEntry) {
+            logger.info(`No active time tracking found for user ${userId} on task ${task._id}, timeEntries: ${task.timeEntries.length}`);
+            // Debug: log all time entries
+            task.timeEntries.forEach((entry, index) => {
+                logger.info(`Time entry ${index}: user=${entry.user}, endTime=${entry.endTime}, isActive=${!entry.endTime}`);
+            });
+            return sendResponse(res, 400, false, 'No active time tracking found for this task');
+        }
+
+        // Stop time tracking
+        activeEntry.endTime = new Date();
+        const timeDiff = activeEntry.endTime - activeEntry.startTime;
+        activeEntry.duration = Math.max(1, Math.round(timeDiff / 1000)); // seconds, minimum 1 second
+        if (description) {
+            activeEntry.description = description;
+        }
+        
+        // Debug logging
+        logger.info(`Time tracking stopped - startTime: ${activeEntry.startTime}, endTime: ${activeEntry.endTime}, timeDiff: ${timeDiff}ms, duration: ${activeEntry.duration}s`);
+
+        await task.save();
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId,
+            action: 'time_tracking_stop',
+            description: `Stopped time tracking for task: ${task.title}`,
+            entity: { type: 'Task', id: task._id, name: task.title },
+            metadata: { 
+                duration: activeEntry.duration,
+                description: activeEntry.description,
+                ipAddress: req.ip 
+            }
+        });
+
+                sendResponse(res, 200, true, 'Time tracking stopped successfully', {
+          timeEntry: {
+            ...activeEntry.toObject(),
+            isActive: false
+          }
+        });
+    } catch (error) {
+        logger.error('Stop time tracking error:', error);
+        sendResponse(res, 500, false, 'Server error stopping time tracking');
+    }
+};
+
+// Duplicate a task
+exports.duplicateTask = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const { title, includeSubtasks = true, includeTags = true, resetStatus = true } = req.body;
+
+        const originalTask = await Task.findById(id);
+        if (!originalTask) {
+            return sendResponse(res, 404, false, 'Task not found');
+        }
+
+                // Create duplicated task
+        const duplicatedTask = new Task({
+          title: title || `${originalTask.title} (Copy)`,
+          description: originalTask.description,
+          board: originalTask.board,
+          space: originalTask.space,
+          column: originalTask.column,
+          reporter: userId,
+          priority: originalTask.priority,
+          status: resetStatus ? 'todo' : originalTask.status,
+          estimatedHours: originalTask.estimatedHours,
+          dueDate: originalTask.dueDate,
+          tags: includeTags && originalTask.tags ? originalTask.tags : [],
+          subtasks: includeSubtasks && originalTask.subtasks ? originalTask.subtasks.map(subtask => ({
+            ...subtask.toObject(),
+            completed: resetStatus ? false : subtask.completed
+          })) : [],
+          position: originalTask.position,
+          assignees: originalTask.assignees,
+          watchers: originalTask.watchers
+        });
+
+        await duplicatedTask.save();
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId,
+            action: 'task_duplicate',
+            description: `Duplicated task: ${originalTask.title}`,
+            entity: { type: 'Task', id: duplicatedTask._id, name: duplicatedTask.title },
+            metadata: { 
+                originalTaskId: originalTask._id,
+                includeSubtasks,
+                includeTags,
+                resetStatus,
+                ipAddress: req.ip 
+            }
+        });
+
+        sendResponse(res, 201, true, 'Task duplicated successfully', {
+            task: duplicatedTask
+        });
+    } catch (error) {
+        logger.error('Duplicate task error:', error);
+        sendResponse(res, 500, false, 'Server error duplicating task');
+    }
+};
+
+// Get task history
+exports.getTaskHistory = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action } = req.query;
+
+        const task = await Task.findById(id);
+        if (!task) {
+            return sendResponse(res, 404, false, 'Task not found');
+        }
+
+        // Get activity logs for this task
+        let query = { 'entity.id': task._id, 'entity.type': 'Task' };
+        if (action) {
+            query.action = action;
+        }
+
+        const history = await ActivityLog.find(query)
+            .sort({ timestamp: -1 })
+            .populate('user', 'name email')
+            .limit(50);
+
+        sendResponse(res, 200, true, 'Task history retrieved successfully', {
+            history: history.map(log => ({
+                action: log.action,
+                changedBy: log.user,
+                changes: log.metadata,
+                timestamp: log.timestamp || log.createdAt,
+                description: log.description
+            }))
+        });
+    } catch (error) {
+        logger.error('Get task history error:', error);
+        sendResponse(res, 500, false, 'Server error retrieving task history');
+    }
+};
+
+// Add task dependency
+exports.addTaskDependency = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const { dependsOn, type = 'blocks' } = req.body;
+
+        const task = await Task.findById(id);
+        if (!task) {
+            return sendResponse(res, 404, false, 'Task not found');
+        }
+
+        const dependencyTask = await Task.findById(dependsOn);
+        if (!dependencyTask) {
+            return sendResponse(res, 404, false, 'Dependency task not found');
+        }
+
+                // Check for circular dependencies
+        if (dependsOn === id) {
+          return sendResponse(res, 400, false, 'Task cannot depend on itself');
+        }
+
+        // Check if this would create a circular dependency
+        const checkCircular = async (taskId, visited = new Set()) => {
+          if (visited.has(taskId.toString())) return true;
+          visited.add(taskId.toString());
+          
+          const currentTask = await Task.findById(taskId);
+          if (!currentTask) return false;
+          
+          for (const dep of currentTask.dependencies) {
+            if (await checkCircular(dep.task, new Set(visited))) {
+              return true;
+            }
+          }
+          return false;
+        };
+
+        // Check if adding this dependency would create a circular dependency
+        const visited = new Set([id.toString()]);
+        if (await checkCircular(dependsOn, visited)) {
+          return sendResponse(res, 400, false, 'Circular dependency detected');
+        }
+
+                // Check if dependency already exists
+        if (task.dependencies.some(dep => dep.task.toString() === dependsOn)) {
+          return sendResponse(res, 400, false, 'Dependency already exists');
+        }
+
+        // Add dependency
+        task.dependencies.push({
+          task: dependsOn,
+          type: type
+        });
+        await task.save();
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId,
+            action: 'task_dependency_add',
+            description: `Added dependency to task: ${task.title}`,
+            entity: { type: 'Task', id: task._id, name: task.title },
+            metadata: { 
+                dependencyTaskId: dependsOn,
+                dependencyTaskTitle: dependencyTask.title,
+                type,
+                ipAddress: req.ip 
+            }
+        });
+
+        sendResponse(res, 200, true, 'Task dependency added successfully', {
+            task
+        });
+    } catch (error) {
+        logger.error('Add task dependency error:', error);
+        sendResponse(res, 500, false, 'Server error adding task dependency');
+    }
+};
+
+// Remove task dependency
+exports.removeTaskDependency = async (req, res) => {
+    try {
+        const { id, dependencyId } = req.params;
+        const userId = req.user.id;
+
+        const task = await Task.findById(id);
+        if (!task) {
+            return sendResponse(res, 404, false, 'Task not found');
+        }
+
+        // Remove dependency
+        task.dependencies = task.dependencies.filter(dep => dep.task.toString() !== dependencyId);
+        await task.save();
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId,
+            action: 'task_dependency_remove',
+            description: `Removed dependency from task: ${task.title}`,
+            entity: { type: 'Task', id: task._id, name: task.title },
+            metadata: { 
+                dependencyTaskId: dependencyId,
+                ipAddress: req.ip 
+            }
+        });
+
+        sendResponse(res, 200, true, 'Task dependency removed successfully', {
+            task
+        });
+    } catch (error) {
+        logger.error('Remove task dependency error:', error);
+        sendResponse(res, 500, false, 'Server error removing task dependency');
     }
 };

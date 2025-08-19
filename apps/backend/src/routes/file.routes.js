@@ -1,51 +1,77 @@
 const express = require('express');
-const fileController = require('../controllers/file.controller');
-const { 
-    avatarUpload, 
-    taskAttachmentUpload, 
-    commentAttachmentUpload, 
-    logoUpload,
-    singleAttachmentUpload 
-} = require('../middlewares/upload.middleware');
-const { requireProjectPermission, requireWorkspacePermission } = require('../middlewares/permission.middleware');
-
 const router = express.Router();
+const { 
+  uploadFile, 
+  uploadMultipleFiles, 
+  getFile, 
+  downloadFile, 
+  deleteFileById,
+  getUserFiles
+} = require('../controllers/file.controller');
+const authMiddleware = require('../middlewares/auth.middleware');
+const { 
+  uploadMiddlewares, 
+  processUploadedFiles, 
+  validateUploadPermissions,
+  setUploadContext
+} = require('../middlewares/upload.middleware');
 
-// Avatar upload
-router.post('/avatar', 
-    avatarUpload,
-    fileController.uploadAvatar
+// Apply authentication to all routes
+router.use(authMiddleware);
+
+// Single file upload routes by category
+router.post('/upload/avatar', 
+  validateUploadPermissions(['user', 'admin'], ['avatar']),
+  setUploadContext(),
+  uploadMiddlewares.avatar,
+  processUploadedFiles,
+  uploadFile
 );
 
-// Task attachment upload
-router.post('/tasks/:taskId/attachments',
-    taskAttachmentUpload,
-    fileController.uploadTaskAttachments
+router.post('/upload/task-attachments',
+  validateUploadPermissions(['user', 'admin'], ['task_attachment']),
+  setUploadContext(),
+  uploadMiddlewares.taskAttachment,
+  processUploadedFiles,
+  uploadMultipleFiles
 );
 
-// Comment attachment upload
-router.post('/comments/:commentId/attachments',
-    commentAttachmentUpload,
-    fileController.uploadCommentAttachments
+router.post('/upload/comment-attachment',
+  validateUploadPermissions(['user', 'admin'], ['comment_attachment']),
+  setUploadContext(),
+  uploadMiddlewares.commentAttachment,
+  processUploadedFiles,
+  uploadMultipleFiles
 );
 
-// Logo upload for workspace or project
-router.post('/logo/:entityType/:entityId',
-    logoUpload,
-    fileController.uploadLogo
+router.post('/upload/logo',
+  validateUploadPermissions(['admin'], ['logo']),
+  setUploadContext(),
+  uploadMiddlewares.logo,
+  processUploadedFiles,
+  uploadFile
 );
 
-// General file operations
-router.get('/:id', fileController.getFile);
-router.delete('/:id', fileController.deleteFile);
+router.post('/upload/board-background',
+  validateUploadPermissions(['user', 'admin'], ['board_background']),
+  setUploadContext(),
+  uploadMiddlewares.boardBackground,
+  processUploadedFiles,
+  uploadFile
+);
 
-// Get files by entity
-router.get('/entity/:entityType/:entityId', fileController.getEntityFiles);
+router.post('/upload/general',
+  validateUploadPermissions(['user', 'admin'], ['general']),
+  setUploadContext(),
+  uploadMiddlewares.general,
+  processUploadedFiles,
+  uploadMultipleFiles
+);
 
-// Get user's files
-router.get('/user/my-files', fileController.getUserFiles);
-
-// Storage statistics
-router.get('/storage/stats', fileController.getStorageStats);
+// File management routes
+router.get('/', getUserFiles);
+router.get('/:id', getFile);
+router.get('/:id/download', downloadFile);
+router.delete('/:id', deleteFileById);
 
 module.exports = router;

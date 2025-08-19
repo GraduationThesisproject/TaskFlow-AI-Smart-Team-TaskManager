@@ -5,7 +5,7 @@ const socketIo = require('socket.io');
 const app = require('./app');
 const connectDB = require('./config/db');
 const logger = require('./config/logger');
-const { initializeCloudinary } = require('./config/cloudinary');
+const { initializeStorage } = require('./config/multer');
 const taskSocket = require('./sockets/task.socket');
 const notificationSocket = require('./sockets/notification.socket');
 const workspaceSocket = require('./sockets/workspace.socket');
@@ -16,8 +16,8 @@ const PORT = process.env.PORT || 3001;
 // Connect to database
 connectDB();
 
-// Initialize Cloudinary
-initializeCloudinary();
+// Initialize file storage
+initializeStorage();
 
 // Create HTTP server
 const server = http.createServer(app);

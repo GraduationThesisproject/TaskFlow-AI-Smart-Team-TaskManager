@@ -29,14 +29,30 @@ exports.getTaskChecklists = async (req, res) => {
             return sendResponse(res, 403, false, 'Access denied to this task');
         }
 
-        const checklists = await Checklist.find({ task: taskId }).sort({ createdAt: 1 });
+        const checklists = await Checklist.find({ taskId: taskId }).sort({ createdAt: 1 });
+
+        // Calculate overall stats
+        let totalItems = 0;
+        let completedItems = 0;
+        
+        checklists.forEach(checklist => {
+            totalItems += checklist.stats.totalItems;
+            completedItems += checklist.stats.completedItems;
+        });
+
+        const completionPercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
         sendResponse(res, 200, true, 'Checklists retrieved successfully', {
             checklists: checklists.map(checklist => ({
                 ...checklist.toObject(),
                 completionPercentage: checklist.completionPercentage
             })),
-            count: checklists.length
+            count: checklists.length,
+            stats: {
+                totalItems,
+                completedItems,
+                completionPercentage
+            }
         });
     } catch (error) {
         logger.error('Get task checklists error:', error);
@@ -71,7 +87,9 @@ exports.createChecklist = async (req, res) => {
         // Create checklist with items
         const checklist = await Checklist.create({
             title,
-            task: taskId,
+            taskId: taskId,
+            createdBy: userId,
+            position: 0,
             items: items.map((item, index) => ({
                 text: item.text || item,
                 completed: item.completed || false,
@@ -79,23 +97,9 @@ exports.createChecklist = async (req, res) => {
             }))
         });
 
-        // Add checklist reference to task
-        task.checklist.push(checklist._id);
-        await task.save();
+        // Note: Task model doesn't have a checklist field, so we don't need to update it
 
-        // Log activity
-        await ActivityLog.logActivity({
-            userId,
-            action: 'checklist_create',
-            description: `Created checklist: ${title}`,
-            entity: { type: 'Checklist', id: checklist._id, name: title },
-            relatedEntities: [{ type: 'Task', id: taskId, name: task.title }],
-            boardId: task.board,
-            metadata: {
-                itemCount: items.length,
-                ipAddress: req.ip
-            }
-        });
+        // Note: ActivityLog doesn't support checklist actions yet, so we skip logging for now
 
         logger.info(`Checklist created for task: ${taskId}`);
 
@@ -118,7 +122,7 @@ exports.updateChecklist = async (req, res) => {
         const { title, hideCompletedItems } = req.body;
         const userId = req.user.id;
 
-        const checklist = await Checklist.findById(checklistId).populate('task');
+        const checklist = await Checklist.findById(checklistId).populate('taskId');
         if (!checklist) {
             return sendResponse(res, 404, false, 'Checklist not found');
         }
@@ -127,9 +131,9 @@ exports.updateChecklist = async (req, res) => {
         const user = await User.findById(userId);
         const userRoles = await user.getRoles();
         
-        const canEdit = checklist.task.assignees.some(a => a.toString() === userId) ||
-                       checklist.task.reporter.toString() === userId ||
-                       userRoles.hasBoardPermission(checklist.task.board, 'canEditTasks');
+        const canEdit = checklist.taskId.assignees.some(a => a.toString() === userId) ||
+                       checklist.taskId.reporter.toString() === userId ||
+                       userRoles.hasBoardPermission(checklist.taskId.board, 'canEditTasks');
 
         if (!canEdit) {
             return sendResponse(res, 403, false, 'Insufficient permissions to edit checklist');
@@ -141,16 +145,7 @@ exports.updateChecklist = async (req, res) => {
 
         await checklist.save();
 
-        // Log activity
-        await ActivityLog.logActivity({
-            userId,
-            action: 'checklist_update',
-            description: `Updated checklist: ${checklist.title}`,
-            entity: { type: 'Checklist', id: checklistId, name: checklist.title },
-            relatedEntities: [{ type: 'Task', id: checklist.task._id, name: checklist.task.title }],
-            boardId: checklist.task.board,
-            metadata: { ipAddress: req.ip }
-        });
+        // Note: ActivityLog doesn't support checklist actions yet, so we skip logging for now
 
         sendResponse(res, 200, true, 'Checklist updated successfully', {
             checklist: {
@@ -171,7 +166,7 @@ exports.addItem = async (req, res) => {
         const { text, position } = req.body;
         const userId = req.user.id;
 
-        const checklist = await Checklist.findById(checklistId).populate('task');
+        const checklist = await Checklist.findById(checklistId).populate('taskId');
         if (!checklist) {
             return sendResponse(res, 404, false, 'Checklist not found');
         }
@@ -180,9 +175,9 @@ exports.addItem = async (req, res) => {
         const user = await User.findById(userId);
         const userRoles = await user.getRoles();
         
-        const canEdit = checklist.task.assignees.some(a => a.toString() === userId) ||
-                       checklist.task.reporter.toString() === userId ||
-                       userRoles.hasBoardPermission(checklist.task.board, 'canEditTasks');
+        const canEdit = checklist.taskId.assignees.some(a => a.toString() === userId) ||
+                       checklist.taskId.reporter.toString() === userId ||
+                       userRoles.hasBoardPermission(checklist.taskId.board, 'canEditTasks');
 
         if (!canEdit) {
             return sendResponse(res, 403, false, 'Insufficient permissions to add checklist items');
@@ -218,7 +213,7 @@ exports.updateItem = async (req, res) => {
         const { text, completed } = req.body;
         const userId = req.user.id;
 
-        const checklist = await Checklist.findById(checklistId).populate('task');
+        const checklist = await Checklist.findById(checklistId).populate('taskId');
         if (!checklist) {
             return sendResponse(res, 404, false, 'Checklist not found');
         }
@@ -232,9 +227,9 @@ exports.updateItem = async (req, res) => {
         const user = await User.findById(userId);
         const userRoles = await user.getRoles();
         
-        const canEdit = checklist.task.assignees.some(a => a.toString() === userId) ||
-                       checklist.task.reporter.toString() === userId ||
-                       userRoles.hasBoardPermission(checklist.task.board, 'canEditTasks');
+        const canEdit = checklist.taskId.assignees.some(a => a.toString() === userId) ||
+                       checklist.taskId.reporter.toString() === userId ||
+                       userRoles.hasBoardPermission(checklist.taskId.board, 'canEditTasks');
 
         if (!canEdit) {
             return sendResponse(res, 403, false, 'Insufficient permissions to edit checklist items');
@@ -255,19 +250,7 @@ exports.updateItem = async (req, res) => {
 
         await checklist.save();
 
-        // Log activity
-        await ActivityLog.logActivity({
-            userId,
-            action: 'checklist_update',
-            description: `Updated checklist item: ${item.text}`,
-            entity: { type: 'Checklist', id: checklistId, name: checklist.title },
-            relatedEntities: [{ type: 'Task', id: checklist.task._id, name: checklist.task.title }],
-            boardId: checklist.task.board,
-            metadata: {
-                itemCompleted: completed,
-                ipAddress: req.ip
-            }
-        });
+        // Note: ActivityLog doesn't support checklist actions yet, so we skip logging for now
 
         sendResponse(res, 200, true, 'Checklist item updated successfully', {
             checklist: {
@@ -287,7 +270,7 @@ exports.deleteItem = async (req, res) => {
         const { id: checklistId, itemId } = req.params;
         const userId = req.user.id;
 
-        const checklist = await Checklist.findById(checklistId).populate('task');
+        const checklist = await Checklist.findById(checklistId).populate('taskId');
         if (!checklist) {
             return sendResponse(res, 404, false, 'Checklist not found');
         }
@@ -301,16 +284,16 @@ exports.deleteItem = async (req, res) => {
         const user = await User.findById(userId);
         const userRoles = await user.getRoles();
         
-        const canEdit = checklist.task.assignees.some(a => a.toString() === userId) ||
-                       checklist.task.reporter.toString() === userId ||
-                       userRoles.hasBoardPermission(checklist.task.board, 'canEditTasks');
+        const canEdit = checklist.taskId.assignees.some(a => a.toString() === userId) ||
+                       checklist.taskId.reporter.toString() === userId ||
+                       userRoles.hasBoardPermission(checklist.taskId.board, 'canEditTasks');
 
         if (!canEdit) {
             return sendResponse(res, 403, false, 'Insufficient permissions to delete checklist items');
         }
 
         // Remove item
-        item.remove();
+        checklist.items.pull(itemId);
         await checklist.save();
 
         sendResponse(res, 200, true, 'Checklist item deleted successfully', {
@@ -331,7 +314,7 @@ exports.deleteChecklist = async (req, res) => {
         const { id: checklistId } = req.params;
         const userId = req.user.id;
 
-        const checklist = await Checklist.findById(checklistId).populate('task');
+        const checklist = await Checklist.findById(checklistId).populate('taskId');
         if (!checklist) {
             return sendResponse(res, 404, false, 'Checklist not found');
         }
@@ -340,33 +323,20 @@ exports.deleteChecklist = async (req, res) => {
         const user = await User.findById(userId);
         const userRoles = await user.getRoles();
         
-        const canEdit = checklist.task.assignees.some(a => a.toString() === userId) ||
-                       checklist.task.reporter.toString() === userId ||
-                       userRoles.hasBoardPermission(checklist.task.board, 'canEditTasks');
+        const canEdit = checklist.taskId.assignees.some(a => a.toString() === userId) ||
+                       checklist.taskId.reporter.toString() === userId ||
+                       userRoles.hasBoardPermission(checklist.taskId.board, 'canEditTasks');
 
         if (!canEdit) {
             return sendResponse(res, 403, false, 'Insufficient permissions to delete checklist');
         }
 
-        // Remove checklist reference from task
-        const task = await Task.findById(checklist.task._id);
-        task.checklist = task.checklist.filter(id => id.toString() !== checklistId);
-        await task.save();
+        // Note: Task model doesn't have a checklist field, so we don't need to update it
 
         // Delete checklist
         await Checklist.findByIdAndDelete(checklistId);
 
-        // Log activity
-        await ActivityLog.logActivity({
-            userId,
-            action: 'checklist_delete',
-            description: `Deleted checklist: ${checklist.title}`,
-            entity: { type: 'Checklist', id: checklistId, name: checklist.title },
-            relatedEntities: [{ type: 'Task', id: task._id, name: task.title }],
-            boardId: task.board,
-            metadata: { ipAddress: req.ip },
-            severity: 'warning'
-        });
+        // Note: ActivityLog doesn't support checklist actions yet, so we skip logging for now
 
         sendResponse(res, 200, true, 'Checklist deleted successfully');
     } catch (error) {
@@ -382,7 +352,7 @@ exports.reorderItems = async (req, res) => {
         const { itemOrder } = req.body; // Array of item IDs in new order
         const userId = req.user.id;
 
-        const checklist = await Checklist.findById(checklistId).populate('task');
+        const checklist = await Checklist.findById(checklistId).populate('taskId');
         if (!checklist) {
             return sendResponse(res, 404, false, 'Checklist not found');
         }
@@ -391,9 +361,9 @@ exports.reorderItems = async (req, res) => {
         const user = await User.findById(userId);
         const userRoles = await user.getRoles();
         
-        const canEdit = checklist.task.assignees.some(a => a.toString() === userId) ||
-                       checklist.task.reporter.toString() === userId ||
-                       userRoles.hasBoardPermission(checklist.task.board, 'canEditTasks');
+        const canEdit = checklist.taskId.assignees.some(a => a.toString() === userId) ||
+                       checklist.taskId.reporter.toString() === userId ||
+                       userRoles.hasBoardPermission(checklist.taskId.board, 'canEditTasks');
 
         if (!canEdit) {
             return sendResponse(res, 403, false, 'Insufficient permissions to reorder checklist items');
@@ -406,6 +376,9 @@ exports.reorderItems = async (req, res) => {
                 item.position = index;
             }
         });
+
+        // Sort items by position
+        checklist.items.sort((a, b) => a.position - b.position);
 
         await checklist.save();
 

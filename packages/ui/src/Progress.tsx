@@ -70,7 +70,7 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
           <div
             className={cn(progressBarVariants({ variant }))}
             style={{
-              transform: `translateX(-${100 - percentage}%)`,
+              width: `${percentage}%`,
             }}
           />
         </div>

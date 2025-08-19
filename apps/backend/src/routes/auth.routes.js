@@ -2,7 +2,8 @@ const express = require('express');
 const authController = require('../controllers/auth.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { avatarUpload } = require('../middlewares/upload.middleware');
+const { uploadMiddlewares } = require('../middlewares/upload.middleware');
+const { rateLimitSensitiveOps } = require('../middlewares/permission.middleware');
 
 const router = express.Router();
 
@@ -112,12 +113,13 @@ router.put('/profile',
 
 router.post('/avatar',
     authMiddleware,
-    avatarUpload,
+    uploadMiddlewares.avatar,
     authController.updateProfile
 );
 
 router.put('/change-password',
     authMiddleware,
+    rateLimitSensitiveOps(5, 15 * 60 * 1000), // 5 requests per 15 minutes
     validateMiddleware(changePasswordSchema),
     authController.changePassword
 );

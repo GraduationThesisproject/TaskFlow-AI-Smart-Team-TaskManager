@@ -2,73 +2,345 @@ const nodemailer = require('nodemailer');
 const env = require('../config/env');
 const logger = require('../config/logger');
 
-// Email templates
+// Email templates with professional design
 const templates = {
     'welcome': {
-        subject: 'Welcome to TaskFlow!',
+        subject: 'Welcome to TaskFlow! 🚀',
         html: `
-            <h1>Welcome to TaskFlow, {{name}}!</h1>
-            <p>Thank you for joining TaskFlow. We're excited to help you manage your projects and tasks more efficiently.</p>
-            <p>Get started by creating your first project and inviting your team members.</p>
-            <p>If you have any questions, feel free to reach out to our support team.</p>
-            <br>
-            <p>Best regards,<br>The TaskFlow Team</p>
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Welcome to TaskFlow</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 600;">🎉 Welcome to TaskFlow!</h1>
+                        <p style="color: #e2e8f0; margin: 10px 0 0 0; font-size: 16px;">Your journey to better project management starts now</p>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div style="padding: 40px 30px;">
+                        <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hello {{name}},</h2>
+                        
+                        <p style="color: #475569; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                            Welcome to TaskFlow! We're thrilled to have you on board. TaskFlow is designed to help you and your team 
+                            manage projects more efficiently, collaborate seamlessly, and achieve your goals faster.
+                        </p>
+                        
+                        <div style="background-color: #f1f5f9; border-radius: 12px; padding: 24px; margin: 30px 0;">
+                            <h3 style="color: #1e293b; margin: 0 0 16px 0; font-size: 18px;">🚀 Get Started</h3>
+                            <ul style="color: #475569; line-height: 1.8; margin: 0; padding-left: 20px;">
+                                <li>Create your first project</li>
+                                <li>Invite team members</li>
+                                <li>Set up your first board</li>
+                                <li>Start organizing tasks</li>
+                            </ul>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 40px 0;">
+                            <a href="{{dashboardUrl}}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);">
+                                🎯 Go to Dashboard
+                            </a>
+                        </div>
+                        
+                        <p style="color: #64748b; line-height: 1.6; margin: 0 0 20px 0; font-size: 14px;">
+                            If you have any questions or need assistance, our support team is here to help. 
+                            Don't hesitate to reach out!
+                        </p>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                        <p style="color: #64748b; margin: 0 0 10px 0; font-size: 14px;">Best regards,</p>
+                        <p style="color: #1e293b; margin: 0; font-weight: 600; font-size: 16px;">The TaskFlow Team</p>
+                        <div style="margin-top: 20px;">
+                            <a href="{{supportUrl}}" style="color: #667eea; text-decoration: none; font-size: 14px;">📧 Support</a>
+                            <span style="color: #cbd5e1; margin: 0 10px;">•</span>
+                            <a href="{{docsUrl}}" style="color: #667eea; text-decoration: none; font-size: 14px;">📚 Documentation</a>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
         `
     },
     'password-reset': {
-        subject: 'Reset Your TaskFlow Password',
+        subject: '🔐 Reset Your TaskFlow Password',
         html: `
-            <h1>Password Reset Request</h1>
-            <p>Hi {{name}},</p>
-            <p>We received a request to reset your TaskFlow password.</p>
-            <p>Click the link below to reset your password:</p>
-            <a href="{{resetUrl}}" style="background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">Reset Password</a>
-            <p>This link will expire in 1 hour.</p>
-            <p>If you didn't request this reset, please ignore this email.</p>
-            <br>
-            <p>Best regards,<br>The TaskFlow Team</p>
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Password Reset</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🔐 Password Reset Request</h1>
+                        <p style="color: #fecaca; margin: 10px 0 0 0; font-size: 16px;">Secure your account</p>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div style="padding: 40px 30px;">
+                        <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hello {{name}},</h2>
+                        
+                        <p style="color: #475569; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                            We received a request to reset your TaskFlow password. If this was you, click the button below to create a new password.
+                        </p>
+                        
+                        <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 24px; margin: 30px 0;">
+                            <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                                <div style="background-color: #ef4444; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                                    <span style="color: #ffffff; font-size: 12px;">⚠️</span>
+                                </div>
+                                <h3 style="color: #991b1b; margin: 0; font-size: 16px;">Security Notice</h3>
+                            </div>
+                            <p style="color: #7f1d1d; margin: 0; font-size: 14px; line-height: 1.5;">
+                                This link will expire in <strong>1 hour</strong> for your security. If you didn't request this reset, 
+                                please ignore this email and your password will remain unchanged.
+                            </p>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 40px 0;">
+                            <a href="{{resetUrl}}" style="display: inline-block; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);">
+                                🔑 Reset Password
+                            </a>
+                        </div>
+                        
+                        <p style="color: #64748b; line-height: 1.6; margin: 0; font-size: 14px;">
+                            If the button doesn't work, copy and paste this link into your browser:<br>
+                            <a href="{{resetUrl}}" style="color: #667eea; word-break: break-all;">{{resetUrl}}</a>
+                        </p>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                        <p style="color: #64748b; margin: 0 0 10px 0; font-size: 14px;">Best regards,</p>
+                        <p style="color: #1e293b; margin: 0; font-weight: 600; font-size: 16px;">The TaskFlow Team</p>
+                        <p style="color: #94a3b8; margin: 10px 0 0 0; font-size: 12px;">This is an automated message, please do not reply.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
         `
     },
     'email-verification': {
-        subject: 'Verify Your TaskFlow Email',
+        subject: '✅ Verify Your TaskFlow Email',
         html: `
-            <h1>Verify Your Email Address</h1>
-            <p>Hi {{name}},</p>
-            <p>Please verify your email address by clicking the link below:</p>
-            <a href="{{verificationUrl}}" style="background-color: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">Verify Email</a>
-            <p>If you didn't create a TaskFlow account, please ignore this email.</p>
-            <br>
-            <p>Best regards,<br>The TaskFlow Team</p>
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Email Verification</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">✅ Verify Your Email</h1>
+                        <p style="color: #bbf7d0; margin: 10px 0 0 0; font-size: 16px;">One step away from getting started</p>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div style="padding: 40px 30px;">
+                        <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hello {{name}},</h2>
+                        
+                        <p style="color: #475569; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                            Thank you for creating your TaskFlow account! To complete your registration and start using our platform, 
+                            please verify your email address by clicking the button below.
+                        </p>
+                        
+                        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 24px; margin: 30px 0;">
+                            <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                                <div style="background-color: #10b981; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                                    <span style="color: #ffffff; font-size: 12px;">✓</span>
+                                </div>
+                                <h3 style="color: #166534; margin: 0; font-size: 16px;">Quick Verification</h3>
+                            </div>
+                            <p style="color: #166534; margin: 0; font-size: 14px; line-height: 1.5;">
+                                This verification ensures your account security and helps us provide you with the best experience.
+                            </p>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 40px 0;">
+                            <a href="{{verificationUrl}}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">
+                                ✅ Verify Email Address
+                            </a>
+                        </div>
+                        
+                        <p style="color: #64748b; line-height: 1.6; margin: 0; font-size: 14px;">
+                            If you didn't create a TaskFlow account, please ignore this email. 
+                            If the button doesn't work, copy and paste this link:<br>
+                            <a href="{{verificationUrl}}" style="color: #667eea; word-break: break-all;">{{verificationUrl}}</a>
+                        </p>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                        <p style="color: #64748b; margin: 0 0 10px 0; font-size: 14px;">Best regards,</p>
+                        <p style="color: #1e293b; margin: 0; font-weight: 600; font-size: 16px;">The TaskFlow Team</p>
+                    </div>
+                </div>
+            </body>
+            </html>
         `
     },
     'task-assigned': {
-        subject: 'New Task Assigned - {{taskTitle}}',
+        subject: '📋 New Task Assigned - {{taskTitle}}',
         html: `
-            <h1>New Task Assigned</h1>
-            <p>Hi {{name}},</p>
-            <p>You have been assigned a new task:</p>
-            <div style="border-left: 4px solid #3B82F6; padding: 16px; margin: 16px 0; background-color: #F8FAFC;">
-                <h3>{{taskTitle}}</h3>
-                <p>{{taskDescription}}</p>
-                <p><strong>Priority:</strong> {{priority}}</p>
-                {{#if dueDate}}<p><strong>Due Date:</strong> {{dueDate}}</p>{{/if}}
-            </div>
-            <a href="{{taskUrl}}" style="background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">View Task</a>
-            <br><br>
-            <p>Best regards,<br>The TaskFlow Team</p>
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>New Task Assigned</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">📋 New Task Assigned</h1>
+                        <p style="color: #bfdbfe; margin: 10px 0 0 0; font-size: 16px;">You have a new task to work on</p>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div style="padding: 40px 30px;">
+                        <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hello {{name}},</h2>
+                        
+                        <p style="color: #475569; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                            You have been assigned a new task. Here are the details:
+                        </p>
+                        
+                        <!-- Task Card -->
+                        <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin: 30px 0;">
+                            <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                                <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                    <span style="color: #ffffff; font-size: 18px;">📋</span>
+                                </div>
+                                <div>
+                                    <h3 style="color: #1e293b; margin: 0; font-size: 20px; font-weight: 600;">{{taskTitle}}</h3>
+                                    <p style="color: #64748b; margin: 5px 0 0 0; font-size: 14px;">Task ID: #{{taskId}}</p>
+                                </div>
+                            </div>
+                            
+                            <p style="color: #475569; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">{{taskDescription}}</p>
+                            
+                            <!-- Task Details -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
+                                <div style="background-color: #ffffff; border-radius: 8px; padding: 16px; border: 1px solid #e2e8f0;">
+                                    <p style="color: #64748b; margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; font-weight: 600;">Priority</p>
+                                    <p style="color: #1e293b; margin: 0; font-weight: 600; font-size: 14px;">{{priority}}</p>
+                                </div>
+                                {{#if dueDate}}
+                                <div style="background-color: #ffffff; border-radius: 8px; padding: 16px; border: 1px solid #e2e8f0;">
+                                    <p style="color: #64748b; margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; font-weight: 600;">Due Date</p>
+                                    <p style="color: #1e293b; margin: 0; font-weight: 600; font-size: 14px;">{{dueDate}}</p>
+                                </div>
+                                {{/if}}
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 40px 0;">
+                            <a href="{{taskUrl}}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);">
+                                👀 View Task Details
+                            </a>
+                        </div>
+                        
+                        <p style="color: #64748b; line-height: 1.6; margin: 0; font-size: 14px;">
+                            You can update the task status, add comments, or attach files directly from the task page.
+                        </p>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                        <p style="color: #64748b; margin: 0 0 10px 0; font-size: 14px;">Best regards,</p>
+                        <p style="color: #1e293b; margin: 0; font-weight: 600; font-size: 16px;">The TaskFlow Team</p>
+                    </div>
+                </div>
+            </body>
+            </html>
         `
     },
     'project-invitation': {
-        subject: 'You\'ve been invited to join {{projectName}}',
+        subject: '🤝 You\'ve been invited to join {{projectName}}',
         html: `
-            <h1>Project Invitation</h1>
-            <p>Hi {{name}},</p>
-            <p>{{inviterName}} has invited you to join the project "{{projectName}}" on TaskFlow.</p>
-            <p>{{#if projectDescription}}<em>{{projectDescription}}</em>{{/if}}</p>
-            <a href="{{invitationUrl}}" style="background-color: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">Accept Invitation</a>
-            <p>If you don't have a TaskFlow account yet, you'll be prompted to create one.</p>
-            <br>
-            <p>Best regards,<br>The TaskFlow Team</p>
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Project Invitation</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🤝 Project Invitation</h1>
+                        <p style="color: #ddd6fe; margin: 10px 0 0 0; font-size: 16px;">Join the team and start collaborating</p>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div style="padding: 40px 30px;">
+                        <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hello {{name}},</h2>
+                        
+                        <p style="color: #475569; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                            <strong>{{inviterName}}</strong> has invited you to join the project <strong>"{{projectName}}"</strong> on TaskFlow.
+                        </p>
+                        
+                        <!-- Project Card -->
+                        <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 1px solid #e9d5ff; border-radius: 16px; padding: 24px; margin: 30px 0;">
+                            <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                                <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                    <span style="color: #ffffff; font-size: 18px;">📁</span>
+                                </div>
+                                <div>
+                                    <h3 style="color: #1e293b; margin: 0; font-size: 20px; font-weight: 600;">{{projectName}}</h3>
+                                    <p style="color: #64748b; margin: 5px 0 0 0; font-size: 14px;">Invited by {{inviterName}}</p>
+                                </div>
+                            </div>
+                            
+                            {{#if projectDescription}}
+                            <p style="color: #475569; line-height: 1.6; margin: 0; font-size: 16px; font-style: italic;">{{projectDescription}}</p>
+                            {{/if}}
+                        </div>
+                        
+                        <div style="text-align: center; margin: 40px 0;">
+                            <a href="{{invitationUrl}}" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);">
+                                ✅ Accept Invitation
+                            </a>
+                        </div>
+                        
+                        <div style="background-color: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 20px; margin: 30px 0;">
+                            <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                                <span style="color: #0369a1; font-size: 16px; margin-right: 8px;">💡</span>
+                                <h4 style="color: #0369a1; margin: 0; font-size: 14px;">New to TaskFlow?</h4>
+                            </div>
+                            <p style="color: #0c4a6e; margin: 0; font-size: 14px; line-height: 1.5;">
+                                If you don't have a TaskFlow account yet, you'll be prompted to create one when you accept the invitation. 
+                                It only takes a minute to get started!
+                            </p>
+                        </div>
+                        
+                        <p style="color: #64748b; line-height: 1.6; margin: 0; font-size: 14px;">
+                            This invitation will expire in 7 days. If you have any questions, feel free to reach out to {{inviterName}}.
+                        </p>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                        <p style="color: #64748b; margin: 0 0 10px 0; font-size: 14px;">Best regards,</p>
+                        <p style="color: #1e293b; margin: 0; font-weight: 600; font-size: 16px;">The TaskFlow Team</p>
+                    </div>
+                </div>
+            </body>
+            </html>
         `
     }
 };

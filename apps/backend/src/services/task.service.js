@@ -6,7 +6,7 @@ const Analytics = require('../models/Analytics');
 class TaskService {
     // Get task statistics
     async getTaskStats(filters = {}) {
-        const matchStage = { archived: false, ...filters };
+        const matchStage = { archivedAt: null, ...filters };
 
         const stats = await Task.aggregate([
             { $match: matchStage },
@@ -52,7 +52,7 @@ class TaskService {
 
     // Get tasks with advanced filtering
     async getFilteredTasks(filters, userId) {
-        let query = { archived: false };
+        let query = { archivedAt: null };
 
         // Apply filters
         if (filters.boardId) query.board = filters.boardId;
@@ -68,37 +68,98 @@ class TaskService {
         }
         if (filters.overdue) {
             query.dueDate = { $lt: new Date() };
-            query.status = { $ne: 'completed' };
+            query.status = { $ne: 'done' };
         }
         if (filters.assignedToMe) {
             query.assignees = userId;
         }
+        
+        // Handle search query
+        if (filters.search) {
+            query.$or = [
+                { title: { $regex: filters.search, $options: 'i' } },
+                { description: { $regex: filters.search, $options: 'i' } }
+            ];
+        }
 
+        const sortOptions = this.getSortOptions(filters.sortBy, filters.sortOrder);
+        
+        // Handle custom priority sorting
+        if (sortOptions.priorityOrder) {
+            const priorityOrder = { 'critical': 4, 'high': 3, 'medium': 2, 'low': 1 };
+            const order = sortOptions.priorityOrder;
+            delete sortOptions.priorityOrder;
+            
+            const tasks = await Task.find(query)
+                .populate('assignees', 'name email avatar')
+                .populate('reporter', 'name email avatar')
+                .populate('board', 'name')
+                .populate('column', 'name color')
+                .sort(sortOptions)
+                .limit(parseInt(filters.limit) || 50);
+            
+            // Sort by priority manually
+            return tasks.sort((a, b) => {
+                const aPriority = priorityOrder[a.priority] || 0;
+                const bPriority = priorityOrder[b.priority] || 0;
+                return order === 1 ? aPriority - bPriority : bPriority - aPriority;
+            });
+        }
+        
         const tasks = await Task.find(query)
             .populate('assignees', 'name email avatar')
             .populate('reporter', 'name email avatar')
             .populate('board', 'name')
             .populate('column', 'name color')
-            .sort(this.getSortOptions(filters.sortBy))
+            .sort(sortOptions)
             .limit(parseInt(filters.limit) || 50);
 
         return tasks;
     }
 
     // Get sort options based on sort criteria
-    getSortOptions(sortBy) {
-        switch (sortBy) {
-            case 'dueDate':
-                return { dueDate: 1 };
-            case 'priority':
-                return { priority: -1, createdAt: -1 };
-            case 'updated':
-                return { updatedAt: -1 };
-            case 'created':
-                return { createdAt: -1 };
-            default:
-                return { position: 1, createdAt: -1 };
+    getSortOptions(sortBy, sortOrder) {
+        if (!sortBy) {
+            return { position: 1, createdAt: -1 };
         }
+
+        const sortFields = sortBy.split(',');
+        const sortOrders = sortOrder ? sortOrder.split(',') : [];
+        
+        const sortOptions = {};
+        
+        sortFields.forEach((field, index) => {
+            const order = sortOrders[index] === 'asc' ? 1 : -1;
+            
+            switch (field.trim()) {
+                case 'dueDate':
+                    sortOptions.dueDate = order;
+                    break;
+                case 'priority':
+                    // Use custom priority sorting
+                    sortOptions.priorityOrder = order;
+                    break;
+                case 'updated':
+                    sortOptions.updatedAt = order;
+                    break;
+                case 'created':
+                    sortOptions.createdAt = order;
+                    break;
+                case 'position':
+                    sortOptions.position = order;
+                    break;
+                default:
+                    sortOptions[field.trim()] = order;
+            }
+        });
+        
+        // Add default sort if no valid fields
+        if (Object.keys(sortOptions).length === 0) {
+            sortOptions.position = 1;
+            sortOptions.createdAt = -1;
+        }
+        
+        return sortOptions;
     }
 
     // Assign task to users
@@ -126,22 +187,22 @@ class TaskService {
                 recipient: assigneeId,
                 sender: assignedBy,
                 relatedEntity: {
-                    entityType: 'Task',
+                    entityType: 'task',
                     entityId: taskId
                 }
             });
         }
 
         // Log analytics
-        await Analytics.create({
-            project: task.project,
-            user: assignedBy,
-            type: 'task_updated',
-            metadata: {
-                taskId,
-                assigneeCount: assigneeIds.length
-            }
-        });
+        // await Analytics.create({
+        //     scopeType: 'space',
+        //     scopeId: task.space,
+        //     kind: 'task_updated',
+        //     data: {
+        //         taskId,
+        //         assigneeCount: assigneeIds.length
+        //     }
+        // });
 
         return task;
     }
@@ -172,7 +233,7 @@ class TaskService {
                         recipient: recipientId,
                         sender: userId,
                         relatedEntity: {
-                            entityType: 'Task',
+                            entityType: 'task',
                             entityId: taskId
                         }
                     });
@@ -185,16 +246,16 @@ class TaskService {
         await task.save();
 
         // Log analytics
-        await Analytics.create({
-            project: task.project,
-            user: userId,
-            type: 'task_updated',
-            metadata: {
-                taskId,
-                previousStatus,
-                newStatus
-            }
-        });
+        // await Analytics.create({
+        //     scopeType: 'space',
+        //     scopeId: task.space,
+        //     kind: 'task_updated',
+        //     data: {
+        //         taskId,
+        //         previousStatus,
+        //         newStatus
+        //     }
+        // });
 
         return task;
     }
@@ -205,7 +266,7 @@ class TaskService {
             content,
             task: taskId,
             author: authorId,
-            mentions
+            mentions: mentions.map(userId => ({ user: userId, mentionedAt: new Date() }))
         });
 
         // Notify mentioned users
@@ -213,11 +274,11 @@ class TaskService {
             await Notification.create({
                 title: 'You were mentioned',
                 message: `You were mentioned in a comment on task`,
-                type: 'mention',
+                type: 'comment_mentioned',
                 recipient: mentionId,
                 sender: authorId,
                 relatedEntity: {
-                    entityType: 'Comment',
+                    entityType: 'comment',
                     entityId: comment._id
                 }
             });
@@ -236,7 +297,7 @@ class TaskService {
                 recipient: recipientId,
                 sender: authorId,
                 relatedEntity: {
-                    entityType: 'Task',
+                    entityType: 'task',
                     entityId: taskId
                 }
             });
@@ -288,8 +349,8 @@ class TaskService {
         const overdueTasks = await Task.find({
             assignees: userId,
             dueDate: { $lt: new Date() },
-            status: { $ne: 'completed' },
-            archived: false
+            status: { $ne: 'done' },
+            archivedAt: null
         })
         .populate('board', 'name')
         .sort({ dueDate: 1 });
@@ -306,34 +367,45 @@ class TaskService {
         const highPriorityTasks = await Task.find({
             assignees: userId,
             priority: 'high',
-            status: { $in: ['todo', 'in-progress'] },
-            archived: false
+            status: { $in: ['todo', 'in_progress'] },
+            archivedAt: null
         }).limit(3);
 
         // Get tasks due soon
         const tasksDueSoon = await Task.find({
             assignees: userId,
             dueDate: { $gte: now, $lte: tomorrow },
-            status: { $ne: 'completed' },
-            archived: false
+            status: { $ne: 'done' },
+            archivedAt: null
         }).limit(2);
 
-        const recommendations = [
-            ...highPriorityTasks.map(task => ({
-                task,
-                reason: 'High priority task',
-                score: 10
-            })),
-            ...tasksDueSoon.map(task => ({
-                task,
-                reason: 'Due soon',
-                score: 8
-            }))
-        ];
+        const recommendations = {
+            suggestedTasks: [
+                ...highPriorityTasks.map(task => ({
+                    task,
+                    reason: 'High priority task',
+                    score: 10
+                })),
+                ...tasksDueSoon.map(task => ({
+                    task,
+                    reason: 'Due soon',
+                    score: 8
+                }))
+            ],
+            optimizations: [
+                'Consider grouping similar tasks together',
+                'Prioritize tasks with approaching deadlines',
+                'Break down large tasks into smaller subtasks'
+            ],
+            patterns: {
+                highPriorityCount: highPriorityTasks.length,
+                dueSoonCount: tasksDueSoon.length,
+                totalRecommendations: highPriorityTasks.length + tasksDueSoon.length
+            },
+            personalized: true
+        };
 
-        return recommendations
-            .sort((a, b) => b.score - a.score)
-            .slice(0, limit);
+        return recommendations;
     }
 
     // Bulk update tasks
@@ -345,11 +417,19 @@ class TaskService {
         }
 
         const updatedTasks = [];
+        const updatesToApply = { ...updates };
 
         for (const task of tasks) {
-            Object.assign(task, updates);
+            // Handle column change separately
+            if (updatesToApply.columnId) {
+                task.column = updatesToApply.columnId;
+                delete updatesToApply.columnId;
+            }
             
-            if (updates.status === 'completed' && task.status !== 'completed') {
+            // Apply other updates
+            Object.assign(task, updatesToApply);
+            
+            if (updatesToApply.status === 'done' && task.status !== 'done') {
                 task.completedAt = new Date();
             }
 
@@ -357,15 +437,15 @@ class TaskService {
             updatedTasks.push(task);
 
             // Log analytics for each task
-            await Analytics.create({
-                project: task.project,
-                user: userId,
-                type: 'task_updated',
-                metadata: {
-                    taskId: task._id,
-                    bulkUpdate: true
-                }
-            });
+            // await Analytics.create({
+            //     space: task.space,
+            //     user: userId,
+            //     type: 'task_updated',
+            //     metadata: {
+            //         taskId: task._id,
+            //         bulkUpdate: true
+            //     }
+            // });
         }
 
         return updatedTasks;
