@@ -1,5 +1,7 @@
 import React from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../store';
+import { logoutAdmin, getCurrentAdmin } from '../store/slices/adminSlice';
 import { Button, Typography, Avatar, Dropdown } from '@taskflow/ui';
 import { ThemeToggle } from '@taskflow/theme/ThemeProvider';
 import { 
@@ -74,10 +76,31 @@ const navigationItems: NavigationItem[] = [
 const AdminLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { currentAdmin, isAuthenticated, isLoading } = useAppSelector(state => state.admin);
 
-  const handleLogout = () => {
-    // TODO: Implement logout logic
-    navigate('/login');
+  // Check authentication on mount
+  React.useEffect(() => {
+    if (!isAuthenticated && !isLoading) {
+      const token = localStorage.getItem('adminToken');
+      if (token) {
+        dispatch(getCurrentAdmin());
+      } else {
+        navigate('/login');
+      }
+    }
+  }, [dispatch, isAuthenticated, isLoading, navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutAdmin()).unwrap();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Force logout by clearing local state
+      localStorage.removeItem('adminToken');
+      navigate('/login');
+    }
   };
 
   const userMenuItems = [
@@ -85,6 +108,25 @@ const AdminLayout: React.FC = () => {
     { label: 'Settings', action: () => console.log('Settings') },
     { label: 'Logout', action: handleLogout }
   ];
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <Typography variant="body-medium" className="text-muted-foreground">
+            Loading...
+          </Typography>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return null; // Will redirect in useEffect
+  }
 
   return (
     <div className="flex h-screen bg-background">
@@ -160,14 +202,20 @@ const AdminLayout: React.FC = () => {
               trigger={
                 <button className="flex items-center space-x-2 hover:bg-muted p-2 rounded-lg transition-colors">
                   <Avatar size="sm" className="bg-primary text-primary-foreground">
-                    <span className="text-sm font-medium">A</span>
+                    {currentAdmin?.avatar ? (
+                      <img src={currentAdmin.avatar} alt={currentAdmin.name || 'Admin'} />
+                    ) : (
+                      <span className="text-sm font-medium">
+                        {currentAdmin?.name?.charAt(0).toUpperCase() || 'A'}
+                      </span>
+                    )}
                   </Avatar>
                   <div className="text-left">
                     <Typography variant="body-medium" className="text-foreground">
-                      Admin User
+                      {currentAdmin?.name || 'Admin User'}
                     </Typography>
                     <Typography variant="body-small" className="text-muted-foreground">
-                      Super Admin
+                      {currentAdmin?.role === 'superadmin' ? 'Super Admin' : 'Admin'}
                     </Typography>
                   </div>
                 </button>

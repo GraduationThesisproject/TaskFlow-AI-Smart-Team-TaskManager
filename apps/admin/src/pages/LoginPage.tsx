@@ -1,17 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../store';
+import { loginAdmin, clearError } from '../store/slices/adminSlice';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Typography } from '@taskflow/ui';
 import { ThemeToggle } from '@taskflow/theme/ThemeProvider';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { isLoading, error, isAuthenticated } = useAppSelector(state => state.admin);
+  
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -19,25 +30,22 @@ const LoginPage: React.FC = () => {
       ...prev,
       [name]: value
     }));
+    
+    // Clear error when user starts typing
+    if (error) {
+      dispatch(clearError());
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
     try {
-      // TODO: Implement actual login logic with Redux
-      console.log('Login attempt:', formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Navigate to dashboard on success
-      navigate('/dashboard');
+      await dispatch(loginAdmin(formData)).unwrap();
+      // Navigation will be handled by useEffect when isAuthenticated changes
     } catch (error) {
+      // Error is already handled by the Redux slice
       console.error('Login failed:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -79,6 +87,7 @@ const LoginPage: React.FC = () => {
                   onChange={handleInputChange}
                   required
                   className="w-full"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -96,11 +105,13 @@ const LoginPage: React.FC = () => {
                     onChange={handleInputChange}
                     required
                     className="w-full pr-10"
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                    disabled={isLoading}
                   >
                     {showPassword ? (
                       <EyeSlashIcon className="w-5 h-5" />
@@ -110,6 +121,15 @@ const LoginPage: React.FC = () => {
                   </button>
                 </div>
               </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="p-3 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <Typography variant="body-small" className="text-red-600 dark:text-red-400">
+                    {error}
+                  </Typography>
+                </div>
+              )}
 
               <Button
                 type="submit"

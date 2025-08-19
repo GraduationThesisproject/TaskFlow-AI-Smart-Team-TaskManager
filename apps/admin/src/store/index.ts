@@ -2,15 +2,17 @@ import { configureStore } from '@reduxjs/toolkit';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 
 // Import reducers here
-// import adminReducer from './slices/adminSlice';
-// import userManagementReducer from './slices/userManagementSlice';
-// import analyticsReducer from './slices/analyticsSlice';
+import adminReducer from './slices/adminSlice';
+import userManagementReducer from './slices/userManagementSlice';
+import analyticsReducer from './slices/analyticsSlice';
+import templatesReducer from './slices/templatesSlice';
 
 export const store = configureStore({
   reducer: {
-    // admin: adminReducer,
-    // userManagement: userManagementReducer,
-    // analytics: analyticsReducer,
+    admin: adminReducer,
+    userManagement: userManagementReducer,
+    analytics: analyticsReducer,
+    templates: templatesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
