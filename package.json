@@ -13,7 +13,6 @@
     "postinstall": "npm run build:packages",
     "build": "turbo run build",
     "build:packages": "turbo run build --filter=./packages/*",
-    
     "dev": "npm run dev:all",
     "dev:all": "concurrently -k -p \"[{name}]\" -n \"Backend,Main,Admin,Mobile\" -c \"red,blue,green,magenta\" \"npm run dev:backend\" \"npm run dev:main\" \"npm run dev:admin\" \"npm run dev:mobile\"",
     "dev:web": "concurrently -k -p \"[{name}]\" -n \"Backend,Main,Admin\" -c \"red,blue,green\" \"npm run dev:backend\" \"npm run dev:main\" \"npm run dev:admin\"",
@@ -21,14 +20,12 @@
     "dev:main": "cd apps/main && npm run dev",
     "dev:admin": "cd apps/admin && npm run dev",
     "dev:mobile": "cd apps/mobile && npm start",
-    
     "start": "npm run dev:all",
     "start:web": "npm run dev:web",
     "start:backend": "cd apps/backend && npm start",
     "start:production": "concurrently -k -p \"[{name}]\" -n \"Backend,Main,Admin\" -c \"red,blue,green\" \"npm run start:backend\" \"npm run serve:main\" \"npm run serve:admin\"",
     "serve:main": "cd apps/main && npm run preview",
     "serve:admin": "cd apps/admin && npm run preview",
-    
     "lint": "echo 'Linting temporarily disabled - run individual app lint commands'",
     "lint:fix": "turbo run lint -- --fix",
     "clean": "turbo run clean && npm run clean:node_modules",
@@ -39,10 +36,8 @@
     "type-check": "turbo run type-check",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    
     "seed": "cd apps/backend && npm run seed",
     "seed:partial": "cd apps/backend && npm run seed:partial",
-    
     "show:ports": "echo \"Backend: http://localhost:3001\" && echo \"Main App: http://localhost:5173\" && echo \"Admin Panel: http://localhost:5175\" && echo \"Mobile: Expo DevTools (port 19000)\"",
     "show:status": "echo \"TaskFlow AI Development Environment\" && echo \"===============================\" && npm run show:ports",
     "dev:all:win": "concurrently -k -p \"[{name}]\" -n \"Backend,Main,Admin,Mobile\" -c \"red,blue,green,magenta\" \"npm run dev:backend\" \"npm run dev:main\" \"npm run dev:admin\" \"npm run dev:mobile\"",
@@ -66,5 +61,9 @@
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
   },
-  "packageManager": "npm@9.0.0"
+  "packageManager": "npm@9.0.0",
+  "dependencies": {
+    "mongoose": "^8.17.2",
+    "nodemon": "^3.1.10"
+  }
 }
