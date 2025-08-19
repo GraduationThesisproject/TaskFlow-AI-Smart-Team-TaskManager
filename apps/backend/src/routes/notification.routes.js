@@ -41,7 +41,7 @@ router.post('/',
 );
 
 router.patch('/:id/read', notificationController.markAsRead);
-router.patch('/mark-all-read', notificationController.markAllAsRead);
+router.post('/mark-all-read', notificationController.markAllAsRead);
 
 router.patch('/bulk-read',
     validateMiddleware(bulkMarkReadSchema),
@@ -49,7 +49,7 @@ router.patch('/bulk-read',
 );
 
 router.delete('/:id', notificationController.deleteNotification);
-router.delete('/read/cleanup', notificationController.deleteReadNotifications);
+router.post('/clear-read', notificationController.deleteReadNotifications);
 
 router.put('/preferences',
     validateMiddleware(updatePreferencesSchema),

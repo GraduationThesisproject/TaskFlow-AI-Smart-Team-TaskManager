@@ -159,7 +159,6 @@ class AuthService {
             },
             roles: {
                 workspaces: roles.workspaces.length,
-                projects: roles.projects.length,
                 spaces: roles.spaces.length
             },
             stats
@@ -169,17 +168,17 @@ class AuthService {
     // Get user statistics
     async getUserStats(userId) {
         const Task = require('../models/Task');
-        const Project = require('../models/Project');
+        const Space = require('../models/Space');
 
         const [
             totalTasks,
             completedTasks,
-            totalProjects,
+            totalSpaces,
             tasksThisWeek
         ] = await Promise.all([
             Task.countDocuments({ assignees: userId }),
             Task.countDocuments({ assignees: userId, status: 'completed' }),
-            Project.countDocuments({ 
+            Space.countDocuments({ 
                 $or: [
                     { owner: userId },
                     { 'members.user': userId }
@@ -194,7 +193,7 @@ class AuthService {
         return {
             totalTasks,
             completedTasks,
-            totalProjects,
+            totalSpaces,
             tasksThisWeek,
             completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
         };

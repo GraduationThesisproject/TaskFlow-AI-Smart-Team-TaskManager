@@ -1,12 +1,48 @@
+const jwt = require('../utils/jwt');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const logger = require('../config/logger');
 
+// Socket authentication middleware
+const authenticateSocket = async (socket, next) => {
+    try {
+        const token = socket.handshake.auth.token || socket.handshake.query.token;
+        
+        if (!token) {
+            return next(new Error('Authentication required'));
+        }
+
+        const decoded = jwt.verifyToken(token);
+        const user = await User.findById(decoded.id);
+        
+        if (!user) {
+            return next(new Error('User not found'));
+        }
+
+        socket.userId = user._id.toString();
+        socket.user = {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar
+        };
+
+        logger.info(`Socket authenticated: ${user.email}`);
+        next();
+        
+    } catch (error) {
+        logger.error('Socket authentication error:', error);
+        next(new Error('Authentication failed'));
+    }
+};
+
 // Handle notification socket events
 const handleNotificationSocket = (io) => {
+    // Apply authentication middleware
+    io.use(authenticateSocket);
     
     io.on('connection', (socket) => {
-        if (!socket.user) return;
+        logger.info(`User connected: ${socket.user.name} (${socket.id})`);
 
         // Join user's personal notification room
         socket.join(`notifications:${socket.userId}`);

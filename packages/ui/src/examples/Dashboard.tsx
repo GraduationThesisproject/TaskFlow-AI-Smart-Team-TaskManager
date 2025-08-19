@@ -1,25 +1,4 @@
-import React from 'react';
-import {
-  Button,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-  Typography,
-  Badge,
-  Progress,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-  Container,
-  Grid,
-  Flex,
-  Stack,
-  getInitials,
-  getAvatarColor,
-} from '../index';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Typography, Badge, Progress, Avatar, AvatarFallback, Container, Grid, Flex, Stack, getInitials, getAvatarColor } from '../index';
 
 // Example usage of the design system components
 export function DashboardExample() {
@@ -56,17 +35,15 @@ export function DashboardExample() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Container size="7xl" className="py-8">
-        {/* Header */}
         <div className="mb-8">
           <Typography variant="heading-xl" className="mb-2">
             Finance Dashboard
           </Typography>
-          <Typography variant="body-large" color="muted">
+          <Typography variant="body-large" textColor="muted">
             Manage your tasks and track progress across all projects
           </Typography>
         </div>
 
-        {/* Action Bar */}
         <Flex justify="between" align="center" className="mb-6">
           <Flex align="center" gap="sm">
             <Button variant="default" size="default">
@@ -76,12 +53,11 @@ export function DashboardExample() {
               Filter
             </Button>
           </Flex>
-          <Typography variant="body-medium" color="muted">
+          <Typography variant="body-medium" textColor="muted">
             {tasks.length} tasks
           </Typography>
         </Flex>
 
-        {/* Task Cards Grid */}
         <Grid cols={3} gap="md">
           {tasks.map((task) => (
             <Card key={task.id} variant="default" className="hover:shadow-lg transition-shadow">
@@ -95,18 +71,18 @@ export function DashboardExample() {
                   </Badge>
                 </div>
                 <CardTitle className="mt-3">{task.title}</CardTitle>
-                <CardDescription>Due: {task.dueDate}</CardDescription>
+                <CardDescription>
+                  Due: {task.dueDate}
+                </CardDescription>
               </CardHeader>
-
               <CardContent>
                 <Stack spacing="md">
-                  {/* Progress */}
                   <div>
                     <Flex justify="between" align="center" className="mb-2">
-                      <Typography variant="small" color="muted">
+                      <Typography variant="small" textColor="muted">
                         Progress
                       </Typography>
-                      <Typography variant="small" color="muted">
+                      <Typography variant="small" textColor="muted">
                         {task.progress}%
                       </Typography>
                     </Flex>
@@ -116,25 +92,20 @@ export function DashboardExample() {
                       className="h-2"
                     />
                   </div>
-
-                  {/* Assignees */}
                   <div>
-                    <Typography variant="small" color="muted" className="mb-2">
+                    <Typography variant="small" textColor="muted" className="mb-2">
                       Assignees
                     </Typography>
                     <Flex align="center" gap="xs">
                       {task.assignees.slice(0, 3).map((assignee, index) => (
                         <Avatar key={index} size="sm">
-                          <AvatarFallback 
-                            variant={getAvatarColor(assignee)} 
-                            size="sm"
-                          >
+                          <AvatarFallback variant={getAvatarColor(assignee)} size="sm">
                             {getInitials(assignee)}
                           </AvatarFallback>
                         </Avatar>
                       ))}
                       {task.assignees.length > 3 && (
-                        <Typography variant="small" color="muted">
+                        <Typography variant="small" textColor="muted">
                           +{task.assignees.length - 3} more
                         </Typography>
                       )}
@@ -142,7 +113,6 @@ export function DashboardExample() {
                   </div>
                 </Stack>
               </CardContent>
-
               <CardFooter>
                 <Flex gap="sm" className="w-full">
                   <Button variant="ghost" size="sm" className="flex-1">
@@ -157,14 +127,12 @@ export function DashboardExample() {
           ))}
         </Grid>
 
-        {/* Example of Gradient Button */}
         <div className="mt-8 text-center">
           <Button variant="gradient" size="lg">
             Create New Project
           </Button>
         </div>
 
-        {/* Typography Examples */}
         <Card className="mt-8" padding="default">
           <CardHeader>
             <CardTitle>Typography Scale</CardTitle>
@@ -176,41 +144,37 @@ export function DashboardExample() {
             <Stack spacing="lg">
               <div>
                 <Typography variant="heading-xl">Heading XL</Typography>
-                <Typography variant="caption" color="muted">
+                <Typography variant="caption" textColor="muted">
                   Inter Bold, 36px, font-bold text-36
                 </Typography>
               </div>
-              
               <div>
                 <Typography variant="heading-large">Heading Large</Typography>
-                <Typography variant="caption" color="muted">
+                <Typography variant="caption" textColor="muted">
                   Inter Bold, 20px, font-bold text-20
                 </Typography>
               </div>
-              
               <div>
                 <Typography variant="body-large">
                   This is a large body text example that shows how the 18px Inter Regular looks in context with other typography elements.
                 </Typography>
-                <Typography variant="caption" color="muted">
+                <Typography variant="caption" textColor="muted">
                   Inter Regular, 18px, text-18
                 </Typography>
               </div>
-              
               <div>
                 <Typography variant="body-medium">
                   This is medium body text at 16px Inter Regular, commonly used for standard paragraph content.
                 </Typography>
-                <Typography variant="caption" color="muted">
+                <Typography variant="caption" textColor="muted">
                   Inter Regular, 16px, text-16
                 </Typography>
               </div>
-              
               <div>
                 <Typography variant="body-small">
                   Small body text at 14px Inter Regular for captions, labels, and secondary information.
                 </Typography>
-                <Typography variant="caption" color="muted">
+                <Typography variant="caption" textColor="muted">
                   Inter Regular, 14px, text-14
                 </Typography>
               </div>

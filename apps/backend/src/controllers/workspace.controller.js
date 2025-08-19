@@ -48,22 +48,15 @@ exports.getWorkspace = async (req, res) => {
         const { id: workspaceId } = req.params;
         const userId = req.user.id;
 
-        // Check access
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        if (!userRoles.hasWorkspaceRole(workspaceId)) {
-            return sendResponse(res, 403, false, 'Access denied to this workspace');
-        }
-
+        // Workspace existence and access are already checked by middleware
         const workspace = await Workspace.findById(workspaceId)
             .populate('owner', 'name email avatar')
             .populate('members.user', 'name email avatar')
             .populate('spaces');
 
-        if (!workspace) {
-            return sendResponse(res, 404, false, 'Workspace not found');
-        }
+        // Get user's role and permissions
+        const user = await User.findById(userId);
+        const userRoles = await user.getRoles();
 
         // Get user's role and permissions
         const userWorkspaceRole = userRoles.workspaces.find(ws => 
@@ -107,8 +100,6 @@ exports.createWorkspace = async (req, res) => {
         const user = await User.findById(userId);
         const userRoles = await user.getRoles();
         await userRoles.addWorkspaceRole(workspace._id, 'owner');
-
-        await workspace.populate('owner', 'name email avatar');
 
         // Log activity
         await ActivityLog.logActivity({
@@ -241,7 +232,8 @@ exports.inviteMember = async (req, res) => {
         }
 
         // Create invitation
-        const invitation = await Invitation.create({
+        const crypto = require('crypto');
+        const invitation = new Invitation({
             type: 'workspace',
             invitedBy: userId,
             invitedUser: {
@@ -254,8 +246,13 @@ exports.inviteMember = async (req, res) => {
                 name: workspace.name
             },
             role,
-            message
+            message,
+            token: crypto.randomBytes(32).toString('hex')
         });
+        await invitation.save();
+        
+        // Debug logging
+        logger.info(`Invitation created - id: ${invitation._id}, token: ${invitation.token}, targetEntity: ${JSON.stringify(invitation.targetEntity)}`);
 
         // Send invitation email
         await sendEmail({
@@ -286,7 +283,7 @@ exports.inviteMember = async (req, res) => {
             }
         });
 
-        sendResponse(res, 200, true, 'Invitation sent successfully', {
+        sendResponse(res, 201, true, 'Invitation sent successfully', {
             invitation: {
                 email,
                 role,

@@ -1,57 +1,71 @@
 const Analytics = require('../models/Analytics');
-const Project = require('../models/Project');
+const Space = require('../models/Space');
 const Task = require('../models/Task');
 const User = require('../models/User');
 const ActivityLog = require('../models/ActivityLog');
 const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
 
-// Get project analytics
-exports.getProjectAnalytics = async (req, res) => {
+// Get space analytics
+exports.getSpaceAnalytics = async (req, res) => {
     try {
-        const { projectId } = req.params;
+        const { spaceId } = req.params;
         const { period = 'monthly', startDate, endDate } = req.query;
         const userId = req.user.id;
 
-        // Check project access
+        // Check space access
         const user = await User.findById(userId);
         const userRoles = await user.getRoles();
         
-        if (!userRoles.hasProjectRole(projectId)) {
-            return sendResponse(res, 403, false, 'Access denied to this project');
+        if (!userRoles.hasSpaceRole(spaceId)) {
+            return sendResponse(res, 403, false, 'Access denied to this space');
         }
 
+        const analyticsService = require('../services/analytics.service');
+        
         let analytics;
         
         if (startDate && endDate) {
-            analytics = await Analytics.findByDateRange(
-                projectId, 
-                new Date(startDate), 
-                new Date(endDate)
-            );
+            analytics = await analyticsService.generateSpaceAnalytics(spaceId, {
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+                periodType: period,
+                includeAI: false
+            });
         } else {
-            analytics = await Analytics.findByProject(projectId, period);
+            analytics = await analyticsService.generateSpaceAnalytics(spaceId, {
+                periodType: period,
+                includeAI: false
+            });
         }
 
-        // Get latest analytics if available
-        const latestAnalytics = await Analytics.findLatest(projectId);
+        const normalizedAnalytics = {
+            ...analytics,
+            taskMetrics: {
+                ...(analytics.taskMetrics || {}),
+                total: analytics.taskMetrics?.totalTasks,
+                completed: analytics.taskMetrics?.completedTasks,
+                inProgress: analytics.taskMetrics?.inProgressTasks,
+                overdue: analytics.taskMetrics?.overdueTasks,
+                completionRate: analytics.taskMetrics?.completionRate ? parseFloat(analytics.taskMetrics.completionRate) : 0
+            }
+        };
 
-        sendResponse(res, 200, true, 'Project analytics retrieved successfully', {
-            analytics,
-            latest: latestAnalytics,
+        sendResponse(res, 200, true, 'Space analytics retrieved successfully', {
+            analytics: normalizedAnalytics,
             period,
-            count: analytics.length
+            count: 1
         });
     } catch (error) {
-        logger.error('Get project analytics error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving project analytics');
+        logger.error('Get space analytics error:', error);
+        sendResponse(res, 500, false, 'Server error retrieving space analytics');
     }
 };
 
-// Generate analytics for project
-exports.generateProjectAnalytics = async (req, res) => {
+// Generate analytics for space
+exports.generateSpaceAnalytics = async (req, res) => {
     try {
-        const { projectId } = req.params;
+        const { spaceId } = req.params;
         const { 
             periodType = 'monthly', 
             startDate, 
@@ -60,17 +74,17 @@ exports.generateProjectAnalytics = async (req, res) => {
         } = req.body;
         const userId = req.user.id;
 
-        // Check project access
+        // Check space access
         const user = await User.findById(userId);
         const userRoles = await user.getRoles();
         
-        if (!userRoles.hasProjectRole(projectId, 'member')) {
-            return sendResponse(res, 403, false, 'Access denied to this project');
+        if (!userRoles.hasSpaceRole(spaceId, 'member')) {
+            return sendResponse(res, 403, false, 'Access denied to this space');
         }
 
-        const project = await Project.findById(projectId);
-        if (!project) {
-            return sendResponse(res, 404, false, 'Project not found');
+        const space = await Space.findById(spaceId);
+        if (!space) {
+            return sendResponse(res, 404, false, 'Space not found');
         }
 
         // Set date range
@@ -81,77 +95,61 @@ exports.generateProjectAnalytics = async (req, res) => {
         const calculationStart = Date.now();
 
         // Generate comprehensive analytics
-        const analytics = await analyticsService.generateProjectAnalytics(projectId, {
+        const analytics = await analyticsService.generateSpaceAnalytics(spaceId, {
             startDate: start,
             endDate: end,
             periodType,
             includeAI
         });
 
-        const calculationDuration = Date.now() - calculationStart;
+        const calculationTime = Date.now() - calculationStart;
 
-        // Save analytics to database
+        // Create analytics record
         const analyticsRecord = await Analytics.create({
-            project: projectId,
+            scopeType: 'space',
+            scopeId: spaceId,
+            kind: 'custom',
+            data: analytics,
             period: {
-                startDate: start,
-                endDate: end,
-                type: periodType
+                start: start,
+                end: end
             },
-            ...analytics,
-            calculationDuration,
-            isCalculated: true
+            calculatedAt: new Date(),
+            calculationTime
         });
-
-        await analyticsRecord.markAsCalculated(calculationDuration);
 
         // Log activity
-        await ActivityLog.logActivity({
+        await ActivityLog.create({
             userId,
-            action: 'analytics_generate',
-            description: `Generated analytics for project: ${project.name}`,
-            entity: { type: 'Analytics', id: analyticsRecord._id, name: 'Project Analytics' },
-            relatedEntities: [{ type: 'Project', id: projectId, name: project.name }],
-            projectId,
+            action: 'analytics_generated',
+            entityType: 'Analytics',
+            entityId: analyticsRecord._id,
+            description: `Generated analytics for space: ${space.name}`,
             metadata: {
+                spaceId,
                 periodType,
-                calculationDuration,
-                includeAI,
-                ipAddress: req.ip
-            }
+                calculationTime,
+                includeAI
+            },
+            relatedEntities: [
+                { type: 'Space', id: spaceId, name: space.name }
+            ]
         });
 
-        logger.info(`Analytics generated for project: ${projectId}`);
-
-        sendResponse(res, 200, true, 'Project analytics generated successfully', {
+        sendResponse(res, 201, true, 'Space analytics generated successfully', {
             analytics: {
-                ...analyticsRecord.toObject(),
-                projectHealth: analyticsRecord.projectHealth,
-                trendIndicators: analyticsRecord.trendIndicators
+                ...analytics,
+                id: analyticsRecord._id,
+                calculationTime
+            },
+            space: {
+                id: space._id,
+                name: space.name
             }
         });
     } catch (error) {
-        logger.error('Generate project analytics error:', error);
-        sendResponse(res, 500, false, 'Server error generating project analytics');
-    }
-};
-
-// Get user analytics
-exports.getUserAnalytics = async (req, res) => {
-    try {
-        const { timeframe = '30d' } = req.query;
-        const userId = req.user.id;
-
-        const analyticsService = require('../services/analytics.service');
-        const userAnalytics = await analyticsService.getUserAnalytics(userId, timeframe);
-
-        sendResponse(res, 200, true, 'User analytics retrieved successfully', {
-            analytics: userAnalytics,
-            timeframe
-        });
-    } catch (error) {
-        logger.error('Get user analytics error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving user analytics');
+        logger.error('Generate space analytics error:', error);
+        sendResponse(res, 500, false, 'Server error generating space analytics');
     }
 };
 
@@ -159,7 +157,7 @@ exports.getUserAnalytics = async (req, res) => {
 exports.getWorkspaceAnalytics = async (req, res) => {
     try {
         const { workspaceId } = req.params;
-        const { timeframe = '30d' } = req.query;
+        const { period = 'monthly', startDate, endDate } = req.query;
         const userId = req.user.id;
 
         // Check workspace access
@@ -171,11 +169,27 @@ exports.getWorkspaceAnalytics = async (req, res) => {
         }
 
         const analyticsService = require('../services/analytics.service');
-        const workspaceAnalytics = await analyticsService.getWorkspaceAnalytics(workspaceId, timeframe);
+        
+        let analytics;
+        
+        if (startDate && endDate) {
+            analytics = await analyticsService.generateWorkspaceAnalytics(workspaceId, {
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+                periodType: period,
+                includeAI: false
+            });
+        } else {
+            analytics = await analyticsService.generateWorkspaceAnalytics(workspaceId, {
+                periodType: period,
+                includeAI: false
+            });
+        }
 
         sendResponse(res, 200, true, 'Workspace analytics retrieved successfully', {
-            analytics: workspaceAnalytics,
-            timeframe
+            analytics,
+            period,
+            count: 1
         });
     } catch (error) {
         logger.error('Get workspace analytics error:', error);
@@ -186,24 +200,33 @@ exports.getWorkspaceAnalytics = async (req, res) => {
 // Get team performance analytics
 exports.getTeamPerformance = async (req, res) => {
     try {
-        const { projectId } = req.params;
-        const { timeframe = '30d' } = req.query;
+        const { spaceId } = req.params;
+        const { period = 'monthly', startDate, endDate } = req.query;
         const userId = req.user.id;
 
-        // Check project access
+        // Check space access
         const user = await User.findById(userId);
         const userRoles = await user.getRoles();
         
-        if (!userRoles.hasProjectRole(projectId)) {
-            return sendResponse(res, 403, false, 'Access denied to this project');
+        if (!userRoles.hasSpaceRole(spaceId)) {
+            return sendResponse(res, 403, false, 'Access denied to this space');
         }
 
         const analyticsService = require('../services/analytics.service');
-        const teamPerformance = await analyticsService.getTeamPerformance(projectId, timeframe);
+        
+        const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const end = endDate ? new Date(endDate) : new Date();
+
+        const teamAnalytics = await analyticsService.generateTeamPerformanceAnalytics(spaceId, {
+            startDate: start,
+            endDate: end,
+            periodType: period
+        });
 
         sendResponse(res, 200, true, 'Team performance analytics retrieved successfully', {
-            performance: teamPerformance,
-            timeframe
+            analytics: teamAnalytics,
+            period,
+            spaceId
         });
     } catch (error) {
         logger.error('Get team performance error:', error);
@@ -214,54 +237,58 @@ exports.getTeamPerformance = async (req, res) => {
 // Export analytics data
 exports.exportAnalytics = async (req, res) => {
     try {
-        const { projectId } = req.params;
-        const { format = 'json', includeCharts = false } = req.query;
+        const { spaceId } = req.params;
+        const { format = 'json', period = 'monthly', startDate, endDate } = req.query;
         const userId = req.user.id;
 
-        // Check project access
+        // Check space access
         const user = await User.findById(userId);
         const userRoles = await user.getRoles();
         
-        if (!userRoles.hasProjectRole(projectId)) {
-            return sendResponse(res, 403, false, 'Access denied to this project');
+        if (!userRoles.hasSpaceRole(spaceId)) {
+            return sendResponse(res, 403, false, 'Access denied to this space');
         }
 
         const analyticsService = require('../services/analytics.service');
-        const exportData = await analyticsService.exportProjectAnalytics(projectId, {
+        
+        const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const end = endDate ? new Date(endDate) : new Date();
+
+        const exportData = await analyticsService.exportSpaceAnalytics(spaceId, {
             format,
-            includeCharts
+            startDate: start,
+            endDate: end,
+            periodType: period
         });
 
-        // Set appropriate headers for download
-        if (format === 'csv') {
-            res.setHeader('Content-Type', 'text/csv');
-            res.setHeader('Content-Disposition', `attachment; filename="project-${projectId}-analytics.csv"`);
-        } else if (format === 'pdf') {
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename="project-${projectId}-analytics.pdf"`);
-        }
-
-        // Log activity
-        await ActivityLog.logActivity({
+        // Log export activity
+        await ActivityLog.create({
             userId,
-            action: 'analytics_export',
-            description: `Exported analytics for project`,
-            entity: { type: 'Project', id: projectId, name: 'Project' },
-            projectId,
+            action: 'analytics_exported',
+            entityType: 'Analytics',
+            entityId: spaceId,
+            description: `Exported analytics for space in ${format.toUpperCase()} format`,
             metadata: {
                 format,
-                includeCharts,
-                ipAddress: req.ip
-            }
+                period,
+                startDate: start,
+                endDate: end
+            },
+            relatedEntities: [
+                { type: 'Space', id: spaceId, name: 'Space' }
+            ]
         });
 
-        if (format === 'json') {
-            sendResponse(res, 200, true, 'Analytics exported successfully', {
-                data: exportData
-            });
-        } else {
-            res.send(exportData);
-        }
+        // Set response headers for file download
+        res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="space-analytics-${spaceId}-${period}.${format}"`);
+
+        sendResponse(res, 200, true, 'Analytics exported successfully', {
+            data: exportData,
+            format,
+            period,
+            spaceId
+        });
     } catch (error) {
         logger.error('Export analytics error:', error);
         sendResponse(res, 500, false, 'Server error exporting analytics');

@@ -15,7 +15,7 @@ class ReminderService {
             })
             .populate('user', 'name email')
             .populate('task', 'title')
-            .populate('project', 'name');
+            .populate('space', 'name');
 
             const results = {
                 processed: 0,
@@ -92,7 +92,7 @@ class ReminderService {
                 title: reminder.title,
                 description: reminder.description,
                 taskTitle: reminder.task ? reminder.task.title : null,
-                projectName: reminder.project ? reminder.project.name : null,
+                spaceName: reminder.space ? reminder.space.name : null,
                 reminderDate: reminder.reminderDate.toDateString()
             };
 
@@ -118,8 +118,8 @@ class ReminderService {
                 type: 'due_date_reminder',
                 recipient: reminder.user._id,
                 relatedEntity: {
-                    entityType: reminder.task ? 'Task' : (reminder.project ? 'Project' : 'Reminder'),
-                    entityId: reminder.task || reminder.project || reminder._id
+                    entityType: reminder.task ? 'Task' : (reminder.space ? 'Space' : 'Reminder'),
+                    entityId: reminder.task || reminder.space || reminder._id
                 },
                 priority: 'medium',
                 deliveryMethods: { inApp: true, push: true }
@@ -165,7 +165,7 @@ class ReminderService {
                 description: reminder.description,
                 user: reminder.user,
                 task: reminder.task,
-                project: reminder.project,
+                space: reminder.space,
                 reminderDate: nextDate,
                 type: reminder.type,
                 recurring: reminder.recurring
@@ -207,8 +207,8 @@ class ReminderService {
         }
     }
 
-    // Create reminder for project milestone
-    static async createProjectMilestoneReminder(project, milestone, userId) {
+    // Create reminder for space milestone
+    static async createSpaceMilestoneReminder(space, milestone, userId) {
         try {
             const reminderDate = new Date(milestone.dueDate);
             reminderDate.setDate(reminderDate.getDate() - 3); // 3 days before
@@ -217,9 +217,9 @@ class ReminderService {
 
             const reminder = await Reminder.create({
                 title: `Milestone due: ${milestone.title}`,
-                description: `Project "${project.name}" milestone "${milestone.title}" is due on ${milestone.dueDate.toDateString()}`,
+                description: `Space "${space.name}" milestone "${milestone.title}" is due on ${milestone.dueDate.toDateString()}`,
                 user: userId,
-                project: project._id,
+                space: space._id,
                 reminderDate,
                 type: 'both'
             });
@@ -227,7 +227,7 @@ class ReminderService {
             return reminder;
 
         } catch (error) {
-            logger.error('Create project milestone reminder error:', error);
+            logger.error('Create space milestone reminder error:', error);
             throw error;
         }
     }
@@ -260,7 +260,7 @@ class ReminderService {
                 reminderDate: { $lte: cutoffDate }
             })
             .populate('task', 'title status')
-            .populate('project', 'name status')
+            .populate('space', 'name status')
             .sort({ reminderDate: 1 });
 
             return reminders;
