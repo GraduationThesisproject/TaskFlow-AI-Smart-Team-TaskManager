@@ -3,7 +3,7 @@ const Workspace = require('../models/Workspace');
 const Space = require('../models/Space');
 const User = require('../models/User');
 const { sendResponse } = require('../utils/response');
-const { sendEmail } = require('../services/email.service');
+const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
 
 // Create invitation
