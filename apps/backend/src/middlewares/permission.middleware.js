@@ -6,21 +6,23 @@ const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
 
 // Require system admin role
-const requireSystemAdmin = async (req, res, next) => {
-    try {
-        const userId = req.user.id;
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
+const requireSystemAdmin = (req, res, next) => {
+    (async () => {
+        try {
+            const userId = req.user.id;
+            const user = await User.findById(userId);
+            const userRoles = await user.getRoles();
 
-        if (userRoles.systemRole !== 'admin' && userRoles.systemRole !== 'super_admin') {
-            return sendResponse(res, 403, false, 'System admin permissions required');
+            if (userRoles.systemRole !== 'admin' && userRoles.systemRole !== 'super_admin') {
+                return sendResponse(res, 403, false, 'System admin permissions required');
+            }
+
+            next();
+        } catch (error) {
+            logger.error('System admin check error:', error);
+            sendResponse(res, 500, false, 'Server error checking admin permissions');
         }
-
-        next();
-    } catch (error) {
-        logger.error('System admin check error:', error);
-        sendResponse(res, 500, false, 'Server error checking admin permissions');
-    }
+    })();
 };
 
 // Require workspace permission
@@ -315,6 +317,8 @@ const requireWhitelistedIP = (whitelist = []) => {
 // Combined middleware for common permission patterns
 const requireSpaceMember = requireSpacePermission('member');
 const requireSpaceAdmin = requireSpacePermission('admin');
+const requireSpaceMember = requireSpacePermission('member');
+const requireSpaceAdmin = requireSpacePermission('admin');
 const requireWorkspaceMember = requireWorkspacePermission('member');
 const requireWorkspaceAdmin = requireWorkspacePermission('admin');
 
@@ -322,6 +326,7 @@ module.exports = {
     requireSystemAdmin,
     requireWorkspacePermission,
     requireSpacePermission,
+    requireSpaceSpecificPermission,
     requireBoardPermission,
     requireResourceOwner,
     requireAnyPermission,
@@ -331,6 +336,8 @@ module.exports = {
     requireFeatureFlag,
     requireWhitelistedIP,
     // Common combinations
+    requireSpaceMember,
+    requireSpaceAdmin,
     requireSpaceMember,
     requireSpaceAdmin,
     requireWorkspaceMember,
