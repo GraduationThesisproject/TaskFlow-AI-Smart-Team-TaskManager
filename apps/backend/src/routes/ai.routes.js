@@ -6,8 +6,8 @@ const router = express.Router();
 
 // Validation schemas
 const taskSuggestionsSchema = {
-    projectGoal: { required: true, minLength: 10, maxLength: 1000 },
-    projectContext: { maxLength: 2000 },
+    spaceGoal: { required: true, minLength: 10, maxLength: 1000 },
+    spaceContext: { maxLength: 2000 },
     boardType: { enum: ['kanban', 'list', 'calendar', 'timeline'], default: 'kanban' }
 };
 
@@ -24,7 +24,7 @@ const timelineSchema = {
 
 const taskDescriptionSchema = {
     title: { required: true, minLength: 2, maxLength: 200 },
-    projectContext: { maxLength: 500 },
+    spaceContext: { maxLength: 500 },
     taskType: { maxLength: 100 }
 };
 
@@ -34,7 +34,7 @@ router.post('/suggestions',
     aiController.generateTaskSuggestions
 );
 
-router.get('/risks/project/:projectId', aiController.analyzeTaskRisks);
+router.get('/risks/space/:spaceId', aiController.analyzeTaskRisks);
 router.get('/risks/board/:boardId', aiController.analyzeTaskRisks);
 
 router.post('/parse',
@@ -42,14 +42,14 @@ router.post('/parse',
     aiController.parseNaturalLanguage
 );
 
-router.post('/timeline/:projectId',
+router.post('/timeline/:spaceId',
     validateMiddleware(timelineSchema),
-    aiController.generateProjectTimeline
+    aiController.generateSpaceTimeline
 );
 
-router.get('/recommendations/:projectId', aiController.getSmartRecommendations);
+router.get('/recommendations/:spaceId', aiController.getSmartRecommendations);
 
-router.get('/performance/:projectId', aiController.analyzeTeamPerformance);
+router.get('/performance/:spaceId', aiController.analyzeTeamPerformance);
 
 router.post('/description',
     validateMiddleware(taskDescriptionSchema),

@@ -1,639 +1,1066 @@
-# 🚀 TaskFlow AI - Smart Team Task Manager v2.0
+# TaskFlow AI Smart Team Task Manager
 
-TaskFlow AI is an enterprise-grade project and task management platform with advanced AI capabilities, built with Express.js (backend), React (web frontend), and React Native (mobile). 
+## 🚀 Quick Start
 
-**🆕 Version 2.0 Major Update** brings professional AI pipeline architecture, advanced analytics with trend analysis, risk assessment, and a complete design system optimized for both dark/light themes and mobile-first experience.
+### Development Scripts
 
-Perfect for individuals, small teams, and enterprises requiring intelligent project management with AI-powered insights and optimization.
-
-## ✨ Core Features
-
-### 🔑 User Authentication & Account Management
-- Secure sign-up with name, email, and password
-- Email/password login with validation & feedback
-- "Remember Me" option for convenience
-- Forgot password flow via email recovery
-- Logout from all devices for enhanced security
-- Social authentication (Google, GitHub)
-- Accessibility support (keyboard nav, screen readers)
-
-### 🏗 Project, Board & Task Management
-- Create multiple boards for organizing projects
-- Add columns to visually track task stages (To Do, In Progress, Done)
-- Create, edit, and delete tasks with rich descriptions
-- Assign tasks to specific users
-- Drag & drop tasks between columns with smooth animations
-- Task detail modal with attachments, comments, labels, checklists
-- Mentions (@username) and markdown in comments for team collaboration
-
-### ⚡ Real-Time Collaboration
-- Instant task updates without page refresh
-- Shared dashboards that reflect team activity in real-time
-- Push notifications (mobile) for new task assignments or updates
-
-### 🤖 Advanced AI Intelligence (v2.0 Enhanced)
-- **AI Pipeline Architecture**: Multi-step complex AI operations with dependency management
-- **Smart Project Analysis**: Automated requirements analysis, work breakdown structure generation, and timeline estimation
-- **Risk Assessment**: AI-powered identification of project risks with severity levels and suggested actions
-- **Task Optimization**: Intelligent bottleneck detection, parallelization opportunities, and resource conflict resolution
-- **Predictive Analytics**: Machine learning-based completion date predictions and trend analysis
-- **Natural Language Processing**: Create tasks via conversational AI ("Remind me to finish the report by Friday")
-- **Intelligent Suggestions**: Context-aware task recommendations based on project goals and team performance
-
-### 📊 Advanced Analytics & AI Insights (v2.0 Enhanced)
-- **Real-time Dashboards**: Live task completion rates and team performance metrics
-- **AI-Powered Risk Analysis**: Automated detection of team overload, resource shortages, and scope creep
-- **Trend Analysis**: Completion, velocity, and quality trends with AI-generated insights
-- **Optimization Recommendations**: AI-suggested workflow improvements with impact assessments
-- **Predictive Modeling**: Timeline predictions and resource allocation optimization
-- **Custom Metrics**: Configurable KPIs and performance indicators
-- **Advanced Reporting**: Export comprehensive analytics as PNG/PDF with AI commentary
-
-### 📅 Calendar View
-- Weekly/monthly task calendar with color-coded priorities
-- Drag-and-drop to reschedule tasks
-- Overdue tasks glow subtly for visibility
-- Clicking tasks opens detail modal for editing
-
-### 🎨 Professional Design System (v2.0 New)
-- **Complete Design Token System**: Primary Blue (#007ADF), Accent Cyan (#00E8C6), full neutral palette
-- **Typography System**: Inter font family with semantic naming and responsive font sizes
-- **Dark/Light Theme**: Optimized themes with localStorage persistence and smooth transitions  
-- **Mobile-First Components**: Touch-friendly sizing with responsive breakpoints
-- **Component Library**: 15+ production-ready components (Button, Card, Badge, Progress, Avatar, etc.)
-- **Theme Provider**: Centralized theme management with context API
-
-### 🌓 Customization & Settings  
-- Profile management (name, email, avatar) with live preview
-- Team management: invite/remove members, assign roles
-- Granular notification settings (email, push, in-app)
-- Advanced theme customization with design tokens
-- Auto-save with confirmation
-
-### 📱 Offline Mode (Mobile Epic)
-- View last opened board while offline
-- Update tasks offline with auto-sync when back online
-
-## 🎉 What's New in Version 2.0
-
-### 🏗️ Architecture Improvements
-- **Monorepo Structure**: Organized with Turborepo for efficient development and builds
-- **Shared Package System**: Reusable UI components, utilities, and configurations across all apps  
-- **Professional Workspace Setup**: Admin panel, main app, mobile app, and backend in unified structure
-
-### 🤖 AI & Analytics Powerhouse
-- **AI Pipeline Framework**: Complex multi-step AI operations with dependency management
-- **Advanced Project Analytics**: Risk assessment, trend analysis, and optimization suggestions
-- **Smart Task Generation**: Context-aware AI task suggestions with priority and time estimation
-- **Predictive Intelligence**: Timeline predictions and performance optimization recommendations
-
-### 🎨 Enterprise Design System  
-- **Professional UI Library**: 15+ production-ready components with variants
-- **Dark/Light Theme**: Fully optimized themes with smooth transitions
-- **Mobile-First Approach**: Touch-friendly components with responsive breakpoints
-- **Design Token System**: Consistent colors, typography, and spacing across all platforms
-
-## 📌 User Stories
-
-### User Authentication
-- **As a new user**, I want to sign up with my name, email, and password so that I can have a personal account
-- **As a registered user**, I want to log in securely so that I can access my projects
-- **As a logged-in user**, I want to log out from all devices so that my account stays secure
-- **As a user**, I want to reset my password via email so that I can recover my account if I forget it
-
-### Project, Board & Task Management
-- **As a project manager**, I want to create new boards so I can organize different projects
-- **As a user**, I want to add columns so that I can track task stages visually
-- **As a team member**, I want to create and edit tasks so I can describe work to be done
-- **As a team member**, I want to assign tasks to specific people so that responsibilities are clear
-- **As a user**, I want to drag and drop tasks between columns so that progress is easy to update
-- **As a user**, I want to comment on tasks so I can collaborate with teammates
-
-### Realtime Collaboration
-- **As a user**, I want instant updates when teammates change tasks so I don't need to refresh
-- **As a mobile user**, I want push notifications when I'm assigned a task so I don't miss updates
-
-### AI Assistance (Epic)
-- **As a project manager**, I want to enter a project goal and have AI suggest tasks with deadlines so I can plan faster
-- **As a user**, I want AI warnings for tasks likely to miss deadlines so I can act early
-- **As a user**, I want to create tasks via natural language so I can work faster
-
-### Analytics (Epic)
-- **As a project manager**, I want a dashboard of task completion rates so I can track progress visually
-- **As a team leader**, I want to see top contributors so I can recognize achievements
-- **As a manager**, I want to see average task completion time so I can estimate deadlines
-- **As a leader**, I want comparative performance charts to track weekly/monthly trends
-
-### Offline Mode (Epic)
-- **As a mobile user**, I want to view my last opened board offline so I can keep working
-- **As a mobile user**, I want to sync offline changes automatically when I reconnect
-
-## 🛠 Tech Stack (v2.0 Enhanced)
-
-### Core Technologies
-- **Backend**: Express.js v5+ (Node.js 18+) with professional middleware architecture  
-- **Frontend (Web)**: React 18+ with TypeScript and TailwindCSS
-- **Admin Panel**: React + TypeScript with advanced admin tools
-- **Mobile**: React Native with Expo and NativeWind (Tailwind for mobile)
-- **Database**: MongoDB with Mongoose ODM (PostgreSQL support available)
-
-### Advanced Infrastructure  
-- **Monorepo**: Turborepo for efficient builds and development
-- **Authentication**: JWT + OAuth 2.0 (Google, GitHub) with enhanced security
-- **Real-time**: Socket.IO for live collaboration and notifications  
-- **AI Integration**: OpenAI API v4+ with custom pipeline architecture
-- **File Storage**: Cloudinary integration for media management
-- **Email Service**: Nodemailer with template support
-- **Logging**: Winston for structured logging and monitoring
-
-### Development & Build Tools
-- **Package Management**: npm workspaces with shared dependencies
-- **Code Quality**: ESLint, Prettier, TypeScript strict mode
-- **Build System**: Vite for fast development and optimized builds
-- **Testing**: Jest for unit and integration testing  
-- **Design System**: Custom design tokens with theme provider
-
-## 📂 Project Structure
-
-```
-TaskFlow-AI-Smart-Team-Task-Manager/
-├── apps/                    # All runnable applications
-│   ├── admin/               # React Admin Panel
-│   │   ├── public/          # Static assets
-│   │   ├── src/
-│   │   │   ├── components/  # Admin-specific components
-│   │   │   ├── hooks/       # Custom React hooks
-│   │   │   ├── pages/       # Admin pages/routes
-│   │   │   ├── utils/       # Admin utilities
-│   │   │   ├── App.tsx      # Main admin component
-│   │   │   ├── App.css      # Admin styles
-│   │   │   ├── index.css    # Global admin styles
-│   │   │   └── main.tsx     # Admin entry point
-│   │   ├── index.html       # HTML template
-│   │   ├── package.json     # Admin dependencies
-│   │   ├── tailwind.config.js  # Tailwind configuration
-│   │   └── vite.config.ts   # Vite build configuration
-│   │
-│   ├── backend/             # Express.js API Server
-│   │   ├── src/
-│   │   │   ├── config/      # App configurations
-│   │   │   │   ├── db.js            # Database connection
-│   │   │   │   ├── env.js           # Environment variables
-│   │   │   │   └── logger.js        # Logger setup
-│   │   │   ├── models/      # Mongoose models
-│   │   │   │   ├── User.js          # User model
-│   │   │   │   ├── Project.js       # Project model
-│   │   │   │   ├── Workspace.js     # Workspace model
-│   │   │   │   ├── Space.js         # Space model
-│   │   │   │   ├── Board.js         # Board model
-│   │   │   │   ├── Column.js        # Column model
-│   │   │   │   ├── Task.js          # Task model
-│   │   │   │   ├── Comment.js       # Comment model
-│   │   │   │   ├── Checklist.js     # Checklist model
-│   │   │   │   ├── Reminder.js      # Reminder model
-│   │   │   │   ├── Notification.js  # Notification model
-│   │   │   │   ├── Analytics.js     # Analytics model
-│   │   │   │   └── Tag.js           # Tag model
-│   │   │   ├── controllers/ # Request handlers
-│   │   │   │   ├── auth.controller.js
-│   │   │   │   ├── project.controller.js
-│   │   │   │   ├── board.controller.js
-│   │   │   │   ├── task.controller.js
-│   │   │   │   └── ai.controller.js
-│   │   │   ├── services/    # Business logic layer
-│   │   │   │   ├── auth.service.js
-│   │   │   │   ├── project.service.js
-│   │   │   │   ├── board.service.js
-│   │   │   │   ├── task.service.js
-│   │   │   │   └── ai.service.js
-│   │   │   ├── routes/      # Route definitions
-│   │   │   │   ├── auth.routes.js
-│   │   │   │   ├── project.routes.js
-│   │   │   │   ├── board.routes.js
-│   │   │   │   ├── task.routes.js
-│   │   │   │   └── ai.routes.js
-│   │   │   ├── middlewares/ # Custom middleware
-│   │   │   │   ├── auth.middleware.js
-│   │   │   │   ├── validate.middleware.js
-│   │   │   │   └── error.middleware.js
-│   │   │   ├── utils/       # Helper utilities
-│   │   │   │   ├── jwt.js           # JWT utilities
-│   │   │   │   ├── email.js         # Email utilities
-│   │   │   │   └── response.js      # Response utilities
-│   │   │   ├── sockets/     # Real-time collaboration
-│   │   │   │   └── task.socket.js
-│   │   │   ├── ai/          # AI integrations
-│   │   │   │   ├── openai.client.js
-│   │   │   │   └── ai.pipeline.js
-│   │   │   ├── tests/       # Unit & integration tests
-│   │   │   │   ├── auth.test.js
-│   │   │   │   ├── task.test.js
-│   │   │   │   └── board.test.js
-│   │   │   ├── app.js       # Express app initialization
-│   │   │   └── server.js    # Entry point (starts server)
-│   │   ├── logs/            # Log files directory
-│   │   ├── .env.example     # Environment variables template
-│   │   ├── README.md        # Backend documentation
-│   │   ├── package.json     # Backend dependencies
-│   │   └── package-lock.json
-│   │
-│   ├── main/                # Main React Application
-│   │   ├── public/          # Static assets
-│   │   ├── src/
-│   │   │   ├── assets/      # Images, icons, etc.
-│   │   │   │   └── react.svg
-│   │   │   ├── components/  # Reusable components
-│   │   │   ├── hooks/       # Custom React hooks
-│   │   │   ├── pages/       # Application pages/routes
-│   │   │   ├── utils/       # Frontend utilities
-│   │   │   ├── App.tsx      # Main app component
-│   │   │   ├── App.css      # Component styles
-│   │   │   ├── index.css    # Global styles
-│   │   │   ├── main.tsx     # React entry point
-│   │   │   └── vite-env.d.ts # Vite type definitions
-│   │   ├── eslint.config.js # ESLint configuration
-│   │   ├── index.html       # HTML template
-│   │   ├── package.json     # Main app dependencies
-│   │   ├── tailwind.config.ts # Tailwind configuration
-│   │   ├── tsconfig.json    # TypeScript configuration
-│   │   ├── tsconfig.app.json # App-specific TS config
-│   │   ├── tsconfig.node.json # Node-specific TS config
-│   │   └── vite.config.ts   # Vite build configuration
-│   │
-│   └── mobile/              # React Native Mobile App
-│       ├── assets/          # Mobile assets (images, fonts)
-│       ├── src/
-│       │   ├── components/  # Mobile components
-│       │   ├── hooks/       # Mobile hooks
-│       │   ├── screens/     # Mobile screens/pages
-│       │   └── App.tsx      # Mobile app entry
-│       ├── app.json         # Expo configuration
-│       ├── babel.config.js  # Babel configuration
-│       ├── package.json     # Mobile dependencies
-│       └── tailwind.config.js # NativeWind configuration
-│
-├── packages/                # Shared libraries & configurations
-│   ├── config/              # Shared configurations
-│   │   ├── eslint-config.js # Shared ESLint rules
-│   │   ├── package.json     # Config package info
-│   │   └── tailwind.config.js # Base Tailwind config
-│   │
-│   ├── theme/               # Design system & theming
-│   │   ├── index.ts         # Theme utilities & functions
-│   │   ├── package.json     # Theme package info
-│   │   └── tokens.json      # Design tokens (colors, spacing)
-│   │
-│   ├── ui/                  # Reusable UI components
-│   │   ├── src/
-│   │   │   ├── Button.tsx   # Button component
-│   │   │   ├── Card.tsx     # Card components
-│   │   │   ├── Input.tsx    # Input component
-│   │   │   ├── index.ts     # Component exports
-│   │   │   └── utils.ts     # UI utilities
-│   │   └── package.json     # UI package info
-│   │
-│   └── utils/               # Shared utilities
-│       ├── src/
-│       │   ├── formatDate.ts # Date formatting utilities
-│       │   └── index.ts     # Utility exports
-│       └── package.json     # Utils package info
-│
-├── .eslintrc.js            # Root ESLint configuration
-├── .gitignore              # Git ignore rules
-├── .prettierrc             # Code formatting rules
-├── package.json            # Root monorepo configuration
-├── README.md               # Project documentation
-├── tsconfig.base.json      # Base TypeScript configuration
-└── turbo.json              # Turborepo build pipeline
-```
-
-## 🚀 Getting Started (v2.0 Setup)
-
-### Prerequisites
-
-Ensure you have the following installed on your system:
-
-- **Node.js**: Version 18.0.0 or higher (required for v2.0 features)
-- **npm**: Version 9.0.0 or higher (for workspace support)
-- **Git**: Latest version for version control
-- **Code Editor**: VS Code recommended with these extensions:
-  - ES7+ React/Redux/React-Native snippets
-  - Tailwind CSS IntelliSense  
-  - ESLint & Prettier
-  - TypeScript support
-  - MongoDB for VS Code (optional)
-
-### Additional Requirements for v2.0
-- **OpenAI API Key**: Required for AI features (get from [OpenAI Platform](https://platform.openai.com))
-- **Cloudinary Account**: For file storage (optional, get from [Cloudinary](https://cloudinary.com))
-- **MongoDB**: Local installation or MongoDB Atlas connection
-
-### Installation & Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/TaskFlow-AI-Smart-Team-Task-Manager.git
-   cd TaskFlow-AI-Smart-Team-Task-Manager
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-   This command installs dependencies for all apps and packages in the monorepo using workspaces.
-
-3. **Environment Setup** (Required for v2.0)
-   ```bash
-   # Backend environment setup
-   cd apps/backend
-   cp .env.example .env
-   
-   # Edit .env with your configuration:
-   # OPENAI_API_KEY=your-openai-api-key
-   # MONGODB_URI=your-mongodb-connection-string
-   # CLOUDINARY_CLOUD_NAME=your-cloud-name (optional)
-   # CLOUDINARY_API_KEY=your-api-key (optional)
-   # CLOUDINARY_API_SECRET=your-api-secret (optional)
-   # JWT_SECRET=your-jwt-secret
-   # EMAIL_FROM=your-email@domain.com
-   # EMAIL_PASSWORD=your-app-password
-   ```
-
-4. **Build shared packages**
-   ```bash
-   npm run build
-   ```
-
-5. **Start development servers**
-   ```bash
-   npm run dev
-   ```
-
-## 📋 Available Commands
-
-### Root Level Commands (Monorepo)
-
+Run all applications concurrently:
 ```bash
-# Development
-npm run dev          # Start all apps in development mode
-npm run build        # Build all apps and packages for production
-npm run lint         # Run ESLint on all packages
-npm run type-check   # Run TypeScript type checking on all packages
-
-# Code Quality
-npm run format       # Format all code with Prettier
-npm run format:check # Check if code is properly formatted
-npm run clean        # Clean all build artifacts and caches
-
-# Testing (if tests are added)
-npm run test         # Run tests across all packages
+npm run dev          # Run all apps (Backend + Main + Admin + Mobile)
+npm run dev:web      # Run web apps only (Backend + Main + Admin)
+npm run dev:all      # Run all apps with detailed logging
 ```
 
-### Individual App Commands
-
-#### Backend (Express Server)
+Run individual applications:
 ```bash
-cd apps/backend
-
-# Development
-npm run dev          # Start backend server with nodemon (auto-reload)
-npm start           # Start backend server in production mode
-npm run build       # No build step needed for Node.js
-npm run lint        # Lint backend code
+npm run dev:backend  # Backend API server
+npm run dev:main     # Main web application
+npm run dev:admin    # Admin panel
+npm run dev:mobile   # Mobile app (Expo)
 ```
 
-#### Admin Panel (React)
+### Application URLs
+- **Backend API**: http://localhost:3001
+- **Main App**: http://localhost:5173
+- **Admin Panel**: http://localhost:5175
+- **Mobile**: Expo DevTools (port 19000)
+
+### Show Status
 ```bash
-cd apps/admin
-
-# Development
-npm run dev         # Start dev server (usually http://localhost:5173)
-npm run build       # Build for production
-npm run preview     # Preview production build locally
-npm run lint        # Lint admin code
-npm run type-check  # TypeScript type checking
+npm run show:status  # Display all application URLs and status
 ```
 
-#### Main App (React)
-```bash
-cd apps/main
+---
 
-# Development  
-npm run dev         # Start dev server (usually http://localhost:5174)
-npm run build       # Build for production
-npm run preview     # Preview production build locally
-npm run lint        # Lint main app code
-npm run type-check  # TypeScript type checking
+# TaskFlow AI Smart Team Task Manager - API Documentation
+
+## Table of Contents
+1. [Overview](#overview)
+2. [Models](#models)
+3. [API Routes](#api-routes)
+4. [Authentication & Authorization](#authentication--authorization)
+5. [Middleware](#middleware)
+6. [Request/Response Interfaces](#requestresponse-interfaces)
+
+## Overview
+
+TaskFlow is a comprehensive team task management system with AI-powered features. The backend API is built with Node.js, Express, and MongoDB, providing RESTful endpoints for managing workspaces, spaces, boards, tasks, and more.
+
+### Hierarchy
+**Workspace → Space → Board → Column → Task**
+
+Spaces are the primary organizational unit within workspaces where boards live. This simplified hierarchy provides better performance and easier navigation.
+
+### Base URL
+```
+http://localhost:3000/api
 ```
 
-#### Mobile App (React Native)
-```bash
-cd apps/mobile
-
-# Development
-npm start           # Start Expo development server
-npm run android     # Run on Android device/simulator
-npm run ios         # Run on iOS device/simulator (macOS only)
-npm run web         # Run mobile app in web browser
-npm run build       # Export for production
-npm run lint        # Lint mobile code
+### Authentication
+All protected routes require a Bearer token in the Authorization header:
+```
+Authorization: Bearer <your-jwt-token>
 ```
 
-### Package Development Commands
+## Models
 
-#### UI Components
-```bash
-cd packages/ui
+### 1. User
+**Description**: Core user entity with authentication and profile management
+**Key Fields**:
+- `name` (String): User's full name
+- `email` (String): Unique email address
+- `password` (String): Hashed password
+- `avatar` (String): Profile picture URL
+- `emailVerified` (Boolean): Email verification status
+- `isActive` (Boolean): Account status
+- `isLocked` (Boolean): Account lock status
+- `preferences` (Object): User preferences
+- `metadata` (Object): Additional user data
 
-npm run build       # Build UI components
-npm run dev         # Watch mode for development
-npm run lint        # Lint UI code
-```
+### 2. Workspace
+**Description**: Top-level organization unit for teams
+**Key Fields**:
+- `name` (String): Workspace name
+- `description` (String): Workspace description
+- `plan` (String): Subscription plan (free, basic, premium, enterprise)
+- `owner` (ObjectId): Reference to User
+- `members` (Array): Workspace members with roles
+- `settings` (Object): Workspace configuration
+- `isActive` (Boolean): Workspace status
 
-#### Utilities
-```bash
-cd packages/utils
+### 3. Space
+**Description**: Primary organizational unit within workspaces where boards live
+**Key Fields**:
+- `name` (String): Space name
+- `description` (String): Space description
+- `workspace` (ObjectId): Reference to Workspace
+- `members` (Array): Space members with roles (owner, admin, contributor, member, viewer)
+- `settings` (Object): Space configuration and features
+- `stats` (Object): Space statistics (totalBoards, totalTasks, completedTasks, etc.)
+- `isActive` (Boolean): Space status
+- `isArchived` (Boolean): Archive status
 
-npm run build       # Build utilities
-npm run dev         # Watch mode for development
-npm run lint        # Lint utilities code
-```
+### 4. Board
+**Description**: Kanban boards for task management
+**Key Fields**:
+- `name` (String): Board name
+- `description` (String): Board description
+- `type` (String): Board type (kanban, list, calendar, timeline)
+- `space` (ObjectId): Reference to Space (required)
+- `columns` (Array): Board columns
+- `settings` (Object): Board configuration
+- `isTemplate` (Boolean): Template flag
 
-## 🖥 Development Workflow
+### 5. Task
+**Description**: Individual work items
+**Key Fields**:
+- `title` (String): Task title
+- `description` (String): Task description
+- `status` (String): Task status (todo, in_progress, review, done, archived)
+- `priority` (String): Priority level (low, medium, high, critical)
+- `boardId` (ObjectId): Reference to Board
+- `space` (ObjectId): Reference to Space (required)
+- `column` (ObjectId): Reference to Column
+- `assignees` (Array): Assigned users
+- `labels` (Array): Task labels
+- `dueDate` (Date): Task deadline
+- `estimatedHours` (Number): Time estimate
+- `actualHours` (Number): Actual time spent
+- `attachments` (Array): File attachments
+- `comments` (Array): Task comments
+- `watchers` (Array): Users watching the task
 
-### Daily Development
+### 6. Column
+**Description**: Board columns for task organization
+**Key Fields**:
+- `name` (String): Column name
+- `color` (String): Column color
+- `order` (Number): Column position
+- `wipLimit` (Number): Work-in-progress limit
+- `boardId` (ObjectId): Reference to Board
+- `isDefault` (Boolean): Default column flag
 
-1. **Start the development environment**
-   ```bash
-   npm run dev
-   ```
-   This starts all applications simultaneously:
-   - Backend API: http://localhost:3001
-   - Admin Panel: http://localhost:5173
-   - Main App: http://localhost:5174
-   - Mobile: Expo development server
+### 7. Comment
+**Description**: Task comments and discussions
+**Key Fields**:
+- `content` (String): Comment text
+- `author` (ObjectId): Reference to User
+- `taskId` (ObjectId): Reference to Task
+- `mentions` (Array): Mentioned users
+- `attachments` (Array): File attachments
+- `reactions` (Array): User reactions
+- `isPinned` (Boolean): Pinned comment flag
+- `isResolved` (Boolean): Resolved comment flag
 
-2. **Working on specific apps**
-   ```bash
-   # Work only on backend
-   cd apps/backend && npm run dev
+### 8. File
+**Description**: File uploads and attachments (Local storage only)
+**Key Fields**:
+- `filename` (String): Original filename
+- `originalName` (String): Original file name
+- `mimeType` (String): File MIME type
+- `size` (Number): File size in bytes
+- `path` (String): File storage path on local disk
+- `extension` (String): File extension
+- `checksum` (String): File checksum for integrity
+- `uploadedBy` (ObjectId): Reference to User
+- `space` (ObjectId): Reference to Space
+- `attachedTo` (Object): Related entity info
+- `isPublic` (Boolean): Public access flag
 
-   # Work only on main app
-   cd apps/main && npm run dev
+**Note**: This File model supports ONLY local disk storage. Cloud/CDN integrations are not supported in this version.
 
-   # Work only on admin panel
-   cd apps/admin && npm run dev
-   ```
+### 9. Notification
+**Description**: System notifications
+**Key Fields**:
+- `title` (String): Notification title
+- `message` (String): Notification message
+- `type` (String): Notification type
+- `recipientId` (ObjectId): Reference to User
+- `relatedEntity` (Object): Related entity info
+- `priority` (String): Priority level (low, medium, high)
+- `isRead` (Boolean): Read status
+- `deliveryMethods` (Object): Delivery configuration
 
-3. **Adding shared components**
-   ```bash
-   # Add new component to UI package
-   cd packages/ui/src
-   # Create new component file
-   # Export it from index.ts
-   # Use it in any app: import { NewComponent } from '@taskflow/ui'
-   ```
+### 10. Tag
+**Description**: Space tags with analytics
+**Key Fields**:
+- `name` (String): Tag name
+- `color` (String): Tag color
+- `textColor` (String): Text color for contrast
+- `description` (String): Tag description
+- `scope` (String): Tag scope (global, workspace, space, board)
+- `space` (ObjectId): Reference to Space
+- `workspace` (ObjectId): Reference to Workspace
+- `createdBy` (ObjectId): Reference to User
+- `category` (String): Tag category
+- `usageCount` (Number): Usage frequency
+- `isSystem` (Boolean): System tag flag
 
-4. **Code quality checks**
-   ```bash
-   npm run lint         # Check for linting issues
-   npm run format       # Auto-format code
-   npm run type-check   # Verify TypeScript types
-   npm run build        # Ensure everything builds correctly
-   ```
+### 11. Checklist
+**Description**: Task checklists
+**Key Fields**:
+- `title` (String): Checklist title
+- `items` (Array): Checklist items
+- `taskId` (ObjectId): Reference to Task
+- `createdBy` (ObjectId): Reference to User
+- `isCompleted` (Boolean): Completion status
 
-### Production Build
+### 12. Reminder
+**Description**: Task and space reminders
+**Key Fields**:
+- `title` (String): Reminder title
+- `message` (String): Reminder message
+- `dueDate` (Date): Reminder date
+- `recipientId` (ObjectId): Reference to User
+- `context` (Object): Context information including spaceId
+- `frequency` (String): Reminder frequency
+- `isActive` (Boolean): Active status
 
-```bash
-# Build all apps for production
-npm run build
+### 13. Analytics
+**Description**: Modular analytics and metrics
+**Key Fields**:
+- `scopeType` (String): Analytics scope (workspace, space, board, user)
+- `scopeId` (ObjectId): Scope reference
+- `kind` (String): Analytics type (velocity, wip, leadTime, cycleTime, burndown, custom)
+- `data` (Object): Analytics data
+- `period` (Object): Date range with start and end dates
+- `createdAt` (Date): Creation timestamp
 
-# Individual app builds
-cd apps/backend && npm run build   # Backend (no build needed)
-cd apps/admin && npm run build     # Admin panel
-cd apps/main && npm run build      # Main app
-cd apps/mobile && npm run build    # Mobile app export
-```
+### 14. Invitation
+**Description**: Workspace and space invitations
+**Key Fields**:
+- `email` (String): Invitee email
+- `token` (String): Invitation token
+- `type` (String): Invitation type (workspace, space, board)
+- `targetEntity` (Object): Target entity information
+- `invitedBy` (ObjectId): Reference to User
+- `status` (String): Invitation status
+- `expiresAt` (Date): Expiration date
 
-### Port Configuration
+### 15. UserRoles
+**Description**: User role and permission management
+**Key Fields**:
+- `userId` (ObjectId): Reference to User
+- `systemRole` (String): System-wide role
+- `workspaceRoles` (Array): Workspace-specific roles
+- `spaceRoles` (Array): Space-specific roles with permissions
+- `boardRoles` (Array): Board-specific roles
+- `permissions` (Object): User permissions
 
-| Application | Default Port | URL |
-|-------------|-------------|-----|
-| Backend API | 3001 | http://localhost:3001 |
-| Admin Panel | 5173 | http://localhost:5173 |
-| Main App | 5174 | http://localhost:5174 |
-| Mobile (Expo) | 19000 | Expo DevTools |
+### 16. UserSessions
+**Description**: User session management
+**Key Fields**:
+- `userId` (ObjectId): Reference to User
+- `sessions` (Array): Active sessions
+- `deviceInfo` (Object): Device information
+- `lastActivity` (Date): Last activity timestamp
 
-### Shared Package Usage
+### 17. UserPreferences
+**Description**: User preferences and settings
+**Key Fields**:
+- `userId` (ObjectId): Reference to User
+- `notifications` (Object): Notification preferences
+- `theme` (String): UI theme preference
+- `language` (String): Language preference
+- `timezone` (String): Timezone setting
 
-```typescript
-// In any React app, you can import shared packages:
+### 18. ActivityLog
+**Description**: System activity tracking
+**Key Fields**:
+- `userId` (ObjectId): Reference to User
+- `action` (String): Performed action
+- `entityType` (String): Entity type
+- `entityId` (ObjectId): Entity reference
+- `description` (String): Activity description
+- `metadata` (Object): Additional data
+- `ipAddress` (String): User IP address
+- `userAgent` (String): User agent string
 
-// UI Components
-import { Button, Card, Input } from '@taskflow/ui';
+### 19. AIJob
+**Description**: AI processing jobs with observability
+**Key Fields**:
+- `type` (String): Job type
+- `status` (String): Job status (queued, running, succeeded, failed, cancelled)
+- `input` (Object): Job input data
+- `output` (Object): Job output data
+- `progress` (Number): Progress percentage
+- `userId` (ObjectId): Reference to User
+- `workspaceId` (ObjectId): Reference to Workspace
+- `spaceId` (ObjectId): Reference to Space
+- `logs` (Array): Job execution logs with timestamps and levels
+- `usage` (Object): Token usage and cost tracking
+- `retryCount` (Number): Number of retry attempts
+- `startedAt` (Date): Job start time
+- `finishedAt` (Date): Job completion time
+- `error` (Object): Error information if failed
 
-// Theme utilities
-import { applyTheme } from '@taskflow/theme';
+### 20. Template
+**Description**: Reusable board templates with categorization
+**Key Fields**:
+- `name` (String): Template name
+- `description` (String): Template description
+- `type` (String): Template type (task, board, space, workflow, checklist)
+- `data` (Object): Template data
+- `createdBy` (ObjectId): Reference to User
+- `isPublic` (Boolean): Public template flag
+- `isSystem` (Boolean): System template flag
+- `usageCount` (Number): Usage frequency
+- `tags` (Array): Template tags for categorization
+- `category` (String): Template category (Agile, Scrum, Kanban, etc.)
 
-// Shared utilities
-import { formatDate } from '@taskflow/utils';
+### 21. Quota
+**Description**: Usage quotas and limits
+**Key Fields**:
+- `workspaceId` (ObjectId): Reference to Workspace
+- `type` (String): Quota type
+- `limit` (Number): Quota limit
+- `used` (Number): Current usage
+- `resetDate` (Date): Reset date
+- `plan` (String): Associated plan
 
-// Example usage
-function MyComponent() {
-  return (
-    <Card>
-      <Button variant="primary">
-        Last updated: {formatDate(new Date())}
-      </Button>
-    </Card>
-  );
+### 22. Admin
+**Description**: System administration (global/system-level only)
+**Key Fields**:
+- `userId` (ObjectId): Reference to User
+- `role` (String): Admin role
+- `permissions` (Object): Admin permissions
+- `isActive` (Boolean): Active status
+- `lastLogin` (Date): Last login timestamp
+
+## API Routes
+
+### Authentication Routes (`/api/auth`)
+
+#### Public Routes
+- `POST /register` - User registration
+- `POST /login` - User login
+- `POST /password-reset/request` - Request password reset
+- `POST /password-reset/confirm` - Reset password
+- `GET /verify-email/:token` - Verify email address
+
+#### Protected Routes
+- `GET /me` - Get current user profile
+- `POST /logout` - User logout
+- `PUT /profile` - Update user profile
+- `POST /avatar` - Upload profile avatar
+- `PUT /change-password` - Change password
+- `PUT /preferences` - Update user preferences
+- `GET /sessions` - Get user sessions
+- `DELETE /sessions/:sessionId` - End specific session
+- `GET /activity` - Get user activity log
+
+### Workspace Routes (`/api/workspaces`)
+
+#### Protected Routes
+- `GET /` - Get all user workspaces
+- `GET /:id` - Get specific workspace
+- `POST /` - Create new workspace
+- `PUT /:id` - Update workspace
+- `POST /:id/invite` - Invite member to workspace
+- `POST /accept-invitation/:token` - Accept workspace invitation
+- `GET /:id/members` - Get workspace members
+- `DELETE /:id/members/:memberId` - Remove workspace member
+- `PUT /:id/settings` - Update workspace settings
+- `GET /:id/analytics` - Get workspace analytics
+- `POST /:id/transfer-ownership` - Transfer workspace ownership
+
+### Space Routes (`/api/spaces`)
+
+#### Protected Routes
+- `GET /workspace/:workspaceId` - Get spaces in workspace
+- `GET /:id` - Get specific space
+- `POST /` - Create new space
+- `PUT /:id` - Update space
+- `DELETE /:id` - Delete space
+- `POST /:id/members` - Add space member
+- `DELETE /:id/members/:memberId` - Remove space member
+- `PUT /:id/members/:memberId/role` - Update member role
+- `GET /:id/members` - Get space members
+- `GET /:id/insights` - Get space insights
+- `POST /:id/archive` - Archive space
+- `POST /:id/clone` - Clone space
+
+### Board Routes (`/api/boards`)
+
+#### Protected Routes
+- `GET /space/:spaceId` - Get boards in space
+- `GET /:id` - Get specific board
+- `POST /` - Create new board
+- `PUT /:id` - Update board
+- `DELETE /:id` - Delete board
+- `POST /:id/columns` - Add board column
+- `PUT /:id/columns/:columnId` - Update column
+- `DELETE /:id/columns/:columnId` - Delete column
+
+### Task Routes (`/api/tasks`)
+
+#### Protected Routes
+- `GET /` - Get tasks
+- `GET /recommendations` - Get task recommendations
+- `GET /overdue` - Get overdue tasks
+- `GET /:id` - Get specific task
+- `POST /` - Create new task
+- `PUT /:id` - Update task
+- `PATCH /:id/move` - Move task to different column
+- `DELETE /:id` - Delete task
+- `PATCH /bulk-update` - Bulk update tasks
+- `POST /:id/time-tracking` - Start time tracking
+- `POST /:id/time-tracking/stop` - Stop time tracking
+- `POST /:id/duplicate` - Duplicate task
+- `GET /:id/history` - Get task history
+- `POST /:id/dependencies` - Add task dependency
+- `DELETE /:id/dependencies/:dependencyId` - Remove task dependency
+
+#### Task Comments
+- `POST /:id/comments` - Add comment to task
+- `PUT /comments/:commentId` - Update comment
+- `DELETE /comments/:commentId` - Delete comment
+- `POST /comments/:commentId/reactions` - Add reaction to comment
+- `DELETE /comments/:commentId/reactions` - Remove reaction from comment
+- `POST /comments/:commentId/pin` - Toggle comment pin
+- `POST /comments/:commentId/resolve` - Toggle comment resolve
+
+#### Task Watchers
+- `POST /:id/watchers` - Add watcher to task
+- `DELETE /:id/watchers` - Remove watcher from task
+
+### File Routes (`/api/files`)
+
+#### Protected Routes
+- `GET /` - Get files
+- `GET /:id` - Get specific file
+- `POST /upload` - Upload file
+- `DELETE /:id` - Delete file
+- `GET /:id/download` - Download file
+- `POST /logo/:entityType/:entityId` - Upload entity logo (workspace/space)
+
+### Notification Routes (`/api/notifications`)
+
+#### Protected Routes
+- `GET /` - Get notifications
+- `GET /stats` - Get notification statistics
+- `POST /` - Create notification (Admin only)
+- `PATCH /:id/read` - Mark notification as read
+- `POST /mark-all-read` - Mark all notifications as read
+- `PATCH /bulk-read` - Bulk mark notifications as read
+- `DELETE /:id` - Delete notification
+- `POST /clear-read` - Delete read notifications
+- `PUT /preferences` - Update notification preferences
+
+### Checklist Routes (`/api/checklists`)
+
+#### Protected Routes
+- `GET /task/:taskId` - Get task checklists
+- `GET /:id` - Get specific checklist
+- `POST /` - Create new checklist
+- `PUT /:id` - Update checklist
+- `DELETE /:id` - Delete checklist
+- `POST /:id/items` - Add checklist item
+- `PUT /:id/items/:itemId` - Update checklist item
+- `DELETE /:id/items/:itemId` - Delete checklist item
+- `PATCH /:id/items/:itemId/toggle` - Toggle checklist item
+
+### Reminder Routes (`/api/reminders`)
+
+#### Protected Routes
+- `GET /` - Get user reminders
+- `GET /:id` - Get specific reminder
+- `POST /` - Create new reminder
+- `PUT /:id` - Update reminder
+- `DELETE /:id` - Delete reminder
+- `PATCH /:id/snooze` - Snooze reminder
+- `PATCH /:id/dismiss` - Dismiss reminder
+
+### Analytics Routes (`/api/analytics`)
+
+#### Protected Routes
+- `GET /workspace/:workspaceId` - Get workspace analytics
+- `GET /space/:spaceId` - Get space analytics
+- `GET /board/:boardId` - Get board analytics
+- `GET /user/:userId` - Get user analytics
+- `GET /team/:spaceId` - Get team analytics
+
+### Tag Routes (`/api/tags`)
+
+#### Protected Routes
+- `GET /workspace/:workspaceId` - Get workspace tags
+- `GET /space/:spaceId` - Get space tags
+- `GET /:id` - Get specific tag
+- `POST /` - Create new tag
+- `PUT /:id` - Update tag
+- `DELETE /:id` - Delete tag
+- `GET /:id/usage` - Get tag usage statistics
+
+### Invitation Routes (`/api/invitations`)
+
+#### Public Routes
+- `POST /workspace` - Invite to workspace
+- `POST /space` - Invite to space
+- `GET /:token` - Get invitation details
+- `POST /:token/accept` - Accept invitation
+- `POST /:token/decline` - Decline invitation
+- `POST /:token/resend` - Resend invitation
+
+### AI Routes (`/api/ai`)
+
+#### Protected Routes
+- `POST /suggestions` - Generate task suggestions
+- `GET /risks/space/:spaceId` - Analyze space risks
+- `GET /risks/board/:boardId` - Analyze board risks
+- `POST /parse` - Parse natural language input
+- `POST /timeline/:spaceId` - Generate space timeline
+- `GET /recommendations/:spaceId` - Get smart recommendations
+- `GET /performance/:spaceId` - Analyze team performance
+- `POST /description` - Generate task description
+
+## Authentication & Authorization
+
+### JWT Token Structure
+```json
+{
+  "id": "user_id",
+  "email": "user@example.com",
+  "name": "User Name",
+  "avatar": "avatar_url",
+  "emailVerified": true,
+  "isActive": true
 }
 ```
 
-## 🔧 Configuration Files
+### Permission Levels
 
-### Monorepo Configuration
-- **package.json**: Root workspace configuration
-- **turbo.json**: Build pipeline and caching
-- **tsconfig.base.json**: Shared TypeScript settings
+#### System Roles
+- `admin` - System administrator
+- `super_admin` - Super administrator
+- `user` - Regular user
 
-### Code Quality
-- **.eslintrc.js**: ESLint rules for all packages
-- **.prettierrc**: Code formatting configuration
-- **.gitignore**: Version control ignore rules
+#### Workspace Roles
+- `owner` - Workspace owner (full access)
+- `admin` - Workspace administrator
+- `member` - Workspace member
 
-### App-Specific Configs
-- **tailwind.config.{js,ts}**: Tailwind CSS customization
-- **vite.config.ts**: Vite build tool configuration
-- **tsconfig.json**: TypeScript configuration
-- **app.json**: Expo mobile app configuration
+#### Space Roles
+- `owner` - Space owner (full access)
+- `admin` - Space administrator
+- `contributor` - Space contributor
+- `member` - Space member
+- `viewer` - Space viewer (read-only)
 
-## 🚀 Roadmap & Status (v2.0)
+#### Board Permissions
+- `canView` - View board
+- `canEdit` - Edit board
+- `canDelete` - Delete board
+- `canManageMembers` - Manage board members
 
-### ✅ Completed in v2.0
-| Feature | Priority | Status |
-|---------|----------|---------|
-| User Authentication | 🔥 High | ✅ Complete |
-| Board & Task Management | 🔥 High | ✅ Complete |
-| Real-time Collaboration | 🔥 High | ✅ Complete |
-| AI Pipeline Architecture | 🔥 High | ✅ Complete |
-| Advanced Analytics | ⚡ Medium | ✅ Complete |
-| Design System | ⚡ Medium | ✅ Complete |
-| Monorepo Structure | ⚡ Medium | ✅ Complete |
+### Permission Hierarchy
+1. **System Admin** - Access to all system features
+2. **Workspace Owner** - Full access to workspace and all spaces
+3. **Workspace Admin** - Administrative access to workspace
+4. **Space Owner** - Full access to specific space
+5. **Space Admin** - Administrative access to space
+6. **Space Contributor** - Can create and edit tasks
+7. **Space Member** - Can view and comment on tasks
+8. **Space Viewer** - Read-only access to space
 
-### 🚧 In Progress (v2.1)
-| Feature | Priority | Status |
-|---------|----------|---------|
-| Calendar View | ⚡ Medium | ⏳ 80% Done |
-| Mobile App Polish | ⚡ Medium | ⏳ In Progress |
-| Advanced AI Features | 🔥 High | ⏳ 60% Done |
+## Middleware
 
-### 📋 Planned (v3.0)  
-| Feature | Priority | Timeline |
-|---------|----------|-----------|
-| Offline Mode (Mobile) | ⚡ Medium | Q1 2024 |
-| Advanced Integrations | 🔥 High | Q2 2024 |
-| Enterprise SSO | ⚡ Medium | Q2 2024 |
-| Mobile App Store Release | 🔥 High | Q3 2024 |
+### Authentication Middleware
+- **Purpose**: Validates JWT tokens and user sessions
+- **Usage**: Applied to all protected routes
+- **Headers Required**: `Authorization: Bearer <token>`
+- **Optional Headers**: `X-Device-ID` for session validation
 
-## 🤝 Contributing
+### Permission Middleware
 
-We welcome contributions!
+#### `requireSystemAdmin`
+- **Purpose**: Restricts access to system administrators only
+- **Usage**: Admin-only routes
 
-1. Fork the repo
-2. Create a new feature branch
-3. Submit a Pull Request 🚀
+#### `requireWorkspacePermission(role)`
+- **Purpose**: Checks workspace-level permissions
+- **Parameters**: `role` - Required role (member, admin, owner)
+- **Usage**: Workspace-related operations
 
-## 📜 License
+#### `requireSpacePermission(permission)`
+- **Purpose**: Checks space-level permissions
+- **Parameters**: `permission` - Required permission or role
+- **Usage**: Space-related operations
 
-This project is licensed under the MIT License.
+#### `requireBoardPermission(permission)`
+- **Purpose**: Checks board-level permissions
+- **Parameters**: `permission` - Required permission
+- **Usage**: Board-related operations
 
----
+#### `requireResourceOwner(resourceField)`
+- **Purpose**: Ensures user owns the resource
+- **Parameters**: `resourceField` - Field containing user ID
+- **Usage**: Resource ownership validation
 
-## 🎯 Version 2.0 Summary
+### Validation Middleware
+- **Purpose**: Validates request body against schemas
+- **Usage**: Applied to POST/PUT routes
+- **Features**: Type checking, length validation, required fields
 
-**TaskFlow AI v2.0** represents a major evolution from a simple task manager to an enterprise-grade AI-powered project management platform.
+### Rate Limiting Middleware
+- **Purpose**: Prevents abuse of sensitive operations
+- **Usage**: Applied to authentication and sensitive operations
+- **Configuration**: Configurable limits per time window
 
-### 🏆 Key Achievements
-- **Professional Architecture**: Monorepo structure with shared components and utilities
-- **Advanced AI Integration**: Multi-step pipeline processing with dependency management
-- **Enterprise Analytics**: Risk assessment, trend analysis, and optimization recommendations
-- **Production-Ready Design**: Complete design system with dark/light theme support
-- **Mobile-First Approach**: Responsive components optimized for touch interfaces
-- **Developer Experience**: Enhanced with TypeScript, modern build tools, and comprehensive tooling
+### Upload Middleware
+- **Purpose**: Handles file uploads
+- **Types**: Avatar, task attachments, comment attachments
+- **Features**: File type validation, size limits, storage management
 
-### 📈 Performance Improvements
-- ⚡ 3x faster builds with Turborepo
-- 🎨 Consistent UI/UX across all platforms
-- 🤖 Intelligent project insights and recommendations  
-- 📱 Optimized mobile experience with touch-friendly design
-- 🔒 Enhanced security with modern authentication patterns
+### Error Middleware
+- **Purpose**: Global error handling
+- **Features**: Error logging, standardized error responses
+- **Usage**: Applied globally to all routes
 
-### 🌟 What Makes v2.0 Special
-TaskFlow AI v2.0 combines the simplicity of modern task management with the power of artificial intelligence, providing teams with not just a tool to manage tasks, but an intelligent assistant that helps optimize workflows, predict risks, and suggest improvements.
+## Request/Response Interfaces
 
-Perfect for teams who want to move beyond basic task tracking to intelligent project management with AI-powered insights and professional-grade architecture.
+### Common Response Format
+```json
+{
+  "success": true,
+  "message": "Operation completed successfully",
+  "data": {},
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
 
----
+### Error Response Format
+```json
+{
+  "success": false,
+  "message": "Error description",
+  "error": "ERROR_CODE",
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
 
-**🚀 Ready to experience the future of project management? Clone the repository and follow the setup guide above to get started with TaskFlow AI v2.0!**
+### Authentication Interfaces
+
+#### Register User
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "securepassword123",
+  "inviteToken": "optional_invite_token",
+  "device": {
+    "deviceId": "device_123",
+    "deviceInfo": {
+      "type": "web",
+      "os": "Windows 10",
+      "browser": "Chrome"
+    }
+  }
+}
+```
+
+#### Login User
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "securepassword123",
+  "rememberMe": true,
+  "device": {
+    "deviceId": "device_123",
+    "deviceInfo": {
+      "type": "web",
+      "os": "Windows 10",
+      "browser": "Chrome"
+    }
+  }
+}
+```
+
+### Workspace Interfaces
+
+#### Create Workspace
+```http
+POST /api/workspaces
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "My Workspace",
+  "description": "Workspace description",
+  "plan": "free"
+}
+```
+
+#### Invite Member
+```http
+POST /api/workspaces/:id/invite
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "email": "newmember@example.com",
+  "role": "member",
+  "message": "Welcome to our workspace!"
+}
+```
+
+### Space Interfaces
+
+#### Create Space
+```http
+POST /api/spaces
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "New Space",
+  "description": "Space description",
+  "workspaceId": "workspace_id",
+  "settings": {
+    "color": "#3B82F6",
+    "icon": "📋"
+  }
+}
+```
+
+### Task Interfaces
+
+#### Create Task
+```http
+POST /api/tasks
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+{
+  "title": "Implement login feature",
+  "description": "Create user authentication system",
+  "boardId": "board_id",
+  "columnId": "column_id",
+  "priority": "high",
+  "assignees": ["user_id_1", "user_id_2"],
+  "labels": ["frontend", "auth"],
+  "estimatedHours": 8,
+  "dueDate": "2024-01-20T23:59:59.000Z",
+  "startDate": "2024-01-15T00:00:00.000Z",
+  "position": 0
+}
+```
+
+#### Update Task
+```http
+PUT /api/tasks/:id
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "Updated task title",
+  "description": "Updated description",
+  "status": "in_progress",
+  "priority": "medium",
+  "assignees": ["user_id_1"],
+  "labels": ["frontend"],
+  "estimatedHours": 6,
+  "actualHours": 4,
+  "dueDate": "2024-01-25T23:59:59.000Z"
+}
+```
+
+#### Move Task
+```http
+PATCH /api/tasks/:id/move
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "columnId": "new_column_id",
+  "position": 2
+}
+```
+
+### Comment Interfaces
+
+#### Add Comment
+```http
+POST /api/tasks/:id/comments
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+{
+  "content": "This is a comment",
+  "mentions": ["user_id_1", "user_id_2"],
+  "parentCommentId": "parent_comment_id"
+}
+```
+
+### File Upload Interfaces
+
+#### Upload Task Attachment
+```http
+POST /api/tasks
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+{
+  "title": "Task with attachment",
+  "boardId": "board_id",
+  "columnId": "column_id",
+  "attachments": [file1, file2]
+}
+```
+
+### AI Interfaces
+
+#### Generate Task Suggestions
+```http
+POST /api/ai/suggestions
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "spaceGoal": "Build a task management application",
+  "spaceContext": "Team of 5 developers working on a React app",
+  "boardType": "kanban"
+}
+```
+
+#### Parse Natural Language
+```http
+POST /api/ai/parse
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "input": "Create a high priority task for user authentication due next Friday",
+  "boardId": "board_id"
+}
+```
+
+### Notification Interfaces
+
+#### Update Preferences
+```http
+PUT /api/notifications/preferences
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "preferences": {
+    "email": {
+      "task_assigned": true,
+      "task_completed": false,
+      "comment_added": true
+    },
+    "push": {
+      "task_assigned": true,
+      "due_date_reminder": true
+    }
+  }
+}
+```
+
+### Analytics Interfaces
+
+#### Get Space Analytics
+```http
+GET /api/analytics/space/:spaceId?dateRange=last30days&metrics=taskCompletion,teamPerformance
+Authorization: Bearer <token>
+```
+
+### Pagination and Filtering
+
+#### Pagination Parameters
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 20, max: 100)
+- `sortBy` - Sort field
+- `sortOrder` - Sort direction (asc, desc)
+
+#### Filtering Parameters
+- `status` - Filter by status
+- `priority` - Filter by priority
+- `assignee` - Filter by assignee
+- `dueDate` - Filter by due date
+- `tags` - Filter by tags
+- `search` - Text search
+
+#### Example with Pagination and Filtering
+```http
+GET /api/tasks?page=1&limit=20&sortBy=dueDate&sortOrder=asc&status=in_progress&priority=high&search=login
+Authorization: Bearer <token>
+```
+
+### WebSocket Events
+
+#### Real-time Updates
+- `task:created` - New task created
+- `task:updated` - Task updated
+- `task:moved` - Task moved to different column
+- `comment:added` - New comment added
+- `notification:received` - New notification
+- `board:updated` - Board configuration changed
+
+#### WebSocket Connection
+```javascript
+const socket = io('http://localhost:3000', {
+  auth: {
+    token: 'your-jwt-token'
+  }
+});
+
+// Join space room
+socket.emit('join:space', { spaceId: 'space_id' });
+
+socket.on('task:created', (data) => {
+  console.log('New task:', data);
+});
+```
+
+## Error Codes
+
+### HTTP Status Codes
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request
+- `401` - Unauthorized
+- `403` - Forbidden
+- `404` - Not Found
+- `409` - Conflict
+- `422` - Validation Error
+- `423` - Locked
+- `429` - Too Many Requests
+- `500` - Internal Server Error
+
+### Custom Error Codes
+- `INVALID_TOKEN` - Invalid JWT token
+- `TOKEN_EXPIRED` - JWT token expired
+- `INSUFFICIENT_PERMISSIONS` - User lacks required permissions
+- `RESOURCE_NOT_FOUND` - Requested resource not found
+- `VALIDATION_ERROR` - Request validation failed
+- `RATE_LIMIT_EXCEEDED` - Rate limit exceeded
+- `FILE_TOO_LARGE` - Uploaded file exceeds size limit
+- `INVALID_FILE_TYPE` - Unsupported file type
+
+## Rate Limiting
+
+### Default Limits
+- **Authentication**: 5 requests per 15 minutes
+- **File Uploads**: 10 requests per hour
+- **API Calls**: 1000 requests per hour per user
+- **WebSocket Connections**: 10 connections per user
+
+### Rate Limit Headers
+```
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1642233600
+```
+
+## Security Features
+
+### Authentication Security
+- JWT tokens with configurable expiration
+- Session management with device tracking
+- Password hashing with bcrypt
+- Account lockout after failed attempts
+- Email verification for new accounts
+
+### Authorization Security
+- Role-based access control (RBAC)
+- Permission-based access control (PBAC)
+- Resource ownership validation
+- Workspace and space isolation
+
+### Data Security
+- Input validation and sanitization
+- SQL injection prevention
+- XSS protection
+- CSRF protection
+- File upload security
+
+### API Security
+- Rate limiting
+- Request size limits
+- CORS configuration
+- Helmet.js security headers
+- Request logging and monitoring
+
+## Development and Testing
+
+### Environment Variables
+```env
+NODE_ENV=development
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/taskflow
+JWT_SECRET=your-jwt-secret
+JWT_EXPIRES_IN=7d
+CORS_ORIGIN=http://localhost:5173
+UPLOAD_PATH=./uploads
+MAX_FILE_SIZE=10485760
+```
+
+**Important**: Never commit real credentials to version control. Use environment variables and .env files for sensitive configuration.
+
+### Running Tests
+```bash
+# Run all tests
+npm test
+
+# Run specific test file
+npm test -- tests/auth.test.js
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### API Testing
+```bash
+# Health check
+curl http://localhost:3000/health
+
+# Get user profile
+curl -H "Authorization: Bearer <token>" http://localhost:3000/api/auth/me
+
+# Create workspace
+curl -X POST -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test Workspace","description":"Test"}' \
+  http://localhost:3000/api/workspaces
+```
+
+### Database Migration
+
+To migrate from the old project-based structure to the new space-based structure:
+
+```bash
+cd apps/backend
+node src/scripts/migrate-projects-to-spaces.js
+```
+
+This migration script will:
+- Convert all existing projects to spaces
+- Update all references (boards, tasks, tags, etc.)
+- Migrate user roles and permissions
+- Update statistics and metadata
+- Drop the projects collection
+
+## File Organization
+
+### Local Storage Structure
+```
+uploads/
+├── avatars/          # User profile pictures
+├── boards/           # Board-specific files
+├── comments/         # Comment attachments
+├── general/          # General files
+├── logos/            # Workspace & space logos
+├── tasks/            # Task attachments
+└── thumbnails/       # Generated thumbnails
+```
+
+All files are stored locally on disk. No cloud/CDN integration is supported in this version.
+
+This comprehensive documentation covers all aspects of the TaskFlow API, including models, routes, permissions, middleware, and request/response interfaces. The API is designed to be secure, scalable, and developer-friendly with comprehensive error handling and real-time capabilities.

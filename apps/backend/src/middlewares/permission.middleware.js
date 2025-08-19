@@ -29,10 +29,16 @@ const requireWorkspacePermission = (role = 'member') => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
-            const workspaceId = req.params.workspaceId || req.body.workspaceId;
+            const workspaceId = req.params.workspaceId || req.params.id || req.body.workspaceId;
 
             if (!workspaceId) {
                 return sendResponse(res, 400, false, 'Workspace ID required');
+            }
+
+            // Check if workspace exists first
+            const workspace = await Workspace.findById(workspaceId);
+            if (!workspace) {
+                return sendResponse(res, 404, false, 'Workspace not found');
             }
 
             const user = await User.findById(userId);
@@ -42,7 +48,7 @@ const requireWorkspacePermission = (role = 'member') => {
                 return sendResponse(res, 403, false, `Workspace ${role} role required`);
             }
 
-            req.workspace = await Workspace.findById(workspaceId);
+            req.workspace = workspace;
             next();
         } catch (error) {
             logger.error('Workspace permission check error:', error);
@@ -52,11 +58,11 @@ const requireWorkspacePermission = (role = 'member') => {
 };
 
 // Require project permission
-const requireProjectPermission = (role = 'member') => {
+const requireProjectPermission = (roleOrPermission = 'member') => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
-            const projectId = req.params.projectId || req.body.projectId;
+            const projectId = req.params.id || req.params.projectId || req.body.projectId;
 
             if (!projectId) {
                 return sendResponse(res, 400, false, 'Project ID required');
@@ -65,8 +71,15 @@ const requireProjectPermission = (role = 'member') => {
             const user = await User.findById(userId);
             const userRoles = await user.getRoles();
 
-            if (!userRoles.hasProjectRole(projectId, role)) {
-                return sendResponse(res, 403, false, `Project ${role} role required`);
+            // Check if it's a permission (starts with 'can') or a role
+            if (roleOrPermission.startsWith('can')) {
+                if (!userRoles.hasProjectPermission(projectId, roleOrPermission)) {
+                    return sendResponse(res, 403, false, `Permission '${roleOrPermission}' required`);
+                }
+            } else {
+                if (!userRoles.hasProjectRole(projectId, roleOrPermission)) {
+                    return sendResponse(res, 403, false, `Project ${roleOrPermission} role required`);
+                }
             }
 
             req.project = await Project.findById(projectId);
@@ -83,20 +96,32 @@ const requireSpacePermission = (permission) => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
-            const spaceId = req.params.spaceId || req.body.spaceId;
+            const spaceId = req.params.id || req.params.spaceId || req.body.spaceId;
 
             if (!spaceId) {
                 return sendResponse(res, 400, false, 'Space ID required');
             }
 
-            const user = await User.findById(userId);
-            const userRoles = await user.getRoles();
+            const [user, space] = await Promise.all([
+                User.findById(userId),
+                Space.findById(spaceId)
+            ]);
 
-            if (!userRoles.hasSpacePermission(spaceId, permission)) {
+            if (!space) {
+                return sendResponse(res, 404, false, 'Space not found');
+            }
+
+            const userRoles = await user.getRoles();
+            const hasRolePermission = userRoles.hasSpacePermission(spaceId, permission);
+            const hasMemberPermission = (typeof space.hasPermission === 'function')
+                ? space.hasPermission(userId, permission)
+                : false;
+
+            if (!hasRolePermission && !hasMemberPermission) {
                 return sendResponse(res, 403, false, `Space permission '${permission}' required`);
             }
 
-            req.space = await Space.findById(spaceId);
+            req.space = space;
             next();
         } catch (error) {
             logger.error('Space permission check error:', error);

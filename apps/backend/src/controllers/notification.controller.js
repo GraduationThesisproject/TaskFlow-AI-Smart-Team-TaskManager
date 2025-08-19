@@ -8,12 +8,24 @@ const logger = require('../config/logger');
 // Get user notifications
 exports.getNotifications = async (req, res) => {
     try {
-        const { limit = 50, page = 1, unreadOnly = false } = req.query;
+        const { limit = 50, page = 1, isRead, type, priority } = req.query;
         const userId = req.user.id;
 
         let query = { recipient: userId };
-        if (unreadOnly === 'true') {
-            query.isRead = false;
+        
+        // Filter by read status
+        if (isRead !== undefined) {
+            query.isRead = isRead === 'true';
+        }
+        
+        // Filter by type
+        if (type) {
+            query.type = type;
+        }
+        
+        // Filter by priority
+        if (priority) {
+            query.priority = priority;
         }
 
         const notifications = await Notification.find(query)
@@ -32,6 +44,8 @@ exports.getNotifications = async (req, res) => {
                 page: parseInt(page),
                 limit: parseInt(limit),
                 total,
+                totalItems: total,
+                currentPage: parseInt(page),
                 pages: Math.ceil(total / parseInt(limit))
             },
             unreadCount
@@ -48,13 +62,15 @@ exports.markAsRead = async (req, res) => {
         const { id: notificationId } = req.params;
         const userId = req.user.id;
 
-        const notification = await Notification.findOne({
-            _id: notificationId,
-            recipient: userId
-        });
+        const notification = await Notification.findById(notificationId);
 
         if (!notification) {
             return sendResponse(res, 404, false, 'Notification not found');
+        }
+
+        // Check if user owns the notification
+        if (notification.recipient.toString() !== userId.toString()) {
+            return sendResponse(res, 403, false, 'Access denied - not notification owner');
         }
 
         if (!notification.isRead) {
@@ -63,7 +79,9 @@ exports.markAsRead = async (req, res) => {
             await notification.save();
         }
 
-        sendResponse(res, 200, true, 'Notification marked as read');
+        sendResponse(res, 200, true, 'Notification marked as read', {
+            notification
+        });
     } catch (error) {
         logger.error('Mark notification as read error:', error);
         sendResponse(res, 500, false, 'Server error marking notification as read');
@@ -75,12 +93,14 @@ exports.markAllAsRead = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        await Notification.updateMany(
+        const result = await Notification.updateMany(
             { recipient: userId, isRead: false },
             { isRead: true, readAt: new Date() }
         );
 
-        sendResponse(res, 200, true, 'All notifications marked as read');
+        sendResponse(res, 200, true, 'All notifications marked as read', {
+            modifiedCount: result.modifiedCount
+        });
     } catch (error) {
         logger.error('Mark all notifications as read error:', error);
         sendResponse(res, 500, false, 'Server error marking all notifications as read');
@@ -93,13 +113,15 @@ exports.deleteNotification = async (req, res) => {
         const { id: notificationId } = req.params;
         const userId = req.user.id;
 
-        const notification = await Notification.findOne({
-            _id: notificationId,
-            recipient: userId
-        });
+        const notification = await Notification.findById(notificationId);
 
         if (!notification) {
             return sendResponse(res, 404, false, 'Notification not found');
+        }
+
+        // Check if user owns the notification
+        if (notification.recipient.toString() !== userId.toString()) {
+            return sendResponse(res, 403, false, 'Access denied - not notification owner');
         }
 
         await Notification.findByIdAndDelete(notificationId);
@@ -148,7 +170,7 @@ exports.getNotificationStats = async (req, res) => {
         const userId = req.user.id;
 
         const stats = await Notification.aggregate([
-            { $match: { recipient: mongoose.Types.ObjectId(userId) } },
+            { $match: { recipient: new mongoose.Types.ObjectId(userId) } },
             {
                 $group: {
                     _id: '$type',
@@ -161,7 +183,7 @@ exports.getNotificationStats = async (req, res) => {
         ]);
 
         const totalStats = await Notification.aggregate([
-            { $match: { recipient: mongoose.Types.ObjectId(userId) } },
+            { $match: { recipient: new mongoose.Types.ObjectId(userId) } },
             {
                 $group: {
                     _id: null,
@@ -182,9 +204,37 @@ exports.getNotificationStats = async (req, res) => {
             }
         ]);
 
+        // Transform stats to match test expectations
+        const byType = {};
+        stats.forEach(stat => {
+            byType[stat._id] = stat.total;
+        });
+
+        const byPriority = await Notification.aggregate([
+            { $match: { recipient: new mongoose.Types.ObjectId(userId) } },
+            {
+                $group: {
+                    _id: '$priority',
+                    total: { $sum: 1 },
+                    unread: {
+                        $sum: { $cond: [{ $eq: ['$isRead', false] }, 1, 0] }
+                    }
+                }
+            }
+        ]);
+
+        const byPriorityObj = {};
+        byPriority.forEach(stat => {
+            byPriorityObj[stat._id] = stat.total;
+        });
+
         sendResponse(res, 200, true, 'Notification statistics retrieved successfully', {
-            byType: stats,
-            overall: totalStats[0] || { total: 0, unread: 0, thisWeek: 0 }
+            stats: {
+                total: totalStats[0]?.total || 0,
+                unread: totalStats[0]?.unread || 0,
+                byType,
+                byPriority: byPriorityObj
+            }
         });
     } catch (error) {
         logger.error('Get notification stats error:', error);
@@ -218,7 +268,7 @@ exports.createNotification = async (req, res) => {
         const notification = await Notification.create({
             title,
             message,
-            type: type || 'project_update',
+            type: type || 'space_update',
             recipient: recipientId,
             sender: senderId,
             relatedEntity,

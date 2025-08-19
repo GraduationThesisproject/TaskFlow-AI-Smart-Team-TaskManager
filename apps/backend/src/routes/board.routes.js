@@ -9,8 +9,7 @@ const createBoardSchema = {
     name: { required: true, minLength: 2, maxLength: 100 },
     description: { maxLength: 500 },
     type: { enum: ['kanban', 'list', 'calendar', 'timeline'], default: 'kanban' },
-    spaceId: { required: true, objectId: true },
-    projectId: { required: true, objectId: true }
+    spaceId: { required: true, objectId: true }
 };
 
 const updateBoardSchema = {
@@ -31,7 +30,7 @@ const updateColumnSchema = {
 };
 
 // Routes
-router.get('/project/:projectId', boardController.getBoards);
+router.get('/space/:spaceId', boardController.getBoards);
 router.get('/:id', boardController.getBoard);
 
 router.post('/', 

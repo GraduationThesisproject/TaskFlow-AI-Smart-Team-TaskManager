@@ -1,19 +1,19 @@
 const Tag = require('../models/Tag');
 const Task = require('../models/Task');
-const Project = require('../models/Project');
+const Space = require('../models/Space');
 const logger = require('../config/logger');
 
 class TagService {
 
     // Create or get existing tag
-    static async createOrGetTag(projectId, tagName, color, userId) {
+    static async createOrGetTag(spaceId, tagName, color, userId) {
         try {
             const normalizedName = tagName.toLowerCase().trim();
 
             // Check if tag already exists
             let tag = await Tag.findOne({ 
-                name: normalizedName, 
-                project: projectId 
+                name: { $regex: `^${normalizedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' }, 
+                space: spaceId 
             });
 
             if (tag) {
@@ -22,9 +22,10 @@ class TagService {
 
             // Create new tag
             tag = await Tag.create({
-                name: normalizedName,
+                name: tagName.trim(),
                 color: color || this.generateRandomColor(),
-                project: projectId,
+                scope: 'space',
+                space: spaceId,
                 createdBy: userId
             });
 
@@ -44,15 +45,15 @@ class TagService {
                 throw new Error('Task not found');
             }
 
-            const project = await Project.findById(task.project);
-            if (!project) {
-                throw new Error('Project not found');
+            const space = await Space.findById(task.space);
+            if (!space) {
+                throw new Error('Space not found');
             }
 
             // Process each tag
             const appliedTags = [];
             for (const tagName of tagNames) {
-                const tag = await this.createOrGetTag(task.project, tagName, null, userId);
+                const tag = await this.createOrGetTag(task.space, tagName, null, userId);
                 
                 // Check if tag is already applied to task
                 const existingLabel = task.labels.find(label => label.name === tag.name);
@@ -104,8 +105,8 @@ class TagService {
             // Decrement usage count for removed tags
             for (const tagName of removedTags) {
                 const tag = await Tag.findOne({ 
-                    name: tagName, 
-                    project: task.project 
+                    name: { $regex: `^${tagName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' }, 
+                    space: task.space 
                 });
                 
                 if (tag && tag.usageCount > 0) {
@@ -122,11 +123,11 @@ class TagService {
         }
     }
 
-    // Get popular tags for project
-    static async getPopularTags(projectId, limit = 20) {
+    // Get popular tags for space
+    static async getPopularTags(spaceId, limit = 20) {
         try {
-            const tags = await Tag.find({ project: projectId })
-                .sort({ usageCount: -1 })
+            const tags = await Tag.find({ space: spaceId })
+                .sort({ usageCount: -1, name: 1 })
                 .limit(limit);
 
             return tags;
@@ -138,10 +139,13 @@ class TagService {
     }
 
     // Update tag usage counts
-    static async updateTagUsageCounts(projectId) {
+    static async updateTagUsageCounts(spaceId) {
         try {
-            const usageCounts = await Task.aggregate([
-                { $match: { project: mongoose.Types.ObjectId(projectId) } },
+            const mongoose = require('mongoose');
+
+            // Aggregate task labels to get usage counts
+            const usageStats = await Task.aggregate([
+                { $match: { space: mongoose.Types.ObjectId(spaceId) } },
                 { $unwind: '$labels' },
                 {
                     $group: {
@@ -151,24 +155,15 @@ class TagService {
                 }
             ]);
 
-            // Update each tag's usage count
-            for (const usage of usageCounts) {
-                await Tag.findOneAndUpdate(
-                    { name: usage._id, project: projectId },
+            // Update tag usage counts
+            for (const usage of usageStats) {
+                await Tag.updateOne(
+                    { name: usage._id, space: spaceId },
                     { usageCount: usage.count }
                 );
             }
 
-            // Set usage count to 0 for tags not in use
-            await Tag.updateMany(
-                {
-                    project: projectId,
-                    name: { $nin: usageCounts.map(u => u._id) }
-                },
-                { usageCount: 0 }
-            );
-
-            return usageCounts;
+            logger.info(`Updated tag usage counts for space: ${spaceId}`);
 
         } catch (error) {
             logger.error('Update tag usage counts error:', error);
@@ -176,44 +171,42 @@ class TagService {
         }
     }
 
-    // Merge two tags
+    // Merge tags
     static async mergeTags(sourceTagId, targetTagId, userId) {
         try {
-            const [sourceTag, targetTag] = await Promise.all([
-                Tag.findById(sourceTagId),
-                Tag.findById(targetTagId)
-            ]);
+            const sourceTag = await Tag.findById(sourceTagId);
+            const targetTag = await Tag.findById(targetTagId);
 
             if (!sourceTag || !targetTag) {
                 throw new Error('One or both tags not found');
             }
 
-            if (sourceTag.project.toString() !== targetTag.project.toString()) {
-                throw new Error('Tags must be from the same project');
+            if (sourceTag.space.toString() !== targetTag.space.toString()) {
+                throw new Error('Cannot merge tags from different spaces');
             }
 
-            // Update all tasks using source tag to use target tag
+            // Update all tasks using the source tag
             await Task.updateMany(
                 { 
-                    project: sourceTag.project,
-                    'labels.name': sourceTag.name
+                    space: sourceTag.space,
+                    'labels.name': sourceTag.name 
                 },
-                {
-                    $set: { 'labels.$.name': targetTag.name, 'labels.$.color': targetTag.color }
+                { 
+                    $set: { 'labels.$.name': targetTag.name },
+                    $set: { 'labels.$.color': targetTag.color }
                 }
             );
 
-            // Update target tag usage count
+            // Update usage count
             targetTag.usageCount += sourceTag.usageCount;
             await targetTag.save();
 
             // Delete source tag
             await Tag.findByIdAndDelete(sourceTagId);
 
-            return {
-                mergedTag: targetTag,
-                transferredUsage: sourceTag.usageCount
-            };
+            logger.info(`Merged tag ${sourceTag.name} into ${targetTag.name}`);
+
+            return targetTag;
 
         } catch (error) {
             logger.error('Merge tags error:', error);
@@ -222,7 +215,7 @@ class TagService {
     }
 
     // Get tag suggestions based on task content
-    static async suggestTags(taskTitle, taskDescription, projectId, limit = 5) {
+    static async suggestTags(taskTitle, taskDescription, spaceId, limit = 5) {
         try {
             // Simple keyword-based suggestion
             const text = `${taskTitle} ${taskDescription}`.toLowerCase();
@@ -230,13 +223,13 @@ class TagService {
 
             // Find existing tags that match keywords
             const matchingTags = await Tag.find({
-                project: projectId,
+                space: spaceId,
                 name: { $in: keywords }
             }).sort({ usageCount: -1 }).limit(limit);
 
             // Get popular tags as fallback
             if (matchingTags.length < limit) {
-                const popularTags = await this.getPopularTags(projectId, limit - matchingTags.length);
+                const popularTags = await this.getPopularTags(spaceId, limit - matchingTags.length);
                 matchingTags.push(...popularTags.filter(tag => 
                     !matchingTags.some(mt => mt._id.toString() === tag._id.toString())
                 ));
@@ -250,8 +243,8 @@ class TagService {
         }
     }
 
-    // Create tag template for project
-    static async createTagTemplate(projectId, templateData, userId) {
+    // Create tag template for space
+    static async createTagTemplate(spaceId, templateData, userId) {
         try {
             const { name, tags } = templateData;
 
@@ -263,14 +256,14 @@ class TagService {
                     description: tag.description
                 })),
                 createdBy: userId,
-                project: projectId
+                space: spaceId
             };
 
             // Store template (could be in separate collection)
             // For now, we'll create the tags and mark them as template
             const createdTags = [];
             for (const tagData of template.tags) {
-                const tag = await this.createOrGetTag(projectId, tagData.name, tagData.color, userId);
+                const tag = await this.createOrGetTag(spaceId, tagData.name, tagData.color, userId);
                 tag.isTemplate = true;
                 tag.description = tagData.description;
                 await tag.save();
@@ -288,11 +281,11 @@ class TagService {
         }
     }
 
-    // Apply tag template to project
-    static async applyTagTemplate(projectId, templateName, userId) {
+    // Apply tag template to space
+    static async applyTagTemplate(spaceId, templateName, userId) {
         try {
             const templateTags = await Tag.find({
-                project: projectId,
+                space: spaceId,
                 isTemplate: true
             });
 
@@ -300,7 +293,7 @@ class TagService {
             const appliedTags = [];
             for (const templateTag of templateTags) {
                 const tag = await this.createOrGetTag(
-                    projectId, 
+                    spaceId, 
                     templateTag.name, 
                     templateTag.color, 
                     userId
@@ -317,12 +310,12 @@ class TagService {
     }
 
     // Cleanup unused tags
-    static async cleanupUnusedTags(projectId, daysUnused = 30) {
+    static async cleanupUnusedTags(spaceId, daysUnused = 30) {
         try {
             const cutoffDate = new Date(Date.now() - daysUnused * 24 * 60 * 60 * 1000);
 
             const unusedTags = await Tag.find({
-                project: projectId,
+                space: spaceId,
                 usageCount: 0,
                 createdAt: { $lt: cutoffDate },
                 isTemplate: { $ne: true }
@@ -344,10 +337,12 @@ class TagService {
     }
 
     // Get tag analytics
-    static async getTagAnalytics(projectId) {
+    static async getTagAnalytics(spaceId) {
         try {
+            const mongoose = require('mongoose');
+
             const analytics = await Tag.aggregate([
-                { $match: { project: mongoose.Types.ObjectId(projectId) } },
+                { $match: { space: mongoose.Types.ObjectId(spaceId) } },
                 {
                     $group: {
                         _id: null,
@@ -362,7 +357,7 @@ class TagService {
                 }
             ]);
 
-            const topTags = await Tag.find({ project: projectId })
+            const topTags = await Tag.find({ space: spaceId })
                 .sort({ usageCount: -1 })
                 .limit(10)
                 .select('name usageCount color');
@@ -417,13 +412,13 @@ class TagService {
     }
 
     // Batch create tags
-    static async batchCreateTags(projectId, tagData, userId) {
+    static async batchCreateTags(spaceId, tagData, userId) {
         try {
             const createdTags = [];
             
             for (const data of tagData) {
                 const validatedName = this.validateTagName(data.name);
-                const tag = await this.createOrGetTag(projectId, validatedName, data.color, userId);
+                const tag = await this.createOrGetTag(spaceId, validatedName, data.color, userId);
                 createdTags.push(tag);
             }
             

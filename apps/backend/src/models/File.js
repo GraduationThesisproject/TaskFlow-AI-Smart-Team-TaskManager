@@ -1,22 +1,16 @@
 const mongoose = require('mongoose');
+const path = require('path');
+
+// NOTE: This File model supports ONLY local disk storage.
+// Cloud/CDN integrations (url field) are not supported in this version.
 
 const fileSchema = new mongoose.Schema({
-  // Cloudinary information
-  publicId: {
+  // Local file information
+  filename: {
     type: String,
-    required: [true, 'Cloudinary public ID is required'],
+    required: [true, 'Filename is required'],
     unique: true
   },
-  url: {
-    type: String,
-    required: [true, 'File URL is required']
-  },
-  secureUrl: {
-    type: String,
-    required: [true, 'Secure URL is required']
-  },
-  
-  // File metadata
   originalName: {
     type: String,
     required: [true, 'Original filename is required'],
@@ -31,14 +25,19 @@ const fileSchema = new mongoose.Schema({
     required: [true, 'File size is required'],
     min: [0, 'File size cannot be negative']
   },
-  format: {
+  path: {
+    type: String,
+    required: [true, 'File path is required']
+  },
+  extension: {
     type: String,
     required: true
   },
-  resourceType: {
+  
+  // File integrity and security
+  checksum: {
     type: String,
-    enum: ['image', 'video', 'raw', 'auto'],
-    default: 'auto'
+    required: [true, 'File checksum is required for integrity verification']
   },
   
   // File categorization
@@ -59,20 +58,20 @@ const fileSchema = new mongoose.Schema({
     ref: 'Workspace',
     default: null
   },
-  project: {
+  space: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project',
+    ref: 'Space',
     default: null
   },
   
-  // Usage tracking
-  attachedTo: [{
-    entityType: {
+  // Usage tracking - Enhanced with model reference
+  attachedTo: {
+    model: {
       type: String,
-      enum: ['User', 'Task', 'Comment', 'Project', 'Workspace', 'Board'],
+      enum: ['User', 'Task', 'Comment', 'Space', 'Workspace', 'Board'],
       required: true
     },
-    entityId: {
+    objectId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true
     },
@@ -80,7 +79,7 @@ const fileSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     }
-  }],
+  },
   
   // File properties
   dimensions: {
@@ -123,10 +122,10 @@ const fileSchema = new mongoose.Schema({
   },
   
   // File transformations (for images)
-  transformations: [{
-    name: String,
+  thumbnails: [{
+    size: String, // e.g., 'small', 'medium', 'large' or '150x150'
+    path: String,
     url: String,
-    transformation: String,
     createdAt: {
       type: Date,
       default: Date.now
@@ -145,13 +144,14 @@ const fileSchema = new mongoose.Schema({
     scanEngine: String
   },
   
-  // Metadata from Cloudinary
-  cloudinaryMetadata: {
-    etag: String,
-    signature: String,
-    version: Number,
-    versionId: String,
-    folder: String
+  // File metadata
+  encoding: {
+    type: String,
+    default: '7bit'
+  },
+  fieldname: {
+    type: String,
+    default: 'file'
   }
 }, {
   timestamps: true,
@@ -196,40 +196,30 @@ fileSchema.virtual('canPreview').get(function() {
 });
 
 // Indexes for efficient queries
-fileSchema.index({ publicId: 1 }, { unique: true });
+// Filename index is created automatically by 'unique: true' in schema
 fileSchema.index({ uploadedBy: 1, createdAt: -1 });
 fileSchema.index({ workspace: 1, category: 1 });
-fileSchema.index({ project: 1, category: 1 });
+fileSchema.index({ space: 1, category: 1 });
 fileSchema.index({ 'attachedTo.entityType': 1, 'attachedTo.entityId': 1 });
 fileSchema.index({ category: 1, isActive: 1 });
 fileSchema.index({ mimeType: 1 });
 fileSchema.index({ size: 1 });
+fileSchema.index({ originalName: 1 });
 
 // Method to attach to entity
-fileSchema.methods.attachTo = function(entityType, entityId) {
-  const existingAttachment = this.attachedTo.find(attachment => 
-    attachment.entityType === entityType && 
-    attachment.entityId.toString() === entityId.toString()
-  );
-  
-  if (!existingAttachment) {
-    this.attachedTo.push({
-      entityType,
-      entityId,
-      attachedAt: new Date()
-    });
-  }
+fileSchema.methods.attachTo = function(model, objectId) {
+  this.attachedTo = {
+    model,
+    objectId,
+    attachedAt: new Date()
+  };
   
   return this.save();
 };
 
 // Method to detach from entity
-fileSchema.methods.detachFrom = function(entityType, entityId) {
-  this.attachedTo = this.attachedTo.filter(attachment => 
-    !(attachment.entityType === entityType && 
-      attachment.entityId.toString() === entityId.toString())
-  );
-  
+fileSchema.methods.detachFrom = function() {
+  this.attachedTo = null;
   return this.save();
 };
 
@@ -240,43 +230,77 @@ fileSchema.methods.incrementDownloadCount = function() {
   return this.save();
 };
 
-// Method to add transformation
-fileSchema.methods.addTransformation = function(name, url, transformation) {
-  this.transformations.push({
-    name,
-    url,
-    transformation
+// Method to add thumbnail
+fileSchema.methods.addThumbnail = function(size, thumbnailPath, thumbnailUrl) {
+  this.thumbnails.push({
+    size,
+    path: thumbnailPath,
+    url: thumbnailUrl
   });
   return this.save();
 };
 
-// Method to get optimized URL
-fileSchema.methods.getOptimizedUrl = function(optimization = 'auto') {
-  const { getOptimizedUrl } = require('../config/cloudinary');
-  return getOptimizedUrl(this.publicId, optimization);
+// Method to get thumbnail URL
+fileSchema.methods.getThumbnailUrl = function(size = 'medium') {
+  const thumbnail = this.thumbnails.find(thumb => thumb.size === size);
+  return thumbnail ? thumbnail.url : this.url;
 };
 
-// Method to delete from Cloudinary
-fileSchema.methods.deleteFromCloudinary = async function() {
-  const { deleteFile } = require('../config/cloudinary');
+// Method to verify file integrity
+fileSchema.methods.verifyIntegrity = async function() {
+  const crypto = require('crypto');
+  const fs = require('fs');
   
   try {
-    const deleted = await deleteFile(this.publicId);
-    if (deleted) {
-      this.isActive = false;
-      await this.save();
+    if (!fs.existsSync(this.path)) {
+      return { valid: false, error: 'File not found on disk' };
     }
-    return deleted;
+    
+    const fileBuffer = fs.readFileSync(this.path);
+    const currentChecksum = crypto.createHash('md5').update(fileBuffer).digest('hex');
+    
+    return {
+      valid: currentChecksum === this.checksum,
+      currentChecksum,
+      storedChecksum: this.checksum,
+      fileSize: fileBuffer.length
+    };
   } catch (error) {
-    throw new Error(`Failed to delete file from Cloudinary: ${error.message}`);
+    return { valid: false, error: error.message };
+  }
+};
+
+// Method to delete file from local storage
+fileSchema.methods.deleteFromStorage = async function() {
+  const fs = require('fs').promises;
+  const path = require('path');
+  
+  try {
+    // Delete main file
+    await fs.unlink(this.path);
+    
+    // Delete thumbnails
+    for (const thumbnail of this.thumbnails) {
+      try {
+        await fs.unlink(thumbnail.path);
+      } catch (error) {
+        console.warn(`Failed to delete thumbnail: ${thumbnail.path}`, error.message);
+      }
+    }
+    
+    this.isActive = false;
+    await this.save();
+    return true;
+  } catch (error) {
+    throw new Error(`Failed to delete file from storage: ${error.message}`);
   }
 };
 
 // Static method to find by entity
-fileSchema.statics.findByEntity = function(entityType, entityId) {
+fileSchema.statics.findByEntity = function(model, objectId) {
   return this.find({
-    'attachedTo.entityType': entityType,
-    'attachedTo.entityId': entityId,
+    'attachedTo.model': model,
+    'attachedTo.objectId': objectId,
     isActive: true
   }).sort({ createdAt: -1 });
 };
@@ -299,9 +323,9 @@ fileSchema.statics.findByWorkspace = function(workspaceId, category = null) {
   return this.find(query).sort({ createdAt: -1 });
 };
 
-// Static method to find by project
-fileSchema.statics.findByProject = function(projectId, category = null) {
-  const query = { project: projectId, isActive: true };
+// Static method to find by space
+fileSchema.statics.findBySpace = function(spaceId, category = null) {
+  const query = { space: spaceId, isActive: true };
   if (category) {
     query.category = category;
   }
@@ -312,7 +336,7 @@ fileSchema.statics.findByProject = function(projectId, category = null) {
 fileSchema.statics.getStorageStats = async function(workspaceId = null) {
   const matchStage = { isActive: true };
   if (workspaceId) {
-    matchStage.workspace = mongoose.Types.ObjectId(workspaceId);
+    matchStage.workspace = new mongoose.Types.ObjectId(workspaceId);
   }
 
   const stats = await this.aggregate([
@@ -352,31 +376,65 @@ fileSchema.statics.getStorageStats = async function(workspaceId = null) {
 // Static method to cleanup orphaned files
 fileSchema.statics.cleanupOrphaned = function() {
   return this.updateMany(
-    { attachedTo: { $size: 0 }, createdAt: { $lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+    { attachedTo: null, createdAt: { $lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
     { isActive: false }
   );
 };
 
-// Pre-save middleware to set workspace/project context
+// Static method to create from Multer upload
+fileSchema.statics.createFromUpload = function(multerFile, uploadedBy, category = 'general', additionalData = {}) {
+  const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+  const url = `${baseUrl}/uploads/${multerFile.filename}`;
+  const crypto = require('crypto');
+  const fs = require('fs');
+  
+  // Generate checksum for file integrity
+  const fileBuffer = fs.readFileSync(multerFile.path);
+  const checksum = crypto.createHash('md5').update(fileBuffer).digest('hex');
+  
+  return new this({
+    filename: multerFile.filename,
+    originalName: multerFile.originalname,
+    mimeType: multerFile.mimetype,
+    size: multerFile.size,
+    path: multerFile.path,
+    url: url,
+    extension: require('path').extname(multerFile.originalname).substring(1), // Remove the dot
+    checksum: checksum,
+    encoding: multerFile.encoding || '7bit',
+    fieldname: multerFile.fieldname || 'file',
+    uploadedBy: uploadedBy,
+    category: category,
+    ...additionalData
+  });
+};
+
+    // Pre-save middleware to set workspace/space context and file extension
 fileSchema.pre('save', async function(next) {
-  if (this.isNew && this.attachedTo.length > 0) {
-    const firstAttachment = this.attachedTo[0];
-    
+  // Set file extension if not already set
+  if (this.isNew && !this.extension && this.originalName) {
+    this.extension = require('path').extname(this.originalName).substring(1); // Remove the dot
+  }
+  
+  if (this.isNew && this.attachedTo) {
     try {
-      // Try to determine workspace/project context
-      switch (firstAttachment.entityType) {
+              // Try to determine workspace/space context
+      switch (this.attachedTo.model) {
         case 'Task':
           const Task = require('./Task');
-          const task = await Task.findById(firstAttachment.entityId).populate('board');
-          if (task && task.board && task.board.project) {
-            this.project = task.board.project;
-          }
+          const task = await Task.findById(this.attachedTo.objectId).populate('board');
+                      if (task && task.board && task.board.space) {
+                this.space = task.board.space;
+            }
           break;
-        case 'Project':
-          this.project = firstAttachment.entityId;
+                  case 'Space':
+            this.space = this.attachedTo.objectId;
           break;
         case 'Workspace':
-          this.workspace = firstAttachment.entityId;
+          this.workspace = this.attachedTo.objectId;
+          break;
+        case 'Space':
+          this.space = this.attachedTo.objectId;
           break;
       }
     } catch (error) {

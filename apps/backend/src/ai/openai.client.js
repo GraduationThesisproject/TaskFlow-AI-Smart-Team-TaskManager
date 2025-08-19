@@ -40,7 +40,7 @@ class OpenAIClient {
                 messages: [
                     {
                         role: 'system',
-                        content: 'You are TaskFlow AI, an intelligent assistant for project and task management. Provide helpful, accurate, and actionable responses.'
+                        content: 'You are TaskFlow AI, an intelligent assistant for space and task management. Provide helpful, accurate, and actionable responses.'
                     },
                     {
                         role: 'user',
@@ -143,36 +143,20 @@ class OpenAIClient {
 
     // Extract key information from text
     async extractKeyInfo(text, type = 'general') {
-        const prompts = {
-            task: `
-                Extract key information from this task description and return JSON with:
-                - title: concise task title
-                - priority: "low", "medium", "high", or "urgent"
-                - estimatedHours: number or null
-                - tags: array of relevant tags
-                - dueDate: ISO date string or null if no date mentioned
-                
-                Text: "${text}"
-            `,
-            project: `
-                Extract project information from this text and return JSON with:
-                - name: project name
-                - description: brief description
-                - goals: array of main goals
-                - estimatedDuration: duration in weeks or null
-                - stakeholders: array of mentioned stakeholders
-                
-                Text: "${text}"
-            `,
-            general: `
-                Extract key information from this text and return structured JSON with relevant fields.
-                
-                Text: "${text}"
-            `
-        };
+        const prompt = `
+            Extract space information from this text and return JSON with:
+            - name: space name
+            - description: space description
+            - goals: array of main objectives
+            - team: array of team members mentioned
+            - timeline: estimated duration if mentioned
+            - priority: priority level if mentioned
+            
+            Text: "${text}"
+        `;
 
         try {
-            const response = await this.generateCompletion(prompts[type] || prompts.general, {
+            const response = await this.generateCompletion(prompt, {
                 maxTokens: 500,
                 temperature: 0.3
             });
@@ -188,7 +172,7 @@ class OpenAIClient {
     async generateSuggestions(context, type = 'task', count = 5) {
         const prompts = {
             task: `
-                Based on this project context, suggest ${count} specific and actionable tasks:
+                Based on this space context, suggest ${count} specific and actionable tasks:
                 Context: ${context}
                 
                 Return JSON array of objects with: title, description, priority, estimatedHours
@@ -200,7 +184,7 @@ class OpenAIClient {
                 Return JSON array of objects with: suggestion, impact, effort, description
             `,
             milestone: `
-                Suggest ${count} project milestones based on this context:
+                Suggest ${count} space milestones based on this context:
                 Context: ${context}
                 
                 Return JSON array of objects with: name, description, timeline, deliverables
