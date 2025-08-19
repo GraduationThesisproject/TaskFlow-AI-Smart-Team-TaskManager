@@ -2,7 +2,7 @@ import React from "react";
 import { Briefcase, Code } from "lucide-react";
 import { Button } from "@taskflow/ui";
 
-const Dashboard: React.FC = () => {
+const Home: React.FC = () => {
   return (
     <div className="min-h-screen bg-black text-white px-8 py-6">
       {/* Header */}
@@ -170,4 +170,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard;
+export default Home;
