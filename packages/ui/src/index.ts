@@ -1,6 +1,7 @@
 export * from './Button';
 export * from './Card';
 export * from './Container';
+export * from './Flex';
 export * from './Gradient';
 export * from './Input';
 export * from './Typography';
@@ -8,6 +9,7 @@ export * from './Badge';
 export * from './Progress';
 export * from './Avatar';
 export * from './Select';
+export * from './Stack';
 export * from './Layout';
 export * from './Mobile';
 export * from './Tooltip';
