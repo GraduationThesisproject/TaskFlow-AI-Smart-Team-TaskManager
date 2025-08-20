@@ -24,7 +24,7 @@ const Templates: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-black text-white">
       {/* Sidebar */}
-      <aside className="w-64 bg-neutral-950 border-r border-neutral-800 flex flex-col">
+      <aside className="hidden lg:flex w-64 bg-neutral-950 border-r border-neutral-800 flex-col">
         {/* Logo */}
         <div className="p-4 flex items-center gap-2">
           <div className="w-7 h-7 bg-blue-600 rounded-md flex items-center justify-center">
@@ -95,7 +95,7 @@ const Templates: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 px-8 py-6 overflow-y-auto space-y-8">
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 overflow-y-auto space-y-8">
         {/* Header */}
         <div className="space-y-2">
           <Typography variant="h2">Templates</Typography>
@@ -103,7 +103,7 @@ const Templates: React.FC = () => {
         </div>
 
         {/* Categories */}
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-3 sm:gap-4">
           <CategoryButton label="Business" icon={<Briefcase />} />
           <CategoryButton label="Design" icon={<Monitor />} />
           <CategoryButton label="Marketing" icon={<Star />} />
