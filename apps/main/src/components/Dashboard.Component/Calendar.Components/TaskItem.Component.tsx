@@ -1,6 +1,12 @@
- 
+ import React from "react";
 
-export const TaskItem: React.FC<{ color: string; title: string; date: string }> = ({
+interface TaskItemProps {
+  color: string;
+  title: string;
+  date: string;
+}
+
+export const TaskItem: React.FC<TaskItemProps> = ({
   color,
   title,
   date,
@@ -8,8 +14,10 @@ export const TaskItem: React.FC<{ color: string; title: string; date: string }> 
   <div className="flex items-center gap-3">
     <span className={`w-3 h-3 rounded-full ${color}`}></span>
     <div>
-      <p className="font-medium text-sm">{title}</p>
-      <p className="text-xs text-gray-500">{date}</p>
+      <p className="font-medium text-sm text-foreground">{title}</p>
+      <p className="text-xs text-muted-foreground">{date}</p>
     </div>
   </div>
 );
+
+export default TaskItem;

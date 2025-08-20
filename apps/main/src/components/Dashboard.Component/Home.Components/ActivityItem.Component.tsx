@@ -17,14 +17,14 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
   meta,
 }) => {
   return (
-    <Card className="bg-neutral-900 border-neutral-800 rounded-lg px-4 py-3">
+    <Card className="bg-card border-border rounded-lg px-4 py-3">
       <div className="flex items-center gap-3">
-        <img src={avatarUrl} alt="" className="w-9 h-9 rounded-full" />
+        <img src={avatarUrl} alt="" className="w-9 h-9 rounded-full border border-border" />
         <div>
-          <p>
-            <span className="font-medium">{actorName}</span> {action} <span className="text-emerald-400">{`"${highlight}"`}</span>
+          <p className="text-foreground">
+            <span className="font-medium">{actorName}</span> {action} <span className="text-accent">{`"${highlight}"`}</span>
           </p>
-          <p className="text-gray-500 text-sm">{meta}</p>
+          <p className="text-muted-foreground text-sm">{meta}</p>
         </div>
       </div>
     </Card>
@@ -32,5 +32,3 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
 };
 
 export default ActivityItem;
-
-

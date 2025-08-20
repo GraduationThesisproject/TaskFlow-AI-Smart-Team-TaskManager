@@ -17,15 +17,15 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   accentClassName,
 }) => {
   return (
-    <Card className="bg-neutral-900 border-neutral-800 rounded-lg p-4 flex items-start gap-3">
+    <Card className="bg-card border-border rounded-lg p-4 flex items-start gap-3">
       {icon && (
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-neutral-800 ${accentClassName || ""}`}>
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-muted ${accentClassName || ""}`}>
           {icon}
         </div>
       )}
       <div className="flex-1">
-        <p className="font-medium">{title}</p>
-        <p className="text-gray-500 text-sm">{description}</p>
+        <p className="font-medium text-foreground">{title}</p>
+        <p className="text-muted-foreground text-sm">{description}</p>
         {actions && <div className="mt-3">{actions}</div>}
       </div>
     </Card>
@@ -33,5 +33,3 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 };
 
 export default NotificationCard;
-
-

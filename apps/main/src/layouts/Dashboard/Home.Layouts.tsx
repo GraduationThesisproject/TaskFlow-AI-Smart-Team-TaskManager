@@ -27,10 +27,10 @@ const Home: React.FC = () => {
   const displayName = `${dummyCurrentUser.firstName}`;
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8 py-6">
       {/* Header */}
-      <h1 className="text-3xl font-bold">Welcome back, {displayName}!</h1>
-      <p className="text-gray-400 mt-1">Here's what's happening with your projects today.</p>
+      <h1 className="text-3xl font-bold text-foreground">Welcome back, {displayName}!</h1>
+      <p className="text-muted-foreground mt-1">Here's what's happening with your projects today.</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8">
         {/* Left Section */}
@@ -38,13 +38,13 @@ const Home: React.FC = () => {
           {/* Workspaces */}
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Your Workspaces</h2>
+              <h2 className="text-xl font-semibold text-foreground">Your Workspaces</h2>
               <Button variant="default">+ New</Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <WorkspaceCard
-                icon={<Briefcase className="w-5 h-5 text-white" />}
-                iconBgClass="bg-blue-600"
+                icon={<Briefcase className="w-5 h-5 text-primary-foreground" />}
+                iconBgClass="bg-primary"
                 name="Marketing Team"
                 description="Q1 Campaign Planning & Social Media Strategy"
                 membersCount={12}
@@ -57,7 +57,7 @@ const Home: React.FC = () => {
               />
 
               <WorkspaceCard
-                icon={<Code className="w-5 h-5 text-white" />}
+                icon={<Code className="w-5 h-5 text-primary-foreground" />}
                 iconBgClass="bg-emerald-600"
                 name="Product Development"
                 description="Mobile App v2.0 Development & Testing"
@@ -70,7 +70,7 @@ const Home: React.FC = () => {
 
           {/* Recent Activity */}
           <div className="mt-8">
-            <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">Recent Activity</h2>
             <div className="space-y-3">
               <ActivityItem
                 avatarUrl="https://i.pravatar.cc/40?img=6"
@@ -101,7 +101,7 @@ const Home: React.FC = () => {
         <div className="lg:col-span-4 space-y-6">
           {/* Notifications */}
           <div>
-            <h2 className="text-xl font-semibold mb-4">Notifications</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">Notifications</h2>
             <div className="space-y-3">
               <NotificationCard
                 title="Team Invitation"
@@ -123,7 +123,7 @@ const Home: React.FC = () => {
 
           {/* Events */}
           <div>
-            <h2 className="text-xl font-semibold mb-4">Upcoming Events</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">Upcoming Events</h2>
             <div className="space-y-3">
               {nextTwoDeadlines.map((e, idx) => (
                 <EventCard key={idx} month={e.month} day={e.day} title={e.title} meta={e.meta} />
