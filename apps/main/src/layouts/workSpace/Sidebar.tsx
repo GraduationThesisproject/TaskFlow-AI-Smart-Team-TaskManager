@@ -1,6 +1,6 @@
 const Sidebar = () => {
   return (
-    <aside className="h-screen w-64 border-r border-border bg-[hsl(var(--neutral-200))] text-foreground/90 shadow-[0_0_10px_hsl(var(--accent))] 
+    <aside className="h-ful w-60 border-r border-border bg-[hsl(var(--neutral-200))] text-foreground/90 shadow-[0_0_10px_hsl(var(--accent))] 
              ring-1 ring-primary/20 
              backdrop-blur bg-neutral-100" >
       <div className="flex flex-col gap-3 p-4 ">
