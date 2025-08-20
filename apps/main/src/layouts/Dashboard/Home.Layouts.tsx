@@ -108,7 +108,7 @@ const Home: React.FC = () => {
                 description={'Join "Design System" workspace'}
                 actions={
                   <div className="flex gap-2">
-                    <Button variant="accent">Accept</Button>
+                    <Button variant="default">Accept</Button>
                     <Button variant="secondary">Decline</Button>
                   </div>
                 }
