@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Card, CardContent, Typography, Input, Avatar, AvatarImage, AvatarFallback, Checkbox } from "@taskflow/ui";
+import { Button, Card, CardContent, Typography, Input, Avatar, AvatarImage, AvatarFallback, Switch } from "@taskflow/ui";
 
 const Settings: React.FC = () => {
   const [emailUpdates, setEmailUpdates] = useState(true);
@@ -44,7 +44,7 @@ const Settings: React.FC = () => {
             <CardContent className="p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <Typography variant="h3" as="h3">Team Management</Typography>
-                <Button variant="accent" size="sm">+ Invite</Button>
+                <Button variant="neon" size="sm">+ Invite</Button>
               </div>
               <div className="space-y-3">
                 {[{name:"Alex Chen", role:"Developer", img: "https://i.pravatar.cc/40?img=11"}, {name:"Mike Rodriguez", role:"Designer", img: "https://i.pravatar.cc/40?img=10"}].map((m) => (
@@ -73,7 +73,7 @@ const Settings: React.FC = () => {
                   <p className="font-medium text-sm">Email updates</p>
                   <p className="text-xs text-gray-500">Receive notifications via email</p>
                 </div>
-                <Checkbox checked={emailUpdates} onChange={(e) => setEmailUpdates(e.target.checked)} />
+                <Switch variant="neon" checked={emailUpdates} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmailUpdates(e.target.checked)} />
               </div>
 
               <div className="bg-neutral-900 rounded-lg p-4 flex items-center justify-between">
@@ -81,7 +81,7 @@ const Settings: React.FC = () => {
                   <p className="font-medium text-sm">Push notifications</p>
                   <p className="text-xs text-gray-500">Get instant updates on your device</p>
                 </div>
-                <Checkbox checked={pushNotifications} onChange={(e) => setPushNotifications(e.target.checked)} />
+                <Switch variant="neon" checked={pushNotifications} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPushNotifications(e.target.checked)} />
               </div>
 
               <div className="bg-neutral-900 rounded-lg p-4 flex items-center justify-between">
@@ -89,7 +89,7 @@ const Settings: React.FC = () => {
                   <p className="font-medium text-sm">Weekly summary</p>
                   <p className="text-xs text-gray-500">Weekly progress reports</p>
                 </div>
-                <Checkbox checked={weeklySummary} onChange={(e) => setWeeklySummary(e.target.checked)} />
+                <Switch variant="neon" checked={weeklySummary} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWeeklySummary(e.target.checked)} />
               </div>
             </CardContent>
           </Card>
@@ -150,7 +150,7 @@ const Settings: React.FC = () => {
                 <p>Pro Plan</p>
                 <p className="text-gray-500">$29/month</p>
               </div>
-              <Button variant="accent" className="mt-4 w-full">Upgrade</Button>
+              <Button variant="neon" className="mt-4 w-full">Upgrade</Button>
             </CardContent>
           </Card>
         </div>
@@ -161,7 +161,7 @@ const Settings: React.FC = () => {
         <Button variant="ghost" className="text-red-400">Delete Account</Button>
         <div className="flex gap-3">
           <Button variant="secondary">Cancel</Button>
-          <Button variant="accent">Save Settings</Button>
+          <Button variant="neon">Save Settings</Button>
         </div>
       </div>
     </div>

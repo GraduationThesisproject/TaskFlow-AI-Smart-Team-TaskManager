@@ -9,21 +9,21 @@ import { UpgradeCard } from "../../components/Dashboard.Component/Home.Component
 
 const Home: React.FC = () => {
   return (
-    <div className="min-h-screen bg-black text-white px-8 py-6">
+    <div className="min-h-screen bg-black text-white px-4 sm:px-6 lg:px-8 py-6">
       {/* Header */}
       <h1 className="text-3xl font-bold">Welcome back, Sarah!</h1>
       <p className="text-gray-400 mt-1">Here's what's happening with your projects today.</p>
 
-      <div className="grid grid-cols-12 gap-6 mt-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8">
         {/* Left Section */}
-        <div className="col-span-8">
+        <div className="lg:col-span-8">
           {/* Workspaces */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Your Workspaces</h2>
               <Button variant="default">+ New</Button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <WorkspaceCard
                 icon={<Briefcase className="w-5 h-5 text-white" />}
                 iconBgClass="bg-blue-600"
@@ -80,7 +80,7 @@ const Home: React.FC = () => {
         </div>
 
         {/* Right Section */}
-        <div className="col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-6">
           {/* Notifications */}
           <div>
             <h2 className="text-xl font-semibold mb-4">Notifications</h2>
