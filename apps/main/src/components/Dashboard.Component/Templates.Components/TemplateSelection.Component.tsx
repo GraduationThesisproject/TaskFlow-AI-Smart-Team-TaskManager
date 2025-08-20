@@ -15,7 +15,7 @@ export const TemplateSection: React.FC<{
             <div className="h-36 w-full bg-neutral-800" />
             <div className="p-4">
               <CardTitle className="text-base font-medium">{t.title}</CardTitle>
-              <Typography variant="muted" as="p" className="mt-1">
+              <Typography textColor="muted" variant="muted" as="p" className="mt-1">
                 {t.desc}
               </Typography>
               <div className="flex gap-4 text-xs text-gray-400 mt-3">
