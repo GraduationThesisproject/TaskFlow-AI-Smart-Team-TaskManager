@@ -9,17 +9,17 @@ import { useTasks } from "../../hooks";
 
 const Calendar: React.FC = () => {
   const [events, setEvents] = useState([
-    { date: 1, title: "Team Meeting", color: "bg-blue-600" },
-    { date: 2, title: "Deploy", color: "bg-emerald-400" },
-    { date: 4, title: "Review", color: "bg-gray-600" },
-    { date: 5, title: "Sprint Plan", color: "bg-blue-600" },
-    { date: 8, title: "Launch", color: "bg-emerald-400" },
-    { date: 10, title: "Design", color: "bg-blue-600" },
-    { date: 12, title: "Testing", color: "bg-gray-600" },
-    { date: 15, title: "Demo", color: "bg-emerald-400" },
-    { date: 18, title: "Standup", color: "bg-blue-600" },
-    { date: 23, title: "Release", color: "bg-emerald-400" },
-    { date: 26, title: "Planning", color: "bg-blue-600" },
+    { date: 1, title: "Team Meeting", color: "bg-primary" },
+    { date: 2, title: "Deploy", color: "bg-accent" },
+    { date: 4, title: "Review", color: "bg-muted" },
+    { date: 5, title: "Sprint Plan", color: "bg-primary" },
+    { date: 8, title: "Launch", color: "bg-accent" },
+    { date: 10, title: "Design", color: "bg-primary" },
+    { date: 12, title: "Testing", color: "bg-muted" },
+    { date: 15, title: "Demo", color: "bg-accent" },
+    { date: 18, title: "Standup", color: "bg-primary" },
+    { date: 23, title: "Release", color: "bg-accent" },
+    { date: 26, title: "Planning", color: "bg-primary" },
   ]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,9 +43,9 @@ const Calendar: React.FC = () => {
     };
 
     const pickColor = (priority: string) => {
-      if (priority === "Very High") return "bg-rose-500";
-      if (priority === "High") return "bg-emerald-400";
-      return "bg-blue-600";
+      if (priority === "Very High") return "bg-destructive";
+      if (priority === "High") return "bg-accent";
+      return "bg-primary";
     };
 
     return tasks
@@ -84,7 +84,7 @@ const Calendar: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 sm:p-6">
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6">
       <CalendarHeader title="Calendar" />
 
       {/* Main Layout */}
@@ -100,9 +100,15 @@ const Calendar: React.FC = () => {
         </div>
 
         <div className="lg:col-span-3 space-y-6">
-          <div className="bg-neutral-950 rounded-xl p-6">
+          <div className="bg-card p-4 rounded-lg border border-border">
+            <h3 className="text-lg font-semibold mb-4">Upcoming Tasks</h3>
             <UpcomingTasksPanel items={upcomingItems} />
-            <ProgressCircle percent={scheduledPercent} label="Tasks Scheduled This Week" />
+          </div>
+          <div className="bg-card p-4 rounded-lg border border-border">
+            <h3 className="text-lg font-semibold mb-4">Scheduled Tasks</h3>
+            <div className="flex justify-center">
+              <ProgressCircle percent={scheduledPercent} label={`${scheduledPercent}% scheduled`} />
+            </div>
           </div>
         </div>
       </div>
@@ -118,4 +124,3 @@ const Calendar: React.FC = () => {
 };
 
 export default Calendar;
-

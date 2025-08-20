@@ -11,6 +11,7 @@ import {
   Layers,
   Trash,
   Settings,
+  Plus,
 } from "lucide-react";
 
 import { NavItem } from "../../components/Dashboard.Component/Templates.Components/NavItem.Component";
@@ -22,59 +23,71 @@ import { Input, Typography } from "@taskflow/ui";
 
 const Templates: React.FC = () => {
   return (
-    <div className="flex min-h-screen bg-black text-white">
+    <div className="flex min-h-screen bg-background text-foreground">
       {/* Sidebar */}
-      <aside className="hidden lg:flex w-64 bg-neutral-950 border-r border-neutral-800 flex-col">
+      <aside className="hidden lg:flex w-64 bg-card border-r border-border flex-col">
         {/* Logo */}
         <div className="p-4 flex items-center gap-2">
-          <div className="w-7 h-7 bg-blue-600 rounded-md flex items-center justify-center">
-            <Layers className="w-4 h-4 text-white" />
+          <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center">
+            <Layers className="w-4 h-4 text-primary-foreground" />
           </div>
-          <span className="font-semibold text-lg">Workspace</span>
+          <span className="font-semibold text-lg text-foreground">Workspace</span>
         </div>
 
         {/* Search */}
         <div className="px-4 py-2">
-          <Input placeholder="Search..." />
+          <Input 
+            placeholder="Search..." 
+            className="bg-background border-border focus-visible:ring-primary"
+          />
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-4 py-4 space-y-7">
-  <div className="space-y-4">
-    <p className="text-xs uppercase text-white/50">Your Workspace</p>
-    <NavItem icon={<Home />} label="Dashboard" />
-    <NavItem icon={<FileText />} label="All Files" />
-    <NavItem icon={<Star />} label="Favorites" />
-  </div>
+        <nav className="flex-1 px-3 py-4 space-y-7 overflow-y-auto">
+          <div className="space-y-2">
+            <p className="text-xs uppercase text-muted-foreground font-medium px-3">Your Workspace</p>
+            <NavItem icon={<Home size={18} />} label="Dashboard" active={true} />
+            <NavItem icon={<FileText size={18} />} label="All Files" />
+            <NavItem icon={<Star size={18} />} label="Favorites" />
+          </div>
 
-  <div className="space-y-4">
-    <p className="text-xs uppercase text-white/50">Team Mates</p>
-    <TeamItem name="Sarah Wilson" status="online" />
-    <TeamItem name="Mike Johnson" status="away" />
-    <TeamItem name="David Chen" status="offline" />
-  </div>
+          <div className="space-y-2">
+            <p className="text-xs uppercase text-muted-foreground font-medium px-3">Team Mates</p>
+            <TeamItem name="Sarah Wilson" status="online" />
+            <TeamItem name="Mike Johnson" status="away" />
+            <TeamItem name="David Chen" status="offline" />
+          </div>
 
-  <div className="space-y-4">
-    <p className="text-xs uppercase text-white/50">Projects</p>
-    <ProjectItem label="Mobile App Design" color="bg-blue-500" />
-    <ProjectItem label="Website Redesign" color="bg-emerald-500" />
-    <ProjectItem label="Brand Guidelines" color="bg-purple-500" />
-  </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-3">
+              <p className="text-xs uppercase text-muted-foreground font-medium">Projects</p>
+              <button className="text-muted-foreground hover:text-foreground">
+                <Plus size={16} />
+              </button>
+            </div>
+            <ProjectItem label="Mobile App Design" color="bg-blue-500" />
+            <ProjectItem label="Website Redesign" color="bg-emerald-500" />
+            <ProjectItem label="Brand Guidelines" color="bg-purple-500" />
+          </div>
+          
+          <div className="space-y-2">
+            <p className="text-xs uppercase text-muted-foreground font-medium px-3">Templates</p>
+            <NavItem icon={<Briefcase size={18} />} label="Business" />
+            <NavItem icon={<Monitor size={18} />} label="Design" />
+            <NavItem icon={<Star size={18} />} label="Marketing" />
+            <NavItem icon={<Book size={18} />} label="Education" />
+            <NavItem icon={<Code size={18} />} label="Development" />
+            <NavItem icon={<Users size={18} />} label="Team" />
+          </div>
 
-  <div className="space-y-4">
-    <p className="text-xs uppercase text-white/50">Templates</p>
-    <NavItem icon={<Briefcase />} label="Business" />
-    <NavItem icon={<Monitor />} label="Design" />
-    <NavItem icon={<Star />} label="Marketing" />
-    <NavItem icon={<Book />} label="Education" />
-    <NavItem icon={<Code />} label="Development" />
-    <NavItem icon={<Users />} label="Team" />
-  </div>
-</nav>
-
+          <div className="space-y-2">
+            <NavItem icon={<Trash size={18} />} label="Trash" />
+            <NavItem icon={<Settings size={18} />} label="Change Theme" />
+          </div>
+        </nav>
 
         {/* Footer */}
-        <div className="px-4 py-4 border-t border-neutral-800 space-y-4">
+        <div className="px-4 py-4 border-t border-border space-y-4">
           <div className="space-y-2">
             <NavItem icon={<Trash />} label="Trash" />
             <NavItem icon={<Settings />} label="Change Theme" />

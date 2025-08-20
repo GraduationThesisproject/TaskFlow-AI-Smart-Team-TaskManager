@@ -15,9 +15,9 @@ interface AddEventModalProps {
 }
 
 const COLOR_OPTIONS = [
-  { label: "Blue", value: "bg-blue-600" },
-  { label: "Emerald", value: "bg-emerald-400" },
-  { label: "Gray", value: "bg-gray-600" },
+  { label: "Primary", value: "bg-primary" },
+  { label: "Accent", value: "bg-accent" },
+  { label: "Muted", value: "bg-muted" },
 ];
 
 export const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, date, onClose, onSave }) => {
@@ -41,32 +41,47 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, date, onCl
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md">
       <ModalHeader>
-        <Typography variant="h3" as="h3">Add Plan {date ? `- Day ${date}` : ""}</Typography>
+        <Typography variant="h3" as="h3" className="text-foreground">Add Plan {date ? `- Day ${date}` : ""}</Typography>
       </ModalHeader>
       <ModalBody>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm mb-1">Title</label>
-            <Input placeholder="e.g., Standup" value={title} onChange={(e) => setTitle(e.target.value)} />
+            <label className="block text-sm text-muted-foreground mb-1">Title</label>
+            <Input 
+              placeholder="e.g., Standup" 
+              value={title} 
+              onChange={(e) => setTitle(e.target.value)} 
+              className="bg-background border-border"
+            />
           </div>
           <div>
-            <label className="block text-sm mb-1">Color</label>
-            <Select value={color} onChange={(e) => setColor(e.target.value)}>
-              {COLOR_OPTIONS.map(opt => (
-                <SelectOption key={opt.value} value={opt.value}>{opt.label}</SelectOption>
-              ))}
-            </Select>
+            <label className="block text-sm text-muted-foreground mb-1">Color</label>
+            <Select 
+  value={color} 
+  onChange={(e) => setColor(e.target.value)}
+>
+  {COLOR_OPTIONS.map((option) => (
+    <SelectOption key={option.value} value={option.value}>
+      <div className="flex items-center gap-2">
+        <span className={`w-4 h-4 rounded-full ${option.value}`}></span>
+        {option.label}
+      </div>
+    </SelectOption>
+  ))}
+</Select>
           </div>
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button variant="accent" onClick={handleSave}>Add</Button>
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button onClick={handleSave}>
+          Save
+        </Button>
       </ModalFooter>
     </Modal>
   );
 };
 
 export default AddEventModal;
-
-
