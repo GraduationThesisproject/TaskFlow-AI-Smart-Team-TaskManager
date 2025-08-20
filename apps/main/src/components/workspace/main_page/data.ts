@@ -1,5 +1,5 @@
 import type { Member } from './types';
-import type { PillVariant } from './Pill';
+import type{ PillVariant } from './Pill';
 
 export const MEMBERS: Member[] = [
   {

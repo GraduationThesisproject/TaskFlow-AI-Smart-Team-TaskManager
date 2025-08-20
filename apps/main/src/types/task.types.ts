@@ -1,3 +1,5 @@
+import type { User } from './auth.types';
+
 export interface Task {
   id: string;
   title: string;
