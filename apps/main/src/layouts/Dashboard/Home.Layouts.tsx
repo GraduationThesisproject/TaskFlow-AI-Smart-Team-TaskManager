@@ -1,11 +1,11 @@
 import React from "react";
 import { Briefcase, Code } from "lucide-react";
 import { Button } from "@taskflow/ui";
-import { WorkspaceCard } from "../../components/Home.Components/WorkspaceCard.Component";
-import { ActivityItem } from "../../components/Home.Components/ActivityItem.Component";
-import { NotificationCard } from "../../components/Home.Components/NotificationCard.Component";
-import { EventCard } from "../../components/Home.Components/EventCard.Component";
-import { UpgradeCard } from "../../components/Home.Components/UpgradeCard.Component";
+import { WorkspaceCard } from "../../components/Dashboard.Component/Home.Components/WorkspaceCard.Component";
+import { ActivityItem } from "../../components/Dashboard.Component/Home.Components/ActivityItem.Component";
+import { NotificationCard } from "../../components/Dashboard.Component/Home.Components/NotificationCard.Component";
+import { EventCard } from "../../components/Dashboard.Component/Home.Components/EventCard.Component";
+import { UpgradeCard } from "../../components/Dashboard.Component/Home.Components/UpgradeCard.Component";
 
 const Home: React.FC = () => {
   return (

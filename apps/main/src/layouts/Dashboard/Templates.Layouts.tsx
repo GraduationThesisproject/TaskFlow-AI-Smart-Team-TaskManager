@@ -13,11 +13,11 @@ import {
   Settings,
 } from "lucide-react";
 
-import { NavItem } from "../../components/Templates.Components/NavItem.Component";
-import { TeamItem } from "../../components/Templates.Components/TeamItem.Component";
-import { ProjectItem } from "../../components/Templates.Components/ProjectItem.Component";
-import { CategoryButton } from "../../components/Templates.Components/CategoryButton.Component";
-import { TemplateSection } from "../../components/Templates.Components/TemplateSelection.Component";
+import { NavItem } from "../../components/Dashboard.Component/Templates.Components/NavItem.Component";
+import { TeamItem } from "../../components/Dashboard.Component/Templates.Components/TeamItem.Component";
+import { ProjectItem } from "../../components/Dashboard.Component/Templates.Components/ProjectItem.Component";
+import { CategoryButton } from "../../components/Dashboard.Component/Templates.Components/CategoryButton.Component";
+import { TemplateSection } from "../../components/Dashboard.Component/Templates.Components/TemplateSelection.Component";
 import { Input, Typography } from "@taskflow/ui";
 
 const Templates: React.FC = () => {
@@ -39,37 +39,48 @@ const Templates: React.FC = () => {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-4 py-4 space-y-2">
-          <p className="text-xs uppercase text-gray-500 mb-2">Your Workspace</p>
-          <NavItem icon={<Home />} label="Dashboard" />
-          <NavItem icon={<FileText />} label="All Files" />
-          <NavItem icon={<Star />} label="Favorites" />
+        <nav className="flex-1 px-4 py-4 space-y-7">
+  <div className="space-y-4">
+    <p className="text-xs uppercase text-white/50">Your Workspace</p>
+    <NavItem icon={<Home />} label="Dashboard" />
+    <NavItem icon={<FileText />} label="All Files" />
+    <NavItem icon={<Star />} label="Favorites" />
+  </div>
 
-          <p className="text-xs uppercase text-gray-500 mt-6 mb-2">Team Mates</p>
-          <TeamItem name="Sarah Wilson" status="online" />
-          <TeamItem name="Mike Johnson" status="away" />
-          <TeamItem name="David Chen" status="offline" />
+  <div className="space-y-4">
+    <p className="text-xs uppercase text-white/50">Team Mates</p>
+    <TeamItem name="Sarah Wilson" status="online" />
+    <TeamItem name="Mike Johnson" status="away" />
+    <TeamItem name="David Chen" status="offline" />
+  </div>
 
-          <p className="text-xs uppercase text-gray-500 mt-6 mb-2">Projects</p>
-          <ProjectItem label="Mobile App Design" color="bg-blue-500" />
-          <ProjectItem label="Website Redesign" color="bg-emerald-500" />
-          <ProjectItem label="Brand Guidelines" color="bg-purple-500" />
+  <div className="space-y-4">
+    <p className="text-xs uppercase text-white/50">Projects</p>
+    <ProjectItem label="Mobile App Design" color="bg-blue-500" />
+    <ProjectItem label="Website Redesign" color="bg-emerald-500" />
+    <ProjectItem label="Brand Guidelines" color="bg-purple-500" />
+  </div>
 
-          <p className="text-xs uppercase text-gray-500 mt-6 mb-2">Templates</p>
-          <NavItem icon={<Briefcase />} label="Business" />
-          <NavItem icon={<Monitor />} label="Design" />
-          <NavItem icon={<Star />} label="Marketing" />
-          <NavItem icon={<Book />} label="Education" />
-          <NavItem icon={<Code />} label="Development" />
-          <NavItem icon={<Users />} label="Team" />
-        </nav>
+  <div className="space-y-4">
+    <p className="text-xs uppercase text-white/50">Templates</p>
+    <NavItem icon={<Briefcase />} label="Business" />
+    <NavItem icon={<Monitor />} label="Design" />
+    <NavItem icon={<Star />} label="Marketing" />
+    <NavItem icon={<Book />} label="Education" />
+    <NavItem icon={<Code />} label="Development" />
+    <NavItem icon={<Users />} label="Team" />
+  </div>
+</nav>
+
 
         {/* Footer */}
-        <div className="px-4 py-4 border-t border-neutral-800">
-          <NavItem icon={<Trash />} label="Trash" />
-          <NavItem icon={<Settings />} label="Change Theme" />
+        <div className="px-4 py-4 border-t border-neutral-800 space-y-4">
+          <div className="space-y-2">
+            <NavItem icon={<Trash />} label="Trash" />
+            <NavItem icon={<Settings />} label="Change Theme" />
+          </div>
 
-          <div className="flex items-center mt-4 gap-3">
+          <div className="flex items-center gap-3">
             <img
               src="https://i.pravatar.cc/40?img=15"
               alt=""
@@ -84,16 +95,15 @@ const Templates: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 px-8 py-6 overflow-y-auto">
+      <main className="flex-1 px-8 py-6 overflow-y-auto space-y-8">
         {/* Header */}
-        <Typography variant="h2" className="mb-4">Templates</Typography>
-        <Input
-          placeholder="Search templates..."
-          className="mb-6"
-        />
+        <div className="space-y-2">
+          <Typography variant="h2">Templates</Typography>
+          <Input placeholder="Search templates..." />
+        </div>
 
         {/* Categories */}
-        <div className="flex gap-4 mb-8">
+        <div className="flex flex-wrap gap-4">
           <CategoryButton label="Business" icon={<Briefcase />} />
           <CategoryButton label="Design" icon={<Monitor />} />
           <CategoryButton label="Marketing" icon={<Star />} />
@@ -178,6 +188,5 @@ const Templates: React.FC = () => {
     </div>
   );
 };
-
 
 export default Templates;
