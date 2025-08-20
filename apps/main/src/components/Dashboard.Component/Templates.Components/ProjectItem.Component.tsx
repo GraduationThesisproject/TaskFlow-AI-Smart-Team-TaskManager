@@ -1,7 +1,25 @@
+interface ProjectItemProps {
+  label: string;
+  color: string;
+  className?: string;
+  showLabel?: boolean;
+}
 
-export const ProjectItem: React.FC<{ label: string; color: string }> = ({ label, color }) => (
-  <div className="flex items-center gap-2 text-sm text-gray-300">
-    <div className={`w-3 h-3 rounded-full ${color}`}></div>
-    {label}
+export const ProjectItem: React.FC<ProjectItemProps> = ({
+  label,
+  color,
+  className = '',
+  showLabel = true
+}) => (
+  <div className={`flex items-center gap-2 ${className}`}>
+    <div 
+      className={`w-2.5 h-2.5 rounded-full ${color} flex-shrink-0`}
+      aria-hidden="true"
+    />
+    {showLabel && (
+      <span className="text-sm text-foreground/80 truncate">
+        {label}
+      </span>
+    )}
   </div>
 );
