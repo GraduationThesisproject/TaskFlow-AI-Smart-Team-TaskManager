@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { CalendarHeader } from "../../components/Calendar.Components/CalendarHeader.Component";
-import { CalendarGrid } from "../../components/Calendar.Components/CalendarGrid.Component";
-import { UpcomingTasksPanel } from "../../components/Calendar.Components/UpcomingTasksPanel.Component";
-import { ProgressCircle } from "../../components/Calendar.Components/ProgressCircle.Component";
-import { FooterActions } from "../../components/Calendar.Components/FooterActions.Component";
-import { AddEventModal, AddEventData } from "../../components/Calendar.Components/AddEventModal.Component";
+import { CalendarHeader } from "../../components/Dashboard.Component/Calendar.Components/CalendarHeader.Component";
+import { CalendarGrid } from "../../components/Dashboard.Component/Calendar.Components/CalendarGrid.Component";
+import { UpcomingTasksPanel } from "../../components/Dashboard.Component/Calendar.Components/UpcomingTasksPanel.Component";
+import { ProgressCircle } from "../../components/Dashboard.Component/Calendar.Components/ProgressCircle.Component";
+import { AddEventModal } from "../../components/Dashboard.Component/Calendar.Components/AddEventModal.Component";
+import type { AddEventData } from "../../components/Dashboard.Component/Calendar.Components/AddEventModal.Component";
 
 const Calendar: React.FC = () => {
   const [events, setEvents] = useState([
