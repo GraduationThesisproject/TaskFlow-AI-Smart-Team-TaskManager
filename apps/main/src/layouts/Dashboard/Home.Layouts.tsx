@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Briefcase, Code } from "lucide-react";
 import { Button } from "@taskflow/ui";
 import { WorkspaceCard } from "../../components/Dashboard.Component/Home.Components/WorkspaceCard.Component";
@@ -6,12 +6,30 @@ import { ActivityItem } from "../../components/Dashboard.Component/Home.Componen
 import { NotificationCard } from "../../components/Dashboard.Component/Home.Components/NotificationCard.Component";
 import { EventCard } from "../../components/Dashboard.Component/Home.Components/EventCard.Component";
 import { UpgradeCard } from "../../components/Dashboard.Component/Home.Components/UpgradeCard.Component";
+import { useTasks } from "../../hooks";
+import { dummyCurrentUser } from "../../constants/dummyData";
 
 const Home: React.FC = () => {
+  const { highPriorityTasks, overdueTasks } = useTasks();
+
+  const nextTwoDeadlines = useMemo(() => {
+    const upcoming = [...highPriorityTasks, ...overdueTasks]
+      .filter(t => t.dueDate)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    return upcoming.slice(0, 2).map(t => ({
+      month: new Date(t.dueDate).toLocaleString(undefined, { month: 'short' }).toUpperCase(),
+      day: new Date(t.dueDate).getDate(),
+      title: t.title,
+      meta: `${t.category || 'Task'} • ${t.priority}`,
+    }));
+  }, [highPriorityTasks, overdueTasks]);
+
+  const displayName = `${dummyCurrentUser.firstName}`;
+
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 lg:px-8 py-6">
       {/* Header */}
-      <h1 className="text-3xl font-bold">Welcome back, Sarah!</h1>
+      <h1 className="text-3xl font-bold">Welcome back, {displayName}!</h1>
       <p className="text-gray-400 mt-1">Here's what's happening with your projects today.</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8">
@@ -107,8 +125,9 @@ const Home: React.FC = () => {
           <div>
             <h2 className="text-xl font-semibold mb-4">Upcoming Events</h2>
             <div className="space-y-3">
-              <EventCard month="JAN" day={24} title="Team Standup" meta="9:00 AM • Marketing Team" />
-              <EventCard month="JAN" day={25} title="Sprint Review" meta="2:00 PM • Product Development" />
+              {nextTwoDeadlines.map((e, idx) => (
+                <EventCard key={idx} month={e.month} day={e.day} title={e.title} meta={e.meta} />
+              ))}
             </div>
           </div>
 
