@@ -34,12 +34,12 @@ const Calendar: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
+    <div className="min-h-screen bg-black text-white p-4 sm:p-6">
       <CalendarHeader title="Calendar" />
 
       {/* Main Layout */}
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-9">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-9">
           <CalendarGrid
             monthLabel="January 2024"
             weekSummary="Week 1 of 4"
@@ -49,7 +49,7 @@ const Calendar: React.FC = () => {
           />
         </div>
 
-        <div className="col-span-3 space-y-6">
+        <div className="lg:col-span-3 space-y-6">
           <div className="bg-neutral-950 rounded-xl p-6">
             <UpcomingTasksPanel
               items={[

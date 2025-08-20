@@ -15,6 +15,7 @@ const buttonVariants = cva(
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         accent: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-md hover:shadow-lg",
+        neon: "relative text-white bg-gradient-to-r from-[#00EBCB] to-[#007ADF] shadow-[0_0_16px_3px_rgba(0,186,255,0.35)] hover:shadow-[0_0_22px_5px_rgba(0,186,255,0.55)]",
       },
       size: {
         sm: "h-8 px-3 text-xs rounded",
