@@ -1,11 +1,11 @@
 import React from 'react';
 import Sidebar from "./Sidebar";
 import { Button, Input, Dropdown, DropdownItem } from '@taskflow/ui';
-import Pill from '../../components/workspace/Pill';
-import OutlineBtn from '../../components/workspace/OutlineBtn';
-import GhostIconBtn from '../../components/workspace/GhostIconBtn';
-import Section from '../../components/workspace/Section';
-import { MEMBERS, roleBadgeVariant, statusBadgeVariant } from '../../components/workspace/data';
+import Pill from '../../components/workspace/main_page/Pill';
+import OutlineBtn from '../../components/workspace/main_page/OutlineBtn';
+import GhostIconBtn from '../../components/workspace/main_page/GhostIconBtn';
+import Section from '../../components/workspace/main_page/Section';
+import { MEMBERS, roleBadgeVariant, statusBadgeVariant } from '../../components/workspace/main_page/data';
 
 const Main = () => {
   const [role, setRole] = React.useState<'all' | 'owner' | 'admin' | 'member'>('all');

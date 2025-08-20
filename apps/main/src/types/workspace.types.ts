@@ -1,3 +1,5 @@
+import type { User } from './auth.types';
+import type { Task } from './task.types';
 export interface Workspace {
   id: string;
   name: string;
@@ -20,12 +22,16 @@ export interface WorkspaceMember {
   joinedAt: Date;
 }
 
-export enum WorkspaceRole {
-  OWNER = 'owner',
-  ADMIN = 'admin',
-  MEMBER = 'member',
-  VIEWER = 'viewer',
-}
+// Use a string literal union instead of an enum to avoid runtime TS emit.
+export type WorkspaceRole = 'owner' | 'admin' | 'member' | 'viewer';
+
+// Optional: enum-like constants for convenient value access in code.
+export const WorkspaceRoleConst = {
+  OWNER: 'owner',
+  ADMIN: 'admin',
+  MEMBER: 'member',
+  VIEWER: 'viewer',
+} as const;
 
 export interface Board {
   id: string;
