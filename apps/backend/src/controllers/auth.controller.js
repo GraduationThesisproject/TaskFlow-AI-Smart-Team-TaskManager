@@ -8,6 +8,8 @@ const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
 
+
+
 // Register new user
 exports.register = async (req, res) => {
     try {
