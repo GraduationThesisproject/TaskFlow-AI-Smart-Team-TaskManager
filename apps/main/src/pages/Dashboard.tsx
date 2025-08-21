@@ -10,9 +10,9 @@ const Dashboard = () => {
     <div>
       <Routes>
         <Route path="" element={<Home/>} />
-        <Route path="Templates" element={<Templates/>} />
-        <Route path="Calendar" element={<Calendar/>} />
-        <Route path="Settings" element={<Settings/>} />
+        <Route path="templates" element={<Templates/>} />
+        <Route path="calendar" element={<Calendar/>} />
+        <Route path="settings" element={<Settings/>} />
       </Routes>
       
      </div>
