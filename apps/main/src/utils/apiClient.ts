@@ -1,4 +1,4 @@
-import tokenManager from './tokenManager';
+import tokenManager from './tokenManager.js';
 
 // Enhanced API client with automatic token management
 class ApiClient {
@@ -23,7 +23,7 @@ class ApiClient {
         const { skipAuth = false, retryOnUnauth = true, ...requestOptions } = options;
         
         const url = `${this.baseURL}${endpoint}`;
-        const headers = { ...this.defaultHeaders, ...requestOptions.headers };
+        const headers: Record<string, string> = { ...this.defaultHeaders, ...(requestOptions.headers as Record<string, string> | undefined) };
 
         // Add authentication token if not skipped
         if (!skipAuth) {
@@ -129,7 +129,7 @@ class ApiClient {
             skipAuth?: boolean;
         } = {}
     ): Promise<T> {
-        const { onProgress, skipAuth = false, ...requestOptions } = options;
+        const { onProgress, skipAuth = false } = options;
         
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
