@@ -7,6 +7,9 @@ import { NotificationCard } from "../../components/Dashboard.Component/Home.Comp
 import { EventCard } from "../../components/Dashboard.Component/Home.Components/EventCard.Component";
 import { UpgradeCard } from "../../components/Dashboard.Component/Home.Components/UpgradeCard.Component";
 import { useTasks } from "../../hooks";
+import { useAppSelector } from "../../store";
+import { PermissionGuard, ProtectedLink } from "../../components";
+import { ROUTES } from "../../config/routes";
 // Removed dummy data import - will use real user data from Redux
 
 const Home: React.FC = () => {
@@ -40,7 +43,9 @@ const Home: React.FC = () => {
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-foreground">Your Workspaces</h2>
-              <Button variant="default">+ New</Button>
+              <PermissionGuard requiredRole="admin">
+                <Button variant="default">+ New</Button>
+              </PermissionGuard>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <WorkspaceCard

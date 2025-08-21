@@ -24,12 +24,8 @@ export const env = {
   COMMIT_HASH: import.meta.env.VITE_COMMIT_HASH,
 } as const;
 
-// Test token for development (remove in production)
-// Note: This token needs to be a valid JWT token from your backend
-// You can get a valid token by:
-// 1. Running the backend
-// 2. Using the login endpoint or getting a token from your seeded data
-export const TEST_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YTYzZWQ4ZDgyODg3YTU0MzE0NTFlZCIsImlhdCI6MTc1NTc2ODk2NywiZXhwIjoxNzU2MzczNzY3LCJhdWQiOiJ0YXNrZmxvdy11c2VycyIsImlzcyI6InRhc2tmbG93LWFwaSJ9.jSQvxzFznskq6qVgfK4qbTUtoTr_pgvkWMr_3drXTMU";
+// Development helpers (remove in production)
+// These are only used for testing and development purposes
 // Test workspace ID (you can update this based on your seeded data)
 export const TEST_WORKSPACE_ID = "68a63eded82887a543145307";
 

@@ -7,3 +7,5 @@ export * from './useTasks';
 export * from './useTheme';
 export * from './useSpaceTasks';
 export * from './usePermissions';
+export * from './useRoutePermissions';
+export * from './useLocalStorage';
