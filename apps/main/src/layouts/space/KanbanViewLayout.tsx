@@ -88,14 +88,14 @@ export const KanbanViewLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Container size="7xl" className="py-6">
+      <Container size="7xl" className="py-4 sm:py-6">
         {/* Header */}
         <Stack spacing="lg">
           <Typography variant="heading-xl">Finance Dashboard</Typography>
           
           {/* Navigation Tabs */}
-          <Flex justify="between" align="center">
-            <Flex gap="lg">
+          <Flex justify="between" align="center" className="flex-col sm:flex-row gap-4 sm:gap-0">
+            <Flex gap="md" className="flex-wrap">
               <Button variant="ghost" className="border-b-2 border-primary pb-1">
                 Kanban
               </Button>
@@ -113,7 +113,7 @@ export const KanbanViewLayout: React.FC = () => {
               </Button>
             </Flex>
             
-            <Flex align="center" gap="md">
+            <Flex align="center" gap="md" className="w-full sm:w-auto justify-between sm:justify-end">
               <Button variant="default">
                 + Add Task
               </Button>
@@ -125,9 +125,9 @@ export const KanbanViewLayout: React.FC = () => {
         </Stack>
 
         {/* Kanban Board */}
-        <div className="flex gap-6 overflow-x-auto pb-4 mt-6">
+        <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 mt-6">
           {columns.map((column) => (
-            <div key={column} className="flex-shrink-0 w-80">
+            <div key={column} className="flex-shrink-0 w-72 sm:w-80">
               <Card variant="default" className="h-fit">
                 <CardHeader>
                   <Flex justify="between" align="center">
