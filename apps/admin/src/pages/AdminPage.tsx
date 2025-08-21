@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store';
 import { logoutAdmin, getCurrentAdmin } from '../store/slices/adminSlice';
-import { Button, Typography, Avatar, Dropdown, DropdownItem } from '@taskflow/ui';
+import { Typography, Avatar, Dropdown, DropdownItem } from '@taskflow/ui';
 import { ThemeToggle } from '@taskflow/theme';
 import { 
   HomeIcon, 
@@ -15,6 +15,9 @@ import {
   PuzzlePieceIcon
 } from '@heroicons/react/24/outline';
 
+// Import NotificationBell component
+import NotificationBell from '../components/NotificationBell';
+
 // Import layouts instead of individual pages
 import DashboardLayout from '../layouts/DashboardLayout';
 import UserManagementLayout from '../layouts/UserManagementLayout';
@@ -25,6 +28,10 @@ import SystemHealthLayout from '../layouts/SystemHealthLayout';
 import NotificationsLayout from '../layouts/NotificationsLayout';
 import SettingsLayout from '../layouts/SettingsLayout';
 
+// Import language context and translation hook
+import { useLanguageContext } from '../contexts/LanguageContext';
+import { useTranslation } from '../hooks/useTranslation';
+
 interface NavigationItem {
   name: string;
   path: string;
@@ -33,70 +40,71 @@ interface NavigationItem {
   layout: React.ComponentType;
 }
 
-const navigationItems: NavigationItem[] = [
-  {
-    name: 'Dashboard',
-    path: '/dashboard',
-    icon: HomeIcon,
-    description: 'Overview and key metrics',
-    layout: DashboardLayout
-  },
-  {
-    name: 'Users & Roles',
-    path: '/users',
-    icon: UsersIcon,
-    description: 'Manage user accounts and permissions',
-    layout: UserManagementLayout
-  },
-  {
-    name: 'Templates',
-    path: '/templates',
-    icon: DocumentTextIcon,
-    description: 'System templates and configurations',
-    layout: TemplatesLayout
-  },
-  {
-    name: 'Analytics',
-    path: '/analytics',
-    icon: ChartBarIcon,
-    description: 'Global statistics and insights',
-    layout: AnalyticsLayout
-  },
-  {
-    name: 'Integrations',
-    path: '/integrations',
-    icon: PuzzlePieceIcon,
-    description: 'Third-party integrations and API keys',
-    layout: IntegrationsLayout
-  },
-  {
-    name: 'System Health',
-    path: '/system-health',
-    icon: HeartIcon,
-    description: 'Monitor system performance and health',
-    layout: SystemHealthLayout
-  },
-  {
-    name: 'Notifications',
-    path: '/notifications',
-    icon: BellIcon,
-    description: 'System announcements and communication',
-    layout: NotificationsLayout
-  },
-  {
-    name: 'Settings',
-    path: '/settings',
-    icon: CogIcon,
-    description: 'System configuration and preferences',
-    layout: SettingsLayout
-  }
-];
-
 const AdminPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { currentAdmin, isAuthenticated, isLoading } = useAppSelector(state => state.admin);
+  const { t } = useTranslation();
+
+  const navigationItems: NavigationItem[] = [
+    {
+      name: t('navigation.dashboard'),
+      path: '/dashboard',
+      icon: HomeIcon,
+      description: t('dashboard.overview'),
+      layout: DashboardLayout
+    },
+    {
+      name: t('navigation.usersAndRoles'),
+      path: '/users',
+      icon: UsersIcon,
+      description: t('userManagement.manageUsers'),
+      layout: UserManagementLayout
+    },
+    {
+      name: t('navigation.templates'),
+      path: '/templates',
+      icon: DocumentTextIcon,
+      description: 'System templates and configurations',
+      layout: TemplatesLayout
+    },
+    {
+      name: t('navigation.analytics'),
+      path: '/analytics',
+      icon: ChartBarIcon,
+      description: 'Global statistics and insights',
+      layout: AnalyticsLayout
+    },
+    {
+      name: t('navigation.integrations'),
+      path: '/integrations',
+      icon: PuzzlePieceIcon,
+      description: 'Third-party integrations and API keys',
+      layout: IntegrationsLayout
+    },
+    {
+      name: t('navigation.systemHealth'),
+      path: '/system-health',
+      icon: HeartIcon,
+      description: 'Monitor system performance and health',
+      layout: SystemHealthLayout
+    },
+    {
+      name: t('navigation.notifications'),
+      path: '/notifications',
+      icon: BellIcon,
+      description: 'System announcements and communication',
+      layout: NotificationsLayout
+    },
+    {
+      name: t('navigation.settings'),
+      path: '/settings',
+      icon: CogIcon,
+      description: 'System configuration and preferences',
+      layout: SettingsLayout
+    }
+  ];
 
 
 
@@ -218,10 +226,7 @@ const AdminPage: React.FC = () => {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="relative">
-              <BellIcon className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-            </Button>
+            <NotificationBell />
             
             <Dropdown
               trigger={
@@ -231,8 +236,8 @@ const AdminPage: React.FC = () => {
                       {currentAdmin?.name?.charAt(0).toUpperCase() || 'A'}
                     </span>
                   </Avatar>
-                  <div className="text-left">
-                    <Typography variant="body-medium" className="text-foreground">
+                  <div className="flex flex-col items-start space-y-1">
+                    <Typography variant="body-medium" className="text-foreground font-medium">
                       {currentAdmin?.name || currentAdmin?.email || 'Admin User'}
                     </Typography>
                     <Typography variant="body-small" className="text-muted-foreground">

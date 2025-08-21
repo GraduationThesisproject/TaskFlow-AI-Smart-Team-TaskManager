@@ -24,16 +24,21 @@ import {
   UserGroupIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
+import { useLanguageContext } from '../contexts/LanguageContext';
+import { useTranslation } from '../hooks/useTranslation';
+import { SUPPORTED_LANGUAGES } from '../hooks/useLanguage';
 
 const SettingsLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('general');
+  const { currentLanguage, changeLanguage } = useLanguageContext();
+  const { t } = useTranslation();
 
   // System Settings
   const [systemSettings, setSystemSettings] = useState({
     companyName: 'TaskFlow AI',
     timezone: 'UTC',
     theme: 'auto',
-    language: 'en'
+    language: currentLanguage
   });
 
   // Security Settings
@@ -56,7 +61,17 @@ const SettingsLayout: React.FC = () => {
 
   const saveSettings = (section: string) => {
     console.log(`Saving ${section} settings...`);
+    
+    // If language changed, apply it immediately
+    if (section === 'general' && systemSettings.language !== currentLanguage) {
+      changeLanguage(systemSettings.language);
+    }
+    
     alert(`${section} settings saved successfully!`);
+  };
+
+  const handleLanguageChange = (language: string) => {
+    setSystemSettings(prev => ({ ...prev, language: language as any }));
   };
 
   return (
@@ -159,12 +174,12 @@ const SettingsLayout: React.FC = () => {
                   <label htmlFor="language" className="text-sm font-medium">Language</label>
                   <Select
                     value={systemSettings.language}
-                    onValueChange={(value) => setSystemSettings(prev => ({ ...prev, language: value }))}
+                    onValueChange={handleLanguageChange}
                   >
-                    <option value="en">English</option>
-                    <option value="es">Spanish</option>
-                    <option value="fr">French</option>
-                    <option value="de">German</option>
+                    <option value="en">🇺🇸 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="de">🇩🇪 Deutsch</option>
                   </Select>
                 </div>
               </Grid>
