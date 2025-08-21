@@ -24,3 +24,4 @@ export { NavigationGuard, ProtectedLink } from './common/NavigationGuard';
 export { LogoutConfirmDialog } from './common/LogoutConfirmDialog';
 export { ThemeToggle } from './common/ThemeToggle';
 export { ThemeSettings } from './settings/ThemeSettings';
+export { CreateWorkspaceModal } from './workspace/CreateWorkspaceModal';

@@ -14,7 +14,6 @@ import { BoardPage } from './pages/board.page';
 import { LandingPage } from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import { NoAccessPage } from './pages/NoAccessPage';
-import { SettingsPage } from './pages/SettingsPage';
 import { ProtectedRoute, PublicRoute, LogoutConfirmDialog, ThemeToggle } from './components';
 import { LogOut } from 'lucide-react';
 
@@ -135,12 +134,6 @@ function AppContent() {
             </ProtectedRoute>
           } />
 
-                     {/* Settings Page - Require authentication */}
-           <Route path="/settings" element={
-             <ProtectedRoute>
-               <SettingsPage />
-             </ProtectedRoute>
-           } />
 
            {/* No Access Page */}
            <Route path="/no-access" element={<NoAccessPage />} />
