@@ -5,6 +5,7 @@ export * from './Flex';
 export * from './Gradient';
 export { default as Gradient } from './Gradient';
 export * from './Input';
+export * from './TextArea';
 export * from './Typography';
 export * from './Badge';
 export * from './Progress';
@@ -26,3 +27,6 @@ export * from './Switch';
 export * from './Textarea';
 export * from './Tabs';
 export * from './utils';
+
+// Re-export GridLayout as Grid for backward compatibility
+export { GridLayout as Grid } from './Layout';
