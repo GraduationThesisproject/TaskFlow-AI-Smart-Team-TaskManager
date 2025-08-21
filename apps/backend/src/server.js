@@ -1,9 +1,21 @@
 require('dotenv').config();
+//for auth i use require('dotenv').config();
+//👉 dotenv allows you to use a .env file to store secret information (like database passwords, API keys, JWT secrets).
 const http = require('http');
 const socketIo = require('socket.io');
 
 const app = require('./app');
+//for auth i use those packages from app.js
+/*import express from "express";
+ import cors from "cors";
+import dotenv from "dotenv";
+*/
+//for authentication i use those packages from app.js
 const connectDB = require('./config/db');
+//for authentication i use (mongoose ) from connectDB/db.js
+
+
+
 const logger = require('./config/logger');
 const { ensureDirectoriesExist } = require('./config/multer');
 const taskSocket = require('./sockets/task.socket');
