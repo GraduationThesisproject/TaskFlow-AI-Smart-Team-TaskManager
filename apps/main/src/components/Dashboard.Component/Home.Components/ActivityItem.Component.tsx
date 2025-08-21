@@ -1,13 +1,8 @@
 import React from "react";
 import { Card } from "@taskflow/ui";
+import type { ActivityItemProps } from "apps/main/src/types/dashboard";
 
-interface ActivityItemProps {
-  avatarUrl: string;
-  actorName: string;
-  action: string;
-  highlight: string;
-  meta: string;
-}
+
 
 export const ActivityItem: React.FC<ActivityItemProps> = ({
   avatarUrl,
