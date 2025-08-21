@@ -10,7 +10,7 @@ export interface User {
   updatedAt: Date;
 }
 
-export type UserRole = 'admin' | 'user' | 'moderator';
+// export type UserRole = 'admin' | 'user' | 'moderator';
 export const UserRole = {
   ADMIN: 'admin',
   USER: 'user',

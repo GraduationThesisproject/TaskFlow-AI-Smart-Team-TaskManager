@@ -22,8 +22,10 @@ export const loginUser = createAsyncThunk(
         return rejectWithValue(errorData.message || 'Login failed');
       }
 
-      const data = await response.json();
-      return data;
+      const body = await response.json();
+      console.log("token",body.data.token)
+      localStorage.setItem('token', body.data.token)
+      return body.data;
     } catch (error) {
       return rejectWithValue('Network error occurred');
     }
@@ -87,13 +89,14 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
+        // const { token, user } = action.payload.data; // <- use .data
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
         
         // Store token in localStorage
-        localStorage.setItem('token', action.payload.token);
+        // localStorage.setItem('token', action.payload.token);
         console.log("Token stored in localStorage:", action.payload.token);
       })
       .addCase(loginUser.rejected, (state, action) => {

@@ -4,7 +4,7 @@ import { useTheme } from './hooks/useTheme';
 import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 import { SpacePage } from './pages/space.page';
 import Dashboard from './pages/Dashboard';  
-import WorkSpace from './pages/workSpace';
+// import WorkSpace from './pages/workSpace';
 import { LandingPage } from './pages/LandingPage';
 
 
@@ -40,7 +40,7 @@ function AppContent() {
           <Route path="/*" element={<LandingPage />} />
           <Route path="/space/*" element={<SpacePage />} />
           <Route path="/dashboard/*" element={<Dashboard/>} />
-          <Route path="/workspace/*" element={<WorkSpace />} />
+          {/* <Route path="/workspace/*" element={<WorkSpace />} /> */}
         </Routes>
       </main>
     </div>
