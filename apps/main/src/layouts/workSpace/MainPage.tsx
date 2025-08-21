@@ -26,7 +26,7 @@ const Main = () => {
   const query = new URLSearchParams(location.search);
   const workspaceId = query.get('id') || 'demo-workspace'; // TODO: replace with real routing param
 
-  const members = useAppSelector(selectMembers);
+  const members = useAppSelector(selectMembers) ?? [];
   const isLoading = useAppSelector(selectWorkspaceLoading);
   const error = useAppSelector(selectWorkspaceError);
 
@@ -41,14 +41,14 @@ const Main = () => {
   }, [dispatch, workspaceId]);
 
   const filteredMembers = React.useMemo(() => {
-    const normalized = members.map((m) => ({
+    const normalized = (Array.isArray(members) ? members : []).map((m) => ({
       ...m,
       displayRole: m.role === 'owner' ? 'Owner' : m.role === 'admin' ? 'Admin' : 'Member',
       displayStatus: (m.status || 'active') === 'active' ? 'Active' : (m.status || 'active') === 'pending' ? 'Pending' : 'Disabled',
       lastActiveStr: typeof m.lastActive === 'string' ? m.lastActive : (m.lastActive ? new Date(m.lastActive).toLocaleDateString() : '—'),
-      name: `${m.user?.firstName ?? ''} ${m.user?.lastName ?? ''}`.trim() || m.userId,
+      name: (m.user?.name ?? '').trim() || m.userId,
       email: m.user?.email || '',
-      handle: (`${m.user?.firstName ?? ''} ${m.user?.lastName ?? ''}`.trim()).toLowerCase().replace(/\s+/g, ''),
+      handle: (((m.user?.name ?? '').trim() || m.user?.email || m.userId)).toLowerCase().replace(/\s+/g, ''),
     }));
 
     return normalized.filter((m) => {
