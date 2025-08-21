@@ -72,7 +72,18 @@ const Templates: React.FC = () => {
   // Define all categories
   const categories: ('all' | CategoryKey)[] = ['all', ...Object.keys(templatesByCategory) as CategoryKey[]];
 
-  
+  // Transform templates to match the expected format
+  const transformTemplates = (templates: any[]) => {
+    return templates.map(template => ({
+      ...template,
+      id: template.id.toString(),
+      desc: template.description,
+      views: 0,
+      likes: 0,
+      image: undefined
+    }));
+  };
+
   // Filter templates based on active category and search query
   const filteredTemplates = useMemo(() => {
     let templates = [];
@@ -91,15 +102,7 @@ const Templates: React.FC = () => {
       );
     }
     
-    // Transform the data to match the expected type
-    return templates.map(template => ({
-      ...template,
-      id: String(template.id),
-      desc: template.description,
-      views: 0,
-      likes: 0,
-      // image is optional, so we can omit it
-    }));
+    return transformTemplates(templates);
   }, [activeCategory, searchQuery, templatesByCategory]);
 
   return (
@@ -228,18 +231,18 @@ const Templates: React.FC = () => {
         {/* Render template sections */}
         {activeCategory === 'all' ? (
           // Show all categories in sections
-          Object.entries(filteredTemplates).map(([category, section]) => (
+          Object.entries(templatesByCategory).map(([category, section]) => (
             <TemplateSection
               key={category}
               title={section.title}
-              templates={section.templates}
+              templates={transformTemplates(section.templates)}
             />
           ))
         ) : (
           // Show only the selected category with search results
           <TemplateSection
             title={`${activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} Templates`}
-            templates={Array.isArray(filteredTemplates) ? filteredTemplates : filteredTemplates.templates}
+            templates={filteredTemplates}
           />
         )}
       </main>

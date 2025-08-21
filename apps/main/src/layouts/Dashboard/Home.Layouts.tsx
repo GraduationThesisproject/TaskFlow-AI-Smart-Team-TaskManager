@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import { Briefcase, Code } from "lucide-react";
 import { Button } from "@taskflow/ui";
 import { WorkspaceCard } from "../../components/Dashboard.Component/Home.Components/WorkspaceCard.Component";
 import { ActivityItem } from "../../components/Dashboard.Component/Home.Components/ActivityItem.Component";
@@ -8,8 +7,7 @@ import { EventCard } from "../../components/Dashboard.Component/Home.Components/
 import { UpgradeCard } from "../../components/Dashboard.Component/Home.Components/UpgradeCard.Component";
 import { useTasks } from "../../hooks";
 import { useAppSelector } from "../../store";
-import { PermissionGuard, ProtectedLink } from "../../components";
-import { ROUTES } from "../../config/routes";
+import { PermissionGuard } from "../../components";
 // Removed dummy data import - will use real user data from Redux
 
 const Home: React.FC = () => {
@@ -17,18 +15,22 @@ const Home: React.FC = () => {
 
   const nextTwoDeadlines = useMemo(() => {
     const upcoming = [...highPriorityTasks, ...overdueTasks]
-      .filter(t => t.dueDate)
-      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      .filter(t => t.dueDate) // This ensures dueDate exists
+      .sort((a, b) => 
+        (a.dueDate && b.dueDate) 
+          ? new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+          : 0
+      );
     return upcoming.slice(0, 2).map(t => ({
-      month: new Date(t.dueDate).toLocaleString(undefined, { month: 'short' }).toUpperCase(),
-      day: new Date(t.dueDate).getDate(),
+      month: t.dueDate ? new Date(t.dueDate).toLocaleString(undefined, { month: 'short' }).toUpperCase() : '',
+      day: t.dueDate ? new Date(t.dueDate).getDate() : 0,
       title: t.title,
-      meta: `${t.category || 'Task'} • ${t.priority}`,
+      meta: `${t.tags?.[0] || 'Task'} • ${t.priority}`,
     }));
   }, [highPriorityTasks, overdueTasks]);
 
   const { user } = useAppSelector(state => state.auth);
-  const displayName = user?.firstName || 'User';
+  const displayName = user?.name || 'User';
 
   return (
     <div className="min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8 py-6">
@@ -49,27 +51,17 @@ const Home: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <WorkspaceCard
-                icon={<Briefcase className="w-5 h-5 text-primary-foreground" />}
-                iconBgClass="bg-primary"
-                name="Marketing Team"
+                title="Marketing Team"
                 description="Q1 Campaign Planning & Social Media Strategy"
-                membersCount={12}
-                avatarUrls={[
-                  "https://i.pravatar.cc/32?img=1",
-                  "https://i.pravatar.cc/32?img=2",
-                  "https://i.pravatar.cc/32?img=3",
-                ]}
-                statusText="Last active 2h ago"
+                memberCount={12}
+                projectCount={5}
               />
 
               <WorkspaceCard
-                icon={<Code className="w-5 h-5 text-primary-foreground" />}
-                iconBgClass="bg-emerald-600"
-                name="Product Development"
+                title="Product Development"
                 description="Mobile App v2.0 Development & Testing"
-                membersCount={8}
-                avatarUrls={["https://i.pravatar.cc/32?img=4", "https://i.pravatar.cc/32?img=5"]}
-                statusText="Active now"
+                memberCount={8}
+                projectCount={3}
               />
             </div>
           </div>
