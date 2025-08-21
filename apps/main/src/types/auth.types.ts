@@ -1,13 +1,57 @@
-export interface User {
-  id: string;
+// Basic user information
+export interface UserBasic {
+  _id: string;
   email: string;
-  name: string; // Changed from firstName/lastName to match backend
+  name: string;
   avatar?: string;
   emailVerified: boolean;
   isActive: boolean;
-  lastLogin?: string; // Changed from Date to string (ISO format)
-  createdAt: string; // Changed from Date to string (ISO format)
-  updatedAt: string; // Changed from Date to string (ISO format)
+  lastLogin?: string; // ISO format
+  createdAt: string; // ISO format
+  updatedAt: string; // ISO format
+}
+
+// User preferences
+export interface UserPreferences {
+  theme: {
+    mode: 'light' | 'dark' | 'system';
+    primaryColor?: string;
+    accentColor?: string;
+  };
+  notifications: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+    marketing: boolean;
+  };
+  language: string;
+  timezone: string;
+  dateFormat: string;
+  timeFormat: '12h' | '24h';
+}
+
+// User security settings
+export interface UserSecurity {
+  twoFactorEnabled: boolean;
+  lastPasswordChange?: string; // ISO format
+  loginAttempts: number;
+  lockedUntil?: string; // ISO format
+  passwordExpiresAt?: string; // ISO format
+}
+
+// User roles and permissions
+export interface UserRoles {
+  global: string[];
+  workspaces: Record<string, string[]>; // workspaceId -> roles[]
+  permissions: string[];
+}
+
+// Complete user object with all nested data
+export interface User {
+  user: UserBasic;
+  preferences: UserPreferences;
+  security: UserSecurity;
+  roles: UserRoles;
 }
 
 // export type UserRole = 'admin' | 'user' | 'moderator';

@@ -22,7 +22,6 @@ interface FormErrors {
 export default function SignIn() {
   const navigate = useNavigate();
   const { login, isLoading, error, clearAuthError } = useAuth();
-  const { theme } = useTheme();
   
   // Form state
   const [formData, setFormData] = useState<LoginFormData>({
