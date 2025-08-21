@@ -47,7 +47,7 @@ class ApiClient {
 
             // Handle unauthorized - attempt token refresh
             if (response.status === 401 && !skipAuth && retryOnUnauth) {
-                console.log('Unauthorized - attempting token refresh...');
+                // Unauthorized - attempting token refresh
                 
                 const newToken = await tokenManager.refreshAccessToken();
                 if (newToken) {

@@ -6,4 +6,4 @@ export * from './useTextDirection';
 export * from './useTasks';
 export * from './useTheme';
 export * from './useSpaceTasks';
-export * from './useTestWorkspace';
+export * from './usePermissions';

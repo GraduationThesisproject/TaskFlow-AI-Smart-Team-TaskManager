@@ -58,7 +58,7 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
     if (taskId) {
       // Since loadTaskById doesn't take parameters, we'll need to handle this differently
       // For now, we'll just log the taskId
-      console.log('Task ID to load:', taskId);
+      // Task ID to load
     }
   }, [taskId]);
 

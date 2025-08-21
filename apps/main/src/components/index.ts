@@ -16,7 +16,5 @@ export { DraggableColumn as BoardDraggableColumn } from './board/DraggableColumn
 export { SubNavigation as BoardSubNavigation } from './board/SubNavigation';
 export { TaskDetailModal } from './board/TaskDetailModal';
 export { CommentItem } from './board/CommentItem';
-export { TaskManagementExample } from './board/TaskManagementExample';
-
-// Export test workspace example
-export { TestWorkspaceExample } from './TestWorkspaceExample';
+export { PermissionGuard } from './common/PermissionGuard';
+export { withPermissions } from './common/withPermissions';

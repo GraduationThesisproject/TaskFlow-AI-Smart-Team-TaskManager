@@ -90,7 +90,7 @@ export const KanbanViewLayout: React.FC = () => {
   // Handle task creation
   const handleAddTask = async (taskData: Partial<Task>) => {
     try {
-      console.log('Adding new task:', taskData);
+      // Adding new task
       await addTask({
         ...taskData,
         space: spaceId!,
@@ -105,7 +105,7 @@ export const KanbanViewLayout: React.FC = () => {
   // Handle column creation
   const handleAddColumn = async (columnData: Partial<Column>) => {
     try {
-      console.log('Adding new column:', columnData);
+      // Adding new column
       await addColumn({
         ...columnData,
         board: boardId!,
@@ -160,12 +160,12 @@ export const KanbanViewLayout: React.FC = () => {
     setSelectedTask(task);
     setIsTaskDetailModalOpen(true);
     selectTask(task);
-    console.log('Task clicked:', task);
+    // Task clicked
   };
 
   // Handle column actions
   const handleEditColumn = (columnId: string) => {
-    console.log('Edit column:', columnId);
+    // Edit column
     // Implement column editing
   };
 
@@ -180,7 +180,7 @@ export const KanbanViewLayout: React.FC = () => {
   // Handle task save
   const handleSaveTask = async (taskData: Partial<Task>) => {
     try {
-      console.log('Saving task:', taskData);
+      // Saving task
       // This would typically call an API to update the task
       // For now, we'll just close the modal
       setIsTaskDetailModalOpen(false);
@@ -194,7 +194,7 @@ export const KanbanViewLayout: React.FC = () => {
   const handleDeleteTask = async () => {
     try {
       if (selectedTask) {
-        console.log('Deleting task:', selectedTask._id);
+        // Deleting task
         await removeTask(selectedTask._id);
         setIsTaskDetailModalOpen(false);
         setSelectedTask(null);

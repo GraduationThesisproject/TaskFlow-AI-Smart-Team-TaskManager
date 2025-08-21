@@ -13,7 +13,7 @@ interface GradientProps {
   overlay?: boolean;
 }
 
-export const Gradient: React.FC<GradientProps> = ({
+ const Gradient: React.FC<GradientProps> = ({
   children,
   className,
   variant = 'primary',
@@ -165,3 +165,4 @@ export const ConicGradient: React.FC<ConicGradientProps> = ({
     </div>
   );
 };
+export default Gradient;
