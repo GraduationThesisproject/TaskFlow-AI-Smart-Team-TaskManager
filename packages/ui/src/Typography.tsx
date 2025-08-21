@@ -12,6 +12,7 @@ const typographyVariants = cva("", {
       h3: "text-lg font-semibold leading-tight",
       h4: "text-base font-semibold leading-tight",
       "body-large": "text-text-18 font-normal leading-normal",
+      interregular24: "text-2xl font-normal leading-normal",
       "body-medium": "text-text-16 font-normal leading-normal",
       "body-small": "text-text-14 font-normal leading-normal",
       p: "text-text-16 font-normal leading-normal",
@@ -82,6 +83,8 @@ function getDefaultTag(variant: TypographyProps['variant']): keyof JSX.Intrinsic
     case 'muted':
     case 'caption':
       return 'span';
+    case 'interregular24':
+      return 'p';
     default:
       return 'p';
   }
