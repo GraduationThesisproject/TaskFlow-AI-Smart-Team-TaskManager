@@ -24,7 +24,7 @@ export const UpcomingTasksPanel: React.FC<UpcomingTasksPanelProps> = ({
       <Typography variant="h3" className="text-lg font-semibold">{title}</Typography>
       <button 
           className="flex items-center text-primary text-sm font-medium hover:underline"
-          onClick={() => console.log('See all tasks')}
+                          onClick={() => {/* See all tasks */}}
         >
           See All
           <ChevronRight className="w-4 h-4 ml-1" />

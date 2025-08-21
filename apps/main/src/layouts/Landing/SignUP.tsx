@@ -20,7 +20,7 @@ export default function Index() {
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     setIsLoading(false);
-    console.log("Form submitted:", formData);
+    // Form submitted
   };
 
   const handleInputChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {

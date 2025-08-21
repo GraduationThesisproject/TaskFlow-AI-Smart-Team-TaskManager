@@ -1,6 +1,6 @@
 export const themes = {
   light: {
-    '--background': '0 0% 70%',
+    '--background': '0 0% 99%',
     '--foreground': '222.2 84% 4.9%',
     '--card': '0 0% 100%',
     '--card-foreground': '222.2 84% 4.9%',
@@ -10,20 +10,24 @@ export const themes = {
     '--primary-foreground': '0 0% 100%',
     '--secondary': '210 40% 96%',
     '--secondary-foreground': '222.2 84% 4.9%',
-    '--muted': '210 40% 96%',
+    '--muted': '210 40% 92%',
     '--muted-foreground': '215.4 16.3% 46.9%',
     '--accent': '170 100% 45%', // #00E8C6
     '--accent-foreground': '222.2 84% 4.9%',
     '--destructive': '0 84.2% 60.2%',
     '--destructive-foreground': '210 40% 98%',
-    '--border': '214.3 31.8% 91.4%',
+    '--border': '214.3 31.8% 85%',
     '--input': '214.3 31.8% 91.4%',
     '--ring': '201 100% 44%',
-    '--radius': '0.5rem',
+    '--radius': '1rem',
     '--neutral-0': '0 0% 0%',
     '--neutral-100': '0 0% 10%',
     '--neutral-200': '0 0% 16%',
     '--neutral-1000': '0 0% 100%',
+    '--success': '142 76% 36%',
+    '--warning': '38 92% 50%',
+    '--error': '0 84% 60%',
+    '--info': '201 100% 44%',
     // Scrollbar colors for light theme
     '--scrollbar-track': '210 40% 96%', // Light gray track
     '--scrollbar-thumb': '215 20% 65%', // Medium gray thumb
@@ -32,7 +36,7 @@ export const themes = {
     // Gradient colors for light theme
     '--gradient-primary': '201 100% 44%', // Primary blue
     '--gradient-secondary': '170 100% 45%', // Accent cyan
-    '--gradient-accent': '215 20% 65%', // Medium gray
+    '--gradient-accent': '170 100% 45%', // Accent cyan
     '--gradient-muted': '210 40% 96%', // Light gray
   },
   dark: {
