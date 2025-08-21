@@ -117,7 +117,7 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
 
   if (error || !currentTask) {
     return (
-      <Container size="lg" className="py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <Card variant="outlined" className="text-center">
           <CardContent className="p-8">
             <Typography variant="heading-large" className="text-error mb-4">
@@ -131,7 +131,7 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
             </Button>
           </CardContent>
         </Card>
-      </Container>
+      </div>
     );
   }
 
@@ -139,10 +139,10 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
   const totalSubtasks = localTask.subtasks?.length || 0;
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
+    <div className="flex h-screen bg-background text-foreground w-full">
       {/* Main Content Area */}
       <div className="flex-1 p-6 overflow-y-auto">
-        <Container size="7xl">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <Flex justify="between" align="center" className="mb-6">
             <Typography variant="heading-xl">Task Details</Typography>
@@ -296,7 +296,7 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
               </Stack>
             </CardContent>
           </Card>
-        </Container>
+        </div>
       </div>
 
       {/* Right Sidebar */}
