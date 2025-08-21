@@ -1,21 +1,120 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, Input, Button, Checkbox } from "@taskflow/ui";
+import { useAuth } from "../../hooks/useAuth";
+import { ThemeProvider, useTheme, ThemeToggle } from '@taskflow/theme/provider';
+// TypeScript interfaces
+interface LoginFormData {
+  email: string;
+  password: string;
+  rememberMe: boolean;
 
-export default function Index() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+}
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+  general?: string;
+  rememberMe?: string;
+}
+
+export default function SignIn() {
+  const navigate = useNavigate();
+  const { login, isLoading, error, clearAuthError } = useAuth();
+  
+  // Form state
+  const [formData, setFormData] = useState<LoginFormData>({
+    email: "",
+    password: "",
+    rememberMe: false,
+  });
+  
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  // Focus states removed; not needed for current styling
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touched, setTouched] = useState<Partial<LoginFormData>>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle login logic here
-    console.log("Login attempted with:", { email, password, rememberMe });
+  // Clear errors when component mounts or when Redux error changes
+  useEffect(() => {
+    if (error) {
+      setErrors({ general: error });
+    }
+  }, [error]);
+
+  // Clear errors when user starts typing
+  const handleInputChange = (field: keyof LoginFormData, value: string | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear field-specific error when user types
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+    
+    // Mark field as touched
+    setTouched(prev => ({ ...prev, [field]: true }));
   };
 
+  // Validation function
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters long";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Clear previous errors
+    clearAuthError();
+    setErrors({});
+
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      const result = await login({
+        email: formData.email,
+        password: formData.password,
+      });
+console.log(result);
+      // Check if login was successful
+      if (result.meta.requestStatus === 'fulfilled') {
+        // Navigate to dashboard or intended page
+        console.log("Login successful");
+        navigate("/landing-page");
+      } else if (result.meta.requestStatus === 'rejected') {
+        // Error is already handled by Redux
+        console.error("Login failed:", result.payload);
+      }
+    } catch (error) {
+      setErrors({ general: "An unexpected error occurred" });
+    }
+  };
+
+  const handleBlur = (field: keyof LoginFormData) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+  };
+
+  // Check if field has error and is touched
+  const hasError = (field: keyof LoginFormData) => 
+    touched[field] && errors[field];
+
   return (
-    <div className="w-screen h-screen bg-black flex items-center justify-center font-inter">
+    <div className="w-screen h-screen bg-card flex items-center justify-center font-inter">
       <Card
         className="w-[448px] h-[715px] bg-taskflow-dark border border-taskflow-accent rounded-2xl relative"
         style={{ boxShadow: "0 20px 40px 0 rgba(0, 0, 0, 0.40)" }}
@@ -49,6 +148,15 @@ export default function Index() {
           </p>
         </div>
 
+        {/* General Error Display */}
+        {errors.general && (
+          <div className="absolute top-[170px] left-[33px] right-[33px]">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+              <p className="text-red-400 text-sm text-center">{errors.general}</p>
+            </div>
+          </div>
+        )}
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="absolute top-[203px] left-[33px] right-[33px]">
           {/* Email Field */}
@@ -60,14 +168,21 @@ export default function Index() {
               <Input
                 type="email"
                 placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onFocus={undefined}
-                onBlur={undefined}
-                className="h-[50px] bg-taskflow-darker border-taskflow-border rounded-lg px-4 text-white text-base"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                onBlur={() => handleBlur('email')}
+                className={`h-[50px] bg-taskflow-darker border rounded-lg px-4 text-white text-base ${
+                  hasError('email') 
+                    ? 'border-red-500 focus:border-red-500' 
+                    : 'border-taskflow-border focus:border-taskflow-accent'
+                }`}
                 autoComplete="email"
+                disabled={isLoading}
               />
             </div>
+            {hasError('email') && (
+              <p className="text-red-400 text-xs mt-1">{errors.email}</p>
+            )}
           </div>
 
           {/* Password Field */}
@@ -77,15 +192,18 @@ export default function Index() {
             </label>
             <div className="relative">
               <Input
-                // key={showPassword ? 'text' : 'password'}
-                type="email"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onFocus={undefined}
-                onBlur={undefined}
-                className="h-[50px] bg-taskflow-darker border-taskflow-border rounded-lg px-4 pr-12 text-taskflow-text-primary text-base placeholder-taskflow-text-muted"
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                onBlur={() => handleBlur('password')}
+                className={`h-[50px] bg-taskflow-darker border rounded-lg px-4 pr-12 text-taskflow-text-primary text-base placeholder-taskflow-text-muted ${
+                  hasError('password') 
+                    ? 'border-red-500 focus:border-red-500' 
+                    : 'border-taskflow-border focus:border-taskflow-accent'
+                }`}
                 autoComplete="current-password"
+                disabled={isLoading}
               />
               <Button
                 type="button"
@@ -94,6 +212,7 @@ export default function Index() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-white hover:text-taskflow-text-secondary"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
+                disabled={isLoading}
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path d="M12.5 10c0 .663-.263 1.299-.732 1.768A2.494 2.494 0 0 1 10 12.5a2.5 2.5 0 1 1 0-5c.663 0 1.299.263 1.768.732.469.469.732 1.105.732 1.768Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -101,15 +220,19 @@ export default function Index() {
                 </svg>
               </Button>
             </div>
+            {hasError('password') && (
+              <p className="text-red-400 text-xs mt-1">{errors.password}</p>
+            )}
           </div>
 
           {/* Remember Me & Forgot Password */}
           <div className="flex items-center justify-between mb-6">
             <Checkbox
-              checked={rememberMe}
-              onChange={(e) => setRememberMe((e.target as HTMLInputElement).checked)}
+              checked={formData.rememberMe}
+              onChange={(e) => handleInputChange('rememberMe', (e.target as HTMLInputElement).checked)}
               label="Remember me"
               className="text-white border-taskflow-text-dimmed"
+              disabled={isLoading}
             />
             <a 
               href="#" 
@@ -120,8 +243,21 @@ export default function Index() {
           </div>
 
           {/* Sign In Button */}
-          <Button type="submit" variant="gradient" size="lg" className="w-full">
-            Sign In
+          <Button 
+            type="submit" 
+            variant="gradient" 
+            size="lg" 
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Signing In...
+              </div>
+            ) : (
+              "Sign In"
+            )}
           </Button>
 
           {/* Divider */}
@@ -140,7 +276,8 @@ export default function Index() {
           <div className="flex gap-4 mb-6">
             <button
               type="button"
-              className="flex-1 h-[50px] bg-taskflow-darker border border-taskflow-border rounded-lg flex items-center justify-center gap-3 text-taskflow-text-secondary text-base font-normal transition-all duration-150 hover:bg-opacity-80 hover:border-taskflow-text-dimmed"
+              className="flex-1 h-[50px] bg-taskflow-darker border border-taskflow-border rounded-lg flex items-center justify-center gap-3 text-taskflow-text-secondary text-base font-normal transition-all duration-150 hover:bg-opacity-80 hover:border-taskflow-text-dimmed disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading}
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M18.8 10.2084C18.8 9.55837 18.7417 8.93337 18.6333 8.33337H10V11.8834H14.9333C14.7167 13.025 14.0667 13.9917 13.0917 14.6417V16.95H16.0667C17.8 15.35 18.8 13 18.8 10.2084Z" fill="currentColor"/>
@@ -152,7 +289,8 @@ export default function Index() {
             </button>
             <button
               type="button"
-              className="flex-1 h-[50px] bg-taskflow-darker border border-taskflow-border rounded-lg flex items-center justify-center gap-3 text-taskflow-text-secondary text-base font-normal transition-all duration-150 hover:bg-opacity-80 hover:border-taskflow-text-dimmed"
+              className="flex-1 h-[50px] bg-taskflow-darker border border-taskflow-border rounded-lg flex items-center justify-center gap-3 text-taskflow-text-secondary text-base font-normal transition-all duration-150 hover:bg-opacity-80 hover:border-taskflow-text-dimmed disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading}
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path fillRule="evenodd" clipRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" fill="currentColor"/>

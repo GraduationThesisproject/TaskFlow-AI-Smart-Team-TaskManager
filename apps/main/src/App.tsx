@@ -46,7 +46,7 @@ function AppContent() {
 
 function App() {
   return (
-    <ThemeProvider>
+    <ThemeProvider defaultTheme="dark" storageKey="taskflow-theme">
       <Router>
         <AppContent />
       </Router>
