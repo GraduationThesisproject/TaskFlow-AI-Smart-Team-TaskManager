@@ -1,10 +1,13 @@
 const express = require('express');
+//👉 Express is a framework that makes building APIs easy.
 const cors = require('cors');
+//👉 CORS (Cross-Origin Resource Sharing) is like a security guard.
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+//Import all models to ensure they are registered with Mongoose
 
-// Import all models to ensure they are registered with Mongoose
+
 require('./models');
 
 // Import middleware
