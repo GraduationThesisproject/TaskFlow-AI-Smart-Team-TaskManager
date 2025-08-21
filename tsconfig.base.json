@@ -17,6 +17,7 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
+      "@/*": ["./apps/*/src"],
       "@taskflow/ui": ["./packages/ui/src"],
       "@taskflow/config": ["./packages/config"],
       "@taskflow/theme": ["./packages/theme"],

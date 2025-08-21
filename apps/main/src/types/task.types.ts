@@ -1,3 +1,5 @@
+import type { User } from './auth.types';
+
 export interface Task {
   id: string;
   title: string;
@@ -17,19 +19,9 @@ export interface Task {
   columnId: string;
 }
 
-export enum TaskStatus {
-  TODO = 'todo',
-  IN_PROGRESS = 'in_progress',
-  REVIEW = 'review',
-  DONE = 'done',
-}
+export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done';
 
-export enum TaskPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  URGENT = 'urgent',
-}
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export interface Attachment {
   id: string;
