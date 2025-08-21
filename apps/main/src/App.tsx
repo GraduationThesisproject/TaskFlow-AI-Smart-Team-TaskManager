@@ -119,7 +119,7 @@ function AppContent() {
 function App() {
   return (
     <Provider store={store}>
-      <ThemeProvider>
+      <ThemeProvider defaultTheme="dark" storageKey="taskflow-theme">
         <Router>
           <AppContent />
         </Router>
