@@ -70,7 +70,7 @@ const logout = async (req, res) => {
 
 const getCurrentAdmin = async (req, res) => {
   try {
-    const admin = await Admin.findOne({ userId: req.user._id, isActive: true })
+    const admin = await Admin.findOne({ userId: req.user.id, isActive: true })
       .populate('userId', 'name email avatar');
 
     if (!admin) {
@@ -118,11 +118,15 @@ const getUsers = async (req, res) => {
     }
 
     if (status && status !== 'All Statuses') {
-      query.status = status;
+      if (status === 'Active') {
+        query.isActive = true;
+      } else if (status === 'Inactive') {
+        query.isActive = false;
+      }
     }
 
     const users = await User.find(query)
-      .select('name email avatar status createdAt lastLoginAt')
+      .select('name email avatar isActive createdAt lastLoginAt')
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
@@ -137,7 +141,7 @@ const getUsers = async (req, res) => {
           username: user.name,
           email: user.email,
           role: userRole?.systemRole || 'User',
-          status: user.status,
+          status: user.isActive ? 'Active' : 'Inactive',
           lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never',
           createdAt: user.createdAt.toLocaleDateString(),
           avatar: user.avatar
@@ -237,7 +241,7 @@ const deleteUser = async (req, res) => {
     }
 
     // Soft delete - mark as inactive
-    user.status = 'Inactive';
+    user.isActive = false;
     await user.save();
 
     sendResponse(res, 200, true, 'User deleted successfully');
@@ -250,22 +254,19 @@ const deleteUser = async (req, res) => {
 const banUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { reason } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
       return sendResponse(res, 404, false, 'User not found');
     }
 
-    user.status = 'Suspended';
-    user.suspensionReason = reason;
-    user.suspendedAt = new Date();
+    user.isActive = false;
     await user.save();
 
-    sendResponse(res, 200, true, 'User suspended successfully', { user });
+    sendResponse(res, 200, true, 'User deactivated successfully', { user });
   } catch (error) {
-    logger.error('Ban user error:', error);
-    sendResponse(res, 500, false, 'Server error suspending user');
+    logger.error('Deactivate user error:', error);
+    sendResponse(res, 500, false, 'Server error deactivating user');
   }
 };
 
@@ -278,9 +279,7 @@ const activateUser = async (req, res) => {
       return sendResponse(res, 404, false, 'User not found');
     }
 
-    user.status = 'Active';
-    user.suspensionReason = undefined;
-    user.suspendedAt = undefined;
+    user.isActive = true;
     await user.save();
 
     sendResponse(res, 200, true, 'User activated successfully', { user });
@@ -319,7 +318,7 @@ const getAnalytics = async (req, res) => {
     const { timeRange = '6-months' } = req.query;
 
     // Get basic counts
-    const totalUsers = await User.countDocuments({ status: 'Active' });
+    const totalUsers = await User.countDocuments({ isActive: true });
     const activeUsers = await User.countDocuments({ 
       lastLoginAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } 
     });
@@ -434,7 +433,7 @@ const getProjectTemplates = async (req, res) => {
       }
     ];
 
-    sendResponse(res, 200, true, 'Project templates retrieved successfully', { templates });
+    sendResponse(res, 200, true, 'Project templates retrieved successfully', templates);
   } catch (error) {
     logger.error('Get project templates error:', error);
     sendResponse(res, 500, false, 'Server error retrieving project templates');
@@ -484,7 +483,7 @@ const getTaskTemplates = async (req, res) => {
       }
     ];
 
-    sendResponse(res, 200, true, 'Task templates retrieved successfully', { templates });
+    sendResponse(res, 200, true, 'Task templates retrieved successfully', templates);
   } catch (error) {
     logger.error('Get task templates error:', error);
     sendResponse(res, 500, false, 'Server error retrieving task templates');
@@ -505,7 +504,7 @@ const getAIPrompts = async (req, res) => {
       }
     ];
 
-    sendResponse(res, 200, true, 'AI prompts retrieved successfully', { prompts });
+    sendResponse(res, 200, true, 'AI prompts retrieved successfully', prompts);
   } catch (error) {
     logger.error('Get AI prompts error:', error);
     sendResponse(res, 500, false, 'Server error retrieving AI prompts');
@@ -525,7 +524,7 @@ const getBrandingAssets = async (req, res) => {
       }
     ];
 
-    sendResponse(res, 200, true, 'Branding assets retrieved successfully', { assets });
+    sendResponse(res, 200, true, 'Branding assets retrieved successfully', assets);
   } catch (error) {
     logger.error('Get branding assets error:', error);
     sendResponse(res, 500, false, 'Server error retrieving branding assets');
@@ -544,7 +543,7 @@ module.exports = {
   getUser,
   updateUser,
   deleteUser,
-  banUser,
+  deactivateUser: banUser, // Keep the old name for backward compatibility
   activateUser,
   resetUserPassword,
   
