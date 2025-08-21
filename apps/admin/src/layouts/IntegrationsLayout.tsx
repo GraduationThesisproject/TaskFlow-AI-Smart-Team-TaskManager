@@ -21,7 +21,8 @@ import {
   ClockIcon,
   PlusIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  PresentationChartBarIcon
 } from '@heroicons/react/24/outline';
 
 interface Integration {
@@ -169,7 +170,7 @@ const IntegrationsLayout: React.FC = () => {
       case 'storage':
         return <PuzzlePieceIcon className="h-5 w-5" />;
       case 'analytics':
-        return <ChartBarIcon className="h-5 w-5" />;
+        return <PresentationChartBarIcon className="h-5 w-5" />;
       case 'development':
         return <KeyIcon className="h-5 w-5" />;
       case 'marketing':
