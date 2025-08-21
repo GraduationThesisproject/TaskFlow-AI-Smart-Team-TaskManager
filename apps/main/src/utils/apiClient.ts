@@ -23,7 +23,10 @@ class ApiClient {
         const { skipAuth = false, retryOnUnauth = true, ...requestOptions } = options;
         
         const url = `${this.baseURL}${endpoint}`;
-        const headers = { ...this.defaultHeaders, ...requestOptions.headers };
+        const headers: Record<string, string> = { 
+            ...this.defaultHeaders, 
+            ...(requestOptions.headers as Record<string, string> || {})
+        };
 
         // Add authentication token if not skipped
         if (!skipAuth) {

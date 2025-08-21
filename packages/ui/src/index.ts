@@ -4,6 +4,7 @@ export * from './Container';
 export * from './Flex';
 export * from './Gradient';
 export * from './Input';
+export * from './TextArea';
 export * from './Typography';
 export * from './Badge';
 export * from './Progress';
@@ -20,3 +21,6 @@ export * from './Loading';
 export * from './Form';
 export * from './Scrollbar';
 export * from './utils';
+
+// Re-export GridLayout as Grid for backward compatibility
+export { GridLayout as Grid } from './Layout';
