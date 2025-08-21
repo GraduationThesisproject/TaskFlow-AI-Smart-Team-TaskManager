@@ -1,4 +1,7 @@
+import { Link, useLocation } from 'react-router-dom';
+
 const Sidebar = () => {
+  const { search } = useLocation();
   return (
     <aside className="h-ful w-60 border-r border-border bg-[hsl(var(--neutral-200))] text-foreground/90 shadow-[0_0_10px_hsl(var(--accent))] 
              ring-1 ring-primary/20 
@@ -38,8 +41,8 @@ const Sidebar = () => {
           <ul className="flex flex-col gap-1">
             {/* Boards */}
             <li>
-              <a
-                href="#/workspace/boards"
+              <Link
+                to={`/workspace/boards${search}`}
                 className="group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors"
               >
 <svg width="12" height="16" viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -54,13 +57,13 @@ const Sidebar = () => {
 </svg>
 
                 <span className="font-medium" style={{color: "hsl(var(--primary-foreground))"}}>Boards</span>
-              </a>
+              </Link>
             </li>
 
             {/* Members (active) */}
             <li>
-              <a
-                href="#/workspace/members"
+              <Link
+                to={`/workspace/members${search}`}
                 className="mx-1 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/20 px-3 py-2 text-sm text-foreground shadow-[0_0_0_1px_rgba(0,232,198,0.15),_0_8px_30px_-12px_rgba(0,232,198,0.35)] ring-1 ring-accent/30"
               >
                 <svg className="outline-none [&>path:first-of-type]:hidden" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -76,16 +79,16 @@ const Sidebar = () => {
 </svg>
 
                 <span className="font-medium" style={{color: "hsl(var(--primary-foreground))"}}>Members</span>
-              </a>
+              </Link>
             </li>
 
             {/* Settings */}
             <li>
-              <a
-                href="#/workspace/settings"
+              <Link
+                to={`/workspace/settings${search}`}
                 className="group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors"
               >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g clip-path="url(#clip0_222_448)">
 <g clip-path="url(#clip1_222_448)">
 <path d="M15.4977 5.20625C15.5977 5.47813 15.5133 5.78125 15.2977 5.975L13.9445 7.20625C13.9789 7.46563 13.9977 7.73125 13.9977 8C13.9977 8.26875 13.9789 8.53438 13.9445 8.79375L15.2977 10.025C15.5133 10.2188 15.5977 10.5219 15.4977 10.7937C15.3602 11.1656 15.1945 11.5219 15.0039 11.8656L14.857 12.1187C14.6508 12.4625 14.4195 12.7875 14.1664 13.0938C13.982 13.3188 13.6758 13.3937 13.4008 13.3062L11.6602 12.7531C11.2414 13.075 10.7789 13.3438 10.2852 13.5469L9.89454 15.3313C9.83204 15.6156 9.61329 15.8406 9.32579 15.8875C8.89454 15.9594 8.45079 15.9969 7.99766 15.9969C7.54454 15.9969 7.10079 15.9594 6.66954 15.8875C6.38204 15.8406 6.16329 15.6156 6.10079 15.3313L5.71016 13.5469C5.21641 13.3438 4.75391 13.075 4.33516 12.7531L2.59766 13.3094C2.32266 13.3969 2.01641 13.3188 1.83204 13.0969C1.57891 12.7906 1.34766 12.4656 1.14141 12.1219L0.994539 11.8687C0.803914 11.525 0.638289 11.1687 0.500789 10.7969C0.400789 10.525 0.485164 10.2219 0.700789 10.0281L2.05391 8.79688C2.01954 8.53438 2.00079 8.26875 2.00079 8C2.00079 7.73125 2.01954 7.46563 2.05391 7.20625L0.700789 5.975C0.485164 5.78125 0.400789 5.47813 0.500789 5.20625C0.638289 4.83438 0.803914 4.47813 0.994539 4.13438L1.14141 3.88125C1.34766 3.5375 1.57891 3.2125 1.83204 2.90625C2.01641 2.68125 2.32266 2.60625 2.59766 2.69375L4.33829 3.24688C4.75704 2.925 5.21954 2.65625 5.71329 2.45312L6.10391 0.66875C6.16641 0.384375 6.38516 0.159375 6.67266 0.1125C7.10391 0.0375 7.54766 0 8.00079 0C8.45391 0 8.89767 0.0375 9.32891 0.109375C9.61642 0.15625 9.83517 0.38125 9.89767 0.665625L10.2883 2.45C10.782 2.65313 11.2445 2.92188 11.6633 3.24375L13.4039 2.69062C13.6789 2.60312 13.9852 2.68125 14.1695 2.90313C14.4227 3.20938 14.6539 3.53437 14.8602 3.87812L15.007 4.13125C15.1977 4.475 15.3633 4.83125 15.5008 5.20312L15.4977 5.20625ZM8.00079 10.5C8.66383 10.5 9.29972 10.2366 9.76856 9.76777C10.2374 9.29893 10.5008 8.66304 10.5008 8C10.5008 7.33696 10.2374 6.70107 9.76856 6.23223C9.29972 5.76339 8.66383 5.5 8.00079 5.5C7.33775 5.5 6.70186 5.76339 6.23302 6.23223C5.76418 6.70107 5.50079 7.33696 5.50079 8C5.50079 8.66304 5.76418 9.29893 6.23302 9.76777C6.70186 10.2366 7.33775 10.5 8.00079 10.5Z" fill="white"/>
@@ -102,16 +105,16 @@ const Sidebar = () => {
 </svg>
 
                 <span className="font-medium" style={{color: "hsl(var(--primary-foreground))"}}>Settings</span>
-              </a>
+              </Link>
             </li>
 
             {/* Upgrade */}
             <li>
-              <a
-                href="#/workspace/upgrade"
+              <Link
+                to={`/workspace/upgrade${search}`}
                 className="group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors"
               >
-<svg width="12" height="16" viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="12" height="16" viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g clip-path="url(#clip0_222_452)">
 <g clip-path="url(#clip1_222_452)">
 <path d="M6.70664 1.2937C6.31602 0.903076 5.68164 0.903076 5.29102 1.2937L0.291016 6.2937C-0.0996094 6.68433 -0.0996094 7.3187 0.291016 7.70933C0.681641 8.09995 1.31602 8.09995 1.70664 7.70933L5.00039 4.41245V14C5.00039 14.5531 5.44727 15 6.00039 15C6.55352 15 7.00039 14.5531 7.00039 14V4.41245L10.2941 7.7062C10.6848 8.09683 11.3191 8.09683 11.7098 7.7062C12.1004 7.31558 12.1004 6.6812 11.7098 6.29058L6.70977 1.29058L6.70664 1.2937Z" fill="white"/>
@@ -128,13 +131,13 @@ const Sidebar = () => {
 </svg>
 
                 <span className="font-medium" style={{color: "hsl(var(--primary-foreground))"}}>Upgrade</span>
-              </a>
+              </Link>
             </li>
 
             {/* Reports */}
             <li>
-              <a
-                href="#/workspace/reports"
+              <Link
+                to={`/workspace/reports${search}`}
                 className="group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors"
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -143,7 +146,7 @@ const Sidebar = () => {
 </svg>
 
                 <span className="font-medium" style={{color: "hsl(var(--primary-foreground))"}}>Reports</span>
-              </a>
+              </Link>
             </li>
           </ul>
         </nav>

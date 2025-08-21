@@ -63,7 +63,7 @@ router.post('/accept-invitation/:token',
 );
 
 router.get('/:id/members',
-    // requireWorkspaceMember,
+    requireWorkspaceMember,
     workspaceController.getWorkspaceMembers
 );
 
