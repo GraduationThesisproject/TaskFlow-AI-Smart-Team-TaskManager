@@ -3,17 +3,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { TypedUseSelectorHook} from 'react-redux';
 
 // Import reducers here
+
+// import workspaceReducer from './slices/workspaceSlice';
 import appReducer from './slices/appSlice.ts';
 import taskReducer from './slices/taskSlice.ts';
 import workspaceReducer from './slices/workspaceSlice.ts';
-// import authReducer from './slices/authSlice.ts';
+import authReducer from './slices/authSlice.ts';
 
 export const store = configureStore({
   reducer: {
     app: appReducer,
     tasks: taskReducer,
     workspace: workspaceReducer,
-    // auth: authReducer,
+    auth: authReducer, // Add the auth reducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
