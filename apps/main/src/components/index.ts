@@ -22,3 +22,5 @@ export { ProtectedRoute } from './common/ProtectedRoute';
 export { PublicRoute } from './common/PublicRoute';
 export { NavigationGuard, ProtectedLink } from './common/NavigationGuard';
 export { LogoutConfirmDialog } from './common/LogoutConfirmDialog';
+export { ThemeToggle } from './common/ThemeToggle';
+export { ThemeSettings } from './settings/ThemeSettings';

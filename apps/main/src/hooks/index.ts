@@ -9,3 +9,4 @@ export * from './useSpaceTasks';
 export * from './usePermissions';
 export * from './useRoutePermissions';
 export * from './useLocalStorage';
+export * from './useUserTheme';
