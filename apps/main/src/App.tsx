@@ -3,6 +3,7 @@ import { ThemeProvider } from '@taskflow/theme';
 import { useTheme } from './hooks/useTheme';
 import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 import { SpacePage } from './pages/space.page';
+import Dashboard from './pages/Dashboard';  
 import WorkSpace from './pages/workSpace';
 import { LandingPage } from './pages/LandingPage';
 
@@ -11,7 +12,7 @@ function AppContent() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground select-none">
       {/* Header with Theme Toggle */}
       <header className="border-b border-border bg-card">
         <Container size="7xl" className="py-4">
@@ -34,15 +35,19 @@ function AppContent() {
 
       {/* Main Content with Gradient Background */}
       <main className="bg-gradient-to-br from-background via-muted/50 to-background">
+
         <Routes>
           <Route path="/*" element={<LandingPage />} />
           <Route path="/space/*" element={<SpacePage />} />
+          <Route path="/dashboard/*" element={<Dashboard/>} />
           <Route path="/workspace/*" element={<WorkSpace />} />
         </Routes>
       </main>
     </div>
   );
 }
+
+
 
 function App() {
   return (
@@ -51,7 +56,7 @@ function App() {
         <AppContent />
       </Router>
     </ThemeProvider>
-
+   
   );
 }
 
