@@ -62,88 +62,127 @@ const TemplatesLayout: React.FC = () => {
         adminService.getBrandingAssets()
       ]);
       
-      setProjectTemplates(projects);
-      setTaskTemplates(tasks);
-      setAiPrompts(prompts);
-      setBrandingAssets(branding);
+      // Ensure we have valid arrays even if API returns null/undefined
+      setProjectTemplates(Array.isArray(projects) ? projects : []);
+      setTaskTemplates(Array.isArray(tasks) ? tasks : []);
+      setAiPrompts(Array.isArray(prompts) ? prompts : []);
+      setBrandingAssets(Array.isArray(branding) ? branding : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load templates');
       console.error('Templates fetch error:', err);
+      // Set empty arrays on error to prevent further issues
+      setProjectTemplates([]);
+      setTaskTemplates([]);
+      setAiPrompts([]);
+      setBrandingAssets([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const getFilteredTemplates = () => {
-    const term = searchTerm.toLowerCase();
-    switch (activeTab) {
-      case 'projects':
-        return (projectTemplates || []).filter(template => 
-          template.name.toLowerCase().includes(term) ||
-          template.description.toLowerCase().includes(term) ||
-          template.category.toLowerCase().includes(term)
-        );
-      case 'tasks':
-        return (taskTemplates || []).filter(template => 
-          template.name.toLowerCase().includes(term) ||
-          template.description.toLowerCase().includes(term) ||
-          template.category.toLowerCase().includes(term)
-        );
-      case 'ai-prompts':
-        return (aiPrompts || []).filter(prompt => 
-          prompt.name.toLowerCase().includes(term) ||
-          prompt.prompt.toLowerCase().includes(term) ||
-          prompt.category.toLowerCase().includes(term)
-        );
-      case 'branding':
-        return (brandingAssets || []).filter(asset => 
-          asset.name.toLowerCase().includes(term) ||
-          asset.type.toLowerCase().includes(term)
-        );
-      default:
-        return [];
+    try {
+      const term = (searchTerm || '').toLowerCase();
+      switch (activeTab) {
+        case 'projects':
+          return (projectTemplates || []).filter(template => 
+            template && template.name && template.description && template.category &&
+            (template.name.toLowerCase().includes(term) ||
+            template.description.toLowerCase().includes(term) ||
+            template.category.toLowerCase().includes(term))
+          );
+        case 'tasks':
+          return (taskTemplates || []).filter(template => 
+            template && template.name && template.description && template.category &&
+            (template.name.toLowerCase().includes(term) ||
+            template.description.toLowerCase().includes(term) ||
+            template.category.toLowerCase().includes(term))
+          );
+        case 'ai-prompts':
+          return (aiPrompts || []).filter(prompt => 
+            prompt && prompt.name && prompt.prompt && prompt.category &&
+            (prompt.name.toLowerCase().includes(term) ||
+            prompt.prompt.toLowerCase().includes(term) ||
+            prompt.category.toLowerCase().includes(term))
+          );
+        case 'branding':
+          return (brandingAssets || []).filter(asset => 
+            asset && asset.name && asset.type &&
+            (asset.name.toLowerCase().includes(term) ||
+            asset.type.toLowerCase().includes(term))
+          );
+        default:
+          return [];
+      }
+    } catch (error) {
+      console.error('Error filtering templates:', error);
+      return [];
     }
   };
 
   // Type-safe filtered templates for each tab
   const getFilteredProjectTemplates = () => {
-    const term = searchTerm.toLowerCase();
-    return (projectTemplates || []).filter(template => 
-      template.name.toLowerCase().includes(term) ||
-      template.description.toLowerCase().includes(term) ||
-      template.category.toLowerCase().includes(term)
-    );
+    try {
+      const term = (searchTerm || '').toLowerCase();
+      return (projectTemplates || []).filter(template => 
+        template && template.name && template.description && template.category &&
+        (template.name.toLowerCase().includes(term) ||
+        template.description.toLowerCase().includes(term) ||
+        template.category.toLowerCase().includes(term))
+      );
+    } catch (error) {
+      console.error('Error filtering project templates:', error);
+      return [];
+    }
   };
 
   const getFilteredTaskTemplates = () => {
-    const term = searchTerm.toLowerCase();
-    return (taskTemplates || []).filter(template => 
-      template.name.toLowerCase().includes(term) ||
-      template.description.toLowerCase().includes(term) ||
-      template.category.toLowerCase().includes(term)
-    );
+    try {
+      const term = (searchTerm || '').toLowerCase();
+      return (taskTemplates || []).filter(template => 
+        template && template.name && template.description && template.category &&
+        (template.name.toLowerCase().includes(term) ||
+        template.description.toLowerCase().includes(term) ||
+        template.category.toLowerCase().includes(term))
+      );
+    } catch (error) {
+      console.error('Error filtering task templates:', error);
+      return [];
+    }
   };
 
   const getFilteredAIPrompts = () => {
-    const term = searchTerm.toLowerCase();
-    return (aiPrompts || []).filter(prompt => 
-      prompt.name.toLowerCase().includes(term) ||
-      prompt.prompt.toLowerCase().includes(term) ||
-      prompt.category.toLowerCase().includes(term)
-    );
+    try {
+      const term = (searchTerm || '').toLowerCase();
+      return (aiPrompts || []).filter(prompt => 
+        prompt && prompt.name && prompt.prompt && prompt.category &&
+        (prompt.name.toLowerCase().includes(term) ||
+        prompt.prompt.toLowerCase().includes(term) ||
+        prompt.category.toLowerCase().includes(term))
+      );
+    } catch (error) {
+      console.error('Error filtering AI prompts:', error);
+      return [];
+    }
   };
 
   const getFilteredBrandingAssets = () => {
-    const term = searchTerm.toLowerCase();
-    return (brandingAssets || []).filter(asset => 
-      asset.name.toLowerCase().includes(term) ||
-      asset.type.toLowerCase().includes(term)
-    );
+    try {
+      const term = (searchTerm || '').toLowerCase();
+      return (brandingAssets || []).filter(asset => 
+        asset && asset.name && asset.type &&
+        (asset.name.toLowerCase().includes(term) ||
+        asset.type.toLowerCase().includes(term))
+      );
+    } catch (error) {
+      console.error('Error filtering branding assets:', error);
+      return [];
+    }
   };
 
-  const getStatusBadge = (isActive: boolean) => (
-    <Badge variant={isActive ? 'success' : 'secondary'}>
-      {isActive ? 'Active' : 'Inactive'}
+  const getStatusBadge = (isActive: boolean | undefined) => (
+    <Badge variant={isActive === true ? 'success' : 'secondary'}>
+      {isActive === true ? 'Active' : 'Inactive'}
     </Badge>
   );
 
@@ -221,220 +260,232 @@ const TemplatesLayout: React.FC = () => {
         <TabsList className="mb-6">
           <TabsTrigger value="projects">
             <FolderIcon className="h-4 w-4 mr-2" />
-            Project Templates ({projectTemplates.length})
+            Project Templates ({(projectTemplates || []).length})
           </TabsTrigger>
           <TabsTrigger value="tasks">
             <DocumentTextIcon className="h-4 w-4 mr-2" />
-            Task Templates ({taskTemplates.length})
+            Task Templates ({(taskTemplates || []).length})
           </TabsTrigger>
           <TabsTrigger value="ai-prompts">
             <SparklesIcon className="h-4 w-4 mr-2" />
-            AI Prompts ({aiPrompts.length})
+            AI Prompts ({(aiPrompts || []).length})
           </TabsTrigger>
           <TabsTrigger value="branding">
             <PaintBrushIcon className="h-4 w-4 mr-2" />
-            Branding Assets ({brandingAssets.length})
+            Branding Assets ({(brandingAssets || []).length})
           </TabsTrigger>
         </TabsList>
 
         {/* Project Templates */}
         <TabsContent value="projects">
-                               <Grid cols={3} className="gap-6">
-                       {getFilteredProjectTemplates().map((template: ProjectTemplate) => (
-              <Card key={template.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
-                    {getStatusBadge(template.isActive)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Typography variant="body-medium" className="text-muted-foreground mb-3">
-                    {template.description}
-                  </Typography>
-                  <div className="space-y-2">
+          <Grid cols={3} className="gap-6">
+            {getFilteredProjectTemplates().map((template: ProjectTemplate) => {
+              if (!template || !template.id || !template.name) return null;
+              return (
+                <Card key={template.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
                     <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Category
-                      </Typography>
-                      <Badge variant="secondary">{template.category}</Badge>
+                      <CardTitle className="text-lg">{template.name}</CardTitle>
+                      {getStatusBadge(template.isActive)}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Usage Count
-                      </Typography>
-                      <Typography variant="body-medium">{template.usageCount}</Typography>
+                  </CardHeader>
+                  <CardContent>
+                    <Typography variant="body-medium" className="text-muted-foreground mb-3">
+                      {template.description}
+                    </Typography>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          Category
+                        </Typography>
+                        <Badge variant="secondary">{template.category}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          Usage Count
+                        </Typography>
+                        <Typography variant="body-medium">{template.usageCount || 0}</Typography>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          Created
+                        </Typography>
+                        <Typography variant="body-small">
+                          {template.createdAt ? new Date(template.createdAt).toLocaleDateString() : 'N/A'}
+                        </Typography>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Created
-                      </Typography>
-                      <Typography variant="body-small">
-                        {new Date(template.createdAt).toLocaleDateString()}
-                      </Typography>
+                    <div className="flex space-x-2 mt-4">
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <PencilIcon className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <TrashIcon className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <PencilIcon className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <TrashIcon className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </Grid>
         </TabsContent>
 
         {/* Task Templates */}
         <TabsContent value="tasks">
-                               <Grid cols={3} className="gap-6">
-                       {getFilteredTaskTemplates().map((template: TaskTemplate) => (
-              <Card key={template.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
-                    {getStatusBadge(template.isActive)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Typography variant="body-medium" className="text-muted-foreground mb-3">
-                    {template.description}
-                  </Typography>
-                  <div className="space-y-2">
+          <Grid cols={3} className="gap-6">
+            {getFilteredTaskTemplates().map((template: TaskTemplate) => {
+              if (!template || !template.id || !template.name) return null;
+              return (
+                <Card key={template.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
                     <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Category
-                      </Typography>
-                      <Badge variant="secondary">{template.category}</Badge>
+                      <CardTitle className="text-lg">{template.name}</CardTitle>
+                      {getStatusBadge(template.isActive)}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Estimated Hours
-                      </Typography>
-                      <Typography variant="body-medium">{template.estimatedHours}h</Typography>
+                  </CardHeader>
+                  <CardContent>
+                    <Typography variant="body-medium" className="text-muted-foreground mb-3">
+                      {template.description}
+                    </Typography>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          Category
+                        </Typography>
+                        <Badge variant="secondary">{template.category}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          Estimated Hours
+                        </Typography>
+                        <Typography variant="body-medium">{template.estimatedHours || 0}h</Typography>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          Usage Count
+                        </Typography>
+                        <Typography variant="body-medium">{template.usageCount || 0}</Typography>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Usage Count
-                      </Typography>
-                      <Typography variant="body-medium">{template.usageCount}</Typography>
+                    <div className="flex space-x-2 mt-4">
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <PencilIcon className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <TrashIcon className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <PencilIcon className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <TrashIcon className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </Grid>
         </TabsContent>
 
         {/* AI Prompts */}
         <TabsContent value="ai-prompts">
-                               <Grid cols={2} className="gap-6">
-                       {getFilteredAIPrompts().map((prompt: AIPrompt) => (
-              <Card key={prompt.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{prompt.name}</CardTitle>
-                    {getStatusBadge(prompt.isActive)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Typography variant="body-medium" className="text-muted-foreground mb-3">
-                    {prompt.prompt}
-                  </Typography>
-                  <div className="space-y-2">
+          <Grid cols={2} className="gap-6">
+            {getFilteredAIPrompts().map((prompt: AIPrompt) => {
+              if (!prompt || !prompt.id || !prompt.name) return null;
+              return (
+                <Card key={prompt.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
                     <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Category
-                      </Typography>
-                      <Badge variant="secondary">{prompt.category}</Badge>
+                      <CardTitle className="text-lg">{prompt.name}</CardTitle>
+                      {getStatusBadge(prompt.isActive)}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Usage Count
-                      </Typography>
-                      <Typography variant="body-medium">{prompt.usageCount}</Typography>
+                  </CardHeader>
+                  <CardContent>
+                    <Typography variant="body-medium" className="text-muted-foreground mb-3">
+                      {prompt.prompt}
+                    </Typography>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          Category
+                        </Typography>
+                        <Badge variant="secondary">{prompt.category}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          Usage Count
+                        </Typography>
+                        <Typography variant="body-medium">{prompt.usageCount || 0}</Typography>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <PencilIcon className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <TrashIcon className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <div className="flex space-x-2 mt-4">
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <PencilIcon className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <TrashIcon className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </Grid>
         </TabsContent>
 
         {/* Branding Assets */}
         <TabsContent value="branding">
-                               <Grid cols={4} className="gap-6">
-                       {getFilteredBrandingAssets().map((asset: BrandingAsset) => (
-              <Card key={asset.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{asset.name}</CardTitle>
-                    {getStatusBadge(asset.isActive)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
+          <Grid cols={4} className="gap-6">
+            {getFilteredBrandingAssets().map((asset: BrandingAsset) => {
+              if (!asset || !asset.id || !asset.name) return null;
+              return (
+                <Card key={asset.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
                     <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Type
-                      </Typography>
-                      <Badge variant="secondary">{asset.type}</Badge>
+                      <CardTitle className="text-lg">{asset.name}</CardTitle>
+                      {getStatusBadge(asset.isActive)}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Value
-                      </Typography>
-                      <Typography variant="body-small" className="truncate max-w-24">
-                        {asset.value}
-                      </Typography>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          Type
+                        </Typography>
+                        <Badge variant="secondary">{asset.type}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          Value
+                        </Typography>
+                        <Typography variant="body-small" className="truncate max-w-24">
+                          {asset.value || 'N/A'}
+                        </Typography>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          Created
+                        </Typography>
+                        <Typography variant="body-small">
+                          {asset.createdAt ? new Date(asset.createdAt).toLocaleDateString() : 'N/A'}
+                        </Typography>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Created
-                      </Typography>
-                      <Typography variant="body-small">
-                        {new Date(asset.createdAt).toLocaleDateString()}
-                      </Typography>
+                    <div className="flex space-x-2 mt-4">
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <PencilIcon className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <TrashIcon className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <PencilIcon className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <TrashIcon className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </Grid>
         </TabsContent>
       </Tabs>
