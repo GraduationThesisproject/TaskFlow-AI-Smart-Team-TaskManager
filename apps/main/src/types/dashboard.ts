@@ -35,3 +35,19 @@ export interface ActivityItemProps {
   highlight: string;
   meta: string;
 }
+
+export interface Template {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+}
+
+export interface TemplateCategory {
+  title: string;
+  templates: Template[];
+}
+
+export type TemplateCategories = {
+  [key in 'business' | 'design' | 'marketing' | 'education' | 'development' | 'team']: TemplateCategory;
+};
