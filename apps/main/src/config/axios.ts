@@ -14,22 +14,31 @@ const axiosInstance: AxiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get token from localStorage
+    // Get token from localStorage for each request
     const token = localStorage.getItem('token');
     
-    if (token && config.headers) {
+    console.log('🔍 Axios Request:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`,
+      hasToken: !!token
+    });
+    
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 Token added to request headers');
     }
     
     // Add debug logging in development
     if (env.IS_DEV) {
-      console.log('API Request:', config.method?.toUpperCase(), config.url);
+      console.log('📡 Making request to:', `${config.baseURL}${config.url}`);
     }
     
     return config;
   },
   (error) => {
-    console.error('Request error:', error);
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -39,7 +48,11 @@ axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
     // Add debug logging in development
     if (env.IS_DEV) {
-      console.log('API Response:', response.status, response.config.url);
+      console.log('✅ Axios Response:', {
+        status: response.status,
+        url: response.config.url,
+        data: response.data
+      });
     }
     
     return response;
@@ -51,9 +64,11 @@ axiosInstance.interceptors.response.use(
       
       switch (status) {
         case 401:
-          // Unauthorized - redirect to login
+          // Unauthorized - clear token and redirect to login
+          console.error('Unauthorized access - Token may be invalid or expired');
           localStorage.removeItem('token');
-          window.location.href = '/login';
+          // Force page reload to trigger auth check
+          window.location.href = '/';
           break;
         case 403:
           // Forbidden
