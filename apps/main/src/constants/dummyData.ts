@@ -201,4 +201,78 @@ export const dummyTasksBackend: BackendTask[] = [
   },
 ];
 
+export interface TemplateDummy {
+  id: string;
+  title: string;
+  desc: string;
+  views: number;
+  likes: number;
+  image?: string;
+  category: string;
+}
 
+export const dummyTemplates: TemplateDummy[] = [
+  {
+    id: 'tpl_1',
+    title: 'Product Roadmap',
+    desc: 'Plan and track your product development',
+    views: 1245,
+    likes: 89,
+    category: 'Product',
+    image: '/images/templates/product-roadmap.png'
+  },
+  {
+    id: 'tpl_2',
+    title: 'Sprint Planning',
+    desc: 'Organize your agile sprints',
+    views: 987,
+    likes: 67,
+    category: 'Development',
+    image: '/images/templates/sprint-planning.png'
+  },
+  {
+    id: 'tpl_3',
+    title: 'Content Calendar',
+    desc: 'Plan and schedule your content',
+    views: 765,
+    likes: 45,
+    category: 'Marketing',
+    image: '/images/templates/content-calendar.png'
+  },
+  {
+    id: 'tpl_4',
+    title: 'Bug Tracker',
+    desc: 'Track and manage software issues',
+    views: 543,
+    likes: 32,
+    category: 'Development',
+    image: '/images/templates/bug-tracker.png'
+  },
+  {
+    id: 'tpl_5',
+    title: 'Employee Onboarding',
+    desc: 'Streamline new hire processes',
+    views: 432,
+    likes: 28,
+    category: 'HR',
+    image: '/images/templates/onboarding.png'
+  },
+  {
+    id: 'tpl_6',
+    title: 'Meeting Notes',
+    desc: 'Organize and share meeting outcomes',
+    views: 321,
+    likes: 21,
+    category: 'General',
+    image: '/images/templates/meeting-notes.png'
+  }
+];
+
+// Group templates by category
+export const getTemplatesByCategory = () => {
+  const categories = [...new Set(dummyTemplates.map(t => t.category))];
+  return categories.map(category => ({
+    title: `${category} Templates`,
+    templates: dummyTemplates.filter(t => t.category === category)
+  }));
+};
