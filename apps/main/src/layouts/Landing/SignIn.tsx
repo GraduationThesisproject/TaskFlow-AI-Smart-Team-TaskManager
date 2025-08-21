@@ -1,21 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Input, Button, Checkbox, Typography, Flex } from "@taskflow/ui";
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from '@taskflow/theme';
 import { Eye, EyeOff, Mail, Lock, Github } from "lucide-react";
+import type { LoginCredentials } from "../../types/auth.types";
 
-// TypeScript interfaces
-interface LoginFormData {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
-
+// Form validation errors interface
 interface FormErrors {
   email?: string;
   password?: string;
-  general?: string;
   rememberMe?: string;
 }
 
@@ -25,7 +19,7 @@ export default function SignIn() {
   const { theme } = useTheme();
   
   // Form state
-  const [formData, setFormData] = useState<LoginFormData>({
+  const [formData, setFormData] = useState<LoginCredentials>({
     email: "",
     password: "",
     rememberMe: false,
@@ -33,21 +27,14 @@ export default function SignIn() {
   
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [touched, setTouched] = useState<Partial<LoginFormData>>({});
-
-  // Clear errors when component mounts or when Redux error changes
-  useEffect(() => {
-    if (error) {
-      setErrors({ general: error });
-    }
-  }, [error]);
+  const [touched, setTouched] = useState<Partial<LoginCredentials>>({});
 
   // Clear errors when user starts typing
-  const handleInputChange = (field: keyof LoginFormData, value: string | boolean) => {
+  const handleInputChange = (field: keyof LoginCredentials, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Clear field-specific error when user types
-    if (errors[field]) {
+    if (errors[field] && field !== 'rememberMe') {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
     
@@ -92,26 +79,25 @@ export default function SignIn() {
         email: formData.email,
         password: formData.password,
       });
+      
       // Check if login was successful
       if (result.meta.requestStatus === 'fulfilled') {
         // Navigate to dashboard or intended page
         navigate("/dashboard");
-      } else if (result.meta.requestStatus === 'rejected') {
-        // Error is already handled by Redux
-        console.error("Login failed:", result.payload);
       }
     } catch (error) {
-      setErrors({ general: "An unexpected error occurred" });
+      // Error is already handled by Redux through useAuth
+      console.error("Login failed:", error);
     }
   };
 
-  const handleBlur = (field: keyof LoginFormData) => {
+  const handleBlur = (field: keyof LoginCredentials) => {
     setTouched(prev => ({ ...prev, [field]: true }));
   };
 
   // Check if field has error and is touched
-  const hasError = (field: keyof LoginFormData) => 
-    touched[field] && errors[field];
+  const hasError = (field: keyof LoginCredentials) => 
+    touched[field] && errors[field] && field !== 'rememberMe';
 
   return (
     <div className="h-screen bg-gradient-to-br from-background via-muted/20 to-background flex items-center justify-center p-4">
@@ -133,10 +119,10 @@ export default function SignIn() {
           </div>
 
           {/* General Error Display */}
-          {errors.general && (
+          {error && (
             <div className="mb-3 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
               <Typography variant="body-small" className="text-destructive text-center text-xs">
-                {errors.general}
+                {error}
               </Typography>
             </div>
           )}
