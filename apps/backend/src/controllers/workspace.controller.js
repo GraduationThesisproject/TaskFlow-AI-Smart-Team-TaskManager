@@ -360,6 +360,7 @@ exports.acceptInvitation = async (req, res) => {
 exports.getWorkspaceMembers = async (req, res) => {
     try {
         const { id: workspaceId } = req.params;
+        const { q } = req.query;
         const userId = req.user.id;
 
         // Check access
@@ -380,7 +381,7 @@ exports.getWorkspaceMembers = async (req, res) => {
         }
 
         // Format member data with statistics
-        const members = [
+        let members = [
             // Include owner
             {
                 user: workspace.owner,
@@ -397,6 +398,18 @@ exports.getWorkspaceMembers = async (req, res) => {
             // Include regular members
             ...workspace.members.map(member => member.toObject())
         ];
+
+        // Optional filter by name/email if `q` provided
+        if (q && typeof q === 'string') {
+            const query = q.trim().toLowerCase();
+            if (query.length > 0) {
+                members = members.filter((m) => {
+                    const name = (m.user?.name || '').toLowerCase();
+                    const email = (m.user?.email || '').toLowerCase();
+                    return name.includes(query) || email.includes(query);
+                });
+            }
+        }
 
         sendResponse(res, 200, true, 'Workspace members retrieved successfully', {
             members,

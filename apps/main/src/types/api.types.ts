@@ -34,3 +34,9 @@ export interface SocketEvent {
   data: any;
   room?: string;
 }
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+  timestamp?: string;
+}
