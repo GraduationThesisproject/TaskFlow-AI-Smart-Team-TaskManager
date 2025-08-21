@@ -231,9 +231,9 @@ const NotificationsLayout: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <Typography variant="heading-large" className="text-foreground mb-2">
-              Notifications
-            </Typography>
-            <Typography variant="body-medium" className="text-muted-foreground">
+        Notifications
+      </Typography>
+      <Typography variant="body-medium" className="text-muted-foreground">
               Manage system notifications and communication settings
             </Typography>
           </div>
@@ -422,7 +422,7 @@ const NotificationsLayout: React.FC = () => {
             </Typography>
             <Typography variant="body-medium" className="text-muted-foreground">
               Try adjusting your search criteria or create a new notification
-            </Typography>
+      </Typography>
           </CardContent>
         </Card>
       )}
