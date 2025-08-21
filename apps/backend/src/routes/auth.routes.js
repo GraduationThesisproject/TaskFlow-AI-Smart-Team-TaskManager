@@ -55,8 +55,8 @@ const updatePreferencesSchema = {
 };
 
 const logoutSchema = {
-    deviceId: { string: true },
-    allDevices: { boolean: true }
+    deviceId: { string: true, required: false },
+    allDevices: { boolean: true, required: false }
 };
 
 const passwordResetRequestSchema = {
