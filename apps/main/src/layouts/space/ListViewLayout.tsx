@@ -21,6 +21,7 @@ import {
   getAvatarColor
 } from '@taskflow/ui';
 
+
 export const ListViewLayout: React.FC = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
@@ -87,7 +88,7 @@ export const ListViewLayout: React.FC = () => {
 
   if (error) {
     return (
-      <Container size="lg" className="py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <Card variant="outlined" className="text-center">
           <CardContent className="p-8">
             <Typography variant="heading-large" className="text-error mb-4">
@@ -101,80 +102,52 @@ export const ListViewLayout: React.FC = () => {
             </Button>
           </CardContent>
         </Card>
-      </Container>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Container size="7xl" className="py-6">
-        {/* Header */}
-        <Stack spacing="lg">
-          <Typography variant="heading-xl">Finance Dashboard</Typography>
-          
-          {/* Navigation Tabs */}
-          <Flex justify="between" align="center">
-            <Flex gap="lg">
-              <Button 
-                variant="ghost"
-                onClick={() => navigate('/space/kanban')}
-              >
-                Kanban
-              </Button>
-              <Button variant="ghost" className="border-b-2 border-primary pb-1">
-                List
-              </Button>
-              <Button 
-                variant="ghost"
-                onClick={() => navigate('/space/timeline')}
-              >
-                Timeline
-              </Button>
-            </Flex>
-            
-            <Flex align="center" gap="md">
-              <Button variant="default">
-                + Add another list
-              </Button>
-              <Typography variant="body-small" textColor="muted">
-                {taskStats.total} tasks
-              </Typography>
-            </Flex>
-          </Flex>
+    <div className="min-h-screen bg-transparent text-foreground w-full">
+      <div className="w-full px-6 sm:px-8 lg:px-12 py-8">
+
 
           {/* Controls */}
-          <Flex gap="md" align="center">
-            <Select
-              value={`${sortBy.field}-${sortBy.direction}`}
-              onChange={(e) => {
-                const [field, direction] = e.target.value.split('-');
-                updateSortBy(field as keyof Task, direction as 'asc' | 'desc');
-              }}
-            >
-              <option value="title-asc">Sort by Title (A-Z)</option>
-              <option value="title-desc">Sort by Title (Z-A)</option>
-              <option value="dueDate-asc">Sort by Date (Oldest)</option>
-              <option value="dueDate-desc">Sort by Date (Newest)</option>
-              <option value="priority-asc">Sort by Priority (Low-High)</option>
-              <option value="priority-desc">Sort by Priority (High-Low)</option>
-              <option value="status-asc">Sort by Status</option>
-            </Select>
-            
-            <Select
-              value={filters.status.length > 0 ? filters.status[0] : 'all'}
-              onChange={(e) => {
-                const value = e.target.value;
-                updateFilters({ 
-                  status: value === 'all' ? [] : [value] 
-                });
-              }}
-            >
-              <option value="all">All Tasks</option>
-              <option value="To Do">To Do</option>
-              <option value="In Progress">In Progress</option>
-              <option value="In Review">In Review</option>
-              <option value="Completed">Completed</option>
-            </Select>
+          <div className="flex gap-4 items-center mb-6">
+            <div className="flex gap-3">
+              <Select
+                value={`${sortBy.field}-${sortBy.direction}`}
+                onChange={(e) => {
+                  const [field, direction] = e.target.value.split('-');
+                  updateSortBy(field as keyof Task, direction as 'asc' | 'desc');
+                }}
+                className="bg-background border-border/50 focus:border-primary"
+              >
+                <option value="title-asc">Sort by Title (A-Z)</option>
+                <option value="title-desc">Sort by Title (Z-A)</option>
+                <option value="dueDate-asc">Sort by Date (Oldest)</option>
+                <option value="dueDate-desc">Sort by Date (Newest)</option>
+                <option value="priority-asc">Sort by Priority (Low-High)</option>
+                <option value="priority-desc">Sort by Priority (High-Low)</option>
+                <option value="status-asc">Sort by Status</option>
+              </Select>
+              
+              <Select
+                value={filters.status.length > 0 ? filters.status[0] : 'all'}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  updateFilters({ 
+                    status: value === 'all' ? [] : [value] 
+                  });
+                }}
+                className="bg-background border-border/50 focus:border-primary"
+              >
+                <option value="all">All Tasks</option>
+                <option value="To Do">To Do</option>
+                <option value="In Progress">In Progress</option>
+                <option value="In Review">In Review</option>
+                <option value="Completed">Completed</option>
+              </Select>
+            </div>
             
             <div className="relative flex-1 max-w-md">
               <Input
@@ -182,31 +155,30 @@ export const ListViewLayout: React.FC = () => {
                 placeholder="Search tasks..."
                 value={searchQuery}
                 onChange={(e) => updateSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-background border-border/50 focus:border-primary"
               />
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">🔍</span>
             </div>
-          </Flex>
-        </Stack>
+          </div>
 
         {/* Task Table */}
-        <Card variant="default" className="mt-6">
-          {/* Table Header */}
-                     <div className="grid grid-cols-6 gap-4 p-4 bg-muted/50">
-             <Typography variant="small">Task</Typography>
-             <Typography variant="small">Status</Typography>
-             <Typography variant="small">Progress</Typography>
-             <Typography variant="small">Priority</Typography>
-             <Typography variant="small">Assignees</Typography>
-             <Typography variant="small">Due Date</Typography>
-           </div>
+        <Card variant="default" className="border-0 shadow-lg bg-card/90 backdrop-blur-sm">
+                    {/* Table Header */}
+                     <div className="grid grid-cols-6 gap-6 p-6 bg-gradient-to-r from-muted/20 to-muted/10 border-b border-border/30">
+            <Typography variant="small" className="font-semibold text-muted-foreground">Task</Typography>
+            <Typography variant="small" className="font-semibold text-muted-foreground">Status</Typography>
+            <Typography variant="small" className="font-semibold text-muted-foreground">Progress</Typography>
+            <Typography variant="small" className="font-semibold text-muted-foreground">Priority</Typography>
+            <Typography variant="small" className="font-semibold text-muted-foreground">Assignees</Typography>
+            <Typography variant="small" className="font-semibold text-muted-foreground">Due Date</Typography>
+          </div>
 
           {/* Table Body */}
-          <div className="divide-y divide-border">
-            {tasks.map((task) => (
-              <div 
-                key={task.id} 
-                className="grid grid-cols-6 gap-4 p-4 hover:bg-muted/50 cursor-pointer transition-colors"
+                     <div className="divide-y divide-border/20">
+             {tasks.map((task) => (
+               <div 
+                 key={task.id} 
+                 className="grid grid-cols-6 gap-6 p-6 hover:bg-muted/10 cursor-pointer transition-all duration-200 group"
                 onClick={() => handleTaskClick(task)}
               >
                 {/* Task Column */}
@@ -250,7 +222,7 @@ export const ListViewLayout: React.FC = () => {
                     </Typography>
                     <Progress 
                       value={task.progress} 
-                      variant={task.progress > 50 ? 'warning' : 'info'}
+                      variant={task.progress > 50 ? 'warning' : 'default'}
                       className="w-16 h-2"
                     />
                   </Flex>
@@ -291,7 +263,7 @@ export const ListViewLayout: React.FC = () => {
             ))}
           </div>
         </Card>
-      </Container>
+      </div>
     </div>
   );
 };
