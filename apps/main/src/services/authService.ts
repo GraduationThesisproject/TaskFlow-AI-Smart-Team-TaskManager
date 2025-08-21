@@ -24,6 +24,12 @@ export class AuthService {
   static async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await axiosInstance.post('/auth/login', credentials);
+      
+      // Store token in localStorage
+      if (response.data.data?.token) {
+        localStorage.setItem('token', response.data.data.token);
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Error logging in:', error);
@@ -45,10 +51,21 @@ export class AuthService {
   // Get current user profile
   static async getProfile(): Promise<ApiResponse<any>> {
     try {
+      console.log('🔍 AuthService.getProfile: Making request to /auth/me');
+      console.log('🔍 AuthService.getProfile: Base URL:', axiosInstance.defaults.baseURL);
+      console.log('🔍 AuthService.getProfile: Headers:', axiosInstance.defaults.headers);
+      
       const response = await axiosInstance.get('/auth/me');
+      console.log('✅ AuthService.getProfile: Success:', response.data);
       return response.data;
-    } catch (error) {
-      console.error('Error fetching profile:', error);
+    } catch (error: any) {
+      console.error('❌ AuthService.getProfile: Error:', error);
+      console.error('❌ AuthService.getProfile: Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config
+      });
       throw error;
     }
   }
@@ -65,9 +82,12 @@ export class AuthService {
   }
 
   // Logout
-  static async logout(): Promise<ApiResponse<any>> {
+  static async logout(deviceId?: string, allDevices: boolean = false): Promise<ApiResponse<any>> {
     try {
-      const response = await axiosInstance.post('/auth/logout');
+      const response = await axiosInstance.post('/auth/logout', {
+        deviceId,
+        allDevices
+      });
       return response.data;
     } catch (error) {
       console.error('Error logging out:', error);

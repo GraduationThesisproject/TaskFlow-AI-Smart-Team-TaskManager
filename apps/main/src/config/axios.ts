@@ -14,18 +14,31 @@ const axiosInstance: AxiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Token will be set dynamically when we get a valid one
-    // No default token to avoid invalid token errors
+    // Get token from localStorage for each request
+    const token = localStorage.getItem('token');
+    
+    console.log('🔍 Axios Request:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`,
+      hasToken: !!token
+    });
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 Token added to request headers');
+    }
     
     // Add debug logging in development
     if (env.IS_DEV) {
-          // API Request logging disabled for production
+      console.log('📡 Making request to:', `${config.baseURL}${config.url}`);
     }
     
     return config;
   },
   (error) => {
-    console.error('Request error:', error);
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -35,7 +48,11 @@ axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
     // Add debug logging in development
     if (env.IS_DEV) {
-      // API Response logging disabled for production
+      console.log('✅ Axios Response:', {
+        status: response.status,
+        url: response.config.url,
+        data: response.data
+      });
     }
     
     return response;
@@ -47,9 +64,11 @@ axiosInstance.interceptors.response.use(
       
       switch (status) {
         case 401:
-          // Unauthorized - log more details for debugging
+          // Unauthorized - clear token and redirect to login
           console.error('Unauthorized access - Token may be invalid or expired');
-          console.error('Response data:', data);
+          localStorage.removeItem('token');
+          // Force page reload to trigger auth check
+          window.location.href = '/';
           break;
         case 403:
           // Forbidden

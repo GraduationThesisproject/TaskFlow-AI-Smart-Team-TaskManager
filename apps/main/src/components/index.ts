@@ -18,3 +18,7 @@ export { TaskDetailModal } from './board/TaskDetailModal';
 export { CommentItem } from './board/CommentItem';
 export { PermissionGuard } from './common/PermissionGuard';
 export { withPermissions } from './common/withPermissions';
+export { ProtectedRoute } from './common/ProtectedRoute';
+export { PublicRoute } from './common/PublicRoute';
+export { NavigationGuard, ProtectedLink } from './common/NavigationGuard';
+export { LogoutConfirmDialog } from './common/LogoutConfirmDialog';
