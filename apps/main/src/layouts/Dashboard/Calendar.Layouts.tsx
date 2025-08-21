@@ -28,19 +28,19 @@ const Calendar: React.FC = () => {
   // Pull tasks from Redux (backed by dummy data)
   const { tasks } = useTasks();
 
+  const toStr = (d: string | Date) => {
+    const date = typeof d === 'string' ? new Date(d) : d;
+    return date.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const upcomingItems = useMemo(() => {
     const now = new Date();
     const in7 = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    const toStr = (d: string) => {
-      const date = new Date(d);
-      return date.toLocaleString(undefined, {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    };
 
     const pickColor = (priority: string) => {
       if (priority === "Very High") return "bg-destructive";
@@ -49,12 +49,16 @@ const Calendar: React.FC = () => {
     };
 
     return tasks
-      .filter(t => t.dueDate)
+      .filter(t => t.dueDate)  // Filter out tasks without dueDate
+      .map(t => ({
+        ...t,
+        dueDate: new Date(t.dueDate as string)  // We've already filtered out undefined
+      }))
       .filter(t => {
-        const d = new Date(t.dueDate);
+        const d = t.dueDate;
         return d >= now && d <= in7;
       })
-      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+      .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
       .slice(0, 5)
       .map(t => ({
         color: pickColor(t.priority),
@@ -67,10 +71,12 @@ const Calendar: React.FC = () => {
     if (tasks.length === 0) return 0;
     const now = new Date();
     const in7 = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const count = tasks.filter(t => t.dueDate).filter(t => {
-      const d = new Date(t.dueDate);
-      return d >= now && d <= in7;
-    }).length;
+    const count = tasks
+      .filter(t => t.dueDate)  
+      .filter(t => {
+        const d = new Date(t.dueDate!);  
+        return d >= now && d <= in7;
+      }).length;
     return Math.min(100, Math.round((count / tasks.length) * 100));
   }, [tasks]);
 
