@@ -1,11 +1,7 @@
 import React from "react";
 import { Button, Card } from "@taskflow/ui";
+import type { UpgradeCardProps } from "../../../types/dashboard";
 
-interface UpgradeCardProps {
-  title: string;
-  description: string;
-  buttonText?: string;
-}
 
 export const UpgradeCard: React.FC<UpgradeCardProps> = ({
   title,
