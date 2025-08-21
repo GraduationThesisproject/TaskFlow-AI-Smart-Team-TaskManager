@@ -1,97 +1,175 @@
-import type { Task, Subtask } from '../store/slices/taskSlice';
-import { dummyTasksBackend } from '../constants/dummyData';
-import { backendTaskToUI, uiTaskToBackend } from '../utils/taskAdapter';
+import type { 
+  Task, 
+  Column, 
+  Board, 
+  Space, 
+  CreateTaskForm, 
+  UpdateTaskForm, 
+  MoveTaskForm,
+  ApiResponse,
+  PaginatedResponse 
+} from '../types/task.types';
+import axiosInstance from '../config/axios';
 
-// Adapted in-memory mock derived from backend-shaped data
-const mockTasks: Task[] = dummyTasksBackend.map(backendTaskToUI);
-
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
+// Task API Service
 export class TaskService {
-  static async getTasks(): Promise<Task[]> {
-    await delay(500); // Simulate network delay
-    return [...mockTasks];
-  }
+  // Get tasks with optional filtering
+  static async getTasks(params: {
+    boardId?: string;
+    spaceId?: string;
+    columnId?: string;
+    status?: string[];
+    priority?: string[];
+    assignee?: string[];
+    tags?: string[];
+    search?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}): Promise<PaginatedResponse<Task>> {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (params.boardId) queryParams.append('boardId', params.boardId);
+      if (params.spaceId) queryParams.append('spaceId', params.spaceId);
+      if (params.columnId) queryParams.append('columnId', params.columnId);
+      if (params.status?.length) queryParams.append('status', params.status.join(','));
+      if (params.priority?.length) queryParams.append('priority', params.priority.join(','));
+      if (params.assignee?.length) queryParams.append('assignee', params.assignee.join(','));
+      if (params.tags?.length) queryParams.append('tags', params.tags.join(','));
+      if (params.search) queryParams.append('search', params.search);
+      if (params.page) queryParams.append('page', params.page.toString());
+      if (params.limit) queryParams.append('limit', params.limit.toString());
+      if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+      if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
 
-  static async getTaskById(id: string): Promise<Task | null> {
-    await delay(300);
-    const task = mockTasks.find(t => t.id === id);
-    return task || null;
-  }
-
-  static async createTask(taskData: Partial<Task>): Promise<Task> {
-    await delay(400);
-    const backendPayload = uiTaskToBackend(taskData);
-    const newBackend = {
-      id: Date.now().toString(),
-      title: backendPayload.title || 'New Task',
-      description: backendPayload.description || '',
-      status: backendPayload.status || 'todo',
-      priority: (backendPayload.priority as any) || 'medium',
-      assigneeId: undefined,
-      assignee: undefined as any,
-      dueDate: backendPayload.dueDate || new Date(),
-      tags: backendPayload.tags || [],
-      attachments: [],
-      comments: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      workspaceId: 'ws_1',
-      boardId: 'brd_1',
-      columnId: 'col_todo',
-    } as any;
-
-    const uiTask = backendTaskToUI(newBackend);
-    mockTasks.unshift(uiTask);
-    return uiTask;
-  }
-
-  static async updateTask(id: string, taskData: Partial<Task>): Promise<Task> {
-    await delay(400);
-    const taskIndex = mockTasks.findIndex(t => t.id === id);
-    if (taskIndex === -1) {
-      throw new Error('Task not found');
+      const response = await axiosInstance.get(`/tasks?${queryParams.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      throw error;
     }
-
-    const updatedTask = {
-      ...mockTasks[taskIndex],
-      ...taskData,
-      updatedAt: new Date().toISOString(),
-    };
-
-    mockTasks[taskIndex] = updatedTask;
-    return updatedTask;
   }
 
-  static async deleteTask(id: string): Promise<void> {
-    await delay(300);
-    const taskIndex = mockTasks.findIndex(t => t.id === id);
-    if (taskIndex === -1) {
-      throw new Error('Task not found');
+  // Get task by ID
+  static async getTask(id: string): Promise<ApiResponse<Task>> {
+    try {
+      const response = await axiosInstance.get(`/tasks/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching task:', error);
+      throw error;
     }
-
-    mockTasks.splice(taskIndex, 1);
   }
 
-  static async updateSubtask(taskId: string, subtaskId: string, updates: Partial<Subtask>): Promise<Task> {
-    await delay(300);
-    const task = mockTasks.find(t => t.id === taskId);
-    if (!task || !task.subtasks) {
-      throw new Error('Task or subtasks not found');
+  // Create new task
+  static async createTask(data: CreateTaskForm): Promise<ApiResponse<Task>> {
+    try {
+      const response = await axiosInstance.post('/tasks', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating task:', error);
+      throw error;
     }
+  }
 
-    const subtaskIndex = task.subtasks.findIndex(st => st.id === subtaskId);
-    if (subtaskIndex === -1) {
-      throw new Error('Subtask not found');
+  // Update task
+  static async updateTask(id: string, data: UpdateTaskForm): Promise<ApiResponse<Task>> {
+    try {
+      const response = await axiosInstance.put(`/tasks/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating task:', error);
+      throw error;
     }
+  }
 
-    task.subtasks[subtaskIndex] = {
-      ...task.subtasks[subtaskIndex],
-      ...updates,
-    };
+  // Delete task
+  static async deleteTask(id: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.delete(`/tasks/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      throw error;
+    }
+  }
 
-    task.updatedAt = new Date().toISOString();
-    return task;
+  // Move task to different column/position
+  static async moveTask(id: string, data: MoveTaskForm): Promise<ApiResponse<Task>> {
+    try {
+      const response = await axiosInstance.patch(`/tasks/${id}/move`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error moving task:', error);
+      throw error;
+    }
+  }
+
+  // Get overdue tasks
+  static async getOverdueTasks(): Promise<ApiResponse<Task[]>> {
+    try {
+      const response = await axiosInstance.get('/tasks/overdue');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching overdue tasks:', error);
+      throw error;
+    }
+  }
+
+  // Get task recommendations
+  static async getTaskRecommendations(): Promise<ApiResponse<Task[]>> {
+    try {
+      const response = await axiosInstance.get('/tasks/recommendations');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching task recommendations:', error);
+      throw error;
+    }
+  }
+
+  // Bulk update tasks
+  static async bulkUpdateTasks(taskIds: string[], updates: Partial<UpdateTaskForm>): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.patch('/tasks/bulk-update', { taskIds, updates });
+      return response.data;
+    } catch (error) {
+      console.error('Error bulk updating tasks:', error);
+      throw error;
+    }
+  }
+
+  // Duplicate task
+  static async duplicateTask(id: string): Promise<ApiResponse<Task>> {
+    try {
+      const response = await axiosInstance.post(`/tasks/${id}/duplicate`);
+      return response.data;
+    } catch (error) {
+      console.error('Error duplicating task:', error);
+      throw error;
+    }
+  }
+
+  // Start time tracking
+  static async startTimeTracking(id: string, description?: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.post(`/tasks/${id}/time-tracking`, { description });
+      return response.data;
+    } catch (error) {
+      console.error('Error starting time tracking:', error);
+      throw error;
+    }
+  }
+
+  // Stop time tracking
+  static async stopTimeTracking(id: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.post(`/tasks/${id}/time-tracking/stop`);
+      return response.data;
+    } catch (error) {
+      console.error('Error stopping time tracking:', error);
+      throw error;
+    }
   }
 }
