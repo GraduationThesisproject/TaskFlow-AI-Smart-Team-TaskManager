@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { workspaceService, type InviteLinkInfo } from '../../services/workspace.service.ts';
-// Avoid importing RootState here to prevent circular type dependency with the store
 import type { Workspace, WorkspaceMember, WorkspaceState } from '../../types/workspace.types';
 
 // Thunks
