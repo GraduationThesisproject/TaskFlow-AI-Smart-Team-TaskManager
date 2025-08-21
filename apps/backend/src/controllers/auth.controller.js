@@ -156,7 +156,6 @@ exports.login = async (req, res) => {
                 ipAddress: req.ip,
                 rememberMe
             });
-
             // Log successful attempt
             await userSessions.logLoginAttempt(true, req.ip, deviceInfo);
 

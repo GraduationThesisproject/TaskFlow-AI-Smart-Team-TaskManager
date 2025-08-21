@@ -13,7 +13,7 @@ export const store = configureStore({
   reducer: {
     app: appReducer,
     tasks: taskReducer,
-    auth: authReducer,
+    auth: authReducer, // Add the auth reducer
     // workspace: workspaceReducer,
   },
   middleware: (getDefaultMiddleware) =>

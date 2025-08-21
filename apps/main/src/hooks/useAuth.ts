@@ -1,17 +1,30 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
-import { setToken, setUser, logout } from '../store/slices/authSlice';
+import { loginUser, logoutUser, clearError, setCredentials, updateUser } from '../store/slices/authSlice';
 import { TEST_TOKEN } from '../config/env';
 import axiosInstance from '../config/axios';
 
 export const useAuth = () => {
   const dispatch = useAppDispatch();
-  const { token, user, isAuthenticated, isLoading, error } = useAppSelector(state => state.auth);
+  const { user, token, isAuthenticated, isLoading, error } = useAppSelector(
+    (state) => state.auth
+  );
 
   // Initialize authentication on mount
   useEffect(() => {
     if (!token && TEST_TOKEN) {
-      dispatch(setToken(TEST_TOKEN));
+      // Create a mock user for test token
+      const mockUser = {
+        id: 'test-user',
+        name: 'Test User',
+        email: 'test@example.com',
+        emailVerified: true,
+        isActive: true,
+        lastLogin: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      dispatch(setCredentials({ user: mockUser, token: TEST_TOKEN }));
     }
   }, [dispatch, token]);
 
@@ -26,31 +39,37 @@ export const useAuth = () => {
     }
   }, [token]);
 
-  const login = (userToken: string, userData?: any) => {
-    dispatch(setToken(userToken));
-    if (userData) {
-      dispatch(setUser(userData));
-    }
-  };
+  const login = useCallback(
+    async (credentials: { email: string; password: string }) => {
+      const result = await dispatch(loginUser(credentials));
+      return result;
+    },
+    [dispatch]
+  );
 
-  const logoutUser = () => {
-    dispatch(logout());
+  const logoutUserHandler = useCallback(async () => {
+    await dispatch(logoutUser());
     // Clear axios headers
     delete axiosInstance.defaults.headers.common['Authorization'];
-  };
+  }, [dispatch]);
 
-  const updateUser = (userData: any) => {
-    dispatch(setUser(userData));
+  const clearAuthError = useCallback(() => {
+    dispatch(clearError());
+  }, [dispatch]);
+
+  const updateUserData = (userData: any) => {
+    dispatch(updateUser(userData));
   };
 
   return {
-    token,
     user,
+    token,
     isAuthenticated,
     isLoading,
     error,
     login,
-    logout: logoutUser,
-    updateUser,
+    logout: logoutUserHandler,
+    clearAuthError,
+    updateUser: updateUserData,
   };
 };
