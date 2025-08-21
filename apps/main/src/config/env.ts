@@ -22,10 +22,50 @@ export const env = {
 } as const;
 
 // Test token for development (remove in production)
-export const TEST_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YTYzZWQ4ZDgyODg3YTU0MzE0NTFlZCIsImlhdCI6MTc1NTczMTMzMCwiZXhwIjoxNzU2MzM2MTMwLCJhdWQiOiJ0YXNrZmxvdy11c2VycyIsImlzcyI6InRhc2tmbG93LWFwaSJ9.SI0I8dgbUI6eB-ezhlnasmh_9p17tlTscbzrEKxbQoQ";
-
-// Test workspace ID for development (remove in production)
+// Note: This token needs to be a valid JWT token from your backend
+// You can get a valid token by:
+// 1. Running the backend
+// 2. Using the login endpoint or getting a token from your seeded data
+export const TEST_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YTYzZWQ4ZDgyODg3YTU0MzE0NTFlZCIsImlhdCI6MTc1NTc2ODk2NywiZXhwIjoxNzU2MzczNzY3LCJhdWQiOiJ0YXNrZmxvdy11c2VycyIsImlzcyI6InRhc2tmbG93LWFwaSJ9.jSQvxzFznskq6qVgfK4qbTUtoTr_pgvkWMr_3drXTMU";
+// Test workspace ID (you can update this based on your seeded data)
 export const TEST_WORKSPACE_ID = "68a63eded82887a543145307";
+
+// Test user ID (you can update this based on your seeded data)
+export const TEST_USER_ID = "68a640b2c0902fc81fde876a";
+
+// Test space ID (you can update this based on your seeded data)
+export const TEST_SPACE_ID = "68a63eded82887a543145308";
+
+// Test board ID (you can update this based on your seeded data)
+export const TEST_BOARD_ID = "68a63eded82887a543145309";
+
+/**
+ * Get the test workspace ID
+ */
+export function getTestWorkspaceId(): string {
+  return TEST_WORKSPACE_ID;
+}
+
+/**
+ * Get the test user ID
+ */
+export function getTestUserId(): string {
+  return TEST_USER_ID;
+}
+
+/**
+ * Get the test space ID
+ */
+export function getTestSpaceId(): string {
+  return TEST_SPACE_ID;
+}
+
+/**
+ * Get the test board ID
+ */
+export function getTestBoardId(): string {
+  return TEST_BOARD_ID;
+}
 
 // Type-safe environment variables
 export type Env = typeof env;
@@ -38,13 +78,4 @@ export function getEnvVar(key: keyof Env, fallback?: string): string {
 // Helper function to check if feature is enabled
 export function isFeatureEnabled(feature: keyof Pick<Env, 'ENABLE_ANALYTICS' | 'ENABLE_DEBUG'>): boolean {
   return env[feature] === true;
-}
-
-// Helper functions for test workspace
-export function getTestWorkspaceId(): string {
-  return TEST_WORKSPACE_ID;
-}
-
-export function isTestEnvironment(): boolean {
-  return env.IS_DEV || env.IS_PRODUCTION === false;
 }

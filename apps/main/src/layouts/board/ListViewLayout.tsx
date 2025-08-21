@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSpaceTasks, useTheme } from '../../hooks';
-import type { Task } from '../../types/task.types';
+import type { Task } from '../../store/slices/taskSlice';
 import { 
   Button, 
   Card, 
@@ -113,7 +113,7 @@ export const ListViewLayout: React.FC = () => {
           <div className="flex gap-4 items-center mb-6">
             <div className="flex gap-3">
               <Select
-                value={`${String(sortBy.field)}-${sortBy.direction}`}
+                value={`${sortBy.field}-${sortBy.direction}`}
                 onChange={(e) => {
                   const [field, direction] = e.target.value.split('-');
                   updateSortBy(field as keyof Task, direction as 'asc' | 'desc');
@@ -240,7 +240,7 @@ export const ListViewLayout: React.FC = () => {
                 {/* Assignees Column */}
                 <Flex align="center">
                   <Flex gap="xs" align="center">
-                    {task.assignees.slice(0, 2).map((assignee: string, index: number) => (
+                    {task.assignees.slice(0, 2).map((assignee, index) => (
                       <Avatar key={`${task._id}-${index}`} size="sm">
                         <AvatarFallback variant={getAvatarColor(assignee)} size="sm">
                           {getInitials(assignee)}

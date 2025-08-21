@@ -17,6 +17,7 @@ export * from './Tooltip';
 export * from './Modal';
 export * from './Dropdown';
 export * from './Checkbox';
+export * from './Switch';
 export * from './Loading';
 export * from './Form';
 export * from './Scrollbar';

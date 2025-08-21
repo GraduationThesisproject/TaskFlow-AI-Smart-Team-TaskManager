@@ -14,17 +14,13 @@ const axiosInstance: AxiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get token from Redux store (we'll set this up in the main app)
-    // For now, we'll use the test token directly
-    const token = env.TEST_TOKEN;
-    
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Token will be set dynamically when we get a valid one
+    // No default token to avoid invalid token errors
     
     // Add debug logging in development
     if (env.IS_DEV) {
       console.log('API Request:', config.method?.toUpperCase(), config.url);
+      console.log('Authorization Header:', config.headers?.Authorization ? 'Present' : 'Missing');
     }
     
     return config;
@@ -52,8 +48,9 @@ axiosInstance.interceptors.response.use(
       
       switch (status) {
         case 401:
-          // Unauthorized - redirect to login
-          console.error('Unauthorized access');
+          // Unauthorized - log more details for debugging
+          console.error('Unauthorized access - Token may be invalid or expired');
+          console.error('Response data:', data);
           break;
         case 403:
           // Forbidden

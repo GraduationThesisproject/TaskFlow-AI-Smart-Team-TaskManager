@@ -18,7 +18,7 @@ export class SpaceService {
   // Get spaces by workspace
   static async getSpacesByWorkspace(workspaceId: string): Promise<ApiResponse<Space[]>> {
     try {
-      const response = await axiosInstance.get(`/spaces/workspace/${workspaceId}`);
+      const response = await axiosInstance.get(`/spaces?workspace=${workspaceId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching spaces:', error);
