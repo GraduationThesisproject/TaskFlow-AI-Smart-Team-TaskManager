@@ -1,53 +1,63 @@
-// Simple token manager for access tokens with refresh support
 class TokenManager {
-  private accessTokenKey = 'access_token';
-
   getAccessToken(): string | null {
     try {
-      return (
-        sessionStorage.getItem(this.accessTokenKey) ||
-        localStorage.getItem(this.accessTokenKey)
-      );
+      return localStorage.getItem('accessToken');
     } catch {
       return null;
     }
   }
 
-  setAccessToken(token: string | null) {
+  getRefreshToken(): string | null {
     try {
-      if (token) {
-        sessionStorage.setItem(this.accessTokenKey, token);
-        localStorage.setItem(this.accessTokenKey, token);
-      } else {
-        sessionStorage.removeItem(this.accessTokenKey);
-        localStorage.removeItem(this.accessTokenKey);
-      }
+      return localStorage.getItem('refreshToken');
+    } catch {
+      return null;
+    }
+  }
+
+  setTokens(accessToken: string, refreshToken?: string) {
+    try {
+      localStorage.setItem('accessToken', accessToken);
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
     } catch {
       // ignore storage errors
     }
   }
 
+  clearTokens() {
+    try {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    } catch {
+      // ignore
+    }
+  }
+
   async refreshAccessToken(): Promise<string | null> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return null;
+
     try {
       const res = await fetch('/api/auth/refresh', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
       });
       if (!res.ok) return null;
-      const data = await res.json().catch(() => ({} as any));
-      const token: string | null =
-        data?.data?.accessToken ?? data?.accessToken ?? data?.token ?? null;
-      if (token) this.setAccessToken(token);
-      return token;
+      const data = await res.json();
+      const newToken = data?.token || data?.accessToken;
+      if (newToken) {
+        this.setTokens(newToken, data?.refreshToken);
+        return newToken as string;
+      }
+      return null;
     } catch {
       return null;
     }
   }
-
-  logout() {
-    this.setAccessToken(null);
-  }
 }
 
 export default new TokenManager();
+
+
