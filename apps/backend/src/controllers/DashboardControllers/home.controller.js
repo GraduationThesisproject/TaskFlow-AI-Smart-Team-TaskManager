@@ -9,12 +9,12 @@ const { sendResponse } = require('../../utils/response');
  * @access  Private
  */
 
-const user = "68a5fc088a7b1bd27300b1b5"
 
 const getDashboardOverviewHome = async (req, res) => {
     try {
         // const userId = req.user?._id
-        const userId = user
+           const userId = "68a5fc088a7b1bd27300b1b5"
+        // const userId = user
 
         // Get workspaces
         const workspaces = await Workspace.find({ 'members.user': userId })

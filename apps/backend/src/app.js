@@ -78,7 +78,7 @@ app.use('/api/analytics', authMiddleware, analyticsRoutes);
 app.use('/api/tags', authMiddleware, tagRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
-app.use('/api/dashboard'/*,authMiddleware*/ , dashboardRoutes);
+app.use('/api/dashboard',/*authMiddlewar,*/ dashboardRoutes);
 
 // 404 handler - using catch-all middleware instead of wildcard
 app.use((req, res) => {

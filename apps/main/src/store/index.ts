@@ -9,6 +9,7 @@ import appReducer from './slices/appSlice.ts';
 import taskReducer from './slices/taskSlice.ts';
 import workspaceReducer from './slices/workspaceSlice.ts';
 import authReducer from './slices/authSlice.ts';
+import dashboardReducer from './slices/dasboardSlice.ts';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,8 @@ export const store = configureStore({
     tasks: taskReducer,
     workspace: workspaceReducer,
     auth: authReducer, // Add the auth reducer
+    dashboard: dashboardReducer,
+
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
