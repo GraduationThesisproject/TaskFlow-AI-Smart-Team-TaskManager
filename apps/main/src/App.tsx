@@ -2,6 +2,8 @@ import { Button,  Typography, Flex, Container } from '@taskflow/ui';
 import { ThemeProvider } from '@taskflow/theme';
 import { useTheme } from './hooks/useTheme';
 import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
+// import { SpacePage } from './pages/space.page';
+import WorkSpace from './pages/workSpace';
 import { SpacePage } from './pages/space.page';
 import Dashboard from './pages/Dashboard';  
 // import WorkSpace from './pages/workSpace';
@@ -40,6 +42,8 @@ function AppContent() {
 
         <Routes>
           <Route path="/*" element={<LandingPage />} />
+          {/* <Route path="/space/*" element={<SpacePage />} /> */}
+          <Route path="/workspace/*" element={<WorkSpace />} />
           <Route path="/space/*" element={<SpacePage />} />
           <Route path="/dashboard/*" element={<Dashboard/>} />
           {/* <Route path="/workspace/*" element={<WorkSpace />} /> */}
