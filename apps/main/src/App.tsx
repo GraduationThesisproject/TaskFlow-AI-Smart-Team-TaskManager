@@ -10,7 +10,7 @@ function AppContent() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground select-none">
       {/* Header with Theme Toggle */}
       <header className="border-b border-border bg-card">
         <Container size="7xl" className="py-4">
