@@ -12,238 +12,364 @@ import {
   Trash,
   Plus,
   Search,
+  Filter,
+  Grid,
+  List
 } from "lucide-react";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+  Button, 
+  Typography,
+  Input,
+  Badge,
+  EmptyState,
+  Avatar,
+  AvatarImage,
+  AvatarFallback
+} from "@taskflow/ui";
+import { DashboardShell } from "./DashboardShell";
+import { useAppSelector } from "../../store";
 
-import { NavItem } from "../../components/Dashboard.Component/Templates.Components/NavItem.Component";
-import { TeamItem } from "../../components/Dashboard.Component/Templates.Components/TeamItem.Component";
-import { ProjectItem } from "../../components/Dashboard.Component/Templates.Components/ProjectItem.Component";
-import { CategoryButton } from "../../components/Dashboard.Component/Templates.Components/CategoryButton.Component";
-import { TemplateSection } from "../../components/Dashboard.Component/Templates.Components/TemplateSelection.Component";
-import { Input, Typography } from "@taskflow/ui";
+interface Template {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  author: {
+    name: string;
+    avatar?: string;
+  };
+  views: number;
+  likes: number;
+  downloads: number;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 type CategoryKey = 'business' | 'design' | 'marketing' | 'education' | 'development' | 'team';
 
-const getTemplatesByCategory = () => ({
-  business: {
-    title: 'Business Templates',
-    templates: [
-      { id: 1, title: 'Project Proposal', description: 'Professional project proposal template', category: 'business' },
-      { id: 2, title: 'Meeting Notes', description: 'Structured meeting notes template', category: 'business' }
-    ]
-  },
-  design: {
-    title: 'Design Templates',
-    templates: [
-      { id: 3, title: 'UI Kit', description: 'Complete UI component library', category: 'design' },
-      { id: 4, title: 'Wireframe', description: 'Basic wireframe template', category: 'design' }
-    ]
-  },
-  marketing: {
-    title: 'Marketing Templates',
-    templates: [
-      { id: 5, title: 'Campaign Plan', description: 'Marketing campaign template', category: 'marketing' }
-    ]
-  },
-  education: {
-    title: 'Education Templates',
-    templates: [
-      { id: 6, title: 'Lesson Plan', description: 'Structured lesson plan template', category: 'education' }
-    ]
-  },
-  development: {
-    title: 'Development Templates',
-    templates: [
-      { id: 7, title: 'API Documentation', description: 'API documentation template', category: 'development' }
-    ]
-  },
-  team: {
-    title: 'Team Templates',
-    templates: [
-      { id: 8, title: 'Team Retrospective', description: 'Team retrospective template', category: 'team' }
-    ]
-  }
-});
-
 const Templates: React.FC = () => {
-  const templatesByCategory = getTemplatesByCategory();
+  const { user } = useAppSelector(state => state.auth);
   const [activeCategory, setActiveCategory] = useState<'all' | CategoryKey>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Define all categories
-  const categories: ('all' | CategoryKey)[] = ['all', ...Object.keys(templatesByCategory) as CategoryKey[]];
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'name'>('newest');
 
-  
-  // Filter templates based on active category and search query
+  // Mock templates data - in real app this would come from API
+  const templates: Template[] = useMemo(() => [
+    {
+      id: '1',
+      title: 'Project Proposal Template',
+      description: 'Professional project proposal template with customizable sections',
+      category: 'business',
+      author: { name: 'Sarah Wilson', avatar: 'https://i.pravatar.cc/40?img=1' },
+      views: 1250,
+      likes: 89,
+      downloads: 234,
+      tags: ['proposal', 'business', 'professional'],
+      createdAt: '2024-01-15',
+      updatedAt: '2024-01-20'
+    },
+    {
+      id: '2',
+      title: 'UI Component Library',
+      description: 'Complete UI component library for React applications',
+      category: 'design',
+      author: { name: 'Mike Johnson', avatar: 'https://i.pravatar.cc/40?img=2' },
+      views: 2100,
+      likes: 156,
+      downloads: 567,
+      tags: ['ui', 'components', 'react'],
+      createdAt: '2024-01-10',
+      updatedAt: '2024-01-18'
+    },
+    {
+      id: '3',
+      title: 'Marketing Campaign Plan',
+      description: 'Comprehensive marketing campaign planning template',
+      category: 'marketing',
+      author: { name: 'Emma Davis', avatar: 'https://i.pravatar.cc/40?img=3' },
+      views: 980,
+      likes: 67,
+      downloads: 123,
+      tags: ['marketing', 'campaign', 'planning'],
+      createdAt: '2024-01-12',
+      updatedAt: '2024-01-16'
+    }
+  ], []);
+
+  const categories: Array<{ key: CategoryKey; label: string; icon: React.ReactNode; count: number }> = [
+    { key: 'business', label: 'Business', icon: <Briefcase size={16} />, count: 12 },
+    { key: 'design', label: 'Design', icon: <Monitor size={16} />, count: 8 },
+    { key: 'marketing', label: 'Marketing', icon: <Star size={16} />, count: 6 },
+    { key: 'education', label: 'Education', icon: <Book size={16} />, count: 4 },
+    { key: 'development', label: 'Development', icon: <Code size={16} />, count: 10 },
+    { key: 'team', label: 'Team', icon: <Users size={16} />, count: 5 }
+  ];
+
+  // Filter and sort templates
   const filteredTemplates = useMemo(() => {
-    let templates = [];
+    let filtered = templates;
     
-    if (activeCategory === 'all') {
-      templates = Object.values(templatesByCategory).flatMap(section => section.templates);
-    } else {
-      templates = templatesByCategory[activeCategory]?.templates || [];
+    // Filter by category
+    if (activeCategory !== 'all') {
+      filtered = filtered.filter(template => template.category === activeCategory);
     }
     
+    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      templates = templates.filter(template => 
-        template.title.toLowerCase().includes(query) || 
-        template.description.toLowerCase().includes(query)
+      filtered = filtered.filter(template => 
+        template.title.toLowerCase().includes(query) ||
+        template.description.toLowerCase().includes(query) ||
+        template.tags.some(tag => tag.toLowerCase().includes(query))
       );
     }
     
-    // Transform the data to match the expected type
-    return templates.map(template => ({
-      ...template,
-      id: String(template.id),
-      desc: template.description,
-      views: 0,
-      likes: 0,
-      // image is optional, so we can omit it
-    }));
-  }, [activeCategory, searchQuery, templatesByCategory]);
+    // Sort templates
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'popular':
+          return b.views - a.views;
+        case 'name':
+          return a.title.localeCompare(b.title);
+        case 'newest':
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
+    
+    return filtered;
+  }, [templates, activeCategory, searchQuery, sortBy]);
+
+  const handleCreateTemplate = () => {
+    // TODO: Implement template creation
+    console.log('Create template');
+  };
+
+  const handleTemplateClick = (template: Template) => {
+    // TODO: Navigate to template detail or open preview
+    console.log('Template clicked:', template);
+  };
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground select-none">
-      {/* Sidebar */}
-      <aside className="hidden lg:flex w-64 bg-card/50 backdrop-blur-sm border-r border-border/50 flex-col text-foreground">
-        {/* Logo and Header */}
-        <div className="p-4 flex items-center justify-between border-b border-border/30">
-          <div className="flex items-center gap-2 group cursor-default">
-            <div className="w-7 h-7 bg-gradient-to-br from-primary to-primary/80 rounded-md flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all duration-300 cursor-pointer">
-              <Layers className="w-4 h-4 text-primary-foreground group-hover:scale-110 transition-transform" />
-            </div>
-            <span className="font-semibold text-lg bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80 group-hover:from-primary group-hover:to-accent group-hover:drop-shadow-[0_0_8px_rgba(0,122,223,0.5)] transition-all duration-300 cursor-default">
-              Workspace
-            </span>
+    <DashboardShell title="Templates">
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Typography variant="h1" className="text-2xl font-bold">
+              Templates
+            </Typography>
+            <Typography variant="body-medium" className="text-muted-foreground">
+              Browse and use professional templates for your projects
+            </Typography>
           </div>
-          <button className="p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent/20 hover:shadow-[0_0_12px_-2px_rgba(0,122,223,0.3)] transition-all duration-300 cursor-pointer border border-transparent hover:border-primary/30">
-            <Trash size={18} className="group-hover:scale-110 transition-transform" />
-          </button>
+          <Button onClick={handleCreateTemplate}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Template
+          </Button>
         </div>
+      </div>
 
-        {/* Search */}
-        <div className="px-4 py-2 relative">
-          <Search className="absolute left-7 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search..." 
-            className="pl-10 bg-background border-border focus-visible:ring-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1 transition-all duration-300 hover:border-primary/50"
+      {/* Search and Filters */}
+      <div className="mb-6 space-y-4">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search templates..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
           />
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-7 overflow-y-auto">
-          <div className="space-y-2">
-            <p className="text-xs uppercase text-muted-foreground font-medium px-3">Your Workspace</p>
-            <NavItem icon={<Home size={18} />} label="Dashboard" active={true} />
-            <NavItem icon={<FileText size={18} />} label="All Files" />
-            <NavItem icon={<Star size={18} />} label="Favorites" />
+        {/* Filters and View Controls */}
+        <div className="flex items-center justify-between">
+          {/* Category Filters */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={activeCategory === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveCategory('all')}
+            >
+              All ({templates.length})
+            </Button>
+            {categories.map(category => (
+              <Button
+                key={category.key}
+                variant={activeCategory === category.key ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveCategory(category.key)}
+                className="flex items-center gap-2"
+              >
+                {category.icon}
+                {category.label} ({category.count})
+              </Button>
+            ))}
           </div>
 
-          <div className="space-y-2">
-            <p className="text-xs uppercase text-muted-foreground font-medium px-3">Team Mates</p>
-            <TeamItem name="Sarah Wilson" status="online" />
-            <TeamItem name="Mike Johnson" status="away" />
-            <TeamItem name="David Chen" status="offline" />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between px-3">
-              <p className="text-xs uppercase text-muted-foreground font-medium">Projects</p>
-              <button className="text-muted-foreground hover:text-foreground hover:bg-accent/20 p-1.5 rounded-md hover:shadow-[0_0_10px_-2px_rgba(0,122,223,0.3)] transition-all duration-300">
-                <Plus size={16} className="group-hover:scale-110 transition-transform" />
-              </button>
-            </div>
-            <ProjectItem label="Mobile App Design" color="bg-blue-500" />
-            <ProjectItem label="Website Redesign" color="bg-emerald-500" />
-            <ProjectItem label="Brand Guidelines" color="bg-purple-500" />
-          </div>
-          
-          <div className="space-y-2">
-            <p className="text-xs uppercase text-muted-foreground font-medium px-3">Templates</p>
-            <NavItem icon={<Briefcase size={18} />} label="Business" />
-            <NavItem icon={<Monitor size={18} />} label="Design" />
-            <NavItem icon={<Star size={18} />} label="Marketing" />
-            <NavItem icon={<Book size={18} />} label="Education" />
-            <NavItem icon={<Code size={18} />} label="Development" />
-            <NavItem icon={<Users size={18} />} label="Team" />
-          </div>
-        </nav>
-
-        {/* Footer */}
-        <div className="px-4 py-4 border-t border-border space-y-4">
-          <div className="flex items-center gap-3">
-            <img
-              src="https://i.pravatar.cc/40?img=15"
-              alt=""
-              className="w-9 h-9 rounded-full"
-            />
-            <div>
-              <p className="text-sm font-medium">Alex Morgan</p>
-              <p className="text-xs text-gray-500">alex@company.com</p>
-            </div>
+          {/* View Controls */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'newest' | 'popular' | 'name')}
+              className="px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm"
+            >
+              <option value="newest">Newest</option>
+              <option value="popular">Most Popular</option>
+              <option value="name">Name</option>
+            </select>
           </div>
         </div>
-      </aside>
+      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 overflow-y-auto space-y-8">
-        {/* Header */}
-        <div className="space-y-2">
-          <Typography variant="h2">Templates</Typography>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search templates..." 
-              className="pl-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
+      {/* Templates Grid/List */}
+      {filteredTemplates.length > 0 ? (
+        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+          {filteredTemplates.map(template => (
+            <Card
+              key={template.id}
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleTemplateClick(template)}
+            >
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg mb-2">{template.title}</CardTitle>
+                    <Typography variant="body-small" className="text-muted-foreground mb-3">
+                      {template.description}
+                    </Typography>
+                  </div>
+                  <Badge variant="secondary">
+                    {template.category}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Author */}
+                <div className="flex items-center gap-2 mb-3">
+                  <Avatar size="sm">
+                    <AvatarImage src={template.author.avatar} />
+                    <AvatarFallback variant="primary" size="sm">
+                      {template.author.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <Typography variant="caption" className="text-muted-foreground">
+                    by {template.author.name}
+                  </Typography>
+                </div>
 
-        {/* Categories */}
-        <div className="flex flex-wrap gap-3 sm:gap-4">
-          {categories.map((category) => (
-            <CategoryButton 
-              key={category}
-              label={category.charAt(0).toUpperCase() + category.slice(1)}
-              icon={
-                category === 'business' ? <Briefcase size={16} /> :
-                category === 'design' ? <Monitor size={16} /> :
-                category === 'marketing' ? <Star size={16} /> :
-                category === 'education' ? <Book size={16} /> :
-                category === 'development' ? <Code size={16} /> :
-                category === 'team' ? <Users size={16} /> : <Layers size={16} />
-              }
-              className={`hover:shadow-[0_0_15px_-3px_rgba(0,122,223,0.4)] ${
-                activeCategory === category 
-                  ? 'border-primary/50 bg-primary/5' 
-                  : 'border-transparent hover:border-primary/30'
-              }`}
-              onClick={() => setActiveCategory(category)}
-            />
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {template.tags.slice(0, 3).map(tag => (
+                    <Badge key={tag} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {template.tags.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{template.tags.length - 3}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div className="flex items-center gap-4">
+                    <span>{template.views} views</span>
+                    <span>{template.likes} likes</span>
+                    <span>{template.downloads} downloads</span>
+                  </div>
+                  <Typography variant="caption">
+                    {new Date(template.updatedAt).toLocaleDateString()}
+                  </Typography>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
+      ) : (
+        <EmptyState
+          icon={<FileText className="h-12 w-12" />}
+          title="No templates found"
+          description={
+            searchQuery 
+              ? `No templates match "${searchQuery}". Try adjusting your search.`
+              : "No templates available in this category."
+          }
+          action={
+            searchQuery ? {
+              label: "Clear Search",
+              onClick: () => setSearchQuery(''),
+              variant: "outline"
+            } : undefined
+          }
+        />
+      )}
 
-        {/* Render template sections */}
-        {activeCategory === 'all' ? (
-          // Show all categories in sections
-          Object.entries(filteredTemplates).map(([category, section]) => (
-            <TemplateSection
-              key={category}
-              title={section.title}
-              templates={section.templates}
-            />
-          ))
-        ) : (
-          // Show only the selected category with search results
-          <TemplateSection
-            title={`${activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} Templates`}
-            templates={Array.isArray(filteredTemplates) ? filteredTemplates : filteredTemplates.templates}
-          />
-        )}
-      </main>
-    </div>
+      {/* Recent Activity */}
+      <div className="mt-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 border border-border rounded-lg">
+                <Avatar size="sm">
+                  <AvatarImage src={user?.user?.avatar} />
+                  <AvatarFallback variant="primary" size="sm">
+                    {user?.user?.name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <Typography variant="body-small">
+                    <span className="font-medium">You</span> downloaded "Project Proposal Template"
+                  </Typography>
+                  <Typography variant="caption" className="text-muted-foreground">
+                    2 hours ago
+                  </Typography>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border border-border rounded-lg">
+                <Avatar size="sm">
+                  <AvatarImage src="https://i.pravatar.cc/40?img=4" />
+                  <AvatarFallback variant="primary" size="sm">J</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <Typography variant="body-small">
+                    <span className="font-medium">John Smith</span> liked "UI Component Library"
+                  </Typography>
+                  <Typography variant="caption" className="text-muted-foreground">
+                    4 hours ago
+                  </Typography>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardShell>
   );
 };
 
