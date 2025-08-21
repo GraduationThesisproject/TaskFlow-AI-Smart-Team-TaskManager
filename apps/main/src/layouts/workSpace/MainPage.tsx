@@ -44,7 +44,7 @@ const Main = () => {
       return;
     }
     dispatch(setCurrentWorkspaceId(workspaceId));
-    dispatch(fetchWorkspace({ id: workspaceId }));
+    dispatch(fetchWorkspace(workspaceId));
     dispatch(fetchMembers({ id: workspaceId }));
   }, [dispatch, workspaceId]);
 
@@ -194,10 +194,10 @@ const Main = () => {
             className="rounded-lg px-3 py-2 text-sm"
             contentClassName="min-w-[160px]"
           >
-            <DropdownItem ><a onClick={() => console.log('all')}>All Roles</a></DropdownItem>
-            <DropdownItem ><a onClick={() => console.log("Owner")}>Owner</a></DropdownItem>
-            <DropdownItem ><a onClick={() => console.log('admin')}>Admin</a></DropdownItem>
-            <DropdownItem ><a onClick={() => console.log('member')}>Member</a></DropdownItem>
+            <DropdownItem onClick={() => setRole('all')}>All Roles</DropdownItem>
+            <DropdownItem onClick={() => setRole('owner')}>Owner</DropdownItem>
+            <DropdownItem onClick={() => setRole('admin')}>Admin</DropdownItem>
+            <DropdownItem onClick={() => setRole('member')}>Member</DropdownItem>
           </Dropdown>
         </div>
 
