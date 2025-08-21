@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Home,
   FileText,
@@ -11,6 +11,7 @@ import {
   Layers,
   Trash,
   Plus,
+  Search,
 } from "lucide-react";
 
 import { NavItem } from "../../components/Dashboard.Component/Templates.Components/NavItem.Component";
@@ -19,8 +20,22 @@ import { ProjectItem } from "../../components/Dashboard.Component/Templates.Comp
 import { CategoryButton } from "../../components/Dashboard.Component/Templates.Components/CategoryButton.Component";
 import { TemplateSection } from "../../components/Dashboard.Component/Templates.Components/TemplateSelection.Component";
 import { Input, Typography } from "@taskflow/ui";
+import { dummyTemplates, getTemplatesByCategory } from "../../constants/dummyData";
 
 const Templates: React.FC = () => {
+  
+  // Get templates by category from dummy data
+  const templatesByCategory = getTemplatesByCategory();
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+
+  // Filter templates based on active category
+  const filteredTemplates = activeCategory === 'all' 
+    ? dummyTemplates 
+    : dummyTemplates.filter(template => template.category === activeCategory);
+
+  // Get unique categories for the category buttons
+  const categories = ['all', ...new Set(dummyTemplates.map(t => t.category))];
+
   return (
     <div className="flex min-h-screen bg-background text-foreground select-none">
       {/* Sidebar */}
@@ -41,10 +56,11 @@ const Templates: React.FC = () => {
         </div>
 
         {/* Search */}
-        <div className="px-4 py-2">
+        <div className="px-4 py-2 relative">
+          <Search className="absolute left-7 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder="Search..." 
-            className="bg-background border-border focus-visible:ring-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1 transition-all duration-300 hover:border-primary/50"
+            className="pl-10 bg-background border-border focus-visible:ring-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1 transition-all duration-300 hover:border-primary/50"
           />
         </div>
 
@@ -108,91 +124,57 @@ const Templates: React.FC = () => {
         {/* Header */}
         <div className="space-y-2">
           <Typography variant="h2">Templates</Typography>
-          <Input placeholder="Search templates..." />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search templates..." 
+              className="pl-9"
+              // Add search functionality here
+            />
+          </div>
         </div>
 
         {/* Categories */}
         <div className="flex flex-wrap gap-3 sm:gap-4">
-          <CategoryButton label="Business" icon={<Briefcase />} className="hover:shadow-[0_0_15px_-3px_rgba(0,122,223,0.4)] hover:border-primary/50" />
-          <CategoryButton label="Design" icon={<Monitor />} className="hover:shadow-[0_0_15px_-3px_rgba(16,185,129,0.4)] hover:border-emerald-500/50" />
-          <CategoryButton label="Marketing" icon={<Star />} className="hover:shadow-[0_0_15px_-3px_rgba(245,158,11,0.4)] hover:border-amber-500/50" />
-          <CategoryButton label="Education" icon={<Book />} className="hover:shadow-[0_0_15px_-3px_rgba(139,92,246,0.4)] hover:border-violet-500/50" />
-          <CategoryButton label="Development" icon={<Code />} className="hover:shadow-[0_0_15px_-3px_rgba(59,130,246,0.4)] hover:border-blue-500/50" />
-          <CategoryButton label="Team" icon={<Users />} className="hover:shadow-[0_0_15px_-3px_rgba(236,72,153,0.4)] hover:border-pink-500/50" />
+          {categories.map((category) => (
+            <CategoryButton 
+              key={category}
+              label={category.charAt(0).toUpperCase() + category.slice(1)}
+              icon={
+                category === 'business' ? <Briefcase /> :
+                category === 'design' ? <Monitor /> :
+                category === 'marketing' ? <Star /> :
+                category === 'education' ? <Book /> :
+                category === 'development' ? <Code /> :
+                category === 'team' ? <Users /> : <Layers />
+              }
+              className={`hover:shadow-[0_0_15px_-3px_rgba(0,122,223,0.4)] ${
+                activeCategory === category 
+                  ? 'border-primary/50 bg-primary/5' 
+                  : 'border-transparent hover:border-primary/30'
+              }`}
+              onClick={() => setActiveCategory(category)}
+            />
+          ))}
         </div>
 
-        {/* Sections */}
-        <TemplateSection
-          title="New & Notable"
-          templates={[
-            {
-              title: "Business Dashboard",
-              desc: "Complete analytics dashboard for business metrics tracking",
-              views: 2400,
-              likes: 156,
-            },
-            {
-              title: "Creative Portfolio",
-              desc: "Showcase your creative work with this stunning portfolio",
-              views: 1800,
-              likes: 89,
-            },
-            {
-              title: "Project Kanban",
-              desc: "Organize your projects with this flexible kanban template",
-              views: 3200,
-              likes: 234,
-            },
-          ]}
-        />
-
-        <TemplateSection
-          title="Business Templates"
-          templates={[
-            {
-              title: "Strategy Planning",
-              desc: "Plan your business strategy with comprehensive templates",
-              views: 1200,
-              likes: 97,
-            },
-            {
-              title: "Meeting Notes",
-              desc: "Keep track of meetings with structured note templates",
-              views: 900,
-              likes: 45,
-            },
-            {
-              title: "Sales Pipeline",
-              desc: "Manage your sales process from lead to close",
-              views: 2100,
-              likes: 112,
-            },
-          ]}
-        />
-
-        <TemplateSection
-          title="Design Templates"
-          templates={[
-            {
-              title: "Design System",
-              desc: "Build consistent UI with comprehensive design systems",
-              views: 1700,
-              likes: 98,
-            },
-            {
-              title: "Brand Guidelines",
-              desc: "Define your brand identity with clear guidelines",
-              views: 1300,
-              likes: 76,
-            },
-            {
-              title: "Wireframes",
-              desc: "Create detailed wireframes for your next project",
-              views: 890,
-              likes: 54,
-            },
-          ]}
-        />
+        {/* Render template sections */}
+        {activeCategory === 'all' ? (
+          // Show all categories in sections
+          Object.entries(templatesByCategory).map(([category, section]) => (
+            <TemplateSection
+              key={category}
+              title={section.title}
+              templates={section.templates}
+            />
+          ))
+        ) : (
+          // Show only the selected category
+          <TemplateSection
+            title={`${activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} Templates`}
+            templates={filteredTemplates}
+          />
+        )}
       </main>
     </div>
   );

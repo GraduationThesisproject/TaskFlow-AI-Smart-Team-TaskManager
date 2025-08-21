@@ -21,8 +21,8 @@ export const UpcomingTasksPanel: React.FC<UpcomingTasksPanelProps> = ({
   return (
     <Card className="bg-card border border-border rounded-xl p-4">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <button 
+      <Typography variant="h3" className="text-lg font-semibold">{title}</Typography>
+      <button 
           className="flex items-center text-primary text-sm font-medium hover:underline"
           onClick={() => console.log('See all tasks')}
         >
