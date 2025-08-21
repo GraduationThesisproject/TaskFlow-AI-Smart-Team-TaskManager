@@ -1,0 +1,57 @@
+[
+  {
+    "_id": "68a5bba5695eaed0b3b717e3",
+    "userId": "68a5bba5695eaed0b3b717df",
+    "systemRole": "user",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-20T12:12:21.830Z",
+    "updatedAt": "2025-08-20T12:12:21.830Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5f03dad8f72c5de8dbc3e",
+    "userId": "68a5f03cad8f72c5de8dbc3a",
+    "systemRole": "user",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-20T15:56:45.011Z",
+    "updatedAt": "2025-08-20T15:56:45.011Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5f20a8d24f4868e79cad7",
+    "userId": "68a5f20a8d24f4868e79cad3",
+    "systemRole": "user",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-20T16:04:26.376Z",
+    "updatedAt": "2025-08-20T16:04:26.376Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5f2528d24f4868e79cae5",
+    "userId": "68a5f2518d24f4868e79cae1",
+    "systemRole": "user",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-20T16:05:38.275Z",
+    "updatedAt": "2025-08-20T16:05:38.275Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5f6a38d24f4868e79caf4",
+    "userId": "68a5f6a28d24f4868e79caf0",
+    "systemRole": "user",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-20T16:24:03.097Z",
+    "updatedAt": "2025-08-20T16:24:03.097Z",
+    "__v": 0
+  }
+]

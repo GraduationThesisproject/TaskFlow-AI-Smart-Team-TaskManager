@@ -84,3 +84,5 @@ temp/
 
 # Optional eslint cache
 .eslintcache
+
+cursorRules.json
