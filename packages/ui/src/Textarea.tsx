@@ -1,39 +1,82 @@
 import React from 'react';
 import { cn } from './utils';
 
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  variant?: 'default' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+export interface TextAreaProps
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  /**
+   * Number of visible text lines
+   */
+  rows?: number;
+  /**
+   * Whether to show a character count
+   */
+  showCharacterCount?: boolean;
+  /**
+   * Maximum number of characters allowed
+   */
+  maxLength?: number;
+  /**
+   * Whether to auto-resize the textarea based on content
+   */
+  autoResize?: boolean;
 }
 
-export const Textarea: React.FC<TextareaProps> = ({
-  className,
-  variant = 'default',
-  size = 'md',
-  ...props
-}) => {
-  const baseClasses = 'flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
-  
-  const variantClasses = {
-    default: 'border-input',
-    error: 'border-destructive focus-visible:ring-destructive'
-  };
+const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
+  ({ 
+    className, 
+    rows = 3, 
+    showCharacterCount = false, 
+    maxLength,
+    autoResize = false,
+    onChange,
+    value,
+    ...props 
+  }, ref) => {
+    const [charCount, setCharCount] = React.useState(0);
 
-  const sizeClasses = {
-    sm: 'px-2 py-1 text-xs',
-    md: 'px-3 py-2 text-sm',
-    lg: 'px-4 py-3 text-base'
-  };
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newValue = e.target.value;
+      setCharCount(newValue.length);
+      
+      if (autoResize) {
+        e.target.style.height = 'auto';
+        e.target.style.height = `${e.target.scrollHeight}px`;
+      }
+      
+      onChange?.(e);
+    };
 
-  return (
-    <textarea
-      className={cn(
-        baseClasses,
-        variantClasses[variant],
-        sizeClasses[size],
-        className
-      )}
-      {...props}
-    />
-  );
-};
+    React.useEffect(() => {
+      if (typeof value === 'string') {
+        setCharCount(value.length);
+      }
+    }, [value]);
+
+    return (
+      <div className="relative">
+        <textarea
+          className={cn(
+            "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+            autoResize && "overflow-hidden",
+            className
+          )}
+          rows={rows}
+          maxLength={maxLength}
+          onChange={handleChange}
+          value={value}
+          ref={ref}
+          {...props}
+        />
+        {showCharacterCount && maxLength && (
+          <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
+            {charCount}/{maxLength}
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+
+TextArea.displayName = "TextArea";
+
+export { TextArea };
