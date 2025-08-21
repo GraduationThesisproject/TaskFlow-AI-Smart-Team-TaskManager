@@ -360,15 +360,18 @@ exports.acceptInvitation = async (req, res) => {
 exports.getWorkspaceMembers = async (req, res) => {
     try {
         const { id: workspaceId } = req.params;
-        const { q } = req.query;
-        const userId = req.user.id;
+        // const workspaceId = '68a6f2ad09162ad369df8692';
 
-        // Check access
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        if (!userRoles.hasWorkspaceRole(workspaceId)) {
-            return sendResponse(res, 403, false, 'Access denied to this workspace');
+        const { q } = req.query;
+        const userId = req.user?.id;
+
+        // Optional access check (only when authenticated)
+        if (userId) {
+            const user = await User.findById(userId);
+            const userRoles = await user.getRoles();
+            if (!userRoles.hasWorkspaceRole(workspaceId)) {
+                return sendResponse(res, 403, false, 'Access denied to this workspace');
+            }
         }
 
         const workspace = await Workspace.findById(workspaceId)
