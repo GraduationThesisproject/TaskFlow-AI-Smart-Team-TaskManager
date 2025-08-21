@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-// import { useAppDispatch } from '../store';
+import React, { useEffect, useState } from 'react';
 import { 
   Card, 
   CardHeader, 
@@ -9,116 +8,176 @@ import {
   Badge,
   Button,
   Input,
-  Select,
   Container,
-  Grid
+  Grid,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent
 } from '@taskflow/ui';
 import { 
-  MagnifyingGlassIcon,
+  DocumentTextIcon, 
+  FolderIcon, 
+  SparklesIcon,
+  PaintBrushIcon,
   PlusIcon,
-  EyeIcon,
   PencilIcon,
   TrashIcon,
-  DocumentTextIcon,
-  FolderIcon
+  ExclamationTriangleIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
-
-// Mock data - replace with actual API calls
-const mockTemplates = [
-  {
-    id: '1',
-    name: 'Project Management',
-    category: 'workflow',
-    description: 'Standard project management template with tasks, milestones, and team collaboration',
-    status: 'active',
-    usageCount: 45,
-    lastUpdated: new Date('2024-01-10T14:30:00Z'),
-    version: '2.1.0'
-  },
-  {
-    id: '2',
-    name: 'Agile Sprint',
-    category: 'agile',
-    description: 'Agile sprint template with user stories, sprint planning, and retrospectives',
-    status: 'active',
-    usageCount: 32,
-    lastUpdated: new Date('2024-01-08T09:15:00Z'),
-    version: '1.8.2'
-  },
-  {
-    id: '3',
-    name: 'Content Creation',
-    category: 'content',
-    description: 'Content creation workflow with review cycles and approval processes',
-    status: 'draft',
-    usageCount: 18,
-    lastUpdated: new Date('2024-01-05T16:45:00Z'),
-    version: '1.2.1'
-  }
-];
+import { 
+  adminService, 
+  ProjectTemplate, 
+  TaskTemplate, 
+  AIPrompt, 
+  BrandingAsset 
+} from '../services/adminService';
 
 const TemplatesLayout: React.FC = () => {
-  // const dispatch = useAppDispatch();
-  const [templates, setTemplates] = useState(mockTemplates);
+  const [activeTab, setActiveTab] = useState('projects');
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Template data
+  const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>([]);
+  const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([]);
+  const [aiPrompts, setAiPrompts] = useState<AIPrompt[]>([]);
+  const [brandingAssets, setBrandingAssets] = useState<BrandingAsset[]>([]);
 
-  const filteredTemplates = templates.filter(template => {
-    const matchesSearch = 
-      template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      template.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = categoryFilter === 'all' || template.category === categoryFilter;
-    const matchesStatus = statusFilter === 'all' || template.status === statusFilter;
-    
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
 
-  const handleViewTemplate = (template: any) => {
-    setSelectedTemplate(template);
-    console.log('View template:', template);
-  };
-
-  const handleEditTemplate = (template: any) => {
-    setSelectedTemplate(template);
-    setShowEditModal(true);
-  };
-
-  const handleDeleteTemplate = (templateId: string) => {
-    if (window.confirm('Are you sure you want to delete this template?')) {
-      setTemplates(templates.filter(template => template.id !== templateId));
+  const fetchTemplates = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const [projects, tasks, prompts, branding] = await Promise.all([
+        adminService.getProjectTemplates(),
+        adminService.getTaskTemplates(),
+        adminService.getAIPrompts(),
+        adminService.getBrandingAssets()
+      ]);
+      
+      setProjectTemplates(projects);
+      setTaskTemplates(tasks);
+      setAiPrompts(prompts);
+      setBrandingAssets(branding);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load templates');
+      console.error('Templates fetch error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'draft':
-        return 'warning';
-      case 'archived':
-        return 'secondary';
+  const getFilteredTemplates = () => {
+    const term = searchTerm.toLowerCase();
+    switch (activeTab) {
+      case 'projects':
+        return (projectTemplates || []).filter(template => 
+          template.name.toLowerCase().includes(term) ||
+          template.description.toLowerCase().includes(term) ||
+          template.category.toLowerCase().includes(term)
+        );
+      case 'tasks':
+        return (taskTemplates || []).filter(template => 
+          template.name.toLowerCase().includes(term) ||
+          template.description.toLowerCase().includes(term) ||
+          template.category.toLowerCase().includes(term)
+        );
+      case 'ai-prompts':
+        return (aiPrompts || []).filter(prompt => 
+          prompt.name.toLowerCase().includes(term) ||
+          prompt.prompt.toLowerCase().includes(term) ||
+          prompt.category.toLowerCase().includes(term)
+        );
+      case 'branding':
+        return (brandingAssets || []).filter(asset => 
+          asset.name.toLowerCase().includes(term) ||
+          asset.type.toLowerCase().includes(term)
+        );
       default:
-        return 'default';
+        return [];
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'workflow':
-        return <DocumentTextIcon className="h-5 w-5" />;
-      case 'agile':
-        return <FolderIcon className="h-5 w-5" />;
-      case 'content':
-        return <DocumentTextIcon className="h-5 w-5" />;
-      default:
-        return <DocumentTextIcon className="h-5 w-5" />;
-    }
+  // Type-safe filtered templates for each tab
+  const getFilteredProjectTemplates = () => {
+    const term = searchTerm.toLowerCase();
+    return (projectTemplates || []).filter(template => 
+      template.name.toLowerCase().includes(term) ||
+      template.description.toLowerCase().includes(term) ||
+      template.category.toLowerCase().includes(term)
+    );
   };
+
+  const getFilteredTaskTemplates = () => {
+    const term = searchTerm.toLowerCase();
+    return (taskTemplates || []).filter(template => 
+      template.name.toLowerCase().includes(term) ||
+      template.description.toLowerCase().includes(term) ||
+      template.category.toLowerCase().includes(term)
+    );
+  };
+
+  const getFilteredAIPrompts = () => {
+    const term = searchTerm.toLowerCase();
+    return (aiPrompts || []).filter(prompt => 
+      prompt.name.toLowerCase().includes(term) ||
+      prompt.prompt.toLowerCase().includes(term) ||
+      prompt.category.toLowerCase().includes(term)
+    );
+  };
+
+  const getFilteredBrandingAssets = () => {
+    const term = searchTerm.toLowerCase();
+    return (brandingAssets || []).filter(asset => 
+      asset.name.toLowerCase().includes(term) ||
+      asset.type.toLowerCase().includes(term)
+    );
+  };
+
+  const getStatusBadge = (isActive: boolean) => (
+    <Badge variant={isActive ? 'success' : 'secondary'}>
+      {isActive ? 'Active' : 'Inactive'}
+    </Badge>
+  );
+
+  if (isLoading) {
+    return (
+      <Container size="7xl">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container size="7xl">
+        <div className="text-center py-12">
+          <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <Typography variant="heading-large" className="text-red-600 mb-2">
+            Error Loading Templates
+          </Typography>
+          <Typography variant="body-medium" className="text-muted-foreground mb-4">
+            {error}
+          </Typography>
+          <Button 
+            variant="outline" 
+            onClick={fetchTemplates}
+          >
+            Retry
+          </Button>
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <Container size="7xl">
@@ -127,24 +186,24 @@ const TemplatesLayout: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <Typography variant="heading-large" className="text-foreground mb-2">
-              Templates
+              Templates & Assets
             </Typography>
             <Typography variant="body-medium" className="text-muted-foreground">
-              Manage system templates and configurations
+              Manage project templates, task templates, AI prompts, and branding assets
             </Typography>
           </div>
-          <Button onClick={() => setShowCreateModal(true)}>
+          <Button>
             <PlusIcon className="h-4 w-4 mr-2" />
             Create Template
           </Button>
         </div>
       </div>
 
-      {/* Filters and Search */}
+      {/* Search and Filters */}
       <Card className="mb-6">
-        <CardContent className="p-6">
-          <Grid cols={3} className="gap-4">
-            <div className="relative">
+        <CardContent className="pt-6">
+          <div className="flex items-center space-x-4">
+            <div className="flex-1 relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search templates..."
@@ -153,143 +212,232 @@ const TemplatesLayout: React.FC = () => {
                 className="pl-10"
               />
             </div>
-            
-            <Select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
-              <option value="all">All Categories</option>
-              <option value="workflow">Workflow</option>
-              <option value="agile">Agile</option>
-              <option value="content">Content</option>
-            </Select>
-            
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="draft">Draft</option>
-              <option value="archived">Archived</option>
-            </Select>
-          </Grid>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Templates Grid */}
-      <Grid cols={3} className="gap-6">
-        {filteredTemplates.map((template) => (
-          <Card key={template.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-2">
-                  {getCategoryIcon(template.category)}
-                  <div>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="projects">
+            <FolderIcon className="h-4 w-4 mr-2" />
+            Project Templates ({projectTemplates.length})
+          </TabsTrigger>
+          <TabsTrigger value="tasks">
+            <DocumentTextIcon className="h-4 w-4 mr-2" />
+            Task Templates ({taskTemplates.length})
+          </TabsTrigger>
+          <TabsTrigger value="ai-prompts">
+            <SparklesIcon className="h-4 w-4 mr-2" />
+            AI Prompts ({aiPrompts.length})
+          </TabsTrigger>
+          <TabsTrigger value="branding">
+            <PaintBrushIcon className="h-4 w-4 mr-2" />
+            Branding Assets ({brandingAssets.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Project Templates */}
+        <TabsContent value="projects">
+                               <Grid cols={3} className="gap-6">
+                       {getFilteredProjectTemplates().map((template: ProjectTemplate) => (
+              <Card key={template.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{template.name}</CardTitle>
-                    <Badge variant="secondary" className="mt-1">
-                      {template.category}
-                    </Badge>
+                    {getStatusBadge(template.isActive)}
                   </div>
-                </div>
-                <Badge variant={getStatusBadgeVariant(template.status)}>
-                  {template.status}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Typography variant="body-medium" className="text-muted-foreground">
-                {template.description}
-              </Typography>
-              
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>Version {template.version}</span>
-                <span>{template.usageCount} uses</span>
-              </div>
-              
-              <div className="text-xs text-muted-foreground">
-                Last updated: {template.lastUpdated.toLocaleDateString()}
-              </div>
-              
-              <div className="flex space-x-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleViewTemplate(template)}
-                  className="flex-1"
-                >
-                  <EyeIcon className="h-4 w-4 mr-1" />
-                  View
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEditTemplate(template)}
-                  className="flex-1"
-                >
-                  <PencilIcon className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDeleteTemplate(template.id)}
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </Grid>
+                </CardHeader>
+                <CardContent>
+                  <Typography variant="body-medium" className="text-muted-foreground mb-3">
+                    {template.description}
+                  </Typography>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Category
+                      </Typography>
+                      <Badge variant="secondary">{template.category}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Usage Count
+                      </Typography>
+                      <Typography variant="body-medium">{template.usageCount}</Typography>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Created
+                      </Typography>
+                      <Typography variant="body-small">
+                        {new Date(template.createdAt).toLocaleDateString()}
+                      </Typography>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2 mt-4">
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <PencilIcon className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <TrashIcon className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </Grid>
+        </TabsContent>
 
-      {/* Create Template Modal Placeholder */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-96">
-            <CardHeader>
-              <CardTitle>Create New Template</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Typography variant="body-medium">
-                Template creation form would go here...
-              </Typography>
-              <div className="flex space-x-2">
-                <Button onClick={() => setShowCreateModal(false)}>
-                  Cancel
-                </Button>
-                <Button variant="outline">
-                  Create Template
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        {/* Task Templates */}
+        <TabsContent value="tasks">
+                               <Grid cols={3} className="gap-6">
+                       {getFilteredTaskTemplates().map((template: TaskTemplate) => (
+              <Card key={template.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">{template.name}</CardTitle>
+                    {getStatusBadge(template.isActive)}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Typography variant="body-medium" className="text-muted-foreground mb-3">
+                    {template.description}
+                  </Typography>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Category
+                      </Typography>
+                      <Badge variant="secondary">{template.category}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Estimated Hours
+                      </Typography>
+                      <Typography variant="body-medium">{template.estimatedHours}h</Typography>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Usage Count
+                      </Typography>
+                      <Typography variant="body-medium">{template.usageCount}</Typography>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2 mt-4">
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <PencilIcon className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <TrashIcon className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </Grid>
+        </TabsContent>
 
-      {/* Edit Template Modal Placeholder */}
-      {showEditModal && selectedTemplate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-96">
-            <CardHeader>
-              <CardTitle>Edit Template: {selectedTemplate.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Typography variant="body-medium">
-                Template editing form would go here...
-              </Typography>
-              <div className="flex space-x-2">
-                <Button onClick={() => setShowEditModal(false)}>
-                  Cancel
-                </Button>
-                <Button variant="outline">
-                  Save Changes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        {/* AI Prompts */}
+        <TabsContent value="ai-prompts">
+                               <Grid cols={2} className="gap-6">
+                       {getFilteredAIPrompts().map((prompt: AIPrompt) => (
+              <Card key={prompt.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">{prompt.name}</CardTitle>
+                    {getStatusBadge(prompt.isActive)}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Typography variant="body-medium" className="text-muted-foreground mb-3">
+                    {prompt.prompt}
+                  </Typography>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Category
+                      </Typography>
+                      <Badge variant="secondary">{prompt.category}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Usage Count
+                      </Typography>
+                      <Typography variant="body-medium">{prompt.usageCount}</Typography>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2 mt-4">
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <PencilIcon className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <TrashIcon className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </Grid>
+        </TabsContent>
+
+        {/* Branding Assets */}
+        <TabsContent value="branding">
+                               <Grid cols={4} className="gap-6">
+                       {getFilteredBrandingAssets().map((asset: BrandingAsset) => (
+              <Card key={asset.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">{asset.name}</CardTitle>
+                    {getStatusBadge(asset.isActive)}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Type
+                      </Typography>
+                      <Badge variant="secondary">{asset.type}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Value
+                      </Typography>
+                      <Typography variant="body-small" className="truncate max-w-24">
+                        {asset.value}
+                      </Typography>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Created
+                      </Typography>
+                      <Typography variant="body-small">
+                        {new Date(asset.createdAt).toLocaleDateString()}
+                      </Typography>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2 mt-4">
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <PencilIcon className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <TrashIcon className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </Grid>
+        </TabsContent>
+      </Tabs>
     </Container>
   );
 };

@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-// import { useAppDispatch } from '../store';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   CardHeader, 
@@ -16,61 +15,58 @@ import {
 } from '@taskflow/ui';
 import { 
   MagnifyingGlassIcon,
-  // FunnelIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
-
-// Mock data - replace with actual API calls
-const mockUsers = [
-  {
-    id: '1',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    role: 'user',
-    status: 'active',
-    lastLoginAt: new Date('2024-01-15T10:30:00Z'),
-    workspaces: 3
-  },
-  {
-    id: '2',
-    firstName: 'Jane',
-    lastName: 'Smith',
-    email: 'jane.smith@example.com',
-    role: 'admin',
-    status: 'active',
-    lastLoginAt: new Date('2024-01-14T15:45:00Z'),
-    workspaces: 5
-  },
-  {
-    id: '3',
-    firstName: 'Bob',
-    lastName: 'Johnson',
-    email: 'bob.johnson@example.com',
-    role: 'user',
-    status: 'inactive',
-    lastLoginAt: new Date('2024-01-10T09:15:00Z'),
-    workspaces: 1
-  }
-];
+import { adminService, User } from '../services/adminService';
 
 const UserManagementLayout: React.FC = () => {
-  // const dispatch = useAppDispatch();
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0
+  });
+
+  useEffect(() => {
+    fetchUsers();
+  }, [pagination.page, pagination.limit, searchTerm, roleFilter, statusFilter]);
+
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await adminService.getUsers({
+        page: pagination.page,
+        limit: pagination.limit,
+        search: searchTerm || undefined,
+        role: roleFilter === 'all' ? undefined : roleFilter,
+        status: statusFilter === 'all' ? undefined : statusFilter
+      });
+      setUsers(response.users);
+      setPagination(prev => ({ ...prev, total: response.total }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load users');
+      console.error('Users fetch error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
-      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
@@ -79,239 +75,317 @@ const UserManagementLayout: React.FC = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const handleViewUser = (user: any) => {
+  const handleViewUser = (user: User) => {
     setSelectedUser(user);
     // Open view modal or navigate to user details
     console.log('View user:', user);
   };
 
-  const handleEditUser = (user: any) => {
+  const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setShowEditUserModal(true);
   };
 
-  const handleDeleteUser = (userId: string) => {
+  const handleDeleteUser = async (userId: string) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      setUsers(users.filter(user => user.id !== userId));
+      try {
+        await adminService.deleteUser(userId);
+        setUsers(users.filter(user => user.id !== userId));
+        setPagination(prev => ({ ...prev, total: prev.total - 1 }));
+      } catch (err) {
+        alert('Failed to delete user: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      }
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
+  const handleBanUser = async (userId: string) => {
+    try {
+      await adminService.banUser(userId);
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, status: 'Inactive' } : user
+      ));
+    } catch (err) {
+      alert('Failed to deactivate user: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  };
+
+  const handleActivateUser = async (userId: string) => {
+    try {
+      await adminService.activateUser(userId);
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, status: 'Active' } : user
+      ));
+    } catch (err) {
+      alert('Failed to activate user: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  };
+
+  const getStatusBadgeVariant = (status: string | undefined) => {
+    if (!status) return 'secondary';
+    
+    switch (status.toLowerCase()) {
       case 'active':
         return 'success';
       case 'inactive':
         return 'secondary';
-      case 'suspended':
+      case 'banned':
+        return 'error';
+      case 'pending':
         return 'warning';
       default:
-        return 'default';
+        return 'secondary';
     }
   };
 
   const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
+    switch (role.toLowerCase()) {
       case 'admin':
-        return 'accent';
+        return 'error';
+      case 'moderator':
+        return 'warning';
       case 'user':
         return 'secondary';
       default:
-        return 'default';
+        return 'secondary';
     }
   };
+
+  if (isLoading && users.length === 0) {
+    return (
+      <Container size="7xl">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </Container>
+    );
+  }
+
+  if (error && users.length === 0) {
+    return (
+      <Container size="7xl">
+        <div className="text-center py-12">
+          <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <Typography variant="heading-medium" className="text-red-600 mb-2">
+            Error Loading Users
+          </Typography>
+          <Typography variant="body-medium" className="text-muted-foreground mb-4">
+            {error}
+          </Typography>
+          <Button 
+            variant="outline" 
+            onClick={fetchUsers}
+          >
+            Retry
+          </Button>
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <Container size="7xl">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <Typography variant="heading-large" className="text-foreground mb-2">
-              User Management
-            </Typography>
-            <Typography variant="body-medium" className="text-muted-foreground">
-              Manage user accounts, roles, and permissions
-            </Typography>
-          </div>
-          <Button onClick={() => setShowCreateUserModal(true)}>
-            <UserPlusIcon className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
-        </div>
+        <Typography variant="heading-large" className="text-foreground mb-2">
+          User Management
+        </Typography>
+        <Typography variant="body-medium" className="text-muted-foreground">
+          Manage user accounts, roles, and permissions across the platform
+        </Typography>
       </div>
 
-      {/* Filters and Search */}
+      {/* Controls */}
       <Card className="mb-6">
-        <CardContent className="p-6">
-          <Grid cols={3} className="gap-4">
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search users..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
-            
             <Select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-            >
-              <option value="all">All Roles</option>
-              <option value="admin">Admin</option>
-              <option value="user">User</option>
-            </Select>
-            
+              onValueChange={setRoleFilter}
+              options={[
+                { value: 'all', label: 'All Roles' },
+                { value: 'admin', label: 'Admin' },
+                { value: 'moderator', label: 'Moderator' },
+                { value: 'user', label: 'User' }
+              ]}
+            />
             <Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="suspended">Suspended</option>
-            </Select>
-          </Grid>
+              onValueChange={setStatusFilter}
+              options={[
+                { value: 'all', label: 'All Statuses' },
+                { value: 'Active', label: 'Active' },
+                { value: 'Inactive', label: 'Inactive' }
+              ]}
+            />
+            <Button onClick={() => setShowCreateUserModal(true)}>
+              <UserPlusIcon className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Users ({filteredUsers.length})</CardTitle>
+          <CardTitle>Users ({pagination.total})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left p-3 font-medium text-muted-foreground">User</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Role</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Workspaces</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Last Login</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="border-b border-border hover:bg-muted/50">
-                    <td className="p-3">
-                      <div className="flex items-center space-x-3">
-                        <Avatar size="sm">
-                          <span className="text-sm font-medium">
-                            {user.firstName.charAt(0).toUpperCase()}
-                          </span>
-                        </Avatar>
-                        <div>
-                          <Typography variant="body-medium" className="text-foreground">
-                            {user.firstName} {user.lastName}
-                          </Typography>
-                          <Typography variant="body-small" className="text-muted-foreground">
-                            {user.email}
-                          </Typography>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {user.role}
-                      </Badge>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant={getStatusBadgeVariant(user.status)}>
-                        {user.status}
-                      </Badge>
-                    </td>
-                    <td className="p-3">
-                      <Typography variant="body-medium">
-                        {user.workspaces}
-                      </Typography>
-                    </td>
-                    <td className="p-3">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        {user.lastLoginAt.toLocaleDateString()}
-                      </Typography>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewUser(user)}
-                        >
-                          <EyeIcon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditUser(user)}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteUser(user.id)}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="text-center py-12">
+              <Typography variant="body-medium" className="text-muted-foreground">
+                No users found matching your criteria
+              </Typography>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-3 font-medium text-muted-foreground">User</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Role</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Last Login</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Created</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="border-b border-border hover:bg-muted/50">
+                      <td className="p-3">
+                        <div className="flex items-center space-x-3">
+                          <Avatar size="sm" className="bg-primary text-primary-foreground">
+                            <span className="text-sm font-medium">
+                              {user.username.charAt(0).toUpperCase()}
+                            </span>
+                          </Avatar>
+                          <div>
+                            <Typography variant="body-medium" className="font-medium">
+                              {user.username}
+                            </Typography>
+                            <Typography variant="body-small" className="text-muted-foreground">
+                              {user.email}
+                            </Typography>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <Badge variant={getRoleBadgeVariant(user.role)}>
+                          {user.role}
+                        </Badge>
+                      </td>
+                      <td className="p-3">
+                        <Badge variant={getStatusBadgeVariant(user.status)}>
+                          {user.status}
+                        </Badge>
+                      </td>
+                      <td className="p-3">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          {user.lastLoginAt}
+                        </Typography>
+                      </td>
+                      <td className="p-3">
+                        <Typography variant="body-small" className="text-muted-foreground">
+                          {user.createdAt}
+                        </Typography>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewUser(user)}
+                            title="View user details"
+                          >
+                            <EyeIcon className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditUser(user)}
+                            title="Edit user"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                          {user.status === 'Inactive' ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleActivateUser(user.id)}
+                              title="Activate user"
+                            >
+                              ✓
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleBanUser(user.id)}
+                              title="Deactivate user"
+                            >
+                              🚫
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteUser(user.id)}
+                            title="Delete user"
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Create User Modal Placeholder */}
-      {showCreateUserModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-96">
-            <CardHeader>
-              <CardTitle>Create New User</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Typography variant="body-medium">
-                User creation form would go here...
-              </Typography>
-              <div className="flex space-x-2">
-                <Button onClick={() => setShowCreateUserModal(false)}>
-                  Cancel
-                </Button>
-                <Button variant="outline">
-                  Create User
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Edit User Modal Placeholder */}
-      {showEditUserModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-96">
-            <CardHeader>
-              <CardTitle>Edit User: {selectedUser.firstName} {selectedUser.lastName}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Typography variant="body-medium">
-                User editing form would go here...
-              </Typography>
-              <div className="flex space-x-2">
-                <Button onClick={() => setShowEditUserModal(false)}>
-                  Cancel
-                </Button>
-                <Button variant="outline">
-                  Save Changes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Pagination */}
+      {pagination.total > pagination.limit && (
+        <div className="flex justify-center mt-6">
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page === 1}
+              onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+            >
+              Previous
+            </Button>
+            <span className="flex items-center px-3 text-sm text-muted-foreground">
+              Page {pagination.page} of {Math.ceil(pagination.total / pagination.limit)}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+              onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       )}
     </Container>
