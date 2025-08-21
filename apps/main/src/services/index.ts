@@ -5,3 +5,4 @@ export { SpaceService } from './spaceService';
 export { BoardService } from './boardService';
 export { CommentService } from './commentService';
 export { UserService } from './userService';
+export { AuthService } from './authService';

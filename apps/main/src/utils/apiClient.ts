@@ -1,4 +1,4 @@
-import tokenManager from './tokenManager';
+import tokenManager from './tokenManager.js';
 
 // Enhanced API client with automatic token management
 class ApiClient {
@@ -132,7 +132,7 @@ class ApiClient {
             skipAuth?: boolean;
         } = {}
     ): Promise<T> {
-        const { onProgress, skipAuth = false, ...requestOptions } = options;
+        const { onProgress, skipAuth = false } = options;
         
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();

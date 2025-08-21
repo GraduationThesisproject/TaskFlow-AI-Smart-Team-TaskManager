@@ -9,11 +9,7 @@ export interface User {
   updatedAt: Date;
 }
 
-export enum UserRole {
-  ADMIN = 'admin',
-  USER = 'user',
-  MODERATOR = 'moderator',
-}
+export type UserRole = 'admin' | 'user' | 'moderator';
 
 export interface AuthState {
   user: User | null;
