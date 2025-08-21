@@ -5,21 +5,76 @@ import { AuthService } from '../../services/authService';
 import { getDeviceId } from '../../utils';
 
 // Helper function to serialize user data (convert Date objects to ISO strings)
-const serializeUser = (user: any): User => {
-  const serializedUser = { ...user };
-  
-  // Convert Date objects to ISO strings
-  if (serializedUser.lastLogin instanceof Date) {
-    serializedUser.lastLogin = serializedUser.lastLogin.toISOString();
+const serializeUser = (userData: any): User => {
+  // Handle both flat and nested user structures
+  if (userData.user) {
+    // Nested structure (from /auth/me)
+    const serializedUser = { ...userData };
+    
+    // Serialize basic user info
+    if (serializedUser.user) {
+      if (serializedUser.user.lastLogin instanceof Date) {
+        serializedUser.user.lastLogin = serializedUser.user.lastLogin.toISOString();
+      }
+      if (serializedUser.user.createdAt instanceof Date) {
+        serializedUser.user.createdAt = serializedUser.user.createdAt.toISOString();
+      }
+      if (serializedUser.user.updatedAt instanceof Date) {
+        serializedUser.user.updatedAt = serializedUser.user.updatedAt.toISOString();
+      }
+    }
+    
+    // Serialize security dates
+    if (serializedUser.security) {
+      if (serializedUser.security.lastPasswordChange instanceof Date) {
+        serializedUser.security.lastPasswordChange = serializedUser.security.lastPasswordChange.toISOString();
+      }
+      if (serializedUser.security.lockedUntil instanceof Date) {
+        serializedUser.security.lockedUntil = serializedUser.security.lockedUntil.toISOString();
+      }
+      if (serializedUser.security.passwordExpiresAt instanceof Date) {
+        serializedUser.security.passwordExpiresAt = serializedUser.security.passwordExpiresAt.toISOString();
+      }
+    }
+    
+    return serializedUser;
+  } else {
+    // Flat structure (from /auth/login) - convert to nested structure
+    const serializedBasicUser = { ...userData };
+    
+    // Convert Date objects to ISO strings
+    if (serializedBasicUser.lastLogin instanceof Date) {
+      serializedBasicUser.lastLogin = serializedBasicUser.lastLogin.toISOString();
+    }
+    if (serializedBasicUser.createdAt instanceof Date) {
+      serializedBasicUser.createdAt = serializedBasicUser.createdAt.toISOString();
+    }
+    if (serializedBasicUser.updatedAt instanceof Date) {
+      serializedBasicUser.updatedAt = serializedBasicUser.updatedAt.toISOString();
+    }
+    
+    // Convert flat structure to nested structure
+    return {
+      user: serializedBasicUser,
+      preferences: {
+        theme: { mode: 'system' },
+        notifications: { email: true, push: true, sms: false, marketing: false },
+        language: 'en',
+        timezone: 'UTC',
+        dateFormat: 'MM/DD/YYYY',
+        timeFormat: '12h'
+      },
+      security: {
+        twoFactorEnabled: false,
+        loginAttempts: 0
+      },
+      roles: {
+        global: [],
+        workspaces: {},
+        permissions: []
+      }
+    };
   }
-  if (serializedUser.createdAt instanceof Date) {
-    serializedUser.createdAt = serializedUser.createdAt.toISOString();
-  }
-  if (serializedUser.updatedAt instanceof Date) {
-    serializedUser.updatedAt = serializedUser.updatedAt.toISOString();
-  }
-  
-  return serializedUser;
 };
 
 // Async thunk for login
@@ -32,10 +87,16 @@ export const loginUser = createAsyncThunk(
       // Store token in localStorage
       localStorage.setItem('token', response.data.token);
       
-      // Serialize the user data before returning
+      // After successful login, fetch the complete user profile
+      // This ensures we get the same user shape as checkAuthStatus
+      console.log('🔍 Login successful, fetching complete user profile...');
+      const profileResponse = await AuthService.getProfile();
+      
+      // Serialize the complete user data before returning
       return {
         ...response.data,
-        user: serializeUser(response.data.user)
+        user: serializeUser(profileResponse.data),
+        token: response.data.token
       };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Login failed');
@@ -146,9 +207,21 @@ const authSlice = createSlice({
     },
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
-        // Ensure updated user data is serialized
-        const serializedUpdates = serializeUser(action.payload);
-        state.user = { ...state.user, ...serializedUpdates };
+        // Handle nested user updates
+        const updates = action.payload;
+        
+        if (updates.user) {
+          state.user.user = { ...state.user.user, ...updates.user };
+        }
+        if (updates.preferences) {
+          state.user.preferences = { ...state.user.preferences, ...updates.preferences };
+        }
+        if (updates.security) {
+          state.user.security = { ...state.user.security, ...updates.security };
+        }
+        if (updates.roles) {
+          state.user.roles = { ...state.user.roles, ...updates.roles };
+        }
       }
     },
   },
@@ -216,3 +289,17 @@ const authSlice = createSlice({
 
 export const { clearError, setCredentials, updateUser } = authSlice.actions;
 export default authSlice.reducer;
+
+// Selectors for easy access to user data
+export const selectUser = (state: { auth: AuthState }) => state.auth.user;
+export const selectUserBasic = (state: { auth: AuthState }) => state.auth.user?.user;
+export const selectUserPreferences = (state: { auth: AuthState }) => state.auth.user?.preferences;
+export const selectUserSecurity = (state: { auth: AuthState }) => state.auth.user?.security;
+export const selectUserRoles = (state: { auth: AuthState }) => state.auth.user?.roles;
+export const selectUserPermissions = (state: { auth: AuthState }) => state.auth.user?.roles?.permissions || [];
+export const selectUserWorkspaceRoles = (state: { auth: AuthState }) => state.auth.user?.roles?.workspaces || {};
+export const selectUserTheme = (state: { auth: AuthState }) => state.auth.user?.preferences?.theme;
+export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;
+export const selectAuthToken = (state: { auth: AuthState }) => state.auth.token;
+export const selectAuthLoading = (state: { auth: AuthState }) => state.auth.isLoading;
+export const selectAuthError = (state: { auth: AuthState }) => state.auth.error;

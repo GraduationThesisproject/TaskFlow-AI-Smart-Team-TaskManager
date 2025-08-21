@@ -138,4 +138,10 @@ export const applyTheme = (theme: 'light' | 'dark') => {
 };
 
 // Export ThemeProvider from the main index
-export { ThemeProvider, useTheme } from './ThemeProvider';
+export { ThemeProvider, useTheme, ThemeToggle } from './ThemeProvider';
+
+// Export color utilities
+export * from './colorUtils';
+
+// Export theme manager
+export * from './themeManager';
