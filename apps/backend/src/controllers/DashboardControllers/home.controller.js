@@ -1,110 +1,77 @@
-const { getTasks, getOverdueTasks } = require('../../task.controller');
-const { getAllWorkspaces } = require('../../workspace.controller');
-const { getNotifications } = require('../../notification.controller');
-const { getRecentActivities } = require('../../activity.controller');
+const Task = require('../../models/Task');
+const Workspace = require('../../models/Workspace');
+const Notification = require('../../models/Notification');
 const { sendResponse } = require('../../utils/response');
 
 /**
- * @desc    Get dashboard overview
- * @route   GET /api/dashboard/overview
+ * @desc    Get dashboard home data
+ * @route   GET /api/dashboard/home
  * @access  Private
  */
 
-const getDashboardOverview = async (req, res) => {
+const user = "68a5fc088a7b1bd27300b1b5"
+
+const getDashboardOverviewHome = async (req, res) => {
     try {
-        const userId = req.user.id;
-        
-        // Helper function to call controller methods
-        const callController = async (controller, req, res) => {
-            return new Promise((resolve) => {
-                const customRes = {
-                    json: (data) => resolve({ data, error: null }),
-                    status: () => ({
-                        json: (error) => resolve({ data: null, error })
-                    })
-                };
-                controller(req, customRes, () => {});
-            });
-        };
+        // const userId = req.user?._id
+        const userId = user
 
         // Get workspaces
-        const workspacesReq = { ...req, user: { id: userId } };
-        const { data: workspacesData } = await callController(
-            getAllWorkspaces, 
-            workspacesReq, 
-            {}
-        );
+        const workspaces = await Workspace.find({ 'members.user': userId })
+            .populate('members.user', 'name email')
+            .limit(5);
 
-        // Get tasks
-        const tasksReq = { 
-            ...req, 
-            query: { 
-                assignedToMe: 'true',
-                limit: '10',
-                sortBy: 'dueDate',
-                sortOrder: 'asc',
-                priority: 'high'
-            } 
-        };
-        const { data: tasksData } = await callController(
-            getTasks, 
-            tasksReq, 
-            {}
-        );
+        // Get high priority tasks
+        const highPriorityTasks = await Task.find({
+            'assignees': userId,
+            'priority': 'high',
+            'status': { $ne: 'completed' },
+            'dueDate': { $gte: new Date() }
+        })
+            .sort({ dueDate: 1 })
+            .limit(5)
+            .lean();
 
         // Get overdue tasks
-        const overdueReq = { 
-            ...req, 
-            query: { 
-                assignedToMe: 'true',
-                overdue: 'true',
-                limit: '10'
-            } 
-        };
-        const { data: overdueData } = await callController(
-            getOverdueTasks, 
-            overdueReq, 
-            {}
-        );
+        const overdueTasks = await Task.find({
+            'assignees': userId,
+            'status': { $ne: 'completed' },
+            'dueDate': { $lt: new Date() }
+        })
+            .sort({ dueDate: 1 })
+            .limit(5)
+            .lean();
 
-        // Get notifications
-        const notifReq = { 
-            ...req, 
-            query: { 
-                limit: '5',
-                read: 'false'
-            } 
-        };
-        const { data: notificationsData } = await callController(
-            getNotifications, 
-            notifReq, 
-            {}
-        );
+        // Get recent notifications
+        const notifications = await Notification.find({ user: userId })
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .lean();
 
-        // Get recent activities
-        const activitiesReq = { 
-            ...req, 
-            query: { 
-                limit: '10'
-            } 
-        };
-        const { data: activitiesData } = await callController(
-            getRecentActivities, 
-            activitiesReq, 
-            {}
-        );
-
-        // Compile dashboard data
+        // Format response
         const dashboardData = {
-            workspaces: workspacesData?.workspaces || [],
+            workspaces: workspaces.map(ws => ({
+                _id: ws._id,
+                name: ws.name,
+                description: ws.description,
+                membersCount: ws.members.length,
+                icon: ws.icon || 'briefcase',
+                iconBgClass: ws.iconBgClass || 'bg-primary'
+            })),
             tasks: {
-                highPriority: tasksData?.tasks || [],
-                overdue: overdueData?.tasks || []
+                highPriority: highPriorityTasks,
+                overdue: overdueTasks
             },
-            notifications: notificationsData?.notifications || [],
-            activities: activitiesData?.activities || []
+            notifications: notifications.map(notif => ({
+                _id: notif._id,
+                type: notif.type,
+                message: notif.message,
+                read: notif.read,
+                createdAt: notif.createdAt,
+                meta: notif.meta || {}
+            }))
         };
-        
+
         sendResponse(res, 200, true, 'Dashboard data retrieved successfully', dashboardData);
         
     } catch (error) {
@@ -114,5 +81,5 @@ const getDashboardOverview = async (req, res) => {
 };
 
 module.exports = {
-    getDashboardOverview
+    getDashboardOverviewHome
 };
