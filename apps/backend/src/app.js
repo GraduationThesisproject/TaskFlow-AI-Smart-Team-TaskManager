@@ -1,7 +1,6 @@
 const express = require('express');
 //👉 Express is a framework that makes building APIs easy.
 const cors = require('cors');
-//👉 CORS (Cross-Origin Resource Sharing) is like a security guard.
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
@@ -35,12 +34,41 @@ const app = express();
 
 
 
-// Security & CORS
+// Security
 app.use(helmet());
-app.use(cors({
-    origin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
-    credentials: true
-}));
+
+// CORS configuration for HTTP requests (Socket.IO handles WebSocket CORS)
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // Parse CORS_ORIGIN from environment or use defaults
+        let allowedOrigins;
+        if (process.env.CORS_ORIGIN) {
+            allowedOrigins = process.env.CORS_ORIGIN.split(',').map(origin => origin.trim());
+        } else {
+            allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+        }
+        
+        console.log('Allowed CORS origins:', allowedOrigins);
+        console.log('Request origin:', origin);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log('CORS blocked origin:', origin);
+            callback(new Error(`Origin ${origin} not allowed by CORS. Allowed: ${allowedOrigins.join(', ')}`));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Socket-ID'],
+    exposedHeaders: ['X-Socket-ID']
+};
+
+console.log('CORS Configuration:', corsOptions);
+app.use(cors(corsOptions));
 
 
 // Logging
@@ -55,6 +83,15 @@ app.get('/health', (req, res) => {
     res.status(200).json({ 
         status: 'OK', 
         message: 'TaskFlow API is running',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// CORS test endpoint
+app.get('/cors-test', (req, res) => {
+    res.status(200).json({ 
+        message: 'CORS is working!',
+        origin: req.headers.origin,
         timestamp: new Date().toISOString()
     });
 });

@@ -1,4 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { env } from '../config/env';
+
+const API_BASE_URL = env.API_BASE_URL;
 
 class ApiService {
   private baseURL: string;
@@ -58,20 +60,20 @@ class ApiService {
 
   // Auth endpoints
   async login(credentials: { email: string; password: string }) {
-    return this.request('/api/admin/auth/login', {
+    return this.request('/admin/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
   }
 
   async logout() {
-    return this.request('/api/admin/auth/logout', {
+    return this.request('/admin/auth/logout', {
       method: 'POST',
     });
   }
 
   async getCurrentAdmin() {
-    return this.request('/api/admin/auth/me');
+    return this.request('/admin/auth/me');
   }
 
   // User management endpoints
@@ -90,46 +92,46 @@ class ApiService {
     if (params?.status) queryParams.append('status', params.status);
 
     const queryString = queryParams.toString();
-    const endpoint = `/api/admin/users${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/admin/users${queryString ? `?${queryString}` : ''}`;
     
     return this.request(endpoint);
   }
 
   async createUser(userData: any) {
-    return this.request('/api/admin/users', {
+    return this.request('/admin/users', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
   }
 
   async updateUser(userId: string, userData: any) {
-    return this.request(`/api/admin/users/${userId}`, {
+    return this.request(`/admin/users/${userId}`, {
       method: 'PUT',
       body: JSON.stringify(userData),
     });
   }
 
   async deleteUser(userId: string) {
-    return this.request(`/api/admin/users/${userId}`, {
+    return this.request(`/admin/users/${userId}`, {
       method: 'DELETE',
     });
   }
 
   async banUser(userId: string, reason?: string) {
-    return this.request(`/api/admin/users/${userId}/ban`, {
+    return this.request(`/admin/users/${userId}/ban`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
   }
 
   async activateUser(userId: string) {
-    return this.request(`/api/admin/users/${userId}/activate`, {
+    return this.request(`/admin/users/${userId}/activate`, {
       method: 'POST',
     });
   }
 
   async resetUserPassword(email: string) {
-    return this.request('/api/admin/users/reset-password', {
+    return this.request('/admin/users/reset-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
@@ -137,52 +139,52 @@ class ApiService {
 
   // Analytics endpoints
   async getAnalytics(timeRange: string) {
-    return this.request(`/api/admin/analytics?timeRange=${timeRange}`);
+    return this.request(`/admin/analytics?timeRange=${timeRange}`);
   }
 
   async getSystemHealth() {
-    return this.request('/api/admin/system/health');
+    return this.request('/admin/system/health');
   }
 
   async exportAnalytics(timeRange: string, format: string) {
-    return this.request(`/api/admin/analytics/export?timeRange=${timeRange}&format=${format}`, {
+    return this.request(`/admin/analytics/export?timeRange=${timeRange}&format=${format}`, {
       method: 'GET',
     });
   }
 
   // Templates endpoints
   async getProjectTemplates() {
-    return this.request('/api/admin/templates/projects');
+    return this.request('/admin/templates/projects');
   }
 
   async getTaskTemplates() {
-    return this.request('/api/admin/templates/tasks');
+    return this.request('/admin/templates/tasks');
   }
 
   async getAIPrompts() {
-    return this.request('/api/admin/templates/ai-prompts');
+    return this.request('/admin/templates/ai-prompts');
   }
 
   async getBrandingAssets() {
-    return this.request('/api/admin/templates/branding');
+    return this.request('/admin/templates/branding');
   }
 
   async createProjectTemplate(templateData: any) {
-    return this.request('/api/admin/templates/projects', {
+    return this.request('/admin/templates/projects', {
       method: 'POST',
       body: JSON.stringify(templateData),
     });
   }
 
   async updateProjectTemplate(templateId: string, templateData: any) {
-    return this.request(`/api/admin/templates/projects/${templateId}`, {
+    return this.request(`/admin/templates/projects/${templateId}`, {
       method: 'PUT',
       body: JSON.stringify(templateData),
     });
   }
 
   async deleteProjectTemplate(templateId: string) {
-    return this.request(`/api/admin/templates/projects/${templateId}`, {
+    return this.request(`/admin/templates/projects/${templateId}`, {
       method: 'DELETE',
     });
   }

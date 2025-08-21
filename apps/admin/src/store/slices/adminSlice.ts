@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Admin, AdminLoginCredentials, AdminResponse } from '../../types/admin.types';
+import { env } from '../../config/env';
 
 interface AdminState {
   currentAdmin: Admin | null;
@@ -22,7 +23,7 @@ export const loginAdmin = createAsyncThunk(
   'admin/login',
   async (credentials: AdminLoginCredentials, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/admin/auth/login', {
+      const response = await fetch(`${env.API_BASE_URL}/admin/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,7 +48,7 @@ export const logoutAdmin = createAsyncThunk(
   'admin/logout',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/admin/auth/logout', {
+      const response = await fetch(`${env.API_BASE_URL}/admin/auth/logout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -69,7 +70,7 @@ export const getCurrentAdmin = createAsyncThunk(
   'admin/getCurrent',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/admin/auth/me', {
+      const response = await fetch(`${env.API_BASE_URL}/admin/auth/me`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
         },
