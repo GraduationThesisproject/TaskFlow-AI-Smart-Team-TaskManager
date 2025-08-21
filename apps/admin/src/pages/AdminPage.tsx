@@ -23,6 +23,7 @@ import AnalyticsLayout from '../layouts/AnalyticsLayout';
 import IntegrationsLayout from '../layouts/IntegrationsLayout';
 import SystemHealthLayout from '../layouts/SystemHealthLayout';
 import NotificationsLayout from '../layouts/NotificationsLayout';
+import SettingsLayout from '../layouts/SettingsLayout';
 
 interface NavigationItem {
   name: string;
@@ -87,7 +88,7 @@ const navigationItems: NavigationItem[] = [
     path: '/settings',
     icon: CogIcon,
     description: 'System configuration and preferences',
-    layout: DashboardLayout // Default to dashboard for now
+    layout: SettingsLayout
   }
 ];
 
