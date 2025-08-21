@@ -32,6 +32,7 @@ import {
   selectSocketConnected
 } from '../../store/slices/taskSlice';
 import type { Task, CreateTaskForm, UpdateTaskForm, MoveTaskForm, User } from '../../types/task.types';
+import { getTestWorkspaceId, getTestSpaceId, getTestBoardId, getTestUserId } from '../../config/env';
 
 export const TaskManagementExample: React.FC = () => {
   const dispatch = useDispatch();
@@ -50,7 +51,7 @@ export const TaskManagementExample: React.FC = () => {
   const taskSocket = useTaskSocket({
     boardId: currentBoard?._id,
     spaceId: currentSpace?._id,
-    workspaceId: 'workspace_1'
+    workspaceId: getTestWorkspaceId()
   });
 
   // Load initial data
@@ -64,13 +65,13 @@ export const TaskManagementExample: React.FC = () => {
         }
         
         // Load space first
-        await dispatch(fetchSpace('space_1') as any);
+        await dispatch(fetchSpace(getTestSpaceId()) as any);
         
         // Load board
-        await dispatch(fetchBoard('board_1') as any);
+        await dispatch(fetchBoard(getTestBoardId()) as any);
         
         // Load tasks
-        await dispatch(fetchTasks('board_1') as any);
+        await dispatch(fetchTasks(getTestBoardId()) as any);
       } catch (err) {
         console.error('Error loading data:', err);
       }
@@ -84,10 +85,10 @@ export const TaskManagementExample: React.FC = () => {
     const newTaskData: CreateTaskForm = {
       title: 'New Task from Example',
       description: 'This is a task created from the example component',
-      boardId: 'board_1',
-      columnId: 'column_1',
+      boardId: getTestBoardId(),
+      columnId: 'column_1', // This will need to be updated when you have real column IDs
       priority: 'medium',
-      assignees: ['user_1'],
+      assignees: [getTestUserId()],
       tags: ['Example'],
       estimatedHours: 4,
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now

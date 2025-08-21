@@ -9,8 +9,10 @@ import { useAuth } from './hooks/useAuth';
 import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom';
 import { SpacePage } from './pages/space.page';
 import { BoardPage } from './pages/board.page';
-import { HomePage } from './pages/home.page';
-
+import { DragDropTestPage } from './pages/dragDropTest.page';
+import TaskDetailDemo from './pages/taskDetailDemo.page';
+import { TaskManagementExample } from './components/board/TaskManagementExample';
+import { ApiTestPage } from './pages/apiTest.page';
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
@@ -35,7 +37,7 @@ function AppContent() {
         <div className="w-full px-6 sm:px-8 lg:px-12 py-6">
           <Flex justify="between" align="center">
             <div className="flex items-center gap-3">
-              <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <Link to="/space/space1" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">T</span>
                 </div>
@@ -100,9 +102,13 @@ function AppContent() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/3 via-transparent to-accent/3 pointer-events-none"></div>
         <div className="relative z-10">
           <Routes>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<Navigate to="/task-management" replace />} />
+            <Route path="/api-test" element={<ApiTestPage />} />
             <Route path="/space/*" element={<SpacePage />} />
             <Route path="/board/*" element={<BoardPage />} />
+            <Route path="/drag-drop-test" element={<DragDropTestPage />} />
+            <Route path="/task-detail-demo" element={<TaskDetailDemo />} />
+            <Route path="/task-management" element={<TaskManagementExample />} />
           </Routes>
         </div>
       </main>
