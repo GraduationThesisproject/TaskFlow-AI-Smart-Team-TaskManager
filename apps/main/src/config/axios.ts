@@ -14,8 +14,9 @@ const axiosInstance: AxiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get token from localStorage
-    const token = localStorage.getItem('token');
+    // Get token from Redux store (we'll set this up in the main app)
+    // For now, we'll use the test token directly
+    const token = env.TEST_TOKEN;
     
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -52,8 +53,7 @@ axiosInstance.interceptors.response.use(
       switch (status) {
         case 401:
           // Unauthorized - redirect to login
-          localStorage.removeItem('token');
-          window.location.href = '/login';
+          console.error('Unauthorized access');
           break;
         case 403:
           // Forbidden

@@ -1,101 +1,152 @@
-import { useEffect, useCallback } from 'react';
-import { useAppDispatch, useAppSelector } from '../store';
+import { useSelector, useDispatch } from 'react-redux';
+import type { Task, Column, Board } from '../types/task.types';
+import type { RootState } from '../store';
 import {
   fetchTasks,
-  fetchTaskById,
+  fetchBoard,
+  fetchSpace,
   createTask,
   updateTask,
   deleteTask,
+  moveTask,
+  fetchTasksByColumn,
+  fetchTasksBySpace,
+  fetchBoardsBySpace,
+  fetchColumnsByBoard,
   setCurrentTask,
-  setFilters,
-  setSortBy,
-  setSearchQuery,
-  clearFilters,
-  Task,
+  updateFilters,
+  updateSort,
+  updateSearchQuery,
+  clearFilters
 } from '../store/slices/taskSlice';
-import {
-  selectFilteredTasks,
-  selectCurrentTask,
-  selectTaskLoading,
-  selectTaskError,
-  selectTaskFilters,
-  selectTaskSortBy,
-  selectTaskSearchQuery,
-  selectTasksByStatus,
-  selectTaskStats,
-  selectUniqueCategories,
-  selectUniqueAssignees,
-  selectUniquePriorities,
-  selectTimelineTasks,
-  selectHighPriorityTasks,
-  selectOverdueTasks,
-} from '../store/selectors/taskSelectors';
 
 export const useTasks = () => {
-  const dispatch = useAppDispatch();
+  const dispatch = useDispatch();
+  
+  // Select state from Redux store
+  const {
+    tasks,
+    currentTask,
+    loading,
+    error,
+    filters,
+    sortBy,
+    searchQuery,
+    columns,
+    boards,
+    spaces,
+    currentBoard,
+    currentSpace
+  } = useSelector((state: RootState) => state.tasks);
 
-  // Selectors
-  const tasks = useAppSelector(selectFilteredTasks);
-  const currentTask = useAppSelector(selectCurrentTask);
-  const loading = useAppSelector(selectTaskLoading);
-  const error = useAppSelector(selectTaskError);
-  const filters = useAppSelector(selectTaskFilters);
-  const sortBy = useAppSelector(selectTaskSortBy);
-  const searchQuery = useAppSelector(selectTaskSearchQuery);
-  const tasksByStatus = useAppSelector(selectTasksByStatus);
-  const taskStats = useAppSelector(selectTaskStats);
-  const uniqueCategories = useAppSelector(selectUniqueCategories);
-  const uniqueAssignees = useAppSelector(selectUniqueAssignees);
-  const uniquePriorities = useAppSelector(selectUniquePriorities);
-  const timelineTasks = useAppSelector(selectTimelineTasks);
-  const highPriorityTasks = useAppSelector(selectHighPriorityTasks);
-  const overdueTasks = useAppSelector(selectOverdueTasks);
+  // Compute derived state
+  const tasksByStatus = {
+    'col1': tasks.filter(t => t.status === 'todo'),
+    'col2': tasks.filter(t => t.status === 'in_progress'),
+    'col3': tasks.filter(t => t.status === 'review'),
+    'col4': tasks.filter(t => t.status === 'done'),
+  };
 
-  // Actions
-  const loadTasks = useCallback(() => {
-    dispatch(fetchTasks());
-  }, [dispatch]);
+  const taskStats = {
+    total: tasks.length,
+    completed: tasks.filter(t => t.status === 'done').length,
+    inProgress: tasks.filter(t => t.status === 'in_progress').length,
+    inReview: tasks.filter(t => t.status === 'review').length,
+    toDo: tasks.filter(t => t.status === 'todo').length,
+    completionRate: tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'done').length / tasks.length) * 100) : 0,
+  };
 
-  const loadTaskById = useCallback((taskId: string) => {
-    dispatch(fetchTaskById(taskId));
-  }, [dispatch]);
+  const uniqueCategories = Array.from(new Set(tasks.flatMap(t => t.tags || [])));
+  const uniqueAssignees = Array.from(new Set(tasks.flatMap(t => t.assignees || [])));
+  const uniquePriorities = Array.from(new Set(tasks.map(t => t.priority)));
+  const timelineTasks = tasks.filter(t => t.dueDate);
+  const highPriorityTasks = tasks.filter(t => t.priority === 'high' || t.priority === 'critical');
+  const overdueTasks = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date());
 
-  const addTask = useCallback((taskData: Partial<Task>) => {
-    return dispatch(createTask(taskData));
-  }, [dispatch]);
+  // API actions
+  const loadTasks = (boardId: string) => {
+    dispatch(fetchTasks(boardId) as any);
+  };
 
-  const editTask = useCallback((taskId: string, taskData: Partial<Task>) => {
-    return dispatch(updateTask({ taskId, taskData }));
-  }, [dispatch]);
+  const loadTaskById = (taskId: string) => {
+    // Find task in current tasks array
+    const task = tasks.find(t => t._id === taskId);
+    if (task) {
+      dispatch(setCurrentTask(task));
+    }
+  };
 
-  const removeTask = useCallback((taskId: string) => {
-    return dispatch(deleteTask(taskId));
-  }, [dispatch]);
+  const addTask = async (taskData: Partial<Task>) => {
+    try {
+      await dispatch(createTask(taskData as any) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      throw error;
+    }
+  };
 
-  const selectTask = useCallback((task: Task | null) => {
+  const editTask = async (taskId: string, taskData: Partial<Task>) => {
+    try {
+      await dispatch(updateTask({ id: taskId, taskData: taskData as any }) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      throw error;
+    }
+  };
+
+  const removeTask = async (taskId: string) => {
+    try {
+      await dispatch(deleteTask(taskId) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      throw error;
+    }
+  };
+
+  const selectTask = (task: Task | null) => {
     dispatch(setCurrentTask(task));
-  }, [dispatch]);
+  };
 
-  const updateFilters = useCallback((newFilters: Partial<typeof filters>) => {
-    dispatch(setFilters(newFilters));
-  }, [dispatch]);
+  const updateFiltersLocal = (newFilters: Partial<typeof filters>) => {
+    dispatch(updateFilters(newFilters));
+  };
 
-  const updateSortBy = useCallback((field: keyof Task, direction: 'asc' | 'desc') => {
-    dispatch(setSortBy({ field, direction }));
-  }, [dispatch]);
+  const updateSortBy = (field: keyof Task, direction: 'asc' | 'desc') => {
+    dispatch(updateSort({ field, direction }));
+  };
 
-  const updateSearchQuery = useCallback((query: string) => {
-    dispatch(setSearchQuery(query));
-  }, [dispatch]);
+  const updateSearchQueryLocal = (query: string) => {
+    dispatch(updateSearchQuery(query));
+  };
 
-  const resetFilters = useCallback(() => {
+  const resetFiltersLocal = () => {
     dispatch(clearFilters());
-  }, [dispatch]);
+  };
 
-  // Load tasks on mount
-  useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+  // Additional API actions
+  const loadBoard = (boardId: string) => {
+    dispatch(fetchBoard(boardId) as any);
+  };
+
+  const loadSpace = (spaceId: string) => {
+    dispatch(fetchSpace(spaceId) as any);
+  };
+
+  const loadTasksByColumn = (columnId: string) => {
+    dispatch(fetchTasksByColumn(columnId) as any);
+  };
+
+  const loadTasksBySpace = (spaceId: string) => {
+    dispatch(fetchTasksBySpace(spaceId) as any);
+  };
+
+  const loadBoardsBySpace = (spaceId: string) => {
+    dispatch(fetchBoardsBySpace(spaceId) as any);
+  };
+
+  const loadColumnsByBoard = (boardId: string) => {
+    dispatch(fetchColumnsByBoard(boardId) as any);
+  };
 
   return {
     // State
@@ -114,17 +165,28 @@ export const useTasks = () => {
     timelineTasks,
     highPriorityTasks,
     overdueTasks,
+    columns,
+    boards,
+    spaces,
+    currentBoard,
+    currentSpace,
 
     // Actions
     loadTasks,
     loadTaskById,
+    loadBoard,
+    loadSpace,
+    loadTasksByColumn,
+    loadTasksBySpace,
+    loadBoardsBySpace,
+    loadColumnsByBoard,
     addTask,
     editTask,
     removeTask,
     selectTask,
-    updateFilters,
+    updateFilters: updateFiltersLocal,
     updateSortBy,
-    updateSearchQuery,
-    resetFilters,
+    updateSearchQuery: updateSearchQueryLocal,
+    resetFilters: resetFiltersLocal,
   };
 };

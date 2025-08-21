@@ -1,36 +1,56 @@
-import { useCallback } from 'react';
+import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
-import { AuthState, LoginCredentials, RegisterData } from '../types';
+import { setToken, setUser, logout } from '../store/slices/authSlice';
+import { TEST_TOKEN } from '../config/env';
+import axiosInstance from '../config/axios';
 
 export const useAuth = () => {
   const dispatch = useAppDispatch();
-  const auth = useAppSelector((state) => state.auth);
+  const { token, user, isAuthenticated, isLoading, error } = useAppSelector(state => state.auth);
 
-  const login = useCallback(async (credentials: LoginCredentials) => {
-    // Implement login logic
-    console.log('Login with:', credentials);
-  }, [dispatch]);
+  // Initialize authentication on mount
+  useEffect(() => {
+    if (!token && TEST_TOKEN) {
+      dispatch(setToken(TEST_TOKEN));
+    }
+  }, [dispatch, token]);
 
-  const register = useCallback(async (data: RegisterData) => {
-    // Implement register logic
-    console.log('Register with:', data);
-  }, [dispatch]);
+  // Set up axios interceptor to use token from Redux
+  useEffect(() => {
+    if (token) {
+      // Set the token in axios defaults
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      // Remove the token from axios defaults
+      delete axiosInstance.defaults.headers.common['Authorization'];
+    }
+  }, [token]);
 
-  const logout = useCallback(() => {
-    // Implement logout logic
-    console.log('Logout');
-  }, [dispatch]);
+  const login = (userToken: string, userData?: any) => {
+    dispatch(setToken(userToken));
+    if (userData) {
+      dispatch(setUser(userData));
+    }
+  };
 
-  const refreshToken = useCallback(async () => {
-    // Implement token refresh logic
-    console.log('Refresh token');
-  }, [dispatch]);
+  const logoutUser = () => {
+    dispatch(logout());
+    // Clear axios headers
+    delete axiosInstance.defaults.headers.common['Authorization'];
+  };
+
+  const updateUser = (userData: any) => {
+    dispatch(setUser(userData));
+  };
 
   return {
-    ...auth,
+    token,
+    user,
+    isAuthenticated,
+    isLoading,
+    error,
     login,
-    register,
-    logout,
-    refreshToken,
+    logout: logoutUser,
+    updateUser,
   };
 };
