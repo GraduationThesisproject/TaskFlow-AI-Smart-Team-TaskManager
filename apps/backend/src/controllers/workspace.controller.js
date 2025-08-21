@@ -46,22 +46,28 @@ exports.getAllWorkspaces = async (req, res) => {
 exports.getWorkspace = async (req, res) => {
     try {
         const { id: workspaceId } = req.params;
-        const userId = req.user.id;
+        const userId = req.user?.id;
 
-        // Workspace existence and access are already checked by middleware
+        // Workspace existence (access may be unchecked when auth is disabled during testing)
         const workspace = await Workspace.findById(workspaceId)
             .populate('owner', 'name email avatar')
             .populate('members.user', 'name email avatar')
             .populate('spaces');
 
-        // Get user's role and permissions
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-
-        // Get user's role and permissions
-        const userWorkspaceRole = userRoles.workspaces.find(ws => 
-            ws.workspace.toString() === workspaceId
-        );
+        // Get user's role and permissions (optional when unauthenticated)
+        let userRole = null;
+        let userPermissions = null;
+        if (userId) {
+            const user = await User.findById(userId);
+            const userRoles = await user.getRoles();
+            const userWorkspaceRole = userRoles.workspaces.find(ws => 
+                ws.workspace.toString() === workspaceId
+            );
+            if (userWorkspaceRole) {
+                userRole = userWorkspaceRole.role;
+                userPermissions = userWorkspaceRole.permissions;
+            }
+        }
 
         sendResponse(res, 200, true, 'Workspace retrieved successfully', {
             workspace: {
@@ -70,8 +76,8 @@ exports.getWorkspace = async (req, res) => {
                 health: workspace.health,
                 availableFeatures: workspace.availableFeatures
             },
-            userRole: userWorkspaceRole.role,
-            userPermissions: userWorkspaceRole.permissions
+            userRole,
+            userPermissions
         });
     } catch (error) {
         logger.error('Get workspace error:', error);

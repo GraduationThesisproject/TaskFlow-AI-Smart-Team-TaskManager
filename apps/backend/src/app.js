@@ -63,7 +63,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/workspaces', workspaceRoutes);
+app.use('/api/workspaces', authMiddleware, workspaceRoutes);
 app.use('/api/spaces', authMiddleware, spaceRoutes);
 app.use('/api/boards', authMiddleware, boardRoutes);
 app.use('/api/tasks', authMiddleware, taskRoutes);
