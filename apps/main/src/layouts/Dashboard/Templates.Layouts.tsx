@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Home,
   FileText,
@@ -20,17 +20,87 @@ import { ProjectItem } from "../../components/Dashboard.Component/Templates.Comp
 import { CategoryButton } from "../../components/Dashboard.Component/Templates.Components/CategoryButton.Component";
 import { TemplateSection } from "../../components/Dashboard.Component/Templates.Components/TemplateSelection.Component";
 import { Input, Typography } from "@taskflow/ui";
-// Removed dummy data import - will use real template data from API
+
+type CategoryKey = 'business' | 'design' | 'marketing' | 'education' | 'development' | 'team';
+
+const getTemplatesByCategory = () => ({
+  business: {
+    title: 'Business Templates',
+    templates: [
+      { id: 1, title: 'Project Proposal', description: 'Professional project proposal template', category: 'business' },
+      { id: 2, title: 'Meeting Notes', description: 'Structured meeting notes template', category: 'business' }
+    ]
+  },
+  design: {
+    title: 'Design Templates',
+    templates: [
+      { id: 3, title: 'UI Kit', description: 'Complete UI component library', category: 'design' },
+      { id: 4, title: 'Wireframe', description: 'Basic wireframe template', category: 'design' }
+    ]
+  },
+  marketing: {
+    title: 'Marketing Templates',
+    templates: [
+      { id: 5, title: 'Campaign Plan', description: 'Marketing campaign template', category: 'marketing' }
+    ]
+  },
+  education: {
+    title: 'Education Templates',
+    templates: [
+      { id: 6, title: 'Lesson Plan', description: 'Structured lesson plan template', category: 'education' }
+    ]
+  },
+  development: {
+    title: 'Development Templates',
+    templates: [
+      { id: 7, title: 'API Documentation', description: 'API documentation template', category: 'development' }
+    ]
+  },
+  team: {
+    title: 'Team Templates',
+    templates: [
+      { id: 8, title: 'Team Retrospective', description: 'Team retrospective template', category: 'team' }
+    ]
+  }
+});
 
 const Templates: React.FC = () => {
-  
-  // Get templates by category from dummy data
   const templatesByCategory = getTemplatesByCategory();
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [activeCategory, setActiveCategory] = useState<'all' | CategoryKey>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Define all categories
+  const categories: ('all' | CategoryKey)[] = ['all', ...Object.keys(templatesByCategory) as CategoryKey[]];
 
-  // TODO: Replace with real template data from API
-  const filteredTemplates: any[] = [];
-  const categories = ['all'];
+  
+  // Filter templates based on active category and search query
+  const filteredTemplates = useMemo(() => {
+    let templates = [];
+    
+    if (activeCategory === 'all') {
+      templates = Object.values(templatesByCategory).flatMap(section => section.templates);
+    } else {
+      templates = templatesByCategory[activeCategory]?.templates || [];
+    }
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      templates = templates.filter(template => 
+        template.title.toLowerCase().includes(query) || 
+        template.description.toLowerCase().includes(query)
+      );
+    }
+    
+    // Transform the data to match the expected type
+    return templates.map(template => ({
+      ...template,
+      id: String(template.id),
+      desc: template.description,
+      views: 0,
+      likes: 0,
+      // image is optional, so we can omit it
+    }));
+  }, [activeCategory, searchQuery, templatesByCategory]);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground select-none">
@@ -125,7 +195,8 @@ const Templates: React.FC = () => {
             <Input 
               placeholder="Search templates..." 
               className="pl-9"
-              // Add search functionality here
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
@@ -137,12 +208,12 @@ const Templates: React.FC = () => {
               key={category}
               label={category.charAt(0).toUpperCase() + category.slice(1)}
               icon={
-                category === 'business' ? <Briefcase /> :
-                category === 'design' ? <Monitor /> :
-                category === 'marketing' ? <Star /> :
-                category === 'education' ? <Book /> :
-                category === 'development' ? <Code /> :
-                category === 'team' ? <Users /> : <Layers />
+                category === 'business' ? <Briefcase size={16} /> :
+                category === 'design' ? <Monitor size={16} /> :
+                category === 'marketing' ? <Star size={16} /> :
+                category === 'education' ? <Book size={16} /> :
+                category === 'development' ? <Code size={16} /> :
+                category === 'team' ? <Users size={16} /> : <Layers size={16} />
               }
               className={`hover:shadow-[0_0_15px_-3px_rgba(0,122,223,0.4)] ${
                 activeCategory === category 
@@ -157,7 +228,7 @@ const Templates: React.FC = () => {
         {/* Render template sections */}
         {activeCategory === 'all' ? (
           // Show all categories in sections
-          Object.entries(templatesByCategory).map(([category, section]) => (
+          Object.entries(filteredTemplates).map(([category, section]) => (
             <TemplateSection
               key={category}
               title={section.title}
@@ -165,10 +236,10 @@ const Templates: React.FC = () => {
             />
           ))
         ) : (
-          // Show only the selected category
+          // Show only the selected category with search results
           <TemplateSection
             title={`${activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} Templates`}
-            templates={filteredTemplates}
+            templates={Array.isArray(filteredTemplates) ? filteredTemplates : filteredTemplates.templates}
           />
         )}
       </main>
