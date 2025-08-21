@@ -7,6 +7,9 @@ const jwt = require('../utils/jwt');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
+const { error } = require('console');
+
+
 
 // Register new user
 exports.register = async (req, res) => {
@@ -17,6 +20,7 @@ exports.register = async (req, res) => {
         // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
+            throw error;
             return sendResponse(res, 400, false, 'User already exists with this email');
         }
 
@@ -103,6 +107,7 @@ exports.register = async (req, res) => {
             } : null
         });
     } catch (error) {
+        throw error;
         logger.error('Register error:', error);
         sendResponse(res, 500, false, 'Server error during registration');
     }

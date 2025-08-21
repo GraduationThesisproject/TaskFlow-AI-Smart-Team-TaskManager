@@ -1,0 +1,157 @@
+[
+  {
+    "_id": "68a5bba5695eaed0b3b717e2",
+    "userId": "68a5bba5695eaed0b3b717df",
+    "sessions": [
+      {
+        "sessionId": "b7a7edc4b4c7fe1d5f42829b9127811e3ca36cf5a120d5ac409196fce4ed76f1",
+        "deviceId": "web-001",
+        "deviceInfo": {
+          "type": "web",
+          "os": "Windows",
+          "browser": "Chrome"
+        },
+        "ipAddress": "::1",
+        "isActive": true,
+        "loginAt": "2025-08-20T12:12:21.847Z",
+        "lastActivityAt": "2025-08-20T12:12:21.847Z",
+        "logoutAt": null,
+        "tokenVersion": 1,
+        "rememberMe": false,
+        "_id": "68a5bba5695eaed0b3b717e9"
+      }
+    ],
+    "security": {
+      "suspiciousActivities": [],
+      "trustedDevices": [],
+      "loginHistory": []
+    },
+    "createdAt": "2025-08-20T12:12:21.830Z",
+    "updatedAt": "2025-08-20T12:12:21.849Z",
+    "__v": 1
+  },
+  {
+    "_id": "68a5f03dad8f72c5de8dbc3d",
+    "userId": "68a5f03cad8f72c5de8dbc3a",
+    "sessions": [
+      {
+        "sessionId": "cf98e2b30450529f5e395230143a04b90c3733dbf5f2dc917173800b8286715e",
+        "deviceId": "web-001",
+        "deviceInfo": {
+          "type": "web",
+          "os": "Windows",
+          "browser": "Chrome"
+        },
+        "ipAddress": "::1",
+        "isActive": true,
+        "loginAt": "2025-08-20T15:56:45.020Z",
+        "lastActivityAt": "2025-08-20T15:56:45.020Z",
+        "logoutAt": null,
+        "tokenVersion": 1,
+        "rememberMe": false,
+        "_id": "68a5f03dad8f72c5de8dbc44"
+      }
+    ],
+    "security": {
+      "suspiciousActivities": [],
+      "trustedDevices": [],
+      "loginHistory": []
+    },
+    "createdAt": "2025-08-20T15:56:45.011Z",
+    "updatedAt": "2025-08-20T15:56:45.023Z",
+    "__v": 1
+  },
+  {
+    "_id": "68a5f20a8d24f4868e79cad6",
+    "userId": "68a5f20a8d24f4868e79cad3",
+    "sessions": [
+      {
+        "sessionId": "34ab6815b0514e4d65dabe7365ce98ecb95436e75e905864149172cabc500907",
+        "deviceId": "web-001",
+        "deviceInfo": {
+          "type": "web",
+          "os": "Windows",
+          "browser": "Chrome"
+        },
+        "ipAddress": "::1",
+        "isActive": true,
+        "loginAt": "2025-08-20T16:04:26.388Z",
+        "lastActivityAt": "2025-08-20T16:04:26.388Z",
+        "logoutAt": null,
+        "tokenVersion": 1,
+        "rememberMe": false,
+        "_id": "68a5f20a8d24f4868e79cadd"
+      }
+    ],
+    "security": {
+      "suspiciousActivities": [],
+      "trustedDevices": [],
+      "loginHistory": []
+    },
+    "createdAt": "2025-08-20T16:04:26.376Z",
+    "updatedAt": "2025-08-20T16:04:26.391Z",
+    "__v": 1
+  },
+  {
+    "_id": "68a5f2528d24f4868e79cae4",
+    "userId": "68a5f2518d24f4868e79cae1",
+    "sessions": [
+      {
+        "sessionId": "ceb30d189ddd2751d44f421293b6891535d0342333d988494157e91f660e658b",
+        "deviceId": "web-001",
+        "deviceInfo": {
+          "type": "web",
+          "os": "Windows",
+          "browser": "Chrome"
+        },
+        "ipAddress": "::1",
+        "isActive": true,
+        "loginAt": "2025-08-20T16:05:38.284Z",
+        "lastActivityAt": "2025-08-20T16:05:38.284Z",
+        "logoutAt": null,
+        "tokenVersion": 1,
+        "rememberMe": false,
+        "_id": "68a5f2528d24f4868e79caeb"
+      }
+    ],
+    "security": {
+      "suspiciousActivities": [],
+      "trustedDevices": [],
+      "loginHistory": []
+    },
+    "createdAt": "2025-08-20T16:05:38.275Z",
+    "updatedAt": "2025-08-20T16:05:38.286Z",
+    "__v": 1
+  },
+  {
+    "_id": "68a5f6a38d24f4868e79caf3",
+    "userId": "68a5f6a28d24f4868e79caf0",
+    "sessions": [
+      {
+        "sessionId": "406f958e16ca7676c2aadaa7992796fb3a524ea2f0d7e017f34a6f52c5301f69",
+        "deviceId": "web-001",
+        "deviceInfo": {
+          "type": "web",
+          "os": "Windows",
+          "browser": "Chrome"
+        },
+        "ipAddress": "::1",
+        "isActive": true,
+        "loginAt": "2025-08-20T16:24:03.103Z",
+        "lastActivityAt": "2025-08-20T16:24:03.103Z",
+        "logoutAt": null,
+        "tokenVersion": 1,
+        "rememberMe": false,
+        "_id": "68a5f6a38d24f4868e79cafa"
+      }
+    ],
+    "security": {
+      "suspiciousActivities": [],
+      "trustedDevices": [],
+      "loginHistory": []
+    },
+    "createdAt": "2025-08-20T16:24:03.097Z",
+    "updatedAt": "2025-08-20T16:24:03.104Z",
+    "__v": 1
+  }
+]

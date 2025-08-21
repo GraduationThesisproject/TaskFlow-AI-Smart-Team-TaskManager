@@ -32,12 +32,15 @@ const aiRoutes = require('./routes/ai.routes');
 
 const app = express();
 
+
+
 // Security & CORS
 app.use(helmet());
 app.use(cors({
     origin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'http://localhost:5174'],
     credentials: true
 }));
+
 
 // Logging
 app.use(morgan('combined'));
