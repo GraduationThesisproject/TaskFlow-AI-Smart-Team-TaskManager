@@ -1,8 +1,6 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
-import { loginUser, logoutUser, clearError, setCredentials, updateUser } from '../store/slices/authSlice';
-import { TEST_TOKEN } from '../config/env';
-import axiosInstance from '../config/axios';
+import { loginUser, logoutUser, clearError, updateUser } from '../store/slices/authSlice';
 
 /**
  * Custom hook for authentication management
@@ -20,34 +18,8 @@ export const useAuth = () => {
     (state) => state.auth
   );
 
-  // Initialize authentication on mount
-  useEffect(() => {
-    if (!token && TEST_TOKEN) {
-      // Create a mock user for test token with ISO string dates
-      const mockUser = {
-        id: 'test-user',
-        name: 'Test User',
-        email: 'test@example.com',
-        emailVerified: true,
-        isActive: true,
-        lastLogin: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      dispatch(setCredentials({ user: mockUser, token: TEST_TOKEN }));
-    }
-  }, [dispatch, token]);
-
-  // Set up axios interceptor to use token from Redux
-  useEffect(() => {
-    if (token) {
-      // Set the token in axios defaults
-      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-      // Remove the token from axios defaults
-      delete axiosInstance.defaults.headers.common['Authorization'];
-    }
-  }, [token]);
+  // Note: Token is now handled by axios interceptor from localStorage
+  // No need to manually set axios headers here
 
   const login = useCallback(
     async (credentials: { email: string; password: string }) => {
@@ -57,10 +29,9 @@ export const useAuth = () => {
     [dispatch]
   );
 
-  const logoutUserHandler = useCallback(async () => {
-    await dispatch(logoutUser());
-    // Clear axios headers
-    delete axiosInstance.defaults.headers.common['Authorization'];
+  const logoutUserHandler = useCallback(async (allDevices: boolean = false) => {
+    await dispatch(logoutUser({ allDevices }));
+    // Token is cleared in the logout thunk and axios interceptor handles it
   }, [dispatch]);
 
   const clearAuthError = useCallback(() => {
