@@ -2,17 +2,17 @@ import { Button,  Typography, Flex } from '@taskflow/ui';
 import { Link } from 'react-router-dom';
 import { ThemeProvider } from '@taskflow/theme';
 import { useTheme } from './hooks/useTheme';
+import { useAuth } from './hooks/useAuth';
 import { Provider } from 'react-redux';
 import { store } from './store';
-import { useAuth } from './hooks/useAuth';
-
-import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom';
+import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
+// import { SpacePage } from './pages/space.page';
+import WorkSpace from './pages/workSpace';
 import { SpacePage } from './pages/space.page';
 import { BoardPage } from './pages/board.page';
-import { DragDropTestPage } from './pages/dragDropTest.page';
-import TaskDetailDemo from './pages/taskDetailDemo.page';
-import { TaskManagementExample } from './components/board/TaskManagementExample';
-import { ApiTestPage } from './pages/apiTest.page';
+
+import { LandingPage } from './pages/LandingPage';
+import Dashboard from './pages/Dashboard';
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
@@ -47,42 +47,6 @@ function AppContent() {
               </Link>
             </div>
             <div className="flex items-center gap-4">
-              <Link to="/api-test">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 hover:bg-muted/50 transition-all duration-200"
-                >
-                  🔌 API Test
-                </Button>
-              </Link>
-              <Link to="/drag-drop-test">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 hover:bg-muted/50 transition-all duration-200"
-                >
-                  🧪 Test Drag & Drop
-                </Button>
-              </Link>
-              <Link to="/task-detail-demo">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 hover:bg-muted/50 transition-all duration-200"
-                >
-                  📋 Task Detail Demo
-                </Button>
-              </Link>
-              <Link to="/task-management">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 hover:bg-muted/50 transition-all duration-200"
-                >
-                  🚀 Task Management
-                </Button>
-              </Link>
               <Button
                 variant="ghost"
                 size="sm"
@@ -97,20 +61,17 @@ function AppContent() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/3 via-transparent to-accent/3 pointer-events-none"></div>
-        <div className="relative z-10">
-          <Routes>
-            <Route path="/" element={<Navigate to="/task-management" replace />} />
-            <Route path="/api-test" element={<ApiTestPage />} />
-            <Route path="/space/*" element={<SpacePage />} />
-            <Route path="/board/*" element={<BoardPage />} />
-            <Route path="/drag-drop-test" element={<DragDropTestPage />} />
-            <Route path="/task-detail-demo" element={<TaskDetailDemo />} />
-            <Route path="/task-management" element={<TaskManagementExample />} />
-          </Routes>
-        </div>
+      {/* Main Content with Gradient Background */}
+      <main className="bg-gradient-to-br from-background via-muted/50 to-background">
+
+        <Routes>
+          <Route path="/*" element={<LandingPage />} />
+          {/* <Route path="/space/*" element={<SpacePage />} /> */}
+          <Route path="/workspace/*" element={<WorkSpace />} />
+          <Route path="/space/*" element={<SpacePage />} />
+          <Route path="/dashboard/*" element={<Dashboard/>} />
+          {/* <Route path="/workspace/*" element={<WorkSpace />} /> */}
+        </Routes>
       </main>
     </div>
   );

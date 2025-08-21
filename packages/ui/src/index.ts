@@ -3,6 +3,7 @@ export * from './Card';
 export * from './Container';
 export * from './Flex';
 export * from './Gradient';
+export { default as Gradient } from './Gradient';
 export * from './Input';
 export * from './TextArea';
 export * from './Typography';

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store';
 import { fetchWorkspace, fetchSpacesByWorkspace, setSelectedSpace } from '../store/slices/workspaceSlice';
 import { Button, Typography, Flex, Card, Loading } from '@taskflow/ui';
-import { getTestWorkspaceId } from '../config/env';
+
 import type { Workspace, Space } from '../types/task.types';
 
 // Demo data for when API is not accessible
@@ -161,8 +161,8 @@ export const HomePage: React.FC = () => {
   const { isAuthenticated } = useAppSelector(state => state.auth);
   const [useDemoData, setUseDemoData] = useState(false);
 
-  // Use test workspace ID for development
-  const workspaceId = getTestWorkspaceId();
+  // Use workspace ID from environment or default
+  const workspaceId = process.env.REACT_APP_DEFAULT_WORKSPACE_ID || 'demo-workspace';
 
   useEffect(() => {
     if (isAuthenticated && workspaceId) {

@@ -57,7 +57,7 @@ export const KanbanViewLayout: React.FC = () => {
   // Handle task creation
   const handleAddTask = async (taskData: Partial<Task>) => {
     try {
-      console.log('Adding new task:', taskData);
+      // Adding new task
       await addTask({
         ...taskData,
         space: spaceId!,
@@ -72,7 +72,7 @@ export const KanbanViewLayout: React.FC = () => {
   // Handle column creation
   const handleAddColumn = async (columnData: Partial<Column>) => {
     try {
-      console.log('Adding new column:', columnData);
+      // Adding new column
       await addColumn({
         ...columnData,
         board: boardId!,
@@ -123,12 +123,12 @@ export const KanbanViewLayout: React.FC = () => {
   const handleTaskClick = (task: Task) => {
     selectTask(task);
     // You can navigate to task detail page or open task modal here
-    console.log('Task clicked:', task);
+    // Task clicked
   };
 
   // Handle column actions
   const handleEditColumn = (columnId: string) => {
-    console.log('Edit column:', columnId);
+    // Edit column
     // Implement column editing
   };
 

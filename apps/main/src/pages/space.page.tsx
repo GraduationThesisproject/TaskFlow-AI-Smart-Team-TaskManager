@@ -200,8 +200,8 @@ export const SpacePage = () => {
             <SpaceHeader
                 space={space}
                 onCreateBoard={() => setShowCreateModal(true)}
-                onSettings={() => console.log('Settings clicked')}
-                onMembers={() => console.log('Members clicked')}
+                        onSettings={() => {/* Settings clicked */}}
+        onMembers={() => {/* Members clicked */}}
             />
 
             {/* Content */}

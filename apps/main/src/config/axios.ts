@@ -19,8 +19,7 @@ axiosInstance.interceptors.request.use(
     
     // Add debug logging in development
     if (env.IS_DEV) {
-      console.log('API Request:', config.method?.toUpperCase(), config.url);
-      console.log('Authorization Header:', config.headers?.Authorization ? 'Present' : 'Missing');
+          // API Request logging disabled for production
     }
     
     return config;
@@ -36,7 +35,7 @@ axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
     // Add debug logging in development
     if (env.IS_DEV) {
-      console.log('API Response:', response.status, response.config.url);
+      // API Response logging disabled for production
     }
     
     return response;
