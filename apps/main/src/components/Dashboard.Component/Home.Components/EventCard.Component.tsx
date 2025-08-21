@@ -1,12 +1,6 @@
 import React from "react";
 import { Card } from "@taskflow/ui";
-
-interface EventCardProps {
-  month: string;
-  day: number | string;
-  title: string;
-  meta: string;
-}
+import type { EventCardProps } from "../../../types/dashboard";
 
 export const EventCard: React.FC<EventCardProps> = ({ month, day, title, meta }) => {
   return (

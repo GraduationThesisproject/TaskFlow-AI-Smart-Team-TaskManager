@@ -1,5 +1,6 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { WorkspaceRole } from '../../types/workspace.types';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import type { WorkspaceRole } from '../../types/workspace.types';
+import type { PayloadAction } from '@reduxjs/toolkit';
 
 export interface PermissionState {
   currentUserRole: WorkspaceRole | null;
