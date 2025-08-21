@@ -10,6 +10,7 @@ import taskReducer from './slices/taskSlice.ts';
 import workspaceReducer from './slices/workspaceSlice.ts';
 import authReducer from './slices/authSlice.ts';
 import permissionReducer from './slices/permissionSlice.ts';
+import dashboardReducer from './slices/dasboardSlice.ts';
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,8 @@ export const store = configureStore({
     workspace: workspaceReducer,
     auth: authReducer,
     permissions: permissionReducer,
+    dashboard: dashboardReducer,
+
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
