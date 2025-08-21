@@ -1,17 +1,12 @@
 import React from "react";
 import { Card } from "@taskflow/ui";
+import type { NotificationCardProps } from "../../../types/dashboard";
 
-interface NotificationCardProps {
-  title: string;
-  description: string;
-  icon?: React.ReactNode;
-  actions?: React.ReactNode;
-  accentClassName?: string;
-}
 
 export const NotificationCard: React.FC<NotificationCardProps> = ({
   title,
   description,
+  time,
   icon,
   actions,
   accentClassName,
@@ -24,8 +19,11 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         </div>
       )}
       <div className="flex-1">
-        <p className="font-medium text-foreground">{title}</p>
-        <p className="text-muted-foreground text-sm">{description}</p>
+        <div className="flex justify-between items-start">
+          <p className="font-medium text-foreground">{title}</p>
+          {time && <span className="text-xs text-muted-foreground">{time}</span>}
+        </div>
+        <p className="text-muted-foreground text-sm mt-1">{description}</p>
         {actions && <div className="mt-3">{actions}</div>}
       </div>
     </Card>

@@ -7,7 +7,10 @@ import { NotificationCard } from "../../components/Dashboard.Component/Home.Comp
 import { EventCard } from "../../components/Dashboard.Component/Home.Components/EventCard.Component";
 import { UpgradeCard } from "../../components/Dashboard.Component/Home.Components/UpgradeCard.Component";
 import { useTasks } from "../../hooks";
-import { dummyCurrentUser } from "../../constants/dummyData";
+import { useAppSelector } from "../../store";
+import { PermissionGuard, ProtectedLink } from "../../components";
+import { ROUTES } from "../../config/routes";
+// Removed dummy data import - will use real user data from Redux
 
 const Home: React.FC = () => {
   const { highPriorityTasks, overdueTasks } = useTasks();
@@ -24,7 +27,8 @@ const Home: React.FC = () => {
     }));
   }, [highPriorityTasks, overdueTasks]);
 
-  const displayName = `${dummyCurrentUser.firstName}`;
+  const { user } = useAppSelector(state => state.auth);
+  const displayName = user?.firstName || 'User';
 
   return (
     <div className="min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8 py-6">
@@ -39,7 +43,9 @@ const Home: React.FC = () => {
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-foreground">Your Workspaces</h2>
-              <Button variant="default">+ New</Button>
+              <PermissionGuard requiredRole="admin">
+                <Button variant="default">+ New</Button>
+              </PermissionGuard>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <WorkspaceCard
