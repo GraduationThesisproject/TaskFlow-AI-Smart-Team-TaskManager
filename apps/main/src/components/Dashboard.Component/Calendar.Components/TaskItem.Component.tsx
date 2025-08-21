@@ -1,23 +1,33 @@
  import React from "react";
 
 interface TaskItemProps {
-  color: string;
   title: string;
   date: string;
+  color: string;
+  onClick?: () => void;
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({
-  color,
   title,
   date,
-}) => (
-  <div className="flex items-center gap-3">
-    <span className={`w-3 h-3 rounded-full ${color}`}></span>
-    <div>
-      <p className="font-medium text-sm text-foreground">{title}</p>
-      <p className="text-xs text-muted-foreground">{date}</p>
+  color,
+  onClick,
+}) => {
+  return (
+    <div 
+      className="flex items-center p-3 rounded-lg cursor-pointer hover:bg-accent/10 transition-colors"
+      onClick={onClick}
+    >
+      <div 
+        className="w-3 h-3 rounded-full mr-3" 
+        style={{ backgroundColor: color }}
+      />
+      <div className="flex-1">
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="text-xs text-muted-foreground">{date}</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default TaskItem;

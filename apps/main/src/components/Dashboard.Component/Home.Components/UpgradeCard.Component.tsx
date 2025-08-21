@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@taskflow/ui";
+import { Button, Card } from "@taskflow/ui";
 
 interface UpgradeCardProps {
   title: string;
@@ -13,13 +13,19 @@ export const UpgradeCard: React.FC<UpgradeCardProps> = ({
   buttonText = "Upgrade",
 }) => {
   return (
-    <div className="bg-gradient-to-r from-primary to-accent shadow-[0_0_16px_3px_rgba(var(--primary)/0.35)] hover:shadow-[0_0_22px_5px_rgba(var(--primary)/0.55)] rounded-xl p-6 relative text-primary-foreground">
-      <h3 className="font-semibold text-lg">{title}</h3>
-      <p className="text-sm mt-1 text-primary-foreground/90">{description}</p>
-      <Button variant="secondary" className="mt-3 bg-background/20 hover:bg-background/30 border-background/30 text-primary-foreground">
-        {buttonText}
-      </Button>
-    </div>
+    <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 rounded-lg p-5 cursor-pointer">
+      <div className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 relative text-primary-foreground">
+        <h3 className="font-semibold text-lg">{title}</h3>
+        <p className="text-sm mt-1 text-primary-foreground/90">{description}</p>
+        <Button 
+          size="sm" 
+          variant="secondary" 
+          className="mt-3 bg-background/20 border-background/30 text-primary-foreground"
+        >
+          {buttonText}
+        </Button>
+      </div>
+    </Card>
   );
 };
 

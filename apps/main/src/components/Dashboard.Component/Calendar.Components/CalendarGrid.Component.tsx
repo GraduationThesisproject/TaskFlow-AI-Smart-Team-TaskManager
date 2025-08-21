@@ -48,7 +48,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
             >
               <span className="text-foreground">{day}</span>
               {event && (
-                <div className={`mt-1 text-xs p-1 rounded truncate ${event.color} text-primary-foreground`}>
+                <div className={`mt-1 text-xs p-1 rounded truncate ${event.color} dark:text-white text-foreground`}>
                   {event.title}
                 </div>
               )}

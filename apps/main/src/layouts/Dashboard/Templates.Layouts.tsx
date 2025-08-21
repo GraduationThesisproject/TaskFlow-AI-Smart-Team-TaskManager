@@ -10,7 +10,6 @@ import {
   Book,
   Layers,
   Trash,
-  Settings,
   Plus,
 } from "lucide-react";
 
@@ -23,22 +22,29 @@ import { Input, Typography } from "@taskflow/ui";
 
 const Templates: React.FC = () => {
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen bg-background text-foreground select-none">
       {/* Sidebar */}
-      <aside className="hidden lg:flex w-64 bg-card border-r border-border flex-col">
-        {/* Logo */}
-        <div className="p-4 flex items-center gap-2">
-          <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center">
-            <Layers className="w-4 h-4 text-primary-foreground" />
+      <aside className="hidden lg:flex w-64 bg-card/50 backdrop-blur-sm border-r border-border/50 flex-col text-foreground">
+        {/* Logo and Header */}
+        <div className="p-4 flex items-center justify-between border-b border-border/30">
+          <div className="flex items-center gap-2 group cursor-default">
+            <div className="w-7 h-7 bg-gradient-to-br from-primary to-primary/80 rounded-md flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all duration-300 cursor-pointer">
+              <Layers className="w-4 h-4 text-primary-foreground group-hover:scale-110 transition-transform" />
+            </div>
+            <span className="font-semibold text-lg bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80 group-hover:from-primary group-hover:to-accent group-hover:drop-shadow-[0_0_8px_rgba(0,122,223,0.5)] transition-all duration-300 cursor-default">
+              Workspace
+            </span>
           </div>
-          <span className="font-semibold text-lg text-foreground">Workspace</span>
+          <button className="p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent/20 hover:shadow-[0_0_12px_-2px_rgba(0,122,223,0.3)] transition-all duration-300 cursor-pointer border border-transparent hover:border-primary/30">
+            <Trash size={18} className="group-hover:scale-110 transition-transform" />
+          </button>
         </div>
 
         {/* Search */}
         <div className="px-4 py-2">
           <Input 
             placeholder="Search..." 
-            className="bg-background border-border focus-visible:ring-primary"
+            className="bg-background border-border focus-visible:ring-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1 transition-all duration-300 hover:border-primary/50"
           />
         </div>
 
@@ -61,8 +67,8 @@ const Templates: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between px-3">
               <p className="text-xs uppercase text-muted-foreground font-medium">Projects</p>
-              <button className="text-muted-foreground hover:text-foreground">
-                <Plus size={16} />
+              <button className="text-muted-foreground hover:text-foreground hover:bg-accent/20 p-1.5 rounded-md hover:shadow-[0_0_10px_-2px_rgba(0,122,223,0.3)] transition-all duration-300">
+                <Plus size={16} className="group-hover:scale-110 transition-transform" />
               </button>
             </div>
             <ProjectItem label="Mobile App Design" color="bg-blue-500" />
@@ -79,20 +85,10 @@ const Templates: React.FC = () => {
             <NavItem icon={<Code size={18} />} label="Development" />
             <NavItem icon={<Users size={18} />} label="Team" />
           </div>
-
-          <div className="space-y-2">
-            <NavItem icon={<Trash size={18} />} label="Trash" />
-            <NavItem icon={<Settings size={18} />} label="Change Theme" />
-          </div>
         </nav>
 
         {/* Footer */}
         <div className="px-4 py-4 border-t border-border space-y-4">
-          <div className="space-y-2">
-            <NavItem icon={<Trash />} label="Trash" />
-            <NavItem icon={<Settings />} label="Change Theme" />
-          </div>
-
           <div className="flex items-center gap-3">
             <img
               src="https://i.pravatar.cc/40?img=15"
@@ -117,12 +113,12 @@ const Templates: React.FC = () => {
 
         {/* Categories */}
         <div className="flex flex-wrap gap-3 sm:gap-4">
-          <CategoryButton label="Business" icon={<Briefcase />} />
-          <CategoryButton label="Design" icon={<Monitor />} />
-          <CategoryButton label="Marketing" icon={<Star />} />
-          <CategoryButton label="Education" icon={<Book />} />
-          <CategoryButton label="Development" icon={<Code />} />
-          <CategoryButton label="Team" icon={<Users />} />
+          <CategoryButton label="Business" icon={<Briefcase />} className="hover:shadow-[0_0_15px_-3px_rgba(0,122,223,0.4)] hover:border-primary/50" />
+          <CategoryButton label="Design" icon={<Monitor />} className="hover:shadow-[0_0_15px_-3px_rgba(16,185,129,0.4)] hover:border-emerald-500/50" />
+          <CategoryButton label="Marketing" icon={<Star />} className="hover:shadow-[0_0_15px_-3px_rgba(245,158,11,0.4)] hover:border-amber-500/50" />
+          <CategoryButton label="Education" icon={<Book />} className="hover:shadow-[0_0_15px_-3px_rgba(139,92,246,0.4)] hover:border-violet-500/50" />
+          <CategoryButton label="Development" icon={<Code />} className="hover:shadow-[0_0_15px_-3px_rgba(59,130,246,0.4)] hover:border-blue-500/50" />
+          <CategoryButton label="Team" icon={<Users />} className="hover:shadow-[0_0_15px_-3px_rgba(236,72,153,0.4)] hover:border-pink-500/50" />
         </div>
 
         {/* Sections */}

@@ -6,43 +6,43 @@ interface ProgressCircleProps {
 }
 
 export const ProgressCircle: React.FC<ProgressCircleProps> = ({ percent, label }) => {
-  const circumference = 2 * Math.PI * 50; // r=50
-  const dashoffset = circumference - (circumference * percent) / 100;
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percent / 100) * circumference;
 
   return (
-    <div className="flex flex-col items-center mt-8">
-      <div className="relative w-28 h-28">
-        <svg className="w-full h-full transform -rotate-90">
-          <circle 
-            cx="56" 
-            cy="56" 
-            r="50" 
-            className="stroke-muted"
-            strokeWidth="8" 
-            fill="transparent" 
-          />
-          <circle
-            cx="56"
-            cy="56"
-            r="50"
-            className="stroke-primary"
-            strokeWidth="8"
-            strokeDasharray={circumference}
-            strokeDashoffset={dashoffset}
-            fill="transparent"
-          />
-          <defs>
-            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" className="stop-color-primary" />
-              <stop offset="100%" className="stop-color-accent" />
-            </linearGradient>
-          </defs>
-        </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-xl font-semibold text-foreground">
+    <div className="relative w-32 h-32 group">
+      <svg className="w-full h-full transform -rotate-90">
+        <circle
+          className="text-muted"
+          strokeWidth="8"
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx="50%"
+          cy="50%"
+        />
+        <circle
+          className="text-primary transition-all duration-500 ease-in-out"
+          strokeWidth="8"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx="50%"
+          cy="50%"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <span className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
           {percent}%
         </span>
+        <span className="text-xs text-muted-foreground group-hover:text-foreground/80 transition-colors">
+          {label}
+        </span>
       </div>
-      {label && <p className="text-muted-foreground text-sm mt-2">{label}</p>}
     </div>
   );
 };

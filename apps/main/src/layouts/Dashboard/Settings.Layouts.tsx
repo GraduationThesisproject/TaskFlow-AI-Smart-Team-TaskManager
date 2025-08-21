@@ -68,28 +68,58 @@ const Settings: React.FC = () => {
             <CardContent className="p-6 space-y-4">
               <Typography variant="h3" as="h3" className="text-foreground">Notifications</Typography>
 
-              <div className="bg-card border-border-2 rounded-lg p-4 flex items-center justify-between">
+              <div className="bg-card border-border-2 rounded-lg p-4 flex items-center justify-between group/switch">
                 <div>
                   <p className="font-medium text-sm text-foreground">Email updates</p>
                   <p className="text-xs text-muted-foreground">Receive notifications via email</p>
                 </div>
-                <Switch variant="default" checked={emailUpdates} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmailUpdates(e.target.checked)} />
+                <div className="relative">
+                  <Switch 
+                    variant="default" 
+                    checked={emailUpdates} 
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmailUpdates(e.target.checked)}
+                    className="relative z-10 data-[state=checked]:bg-primary/90 data-[state=unchecked]:bg-muted-foreground/20"
+                  />
+                  {emailUpdates && (
+                    <div className="absolute inset-0 rounded-full bg-primary/20 blur-[8px] -z-10 animate-pulse"></div>
+                  )}
+                </div>
               </div>
 
-              <div className="bg-card border-border-2 rounded-lg p-4 flex items-center justify-between">
+              <div className="bg-card border-border-2 rounded-lg p-4 flex items-center justify-between group/switch">
                 <div>
                   <p className="font-medium text-sm text-foreground">Push notifications</p>
                   <p className="text-xs text-muted-foreground">Get instant updates on your device</p>
                 </div>
-                <Switch variant="default" checked={pushNotifications} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPushNotifications(e.target.checked)} />
+                <div className="relative">
+                  <Switch 
+                    variant="default" 
+                    checked={pushNotifications} 
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPushNotifications(e.target.checked)}
+                    className="relative z-10 data-[state=checked]:bg-primary/90 data-[state=unchecked]:bg-muted-foreground/20"
+                  />
+                  {pushNotifications && (
+                    <div className="absolute inset-0 rounded-full bg-primary/20 blur-[8px] -z-10 animate-pulse"></div>
+                  )}
+                </div>
               </div>
 
-              <div className="bg-card border-border-2 rounded-lg p-4 flex items-center justify-between">
+              <div className="bg-card border-border-2 rounded-lg p-4 flex items-center justify-between group/switch">
                 <div>
                   <p className="font-medium text-sm text-foreground">Weekly summary</p>
                   <p className="text-xs text-muted-foreground">Weekly progress reports</p>
                 </div>
-                <Switch variant="default" checked={weeklySummary} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWeeklySummary(e.target.checked)} />
+                <div className="relative">
+                  <Switch 
+                    variant="default" 
+                    checked={weeklySummary} 
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWeeklySummary(e.target.checked)}
+                    className="relative z-10 data-[state=checked]:bg-primary/90 data-[state=unchecked]:bg-muted-foreground/20"
+                  />
+                  {weeklySummary && (
+                    <div className="absolute inset-0 rounded-full bg-primary/20 blur-[8px] -z-10 animate-pulse"></div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -150,7 +180,31 @@ const Settings: React.FC = () => {
                 <p>Pro Plan</p>
                 <p className="text-muted-foreground">$29/month</p>
               </div>
-              <Button variant="default" className="mt-4 w-full">Upgrade</Button>
+              <div className="relative group">
+                <Button 
+                  variant="default" 
+                  className="mt-4 w-full relative overflow-hidden z-10
+                  bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70
+                  text-white font-medium shadow-lg shadow-primary/20 hover:shadow-primary/30
+                  transition-all duration-300 transform hover:-translate-y-0.5
+                  before:absolute before:inset-0 before:bg-[radial-gradient(300px_circle_at_var(--mouse-x,0px)_var(--mouse-y,0px),rgba(255,255,255,0.2),transparent_40%)]
+                  before:opacity-0 group-hover:before:opacity-100 before:transition-opacity before:duration-300"
+                  onMouseMove={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+                    e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+                  }}
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <span className="text-white drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]">✨</span>
+                    Upgrade Now
+                    <span className="absolute -right-2 -top-2 w-2 h-2 rounded-full bg-white/80 animate-ping"></span>
+                  </span>
+                </Button>
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 via-transparent to-primary/30 rounded-lg opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 -z-10"></div>
+              </div>
             </CardContent>
           </Card>
         </div>

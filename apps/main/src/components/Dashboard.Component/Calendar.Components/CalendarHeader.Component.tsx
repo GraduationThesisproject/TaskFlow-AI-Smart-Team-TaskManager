@@ -25,8 +25,17 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         {title}
       </Typography>
       <div className="flex items-center gap-2">
-        <Button size="sm" variant="accent" onClick={onToday}>
-          Today
+        <Button 
+          size="sm" 
+          variant="accent" 
+          onClick={onToday}
+          className="relative overflow-hidden group"
+        >
+          <span className="relative z-10">Today</span>
+          <span className="absolute inset-0 bg-accent/20 group-hover:bg-accent/30 transition-colors"></span>
+          <span className="absolute inset-0 bg-gradient-to-r from-accent/40 via-accent/20 to-accent/40 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+          <span className="absolute inset-0 rounded-md border border-accent/30 group-hover:border-accent/50 transition-colors"></span>
+          <span className="absolute -inset-1 bg-accent/20 rounded-md blur-sm group-hover:blur-md transition-all duration-300"></span>
         </Button>
         <Button 
           size="sm" 

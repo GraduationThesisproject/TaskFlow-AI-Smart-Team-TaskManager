@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { CalendarHeader } from "../../components/Dashboard.Component/Calendar.Components/CalendarHeader.Component";
 import { CalendarGrid } from "../../components/Dashboard.Component/Calendar.Components/CalendarGrid.Component";
-import { UpcomingTasksPanel } from "../../components/Dashboard.Component/Calendar.Components/UpcomingTasksPanel.Component";
 import { ProgressCircle } from "../../components/Dashboard.Component/Calendar.Components/ProgressCircle.Component";
 import { AddEventModal } from "../../components/Dashboard.Component/Calendar.Components/AddEventModal.Component";
+import { UpcomingTasksPanel } from "../../components/Dashboard.Component/Calendar.Components/UpcomingTasksPanel.Component";
 import type { AddEventData } from "../../components/Dashboard.Component/Calendar.Components/AddEventModal.Component";
 import { useTasks } from "../../hooks";
 
@@ -100,10 +100,11 @@ const Calendar: React.FC = () => {
         </div>
 
         <div className="lg:col-span-3 space-y-6">
-          <div className="bg-card p-4 rounded-lg border border-border">
-            <h3 className="text-lg font-semibold mb-4">Upcoming Tasks</h3>
-            <UpcomingTasksPanel items={upcomingItems} />
-          </div>
+          <UpcomingTasksPanel 
+            title="Upcoming Tasks"
+            items={upcomingItems}
+            emptyMessage="No upcoming tasks"
+          />
           <div className="bg-card p-4 rounded-lg border border-border">
             <h3 className="text-lg font-semibold mb-4">Scheduled Tasks</h3>
             <div className="flex justify-center">
