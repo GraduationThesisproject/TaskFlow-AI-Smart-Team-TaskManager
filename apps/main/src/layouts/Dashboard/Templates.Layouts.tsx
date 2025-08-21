@@ -20,7 +20,7 @@ import { ProjectItem } from "../../components/Dashboard.Component/Templates.Comp
 import { CategoryButton } from "../../components/Dashboard.Component/Templates.Components/CategoryButton.Component";
 import { TemplateSection } from "../../components/Dashboard.Component/Templates.Components/TemplateSelection.Component";
 import { Input, Typography } from "@taskflow/ui";
-import { dummyTemplates, getTemplatesByCategory } from "../../constants/dummyData";
+// Removed dummy data import - will use real template data from API
 
 const Templates: React.FC = () => {
   
@@ -28,13 +28,9 @@ const Templates: React.FC = () => {
   const templatesByCategory = getTemplatesByCategory();
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
-  // Filter templates based on active category
-  const filteredTemplates = activeCategory === 'all' 
-    ? dummyTemplates 
-    : dummyTemplates.filter(template => template.category === activeCategory);
-
-  // Get unique categories for the category buttons
-  const categories = ['all', ...new Set(dummyTemplates.map(t => t.category))];
+  // TODO: Replace with real template data from API
+  const filteredTemplates: any[] = [];
+  const categories = ['all'];
 
   return (
     <div className="flex min-h-screen bg-background text-foreground select-none">

@@ -5,9 +5,9 @@ export interface User {
   avatar?: string;
   emailVerified: boolean;
   isActive: boolean;
-  lastLogin?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  lastLogin?: string; // Changed from Date to string (ISO format)
+  createdAt: string; // Changed from Date to string (ISO format)
+  updatedAt: string; // Changed from Date to string (ISO format)
 }
 
 // export type UserRole = 'admin' | 'user' | 'moderator';
