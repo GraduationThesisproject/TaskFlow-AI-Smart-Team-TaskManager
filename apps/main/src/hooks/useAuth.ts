@@ -4,6 +4,16 @@ import { loginUser, logoutUser, clearError, setCredentials, updateUser } from '.
 import { TEST_TOKEN } from '../config/env';
 import axiosInstance from '../config/axios';
 
+/**
+ * Custom hook for authentication management
+ * 
+ * Note: User date fields (lastLogin, createdAt, updatedAt) are stored as ISO strings in Redux
+ * to ensure serialization compatibility. Use the utility functions from utils/index.ts
+ * to convert them back to Date objects when needed:
+ * - fromISODateString() - Convert ISO string to Date
+ * - formatDate() - Format date for display
+ * - formatDateTime() - Format date and time for display
+ */
 export const useAuth = () => {
   const dispatch = useAppDispatch();
   const { user, token, isAuthenticated, isLoading, error } = useAppSelector(
@@ -13,16 +23,16 @@ export const useAuth = () => {
   // Initialize authentication on mount
   useEffect(() => {
     if (!token && TEST_TOKEN) {
-      // Create a mock user for test token
+      // Create a mock user for test token with ISO string dates
       const mockUser = {
         id: 'test-user',
         name: 'Test User',
         email: 'test@example.com',
         emailVerified: true,
         isActive: true,
-        lastLogin: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date()
+        lastLogin: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
       dispatch(setCredentials({ user: mockUser, token: TEST_TOKEN }));
     }
@@ -58,7 +68,18 @@ export const useAuth = () => {
   }, [dispatch]);
 
   const updateUserData = (userData: any) => {
-    dispatch(updateUser(userData));
+    // Convert any Date objects to ISO strings before dispatching
+    const serializedUserData = Object.keys(userData).reduce((acc, key) => {
+      const value = userData[key];
+      if (value instanceof Date) {
+        acc[key] = value.toISOString();
+      } else {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as any);
+    
+    dispatch(updateUser(serializedUserData));
   };
 
   return {

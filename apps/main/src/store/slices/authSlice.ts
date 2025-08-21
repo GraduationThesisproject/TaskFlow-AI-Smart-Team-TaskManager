@@ -3,6 +3,25 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import type { AuthState, LoginCredentials, User } from '../../types/auth.types';
 
 import { env } from '../../config/env';
+
+// Helper function to serialize user data (convert Date objects to ISO strings)
+const serializeUser = (user: any): User => {
+  const serializedUser = { ...user };
+  
+  // Convert Date objects to ISO strings
+  if (serializedUser.lastLogin instanceof Date) {
+    serializedUser.lastLogin = serializedUser.lastLogin.toISOString();
+  }
+  if (serializedUser.createdAt instanceof Date) {
+    serializedUser.createdAt = serializedUser.createdAt.toISOString();
+  }
+  if (serializedUser.updatedAt instanceof Date) {
+    serializedUser.updatedAt = serializedUser.updatedAt.toISOString();
+  }
+  
+  return serializedUser;
+};
+
 // Async thunk for login
 export const loginUser = createAsyncThunk(
   'auth/login',
@@ -23,9 +42,13 @@ export const loginUser = createAsyncThunk(
       }
 
       const body = await response.json();
-      console.log("token",body.data.token)
       localStorage.setItem('token', body.data.token)
-      return body.data;
+      
+      // Serialize the user data before returning
+      return {
+        ...body.data,
+        user: serializeUser(body.data.user)
+      };
     } catch (error) {
       return rejectWithValue('Network error occurred');
     }
@@ -69,14 +92,17 @@ const authSlice = createSlice({
       state.error = null;
     },
     setCredentials: (state, action: PayloadAction<{ user: User; token: string }>) => {
-      state.user = action.payload.user;
+      // Ensure user data is serialized
+      state.user = serializeUser(action.payload.user);
       state.token = action.payload.token;
       state.isAuthenticated = true;
       state.error = null;
     },
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
-        state.user = { ...state.user, ...action.payload };
+        // Ensure updated user data is serialized
+        const serializedUpdates = serializeUser(action.payload);
+        state.user = { ...state.user, ...serializedUpdates };
       }
     },
   },
@@ -89,7 +115,7 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        // const { token, user } = action.payload.data; // <- use .data
+        // User data is already serialized in the thunk
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
@@ -97,7 +123,6 @@ const authSlice = createSlice({
         
         // Store token in localStorage
         // localStorage.setItem('token', action.payload.token);
-        console.log("Token stored in localStorage:", action.payload.token);
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;

@@ -6,3 +6,4 @@ export { BoardService } from './boardService';
 export { CommentService } from './commentService';
 export { UserService } from './userService';
 export { AuthService } from './authService';
+export { PermissionService } from './permissionService';

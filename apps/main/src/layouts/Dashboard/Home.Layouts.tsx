@@ -7,7 +7,7 @@ import { NotificationCard } from "../../components/Dashboard.Component/Home.Comp
 import { EventCard } from "../../components/Dashboard.Component/Home.Components/EventCard.Component";
 import { UpgradeCard } from "../../components/Dashboard.Component/Home.Components/UpgradeCard.Component";
 import { useTasks } from "../../hooks";
-import { dummyCurrentUser } from "../../constants/dummyData";
+// Removed dummy data import - will use real user data from Redux
 
 const Home: React.FC = () => {
   const { highPriorityTasks, overdueTasks } = useTasks();
@@ -24,7 +24,8 @@ const Home: React.FC = () => {
     }));
   }, [highPriorityTasks, overdueTasks]);
 
-  const displayName = `${dummyCurrentUser.firstName}`;
+  const { user } = useAppSelector(state => state.auth);
+  const displayName = user?.firstName || 'User';
 
   return (
     <div className="min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8 py-6">
