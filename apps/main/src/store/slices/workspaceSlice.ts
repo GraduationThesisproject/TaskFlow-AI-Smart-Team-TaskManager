@@ -1,13 +1,40 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import type { Space } from '../../types/task.types';
+import { WorkspaceService } from '../../services/workspaceService';
+import { SpaceService } from '../../services/spaceService';
 import { workspaceService, type InviteLinkInfo } from '../../services/workspace.service.ts';
-import type { Workspace, WorkspaceMember, WorkspaceState } from '../../types/workspace.types';
+import type { Workspace, WorkspaceMember, WorkspaceState as BaseWorkspaceState } from '../../types/workspace.types';
 
-// Thunks
-export const fetchWorkspace = createAsyncThunk<Workspace, { id: string }>('workspace/fetchWorkspace', async ({ id }) => {
-  return workspaceService.getWorkspace(id);
-});
+// Async thunks - combining both implementations
+export const fetchWorkspace = createAsyncThunk(
+  'workspace/fetchWorkspace',
+  async (workspaceId: string) => {
+    const response = await WorkspaceService.getWorkspace(workspaceId);
+    // Backend returns { workspace: {...}, userRole: '...', userPermissions: {...} }
+    return (response.data as any).workspace;
+  }
+);
 
+export const fetchSpacesByWorkspace = createAsyncThunk(
+  'workspace/fetchSpacesByWorkspace',
+  async (workspaceId: string) => {
+    const response = await SpaceService.getSpacesByWorkspace(workspaceId);
+    // Backend returns { spaces: [...], count: number }
+    return (response.data as any).spaces;
+  }
+);
+
+export const fetchSpace = createAsyncThunk(
+  'workspace/fetchSpace',
+  async (spaceId: string) => {
+    const response = await SpaceService.getSpace(spaceId);
+    // Backend returns { space: {...}, userRole: '...', userPermissions: {...} }
+    return (response.data as any).space;
+  }
+);
+
+// New thunks from the newer implementation
 export const fetchMembers = createAsyncThunk<WorkspaceMember[], { id: string }>('workspace/fetchMembers', async ({ id }) => {
   return workspaceService.getMembers(id);
 });
@@ -37,18 +64,25 @@ export const disableInviteLink = createAsyncThunk<InviteLinkInfo, { id: string }
   async ({ id }) => workspaceService.disableInviteLink(id)
 );
 
-export interface WorkspaceUiState extends WorkspaceState {
+// Combined state interface
+interface WorkspaceState extends BaseWorkspaceState {
+  spaces: Space[];
+  selectedSpace: Space | null;
   currentWorkspaceId: string | null;
   members: WorkspaceMember[];
   inviteLink?: InviteLinkInfo;
+  loading: boolean;
 }
 
-const initialState: WorkspaceUiState = {
+const initialState: WorkspaceState = {
   workspaces: [],
   currentWorkspace: null,
+  spaces: [],
+  selectedSpace: null,
   currentWorkspaceId: null,
   members: [],
   inviteLink: undefined,
+  loading: false,
   isLoading: false,
   error: null,
 };
@@ -57,6 +91,21 @@ const workspaceSlice = createSlice({
   name: 'workspace',
   initialState,
   reducers: {
+    setSelectedSpace: (state, action: PayloadAction<Space | null>) => {
+      state.selectedSpace = action.payload;
+    },
+    clearWorkspaceData: (state) => {
+      state.currentWorkspace = null;
+      state.spaces = [];
+      state.selectedSpace = null;
+      state.error = null;
+    },
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
+    },
+    clearError: (state) => {
+      state.error = null;
+    },
     setCurrentWorkspaceId(state, action: PayloadAction<string | null>) {
       state.currentWorkspaceId = action.payload;
     },
@@ -64,21 +113,61 @@ const workspaceSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Fetch workspace
       .addCase(fetchWorkspace.pending, (state) => {
+        state.loading = true;
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
         state.isLoading = false;
         state.currentWorkspace = action.payload;
         if (!state.workspaces.find((w) => w.id === action.payload.id)) {
           state.workspaces.push(action.payload);
         }
+        state.error = null;
       })
       .addCase(fetchWorkspace.rejected, (state, action) => {
+        state.loading = false;
         state.isLoading = false;
-        state.error = action.error.message || 'Failed to load workspace';
+        state.error = action.error.message || 'Failed to fetch workspace';
       })
+      // Fetch spaces by workspace
+      .addCase(fetchSpacesByWorkspace.pending, (state) => {
+        state.loading = true;
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchSpacesByWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isLoading = false;
+        state.spaces = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchSpacesByWorkspace.rejected, (state, action) => {
+        state.loading = false;
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to fetch spaces';
+      })
+      // Fetch space
+      .addCase(fetchSpace.pending, (state) => {
+        state.loading = true;
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchSpace.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isLoading = false;
+        state.selectedSpace = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchSpace.rejected, (state, action) => {
+        state.loading = false;
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to fetch space';
+      })
+      // New member-related cases
       .addCase(fetchMembers.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -106,13 +195,20 @@ const workspaceSlice = createSlice({
   },
 });
 
-export const { setCurrentWorkspaceId, resetWorkspaceState } = workspaceSlice.actions;
+export const {
+  setSelectedSpace,
+  clearWorkspaceData,
+  setLoading,
+  clearError,
+  setCurrentWorkspaceId,
+  resetWorkspaceState,
+} = workspaceSlice.actions;
 
 // Selectors
 // Note: accept `any` for state to avoid importing RootState and to be compatible with useSelector typing.
-export const selectWorkspaceState = (state: any) => state.workspace as WorkspaceUiState;
-export const selectMembers = (state: any) => (state.workspace as WorkspaceUiState).members;
-export const selectWorkspaceLoading = (state: any) => (state.workspace as WorkspaceUiState).isLoading;
-export const selectWorkspaceError = (state: any) => (state.workspace as WorkspaceUiState).error;
+export const selectWorkspaceState = (state: any) => state.workspace as WorkspaceState;
+export const selectMembers = (state: any) => (state.workspace as WorkspaceState).members;
+export const selectWorkspaceLoading = (state: any) => (state.workspace as WorkspaceState).isLoading;
+export const selectWorkspaceError = (state: any) => (state.workspace as WorkspaceState).error;
 
 export default workspaceSlice.reducer;
