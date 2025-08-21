@@ -201,21 +201,21 @@ const SystemHealthPage: React.FC = () => {
                   <Typography variant="body-medium">Enable outage notifications</Typography>
                   <Switch
                     checked={notificationSettings.outageAlerts}
-                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, outageAlerts: checked }))}
+                    onChange={(e) => setNotificationSettings(prev => ({ ...prev, outageAlerts: e.target.checked }))}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Typography variant="body-medium">Email notifications</Typography>
                   <Switch
                     checked={notificationSettings.emailNotifications}
-                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, emailNotifications: checked }))}
+                    onChange={(e) => setNotificationSettings(prev => ({ ...prev, emailNotifications: e.target.checked }))}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Typography variant="body-medium">SMS notifications</Typography>
                   <Switch
                     checked={notificationSettings.smsNotifications}
-                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, smsNotifications: checked }))}
+                    onChange={(e) => setNotificationSettings(prev => ({ ...prev, smsNotifications: e.target.checked }))}
                   />
                 </div>
               </div>

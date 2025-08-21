@@ -372,7 +372,7 @@ const NotificationsLayout: React.FC = () => {
                 <div className="flex items-center space-x-2 ml-4">
                   <Switch
                     checked={notification.isEnabled}
-                    onCheckedChange={() => handleToggleNotification(notification.id)}
+                    onChange={(e) => handleToggleNotification(notification.id)}
                   />
                   <div className="flex space-x-1">
                     {notification.status === 'unread' && (

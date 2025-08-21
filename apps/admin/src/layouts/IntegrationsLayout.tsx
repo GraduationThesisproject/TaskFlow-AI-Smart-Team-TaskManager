@@ -246,7 +246,7 @@ const IntegrationsLayout: React.FC = () => {
                   {getStatusBadge(integration.status)}
                   <Switch
                     checked={integration.isEnabled}
-                    onCheckedChange={() => handleToggleIntegration(integration.id)}
+                    onChange={(e) => handleToggleIntegration(integration.id)}
                   />
                 </div>
               </div>

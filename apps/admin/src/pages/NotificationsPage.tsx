@@ -333,7 +333,7 @@ const NotificationsPage: React.FC = () => {
                   </div>
                   <Switch
                     checked={notification.isEnabled}
-                    onCheckedChange={() => handleTogglePushNotification(notification.id)}
+                    onChange={(e) => handleTogglePushNotification(notification.id)}
                   />
                 </div>
               ))}
