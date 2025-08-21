@@ -1,6 +1,7 @@
 import { Admin, AdminLoginCredentials, AdminResponse } from '../types/admin.types';
+import { env } from '../config/env';
 
-const API_BASE = '/api/admin';
+const API_BASE = `${env.API_BASE_URL}/admin`;
 
 export interface User {
   id: string;

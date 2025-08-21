@@ -1,7 +1,6 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { Socket, io } from 'socket.io-client';
 import { SocketMessage, SocketEvent } from '../../types';
-import { useState } from 'react';
 
 interface UseSocketOptions {
   url: string;
@@ -16,13 +15,20 @@ export function useSocket(options: UseSocketOptions) {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
+  // Memoize options to prevent unnecessary re-renders
+  const memoizedOptions = useMemo(() => ({
+    url: options.url,
+    autoConnect: options.autoConnect ?? true,
+    auth: options.auth,
+  }), [options.url, options.autoConnect, options.auth?.token]);
+
   const connect = useCallback(() => {
     if (socketRef.current?.connected) return;
 
     setIsConnecting(true);
-    socketRef.current = io(options.url, {
-      autoConnect: options.autoConnect ?? true,
-      auth: options.auth,
+    socketRef.current = io(memoizedOptions.url, {
+      autoConnect: memoizedOptions.autoConnect,
+      auth: memoizedOptions.auth,
     });
 
     socketRef.current.on('connect', () => {
@@ -34,12 +40,14 @@ export function useSocket(options: UseSocketOptions) {
       setIsConnected(false);
       setIsConnecting(false);
     });
-  }, [options.url, options.autoConnect, options.auth]);
+  }, [memoizedOptions]);
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
       socketRef.current.disconnect();
       socketRef.current = null;
+      setIsConnected(false);
+      setIsConnecting(false);
     }
   }, []);
 
@@ -62,14 +70,14 @@ export function useSocket(options: UseSocketOptions) {
   }, []);
 
   useEffect(() => {
-    if (options.autoConnect) {
+    if (memoizedOptions.autoConnect) {
       connect();
     }
 
     return () => {
       disconnect();
     };
-  }, [connect, disconnect, options.autoConnect]);
+  }, [memoizedOptions.autoConnect, connect, disconnect]);
 
   return {
     socket: socketRef.current,

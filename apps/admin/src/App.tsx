@@ -11,6 +11,10 @@ import AdminPage from './pages/AdminPage';
 // Login Page
 import LoginPage from './pages/LoginPage';
 
+// Notification Context
+import { NotificationProvider } from './contexts/NotificationContext';
+import { LanguageProvider } from './contexts/LanguageContext';
+
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('adminToken');
@@ -35,7 +39,11 @@ function App() {
               {/* Protected Admin Routes - All handled by AdminPage */}
               <Route path="/*" element={
                 <ProtectedRoute>
-                  <AdminPage />
+                  <LanguageProvider>
+                    <NotificationProvider authToken={localStorage.getItem('adminToken') || ''}>
+                      <AdminPage />
+                    </NotificationProvider>
+                  </LanguageProvider>
                 </ProtectedRoute>
               } />
             </Routes>
