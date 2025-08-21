@@ -95,7 +95,7 @@ console.log(result);
       if (result.meta.requestStatus === 'fulfilled') {
         // Navigate to dashboard or intended page
         console.log("Login successful");
-        navigate("/landing-page");
+        navigate("/dashboard");
       } else if (result.meta.requestStatus === 'rejected') {
         // Error is already handled by Redux
         console.error("Login failed:", result.payload);

@@ -9,7 +9,7 @@ const Dashboard = () => {
   return (
     <div>
       <Routes>
-        <Route path="Home" element={<Home/>} />
+        <Route path="" element={<Home/>} />
         <Route path="Templates" element={<Templates/>} />
         <Route path="Calendar" element={<Calendar/>} />
         <Route path="Settings" element={<Settings/>} />

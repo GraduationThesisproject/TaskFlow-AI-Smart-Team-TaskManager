@@ -6,15 +6,15 @@ import { SpacePage } from './pages/space.page';
 import Dashboard from './pages/Dashboard';  
 // import WorkSpace from './pages/workSpace';
 import { LandingPage } from './pages/LandingPage';
-
+import Navbar from "./components/common"
 
 function AppContent() {
-  const { theme, toggleTheme } = useTheme();
+  // const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="min-h-screen bg-background text-foreground select-none">
       {/* Header with Theme Toggle */}
-      <header className="border-b border-border bg-card">
+      {/* <header className="border-b border-border bg-card">
         <Container size="7xl" className="py-4">
           <Flex justify="between" align="center">
             <Typography variant="heading-large" className="font-bold">
@@ -31,9 +31,11 @@ function AppContent() {
             </Button>
           </Flex>
         </Container>
-      </header>
-
-      {/* Main Content with Gradient Background */}
+      </header> */}
+      {/* Navigation Bar */}
+      <Navbar />
+      
+      {/* Main Content */}
       <main className="bg-gradient-to-br from-background via-muted/50 to-background">
 
         <Routes>
