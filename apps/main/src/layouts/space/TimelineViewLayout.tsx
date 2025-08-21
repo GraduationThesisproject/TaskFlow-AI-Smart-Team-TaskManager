@@ -19,6 +19,7 @@ import {
   getAvatarColor
 } from '@taskflow/ui';
 
+
 export const TimelineViewLayout: React.FC = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
@@ -33,20 +34,20 @@ export const TimelineViewLayout: React.FC = () => {
 
   const getStatusVariant = (status: Task['status']) => {
     switch (status) {
-      case 'In Review': return 'in-review';
-      case 'In Progress': return 'in-progress';
-      case 'Completed': return 'completed';
-      case 'To Do': return 'to-do';
+      case 'review': return 'in-review';
+      case 'in_progress': return 'in-progress';
+      case 'done': return 'completed';
+      case 'todo': return 'to-do';
       default: return 'default';
     }
   };
 
   const getProgressVariant = (status: Task['status']) => {
     switch (status) {
-      case 'In Review': return 'info';
-      case 'In Progress': return 'accent';
-      case 'Completed': return 'success';
-      case 'To Do': return 'warning';
+      case 'review': return 'info';
+      case 'in_progress': return 'accent';
+      case 'done': return 'success';
+      case 'todo': return 'warning';
       default: return 'default';
     }
   };
@@ -85,86 +86,55 @@ export const TimelineViewLayout: React.FC = () => {
     );
   }
 
-  if (error) {
+    if (error) {
     return (
-      <Container size="lg" className="py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <Card variant="outlined" className="text-center">
           <CardContent className="p-8">
             <Typography variant="heading-large" className="text-error mb-4">
               {error}
             </Typography>
-            <Button
-              variant="outline"
+            <Button 
+              variant="outline" 
               onClick={() => window.location.reload()}
             >
               Try Again
             </Button>
           </CardContent>
         </Card>
-      </Container>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Container size="7xl" className="py-6">
-        {/* Header */}
-        <Stack spacing="lg">
-          <Typography variant="heading-xl">Finance Dashboard</Typography>
+    <div className="min-h-screen bg-transparent text-foreground w-full">
+      <div className="w-full px-6 sm:px-8 lg:px-12 py-8">
 
-          {/* Navigation Tabs */}
-          <Flex justify="between" align="center">
-            <Flex gap="lg">
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/space/kanban')}
-              >
-                Kanban
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/space/list')}
-              >
-                List
-              </Button>
-              <Button variant="ghost" className="border-b-2 border-primary pb-1">
-                Timeline
-              </Button>
-            </Flex>
 
-            <Flex align="center" gap="md">
-              <Button variant="default">
-                + Add Task
-              </Button>
-              <Typography variant="body-small" textColor="muted">
-                {taskStats.total} tasks
-              </Typography>
-            </Flex>
-          </Flex>
-
-          {/* Legend */}
-          <Flex gap="lg" align="center">
-            <Flex gap="sm" align="center">
+        {/* Legend */}
+        <div className="mb-6">
+          <div className="flex gap-6 items-center">
+            <div className="flex gap-2 items-center">
               <div className="w-3 h-3 bg-info rounded-full"></div>
               <Typography variant="body-small">In review</Typography>
-            </Flex>
-            <Flex gap="sm" align="center">
+            </div>
+            <div className="flex gap-2 items-center">
               <div className="w-3 h-3 bg-primary rounded-full"></div>
               <Typography variant="body-small">In Progress</Typography>
-            </Flex>
-            <Flex gap="sm" align="center">
+            </div>
+            <div className="flex gap-2 items-center">
               <div className="w-3 h-3 bg-success rounded-full"></div>
               <Typography variant="body-small">Completed</Typography>
-            </Flex>
-            <Flex gap="sm" align="center">
+            </div>
+            <div className="flex gap-2 items-center">
               <div className="w-3 h-3 bg-warning rounded-full"></div>
               <Typography variant="body-small">To Do</Typography>
-            </Flex>
-          </Flex>
-        </Stack>
+            </div>
+          </div>
+        </div>
 
         {/* Timeline */}
-        <Card variant="default" className="mt-6">
+        <Card variant="default" className="border-0 shadow-lg bg-card/90 backdrop-blur-sm">
           <CardContent className="p-6">
             <Typography variant="heading-large" className="mb-6">
               Project Timeline Jan 2024 - Jun 2024
@@ -183,10 +153,10 @@ export const TimelineViewLayout: React.FC = () => {
             {/* Timeline Rows */}
             <Stack spacing="md">
               {timelineTasks.map((project) => {
-                const position = getTimelinePosition(project.startDate!, project.endDate!);
+                const position = getTimelinePosition(project.startDate!, project.dueDate!);
 
                 return (
-                  <div key={project.id} className="grid grid-cols-7 gap-4 items-center">
+                  <div key={project._id} className="grid grid-cols-7 gap-4 items-center">
                     {/* Project Info */}
                     <Stack spacing="xs">
                       <Flex gap="sm" align="center">
@@ -196,10 +166,10 @@ export const TimelineViewLayout: React.FC = () => {
                          </Typography>
                       </Flex>
                       <Typography variant="body-small" textColor="muted">
-                        {project.category}
+                        {project.priority}
                       </Typography>
                       <Typography variant="body-small" textColor="muted">
-                        {project.progress}%
+                        {project.estimatedHours || 0}h
                       </Typography>
                     </Stack>
 
@@ -229,7 +199,7 @@ export const TimelineViewLayout: React.FC = () => {
 
                       {/* Date Range */}
                       <Typography variant="caption" textColor="muted" className="mt-1">
-                        {formatDate(project.startDate!)} - {formatDate(project.endDate!)}
+                        {formatDate(project.startDate!)} - {formatDate(project.dueDate!)}
                       </Typography>
 
                       {/* Assignee Count */}
@@ -243,7 +213,7 @@ export const TimelineViewLayout: React.FC = () => {
             </Stack>
           </CardContent>
         </Card>
-      </Container>
+      </div>
     </div>
   );
 };
