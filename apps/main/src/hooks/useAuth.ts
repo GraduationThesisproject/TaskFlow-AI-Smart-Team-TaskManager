@@ -1,36 +1,37 @@
-import { useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
-import { AuthState, LoginCredentials, RegisterData } from '../types';
+import { loginUser, logoutUser, clearError } from '../store/slices/authSlice';
+import { useCallback } from 'react';
 
 export const useAuth = () => {
   const dispatch = useAppDispatch();
-  const auth = useAppSelector((state) => state.auth);
+  const { user, token, isAuthenticated, isLoading, error } = useAppSelector(
+    (state) => state.auth
+  );
 
-  const login = useCallback(async (credentials: LoginCredentials) => {
-    // Implement login logic
-    console.log('Login with:', credentials);
+  const login = useCallback(
+    async (credentials: { email: string; password: string }) => {
+      const result = await dispatch(loginUser(credentials));
+      return result;
+    },
+    [dispatch]
+  );
+
+  const logout = useCallback(async () => {
+    await dispatch(logoutUser());
   }, [dispatch]);
 
-  const register = useCallback(async (data: RegisterData) => {
-    // Implement register logic
-    console.log('Register with:', data);
-  }, [dispatch]);
-
-  const logout = useCallback(() => {
-    // Implement logout logic
-    console.log('Logout');
-  }, [dispatch]);
-
-  const refreshToken = useCallback(async () => {
-    // Implement token refresh logic
-    console.log('Refresh token');
+  const clearAuthError = useCallback(() => {
+    dispatch(clearError());
   }, [dispatch]);
 
   return {
-    ...auth,
+    user,
+    token,
+    isAuthenticated,
+    isLoading,
+    error,
     login,
-    register,
     logout,
-    refreshToken,
+    clearAuthError,
   };
 };
