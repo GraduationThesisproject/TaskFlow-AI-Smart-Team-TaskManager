@@ -23,7 +23,7 @@ router.post('/users', adminController.createUser);
 router.get('/users/:userId', adminController.getUser);
 router.put('/users/:userId', adminController.updateUser);
 router.delete('/users/:userId', adminController.deleteUser);
-router.post('/users/:userId/ban', adminController.banUser);
+router.post('/users/:userId/ban', adminController.deactivateUser);
 router.post('/users/:userId/activate', adminController.activateUser);
 router.post('/users/reset-password', adminController.resetUserPassword);
 

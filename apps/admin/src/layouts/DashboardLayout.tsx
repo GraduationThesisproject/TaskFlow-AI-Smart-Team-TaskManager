@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-// import { useAppDispatch } from '../store';
 import { 
   Card, 
   CardHeader, 
@@ -20,29 +19,29 @@ import {
   CheckCircleIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
+import { adminService, AnalyticsData } from '../services/adminService';
 
 const DashboardLayout: React.FC = () => {
-  // const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(true);
-
-  // Mock data for now - replace with actual API calls
-  const dashboardData = {
-    totalUsers: 1247,
-    activeUsers: 892,
-    totalWorkspaces: 156,
-    activeWorkspaces: 142,
-    systemHealth: 'healthy',
-    uptime: '99.9%',
-    lastBackup: '2 hours ago',
-    pendingUpdates: 3,
-    criticalAlerts: 0,
-    performanceScore: 94
-  };
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await adminService.getAnalytics('6-months');
+        setAnalyticsData(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+        console.error('Dashboard data fetch error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
   }, []);
 
   if (isLoading) {
@@ -52,6 +51,51 @@ const DashboardLayout: React.FC = () => {
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <Container size="7xl">
+        <div className="text-center py-12">
+          <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <Typography variant="heading-medium" className="text-red-600 mb-2">
+            Error Loading Dashboard
+          </Typography>
+          <Typography variant="body-medium" className="text-muted-foreground mb-4">
+            {error}
+          </Typography>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
+        </div>
+      </Container>
+    );
+  }
+
+  if (!analyticsData) {
+    return (
+      <Container size="7xl">
+        <div className="text-center py-12">
+          <Typography variant="heading-medium" className="text-muted-foreground">
+            No data available
+          </Typography>
+        </div>
+      </Container>
+    );
+  }
+
+  const getSystemHealthStatus = () => {
+    const { serverUptime, apiResponseTime, databaseHealth } = analyticsData.systemPerformance;
+    const avgHealth = (serverUptime + (100 - apiResponseTime / 10) + databaseHealth) / 3;
+    
+    if (avgHealth >= 90) return { status: 'healthy', color: 'success' as const };
+    if (avgHealth >= 70) return { status: 'warning', color: 'warning' as const };
+    return { status: 'critical', color: 'error' as const };
+  };
+
+  const systemHealth = getSystemHealthStatus();
 
   return (
     <Container size="7xl">
@@ -77,11 +121,11 @@ const DashboardLayout: React.FC = () => {
             <div className="flex items-center space-x-2">
               <UsersIcon className="h-4 w-4 text-muted-foreground" />
               <Typography variant="heading-large" className="text-foreground">
-                {dashboardData.totalUsers.toLocaleString()}
+                {analyticsData.totalUsers.toLocaleString()}
               </Typography>
             </div>
             <Typography variant="body-small" className="text-muted-foreground mt-1">
-              +12% from last month
+              {analyticsData.activeUsers.daily} active today
             </Typography>
           </CardContent>
         </Card>
@@ -89,18 +133,18 @@ const DashboardLayout: React.FC = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active Workspaces
+              Active Projects
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center space-x-2">
               <FolderIcon className="h-4 w-4 text-muted-foreground" />
               <Typography variant="heading-large" className="text-foreground">
-                {dashboardData.activeWorkspaces}
+                {analyticsData.activeProjects}
               </Typography>
             </div>
             <Typography variant="body-small" className="text-muted-foreground mt-1">
-              {Math.round((dashboardData.activeWorkspaces / dashboardData.totalWorkspaces) * 100)}% active
+              {analyticsData.completionRate}% completion rate
             </Typography>
           </CardContent>
         </Card>
@@ -113,13 +157,16 @@ const DashboardLayout: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center space-x-2">
-              <CheckCircleIcon className="h-4 w-4 text-green-500" />
+              <CheckCircleIcon className={`h-4 w-4 ${
+                systemHealth.color === 'success' ? 'text-green-500' : 
+                systemHealth.color === 'warning' ? 'text-yellow-500' : 'text-red-500'
+              }`} />
               <Typography variant="heading-large" className="text-foreground">
-                {dashboardData.performanceScore}%
+                {Math.round(analyticsData.systemPerformance.serverUptime)}%
               </Typography>
             </div>
             <Typography variant="body-small" className="text-muted-foreground mt-1">
-              Performance score
+              Server uptime
             </Typography>
           </CardContent>
         </Card>
@@ -127,18 +174,18 @@ const DashboardLayout: React.FC = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Uptime
+              API Response
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center space-x-2">
               <ClockIcon className="h-4 w-4 text-muted-foreground" />
               <Typography variant="heading-large" className="text-foreground">
-                {dashboardData.uptime}
+                {analyticsData.systemPerformance.apiResponseTime}ms
               </Typography>
             </div>
             <Typography variant="body-small" className="text-muted-foreground mt-1">
-              Last 30 days
+              Average response time
             </Typography>
           </CardContent>
         </Card>
@@ -156,18 +203,18 @@ const DashboardLayout: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Overall Health</span>
-              <Badge variant="success">{dashboardData.systemHealth}</Badge>
+              <Badge variant={systemHealth.color}>{systemHealth.status}</Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Performance</span>
+              <span className="text-sm text-muted-foreground">Database Health</span>
               <div className="flex items-center space-x-2">
-                <Progress value={dashboardData.performanceScore} className="w-20" />
-                <span className="text-sm font-medium">{dashboardData.performanceScore}%</span>
+                <Progress value={analyticsData.systemPerformance.databaseHealth} className="w-20" />
+                <span className="text-sm font-medium">{analyticsData.systemPerformance.databaseHealth}%</span>
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Last Backup</span>
-              <span className="text-sm font-medium">{dashboardData.lastBackup}</span>
+              <span className="text-sm text-muted-foreground">Server Uptime</span>
+              <span className="text-sm font-medium">{analyticsData.systemPerformance.serverUptime}%</span>
             </div>
           </CardContent>
         </Card>
@@ -176,27 +223,56 @@ const DashboardLayout: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <ExclamationTriangleIcon className="h-5 w-5" />
-              <span>Alerts & Updates</span>
+              <span>Task Status</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Critical Alerts</span>
-                             <Badge variant={dashboardData.criticalAlerts > 0 ? "error" : "success"}>
-                 {dashboardData.criticalAlerts}
-               </Badge>
+              <span className="text-sm text-muted-foreground">Pending Tasks</span>
+              <Badge variant="warning">{analyticsData.taskCompletionData.pending}</Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Pending Updates</span>
-              <Badge variant="warning">{dashboardData.pendingUpdates}</Badge>
+              <span className="text-sm text-muted-foreground">In Progress</span>
+              <Badge variant="secondary">{analyticsData.taskCompletionData.inProgress}</Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Security Status</span>
-              <Badge variant="success">Secure</Badge>
+              <span className="text-sm text-muted-foreground">Completed</span>
+              <Badge variant="success">{analyticsData.taskCompletionData.completed}</Badge>
             </div>
           </CardContent>
         </Card>
       </Grid>
+
+      {/* Top Teams */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Top Performing Teams</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {analyticsData.topTeams.map((team) => (
+              <div key={team.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div>
+                  <Typography variant="body-medium" className="font-medium">
+                    {team.name}
+                  </Typography>
+                  <Typography variant="body-small" className="text-muted-foreground">
+                    {team.members} members • {team.projects} projects
+                  </Typography>
+                </div>
+                <div className="text-right">
+                  <Typography variant="body-medium" className="font-medium">
+                    {team.activityScore}%
+                  </Typography>
+                  <Typography variant="body-small" className="text-muted-foreground">
+                    Activity Score
+                  </Typography>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <Card>
@@ -205,17 +281,33 @@ const DashboardLayout: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="flex space-x-4">
-            <Button variant="outline" size="sm">
-              View System Logs
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.href = '/admin/system-health'}
+            >
+              View System Health
             </Button>
-            <Button variant="outline" size="sm">
-              Run Health Check
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.href = '/admin/analytics'}
+            >
+              View Analytics
             </Button>
-            <Button variant="outline" size="sm">
-              Backup System
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.href = '/admin/users'}
+            >
+              Manage Users
             </Button>
-            <Button variant="outline" size="sm">
-              Update System
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.href = '/admin/templates'}
+            >
+              Manage Templates
             </Button>
           </div>
         </CardContent>
