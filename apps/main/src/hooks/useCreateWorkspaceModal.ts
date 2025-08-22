@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { useWorkspaces } from './useWorkspaces';
+import { useState } from "react";
+import { useWorkspaces } from "./useWorkspaces"; // important: hook that has workspace list
 
 export const useCreateWorkspaceModal = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { createNewWorkspace, loading, error } = useWorkspaces();
+  const { createNewWorkspace, workspaces } = useWorkspaces(); // get workspace list + action
 
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
@@ -11,23 +11,17 @@ export const useCreateWorkspaceModal = () => {
   const handleCreateWorkspace = async (workspaceData: {
     name: string;
     description?: string;
-    visibility: 'private' | 'public';
+    visibility: "private" | "public";
   }) => {
     try {
-      await createNewWorkspace(workspaceData);
-      closeModal();
+      await createNewWorkspace(workspaceData); // dispatch Redux action
     } catch (error) {
-      // Error is handled by the modal component
+      console.error("Workspace creation failed:", error);
       throw error;
+    } finally {
+      closeModal();
     }
   };
 
-  return {
-    isOpen,
-    openModal,
-    closeModal,
-    handleCreateWorkspace,
-    loading,
-    error
-  };
+  return { isOpen, openModal, closeModal, handleCreateWorkspace, workspaces };
 };
