@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNotificationContext } from '../contexts/NotificationContext';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { Badge, Dropdown } from '@taskflow/ui';
 
 export const NotificationBell: React.FC = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotificationContext();
-  const [isOpen, setIsOpen] = useState(false);
 
   const handleMarkAsRead = (notificationId: string) => {
     markAsRead(notificationId);
@@ -60,9 +59,8 @@ export const NotificationBell: React.FC = () => {
     <div className="relative">
       <Dropdown
         trigger={
-          <button
-            className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => setIsOpen(!isOpen)}
+          <div
+            className="relative p-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             <BellIcon className="h-6 w-6" />
             {unreadCount > 0 && (
@@ -73,7 +71,7 @@ export const NotificationBell: React.FC = () => {
                 {unreadCount > 99 ? '99+' : unreadCount}
               </Badge>
             )}
-          </button>
+          </div>
         }
       >
         <div className="w-80 max-h-96 overflow-y-auto">
@@ -105,9 +103,9 @@ export const NotificationBell: React.FC = () => {
             ) : (
               <div className="space-y-2">
                 {notifications.slice(0, 10).map((notification: any) => (
-                  <div
+                  <button
                     key={notification.id}
-                    className={`flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-muted ${
+                    className={`w-full text-left flex items-start gap-3 p-3 rounded-lg border transition-colors hover:bg-muted ${
                       !notification.isRead ? 'bg-muted/50 border-primary/20' : 'bg-card'
                     }`}
                     onClick={() => handleMarkAsRead(notification.id)}
@@ -143,7 +141,7 @@ export const NotificationBell: React.FC = () => {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}

@@ -9,7 +9,6 @@ import {
   Button,
   Input,
   Container,
-  Grid,
   Switch
 } from '@taskflow/ui';
 import { 
@@ -203,7 +202,7 @@ const IntegrationsLayout: React.FC = () => {
       {/* Search and Filters */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
             <div className="flex-1 relative">
               <PuzzlePieceIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -216,7 +215,7 @@ const IntegrationsLayout: React.FC = () => {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-2 border border-border rounded-md bg-background text-foreground"
+              className="px-3 py-2 border border-border rounded-md bg-background text-foreground min-w-[140px]"
             >
               <option value="all">All Categories</option>
               <option value="communication">Communication</option>
@@ -230,19 +229,19 @@ const IntegrationsLayout: React.FC = () => {
       </Card>
 
       {/* Integrations Grid */}
-      <Grid cols={3} className="gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         {filteredIntegrations.map((integration) => (
           <Card key={integration.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 min-w-0 flex-1">
                   {getCategoryIcon(integration.category)}
-                  <div>
-                    <CardTitle className="text-lg">{integration.name}</CardTitle>
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-lg truncate">{integration.name}</CardTitle>
                     {getCategoryBadge(integration.category)}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
                   {getStatusBadge(integration.status)}
                   <Switch
                     checked={integration.isEnabled}
@@ -281,20 +280,20 @@ const IntegrationsLayout: React.FC = () => {
                 )}
               </div>
               
-              <div className="flex space-x-2 mt-4">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <PencilIcon className="h-4 w-4 mr-2" />
-                  Configure
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
+                <Button variant="outline" size="sm" className="flex-1 min-w-0">
+                  <PencilIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Configure</span>
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  <ClockIcon className="h-4 w-4 mr-2" />
-                  Sync Now
+                <Button variant="outline" size="sm" className="flex-1 min-w-0">
+                  <ClockIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Sync Now</span>
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => handleDeleteIntegration(integration.id)}
-                  className="text-red-600 hover:text-red-700"
+                  className="text-red-600 hover:text-red-700 flex-shrink-0 sm:w-auto"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </Button>
@@ -302,7 +301,7 @@ const IntegrationsLayout: React.FC = () => {
             </CardContent>
           </Card>
         ))}
-      </Grid>
+      </div>
 
       {/* No Results */}
       {filteredIntegrations.length === 0 && (

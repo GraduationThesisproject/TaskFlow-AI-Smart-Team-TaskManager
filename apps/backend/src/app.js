@@ -74,10 +74,6 @@ app.use(cors(corsOptions));
 // Logging
 app.use(morgan('combined'));
 
-// Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.status(200).json({ 
@@ -96,17 +92,39 @@ app.get('/cors-test', (req, res) => {
     });
 });
 
-// Static file serving for uploads - minimal version
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// Static file serving for uploads - handle subdirectories properly
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+  setHeaders: (res, path) => {
+    // Set CORS headers for static files
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    // Set proper headers for different file types
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png') || path.endsWith('.gif') || path.endsWith('.webp')) {
+      res.setHeader('Content-Type', 'image/*');
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache images for 1 year
+    } else if (path.endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache other files for 1 day
+    }
+  }
+}));
+
+// Body parsing middleware for all routes
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/files', authMiddleware, fileRoutes);
 app.use('/api/workspaces', authMiddleware, workspaceRoutes);
 app.use('/api/spaces', authMiddleware, spaceRoutes);
 app.use('/api/boards', authMiddleware, boardRoutes);
 app.use('/api/tasks', authMiddleware, taskRoutes);
-app.use('/api/files', authMiddleware, fileRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/checklists', authMiddleware, checklistRoutes);
 app.use('/api/reminders', authMiddleware, reminderRoutes);

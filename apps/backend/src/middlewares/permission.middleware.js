@@ -6,23 +6,27 @@ const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
 
 // Require system admin role
-const requireSystemAdmin = (req, res, next) => {
-    (async () => {
-        try {
-            const userId = req.user.id;
-            const user = await User.findById(userId);
-            const userRoles = await user.getRoles();
+const requireSystemAdmin = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        logger.info(`Permission middleware: Checking system admin for user ID: ${userId}`);
+        
+        const user = await User.findById(userId);
+        const userRoles = await user.getRoles();
 
-            if (userRoles.systemRole !== 'admin' && userRoles.systemRole !== 'super_admin') {
-                return sendResponse(res, 403, false, 'System admin permissions required');
-            }
+        logger.info(`Permission middleware: User roles - systemRole: ${userRoles.systemRole}`);
 
-            next();
-        } catch (error) {
-            logger.error('System admin check error:', error);
-            sendResponse(res, 500, false, 'Server error checking admin permissions');
+        if (userRoles.systemRole !== 'admin' && userRoles.systemRole !== 'super_admin') {
+            logger.warn(`Permission middleware: Access denied for user ${userId} with role ${userRoles.systemRole}`);
+            return sendResponse(res, 403, false, 'System admin permissions required');
         }
-    })();
+
+        logger.info(`Permission middleware: Access granted for user ${userId}`);
+        next();
+    } catch (error) {
+        logger.error('System admin check error:', error);
+        sendResponse(res, 500, false, 'Server error checking admin permissions');
+    }
 };
 
 // Require workspace permission

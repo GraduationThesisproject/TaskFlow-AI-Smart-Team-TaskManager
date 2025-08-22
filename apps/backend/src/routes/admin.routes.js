@@ -3,7 +3,7 @@ const adminController = require('../controllers/admin.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 const { requireSystemAdmin } = require('../middlewares/permission.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { uploadMiddlewares, processUploadedFiles } = require('../middlewares/upload.middleware');
+const { uploadMiddlewares, processUploadedFiles, createAdminRouteMiddleware } = require('../middlewares/upload.middleware');
 
 const router = express.Router();
 
@@ -18,9 +18,12 @@ router.use(requireSystemAdmin);
 router.post('/auth/logout', adminController.logout);
 router.get('/auth/me', adminController.getCurrentAdmin);
 router.post('/auth/change-password', adminController.changePassword);
-router.put('/auth/profile', adminController.updateProfile);
+router.put('/auth/profile', 
+  ...createAdminRouteMiddleware('general', true), // Handle both JSON and file uploads
+  adminController.updateProfile
+);
 router.post('/auth/avatar', 
-  uploadMiddlewares.avatar,
+  ...createAdminRouteMiddleware('avatar', false), // Handle both JSON and file uploads, file required
   processUploadedFiles,
   adminController.uploadAvatar
 );

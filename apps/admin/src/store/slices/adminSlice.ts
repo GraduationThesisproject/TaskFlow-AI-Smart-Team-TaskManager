@@ -131,25 +131,37 @@ export const uploadAdminAvatar = createAsyncThunk(
   'admin/uploadAvatar',
   async (file: File, { rejectWithValue }) => {
     try {
+      console.log('uploadAdminAvatar: starting upload for file:', file.name, file.size, file.type);
+      
       const formData = new FormData();
       formData.append('file', file);
+      
+      console.log('uploadAdminAvatar: FormData created, file appended with key "file"');
+      console.log('uploadAdminAvatar: FormData contents:', Array.from(formData.entries()));
 
       const response = await fetch(`${env.API_BASE_URL}/admin/auth/avatar`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          // Don't set Content-Type manually - let the browser set it with boundary for FormData
         },
         body: formData,
       });
 
+      console.log('uploadAdminAvatar: Response status:', response.status);
+      console.log('uploadAdminAvatar: Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('uploadAdminAvatar: Error response:', errorData);
         return rejectWithValue(errorData.message || 'Failed to upload avatar');
       }
 
       const data = await response.json();
+      console.log('uploadAdminAvatar: Success response:', data);
       return data;
     } catch (error) {
+      console.error('uploadAdminAvatar: Network error:', error);
       return rejectWithValue('Network error occurred');
     }
   }
@@ -318,8 +330,17 @@ const adminSlice = createSlice({
         // Update the current admin's avatar
         if (state.currentAdmin) {
           const responseData = action.payload;
-          const avatarData = responseData.data || responseData;
-          state.currentAdmin.avatar = avatarData.avatar;
+          const adminData = responseData.data || responseData;
+          console.log('uploadAdminAvatar fulfilled: responseData:', responseData);
+          console.log('uploadAdminAvatar fulfilled: adminData:', adminData);
+          
+          // Update the avatar field
+          if (adminData.admin && adminData.admin.avatar) {
+            state.currentAdmin.avatar = adminData.admin.avatar;
+            console.log('uploadAdminAvatar fulfilled: Avatar updated to:', adminData.admin.avatar);
+          } else {
+            console.warn('uploadAdminAvatar fulfilled: No avatar data found in response');
+          }
         }
         state.error = null;
       })

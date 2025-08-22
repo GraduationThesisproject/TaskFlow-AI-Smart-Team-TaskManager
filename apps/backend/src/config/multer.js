@@ -21,10 +21,14 @@ const ensureDirectoriesExist = async () => {
 
   for (const dir of directories) {
     try {
-      await fs.mkdir(path.join(process.cwd(), dir), { recursive: true });
+      const fullPath = path.join(process.cwd(), dir);
+      await fs.mkdir(fullPath, { recursive: true });
+      logger.info(`✅ Created/verified directory: ${fullPath}`);
     } catch (error) {
       if (error.code !== 'EEXIST') {
-        logger.error(`Failed to create directory ${dir}:`, error);
+        logger.error(`❌ Failed to create directory ${dir}:`, error);
+      } else {
+        logger.info(`✅ Directory already exists: ${dir}`);
       }
     }
   }
@@ -35,7 +39,7 @@ const fileTypeConfigs = {
   avatar: {
     folder: 'avatars',
     allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-    maxFileSize: 2 * 1024 * 1024, // 2MB
+    maxFileSize: 5 * 1024 * 1024, // 5MB (increased from 2MB)
     thumbnails: [
       { name: 'small', width: 50, height: 50 },
       { name: 'medium', width: 150, height: 150 },
@@ -116,20 +120,48 @@ const generateFilename = (originalname, category = 'general', userId = null) => 
 // Configure Multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Ensure workspaceId and spaceId are set to prevent undefined errors
-    req.workspaceId = req.workspaceId || req.workspace || null;
-    req.spaceId = req.spaceId || req.space || null;
-    
-    const category = req.fileCategory || 'general';
-    const config = fileTypeConfigs[category] || fileTypeConfigs.general;
-    const uploadPath = path.join(process.cwd(), 'uploads', config.folder);
-    cb(null, uploadPath);
+    try {
+      // Ensure workspaceId and spaceId are set to prevent undefined errors
+      req.workspaceId = req.workspaceId || req.workspace || null;
+      req.spaceId = req.spaceId || req.space || null;
+      
+      const category = req.fileCategory || 'general';
+      const config = fileTypeConfigs[category] || fileTypeConfigs.general;
+      const uploadPath = path.join(process.cwd(), 'uploads', config.folder);
+      
+      logger.info(`Storage destination: File ${file.originalname}`);
+      logger.info(`Storage destination: req.fileCategory: ${req.fileCategory}`);
+      logger.info(`Storage destination: category variable: ${category}`);
+      logger.info(`Storage destination: config.folder: ${config.folder}`);
+      logger.info(`Storage destination: uploadPath: ${uploadPath}`);
+      
+      // Ensure the destination directory exists
+      fs.mkdir(uploadPath, { recursive: true })
+        .then(() => {
+          logger.info(`✅ Destination directory ready: ${uploadPath}`);
+          cb(null, uploadPath);
+        })
+        .catch((error) => {
+          logger.error(`❌ Failed to create destination directory: ${uploadPath}`, error);
+          cb(error);
+        });
+    } catch (error) {
+      logger.error(`❌ Storage destination error:`, error);
+      cb(error);
+    }
   },
   filename: (req, file, cb) => {
-    const category = req.fileCategory || 'general';
-    const userId = req.user ? req.user._id || req.user.id : null;
-    const filename = generateFilename(file.originalname, category, userId);
-    cb(null, filename);
+    try {
+      const category = req.fileCategory || 'general';
+      const userId = req.user ? req.user._id || req.user.id : null;
+      const filename = generateFilename(file.originalname, category, userId);
+      
+      logger.info(`Storage filename: File ${file.originalname} -> ${filename}, userId: ${userId}`);
+      cb(null, filename);
+    } catch (error) {
+      logger.error(`❌ Storage filename error:`, error);
+      cb(error);
+    }
   }
 });
 
@@ -138,9 +170,14 @@ const fileFilter = (req, file, cb) => {
   const category = req.fileCategory || 'general';
   const config = fileTypeConfigs[category] || fileTypeConfigs.general;
   
+  logger.info(`File filter: Processing file ${file.originalname}, mimetype: ${file.mimetype}, category: ${category}`);
+  logger.info(`File filter: Allowed types for ${category}:`, config.allowedMimeTypes);
+  
   if (config.allowedMimeTypes.includes(file.mimetype)) {
+    logger.info(`File filter: File ${file.originalname} accepted`);
     cb(null, true);
   } else {
+    logger.error(`File filter: File type ${file.mimetype} is not allowed for ${category}`);
     cb(new Error(`File type ${file.mimetype} is not allowed for ${category}`), false);
   }
 };
@@ -149,13 +186,27 @@ const fileFilter = (req, file, cb) => {
 const createMulterUpload = (category = 'general') => {
   const config = fileTypeConfigs[category] || fileTypeConfigs.general;
   
+  logger.info(`createMulterUpload: Creating upload for category: ${category}`);
+  logger.info(`createMulterUpload: Using config:`, {
+    folder: config.folder,
+    maxFileSize: config.maxFileSize,
+    maxFileSizeMB: (config.maxFileSize / (1024 * 1024)).toFixed(2) + 'MB'
+  });
+  
   return multer({
     storage: storage,
     limits: {
       fileSize: config.maxFileSize
     },
-    fileFilter: fileFilter
-  });
+    fileFilter: (req, file, cb) => {
+      // Ensure the fileCategory is set for this request
+      req.fileCategory = category;
+      logger.info(`createMulterUpload: Set req.fileCategory to ${category} for file ${file.originalname}`);
+      
+      // Call the original fileFilter with the updated req object
+      fileFilter(req, file, cb);
+    }
+  }).single('file'); // Pre-configure for single file upload
 };
 
 // Generate thumbnails for images
@@ -232,13 +283,30 @@ const getFileMimeType = async (filePath) => {
 const getFileStats = async (filePath) => {
   try {
     const stats = await fs.stat(filePath);
-    return {
+    const result = {
       size: stats.size,
       created: stats.birthtime,
       modified: stats.mtime,
       isFile: stats.isFile(),
       isDirectory: stats.isDirectory()
     };
+    
+    // Try to get image dimensions if it's an image file
+    try {
+      const mimeType = await getFileMimeType(filePath);
+      if (mimeType.startsWith('image/')) {
+        const imageInfo = await sharp(filePath).metadata();
+        result.dimensions = {
+          width: imageInfo.width,
+          height: imageInfo.height
+        };
+      }
+    } catch (dimensionError) {
+      logger.warn(`Failed to get image dimensions for ${filePath}:`, dimensionError);
+      // Continue without dimensions
+    }
+    
+    return result;
   } catch (error) {
     logger.error(`Failed to get file stats for ${filePath}:`, error);
     return null;
@@ -279,7 +347,8 @@ module.exports = {
   createMulterUpload,
   generateThumbnails,
   getFileStats,
-  deleteFile,
+  getFileMimeType,
+  fileTypeConfigs, // Export the file type configurations
   ensureDirectoriesExist
 };
 
