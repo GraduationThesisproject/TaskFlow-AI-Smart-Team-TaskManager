@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { WorkspaceService } from "../../services/workspaceService";
+import { WorkspaceService } from "../../services/D_workspaceService";
 import type { CreateWorkspaceData, Workspace } from "../../types"
 
 export const useWorkspacesAPI = () => {
