@@ -15,18 +15,33 @@ import LoginPage from './pages/LoginPage';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 
-// Protected Route Component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+// Protected Route Component that can access Redux state
+const ProtectedRouteWithRedux = ({ children }: { children: React.ReactNode }) => {
+  const state = store.getState();
+  const { isAuthenticated, isLoading } = state.admin;
   const token = localStorage.getItem('adminToken');
   
-  console.log('ProtectedRoute: checking token:', !!token);
+  console.log('ProtectedRoute: checking auth state:', { isAuthenticated, isLoading, hasToken: !!token });
   
-  if (!token) {
-    console.log('ProtectedRoute: no token, redirecting to login');
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="text-muted-foreground">Checking authentication...</div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Check if authenticated or has token
+  if (!isAuthenticated && !token) {
+    console.log('ProtectedRoute: not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
-  console.log('ProtectedRoute: token found, rendering children');
+  console.log('ProtectedRoute: authenticated, rendering children');
   return <>{children}</>;
 };
 
@@ -42,13 +57,13 @@ function App() {
               
               {/* Protected Admin Routes - All handled by AdminPage */}
               <Route path="/*" element={
-                <ProtectedRoute>
+                <ProtectedRouteWithRedux>
                   <LanguageProvider>
                     <NotificationProvider authToken={localStorage.getItem('adminToken') || ''}>
                       <AdminPage />
                     </NotificationProvider>
                   </LanguageProvider>
-                </ProtectedRoute>
+                </ProtectedRouteWithRedux>
               } />
             </Routes>
           </div>

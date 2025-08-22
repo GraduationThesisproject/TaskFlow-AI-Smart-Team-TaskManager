@@ -19,10 +19,12 @@ const LoginPage: React.FC = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
+    console.log('LoginPage: auth state changed:', { isAuthenticated, isLoading, error });
     if (isAuthenticated) {
+      console.log('LoginPage: authenticated, navigating to dashboard');
       navigate('/dashboard');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -39,13 +41,16 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('LoginPage: submitting login form...');
     
     try {
-      await dispatch(loginAdmin(formData)).unwrap();
+      console.log('LoginPage: dispatching loginAdmin...');
+      const result = await dispatch(loginAdmin(formData)).unwrap();
+      console.log('LoginPage: login successful:', result);
       // Navigation will be handled by useEffect when isAuthenticated changes
     } catch (error) {
+      console.error('LoginPage: login failed:', error);
       // Error is already handled by the Redux slice
-      console.error('Login failed:', error);
     }
   };
 

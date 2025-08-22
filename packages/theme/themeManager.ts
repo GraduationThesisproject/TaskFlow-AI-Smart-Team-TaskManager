@@ -37,8 +37,8 @@ export const generateThemeWithCustomColors = (
     const primaryDarker = darkenColor(primaryColor, 10);
     
     // Add custom CSS variables for primary color variants
-    customTheme['--primary-lighter'] = primaryLighter;
-    customTheme['--primary-darker'] = primaryDarker;
+    (customTheme as any)['--primary-lighter'] = primaryLighter;
+    (customTheme as any)['--primary-darker'] = primaryDarker;
   }
   
   // Apply custom accent color if provided

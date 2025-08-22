@@ -125,19 +125,53 @@ const adminSlice = createSlice({
         state.error = null;
       })
       .addCase(loginAdmin.fulfilled, (state, action) => {
+        console.log('AdminSlice: login fulfilled, payload:', action.payload);
         state.isLoading = false;
         state.isAuthenticated = true;
         // Handle the response format from sendResponse utility
         const responseData = action.payload;
 
-        state.currentAdmin = responseData.admin || responseData;
-        state.permissions = (responseData.admin?.permissions || []).map(p => p.name || p.id);
+        // The response is wrapped in a data property by sendResponse utility
+        const adminData = responseData.data || responseData;
+        
+        console.log('AdminSlice: adminData:', adminData);
+        console.log('AdminSlice: permissions data:', adminData.admin?.permissions);
+        
+        state.currentAdmin = adminData.admin || adminData;
+        
+        // Safely handle permissions - ensure it's an array before mapping
+        try {
+          const permissions = adminData.admin?.permissions;
+          if (Array.isArray(permissions)) {
+            state.permissions = permissions.map((p: any) => p.name || p.id);
+          } else if (permissions && typeof permissions === 'object') {
+            // If permissions is an object, try to extract values
+            state.permissions = Object.values(permissions).map((p: any) => p.name || p.id || p);
+          } else {
+            console.warn('AdminSlice: permissions is not an array or object:', permissions);
+            state.permissions = [];
+          }
+        } catch (error) {
+          console.error('AdminSlice: error processing permissions:', error);
+          state.permissions = [];
+        }
+        
         state.error = null;
         
-        // Store token in localStorage
-        if (responseData.token) {
-          localStorage.setItem('adminToken', responseData.token);
+        // Store token in localStorage - token is in data.token
+        if (adminData.token) {
+          console.log('AdminSlice: storing token in localStorage');
+          localStorage.setItem('adminToken', adminData.token);
+        } else {
+          console.warn('AdminSlice: no token in response data:', adminData);
         }
+        
+        console.log('AdminSlice: final state:', { 
+          isAuthenticated: state.isAuthenticated, 
+          hasAdmin: !!state.currentAdmin,
+          hasToken: !!localStorage.getItem('adminToken'),
+          permissions: state.permissions
+        });
       })
       .addCase(loginAdmin.rejected, (state, action) => {
         state.isLoading = false;
@@ -165,17 +199,39 @@ const adminSlice = createSlice({
         // Handle the response format from sendResponse utility
         const responseData = action.payload;
 
-        state.currentAdmin = responseData.admin || responseData;
-        state.permissions = (responseData.admin?.permissions || []).map(p => p.name || p.id);
+        // The response is wrapped in a data property by sendResponse utility
+        const adminData = responseData.data || responseData;
+
+        state.currentAdmin = adminData.admin || adminData;
+        
+        // Safely handle permissions - ensure it's an array before mapping
+        try {
+          const permissions = adminData.admin?.permissions;
+          if (Array.isArray(permissions)) {
+            state.permissions = permissions.map((p: any) => p.name || p.id);
+          } else if (permissions && typeof permissions === 'object') {
+            // If permissions is an object, try to extract values
+            state.permissions = Object.values(permissions).map((p: any) => p.name || p.id || p);
+          } else {
+            console.warn('AdminSlice: permissions is not an array or object:', permissions);
+            state.permissions = [];
+          }
+        } catch (error) {
+          console.error('AdminSlice: error processing permissions:', error);
+          state.permissions = [];
+        }
+        
         state.error = null;
       })
       .addCase(getCurrentAdmin.rejected, (state, action) => {
+        console.log('AdminSlice: getCurrentAdmin rejected:', action.payload);
         state.isLoading = false;
         state.isAuthenticated = false;
         state.currentAdmin = null;
         state.permissions = [];
         state.error = action.payload as string;
-        localStorage.removeItem('adminToken');
+        // Don't remove token on failure - let the user try again
+        // localStorage.removeItem('adminToken');
       });
   },
 });
