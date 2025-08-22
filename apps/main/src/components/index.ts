@@ -16,13 +16,9 @@ export { DraggableColumn as BoardDraggableColumn } from './board/DraggableColumn
 export { SubNavigation as BoardSubNavigation } from './board/SubNavigation';
 export { TaskDetailModal } from './board/TaskDetailModal';
 export { CommentItem } from './board/CommentItem';
-export { PermissionGuard } from './common/PermissionGuard';
-export { withPermissions } from './common/withPermissions';
-export { ProtectedRoute } from './common/ProtectedRoute';
-export { PublicRoute } from './common/PublicRoute';
-export { NavigationGuard, ProtectedLink } from './common/NavigationGuard';
 export { LogoutConfirmDialog } from './common/LogoutConfirmDialog';
 export { ThemeToggle } from './common/ThemeToggle';
+export { AppLayout } from './common/AppLayout';
 export { ThemeSettings } from './settings/ThemeSettings';
 export { CreateWorkspaceModal } from "./workspace/CreateWorkspaceModal"
 export { useWorkspacesAPI } from "./workspace/useWorkspacesAPI"
