@@ -21,7 +21,7 @@ const ProtectedRouteWithRedux = ({ children }: { children: React.ReactNode }) =>
   const { isAuthenticated, isLoading } = state.admin;
   const token = localStorage.getItem('adminToken');
   
-  console.log('ProtectedRoute: checking auth state:', { isAuthenticated, isLoading, hasToken: !!token });
+  // console.log('ProtectedRoute: checking auth state:', { isAuthenticated, isLoading, hasToken: !!token });
   
   // Show loading while checking authentication
   if (isLoading) {
@@ -41,7 +41,7 @@ const ProtectedRouteWithRedux = ({ children }: { children: React.ReactNode }) =>
     return <Navigate to="/login" replace />;
   }
   
-  console.log('ProtectedRoute: authenticated, rendering children');
+  // console.log('ProtectedRoute: authenticated, rendering children');
   return <>{children}</>;
 };
 

@@ -185,22 +185,40 @@ const updateProfile = async (req, res) => {
 
 const uploadAvatar = async (req, res) => {
   try {
+    logger.info('uploadAvatar: Request received');
+    logger.info('uploadAvatar: Request headers:', req.headers);
+    logger.info('uploadAvatar: Request body keys:', Object.keys(req.body || {}));
+    logger.info('uploadAvatar: Request file:', req.file);
+    logger.info('uploadAvatar: Request files:', req.files);
+    logger.info('uploadAvatar: Request uploadedFile:', req.uploadedFile);
+    logger.info('uploadAvatar: Request processedFiles:', req.processedFiles);
+    
     if (!req.uploadedFile) {
+      logger.error('uploadAvatar: No uploadedFile found in request');
       return sendResponse(res, 400, false, 'No file uploaded');
     }
 
     const userId = req.user.id;
     const avatarUrl = req.uploadedFile.url; // Use the processed file URL
 
+    logger.info('uploadAvatar: Processing avatar upload for userId:', userId);
+    logger.info('uploadAvatar: Avatar URL:', avatarUrl);
+    logger.info('uploadAvatar: Full uploadedFile object:', JSON.stringify(req.uploadedFile, null, 2));
+
     // Update user avatar
     const user = await User.findByIdAndUpdate(userId, { avatar: avatarUrl }, { new: true });
     if (!user) {
+      logger.error('uploadAvatar: User not found for userId:', userId);
       return sendResponse(res, 404, false, 'User not found');
     }
+
+    logger.info('uploadAvatar: User avatar updated successfully');
+    logger.info('uploadAvatar: Updated user object:', JSON.stringify(user, null, 2));
 
     // Get updated admin info
     const admin = await Admin.findOne({ userId: user._id, isActive: true });
     if (!admin) {
+      logger.error('uploadAvatar: Admin not found for userId:', userId);
       return sendResponse(res, 404, false, 'Admin not found');
     }
 
@@ -218,6 +236,8 @@ const uploadAvatar = async (req, res) => {
       }
     };
 
+    logger.info('uploadAvatar: Avatar upload completed successfully');
+    logger.info('uploadAvatar: Final admin response:', JSON.stringify(adminResponse, null, 2));
     sendResponse(res, 200, true, 'Avatar uploaded successfully', adminResponse);
   } catch (error) {
     logger.error('Upload avatar error:', error);

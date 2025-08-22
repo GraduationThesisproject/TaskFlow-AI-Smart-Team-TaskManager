@@ -42,7 +42,14 @@ const ProfileLayout: React.FC = () => {
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    console.log('handleAvatarChange: file selected:', file);
     if (file) {
+      console.log('handleAvatarChange: file details:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      });
       setAvatarFile(file);
       // Create preview URL
       const reader = new FileReader();
@@ -50,14 +57,22 @@ const ProfileLayout: React.FC = () => {
         setAvatarPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+    } else {
+      console.log('handleAvatarChange: no file selected');
     }
   };
 
   const handleAvatarUpload = async () => {
-    if (!avatarFile) return;
+    console.log('handleAvatarUpload: called with avatarFile:', avatarFile);
+    if (!avatarFile) {
+      console.log('handleAvatarUpload: no avatar file, returning early');
+      return;
+    }
     
     try {
+      console.log('handleAvatarUpload: dispatching uploadAdminAvatar with file:', avatarFile.name);
       await dispatch(uploadAdminAvatar(avatarFile)).unwrap();
+      console.log('handleAvatarUpload: upload successful');
       setAvatarFile(null);
       setAvatarPreview(null);
       if (fileInputRef.current) {
@@ -157,9 +172,10 @@ const ProfileLayout: React.FC = () => {
                 <Avatar size="xl" className="bg-primary text-primary-foreground">
                   {currentAdmin?.avatar ? (
                     <img 
-                      src={currentAdmin.avatar} 
+                      src={`${currentAdmin.avatar}?v=${encodeURIComponent(currentAdmin.avatar)}`} 
                       alt={currentAdmin?.name || 'Admin'} 
                       className="w-full h-full object-cover rounded-full"
+                      key={currentAdmin.avatar} // Force re-render when avatar changes
                     />
                   ) : (
                     <span className="text-2xl font-bold">
@@ -210,6 +226,15 @@ const ProfileLayout: React.FC = () => {
                   <Typography variant="body-small" className="text-muted-foreground mt-2">
                     New avatar preview
                   </Typography>
+                  <div className="mt-2">
+                    <Button
+                      size="sm"
+                      onClick={handleAvatarUpload}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Uploading...' : 'Upload Avatar Now'}
+                    </Button>
+                  </div>
                 </div>
               )}
               
