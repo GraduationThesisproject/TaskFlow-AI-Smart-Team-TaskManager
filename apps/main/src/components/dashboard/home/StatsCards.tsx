@@ -1,8 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle, Typography } from "@taskflow/ui";
 import { Users, Clock, AlertTriangle, Calendar } from "lucide-react";
-import type { StatsCardsProps } from "../../../types/dash.types";
 
 
+interface StatsCardsProps {
+  taskStats: {
+    total: number;
+    completed: number;
+    inProgress: number;
+    overdue: number;
+    highPriority: number;
+    completionRate: number;
+  };
+}
 
 
 export const StatsCards: React.FC<StatsCardsProps> = ({ taskStats }) => (
