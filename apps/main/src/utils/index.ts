@@ -2,6 +2,7 @@
 export * from './apiClient';
 export * from './tokenManager';
 export * from './permissions';
+export * from './userUtils';
 
 // Date utilities for Redux serialization
 export const toISODateString = (date: Date | string | undefined): string | undefined => {

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button,  Typography, Flex, Avatar, AvatarImage, AvatarFallback } from '@taskflow/ui';
 import { Link } from 'react-router-dom';
 import { ThemeProvider } from '@taskflow/theme';
-import { useTheme } from './hooks/useTheme';
 import { useAuth } from './hooks/useAuth';
 import { Provider } from 'react-redux';
 import { store } from './store';
@@ -15,12 +14,11 @@ import { BoardPage } from './pages/board.page';
 import { LandingPage } from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import { NoAccessPage } from './pages/NoAccessPage';
-import { ProtectedRoute, PublicRoute, LogoutConfirmDialog } from './components';
+import { ProtectedRoute, PublicRoute, LogoutConfirmDialog, ThemeToggle } from './components';
 import { LogOut } from 'lucide-react';
 
 function AppContent() {
   const dispatch = useAppDispatch();
-  const { theme, toggleTheme } = useTheme();
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -66,27 +64,19 @@ function AppContent() {
                 </Link>
               </div>
               <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleTheme}
-                  className="flex items-center gap-2 hover:bg-muted/50 transition-all duration-200 rounded-full px-4 py-2"
-                >
-                  {theme === 'dark' ? '☀️' : '🌙'}
-                  <span className="hidden sm:inline">{theme === 'dark' ? 'Light' : 'Dark'}</span>
-                </Button>
+                                 <ThemeToggle />
 
                 {/* User Info and Logout */}
                 <div className="flex items-center gap-3">
                   <div className="hidden sm:flex items-center gap-2 text-sm">
                     <Avatar size="sm">
-                      {user?.avatar && <AvatarImage src={user.avatar} alt={user.name || 'User'} />}
+                      {user?.user?.avatar && <AvatarImage src={user.user.avatar} alt={user.user.name || 'User'} />}
                       <AvatarFallback variant="primary">
-                        {user?.name?.charAt(0) || 'U'}
+                        {user?.user?.name?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <span className="font-medium">
-                      {user?.name || 'User'}
+                      {user?.user?.name || 'User'}
                     </span>
                   </div>
                   
@@ -144,8 +134,9 @@ function AppContent() {
             </ProtectedRoute>
           } />
 
-          {/* No Access Page */}
-          <Route path="/no-access" element={<NoAccessPage />} />
+
+           {/* No Access Page */}
+           <Route path="/no-access" element={<NoAccessPage />} />
 
           {/* Catch all route - redirect to landing page */}
           <Route path="*" element={
@@ -159,7 +150,7 @@ function AppContent() {
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={logout}
-        userName={user?.name || 'User'}
+        userName={user?.user?.name || 'User'}
       />
     </div>
   );
@@ -168,7 +159,7 @@ function AppContent() {
 function App() {
   return (
     <Provider store={store}>
-      <ThemeProvider defaultTheme="dark" storageKey="taskflow-theme">
+      <ThemeProvider defaultTheme="dark" storageKey="theme">
         <Router>
           <AppContent />
         </Router>
