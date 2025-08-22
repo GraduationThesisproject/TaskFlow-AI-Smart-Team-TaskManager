@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
 import { 
+  fetchWorkspaces,
   fetchWorkspace, 
   fetchSpacesByWorkspace,
   fetchMembers,
@@ -25,6 +26,11 @@ export const useWorkspaces = (workspaceId?: string) => {
     isLoading,
     error
   } = useAppSelector(state => state.workspace);
+
+  // Fetch all workspaces on mount
+  useEffect(() => {
+    dispatch(fetchWorkspaces() as any);
+  }, [dispatch]);
 
   // Load workspace data when workspaceId changes
   useEffect(() => {
@@ -87,6 +93,7 @@ export const useWorkspaces = (workspaceId?: string) => {
     }
   };
 
+  // ✅ Updated: create workspace and refetch list
   const createNewWorkspace = async (workspaceData: {
     name: string;
     description?: string;
@@ -94,6 +101,8 @@ export const useWorkspaces = (workspaceId?: string) => {
   }) => {
     try {
       await dispatch(createWorkspace(workspaceData) as any).unwrap();
+      // Refetch all workspaces after creation
+      dispatch(fetchWorkspaces() as any);
     } catch (error) {
       console.error('Failed to create workspace:', error);
       throw error;
@@ -101,7 +110,6 @@ export const useWorkspaces = (workspaceId?: string) => {
   };
 
   return {
-    // State
     workspaces,
     currentWorkspace,
     spaces,
