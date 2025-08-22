@@ -85,6 +85,30 @@ export interface WorkspaceState {
   error: string | null;
 }
 
+export interface WorkspacesSectionProps {
+  workspaces: Workspace[];
+  openCreateModal: () => void;
+}
+
+export interface WelcomeHeaderProps {
+  displayName: string;
+}
+
+export interface StatsCardsProps {
+  taskStats: {
+    total: number;
+    completed: number;
+    inProgress: number;
+    overdue: number;
+    highPriority: number;
+    completionRate: number;
+  };
+}
+
+export interface RecentActivityProps {
+  recentActivity: Array<{ user: { name: string; avatar?: string }; action: string; timestamp: string }>;
+}
+
 export interface UpcomingDeadlinesProps {
-  upcomingDeadlines: Array<{ _id: string; title: string; dueDate: Date; priority: string }>;
+  upcomingDeadlines: Task[];
 }
