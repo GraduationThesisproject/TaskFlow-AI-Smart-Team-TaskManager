@@ -9,10 +9,10 @@ const WorkSpace = () => {
   return (      
       <Routes>
         {/* Anyone with workspace access (member+) */}
-        <Route path="main" element={
-          <ProtectedRoute requiredRole="member">
+        <Route path="" element={
+          // <ProtectedRoute requiredRole="member">
             <Main/>
-          </ProtectedRoute>
+          // </ProtectedRoute>
         } />
 
         {/* Settings: restrict to admins+ (owner/admin) */}
