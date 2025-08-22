@@ -4,7 +4,6 @@ import Home from '../layouts/Dashboard/Home.Layouts';
 import Templates from '../layouts/Dashboard/Templates.Layouts';
 import Calendar from '../layouts/Dashboard/Calendar.Layouts';
 import Settings from '../layouts/Dashboard/Settings.Layouts';
-
 const Dashboard: React.FC = () => {
   return (
     <div>
