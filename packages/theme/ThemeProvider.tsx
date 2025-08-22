@@ -7,6 +7,8 @@ interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
+  setUserPrimaryColor: (color: string) => void;
+  userPrimaryColor: string | null;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -15,34 +17,60 @@ interface ThemeProviderProps {
   children: React.ReactNode;
   defaultTheme?: Theme;
   storageKey?: string;
+  userPrimaryColor?: string;
 }
 
 export function ThemeProvider({ 
   children, 
   defaultTheme = 'dark',
-  storageKey = 'taskflow-theme' 
+  storageKey = 'taskflow-theme',
+  userPrimaryColor: initialUserColor
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(defaultTheme);
+  const [userPrimaryColor, setUserPrimaryColorState] = useState<string | null>(initialUserColor || null);
 
   useEffect(() => {
-    // Check for saved theme preference or default to 'dark'
-    const savedTheme = localStorage.getItem(storageKey) as Theme;
-    if (savedTheme) {
-      setThemeState(savedTheme);
-      applyTheme(savedTheme);
-    } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initialTheme = prefersDark ? 'dark' : 'light';
-      setThemeState(initialTheme);
-      applyTheme(initialTheme);
+    try {
+      const savedTheme = localStorage.getItem(storageKey) as Theme;
+      const savedUserColor = localStorage.getItem('taskflow-user-primary-color');
+      
+      if (savedTheme && ['light', 'dark'].includes(savedTheme)) {
+        setThemeState(savedTheme);
+        applyTheme(savedTheme, savedUserColor);
+      } else {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const initialTheme = prefersDark ? 'dark' : 'light';
+        setThemeState(initialTheme);
+        applyTheme(initialTheme, savedUserColor);
+      }
+
+      if (savedUserColor) {
+        setUserPrimaryColorState(savedUserColor);
+      }
+    } catch (error) {
+      console.warn('Failed to load theme preferences:', error);
+      applyTheme(defaultTheme, initialUserColor);
     }
-  }, [storageKey]);
+  }, [storageKey, defaultTheme, initialUserColor]);
 
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem(storageKey, newTheme);
-    applyTheme(newTheme);
+    try {
+      setThemeState(newTheme);
+      localStorage.setItem(storageKey, newTheme);
+      applyTheme(newTheme, userPrimaryColor);
+    } catch (error) {
+      console.warn('Failed to save theme preference:', error);
+    }
+  };
+
+  const setUserPrimaryColor = (color: string) => {
+    try {
+      setUserPrimaryColorState(color);
+      localStorage.setItem('taskflow-user-primary-color', color);
+      applyTheme(theme, color);
+    } catch (error) {
+      console.warn('Failed to save user primary color:', error);
+    }
   };
 
   const toggleTheme = () => {
@@ -53,6 +81,8 @@ export function ThemeProvider({
     theme,
     setTheme,
     toggleTheme,
+    setUserPrimaryColor,
+    userPrimaryColor,
   };
 
   return (
@@ -70,7 +100,6 @@ export function useTheme() {
   return context;
 }
 
-// Theme toggle button component
 interface ThemeToggleProps {
   className?: string;
 }
@@ -86,7 +115,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
         ring-offset-background transition-colors focus-visible:outline-none 
         focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
         disabled:pointer-events-none disabled:opacity-50 hover:bg-accent 
-        hover:text-accent-foreground h-10 px-4 py-2 ${className}
+        hover:text-accent-foreground h-10 px-4 py-2 ${className || ''}
       `}
       aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
     >
