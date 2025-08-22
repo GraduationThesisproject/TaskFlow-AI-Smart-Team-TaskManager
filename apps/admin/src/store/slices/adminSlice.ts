@@ -101,6 +101,60 @@ export const getCurrentAdmin = createAsyncThunk(
   }
 );
 
+export const updateAdminProfileAsync = createAsyncThunk(
+  'admin/updateProfile',
+  async (profileData: Partial<Admin>, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${env.API_BASE_URL}/admin/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || 'Failed to update profile');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue('Network error occurred');
+    }
+  }
+);
+
+export const uploadAdminAvatar = createAsyncThunk(
+  'admin/uploadAvatar',
+  async (file: File, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`${env.API_BASE_URL}/admin/auth/avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || 'Failed to upload avatar');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue('Network error occurred');
+    }
+  }
+);
+
 const adminSlice = createSlice({
   name: 'admin',
   initialState,
@@ -232,6 +286,46 @@ const adminSlice = createSlice({
         state.error = action.payload as string;
         // Don't remove token on failure - let the user try again
         // localStorage.removeItem('adminToken');
+      })
+      
+      // Update Profile
+      .addCase(updateAdminProfileAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateAdminProfileAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Update the current admin with new profile data
+        if (state.currentAdmin) {
+          const responseData = action.payload;
+          const adminData = responseData.data || responseData;
+          state.currentAdmin = { ...state.currentAdmin, ...adminData.admin };
+        }
+        state.error = null;
+      })
+      .addCase(updateAdminProfileAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      
+      // Upload Avatar
+      .addCase(uploadAdminAvatar.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(uploadAdminAvatar.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Update the current admin's avatar
+        if (state.currentAdmin) {
+          const responseData = action.payload;
+          const avatarData = responseData.data || responseData;
+          state.currentAdmin.avatar = avatarData.avatar;
+        }
+        state.error = null;
+      })
+      .addCase(uploadAdminAvatar.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
       });
   },
 });

@@ -6,6 +6,9 @@ export interface Admin {
   role: AdminRole;
   permissions: Permission[];
   avatar?: string;
+  bio?: string;
+  location?: string;
+  phone?: string;
   isActive?: boolean;
   lastActivity?: Date;
   lastLoginAt?: Date;

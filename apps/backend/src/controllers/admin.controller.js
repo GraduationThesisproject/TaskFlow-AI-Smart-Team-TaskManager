@@ -98,6 +98,133 @@ const getCurrentAdmin = async (req, res) => {
   }
 };
 
+// Admin Profile Management
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    // Find user and include password for verification
+    const user = await User.findById(userId).select('+password');
+    if (!user) {
+      return sendResponse(res, 404, false, 'User not found');
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+    if (!isCurrentPasswordValid) {
+      return sendResponse(res, 400, false, 'Current password is incorrect');
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    sendResponse(res, 200, true, 'Password changed successfully');
+  } catch (error) {
+    logger.error('Change password error:', error);
+    sendResponse(res, 500, false, 'Server error changing password');
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const { name, email, bio, location, phone } = req.body;
+    const userId = req.user.id;
+
+    // Check if email is already taken by another user
+    if (email) {
+      const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+      if (existingUser) {
+        return sendResponse(res, 400, false, 'Email is already taken');
+      }
+    }
+
+    // Update user profile
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (bio !== undefined) updateData.bio = bio;
+    if (location !== undefined) updateData.location = location;
+    if (phone !== undefined) updateData.phone = phone;
+
+    const user = await User.findByIdAndUpdate(userId, updateData, { new: true }).select('-password');
+    if (!user) {
+      return sendResponse(res, 404, false, 'User not found');
+    }
+
+    // Get updated admin info
+    const admin = await Admin.findOne({ userId: user._id, isActive: true });
+    if (!admin) {
+      return sendResponse(res, 404, false, 'Admin not found');
+    }
+
+    const adminResponse = {
+      admin: {
+        id: admin._id,
+        userId: admin.userId._id,
+        name: user.name,
+        email: user.email,
+        role: admin.role,
+        permissions: admin.permissions,
+        avatar: user.avatar,
+        bio: user.bio,
+        location: user.location,
+        phone: user.phone,
+        isActive: admin.isActive,
+        lastActivity: admin.lastActivity
+      }
+    };
+
+    sendResponse(res, 200, true, 'Profile updated successfully', adminResponse);
+  } catch (error) {
+    logger.error('Update profile error:', error);
+    sendResponse(res, 500, false, 'Server error updating profile');
+  }
+};
+
+const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.uploadedFile) {
+      return sendResponse(res, 400, false, 'No file uploaded');
+    }
+
+    const userId = req.user.id;
+    const avatarUrl = req.uploadedFile.url; // Use the processed file URL
+
+    // Update user avatar
+    const user = await User.findByIdAndUpdate(userId, { avatar: avatarUrl }, { new: true });
+    if (!user) {
+      return sendResponse(res, 404, false, 'User not found');
+    }
+
+    // Get updated admin info
+    const admin = await Admin.findOne({ userId: user._id, isActive: true });
+    if (!admin) {
+      return sendResponse(res, 404, false, 'Admin not found');
+    }
+
+    const adminResponse = {
+      admin: {
+        id: admin._id,
+        userId: admin.userId._id,
+        name: user.name,
+        email: user.email,
+        role: admin.role,
+        permissions: admin.permissions,
+        avatar: user.avatar,
+        isActive: admin.isActive,
+        lastActivity: admin.lastActivity
+      }
+    };
+
+    sendResponse(res, 200, true, 'Avatar uploaded successfully', adminResponse);
+  } catch (error) {
+    logger.error('Upload avatar error:', error);
+    sendResponse(res, 500, false, 'Server error uploading avatar');
+  }
+};
+
 // User Management
 const getUsers = async (req, res) => {
   try {
@@ -536,6 +663,9 @@ module.exports = {
   login,
   logout,
   getCurrentAdmin,
+  changePassword,
+  updateProfile,
+  uploadAvatar,
   
   // User Management
   getUsers,
