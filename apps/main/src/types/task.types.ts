@@ -22,33 +22,6 @@ export interface UserPreferences {
   timezone?: string;
 }
 
-export interface Workspace {
-  _id: string;
-  name: string;
-  description?: string;
-  plan: 'free' | 'basic' | 'premium' | 'enterprise';
-  owner: string;
-  members: WorkspaceMember[];
-  settings: WorkspaceSettings;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface WorkspaceMember {
-  user: string;
-  role: 'owner' | 'admin' | 'member';
-  joinedAt: string;
-  addedBy?: string;
-}
-
-export interface WorkspaceSettings {
-  color?: string;
-  icon?: string;
-  theme?: string;
-  features?: Record<string, boolean>;
-}
-
 export interface Space {
   _id: string;
   name: string;
@@ -393,7 +366,6 @@ export interface TaskState {
   columns: Column[];
   boards: Board[];
   spaces: Space[];
-  workspaces: Workspace[];
   currentTask: Task | null;
   currentBoard: Board | null;
   currentSpace: Space | null;
