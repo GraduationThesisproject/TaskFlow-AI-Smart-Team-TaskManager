@@ -1,23 +1,11 @@
 import axiosInstance from '../config/axios';
-import type { Workspace, ApiResponse, PaginatedResponse } from '../types/task.types';
-
-export interface CreateWorkspaceData {
-  name: string;
-  description?: string;
-  plan?: 'free' | 'basic' | 'premium' | 'enterprise';
-}
-
-export interface UpdateWorkspaceData {
-  name?: string;
-  description?: string;
-  settings?: any;
-}
-
-export interface InviteMemberData {
-  email: string;
-  role?: 'member' | 'admin';
-  message?: string;
-}
+import type { ApiResponse, PaginatedResponse } from '../types/task.types';
+import type { 
+  Workspace, 
+  CreateWorkspaceData, 
+  UpdateWorkspaceData, 
+  InviteMemberData 
+} from '../types/workspace.types';
 
 export class WorkspaceService {
   // Get all workspaces
