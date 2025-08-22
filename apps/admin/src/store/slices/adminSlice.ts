@@ -48,19 +48,32 @@ export const logoutAdmin = createAsyncThunk(
   'admin/logout',
   async (_, { rejectWithValue }) => {
     try {
+      console.log('Logout thunk: making API call to logout endpoint...');
+      const token = localStorage.getItem('adminToken');
+      console.log('Logout thunk: token from localStorage:', !!token);
+      
       const response = await fetch(`${env.API_BASE_URL}/admin/auth/logout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
 
+      console.log('Logout thunk: response status:', response.status);
+      console.log('Logout thunk: response ok:', response.ok);
+
       if (!response.ok) {
-        return rejectWithValue('Logout failed');
+        const errorData = await response.json();
+        console.log('Logout thunk: error response:', errorData);
+        return rejectWithValue(errorData.message || 'Logout failed');
       }
 
-      return null;
+      const data = await response.json();
+      console.log('Logout thunk: success response:', data);
+      return data;
     } catch (error) {
+      console.error('Logout thunk: network error:', error);
       return rejectWithValue('Network error occurred');
     }
   }
@@ -115,10 +128,10 @@ const adminSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         // Handle the response format from sendResponse utility
-        const responseData = action.payload.data || action.payload;
+        const responseData = action.payload;
 
         state.currentAdmin = responseData.admin || responseData;
-        state.permissions = (responseData.admin?.permissions || responseData.permissions) || [];
+        state.permissions = (responseData.admin?.permissions || []).map(p => p.name || p.id);
         state.error = null;
         
         // Store token in localStorage
@@ -133,10 +146,12 @@ const adminSlice = createSlice({
       
       // Logout
       .addCase(logoutAdmin.fulfilled, (state) => {
+        console.log('Logout reducer: clearing state...');
         state.isAuthenticated = false;
         state.currentAdmin = null;
         state.permissions = [];
         localStorage.removeItem('adminToken');
+        console.log('Logout reducer: state cleared, isAuthenticated:', state.isAuthenticated);
       })
       
       // Get Current Admin
@@ -148,10 +163,10 @@ const adminSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         // Handle the response format from sendResponse utility
-        const responseData = action.payload.data || action.payload;
+        const responseData = action.payload;
 
         state.currentAdmin = responseData.admin || responseData;
-        state.permissions = (responseData.admin?.permissions || responseData.permissions) || [];
+        state.permissions = (responseData.admin?.permissions || []).map(p => p.name || p.id);
         state.error = null;
       })
       .addCase(getCurrentAdmin.rejected, (state, action) => {
