@@ -7,7 +7,7 @@ import ReportsLayout from '../layouts/workSpace/ReportsLayout';
 const WorkSpace = () => {
   return (      
       <Routes>
-        <Route path="main" element={<Main/>} />
+        <Route path="" element={<Main/>} />
 
         <Route path="settings/*" element={<SettingsLayout />} />
 
