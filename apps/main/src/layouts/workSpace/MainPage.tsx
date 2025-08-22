@@ -28,7 +28,7 @@ const Main = () => {
   const rawWorkspaceId = query.get('id') || '';
   const isValidObjectId = (v: string) => /^[0-9a-fA-F]{24}$/.test(v);
   const workspaceId = isValidObjectId(rawWorkspaceId) ? rawWorkspaceId : null;
-
+  
   const members = useAppSelector(selectMembers) ?? [];
   const isLoading = useAppSelector(selectWorkspaceLoading);
   const error = useAppSelector(selectWorkspaceError);
