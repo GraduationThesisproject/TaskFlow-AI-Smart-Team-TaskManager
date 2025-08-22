@@ -4,14 +4,10 @@ import type { AuthState, LoginCredentials, RegisterData, User } from '../../type
 import { AuthService } from '../../services/authService';
 import { getDeviceId } from '../../utils';
 
-// Helper function to serialize user data (convert Date objects to ISO strings)
 const serializeUser = (userData: any): User => {
-  // Handle both flat and nested user structures
   if (userData.user) {
-    // Nested structure (from /auth/me)
     const serializedUser = { ...userData };
     
-    // Serialize basic user info
     if (serializedUser.user) {
       if (serializedUser.user.lastLogin instanceof Date) {
         serializedUser.user.lastLogin = serializedUser.user.lastLogin.toISOString();
@@ -24,7 +20,6 @@ const serializeUser = (userData: any): User => {
       }
     }
     
-    // Serialize security dates
     if (serializedUser.security) {
       if (serializedUser.security.lastPasswordChange instanceof Date) {
         serializedUser.security.lastPasswordChange = serializedUser.security.lastPasswordChange.toISOString();
@@ -39,10 +34,8 @@ const serializeUser = (userData: any): User => {
     
     return serializedUser;
   } else {
-    // Flat structure (from /auth/login) - convert to nested structure
     const serializedBasicUser = { ...userData };
     
-    // Convert Date objects to ISO strings
     if (serializedBasicUser.lastLogin instanceof Date) {
       serializedBasicUser.lastLogin = serializedBasicUser.lastLogin.toISOString();
     }
@@ -53,7 +46,6 @@ const serializeUser = (userData: any): User => {
       serializedBasicUser.updatedAt = serializedBasicUser.updatedAt.toISOString();
     }
     
-    // Convert flat structure to nested structure
     return {
       user: serializedBasicUser,
       preferences: {
@@ -77,46 +69,42 @@ const serializeUser = (userData: any): User => {
   }
 };
 
-// Async thunk for login
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
       const response = await AuthService.login(credentials);
       
-      // Store token in localStorage
+      if (!response.data.token) {
+        throw new Error('No token received from server');
+      }
+      
       localStorage.setItem('token', response.data.token);
       
-      // After successful login, fetch the complete user profile
-      // This ensures we get the same user shape as checkAuthStatus
-      console.log('🔍 Login successful, fetching complete user profile...');
       const profileResponse = await AuthService.getProfile();
       
-      // Serialize the complete user data before returning
       return {
         ...response.data,
         user: serializeUser(profileResponse.data),
         token: response.data.token
       };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      const errorMessage = error.response?.data?.message || error.message || 'Login failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
-// Async thunk for register
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (userData: RegisterData, { rejectWithValue }) => {
     try {
       const response = await AuthService.register(userData);
       
-      // Store token in localStorage if provided
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
       }
       
-      // Fetch complete user profile after registration
       const profileResponse = await AuthService.getProfile();
       
       return {
@@ -125,19 +113,18 @@ export const registerUser = createAsyncThunk(
         token: response.data.token
       };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+      const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
-// Async thunk for refresh token
 export const refreshToken = createAsyncThunk(
   'auth/refreshToken',
   async (refreshToken: string, { rejectWithValue }) => {
     try {
       const response = await AuthService.refreshToken(refreshToken);
       
-      // Update token in localStorage
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
       }
@@ -147,12 +134,12 @@ export const refreshToken = createAsyncThunk(
         refreshToken: response.data.refreshToken
       };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Token refresh failed');
+      const errorMessage = error.response?.data?.message || error.message || 'Token refresh failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
-// Async thunk for test connection
 export const testConnection = createAsyncThunk(
   'auth/testConnection',
   async (_, { rejectWithValue }) => {
@@ -160,86 +147,61 @@ export const testConnection = createAsyncThunk(
       const response = await AuthService.testConnection();
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Connection test failed');
+      const errorMessage = error.response?.data?.message || error.message || 'Connection test failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
-// Async thunk to check authentication status
 export const checkAuthStatus = createAsyncThunk(
   'auth/checkStatus',
   async (_, { rejectWithValue }) => {
     try {
-      console.log('🔍 checkAuthStatus: Starting auth check...');
       const token = localStorage.getItem('token');
       
       if (!token) {
-        console.log('❌ No token found, user is not authenticated');
         return { isAuthenticated: false, user: null, token: null };
       }
       
-      console.log('✅ Token found, checking with backend...');
-      console.log('🌐 API URL:', import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api');
-      
-      // Add timeout to prevent infinite loading
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
-          console.log('⏰ Auth check timeout after 5 seconds');
           reject(new Error('Auth check timeout'));
         }, 5000);
       });
       
-      // Verify token by fetching user profile with timeout
-      console.log('📡 Making API call to /auth/me...');
       const profilePromise = AuthService.getProfile();
       const response = await Promise.race([profilePromise, timeoutPromise]);
       
-      console.log('✅ Auth check successful, user authenticated');
-      console.log('👤 User data:', (response as any).data);
       return {
         isAuthenticated: true,
         user: serializeUser((response as any).data),
         token
       };
     } catch (error: any) {
-      // Token is invalid or expired, clear it
       localStorage.removeItem('token');
-      console.error('❌ Auth check failed:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        config: error.config
-      });
-      
-      // Don't reject, just return unauthenticated state
-      return { isAuthenticated: false, user: null, token: null };
+      const errorMessage = error.response?.data?.message || error.message || 'Authentication check failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
-// Async thunk for logout
 export const logoutUser = createAsyncThunk(
   'auth/logout',
   async (params: { allDevices?: boolean } = {}, { rejectWithValue }) => {
     try {
       const { allDevices = false } = params;
       
-      // Get device ID for logout
       const deviceId = getDeviceId();
       
-      // Call the logout API endpoint with device info
       await AuthService.logout(deviceId, allDevices);
       
-      // Clear token from localStorage
       localStorage.removeItem('token');
       
       return true;
     } catch (error: any) {
-      // Even if the API call fails, we should still clear the local state
       localStorage.removeItem('token');
-      console.error('Logout API error:', error);
-      return rejectWithValue(error.response?.data?.message || 'Logout failed');
+      const errorMessage = error.response?.data?.message || error.message || 'Logout failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -306,7 +268,6 @@ const authSlice = createSlice({
         state.token = null;
         state.isAuthenticated = false;
         state.error = action.payload as string;
-        console.error('Auth check rejected:', action.payload);
       })
       // Login
       .addCase(loginUser.pending, (state) => {
