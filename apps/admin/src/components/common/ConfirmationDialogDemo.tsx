@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@taskflow/ui';
-import { ConfirmationDialog, ConfirmationType } from './ConfirmationDialog';
+import ConfirmationDialog, { ConfirmationType } from './ConfirmationDialog';
 
 const ConfirmationDialogDemo: React.FC = () => {
   const [showDialog, setShowDialog] = useState(false);

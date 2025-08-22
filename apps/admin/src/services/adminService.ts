@@ -122,7 +122,7 @@ export interface UsersResponse {
 class AdminService {
   private getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('adminToken');
-    console.log('AdminService: getAuthHeaders - token:', !!token, token ? `${token.substring(0, 10)}...` : 'none');
+    // console.log('AdminService: getAuthHeaders - token:', !!token, token ? `${token.substring(0, 10)}...` : 'none');
     return {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,

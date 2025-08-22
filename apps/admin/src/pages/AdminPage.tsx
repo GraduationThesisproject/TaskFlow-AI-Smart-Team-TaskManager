@@ -15,7 +15,9 @@ import {
   HeartIcon,
   PuzzlePieceIcon,
   UserIcon,
-  ArrowRightOnRectangleIcon
+  ArrowRightOnRectangleIcon,
+  Bars3Icon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 // Import NotificationBell component
@@ -51,6 +53,7 @@ const AdminPage: React.FC = () => {
   const { currentAdmin, isAuthenticated, isLoading } = useAppSelector(state => state.admin);
   const { t } = useTranslation();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigationItems: NavigationItem[] = [
     {
@@ -120,12 +123,12 @@ const AdminPage: React.FC = () => {
 
   // Check authentication on mount
   React.useEffect(() => {
-    console.log('AdminPage: useEffect triggered:', { isAuthenticated, isLoading, hasCurrentAdmin: !!currentAdmin });
+    // console.log('AdminPage: useEffect triggered:', { isAuthenticated, isLoading, hasCurrentAdmin: !!currentAdmin });
     if (!isAuthenticated && !isLoading) {
       const token = localStorage.getItem('adminToken');
-      console.log('AdminPage: checking token:', !!token);
+      // console.log('AdminPage: checking token:', !!token);
       if (token) {
-        console.log('AdminPage: token found, dispatching getCurrentAdmin');
+        // console.log('AdminPage: token found, dispatching getCurrentAdmin');
         dispatch(getCurrentAdmin());
       } else {
         console.log('AdminPage: no token, navigating to login');
@@ -159,6 +162,14 @@ const AdminPage: React.FC = () => {
   const handleLogoutConfirm = () => {
     setShowLogoutConfirm(false);
     handleLogout();
+  };
+
+  // Close sidebar when navigating on mobile
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
   };
 
   const userMenuItems = [
@@ -231,22 +242,42 @@ const AdminPage: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 bg-card border-r border-border flex flex-col">
+      <div className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border flex flex-col transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
         {/* Logo */}
-        <div className="p-6 border-b border-border">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">TF</span>
+        <div className="p-4 lg:p-6 border-b border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">TF</span>
+              </div>
+              <Typography variant="heading-large" className="text-foreground">
+                TaskFlow Admin
+              </Typography>
             </div>
-            <Typography variant="heading-large" className="text-foreground">
-              TaskFlow Admin
-            </Typography>
+            {/* Close button for mobile */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {navigationItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
@@ -254,7 +285,7 @@ const AdminPage: React.FC = () => {
             return (
               <button
                 key={item.name}
-                onClick={() => navigate(item.path)}
+                onClick={() => handleNavigation(item.path)}
                 className={`w-full text-left p-3 rounded-lg transition-colors duration-200 group ${
                   isActive 
                     ? 'bg-primary text-primary-foreground' 
@@ -280,35 +311,45 @@ const AdminPage: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top Header */}
-        <header className="h-16 bg-card border-b border-border px-6 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Typography variant="heading-large" className="text-foreground">
-              {currentNavItem.name}
-            </Typography>
-            <Typography variant="body-medium" className="text-muted-foreground">
-              {currentNavItem.description}
-            </Typography>
+        <header className="h-16 bg-card border-b border-border px-4 lg:px-6 flex items-center justify-between">
+          <div className="flex items-center space-x-4 min-w-0">
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+            >
+              <Bars3Icon className="w-5 h-5" />
+            </button>
+            
+            <div className="min-w-0">
+              <Typography variant="heading-large" className="text-foreground truncate">
+                {currentNavItem.name}
+              </Typography>
+              <Typography variant="body-medium" className="text-muted-foreground truncate">
+                {currentNavItem.description}
+              </Typography>
+            </div>
           </div>
 
           {/* User Menu */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 lg:space-x-4">
             <NotificationBell />
             
             <Dropdown
               trigger={
                 <div className="flex items-center space-x-2 hover:bg-muted p-2 rounded-lg transition-colors cursor-pointer">
-                  <Avatar size="sm" className="bg-primary text-primary-foreground">
+                  <Avatar size="sm" className="bg-primary text-primary-foreground flex-shrink-0">
                     <span className="text-sm font-medium">
                       {currentAdmin?.name?.charAt(0).toUpperCase() || 'A'}
                     </span>
                   </Avatar>
-                  <div className="flex flex-col items-start space-y-1">
-                    <Typography variant="body-medium" className="text-foreground font-medium">
+                  <div className="hidden lg:flex flex-col items-start space-y-1 min-w-0">
+                    <Typography variant="body-medium" className="text-foreground font-medium truncate">
                       {currentAdmin?.name || currentAdmin?.email || 'Admin User'}
                     </Typography>
-                    <Typography variant="body-small" className="text-muted-foreground">
+                    <Typography variant="body-small" className="text-muted-foreground truncate">
                       {currentAdmin?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
                     </Typography>
                   </div>
@@ -335,10 +376,11 @@ const AdminPage: React.FC = () => {
         </header>
 
         {/* Page Content - Render the current layout */}
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-4 lg:p-6">
           <CurrentLayout />
         </main>
       </div>
+      
       <ConfirmationDialog
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
