@@ -1,4 +1,4 @@
-import type { User } from './auth.types';
+import type { UserBasic } from './auth.types';
 import type { Task } from './task.types';
 
 export interface Workspace {
@@ -16,11 +16,20 @@ export interface Workspace {
 }
 
 export interface WorkspaceMember {
-  user: string;
+  // Identifier fields
+  id: string;            // member id (typically the user id)
+  userId: string;        // explicit user id
+
+  // Optional embedded user info (lightweight)
+  user?: UserBasic;
+
+  // Membership info
   role: 'owner' | 'admin' | 'member';
-  joinedAt: string;
+  status?: 'active' | 'pending' | 'disabled';
+  lastActive?: string | Date;
+  joinedAt: Date;
   addedBy?: string;
-  permissions: string[];
+  permissions?: string[];
 }
 
 export interface WorkspaceSettings {
