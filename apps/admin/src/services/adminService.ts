@@ -356,6 +356,45 @@ class AdminService {
     return data.data || [];
   }
 
+  // Profile Management
+  async updateProfile(profileData: Partial<Admin>): Promise<Admin> {
+    const response = await fetch(`${API_BASE}/auth/profile`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(profileData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update profile');
+    }
+
+    const data = await response.json();
+    return data.data?.admin || data.data;
+  }
+
+  async uploadAvatar(file: File): Promise<{ avatar: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE}/auth/avatar`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+        // Don't set Content-Type for FormData
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to upload avatar');
+    }
+
+    const data = await response.json();
+    return data.data;
+  }
+
   // Password Management
   async changePassword(credentials: ChangePasswordRequest): Promise<void> {
     const response = await fetch(`${API_BASE}/auth/change-password`, {

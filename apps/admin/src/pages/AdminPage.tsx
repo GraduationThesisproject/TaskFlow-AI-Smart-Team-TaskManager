@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store';
 import { logoutAdmin, getCurrentAdmin } from '../store/slices/adminSlice';
 import { Typography, Avatar, Dropdown, DropdownItem } from '@taskflow/ui';
 import { ThemeToggle } from '@taskflow/theme';
+import { ConfirmationDialog } from '../components/common';
 import {
   HomeIcon,
   UsersIcon,
@@ -49,6 +50,7 @@ const AdminPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { currentAdmin, isAuthenticated, isLoading } = useAppSelector(state => state.admin);
   const { t } = useTranslation();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const navigationItems: NavigationItem[] = [
     {
@@ -154,6 +156,11 @@ const AdminPage: React.FC = () => {
     console.log('=== LOGOUT DEBUG END ===');
   };
 
+  const handleLogoutConfirm = () => {
+    setShowLogoutConfirm(false);
+    handleLogout();
+  };
+
   const userMenuItems = [
     { 
       label: 'Profile', 
@@ -178,7 +185,7 @@ const AdminPage: React.FC = () => {
       action: () => {
         console.log('=== LOGOUT CLICKED FROM DROPDOWN ===');
         console.log('Logout clicked from menu');
-        handleLogout();
+        setShowLogoutConfirm(true);
       },
       icon: ArrowRightOnRectangleIcon,
       variant: 'destructive' as const
@@ -289,14 +296,6 @@ const AdminPage: React.FC = () => {
           <div className="flex items-center space-x-4">
             <NotificationBell />
             
-            {/* Test Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Test Logout
-            </button>
-            
             <Dropdown
               trigger={
                 <div className="flex items-center space-x-2 hover:bg-muted p-2 rounded-lg transition-colors cursor-pointer">
@@ -340,6 +339,16 @@ const AdminPage: React.FC = () => {
           <CurrentLayout />
         </main>
       </div>
+      <ConfirmationDialog
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogoutConfirm}
+        title={t('logout.confirmTitle')}
+        description={t('logout.confirmMessage')}
+        confirmText={t('logout.confirmButton')}
+        cancelText={t('logout.cancelButton')}
+        type="warning"
+      />
     </div>
   );
 };

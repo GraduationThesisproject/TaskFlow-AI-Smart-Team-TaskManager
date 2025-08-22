@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Card, 
   CardHeader, 
@@ -15,12 +15,17 @@ import {
   UserIcon,
   EnvelopeIcon,
   ShieldCheckIcon,
-  PencilIcon
+  PencilIcon,
+  CameraIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
-import { useAppSelector } from '../store';
+import { useAppSelector, useAppDispatch } from '../store';
+import { updateAdminProfileAsync, uploadAdminAvatar } from '../store/slices/adminSlice';
+import { ConfirmationDialog } from '../components/common';
 
 const ProfileLayout: React.FC = () => {
-  const { currentAdmin } = useAppSelector(state => state.admin);
+  const dispatch = useAppDispatch();
+  const { currentAdmin, isLoading, error } = useAppSelector(state => state.admin);
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
     name: currentAdmin?.name || '',
@@ -30,12 +35,68 @@ const ProfileLayout: React.FC = () => {
     location: 'Not specified',
     phone: 'Not specified'
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [showAvatarRemoveConfirm, setShowAvatarRemoveConfirm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSave = () => {
-    // Here you would make an API call to update the profile
-    console.log('Saving profile:', profileData);
-    setIsEditing(false);
-    // You could dispatch an action to update the profile in Redux
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!avatarFile) return;
+    
+    try {
+      await dispatch(uploadAdminAvatar(avatarFile)).unwrap();
+      setAvatarFile(null);
+      setAvatarPreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Failed to upload avatar:', error);
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarPreview(null);
+    setAvatarFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    setShowAvatarRemoveConfirm(false);
+  };
+
+  const handleSave = async () => {
+    try {
+      // Update profile data
+      await dispatch(updateAdminProfileAsync({
+        name: profileData.name,
+        email: profileData.email,
+        bio: profileData.bio,
+        location: profileData.location,
+        phone: profileData.phone,
+      })).unwrap();
+      
+      // Upload avatar if selected
+      if (avatarFile) {
+        await handleAvatarUpload();
+      }
+      
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+    }
   };
 
   const handleCancel = () => {
@@ -49,6 +110,20 @@ const ProfileLayout: React.FC = () => {
     });
     setIsEditing(false);
   };
+
+  // Update profileData when currentAdmin changes
+  React.useEffect(() => {
+    if (currentAdmin) {
+      setProfileData({
+        name: currentAdmin.name || '',
+        email: currentAdmin.email || '',
+        role: currentAdmin.role || '',
+        bio: currentAdmin.bio || 'No bio available',
+        location: currentAdmin.location || 'Not specified',
+        phone: currentAdmin.phone || 'Not specified'
+      });
+    }
+  }, [currentAdmin]);
 
   return (
     <Container size="7xl">
@@ -78,13 +153,66 @@ const ProfileLayout: React.FC = () => {
         <div className="lg:col-span-1">
           <Card>
             <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
+              <div className="flex justify-center mb-4 relative">
                 <Avatar size="xl" className="bg-primary text-primary-foreground">
-                  <span className="text-2xl font-bold">
-                    {currentAdmin?.name?.charAt(0).toUpperCase() || 'A'}
-                  </span>
+                  {currentAdmin?.avatar ? (
+                    <img 
+                      src={currentAdmin.avatar} 
+                      alt={currentAdmin?.name || 'Admin'} 
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold">
+                      {currentAdmin?.name?.charAt(0).toUpperCase() || 'A'}
+                    </span>
+                  )}
                 </Avatar>
+                
+                {isEditing && (
+                  <div className="absolute -bottom-2 -right-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-8 h-8 p-0 rounded-full bg-background border-2 border-primary"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <CameraIcon className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
               </div>
+              
+              {avatarPreview && (
+                <div className="mb-4">
+                  <div className="relative inline-block">
+                    <img 
+                      src={avatarPreview} 
+                      alt="Avatar preview" 
+                      className="w-20 h-20 rounded-full object-cover border-2 border-primary"
+                    />
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full"
+                      onClick={() => setShowAvatarRemoveConfirm(true)}
+                    >
+                      <XMarkIcon className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <Typography variant="body-small" className="text-muted-foreground mt-2">
+                    New avatar preview
+                  </Typography>
+                </div>
+              )}
+              
               <CardTitle className="text-xl">{currentAdmin?.name || 'Admin User'}</CardTitle>
               <Typography variant="body-medium" className="text-muted-foreground">
                 {currentAdmin?.role === 'super_admin' ? 'Super Administrator' : 'Administrator'}
@@ -176,12 +304,20 @@ const ProfileLayout: React.FC = () => {
 
               {isEditing && (
                 <div className="flex justify-end space-x-3 pt-4 border-t border-border">
-                  <Button variant="outline" onClick={handleCancel}>
+                  <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSave}>
-                    Save Changes
+                  <Button onClick={handleSave} disabled={isLoading}>
+                    {isLoading ? 'Saving...' : 'Save Changes'}
                   </Button>
+                </div>
+              )}
+              
+              {error && (
+                <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <Typography variant="body-small" className="text-red-600 dark:text-red-400">
+                    {error}
+                  </Typography>
                 </div>
               )}
             </CardContent>
@@ -223,6 +359,19 @@ const ProfileLayout: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Avatar Removal Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showAvatarRemoveConfirm}
+        onClose={() => setShowAvatarRemoveConfirm(false)}
+        onConfirm={handleRemoveAvatar}
+        title="Remove Avatar Preview"
+        description="Are you sure you want to remove the selected avatar? This action cannot be undone."
+        confirmText="Remove"
+        cancelText="Keep"
+        type="warning"
+        confirmButtonVariant="destructive"
+      />
     </Container>
   );
 };
