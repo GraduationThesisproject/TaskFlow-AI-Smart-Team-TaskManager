@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   Home, 
   Calendar, 
@@ -50,14 +50,13 @@ const navigationItems = [
 export const DashboardShell: React.FC<DashboardShellProps> = ({
   children,
   title,
-  breadcrumbs = []
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const dispatch = useAppDispatch();
   
-  const { user, isAuthenticated } = useAppSelector(state => state.auth);
+  const { user } = useAppSelector(state => state.auth);
 
   const handleLogout = async () => {
     try {
