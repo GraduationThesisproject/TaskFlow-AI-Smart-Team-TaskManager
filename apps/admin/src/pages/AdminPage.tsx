@@ -13,7 +13,8 @@ import {
   BellIcon,
   HeartIcon,
   PuzzlePieceIcon,
-  UserIcon
+  UserIcon,
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
 
 // Import NotificationBell component
@@ -117,19 +118,26 @@ const AdminPage: React.FC = () => {
 
   // Check authentication on mount
   React.useEffect(() => {
+    console.log('AdminPage: useEffect triggered:', { isAuthenticated, isLoading, hasCurrentAdmin: !!currentAdmin });
     if (!isAuthenticated && !isLoading) {
       const token = localStorage.getItem('adminToken');
+      console.log('AdminPage: checking token:', !!token);
       if (token) {
+        console.log('AdminPage: token found, dispatching getCurrentAdmin');
         dispatch(getCurrentAdmin());
       } else {
+        console.log('AdminPage: no token, navigating to login');
         navigate('/login');
       }
     }
   }, [dispatch, isAuthenticated, isLoading, navigate]);
 
   const handleLogout = async () => {
+    console.log('=== LOGOUT DEBUG START ===');
     console.log('Logout started...');
     console.log('Current state before logout:', { isAuthenticated, currentAdmin });
+    console.log('Current location:', location.pathname);
+    console.log('Token in localStorage:', !!localStorage.getItem('adminToken'));
     
     try {
       console.log('Dispatching logoutAdmin...');
@@ -143,12 +151,38 @@ const AdminPage: React.FC = () => {
       localStorage.removeItem('adminToken');
       navigate('/login');
     }
+    console.log('=== LOGOUT DEBUG END ===');
   };
 
   const userMenuItems = [
-    { label: 'Profile', action: () => navigate('/profile') },
-    { label: 'Settings', action: () => navigate('/settings') },
-    { label: 'Logout', action: handleLogout }
+    { 
+      label: 'Profile', 
+      action: () => {
+        console.log('=== PROFILE CLICKED ===');
+        console.log('Profile clicked');
+        navigate('/profile');
+      },
+      icon: UserIcon 
+    },
+    { 
+      label: 'Settings', 
+      action: () => {
+        console.log('=== SETTINGS CLICKED ===');
+        console.log('Settings clicked');
+        navigate('/settings');
+      },
+      icon: CogIcon 
+    },
+    { 
+      label: 'Logout', 
+      action: () => {
+        console.log('=== LOGOUT CLICKED FROM DROPDOWN ===');
+        console.log('Logout clicked from menu');
+        handleLogout();
+      },
+      icon: ArrowRightOnRectangleIcon,
+      variant: 'destructive' as const
+    }
   ];
 
   // Show loading state while checking authentication
@@ -168,6 +202,20 @@ const AdminPage: React.FC = () => {
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return null; // Will redirect in useEffect
+  }
+
+  // Ensure we have admin data before rendering layouts
+  if (!currentAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <Typography variant="body-medium" className="text-muted-foreground">
+            Loading admin data...
+          </Typography>
+        </div>
+      </div>
+    );
   }
 
   // Get current navigation item and layout
@@ -241,6 +289,14 @@ const AdminPage: React.FC = () => {
           <div className="flex items-center space-x-4">
             <NotificationBell />
             
+            {/* Test Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Test Logout
+            </button>
+            
             <Dropdown
               trigger={
                 <div className="flex items-center space-x-2 hover:bg-muted p-2 rounded-lg transition-colors cursor-pointer">
@@ -260,11 +316,21 @@ const AdminPage: React.FC = () => {
                 </div>
               }
             >
-              {userMenuItems.map((item, index) => (
-                <DropdownItem key={index} onClick={item.action}>
-                  {item.label}
-                </DropdownItem>
-              ))}
+              {userMenuItems.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={index}
+                    onClick={item.action}
+                    className={`w-full text-left p-2 rounded-lg transition-colors hover:bg-muted flex items-center space-x-2 ${
+                      item.variant === 'destructive' ? 'text-red-600 hover:text-red-700' : 'text-foreground'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
             </Dropdown>
           </div>
         </header>
