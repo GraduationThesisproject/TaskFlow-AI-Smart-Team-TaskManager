@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button,  Typography, Flex, Avatar, AvatarImage, AvatarFallback } from '@taskflow/ui';
+import { Button, Typography, Flex, Avatar, AvatarImage, AvatarFallback } from '@taskflow/ui';
 import { Link } from 'react-router-dom';
 import { ThemeProvider } from '@taskflow/theme';
 import { useAuth } from './hooks/useAuth';
@@ -7,14 +7,15 @@ import { Provider } from 'react-redux';
 import { store } from './store';
 import { useAppDispatch } from './store';
 import { checkAuthStatus } from './store/slices/authSlice';
-import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import WorkSpace from './pages/workSpace';
 import { SpacePage } from './pages/space.page';
 import { BoardPage } from './pages/board.page';
 import { LandingPage } from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import { NoAccessPage } from './pages/NoAccessPage';
-import { ProtectedRoute, PublicRoute, LogoutConfirmDialog, ThemeToggle } from './components';
+import { LogoutConfirmDialog, ThemeToggle, AppLayout } from './components';
+import { AccessibilityProvider } from './components/common/AccessibilityProvider';
 import { LogOut } from 'lucide-react';
 
 function AppContent() {
@@ -22,33 +23,25 @@ function AppContent() {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Initialize authentication check on app mount
   useEffect(() => {
-    console.log('AppContent: Initializing authentication check...');
     dispatch(checkAuthStatus());
   }, [dispatch]);
 
-  // Debug logging (only in development)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('AppContent render:', { isAuthenticated, isLoading, user: !!user });
-  }
-
-  // Show loading while auth is initializing
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Initializing...</p>
-          <p className="text-xs text-muted-foreground mt-2">Checking authentication...</p>
+      <AppLayout>
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Initializing...</p>
+          </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
-      {/* Header with Theme Toggle - Only show for authenticated users */}
+    <AppLayout>
       {isAuthenticated && (
         <header className="backdrop-blur-sm bg-card/90 border-b border-border/30 w-full sticky top-0 z-50 shadow-sm">
           <div className="w-full px-6 sm:px-8 lg:px-12 py-6">
@@ -64,9 +57,7 @@ function AppContent() {
                 </Link>
               </div>
               <div className="flex items-center gap-4">
-                                 <ThemeToggle />
-
-                {/* User Info and Logout */}
+                <ThemeToggle />
                 <div className="flex items-center gap-3">
                   <div className="hidden sm:flex items-center gap-2 text-sm">
                     <Avatar size="sm">
@@ -79,7 +70,7 @@ function AppContent() {
                       {user?.user?.name || 'User'}
                     </span>
                   </div>
-                  
+
                   <Button
                     variant="ghost"
                     size="sm"
@@ -96,73 +87,48 @@ function AppContent() {
         </header>
       )}
 
-      {/* Main Content with Gradient Background */}
-      <main className="bg-gradient-to-br from-background via-muted/50 to-background">
+      <main className="flex-1 bg-gradient-to-br from-background via-muted/50 to-background">
         <Routes>
-          {/* Public Routes - Only accessible to unauthenticated users */}
-          <Route path="/*" element={
-            <PublicRoute>
-              <LandingPage />
-            </PublicRoute>
-          } />
+          <Route path="/*" element={<LandingPage />} />
 
-          {/* Protected Routes - Require authentication */}
-          <Route path="/dashboard/*" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
+          <Route path="/dashboard/*" element={<Dashboard />} />
 
-          {/* Workspace Routes - Require authentication and member role */}
-          <Route path="/workspace/*" element={
-            // <ProtectedRoute requiredRole="member">
-              <WorkSpace />
-            // { /* </ProtectedRoute> */}
-          } />
+          <Route path="/workspace/*" element={<WorkSpace />} />
 
-          {/* Space Routes - Require authentication and member role */}
-          <Route path="/space/*" element={
-            <ProtectedRoute requiredRole="member">
-              <SpacePage />
-            </ProtectedRoute>
-          } />
+          <Route path="/space/*" element={<SpacePage />} />
 
-          {/* Board Routes - Require authentication and member role */}
-          <Route path="/board/*" element={
-            <ProtectedRoute requiredRole="member">
-              <BoardPage />
-            </ProtectedRoute>
-          } />
+          <Route path="/board/*" element={<BoardPage />} />
 
+          <Route path="/no-access" element={<NoAccessPage />} />
 
-           {/* No Access Page */}
-           <Route path="/no-access" element={<NoAccessPage />} />
-
-          {/* Catch all route - redirect to landing page */}
           <Route path="*" element={
             <Navigate to="/" replace />
           } />
         </Routes>
       </main>
 
-      {/* Logout Confirmation Dialog */}
       <LogoutConfirmDialog
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={logout}
         userName={user?.user?.name || 'User'}
       />
-    </div>
+    </AppLayout>
   );
 }
 
 function App() {
   return (
     <Provider store={store}>
-      <ThemeProvider defaultTheme="dark" storageKey="theme">
-        <Router>
-          <AppContent />
-        </Router>
+      <ThemeProvider 
+        defaultTheme="dark" 
+        storageKey="theme"
+      >
+        <AccessibilityProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </AccessibilityProvider>
       </ThemeProvider>
     </Provider>
   );
