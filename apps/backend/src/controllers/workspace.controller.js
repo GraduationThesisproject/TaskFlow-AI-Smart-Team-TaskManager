@@ -46,22 +46,28 @@ exports.getAllWorkspaces = async (req, res) => {
 exports.getWorkspace = async (req, res) => {
     try {
         const { id: workspaceId } = req.params;
-        const userId = req.user.id;
+        const userId = req.user?.id;
 
-        // Workspace existence and access are already checked by middleware
+        // Workspace existence (access may be unchecked when auth is disabled during testing)
         const workspace = await Workspace.findById(workspaceId)
             .populate('owner', 'name email avatar')
             .populate('members.user', 'name email avatar')
             .populate('spaces');
 
-        // Get user's role and permissions
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-
-        // Get user's role and permissions
-        const userWorkspaceRole = userRoles.workspaces.find(ws => 
-            ws.workspace.toString() === workspaceId
-        );
+        // Get user's role and permissions (optional when unauthenticated)
+        let userRole = null;
+        let userPermissions = null;
+        if (userId) {
+            const user = await User.findById(userId);
+            const userRoles = await user.getRoles();
+            const userWorkspaceRole = userRoles.workspaces.find(ws => 
+                ws.workspace.toString() === workspaceId
+            );
+            if (userWorkspaceRole) {
+                userRole = userWorkspaceRole.role;
+                userPermissions = userWorkspaceRole.permissions;
+            }
+        }
 
         sendResponse(res, 200, true, 'Workspace retrieved successfully', {
             workspace: {
@@ -70,8 +76,8 @@ exports.getWorkspace = async (req, res) => {
                 health: workspace.health,
                 availableFeatures: workspace.availableFeatures
             },
-            userRole: userWorkspaceRole.role,
-            userPermissions: userWorkspaceRole.permissions
+            userRole,
+            userPermissions
         });
     } catch (error) {
         logger.error('Get workspace error:', error);
@@ -360,14 +366,18 @@ exports.acceptInvitation = async (req, res) => {
 exports.getWorkspaceMembers = async (req, res) => {
     try {
         const { id: workspaceId } = req.params;
-        const userId = req.user.id;
+        // const workspaceId = '68a6f2ad09162ad369df8692';
 
-        // Check access
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        if (!userRoles.hasWorkspaceRole(workspaceId)) {
-            return sendResponse(res, 403, false, 'Access denied to this workspace');
+        const { q } = req.query;
+        const userId = req.user?.id;
+
+        // Optional access check (only when authenticated)
+        if (userId) {
+            const user = await User.findById(userId);
+            const userRoles = await user.getRoles();
+            if (!userRoles.hasWorkspaceRole(workspaceId)) {
+                return sendResponse(res, 403, false, 'Access denied to this workspace');
+            }
         }
 
         const workspace = await Workspace.findById(workspaceId)
@@ -380,7 +390,7 @@ exports.getWorkspaceMembers = async (req, res) => {
         }
 
         // Format member data with statistics
-        const members = [
+        let members = [
             // Include owner
             {
                 user: workspace.owner,
@@ -397,6 +407,18 @@ exports.getWorkspaceMembers = async (req, res) => {
             // Include regular members
             ...workspace.members.map(member => member.toObject())
         ];
+
+        // Optional filter by name/email if `q` provided
+        if (q && typeof q === 'string') {
+            const query = q.trim().toLowerCase();
+            if (query.length > 0) {
+                members = members.filter((m) => {
+                    const name = (m.user?.name || '').toLowerCase();
+                    const email = (m.user?.email || '').toLowerCase();
+                    return name.includes(query) || email.includes(query);
+                });
+            }
+        }
 
         sendResponse(res, 200, true, 'Workspace members retrieved successfully', {
             members,
