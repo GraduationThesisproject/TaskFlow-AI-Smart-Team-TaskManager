@@ -9,10 +9,6 @@ import {
   Input,
   Container,
   Grid,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
   Switch,
   Select
 } from '@taskflow/ui';
@@ -93,37 +89,82 @@ const SettingsLayout: React.FC = () => {
         </div>
       </div>
 
-      {/* Settings Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="general">
+      {/* Settings Navigation */}
+      <div className="mb-6">
+        <div className="flex flex-wrap gap-2 border-b border-border">
+          <button
+            onClick={() => setActiveTab('general')}
+            className={`flex items-center px-4 py-2 rounded-t-lg transition-colors ${
+              activeTab === 'general'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+          >
             <CogIcon className="h-4 w-4 mr-2" />
             General
-          </TabsTrigger>
-          <TabsTrigger value="security">
+          </button>
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`flex items-center px-4 py-2 rounded-t-lg transition-colors ${
+              activeTab === 'security'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+          >
             <ShieldCheckIcon className="h-4 w-4 mr-2" />
             Security
-          </TabsTrigger>
-          <TabsTrigger value="notifications">
+          </button>
+          <button
+            onClick={() => setActiveTab('notifications')}
+            className={`flex items-center px-4 py-2 rounded-t-lg transition-colors ${
+              activeTab === 'notifications'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+          >
             <BellIcon className="h-4 w-4 mr-2" />
             Notifications
-          </TabsTrigger>
-          <TabsTrigger value="integrations">
+          </button>
+          <button
+            onClick={() => setActiveTab('integrations')}
+            className={`flex items-center px-4 py-2 rounded-t-lg transition-colors ${
+              activeTab === 'integrations'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+          >
             <PuzzlePieceIcon className="h-4 w-4 mr-2" />
             Integrations
-          </TabsTrigger>
-          <TabsTrigger value="users">
+          </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`flex items-center px-4 py-2 rounded-t-lg transition-colors ${
+              activeTab === 'users'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+          >
             <UserGroupIcon className="h-4 w-4 mr-2" />
             Users
-          </TabsTrigger>
-          <TabsTrigger value="analytics">
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`flex items-center px-4 py-2 rounded-t-lg transition-colors ${
+              activeTab === 'analytics'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+          >
             <ChartBarIcon className="h-4 w-4 mr-2" />
             Analytics
-          </TabsTrigger>
-        </TabsList>
+          </button>
+        </div>
+      </div>
 
+      {/* Tab Content */}
+      <div className="space-y-6">
         {/* General Settings */}
-        <TabsContent value="general">
+        {activeTab === 'general' && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -191,10 +232,10 @@ const SettingsLayout: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* Security Settings */}
-        <TabsContent value="security">
+        {activeTab === 'security' && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -271,10 +312,10 @@ const SettingsLayout: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* Notification Settings */}
-        <TabsContent value="notifications">
+        {activeTab === 'notifications' && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -348,10 +389,10 @@ const SettingsLayout: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* Integration Settings */}
-        <TabsContent value="integrations">
+        {activeTab === 'integrations' && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -431,10 +472,10 @@ const SettingsLayout: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* User Management Settings */}
-        <TabsContent value="users">
+        {activeTab === 'users' && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -523,10 +564,10 @@ const SettingsLayout: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* Analytics Settings */}
-        <TabsContent value="analytics">
+        {activeTab === 'analytics' && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -595,8 +636,8 @@ const SettingsLayout: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </Container>
   );
 };
