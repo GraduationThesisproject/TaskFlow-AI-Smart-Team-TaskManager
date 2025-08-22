@@ -1,7 +1,7 @@
-import React, { createContext, useContext, ReactNode, useEffect, useMemo } from 'react';
+import { createContext, useContext, ReactNode, useEffect, useMemo } from 'react';
 import { useSocket } from '../hooks/socket/useSocket';
 import { env } from '../config/env';
-import { 
+import {
   NotificationState,
   addNotification,
   setNotifications,
@@ -14,18 +14,21 @@ import {
 import { NotificationSocketEvents } from '../types/notification.types';
 import { useAppDispatch, useAppSelector } from '../store';
 
-interface NotificationContextType extends NotificationState {
+export interface NotificationContextType {
+  notifications: NotificationState['notifications'];
+  unreadCount: NotificationState['unreadCount'];
+  isLoading: NotificationState['isLoading'];
+  error: NotificationState['error'];
+  isConnected: boolean;
   markAsRead: (notificationId: string) => void;
   markAllAsRead: () => void;
   deleteNotification: (notificationId: string) => void;
-  refreshNotifications: () => void;
-  subscribeToTypes: (types: string[]) => void;
-  unsubscribeFromTypes: (types: string[]) => void;
+  clearError: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-interface NotificationProviderProps {
+export interface NotificationProviderProps {
   children: ReactNode;
   authToken: string;
 }
@@ -33,63 +36,63 @@ interface NotificationProviderProps {
 export function NotificationProvider({ children, authToken }: NotificationProviderProps) {
   const dispatch = useAppDispatch();
   const state = useAppSelector((rootState) => rootState.notifications);
-  
+
   // Memoize socket options to prevent infinite re-renders
   const socketOptions = useMemo(() => ({
     url: env.SOCKET_URL,
     auth: { token: authToken },
     autoConnect: !!authToken,
   }), [authToken]);
-  
+
   const { isConnected, emit, on, off } = useSocket(socketOptions);
 
   // Socket event handlers
   useEffect(() => {
     if (!isConnected) return;
 
-    // Listen for new notifications
     on('notification:new', (data: NotificationSocketEvents['notification:new']) => {
       dispatch(addNotification(data.notification));
     });
 
-    // Listen for unread count updates
+    on('notifications:list', (data: NotificationSocketEvents['notifications:list']) => {
+      dispatch(setNotifications(data.notifications));
+      dispatch(setUnreadCount(data.unreadCount));
+    });
+
     on('notifications:unreadCount', (data: NotificationSocketEvents['notifications:unreadCount']) => {
       dispatch(setUnreadCount(data.count));
     });
 
-    // Listen for marked as read updates
-    on('notifications:marked-read', (data: NotificationSocketEvents['notifications:marked-read']) => {
+    on('notifications:markRead', (data: NotificationSocketEvents['notifications:markRead']) => {
       dispatch(markAsReadAction(data.notificationId));
     });
 
-    // Listen for all marked as read
-    on('notifications:all-marked-read', () => {
+    on('notifications:markAllRead', () => {
       dispatch(markAllAsReadAction());
     });
 
-    // Listen for recent notifications
-    on('notifications:recent', (data: NotificationSocketEvents['notifications:recent']) => {
-      dispatch(setNotifications(data.notifications));
+    on('notifications:delete', (data: NotificationSocketEvents['notifications:delete']) => {
+      dispatch(removeNotificationAction(data.notificationId));
     });
 
-    // Listen for errors
     on('error', (data: NotificationSocketEvents['error']) => {
       dispatch(setError(data.message));
     });
 
-    // Get initial data
+    // Emit initial data request
+    emit('notifications:getList', {});
     emit('notifications:getUnreadCount', {});
-    emit('notifications:getRecent', { limit: 50 });
 
     return () => {
       off('notification:new');
+      off('notifications:list');
       off('notifications:unreadCount');
-      off('notifications:marked-read');
-      off('notifications:all-marked-read');
-      off('notifications:recent');
+      off('notifications:markRead');
+      off('notifications:markAllRead');
+      off('notifications:delete');
       off('error');
     };
-  }, [isConnected, emit, on, off]);
+  }, [isConnected, emit, on, off, dispatch]);
 
   const markAsRead = (notificationId: string) => {
     emit('notifications:markRead', { notificationId });
@@ -103,26 +106,20 @@ export function NotificationProvider({ children, authToken }: NotificationProvid
     dispatch(removeNotificationAction(notificationId));
   };
 
-  const refreshNotifications = () => {
-    emit('notifications:getRecent', { limit: 50 });
-  };
-
-  const subscribeToTypes = (types: string[]) => {
-    emit('notifications:subscribe', { types });
-  };
-
-  const unsubscribeFromTypes = (types: string[]) => {
-    emit('notifications:unsubscribe', { types });
+  const clearError = () => {
+    dispatch(setError(null));
   };
 
   const value: NotificationContextType = {
-    ...state,
+    notifications: state.notifications,
+    unreadCount: state.unreadCount,
+    isLoading: state.isLoading,
+    error: state.error,
+    isConnected,
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    refreshNotifications,
-    subscribeToTypes,
-    unsubscribeFromTypes,
+    clearError,
   };
 
   return (
@@ -132,10 +129,10 @@ export function NotificationProvider({ children, authToken }: NotificationProvid
   );
 }
 
-export function useNotifications() {
+export function useNotificationContext(): NotificationContextType {
   const context = useContext(NotificationContext);
   if (context === undefined) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
+    throw new Error('useNotificationContext must be used within a NotificationProvider');
   }
   return context;
 }

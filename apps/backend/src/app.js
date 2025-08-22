@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const env = require('./config/env');
 //Import all models to ensure they are registered with Mongoose
 
 
@@ -47,7 +48,7 @@ const corsOptions = {
         if (process.env.CORS_ORIGIN) {
             allowedOrigins = process.env.CORS_ORIGIN.split(',').map(origin => origin.trim());
         } else {
-            allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+            allowedOrigins = env.CORS_ORIGIN;
         }
         
         console.log('Allowed CORS origins:', allowedOrigins);

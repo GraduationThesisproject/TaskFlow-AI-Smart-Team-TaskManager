@@ -1,126 +1,91 @@
 import React, { useState } from 'react';
-import { useNotifications } from '../contexts/NotificationContext';
-import { 
-  Card, 
+import { useNotificationContext } from '../contexts/NotificationContext';
+import {
+  Card,
   CardContent,
   Typography,
-  Badge,
   Button,
-  Input,
+  Badge,
   Container,
   Grid
 } from '@taskflow/ui';
-import { 
-  BellIcon, 
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
+import {
+  BellIcon,
+  CheckIcon,
   TrashIcon,
-  MagnifyingGlassIcon,
-  ArrowPathIcon
+  FunnelIcon,
+  Bars3Icon,
+  ExclamationTriangleIcon,
+  InformationCircleIcon,
+  CheckCircleIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline';
 
 const NotificationsLayout: React.FC = () => {
-  const { 
-    notifications, 
-    unreadCount, 
-    markAsRead, 
-    markAllAsRead, 
-    deleteNotification, 
-    refreshNotifications 
-  } = useNotifications();
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedPriority, setSelectedPriority] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotificationContext();
+  const [filter, setFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('date');
+  const [showRead, setShowRead] = useState(true);
 
-  // Filter notifications based on search and filters
-  const filteredNotifications = notifications.filter(notification => {
-    const matchesSearch = !searchTerm || 
-      notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      notification.message.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = selectedCategory === 'all' || notification.category === selectedCategory;
-    const matchesPriority = selectedPriority === 'all' || notification.priority === selectedPriority;
-    const matchesStatus = selectedStatus === 'all' || 
-      (selectedStatus === 'unread' ? !notification.isRead : notification.isRead);
-    
-    return matchesSearch && matchesCategory && matchesPriority && matchesStatus;
+  // Filter notifications based on current filter
+  const filteredNotifications = notifications.filter((notification: any) => {
+    if (filter === 'all') return true;
+    if (filter === 'unread') return !notification.isRead;
+    if (filter === 'read') return notification.isRead;
+    if (filter === 'critical') return notification.priority === 'critical';
+    if (filter === 'high') return notification.priority === 'high';
+    return notification.priority === filter;
+  });
+
+  // Sort notifications
+  const sortedNotifications = [...filteredNotifications].sort((a: any, b: any) => {
+    if (sortBy === 'date') {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+    if (sortBy === 'priority') {
+      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+      return priorityOrder[b.priority as keyof typeof priorityOrder] - priorityOrder[a.priority as keyof typeof priorityOrder];
+    }
+    return 0;
   });
 
   const handleMarkAsRead = (notificationId: string) => {
     markAsRead(notificationId);
   };
 
+  const handleMarkAllAsRead = () => {
+    markAllAsRead();
+  };
+
   const handleDeleteNotification = (notificationId: string) => {
-    if (window.confirm('Are you sure you want to delete this notification?')) {
-      deleteNotification(notificationId);
-    }
+    deleteNotification(notificationId);
   };
 
-  const getTypeBadge = (type: string) => {
-    switch (type) {
-      case 'info':
-        return <Badge variant="secondary">Info</Badge>;
-      case 'success':
-        return <Badge variant="success">Success</Badge>;
-      case 'warning':
-        return <Badge variant="warning">Warning</Badge>;
-      case 'error':
-        return <Badge variant="error">Error</Badge>;
-      default:
-        return <Badge variant="secondary">{type}</Badge>;
-    }
-  };
-
-  const getCategoryBadge = (category: string) => {
-    switch (category) {
-      case 'system':
-        return <Badge variant="secondary">System</Badge>;
-      case 'user':
-        return <Badge variant="success">User</Badge>;
-      case 'security':
-        return <Badge variant="error">Security</Badge>;
-      case 'maintenance':
-        return <Badge variant="warning">Maintenance</Badge>;
-      default:
-        return <Badge variant="secondary">{category}</Badge>;
-    }
-  };
-
-  const getPriorityBadge = (priority: string) => {
+  const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case 'low':
-        return <Badge variant="secondary">Low</Badge>;
-      case 'medium':
-        return <Badge variant="warning">Medium</Badge>;
-      case 'high':
-        return <Badge variant="error">High</Badge>;
       case 'critical':
-        return <Badge variant="error">Critical</Badge>;
-      default:
-        return <Badge variant="secondary">{priority}</Badge>;
-    }
-  };
-
-
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'info':
-        return <BellIcon className="h-5 w-5 text-blue-500" />;
-      case 'success':
-        return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-      case 'warning':
-        return <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500" />;
-      case 'error':
         return <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />;
+      case 'high':
+        return <ExclamationTriangleIcon className="h-5 w-5 text-orange-500" />;
+      case 'medium':
+        return <InformationCircleIcon className="h-5 w-5 text-yellow-500" />;
+      case 'low':
+        return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
       default:
-        return <BellIcon className="h-5 w-5 text-gray-500" />;
+        return <InformationCircleIcon className="h-5 w-5 text-gray-500" />;
     }
   };
 
+  const formatTime = (timestamp: string | Date) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
 
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <Container size="7xl">
@@ -129,226 +94,251 @@ const NotificationsLayout: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <Typography variant="heading-large" className="text-foreground mb-2">
-              Real-Time Notifications
+              Notifications
             </Typography>
             <Typography variant="body-medium" className="text-muted-foreground">
-              Live system notifications and alerts via Socket.IO
+              Manage system notifications and communications
             </Typography>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={refreshNotifications}>
-              <ArrowPathIcon className="h-4 w-4 mr-2" />
-              Refresh
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <Typography variant="body-large" className="text-foreground font-semibold">
+                {unreadCount}
+              </Typography>
+              <Typography variant="body-small" className="text-muted-foreground">
+                Unread
+              </Typography>
+            </div>
+            <Button onClick={handleMarkAllAsRead} disabled={unreadCount === 0}>
+              <CheckIcon className="h-4 w-4 mr-2" />
+              Mark All Read
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                // Send test notification
-                fetch('/api/notifications/test', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-                  },
-                  body: JSON.stringify({
-                    recipientId: 'current-user', // This will be replaced with actual user ID
-                    title: 'Test Real-Time Notification',
-                    message: 'This notification was sent via Socket.IO and should appear instantly!',
-                    type: 'info',
-                    priority: 'medium',
-                    category: 'system'
-                  })
-                });
-              }}
-            >
-              Send Test Notification
-            </Button>
-            {unreadCount > 0 && (
-              <Button onClick={markAllAsRead}>
-                Mark All Read
-              </Button>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <Grid cols={3} className="mb-6 gap-6">
+      {/* Stats Cards */}
+      <Grid cols={4} className="gap-6 mb-8">
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <BellIcon className="h-8 w-8 text-primary" />
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <Typography variant="heading-large" className="text-foreground">
-                  {notifications.length}
-                </Typography>
                 <Typography variant="body-small" className="text-muted-foreground">
                   Total Notifications
                 </Typography>
+                <Typography variant="heading-large" className="text-foreground">
+                  {notifications.length}
+                </Typography>
               </div>
+              <BellIcon className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
+
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <ExclamationTriangleIcon className="h-8 w-8 text-warning" />
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <Typography variant="heading-large" className="text-foreground">
-                  {unreadCount}
-                </Typography>
                 <Typography variant="body-small" className="text-muted-foreground">
                   Unread
                 </Typography>
+                <Typography variant="heading-large" className="text-foreground">
+                  {unreadCount}
+                </Typography>
+              </div>
+              <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-bold">{unreadCount}</span>
               </div>
             </div>
           </CardContent>
         </Card>
+
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <ExclamationTriangleIcon className="h-8 w-8 text-error" />
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <Typography variant="heading-large" className="text-foreground">
-                  {notifications.filter(n => n.priority === 'high' || n.priority === 'critical').length}
-                </Typography>
                 <Typography variant="body-small" className="text-muted-foreground">
                   High Priority
                 </Typography>
+                <Typography variant="heading-large" className="text-foreground">
+                  {notifications.filter((n: any) => n.priority === 'high' || n.priority === 'critical').length}
+                </Typography>
               </div>
+              <ExclamationTriangleIcon className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <Typography variant="body-small" className="text-muted-foreground">
+                  Today
+                </Typography>
+                <Typography variant="heading-large" className="text-foreground">
+                  {notifications.filter((n: any) => {
+                    const today = new Date();
+                    const notificationDate = new Date(n.createdAt);
+                    return notificationDate.toDateString() === today.toDateString();
+                  }).length}
+                </Typography>
+              </div>
+              <CalendarIcon className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
       </Grid>
 
-      {/* Search and Filters */}
+      {/* Filters and Controls */}
       <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search notifications..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <FunnelIcon className="h-4 w-4 text-muted-foreground" />
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="border border-border rounded-md px-3 py-2 text-sm bg-background text-foreground"
+                >
+                  <option value="all">All Notifications</option>
+                  <option value="unread">Unread Only</option>
+                  <option value="read">Read Only</option>
+                  <option value="critical">Critical Priority</option>
+                  <option value="high">High Priority</option>
+                  <option value="medium">Medium Priority</option>
+                  <option value="low">Low Priority</option>
+                </select>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Bars3Icon className="h-4 w-4 text-muted-foreground" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="border border-border rounded-md px-3 py-2 text-sm bg-background text-foreground"
+                >
+                  <option value="date">Sort by Date</option>
+                  <option value="priority">Sort by Priority</option>
+                </select>
+              </div>
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={showRead}
+                  onChange={(e) => setShowRead(e.target.checked)}
+                  className="rounded border-border"
+                />
+                <Typography variant="body-small">Show read notifications</Typography>
+              </label>
             </div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 border border-border rounded-md bg-background text-foreground"
-            >
-              <option value="all">All Categories</option>
-              <option value="system">System</option>
-              <option value="user">User</option>
-              <option value="security">Security</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="task">Task</option>
-              <option value="workspace">Workspace</option>
-            </select>
-            <select
-              value={selectedPriority}
-              onChange={(e) => setSelectedPriority(e.target.value)}
-              className="px-3 py-2 border border-border rounded-md bg-background text-foreground"
-            >
-              <option value="all">All Priorities</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
-            </select>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 border border-border rounded-md bg-background text-foreground"
-            >
-              <option value="all">All Statuses</option>
-              <option value="unread">Unread</option>
-              <option value="read">Read</option>
-            </select>
+
+            <div className="flex items-center space-x-2">
+              <Typography variant="body-small" className="text-muted-foreground">
+                {filteredNotifications.length} notification{filteredNotifications.length !== 1 ? 's' : ''}
+              </Typography>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Notifications List */}
       <div className="space-y-4">
-        {filteredNotifications.map((notification) => (
-          <Card key={notification._id} className={`hover:shadow-md transition-shadow ${
-            !notification.isRead ? 'border-l-4 border-l-blue-500 bg-blue-50' : ''
-          }`}>
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4 flex-1">
-                  <div className="text-2xl">{getTypeIcon(notification.type)}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Typography variant="body-medium" className={`font-medium ${
-                        !notification.isRead ? 'text-gray-900' : 'text-gray-600'
-                      }`}>
-                        {notification.title}
-                      </Typography>
-                      {getTypeBadge(notification.type)}
-                      {getCategoryBadge(notification.category)}
-                      {getPriorityBadge(notification.priority)}
-                      {!notification.isRead && (
-                        <Badge variant="secondary">Unread</Badge>
-                      )}
+        {sortedNotifications.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <BellIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <Typography variant="h3" className="text-muted-foreground mb-2">
+                No notifications found
+              </Typography>
+              <Typography variant="body-medium" className="text-muted-foreground">
+                {filter === 'all' ? 'You\'re all caught up!' : `No ${filter} notifications found.`}
+              </Typography>
+            </CardContent>
+          </Card>
+        ) : (
+          sortedNotifications.map((notification: any) => (
+            <Card
+              key={notification.id}
+              className={`transition-all duration-200 hover:shadow-md ${
+                !notification.isRead ? 'ring-2 ring-primary/20' : ''
+              }`}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-4">
+                    <div className="mt-1">
+                      {getPriorityIcon(notification.priority)}
                     </div>
-                    <Typography variant="body-medium" className="text-muted-foreground mb-3">
-                      {notification.message}
-                    </Typography>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span>Created: {new Date(notification.createdAt).toLocaleString()}</span>
-                      {notification.sender && (
-                        <span>From: {notification.sender.name}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <Typography variant="h4" className="text-foreground">
+                          {notification.title}
+                        </Typography>
+                        <div className="flex items-center space-x-2">
+                          <Badge
+                            variant={notification.priority === 'critical' ? 'destructive' : 'secondary'}
+                          >
+                            {notification.priority}
+                          </Badge>
+                          {notification.category && (
+                            <Badge variant="outline">
+                              {notification.category}
+                            </Badge>
+                          )}
+                          {!notification.isRead && (
+                            <Badge variant="default" className="bg-primary text-primary-foreground">
+                              New
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {notification.description && (
+                        <Typography variant="body-medium" className="text-muted-foreground mb-3">
+                          {notification.description}
+                        </Typography>
                       )}
+                      
+                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                        <span>{formatTime(notification.createdAt)}</span>
+                        {notification.sender && (
+                          <span>From: {notification.sender}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-2 ml-4">
-                  <div className="flex space-x-1">
+                  
+                  <div className="flex items-center space-x-2 ml-4">
                     {!notification.isRead && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleMarkAsRead(notification._id)}
-                        title="Mark as read"
+                        onClick={() => handleMarkAsRead(notification.id)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
                       >
-                        <CheckCircleIcon className="h-4 w-4" />
+                        <CheckIcon className="h-4 w-4 mr-1" />
+                        Mark Read
                       </Button>
                     )}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDeleteNotification(notification._id)}
-                      title="Delete"
-                      className="text-red-600 hover:text-red-700"
+                      onClick={() => handleDeleteNotification(notification.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
-                      <TrashIcon className="h-4 w-4" />
+                      <TrashIcon className="h-4 w-4 mr-1" />
+                      Delete
                     </Button>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
-
-      {/* No Results */}
-      {filteredNotifications.length === 0 && (
-        <Card className="mt-6">
-          <CardContent className="text-center py-12">
-            <BellIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <Typography variant="heading-large" className="text-muted-foreground mb-2">
-              No notifications found
-            </Typography>
-            <Typography variant="body-medium" className="text-muted-foreground">
-              Try adjusting your search criteria or create a new notification
-      </Typography>
-          </CardContent>
-        </Card>
-      )}
     </Container>
   );
 };

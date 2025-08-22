@@ -165,7 +165,7 @@ const UserManagementLayout: React.FC = () => {
       <Container size="7xl">
         <div className="text-center py-12">
           <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <Typography variant="heading-medium" className="text-red-600 mb-2">
+          <Typography variant="h3" className="text-red-600 mb-2">
             Error Loading Users
           </Typography>
           <Typography variant="body-medium" className="text-muted-foreground mb-4">
