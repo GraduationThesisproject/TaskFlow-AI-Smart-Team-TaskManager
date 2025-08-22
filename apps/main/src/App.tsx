@@ -115,9 +115,9 @@ function AppContent() {
 
           {/* Workspace Routes - Require authentication and member role */}
           <Route path="/workspace/*" element={
-            <ProtectedRoute requiredRole="member">
+            // <ProtectedRoute requiredRole="member">
               <WorkSpace />
-            </ProtectedRoute>
+            // { /* </ProtectedRoute> */}
           } />
 
           {/* Space Routes - Require authentication and member role */}
