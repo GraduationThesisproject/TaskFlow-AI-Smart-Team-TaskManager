@@ -19,10 +19,14 @@ import { LanguageProvider } from './contexts/LanguageContext';
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('adminToken');
   
+  console.log('ProtectedRoute: checking token:', !!token);
+  
   if (!token) {
+    console.log('ProtectedRoute: no token, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
+  console.log('ProtectedRoute: token found, rendering children');
   return <>{children}</>;
 };
 
