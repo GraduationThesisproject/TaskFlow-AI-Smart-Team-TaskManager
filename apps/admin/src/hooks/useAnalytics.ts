@@ -1,36 +1,23 @@
-import { useCallback } from 'react';
-import { useAppDispatch, useAppSelector } from '../store';
-import { Analytics, DateRange } from '../types';
+import { useCallback, useState } from 'react';
 
 export const useAnalytics = () => {
-  const dispatch = useAppDispatch();
-  const analytics = useAppSelector((state) => state.analytics);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const fetchOverview = useCallback(async (dateRange?: DateRange) => {
-    // Implement fetch overview logic
-    console.log('Fetch overview with date range:', dateRange);
-  }, [dispatch]);
-
-  const fetchUserStats = useCallback(async (dateRange?: DateRange) => {
-    // Implement fetch user stats logic
-    console.log('Fetch user stats with date range:', dateRange);
-  }, [dispatch]);
-
-  const fetchWorkspaceStats = useCallback(async (dateRange?: DateRange) => {
-    // Implement fetch workspace stats logic
-    console.log('Fetch workspace stats with date range:', dateRange);
-  }, [dispatch]);
-
-  const fetchTaskStats = useCallback(async (dateRange?: DateRange) => {
-    // Implement fetch task stats logic
-    console.log('Fetch task stats with date range:', dateRange);
-  }, [dispatch]);
+  const fetchAnalytics = useCallback(async (dateRange?: string) => {
+    setIsLoading(true);
+    try {
+      // Implement analytics fetching logic
+      console.log('Fetching analytics for date range:', dateRange);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   return {
-    ...analytics,
-    fetchOverview,
-    fetchUserStats,
-    fetchWorkspaceStats,
-    fetchTaskStats,
+    isLoading,
+    fetchAnalytics,
   };
 };

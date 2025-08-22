@@ -1,59 +1,52 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNotifications } from '../contexts/NotificationContext';
-import { BellIcon, XMarkIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { Badge, Button, Typography } from '@taskflow/ui';
+import React, { useState } from 'react';
+import { useNotificationContext } from '../contexts/NotificationContext';
+import { BellIcon } from '@heroicons/react/24/outline';
+import { Badge, Dropdown } from '@taskflow/ui';
 
-const NotificationBell: React.FC = () => {
+export const NotificationBell: React.FC = () => {
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotificationContext();
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleNotificationClick = (notificationId: string) => {
+  const handleMarkAsRead = (notificationId: string) => {
     markAsRead(notificationId);
   };
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllAsRead = () => {
     markAllAsRead();
-  };
-
-  const handleDeleteNotification = (notificationId: string) => {
-    deleteNotification(notificationId);
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'bg-red-500';
-      case 'high': return 'bg-orange-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-blue-500';
-      default: return 'bg-gray-500';
+      case 'critical':
+        return 'text-red-500';
+      case 'high':
+        return 'text-orange-500';
+      case 'medium':
+        return 'text-yellow-500';
+      case 'low':
+        return 'text-green-500';
+      default:
+        return 'text-gray-500';
     }
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'success': return '✅';
-      case 'warning': return '⚠️';
-      case 'error': return '❌';
-      case 'info': return 'ℹ️';
-      default: return '📢';
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'critical':
+        return '🔴';
+      case 'high':
+        return '🟠';
+      case 'medium':
+        return '🟡';
+      case 'low':
+        return '🟢';
+      default:
+        return '⚪';
     }
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatTime = (timestamp: string | Date) => {
+    const date = new Date(timestamp);
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
 
@@ -64,138 +57,90 @@ const NotificationBell: React.FC = () => {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      {/* Notification Bell Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-      >
-        <BellIcon className="h-6 w-6" />
-        {unreadCount > 0 && (
-          <Badge 
-            variant="destructive" 
-            className="absolute -top-1 -right-1 min-w-[20px] h-5 text-xs flex items-center justify-center"
+    <div className="relative">
+      <Dropdown
+        trigger={
+          <button
+            className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setIsOpen(!isOpen)}
           >
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </Badge>
-        )}
-      </button>
-
-      {/* Dropdown */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden">
+            <BellIcon className="h-6 w-6" />
+            {unreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
+              >
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Badge>
+            )}
+          </button>
+        }
+      >
+        <div className="w-80 max-h-96 overflow-y-auto">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+          <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between">
-              <Typography variant="h3" className="text-gray-900">
-                Notifications
-              </Typography>
-              <div className="flex items-center space-x-2">
-                {unreadCount > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleMarkAllRead}
-                    className="text-xs"
-                  >
-                    Mark all read
-                  </Button>
-                )}
+              <h3 className="font-semibold text-foreground">Notifications</h3>
+              {unreadCount > 0 && (
                 <button
-                  onClick={() => setIsOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  onClick={handleMarkAllAsRead}
+                  className="text-sm text-primary hover:text-primary/80 transition-colors"
                 >
-                  <XMarkIcon className="h-5 w-5" />
+                  Mark all as read
                 </button>
-              </div>
+              )}
             </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
+            </p>
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-80 overflow-y-auto">
+          <div className="p-2">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-gray-500">
-                <BellIcon className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                <Typography variant="body-medium">No notifications</Typography>
-                <Typography variant="body-small" className="text-gray-400">
-                  You're all caught up!
-                </Typography>
+              <div className="text-center py-8 text-muted-foreground">
+                <BellIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No notifications</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
-                {notifications.slice(0, 10).map((notification) => (
+              <div className="space-y-2">
+                {notifications.slice(0, 10).map((notification: any) => (
                   <div
-                    key={notification._id}
-                    className={`px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${
-                      !notification.isRead ? 'bg-blue-50' : ''
+                    key={notification.id}
+                    className={`flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-muted ${
+                      !notification.isRead ? 'bg-muted/50 border-primary/20' : 'bg-card'
                     }`}
-                    onClick={() => handleNotificationClick(notification._id)}
+                    onClick={() => handleMarkAsRead(notification.id)}
                   >
-                    <div className="flex items-start space-x-3">
-                      {/* Priority indicator */}
-                      <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${getPriorityColor(notification.priority)}`} />
-                      
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <span className="text-sm">{getTypeIcon(notification.type)}</span>
-                          <Typography 
-                            variant="body-medium" 
-                            className={`font-medium ${!notification.isRead ? 'text-gray-900' : 'text-gray-600'}`}
-                          >
-                            {notification.title}
-                          </Typography>
-                          {!notification.isRead && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
-                          )}
-                        </div>
-                        
-                        <Typography 
-                          variant="body-small" 
-                          className="text-gray-600 mb-2 line-clamp-2"
-                        >
-                          {notification.message}
-                        </Typography>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Badge variant="secondary" className="text-xs">
-                              {notification.category}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {notification.priority}
-                            </Badge>
-                          </div>
-                          <Typography variant="body-small" className="text-gray-400">
-                            {formatTime(notification.createdAt)}
-                          </Typography>
-                        </div>
+                    <div className={`text-lg ${getPriorityColor(notification.priority)}`}>
+                      {getPriorityIcon(notification.priority)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm text-foreground truncate">
+                          {notification.title}
+                        </h4>
+                        <span className="text-xs text-muted-foreground">
+                          {formatTime(notification.createdAt)}
+                        </span>
                       </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center space-x-1">
-                        {!notification.isRead && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleNotificationClick(notification._id);
-                            }}
-                            className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
-                            title="Mark as read"
-                          >
-                            <CheckIcon className="h-4 w-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteNotification(notification._id);
-                          }}
-                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                          title="Delete notification"
+                      {notification.description && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {notification.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge
+                          variant={notification.priority === 'critical' ? 'destructive' : 'secondary'}
+                          className="text-xs"
                         >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
+                          {notification.priority}
+                        </Badge>
+                        {notification.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {notification.category}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -206,25 +151,14 @@ const NotificationBell: React.FC = () => {
 
           {/* Footer */}
           {notifications.length > 10 && (
-            <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => {
-                  setIsOpen(false);
-                  // Navigate to full notifications page
-                  window.location.hash = '#/notifications';
-                }}
-              >
+            <div className="p-4 border-t border-border text-center">
+              <button className="text-sm text-primary hover:text-primary/80 transition-colors">
                 View all notifications
-              </Button>
+              </button>
             </div>
           )}
         </div>
-      )}
+      </Dropdown>
     </div>
   );
 };
-
-export default NotificationBell;

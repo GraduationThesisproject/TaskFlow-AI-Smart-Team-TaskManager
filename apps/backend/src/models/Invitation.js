@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 
+const config = require('../config/env');
+
 const invitationSchema = new mongoose.Schema({
   type: {
     type: String,
@@ -116,7 +118,7 @@ invitationSchema.pre('save', function(next) {
 
 // Virtual for invitation URL
 invitationSchema.virtual('inviteUrl').get(function() {
-  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const baseUrl = process.env.FRONTEND_URL || config.FRONTEND_URL;
   return `${baseUrl}/invite/${this.token}`;
 });
 

@@ -136,7 +136,7 @@ const IntegrationsLayout: React.FC = () => {
   const getCategoryBadge = (category: string) => {
     switch (category) {
       case 'communication':
-        return <Badge variant="primary">Communication</Badge>;
+        return <Badge variant="default">Communication</Badge>;
       case 'storage':
         return <Badge variant="secondary">Storage</Badge>;
       case 'analytics':
@@ -246,7 +246,7 @@ const IntegrationsLayout: React.FC = () => {
                   {getStatusBadge(integration.status)}
                   <Switch
                     checked={integration.isEnabled}
-                    onChange={(e) => handleToggleIntegration(integration.id)}
+                    onChange={() => handleToggleIntegration(integration.id)}
                   />
                 </div>
               </div>
@@ -309,7 +309,7 @@ const IntegrationsLayout: React.FC = () => {
         <Card className="mt-6">
           <CardContent className="text-center py-12">
             <PuzzlePieceIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <Typography variant="heading-medium" className="text-muted-foreground mb-2">
+            <Typography variant="h3" className="text-muted-foreground mb-2">
               No integrations found
             </Typography>
             <Typography variant="body-medium" className="text-muted-foreground">

@@ -1,33 +1,37 @@
-import React, { createContext, useContext, ReactNode } from 'react';
-import { useLanguage, Language, LanguageConfig } from '../hooks/useLanguage';
+import { createContext, useContext, ReactNode } from 'react';
+import { useLanguage } from '../hooks/useLanguage';
 
-interface LanguageContextType {
+export type Language = 'en' | 'es' | 'fr' | 'de';
+
+export interface LanguageConfig {
+  code: Language;
+  name: string;
+  flag: string;
+  nativeName: string;
+}
+
+export interface LanguageContextType {
   currentLanguage: Language;
   changeLanguage: (language: Language) => void;
-  supportedLanguages: LanguageConfig[];
-  getLanguageConfig: (code: Language) => LanguageConfig | undefined;
+  getLanguageConfig: (language: Language) => LanguageConfig | undefined;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-interface LanguageProviderProps {
-  children: ReactNode;
-}
-
-export function LanguageProvider({ children }: LanguageProviderProps) {
-  const languageUtils = useLanguage();
-
+export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const languageHook = useLanguage();
+  
   return (
-    <LanguageContext.Provider value={languageUtils}>
+    <LanguageContext.Provider value={languageHook}>
       {children}
     </LanguageContext.Provider>
   );
-}
+};
 
-export function useLanguageContext() {
+export const useLanguageContext = (): LanguageContextType => {
   const context = useContext(LanguageContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useLanguageContext must be used within a LanguageProvider');
   }
   return context;
-}
+};

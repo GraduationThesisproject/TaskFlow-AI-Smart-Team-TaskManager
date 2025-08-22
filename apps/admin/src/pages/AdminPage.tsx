@@ -4,19 +4,20 @@ import { useAppDispatch, useAppSelector } from '../store';
 import { logoutAdmin, getCurrentAdmin } from '../store/slices/adminSlice';
 import { Typography, Avatar, Dropdown, DropdownItem } from '@taskflow/ui';
 import { ThemeToggle } from '@taskflow/theme';
-import { 
-  HomeIcon, 
-  UsersIcon, 
-  DocumentTextIcon, 
-  ChartBarIcon, 
-  CogIcon, 
+import {
+  HomeIcon,
+  UsersIcon,
+  DocumentTextIcon,
+  ChartBarIcon,
+  CogIcon,
   BellIcon,
   HeartIcon,
-  PuzzlePieceIcon
+  PuzzlePieceIcon,
+  UserIcon
 } from '@heroicons/react/24/outline';
 
 // Import NotificationBell component
-import NotificationBell from '../components/NotificationBell';
+import { NotificationBell } from '../components/NotificationBell';
 
 // Import all layouts
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -27,6 +28,7 @@ import IntegrationsLayout from '../layouts/IntegrationsLayout';
 import SystemHealthLayout from '../layouts/SystemHealthLayout';
 import NotificationsLayout from '../layouts/NotificationsLayout';
 import SettingsLayout from '../layouts/SettingsLayout';
+import ProfileLayout from '../layouts/ProfileLayout';
 
 // Import language context and translation hook
 import { useLanguageContext } from '../contexts/LanguageContext';
@@ -103,6 +105,13 @@ const AdminPage: React.FC = () => {
       icon: CogIcon,
       description: 'System configuration and preferences',
       layout: SettingsLayout
+    },
+    {
+      name: 'Profile',
+      path: '/profile',
+      icon: UserIcon,
+      description: 'Manage your personal profile and account',
+      layout: ProfileLayout
     }
   ];
 
@@ -131,8 +140,8 @@ const AdminPage: React.FC = () => {
   };
 
   const userMenuItems = [
-    { label: 'Profile', action: () => console.log('Profile') },
-    { label: 'Settings', action: () => console.log('Settings') },
+    { label: 'Profile', action: () => navigate('/profile') },
+    { label: 'Settings', action: () => navigate('/settings') },
     { label: 'Logout', action: handleLogout }
   ];
 
