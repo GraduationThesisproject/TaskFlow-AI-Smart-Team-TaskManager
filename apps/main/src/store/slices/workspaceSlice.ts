@@ -64,6 +64,22 @@ export const disableInviteLink = createAsyncThunk<InviteLinkInfo, { id: string }
   async ({ id }) => workspaceService.disableInviteLink(id)
 );
 
+export const createWorkspace = createAsyncThunk(
+  'workspace/createWorkspace',
+  async (workspaceData: {
+    name: string;
+    description?: string;
+    visibility: 'private' | 'public';
+  }) => {
+    const response = await WorkspaceService.createWorkspace({
+      name: workspaceData.name,
+      description: workspaceData.description,
+      plan: 'free' // Default to free plan
+    });
+    return response.data;
+  }
+);
+
 // Combined state interface
 interface WorkspaceState extends BaseWorkspaceState {
   spaces: Space[];
@@ -191,6 +207,23 @@ const workspaceSlice = createSlice({
       })
       .addCase(disableInviteLink.fulfilled, (state, action) => {
         state.inviteLink = action.payload;
+      })
+      // Create workspace
+      .addCase(createWorkspace.pending, (state) => {
+        state.loading = true;
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isLoading = false;
+        state.workspaces.push(action.payload as any);
+        state.error = null;
+      })
+      .addCase(createWorkspace.rejected, (state, action) => {
+        state.loading = false;
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to create workspace';
       });
   },
 });
