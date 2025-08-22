@@ -92,6 +92,7 @@ export default function UniversalNavbar({
 
         <NavbarRight>
           <DashboardActions />
+          <ThemeToggleButton />
           <NotificationButton count={notificationCount} />
           <UserProfile user={user} onLogout={onLogout} />
         </NavbarRight>
