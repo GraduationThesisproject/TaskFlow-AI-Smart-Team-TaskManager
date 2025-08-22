@@ -8,9 +8,11 @@ export const workspaceService = {
       .get<ApiResponse<{ workspace: Workspace; userRole?: string; userPermissions?: any }>>(`/workspaces/${id}`)
       .then((r) => r.data.data.workspace),
 
-  getMembers: (id: string) =>
+  getMembers: (id: string, opts?: { q?: string }) =>
     axios
-      .get<ApiResponse<{ members: any[]; total: number; limits: any }>>(`/workspaces/${id}/members`)
+      .get<ApiResponse<{ members: any[]; total: number; limits: any }>>(`/workspaces/${id}/members`, {
+        params: opts?.q ? { q: opts.q } : undefined,
+      })
       .then((r) =>
         (r.data.data.members || []).map((m: any): WorkspaceMember => ({
           id: m.user?._id || m.userId || m.id, // use user id as member id
