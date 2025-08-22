@@ -1,7 +1,14 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { useAppSelector } from '../../store';
 
 const Sidebar = () => {
   const { search } = useLocation();
+  const userBasic = useAppSelector((state) => state.auth.user?.user);
+  const displayName =
+    (userBasic?.name?.trim()?.split(' ')?.[0]) ||
+    userBasic?.name ||
+    (userBasic?.email ? userBasic.email.split('@')[0] : undefined) ||
+    'Your';
   return (
     <aside className="h-ful w-60 border-r border-border bg-[hsl(var(--neutral-200))] text-foreground/90 shadow-[0_0_10px_hsl(var(--accent))] 
              ring-1 ring-primary/20 
@@ -30,7 +37,7 @@ const Sidebar = () => {
 
             </div>
             <div className="flex min-w-0 flex-col">
-              <span className="truncate text-sm font-small" style={{color: "hsl(var(--accent))"}}>Douzi Hazem's</span>
+              <span className="truncate text-sm font-small" style={{color: "hsl(var(--accent))"}}>{displayName}'s</span>
               <span className="truncate text-xs text-foreground/70" style={{color: "hsl(var(--accent))"}}>workspace</span>
             </div>
           </div>

@@ -168,6 +168,10 @@ const workspaceSlice = createSlice({
         if (!state.workspaces.find((w) => w._id === action.payload._id)) {
           state.workspaces = [...state.workspaces, action.payload];
         }
+        // Ensure members table has data even if fetchMembers hasn't run or failed
+        if (Array.isArray((action.payload as any).members)) {
+          state.members = (action.payload as any).members as unknown as WorkspaceMember[];
+        }
         state.error = null;
       })
       .addCase(fetchWorkspace.rejected, (state, action) => {
@@ -192,6 +196,21 @@ const workspaceSlice = createSlice({
       .addCase(createWorkspace.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to create workspace';
+      })
+
+      // Fetch members
+      .addCase(fetchMembers.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchMembers.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.members = Array.isArray(action.payload) ? action.payload : [];
+        state.error = null;
+      })
+      .addCase(fetchMembers.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to fetch members';
       });
   
     // You can add other thunks (spaces, members, invite links) here similarly...

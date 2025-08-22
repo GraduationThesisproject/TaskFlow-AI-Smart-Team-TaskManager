@@ -15,10 +15,27 @@ export const workspaceService = {
       })
       .then((r) =>
         (r.data.data.members || []).map((m: any): WorkspaceMember => ({
-          user: m.user?._id || m.userId || m.id,
-          role: (m.role === 'owner' || m.role === 'admin' || m.role === 'member') ? m.role : 'member',
-          joinedAt: m.joinedAt ? new Date(m.joinedAt).toISOString() : new Date().toISOString(),
-          addedBy: m.addedBy,
+          id: m._id || m.id || m.userId || m.user?._id,
+          userId: m.userId || m.user?._id || m.id || m._id,
+          user:
+            m.user && typeof m.user === 'object'
+              ? {
+                  _id: m.user._id,
+                  email: m.user.email,
+                  name: m.user.name,
+                  avatar: m.user.avatar,
+                  emailVerified: !!m.user.emailVerified,
+                  isActive: !!m.user.isActive,
+                  lastLogin: m.user.lastLogin,
+                  createdAt: m.user.createdAt,
+                  updatedAt: m.user.updatedAt,
+                }
+              : undefined,
+          role: m.role === 'owner' || m.role === 'admin' || m.role === 'member' ? m.role : 'member',
+          status: m.status || 'active',
+          lastActive: m.lastActive ? new Date(m.lastActive) : undefined,
+          joinedAt: m.joinedAt ? new Date(m.joinedAt) : new Date(),
+          addedBy: typeof m.addedBy === 'string' ? m.addedBy : m.addedBy?._id,
           permissions: m.permissions || [],
         }))
       ),
