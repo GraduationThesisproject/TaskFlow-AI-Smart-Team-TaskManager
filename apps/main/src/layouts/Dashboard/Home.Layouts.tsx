@@ -8,7 +8,6 @@ import { StatsCards } from "../../components/dashboard/home/StatsCards";
 import { WorkspacesSection } from "../../components/dashboard/home/WorkspacesSection";
 import { RecentActivity } from "../../components/dashboard/home/RecentActivity";
 import { UpcomingDeadlines } from "../../components/dashboard/home/UpcomingDeadlines";
-import { QuickActions } from "../../components/dashboard/home/QuickActions";
 import { CreateWorkspaceModal } from "../../components/workspace/CreateWorkspaceModal";
 
 const HomeLayout: React.FC = () => {
@@ -68,7 +67,6 @@ const HomeLayout: React.FC = () => {
 
         <div className="lg:col-span-4 space-y-6">
           <UpcomingDeadlines upcomingDeadlines={upcomingDeadlines} />
-          <QuickActions />
         </div>
       </div>
 
