@@ -8,6 +8,7 @@ import Section from '../../components/workspace/main_page/Section';
 import { roleBadgeVariant, statusBadgeVariant } from '../../components/workspace/main_page/data';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { useLocation } from 'react-router-dom';
+import { workspaceService } from '../../services/workspace.service';
 import {
   fetchWorkspace,
   fetchMembers,
@@ -24,7 +25,9 @@ const Main = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const query = new URLSearchParams(location.search);
-  const workspaceId = query.get('id') || 'demo-workspace'; // TODO: replace with real routing param
+  const rawWorkspaceId = query.get('id') || '';
+  const isValidObjectId = (v: string) => /^[0-9a-fA-F]{24}$/.test(v);
+  const workspaceId = isValidObjectId(rawWorkspaceId) ? rawWorkspaceId : null;
 
   const members = useAppSelector(selectMembers) ?? [];
   const isLoading = useAppSelector(selectWorkspaceLoading);
@@ -35,8 +38,13 @@ const Main = () => {
   const roleLabel = role === 'all' ? 'All Roles' : role.charAt(0).toUpperCase() + role.slice(1);
 
   React.useEffect(() => {
+    if (!workspaceId) {
+      // eslint-disable-next-line no-console
+      console.warn('[Workspace] Missing or invalid workspace id in URL. Expected 24-char ObjectId in ?id=');
+      return;
+    }
     dispatch(setCurrentWorkspaceId(workspaceId));
-    dispatch(fetchWorkspace({ id: workspaceId }));
+    dispatch(fetchWorkspace(workspaceId));
     dispatch(fetchMembers({ id: workspaceId }));
   }, [dispatch, workspaceId]);
 
@@ -60,12 +68,50 @@ const Main = () => {
   }, [members, role, search]);
 
   const onRemove = (memberId: string, roleKey: string) => {
-    // If owner wants to leave, the backend should handle transfer/validation. For now, call remove.
+    if (!workspaceId) {
+      console.warn('[Workspace] Cannot remove member: missing/invalid workspace id.');
+      return;
+    }
     dispatch(removeMember({ id: workspaceId, memberId }));
   };
+  
+  const onGenerateInvite = () => {
+    if (!workspaceId) {
+      console.warn('[Workspace] Cannot generate invite: missing/invalid workspace id.');
+      return;
+    }
+    dispatch(generateInviteLink({ id: workspaceId }));
+  };
+  
+  const onDisableInvite = () => {
+    if (!workspaceId) {
+      console.warn('[Workspace] Cannot disable invite: missing/invalid workspace id.');
+      return;
+    }
+    dispatch(disableInviteLink({ id: workspaceId }));
+  };
 
-  const onGenerateInvite = () => dispatch(generateInviteLink({ id: workspaceId }));
-  const onDisableInvite = () => dispatch(disableInviteLink({ id: workspaceId }));
+    // Auto-fire API search when user types 2+ chars (debounced)
+    React.useEffect(() => {
+      const q = search.trim();
+      if (q.length < 2) return;
+      if (!workspaceId) {
+        // eslint-disable-next-line no-console
+        console.warn('[API members search] Skipped: invalid workspace id. Provide ?id=<ObjectId> in URL.');
+        return;
+      }
+      const t = setTimeout(async () => {
+        try {
+          const apiMembers = await workspaceService.getMembers(workspaceId, { q });
+          // eslint-disable-next-line no-console
+          console.log('[API members search]', { query: q, count: apiMembers.length, members: apiMembers });
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error('[API members search error]', err);
+        }
+      }, 300);
+      return () => clearTimeout(t);
+    }, [search, workspaceId]);
 
   return (
     <div className="flex min-h-screen bg-neutral-0">
@@ -101,7 +147,9 @@ const Main = () => {
             </defs>
           </svg>
 
-          <p className="text-md">You are the only owner of this account. We suggest you add another admin…</p>
+          <p className="text-md">
+            {workspaceId ? 'You are the only owner of this account. We suggest you add another admin…' : 'Invalid or missing workspace id. Append ?id=<MongoObjectId> to the URL to load workspace data.'}
+          </p>
         </div>
 
         {/* Search + role filter */}
@@ -114,6 +162,25 @@ const Main = () => {
               placeholder="Search user name / email"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter') {
+                  const q = search.trim();
+                  if (q.length === 0) return;
+                  if (!workspaceId) {
+                    // eslint-disable-next-line no-console
+                    console.warn('[API members search] Skipped: invalid workspace id. Provide ?id=<ObjectId> in URL.');
+                    return;
+                  }
+                  try {
+                    const apiMembers = await workspaceService.getMembers(workspaceId, { q });
+                    // eslint-disable-next-line no-console
+                    console.log('[API members search: Enter]', { query: q, count: apiMembers.length, members: apiMembers });
+                  } catch (err) {
+                    // eslint-disable-next-line no-console
+                    console.error('[API members search error]', err);
+                  }
+                }
+              }}
             />
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }}>
               <path d="M10.5 10.5L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
