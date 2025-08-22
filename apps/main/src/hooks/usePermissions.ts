@@ -1,5 +1,5 @@
-import { useAppSelector } from '../store';
-import { WorkspaceRole } from '../types/workspace.types';
+import { useAppSelector } from "../store";
+import { WorkspaceRole } from "../types/workspace.types";
 
 export interface Permission {
   canView: boolean;

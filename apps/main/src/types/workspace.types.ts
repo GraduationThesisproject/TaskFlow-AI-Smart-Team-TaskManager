@@ -2,41 +2,62 @@ import type { User } from './auth.types';
 import type { Task } from './task.types';
 
 export interface Workspace {
-  id: string;
+  _id: string;
   name: string;
   description?: string;
-  logo?: string;
-  ownerId: string;
-  owner?: User;
+  owner: string;
   members: WorkspaceMember[];
+  spaces: string[];
   settings: WorkspaceSettings;
-  plan: WorkspacePlan;
+  plan: 'free' | 'basic' | 'premium' | 'enterprise';
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface WorkspaceMember {
-  id: string;
-  userId: string;
-  user?: User;
-  role: WorkspaceRole;
-  status?: 'active' | 'pending' | 'disabled';
-  lastActive?: string | Date;
-  joinedAt: Date;
+  user: string;
+  role: 'owner' | 'admin' | 'member';
+  joinedAt: string;
+  addedBy?: string;
+  permissions: string[];
 }
 
-// Use a string literal union instead of an enum to avoid runtime TS emit.
-export type WorkspaceRole = 'owner' | 'admin' | 'member';
+export interface WorkspaceSettings {
+  theme?: string;
+  timezone?: string;
+  dateFormat?: string;
+  timeFormat?: string;
+  defaultView?: 'list' | 'board' | 'calendar';
+  notifications: {
+    email: boolean;
+    push: boolean;
+    desktop: boolean;
+  };
+  features: {
+    timeTracking: boolean;
+    fileAttachments: boolean;
+    customFields: boolean;
+  };
+}
 
-// Optional: enum-like constants for convenient value access in code.
-export const WorkspaceRoleConst = {
-  OWNER: 'owner',
-  ADMIN: 'admin',
-  MEMBER: 'member',
-} as const;
+export interface CreateWorkspaceData {
+  name: string;
+  description?: string;
+  plan?: 'free' | 'basic' | 'premium' | 'enterprise';
+}
 
-export type WorkspacePlan = 'free' | 'basic' | 'premium' | 'enterprise';
+export interface UpdateWorkspaceData {
+  name?: string;
+  description?: string;
+  settings?: WorkspaceSettings;
+}
+
+export interface InviteMemberData {
+  email: string;
+  role?: 'member' | 'admin';
+  message?: string;
+}
 
 export interface Board {
   id: string;
@@ -55,13 +76,6 @@ export interface Column {
   tasks: Task[];
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface WorkspaceSettings {
-  allowGuestAccess: boolean;
-  requireApproval: boolean;
-  maxFileSize: number;
-  allowedFileTypes: string[];
 }
 
 export interface WorkspaceState {
