@@ -98,6 +98,11 @@ export interface AIPrompt {
   usageCount: number;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface BrandingAsset {
   id: string;
   name: string;
@@ -348,6 +353,23 @@ class AdminService {
 
     const data = await response.json();
     return data.data || [];
+  }
+
+  // Password Management
+  async changePassword(credentials: ChangePasswordRequest): Promise<void> {
+    const response = await fetch(`${API_BASE}/auth/change-password`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to change password');
+    }
   }
 }
 

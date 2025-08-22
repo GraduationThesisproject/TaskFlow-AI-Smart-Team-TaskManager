@@ -40,7 +40,7 @@ const socketCorsOptions = {
         if (process.env.CORS_ORIGIN) {
             allowedOrigins = process.env.CORS_ORIGIN.split(',').map(origin => origin.trim());
         } else {
-            allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+            allowedOrigins = config.CORS_ORIGIN;
         }
         
         console.log('Socket.IO - Allowed CORS origins:', allowedOrigins);
