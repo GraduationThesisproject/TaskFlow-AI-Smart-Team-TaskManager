@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Space } from '../../types/task.types';
-import { WorkspaceService } from '../../services/workspaceService';
+import { WorkspaceService } from '../../services/D_workspaceService';
 import { SpaceService } from '../../services/spaceService';
 import { workspaceService, type InviteLinkInfo } from '../../services/workspace.service.ts';
 import type { Workspace, WorkspaceMember, WorkspaceState as BaseWorkspaceState } from '../../types/workspace.types';

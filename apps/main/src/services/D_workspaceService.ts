@@ -1,5 +1,5 @@
 import axiosInstance from '../config/axios';
-import type { ApiResponse, PaginatedResponse } from '../types/task.types';
+import type { ApiResponse } from '../types/task.types';
 import type { 
   Workspace, 
   CreateWorkspaceData, 
