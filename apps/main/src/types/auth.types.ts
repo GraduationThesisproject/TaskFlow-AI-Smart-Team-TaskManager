@@ -71,23 +71,27 @@ export interface AuthState {
   error: string | null;
 }
 
+// Login credentials interface
 export interface LoginCredentials {
   email: string;
   password: string;
   rememberMe?: boolean;
 }
 
+// Register data interface
 export interface RegisterData {
   email: string;
   password: string;
-  name: string; // Changed from firstName/lastName
+  name: string;
 }
 
+// Auth response from backend
 export interface AuthResponse {
   user: User;
   token: string;
   message: string;
   success: boolean;
+  refreshToken?: string;
 }
 
 // Add device info for session management
