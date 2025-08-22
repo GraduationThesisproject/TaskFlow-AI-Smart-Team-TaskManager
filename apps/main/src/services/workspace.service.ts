@@ -15,13 +15,11 @@ export const workspaceService = {
       })
       .then((r) =>
         (r.data.data.members || []).map((m: any): WorkspaceMember => ({
-          id: m.user?._id || m.userId || m.id, // use user id as member id
-          userId: m.user?._id || m.userId || m.id,
-          user: m.user || undefined,
+          user: m.user?._id || m.userId || m.id,
           role: (m.role === 'owner' || m.role === 'admin' || m.role === 'member') ? m.role : 'member',
-          status: 'active',
-          lastActive: m.user?.lastLogin || m.lastActive || undefined,
-          joinedAt: m.joinedAt ? new Date(m.joinedAt) : new Date(),
+          joinedAt: m.joinedAt ? new Date(m.joinedAt).toISOString() : new Date().toISOString(),
+          addedBy: m.addedBy,
+          permissions: m.permissions || [],
         }))
       ),
 
