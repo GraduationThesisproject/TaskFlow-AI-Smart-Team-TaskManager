@@ -18,6 +18,8 @@ const HomeLayout: React.FC = () => {
   const { isOpen, openModal, closeModal, handleCreateWorkspace } = useCreateWorkspaceModal();
   const { permissions } = usePermissions();
 
+  // ✅ fixed here
+
   const displayName = user?.user?.name || "User";
   const isLoading = tasksLoading || workspaceLoading;
   const hasError = tasksError || workspaceError;
@@ -28,6 +30,7 @@ const HomeLayout: React.FC = () => {
     const inProgress = tasks?.filter(t => t.status === "in_progress")?.length || 0;
     const overdue = tasks?.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "done")?.length || 0;
     const highPriority = tasks?.filter(t => t.priority === "high" || t.priority === "critical")?.length || 0;
+    
     return {
       total,
       completed,

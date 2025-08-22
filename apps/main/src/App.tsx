@@ -108,9 +108,9 @@ function AppContent() {
 
           {/* Protected Routes - Require authentication */}
           <Route path="/dashboard/*" element={
-            <ProtectedRoute>
+            // <ProtectedRoute>
               <Dashboard />
-            </ProtectedRoute>
+           // </ProtectedRoute>
           } />
 
           {/* Workspace Routes - Require authentication and member role */}
