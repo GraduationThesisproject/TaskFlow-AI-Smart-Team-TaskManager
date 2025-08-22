@@ -1,4 +1,4 @@
-import type { UserBasic } from './auth.types';
+import type { User } from './auth.types';
 import type { Task } from './task.types';
 
 export interface Workspace {
@@ -16,20 +16,11 @@ export interface Workspace {
 }
 
 export interface WorkspaceMember {
-  // Identifier fields
-  id: string;            // member id (typically the user id)
-  userId: string;        // explicit user id
-
-  // Optional embedded user info (lightweight)
-  user?: UserBasic;
-
-  // Membership info
+  user: string;
   role: 'owner' | 'admin' | 'member';
-  status?: 'active' | 'pending' | 'disabled';
-  lastActive?: string | Date;
-  joinedAt: Date;
+  joinedAt: string;
   addedBy?: string;
-  permissions?: string[];
+  permissions: string[];
 }
 
 export interface WorkspaceSettings {
@@ -94,6 +85,30 @@ export interface WorkspaceState {
   error: string | null;
 }
 
+export interface WorkspacesSectionProps {
+  workspaces: Workspace[];
+  openCreateModal: () => void;
+}
+
+export interface WelcomeHeaderProps {
+  displayName: string;
+}
+
+export interface StatsCardsProps {
+  taskStats: {
+    total: number;
+    completed: number;
+    inProgress: number;
+    overdue: number;
+    highPriority: number;
+    completionRate: number;
+  };
+}
+
+export interface RecentActivityProps {
+  recentActivity: Array<{ user: { name: string; avatar?: string }; action: string; timestamp: string }>;
+}
+
 export interface UpcomingDeadlinesProps {
-  upcomingDeadlines: Array<{ _id: string; title: string; dueDate: Date; priority: string }>;
+  upcomingDeadlines: Task[];
 }
