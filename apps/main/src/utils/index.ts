@@ -1,6 +1,5 @@
 // Export all utility functions
 export * from './apiClient';
-export * from './permissions';
 export * from './userUtils';
 
 // Date utilities for Redux serialization

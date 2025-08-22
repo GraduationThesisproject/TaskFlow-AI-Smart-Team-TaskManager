@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { Socket, io } from 'socket.io-client';
-import { SocketMessage, SocketEvent } from '../../types';
+import type { SocketMessage, SocketEvent } from '../../types';
+import { useState } from 'react';
 
 interface UseSocketOptions {
   url: string;
@@ -14,33 +15,52 @@ export function useSocket(options: UseSocketOptions) {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-
-  // Memoize options to prevent unnecessary re-renders
-  const memoizedOptions = useMemo(() => ({
-    url: options.url,
-    autoConnect: options.autoConnect ?? true,
-    auth: options.auth,
-  }), [options.url, options.autoConnect, options.auth?.token]);
+  const [error, setError] = useState<string | null>(null);
 
   const connect = useCallback(() => {
     if (socketRef.current?.connected) return;
 
     setIsConnecting(true);
-    socketRef.current = io(memoizedOptions.url, {
-      autoConnect: memoizedOptions.autoConnect,
-      auth: memoizedOptions.auth,
-    });
+    setError(null);
 
-    socketRef.current.on('connect', () => {
-      setIsConnected(true);
-      setIsConnecting(false);
-    });
+    try {
+      socketRef.current = io(options.url, {
+        autoConnect: options.autoConnect ?? true,
+        auth: options.auth,
+        transports: ['websocket', 'polling'],
+        timeout: 20000,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      });
 
-    socketRef.current.on('disconnect', () => {
-      setIsConnected(false);
+      socketRef.current.on('connect', () => {
+        setIsConnected(true);
+        setIsConnecting(false);
+        setError(null);
+      });
+
+      socketRef.current.on('disconnect', (reason) => {
+        setIsConnected(false);
+        setIsConnecting(false);
+        if (reason === 'io server disconnect') {
+          setError('Server disconnected');
+        }
+      });
+
+      socketRef.current.on('connect_error', (err) => {
+        setIsConnecting(false);
+        setError(err.message || 'Connection failed');
+      });
+
+      socketRef.current.on('error', (err) => {
+        setError(err.message || 'Socket error');
+      });
+    } catch (err) {
       setIsConnecting(false);
-    });
-  }, [memoizedOptions]);
+      setError('Failed to create socket connection');
+    }
+  }, [options.url, options.autoConnect, options.auth]);
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
@@ -48,12 +68,15 @@ export function useSocket(options: UseSocketOptions) {
       socketRef.current = null;
       setIsConnected(false);
       setIsConnecting(false);
+      setError(null);
     }
   }, []);
 
   const emit = useCallback((event: string, data: any) => {
     if (socketRef.current?.connected) {
       socketRef.current.emit(event, data);
+    } else {
+      setError('Socket not connected');
     }
   }, []);
 
@@ -70,19 +93,20 @@ export function useSocket(options: UseSocketOptions) {
   }, []);
 
   useEffect(() => {
-    if (memoizedOptions.autoConnect) {
+    if (options.autoConnect && options.auth?.token) {
       connect();
     }
 
     return () => {
       disconnect();
     };
-  }, [memoizedOptions.autoConnect, connect, disconnect]);
+  }, [connect, disconnect, options.autoConnect, options.auth?.token]);
 
   return {
     socket: socketRef.current,
     isConnected,
     isConnecting,
+    error,
     connect,
     disconnect,
     emit,
