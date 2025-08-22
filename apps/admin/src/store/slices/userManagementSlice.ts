@@ -19,15 +19,15 @@ const initialState: UserManagementState = {
   isLoading: false,
   error: null,
   filters: {
-    searchTerm: '',
-    role: 'All Roles',
-    status: 'All Statuses',
-    workspace: 'All Workspaces'
+    search: '',
+    role: [] as UserRole[],
+    status: [] as UserStatus[]
   },
   pagination: {
     page: 1,
     limit: 20,
-    total: 0
+    total: 0,
+    totalPages: 0
   },
   selectedUser: null,
   showAddUserModal: false,
@@ -218,10 +218,9 @@ const userManagementSlice = createSlice({
     },
     clearFilters: (state) => {
       state.filters = {
-        searchTerm: '',
-        role: 'All Roles',
-        status: 'All Statuses',
-        workspace: 'All Workspaces'
+        search: '',
+        role: [] as UserRole[],
+        status: [] as UserStatus[]
       };
       state.pagination.page = 1;
     },

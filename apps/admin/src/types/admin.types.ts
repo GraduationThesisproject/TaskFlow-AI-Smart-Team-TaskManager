@@ -40,7 +40,11 @@ export interface AdminLoginCredentials {
 }
 
 export interface AdminResponse {
-  admin: Admin;
-  token: string;
-  refreshToken: string;
+  success: boolean;
+  message: string;
+  timestamp: string;
+  data: {
+    admin: Admin;
+    token: string;
+  };
 }
