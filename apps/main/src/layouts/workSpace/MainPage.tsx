@@ -27,9 +27,17 @@ const Main = () => {
   const query = new URLSearchParams(location.search);
   const rawWorkspaceId = query.get('id') || '';
   const isValidObjectId = (v: string) => /^[0-9a-fA-F]{24}$/.test(v);
-  const workspaceId = isValidObjectId(rawWorkspaceId) ? rawWorkspaceId : null;
+  const currentWorkspace = useAppSelector((s: any) => s.workspace.currentWorkspace);
+  const workspaces = useAppSelector((s: any) => s.workspace.workspaces) as Array<{ _id: string }> | undefined;
+  const derivedId = currentWorkspace?._id || workspaces?.[0]?._id || null;
+  const workspaceId = React.useMemo(() => {
+    if (isValidObjectId(rawWorkspaceId)) return rawWorkspaceId;
+    if (isValidObjectId(derivedId || '')) return derivedId as string;
+    return null;
+  }, [rawWorkspaceId, derivedId]);
   
-  const members = useAppSelector(selectMembers) ?? [];
+  const storeMembers = useAppSelector(selectMembers) ?? [];
+  const members = storeMembers.length > 0 ? storeMembers : (currentWorkspace?.members ?? []);
   const isLoading = useAppSelector(selectWorkspaceLoading);
   const error = useAppSelector(selectWorkspaceError);
 
@@ -49,15 +57,20 @@ const Main = () => {
   }, [dispatch, workspaceId]);
 
   const filteredMembers = React.useMemo(() => {
-    const normalized = (Array.isArray(members) ? members : []).map((m) => ({
-      ...m,
-      displayRole: m.role === 'owner' ? 'Owner' : m.role === 'admin' ? 'Admin' : 'Member',
-      displayStatus: (m.status || 'active') === 'active' ? 'Active' : (m.status || 'active') === 'pending' ? 'Pending' : 'Disabled',
-      lastActiveStr: typeof m.lastActive === 'string' ? m.lastActive : (m.lastActive ? new Date(m.lastActive).toLocaleDateString() : '—'),
-      name: (m.user?.name ?? '').trim() || m.userId,
-      email: m.user?.email || '',
-      handle: (((m.user?.name ?? '').trim() || m.user?.email || m.userId)).toLowerCase().replace(/\s+/g, ''),
-    }));
+    const normalized = (Array.isArray(members) ? members : []).map((m: any) => {
+      const derivedId = m.id || m.userId || m.user?._id || (typeof m.user === 'string' ? m.user : undefined);
+      return {
+        ...m,
+        id: derivedId,
+        userId: m.userId || (typeof m.user === 'string' ? m.user : m.user?._id),
+        displayRole: m.role === 'owner' ? 'Owner' : m.role === 'admin' ? 'Admin' : 'Member',
+        displayStatus: (m.status || 'active') === 'active' ? 'Active' : (m.status || 'active') === 'pending' ? 'Pending' : 'Disabled',
+        lastActiveStr: typeof m.lastActive === 'string' ? m.lastActive : (m.lastActive ? new Date(m.lastActive).toLocaleDateString() : '—'),
+        name: (m.user?.name ?? '').trim() || m.userId || derivedId || 'Unknown',
+        email: m.user?.email || '',
+        handle: (((m.user?.name ?? '').trim() || m.user?.email || m.userId || derivedId || '')).toLowerCase().replace(/\s+/g, ''),
+      };
+    });
 
     return normalized.filter((m) => {
       const byRole = role === 'all' ? true : (role === 'owner' ? m.role === 'owner' : (role === 'admin' ? m.role === 'admin' : m.role === 'member'));
