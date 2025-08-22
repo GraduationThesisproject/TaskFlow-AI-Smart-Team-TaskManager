@@ -1,6 +1,6 @@
-import tokenManager from './tokenManager.js';
 
 // Enhanced API client with automatic token management
+import tokenManager from './tokenManager';
 class ApiClient {
     private baseURL: string;
     private defaultHeaders: Record<string, string>;

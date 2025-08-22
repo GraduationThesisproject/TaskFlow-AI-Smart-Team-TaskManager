@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { AuthCard, FormField, Button, SocialButton, Typography, Flex, Checkbox } from "@taskflow/ui";
 import { useAuth } from "../../hooks/useAuth";
 import type { LoginCredentials } from "../../types/auth.types";
+import AuthNavbar from "../../components/common/navbar/authNav/AuthNavbar";
 
 // Form validation errors interface
 interface FormErrors {
@@ -94,11 +95,13 @@ export default function SignIn() {
     touched[field] && errors[field];
 
   return (
-    <AuthCard
-      title="TaskFlow"
-      subtitle="Welcome Back"
-      description="Sign in to continue managing your tasks efficiently"
-    >
+    <>
+      <AuthNavbar />
+      <AuthCard
+        title="TaskFlow"
+        subtitle="Welcome Back"
+        description="Sign in to continue managing your tasks efficiently"
+      >
       {/* General Error Display */}
       {error && (
         <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
@@ -239,5 +242,6 @@ export default function SignIn() {
         </Typography>
       </div>
     </AuthCard>
+    </>
   );
 }
