@@ -128,12 +128,18 @@ const AdminPage: React.FC = () => {
   }, [dispatch, isAuthenticated, isLoading, navigate]);
 
   const handleLogout = async () => {
+    console.log('Logout started...');
+    console.log('Current state before logout:', { isAuthenticated, currentAdmin });
+    
     try {
+      console.log('Dispatching logoutAdmin...');
       await dispatch(logoutAdmin()).unwrap();
+      console.log('Logout successful, navigating to login...');
       navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
       // Force logout by clearing local state
+      console.log('Force clearing localStorage and navigating...');
       localStorage.removeItem('adminToken');
       navigate('/login');
     }
