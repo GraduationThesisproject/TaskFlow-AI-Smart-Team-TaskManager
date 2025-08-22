@@ -17,7 +17,7 @@ export { SubNavigation as BoardSubNavigation } from './board/SubNavigation';
 export { TaskDetailModal } from './board/TaskDetailModal';
 export { CommentItem } from './board/CommentItem';
 export { LogoutConfirmDialog } from './common/LogoutConfirmDialog';
-export { ThemeToggle } from './common/ThemeToggle';
+// export  ThemeToggle  from './common/navbar/ThemeToggleButton';
 export { AppLayout } from './common/AppLayout';
 export { ThemeSettings } from './settings/ThemeSettings';
 export { CreateWorkspaceModal } from "./workspace/CreateWorkspaceModal"
