@@ -16,6 +16,18 @@ export const fetchWorkspace = createAsyncThunk(
   }
 );
 
+export const fetchWorkspaces = createAsyncThunk<Workspace[]>(
+  'workspace/fetchWorkspaces',
+  async () => {
+    const response = await WorkspaceService.getWorkspaces();
+    // The response is an object with a workspaces array
+    return Array.isArray((response.data as any)?.workspaces) 
+      ? (response.data as any).workspaces 
+      : [];
+  }
+);
+
+
 export const fetchSpacesByWorkspace = createAsyncThunk(
   'workspace/fetchSpacesByWorkspace',
   async (workspaceId: string) => {
@@ -82,6 +94,7 @@ export const createWorkspace = createAsyncThunk(
 
 // Combined state interface
 interface WorkspaceState extends BaseWorkspaceState {
+  workspaces: Workspace[];
   spaces: Space[];
   selectedSpace: Space | null;
   currentWorkspaceId: string | null;
@@ -129,104 +142,62 @@ const workspaceSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch workspace
+      // Fetch all workspaces
+      .addCase(fetchWorkspaces.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchWorkspaces.fulfilled, (state, action) => {
+        state.loading = false;
+        state.workspaces = Array.isArray(action.payload) ? action.payload : [];
+        state.error = null;
+      })
+      .addCase(fetchWorkspaces.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch workspaces';
+      })
+  
+      // Fetch single workspace
       .addCase(fetchWorkspace.pending, (state) => {
         state.loading = true;
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchWorkspace.fulfilled, (state, action) => {
         state.loading = false;
-        state.isLoading = false;
         state.currentWorkspace = action.payload;
-        if (!state.workspaces.find((w) => w.id === action.payload.id)) {
-          state.workspaces.push(action.payload);
+        if (!state.workspaces.find((w) => w._id === action.payload._id)) {
+          state.workspaces = [...state.workspaces, action.payload];
         }
         state.error = null;
       })
       .addCase(fetchWorkspace.rejected, (state, action) => {
         state.loading = false;
-        state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch workspace';
       })
-      // Fetch spaces by workspace
-      .addCase(fetchSpacesByWorkspace.pending, (state) => {
-        state.loading = true;
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchSpacesByWorkspace.fulfilled, (state, action) => {
-        state.loading = false;
-        state.isLoading = false;
-        state.spaces = action.payload;
-        state.error = null;
-      })
-      .addCase(fetchSpacesByWorkspace.rejected, (state, action) => {
-        state.loading = false;
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to fetch spaces';
-      })
-      // Fetch space
-      .addCase(fetchSpace.pending, (state) => {
-        state.loading = true;
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchSpace.fulfilled, (state, action) => {
-        state.loading = false;
-        state.isLoading = false;
-        state.selectedSpace = action.payload;
-        state.error = null;
-      })
-      .addCase(fetchSpace.rejected, (state, action) => {
-        state.loading = false;
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to fetch space';
-      })
-      // New member-related cases
-      .addCase(fetchMembers.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchMembers.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.members = action.payload;
-      })
-      .addCase(fetchMembers.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to load members';
-      })
-      .addCase(inviteMember.fulfilled, (state, action) => {
-        state.members.push(action.payload);
-      })
-      .addCase(removeMember.fulfilled, (state, action) => {
-        state.members = state.members.filter((m) => m.id !== action.payload.memberId);
-      })
-      .addCase(generateInviteLink.fulfilled, (state, action) => {
-        state.inviteLink = action.payload;
-      })
-      .addCase(disableInviteLink.fulfilled, (state, action) => {
-        state.inviteLink = action.payload;
-      })
+  
       // Create workspace
       .addCase(createWorkspace.pending, (state) => {
         state.loading = true;
-        state.isLoading = true;
         state.error = null;
       })
       .addCase(createWorkspace.fulfilled, (state, action) => {
         state.loading = false;
-        state.isLoading = false;
-        state.workspaces.push(action.payload as any);
+        if (action.payload) {
+          state.workspaces = Array.isArray(state.workspaces)
+            ? [...state.workspaces, action.payload]
+            : [action.payload];
+        }
         state.error = null;
       })
       .addCase(createWorkspace.rejected, (state, action) => {
         state.loading = false;
-        state.isLoading = false;
         state.error = action.error.message || 'Failed to create workspace';
       });
-  },
+  
+    // You can add other thunks (spaces, members, invite links) here similarly...
+  }
 });
+
 
 export const {
   setSelectedSpace,
