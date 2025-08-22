@@ -1,6 +1,8 @@
 import { Typography } from "@taskflow/ui";
-import type { WelcomeHeaderProps } from "../../../types/dash.types";
 
+interface WelcomeHeaderProps {
+  displayName: string;
+}
 
 export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ displayName }) => (
   <div className="mb-8">

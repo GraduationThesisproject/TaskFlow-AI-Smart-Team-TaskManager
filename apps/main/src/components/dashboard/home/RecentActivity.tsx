@@ -1,8 +1,10 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback, EmptyState } from "@taskflow/ui";
 import { Clock } from "lucide-react";
-import type { RecentActivityProps } from "../../../types/dash.types";
 
+interface RecentActivityProps {
+  recentActivity: Array<{ user: { name: string; avatar?: string }; action: string; timestamp: string }>;
+}
 
 export const RecentActivity: React.FC<RecentActivityProps> = ({ recentActivity }) => (
   <Card>
