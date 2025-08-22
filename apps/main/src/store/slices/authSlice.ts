@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { AuthState, LoginCredentials, User } from '../../types/auth.types';
+import type { AuthState, LoginCredentials, RegisterData, User } from '../../types/auth.types';
 import { AuthService } from '../../services/authService';
 import { getDeviceId } from '../../utils';
 
@@ -100,6 +100,67 @@ export const loginUser = createAsyncThunk(
       };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Login failed');
+    }
+  }
+);
+
+// Async thunk for register
+export const registerUser = createAsyncThunk(
+  'auth/register',
+  async (userData: RegisterData, { rejectWithValue }) => {
+    try {
+      const response = await AuthService.register(userData);
+      
+      // Store token in localStorage if provided
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      
+      // Fetch complete user profile after registration
+      const profileResponse = await AuthService.getProfile();
+      
+      return {
+        ...response.data,
+        user: serializeUser(profileResponse.data),
+        token: response.data.token
+      };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+    }
+  }
+);
+
+// Async thunk for refresh token
+export const refreshToken = createAsyncThunk(
+  'auth/refreshToken',
+  async (refreshToken: string, { rejectWithValue }) => {
+    try {
+      const response = await AuthService.refreshToken(refreshToken);
+      
+      // Update token in localStorage
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      
+      return {
+        token: response.data.token,
+        refreshToken: response.data.refreshToken
+      };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Token refresh failed');
+    }
+  }
+);
+
+// Async thunk for test connection
+export const testConnection = createAsyncThunk(
+  'auth/testConnection',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await AuthService.testConnection();
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Connection test failed');
     }
   }
 );
@@ -282,6 +343,46 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
+        state.error = action.payload as string;
+      })
+      // Register
+      .addCase(registerUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(registerUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isAuthenticated = true;
+        state.error = null;
+      })
+      .addCase(registerUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Refresh Token
+      .addCase(refreshToken.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(refreshToken.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.token = action.payload.token;
+        state.error = null;
+      })
+      .addCase(refreshToken.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Test Connection (doesn't affect auth state, just for debugging)
+      .addCase(testConnection.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(testConnection.fulfilled, (state) => {
+        state.error = null;
+      })
+      .addCase(testConnection.rejected, (state, action) => {
         state.error = action.payload as string;
       });
   },
