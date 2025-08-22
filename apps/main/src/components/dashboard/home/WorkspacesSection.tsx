@@ -4,11 +4,8 @@ import type { Workspace } from "../../../types";
 import { useNavigate } from "react-router-dom";
 import { setCurrentWorkspaceId } from "../../../store/slices/workspaceSlice";
 import { useAppDispatch } from "../../../store";
+import type { WorkspacesSectionProps } from "../../../types/dash.types";
 
-interface WorkspacesSectionProps {
-  workspaces: Workspace[];
-  openCreateModal: () => void;
-}
 
 export const WorkspacesSection: React.FC<WorkspacesSectionProps> = ({ workspaces, openCreateModal }) => {
   const navigate = useNavigate();
