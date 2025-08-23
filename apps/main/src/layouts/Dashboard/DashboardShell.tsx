@@ -73,6 +73,21 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({ children, title 
   };
 
   return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      {/* <header className="border-b border-border/40 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">T</span>
+                </div>
+                <Typography variant="heading-large" className="font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  TaskFlow AI
+                </Typography>
+              </div>
+            </div>
     <div className="flex h-screen bg-background">
       {/* Desktop Sidebar */}
       <Sidebar collapsed={sidebarCollapsed} onCollapse={setSidebarCollapsed} className="hidden lg:flex">
@@ -161,6 +176,8 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({ children, title 
               <Typography variant="caption" className="text-muted-foreground truncate">{user?.user?.email}</Typography>
             </div>
           </div>
+        </div>
+      </header> */}
         </SidebarFooter>
       </Sidebar>
 
