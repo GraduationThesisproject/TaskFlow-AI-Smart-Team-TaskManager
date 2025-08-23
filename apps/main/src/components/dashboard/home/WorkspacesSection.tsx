@@ -1,18 +1,18 @@
+import { Card, CardHeader, CardTitle, CardContent, Typography, Button, Badge, EmptyState } from "@taskflow/ui";
 import { Plus, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { setCurrentWorkspaceId } from "../../../store/slices/workspaceSlice";
 import { useAppDispatch } from "../../../store";
 import type { WorkspacesSectionProps } from "../../../types/dash.types";
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, EmptyState } from "@taskflow/ui";
 
-export const WorkspacesSection: React.FC<WorkspacesSectionProps> = ({ workspaces = [], openCreateModal }) => {
+
+export const WorkspacesSection: React.FC<WorkspacesSectionProps> = ({ workspaces, openCreateModal }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
-  const handleWorkspaceClick = (ws: { _id: string; members?: any[] }) => {
-    dispatch(setCurrentWorkspaceId(ws._id));
-    const membersCount = ws.members?.length ?? 0;
-    navigate(`/workspace?id=${encodeURIComponent(ws._id)}&members=${membersCount}`);
+  const handleWorkspaceClick = (workspaceId: string) => {
+    navigate(`/workspace`);
+    dispatch(setCurrentWorkspaceId(workspaceId));
   };
 
   return (
@@ -27,36 +27,29 @@ export const WorkspacesSection: React.FC<WorkspacesSectionProps> = ({ workspaces
       </CardHeader>
 
       <CardContent>
-        {workspaces.length === 0 ? (
-          <EmptyState
-            icon={<Users className="h-12 w-12 text-muted-foreground" />}
-            title="No workspaces yet"
-            description="Get started by creating a new workspace to organize your tasks and collaborate with your team."
-            action={{
-              label: 'Create Workspace',
-              onClick: openCreateModal
-            }}
-          />
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {workspaces.map((workspace) => (
+        {workspaces.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {workspaces.slice(0, 4).map((workspace) => (
               <div
                 key={workspace._id}
-                onClick={() => handleWorkspaceClick(workspace)}
                 className="p-4 border rounded-lg hover:border-primary cursor-pointer"
+                onClick={() => handleWorkspaceClick(workspace._id)}
               >
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium truncate max-w-[180px]">{workspace.name}</h3>
-                  <Badge variant="outline" className="ml-2 flex-shrink-0">
-                    {workspace.members?.length ?? 0} members
-                  </Badge>
+                <div className="flex items-center justify-between mb-2">
+                  <Typography variant="body-medium" className="font-medium">{workspace.name}</Typography>
+                  <Badge variant="secondary">{workspace.members?.length || 0} members</Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {workspace.description || 'No description'}
-                </p>
+                <Typography variant="caption" className="text-muted-foreground">{workspace.description || 'No description'}</Typography>
               </div>
             ))}
           </div>
+        ) : (
+          <EmptyState
+            icon={<Users className="h-8 w-8" />}
+            title="No workspaces yet"
+            description="Create your first workspace to get started with team collaboration."
+            action={{ label: "Create Workspace", onClick: openCreateModal, variant: "default" }}
+          />
         )}
       </CardContent>
     </Card>

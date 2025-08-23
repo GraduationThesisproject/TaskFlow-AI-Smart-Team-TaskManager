@@ -5,7 +5,7 @@ import { useAppSelector } from "../../store";
 
 import { WelcomeHeader } from "../../components/dashboard/home/WelcomeHeader";
 import { StatsCards } from "../../components/dashboard/home/StatsCards";
-import { WorkspacesSection } from "../../components/dashboard/home/WorkspacesSection"
+import { WorkspacesSection } from "../../components/dashboard/home/WorkspacesSection";
 import { RecentActivity } from "../../components/dashboard/home/RecentActivity";
 import { UpcomingDeadlines } from "../../components/dashboard/home/UpcomingDeadlines";
 import { CreateWorkspaceModal } from "../../components/workspace/CreateWorkspaceModal";

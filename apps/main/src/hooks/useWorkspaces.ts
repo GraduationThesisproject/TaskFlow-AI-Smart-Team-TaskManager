@@ -1,19 +1,20 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
-import {
+import { 
   fetchWorkspaces,
-  fetchWorkspace,
+  fetchWorkspace, 
   fetchSpacesByWorkspace,
   fetchMembers,
   inviteMember,
   removeMember,
   generateInviteLink,
   disableInviteLink,
-  createWorkspace,
+  createWorkspace
 } from '../store/slices/workspaceSlice';
 
 export const useWorkspaces = (workspaceId?: string) => {
   const dispatch = useAppDispatch();
+  
   const {
     workspaces,
     currentWorkspace,
@@ -22,55 +23,91 @@ export const useWorkspaces = (workspaceId?: string) => {
     members,
     inviteLink,
     loading,
+    isLoading,
     error
   } = useAppSelector(state => state.workspace);
 
-  // ✅ Fetch all workspaces only if token exists
+  // Fetch all workspaces on mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token || workspaces?.length) return;
-    dispatch(fetchWorkspaces());
-  }, [dispatch, workspaces]);
+    dispatch(fetchWorkspaces() as any);
+  }, [dispatch]);
 
-  // ✅ Load workspace-specific data safely
+  // Load workspace data when workspaceId changes
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token || !workspaceId) return;
-
-    dispatch(fetchWorkspace(workspaceId));
-    dispatch(fetchSpacesByWorkspace(workspaceId));
-    dispatch(fetchMembers({ id: workspaceId }));
+    if (workspaceId) {
+      dispatch(fetchWorkspace(workspaceId) as any);
+      dispatch(fetchSpacesByWorkspace(workspaceId) as any);
+      dispatch(fetchMembers({ id: workspaceId }) as any);
+    }
   }, [workspaceId, dispatch]);
 
-  // Actions
-  const loadWorkspace = useCallback((id: string) => dispatch(fetchWorkspace(id)), [dispatch]);
-  const loadSpaces = useCallback((id: string) => dispatch(fetchSpacesByWorkspace(id)), [dispatch]);
-  const loadMembers = useCallback((id: string) => dispatch(fetchMembers({ id })), [dispatch]);
+  const loadWorkspace = (id: string) => {
+    dispatch(fetchWorkspace(id) as any);
+  };
 
-  const inviteNewMember = useCallback(async (email: string, role: 'member' | 'admin') => {
+  const loadSpaces = (id: string) => {
+    dispatch(fetchSpacesByWorkspace(id) as any);
+  };
+
+  const loadMembers = (id: string) => {
+    dispatch(fetchMembers({ id }) as any);
+  };
+
+  const inviteNewMember = async (email: string, role: 'member' | 'admin') => {
     if (!workspaceId) throw new Error('No workspace selected');
-    await dispatch(inviteMember({ id: workspaceId, email, role })).unwrap();
-  }, [dispatch, workspaceId]);
+    try {
+      await dispatch(inviteMember({ id: workspaceId, email, role }) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to invite member:', error);
+      throw error;
+    }
+  };
 
-  const removeWorkspaceMember = useCallback(async (memberId: string) => {
+  const removeWorkspaceMember = async (memberId: string) => {
     if (!workspaceId) throw new Error('No workspace selected');
-    await dispatch(removeMember({ id: workspaceId, memberId })).unwrap();
-  }, [dispatch, workspaceId]);
+    try {
+      await dispatch(removeMember({ id: workspaceId, memberId }) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to remove member:', error);
+      throw error;
+    }
+  };
 
-  const createInviteLink = useCallback(async () => {
+  const createInviteLink = async () => {
     if (!workspaceId) throw new Error('No workspace selected');
-    await dispatch(generateInviteLink({ id: workspaceId })).unwrap();
-  }, [dispatch, workspaceId]);
+    try {
+      await dispatch(generateInviteLink({ id: workspaceId }) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to generate invite link:', error);
+      throw error;
+    }
+  };
 
-  const disableWorkspaceInviteLink = useCallback(async () => {
+  const disableWorkspaceInviteLink = async () => {
     if (!workspaceId) throw new Error('No workspace selected');
-    await dispatch(disableInviteLink({ id: workspaceId })).unwrap();
-  }, [dispatch, workspaceId]);
+    try {
+      await dispatch(disableInviteLink({ id: workspaceId }) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to disable invite link:', error);
+      throw error;
+    }
+  };
 
-  const createNewWorkspace = useCallback(async (workspaceData: { name: string; description?: string; visibility: 'private' | 'public' }) => {
-    await dispatch(createWorkspace(workspaceData)).unwrap();
-    dispatch(fetchWorkspaces());
-  }, [dispatch]);
+  // ✅ Updated: create workspace and refetch list
+  const createNewWorkspace = async (workspaceData: {
+    name: string;
+    description?: string;
+    visibility: 'private' | 'public';
+  }) => {
+    try {
+      await dispatch(createWorkspace(workspaceData) as any).unwrap();
+      // Refetch all workspaces after creation
+      dispatch(fetchWorkspaces() as any);
+    } catch (error) {
+      console.error('Failed to create workspace:', error);
+      throw error;
+    }
+  };
 
   return {
     workspaces,
@@ -79,8 +116,10 @@ export const useWorkspaces = (workspaceId?: string) => {
     selectedSpace,
     members,
     inviteLink,
-    loading,
+    loading: loading || isLoading,
     error,
+
+    // Actions
     loadWorkspace,
     loadSpaces,
     loadMembers,
