@@ -12,6 +12,11 @@ const createWorkspaceSchema = {
     plan: { enum: ['free', 'basic', 'premium', 'enterprise'] }
 };
 
+const deleteWorkspaceSchema = {
+    id: { required: true, objectId: true }
+};
+
+
 const updateWorkspaceSchema = {
     name: { minLength: 2, maxLength: 200 },
     description: { maxLength: 1000 },
@@ -44,6 +49,12 @@ router.get('/:id',
 router.post('/', 
     validateMiddleware(createWorkspaceSchema),
     workspaceController.createWorkspace
+);
+
+router.delete('/:id',
+    requireWorkspacePermission('canDeleteWorkspace'), 
+    validateMiddleware(deleteWorkspaceSchema),
+    workspaceController.deleteWorkspace
 );
 
 router.put('/:id', 
