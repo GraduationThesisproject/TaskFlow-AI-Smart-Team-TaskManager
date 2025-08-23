@@ -1,35 +1,12 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
-  Home, 
-  Calendar, 
-  Settings, 
-  FileText, 
-  Menu, 
-  X, 
-  User,
-  LogOut,
-  Bell,
-  Search
+  Home, Calendar, Settings, FileText, Menu, X, User, LogOut, Bell, Search 
 } from 'lucide-react';
 import { 
-  Sidebar, 
-  SidebarHeader, 
-  SidebarContent, 
-  SidebarFooter, 
-  SidebarNav, 
-  SidebarNavItem,
-  Topbar,
-  TopbarLeft,
-  TopbarRight,
-  Button,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-  Dropdown,
-  DropdownItem,
-  Input,
-  Typography
+  Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarNav, SidebarNavItem,
+  Topbar, TopbarLeft, TopbarRight, Button, Avatar, AvatarImage, AvatarFallback,
+  Dropdown, DropdownItem, Input, Typography
 } from '@taskflow/ui';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { logoutUser } from '../../store/slices/authSlice';
@@ -38,7 +15,6 @@ import { useNotifications } from "../../hooks/socket/useNotifications";
 interface DashboardShellProps {
   children: React.ReactNode;
   title?: string;
-  breadcrumbs?: Array<{ label: string; href?: string }>;
 }
 
 const navigationItems = [
@@ -56,7 +32,6 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({ children, title 
   const dispatch = useAppDispatch();
   const { user, token } = useAppSelector(state => state.auth);
 
-  // Use custom notifications hook
   const { notifications, unreadCount, markAsRead } = useNotifications(token || '');
 
   const handleLogout = async () => {
@@ -68,40 +43,20 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({ children, title 
   };
 
   const isActiveRoute = (href: string) => {
-    if (href === '/dashboard') return location.pathname === '/dashboard';
-    return location.pathname.startsWith(href);
+    return href === '/dashboard' ? location.pathname === '/dashboard' : location.pathname.startsWith(href);
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      {/* <header className="border-b border-border/40 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">T</span>
-                </div>
-                <Typography variant="heading-large" className="font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  TaskFlow AI
-                </Typography>
-              </div>
-            </div>
-    <div className="flex h-screen bg-background">
-      {/* Desktop Sidebar */}
-      <Sidebar collapsed={sidebarCollapsed} onCollapse={setSidebarCollapsed} className="hidden lg:flex">
+    <div className="min-h-screen flex bg-background">
+      {/* Sidebar */}
+      <Sidebar className={cn(
+        "hidden lg:flex flex-col transition-all duration-300",
+        sidebarCollapsed ? "w-20" : "w-64"
+      )}>
         <SidebarHeader>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">T</span>
-            </div>
-            {!sidebarCollapsed && (
-              <Typography variant="h3" className="font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                TaskFlow AI
-              </Typography>
-            )}
-          </div>
+          {!sidebarCollapsed && (
+            <Typography variant="h3" className="font-bold text-center py-4">TaskFlow AI</Typography>
+          )}
         </SidebarHeader>
 
         <SidebarContent>
@@ -119,12 +74,10 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({ children, title 
         </SidebarContent>
 
         <SidebarFooter>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 p-2">
             <Avatar size="sm">
               <AvatarImage src={user?.user?.avatar} alt={user?.user?.name} />
-              <AvatarFallback variant="primary" size="sm">
-                {user?.user?.name?.charAt(0) || 'U'}
-              </AvatarFallback>
+              <AvatarFallback variant="primary" size="sm">{user?.user?.name?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
@@ -137,16 +90,16 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({ children, title 
       </Sidebar>
 
       {/* Mobile Sidebar */}
-      {mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)} />}
-      <Sidebar className={cn("fixed inset-y-0 left-0 z-50 lg:hidden transform transition-transform duration-300", mobileMenuOpen ? "translate-x-0" : "-translate-x-full")}>
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)} />
+      )}
+      <Sidebar className={cn(
+        "fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:hidden",
+        mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
         <SidebarHeader>
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">T</span>
-              </div>
-              <Typography variant="h3" className="font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">TaskFlow AI</Typography>
-            </div>
+          <div className="flex items-center justify-between p-4">
+            <Typography variant="h3" className="font-bold">TaskFlow AI</Typography>
             <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(false)}><X size={20} /></Button>
           </div>
         </SidebarHeader>
@@ -156,7 +109,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({ children, title 
             {navigationItems.map((item) => {
               const Icon = item.icon;
               return (
-                <SidebarNavItem key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)} active={isActiveRoute(item.href)} className="justify-start">
+                <SidebarNavItem key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)} active={isActiveRoute(item.href)}>
                   <Icon size={18} />
                   <span>{item.label}</span>
                 </SidebarNavItem>
@@ -164,21 +117,6 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({ children, title 
             })}
           </SidebarNav>
         </SidebarContent>
-
-        <SidebarFooter>
-          <div className="flex items-center gap-3">
-            <Avatar size="sm">
-              <AvatarImage src={user?.user?.avatar} alt={user?.user?.name} />
-              <AvatarFallback variant="primary" size="sm">{user?.user?.name?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <Typography variant="body-small" className="font-medium truncate">{user?.user?.name || 'User'}</Typography>
-              <Typography variant="caption" className="text-muted-foreground truncate">{user?.user?.email}</Typography>
-            </div>
-          </div>
-        </div>
-      </header> */}
-        </SidebarFooter>
       </Sidebar>
 
       {/* Main Content */}
@@ -187,45 +125,42 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({ children, title 
           <TopbarLeft>
             <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(true)} className="lg:hidden"><Menu size={20} /></Button>
             <Button variant="ghost" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="hidden lg:flex"><Menu size={20} /></Button>
-            {title && <div className="hidden sm:block"><Typography variant="h3">{title}</Typography></div>}
+            {title && <div className="ml-4 hidden sm:block"><Typography variant="h3">{title}</Typography></div>}
           </TopbarLeft>
 
-          <TopbarRight>
-            <div className="hidden sm:flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search..." className="pl-9 w-64" />
-              </div>
-
-              {/* Notifications Dropdown */}
-              <Dropdown
-                trigger={
-                  <Button variant="ghost" size="sm" className="relative">
-                    <Bell size={20} />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">{unreadCount}</span>
-                    )}
-                  </Button>
-                }
-                align="end"
-                className="w-80"
-              >
-                {notifications.length === 0 ? (
-                  <div className="p-2 text-muted-foreground text-sm">No notifications</div>
-                ) : (
-                  notifications.map((n, idx) => (
-                    <DropdownItem key={idx} onClick={() => markAsRead(n._id)}>
-                      <Typography variant="body-small">{n.message}</Typography>
-                    </DropdownItem>
-                  ))
-                )}
-              </Dropdown>
+          <TopbarRight className="flex items-center gap-2">
+            <div className="relative hidden sm:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search..." className="pl-9 w-64" />
             </div>
+
+            {/* Notifications */}
+            <Dropdown
+              trigger={
+                <Button variant="ghost" size="sm" className="relative">
+                  <Bell size={20} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">{unreadCount}</span>
+                  )}
+                </Button>
+              }
+              align="end"
+              className="w-80"
+            >
+              {notifications.length === 0
+                ? <div className="p-2 text-muted-foreground text-sm">No notifications</div>
+                : notifications.map((n) => (
+                  <DropdownItem key={n._id} onClick={() => markAsRead(n._id)}>
+                    <Typography variant="body-small">{n.message}</Typography>
+                  </DropdownItem>
+                ))
+              }
+            </Dropdown>
 
             {/* User Dropdown */}
             <Dropdown
               trigger={
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 cursor-pointer">
                   <Avatar size="sm">
                     <AvatarImage src={user?.user?.avatar} alt={user?.user?.name} />
                     <AvatarFallback variant="primary" size="sm">{user?.user?.name?.charAt(0) || 'U'}</AvatarFallback>
@@ -237,10 +172,10 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({ children, title 
               className="w-56"
             >
               <DropdownItem onClick={() => window.location.href = '/dashboard/settings'}>
-                <div className="flex items-center gap-2"><User size={16} />Profile Settings</div>
+                <User size={16} /> Profile Settings
               </DropdownItem>
               <DropdownItem onClick={handleLogout} variant="destructive">
-                <div className="flex items-center gap-2"><LogOut size={16} />Sign Out</div>
+                <LogOut size={16} /> Sign Out
               </DropdownItem>
             </Dropdown>
           </TopbarRight>
