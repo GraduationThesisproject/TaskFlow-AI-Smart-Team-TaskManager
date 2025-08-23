@@ -1,14 +1,9 @@
+// src/services/workspace.service.ts
 import axiosInstance from '../config/axios';
 import type { ApiResponse } from '../types/task.types';
-import type { 
-  Workspace, 
-  CreateWorkspaceData, 
-  UpdateWorkspaceData, 
-  InviteMemberData 
-} from '../types/workspace.types';
+import type { Workspace, CreateWorkspaceData, UpdateWorkspaceData, InviteMemberData } from '../types/workspace.types';
 
 export class WorkspaceService {
-  // Get all workspaces
   static async getWorkspaces(): Promise<ApiResponse<Workspace[]>> {
     try {
       const response = await axiosInstance.get('/workspaces');
@@ -19,7 +14,6 @@ export class WorkspaceService {
     }
   }
 
-  // Get workspace by ID
   static async getWorkspace(id: string): Promise<ApiResponse<Workspace>> {
     try {
       const response = await axiosInstance.get(`/workspaces/${id}`);
@@ -30,7 +24,6 @@ export class WorkspaceService {
     }
   }
 
-  // Create new workspace
   static async createWorkspace(data: CreateWorkspaceData): Promise<ApiResponse<Workspace>> {
     try {
       const response = await axiosInstance.post('/workspaces', data);
@@ -40,19 +33,17 @@ export class WorkspaceService {
       throw error;
     }
   }
-  
-// Delete workspace
-static async deleteWorkspace(id: string): Promise<ApiResponse<{ message: string }>> {
-  try {
-    const response = await axiosInstance.delete(`/workspaces/${id}`);
-    return response.data;
-  } catch (error: any) {
-    console.error('Error deleting workspace:', error);
-    throw new Error(error.response?.data?.message || error.message || 'Failed to delete workspace');
-  }
-}
 
-  // Update workspace
+  static async deleteWorkspace(id: string): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await axiosInstance.delete(`/workspaces/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error deleting workspace:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to delete workspace');
+    }
+  }
+
   static async updateWorkspace(id: string, data: UpdateWorkspaceData): Promise<ApiResponse<Workspace>> {
     try {
       const response = await axiosInstance.put(`/workspaces/${id}`, data);
@@ -63,7 +54,6 @@ static async deleteWorkspace(id: string): Promise<ApiResponse<{ message: string 
     }
   }
 
-  // Get workspace members
   static async getWorkspaceMembers(id: string): Promise<ApiResponse<any[]>> {
     try {
       const response = await axiosInstance.get(`/workspaces/${id}/members`);
@@ -74,7 +64,6 @@ static async deleteWorkspace(id: string): Promise<ApiResponse<{ message: string 
     }
   }
 
-  // Invite member to workspace
   static async inviteMember(workspaceId: string, data: InviteMemberData): Promise<ApiResponse<any>> {
     try {
       const response = await axiosInstance.post(`/workspaces/${workspaceId}/invite`, data);
@@ -85,7 +74,6 @@ static async deleteWorkspace(id: string): Promise<ApiResponse<{ message: string 
     }
   }
 
-  // Remove member from workspace
   static async removeMember(workspaceId: string, memberId: string): Promise<ApiResponse<any>> {
     try {
       const response = await axiosInstance.delete(`/workspaces/${workspaceId}/members/${memberId}`);
@@ -96,7 +84,6 @@ static async deleteWorkspace(id: string): Promise<ApiResponse<{ message: string 
     }
   }
 
-  // Get workspace analytics
   static async getWorkspaceAnalytics(id: string): Promise<ApiResponse<any>> {
     try {
       const response = await axiosInstance.get(`/workspaces/${id}/analytics`);
