@@ -30,6 +30,7 @@ export * from './Topbar';
 export * from './Breadcrumbs';
 export * from './EmptyState';
 export * from './Toast';
+export * from './Alert';
 export * from './utils';
 
 // Re-export GridLayout as Grid for backward compatibility

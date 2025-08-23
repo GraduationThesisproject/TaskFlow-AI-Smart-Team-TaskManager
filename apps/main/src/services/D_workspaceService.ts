@@ -40,6 +40,17 @@ export class WorkspaceService {
       throw error;
     }
   }
+  
+// Delete workspace
+static async deleteWorkspace(id: string): Promise<ApiResponse<{ message: string }>> {
+  try {
+    const response = await axiosInstance.delete(`/workspaces/${id}`);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error deleting workspace:', error);
+    throw new Error(error.response?.data?.message || error.message || 'Failed to delete workspace');
+  }
+}
 
   // Update workspace
   static async updateWorkspace(id: string, data: UpdateWorkspaceData): Promise<ApiResponse<Workspace>> {
