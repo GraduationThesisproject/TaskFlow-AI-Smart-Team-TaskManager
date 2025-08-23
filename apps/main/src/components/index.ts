@@ -21,4 +21,3 @@ export { ThemeToggle } from './common/ThemeToggle';
 export { AppLayout } from './common/AppLayout';
 export { ThemeSettings } from './settings/ThemeSettings';
 export { CreateWorkspaceModal } from "./workspace/CreateWorkspaceModal"
-export { useWorkspacesAPI } from "./workspace/useWorkspacesAPI"

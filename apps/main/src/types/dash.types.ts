@@ -1,4 +1,3 @@
-import type { User } from './auth.types';
 import type { Task } from './task.types';
 
 export interface Workspace {
@@ -111,4 +110,20 @@ export interface RecentActivityProps {
 
 export interface UpcomingDeadlinesProps {
   upcomingDeadlines: Task[];
+}
+export interface CreateWorkspaceModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (workspaceData: {
+    name: string;
+    description?: string;
+    visibility: 'private' | 'public';
+  }) => Promise<void>;
+}
+export interface DeleteWorkspaceModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  workspace?: { id: string; name: string } | null;
+  onConfirm: (workspaceId: string) => Promise<void> | void;
+  isLoading?: boolean;
 }
