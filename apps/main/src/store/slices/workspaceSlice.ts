@@ -1,17 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { Space, ApiResponse } from '../../types/task.types';
+import type { Space } from '../../types/task.types';
 import { WorkspaceService } from '../../services/D_workspaceService';
 import { SpaceService } from '../../services/spaceService';
 import { workspaceService, type InviteLinkInfo } from '../../services/workspace.service.ts';
 import type { Workspace, WorkspaceMember, WorkspaceState as BaseWorkspaceState } from '../../types/workspace.types';
 
-// Async thunks - combining both implementations
+// Async thunks
 export const fetchWorkspace = createAsyncThunk(
   'workspace/fetchWorkspace',
   async (workspaceId: string) => {
     const response = await WorkspaceService.getWorkspace(workspaceId);
-    // Backend returns { workspace: {...}, userRole: '...', userPermissions: {...} }
     return (response.data as any).workspace;
   }
 );
@@ -20,19 +19,16 @@ export const fetchWorkspaces = createAsyncThunk<Workspace[]>(
   'workspace/fetchWorkspaces',
   async () => {
     const response = await WorkspaceService.getWorkspaces();
-    // The response is an object with a workspaces array
     return Array.isArray((response.data as any)?.workspaces) 
       ? (response.data as any).workspaces 
       : [];
   }
 );
 
-
 export const fetchSpacesByWorkspace = createAsyncThunk(
   'workspace/fetchSpacesByWorkspace',
   async (workspaceId: string) => {
     const response = await SpaceService.getSpacesByWorkspace(workspaceId);
-    // Backend returns { spaces: [...], count: number }
     return (response.data as any).spaces;
   }
 );
@@ -41,21 +37,18 @@ export const fetchSpace = createAsyncThunk(
   'workspace/fetchSpace',
   async (spaceId: string) => {
     const response = await SpaceService.getSpace(spaceId);
-    // Backend returns { space: {...}, userRole: '...', userPermissions: {...} }
     return (response.data as any).space;
   }
 );
 
-// New thunks from the newer implementation
-export const fetchMembers = createAsyncThunk<WorkspaceMember[], { id: string }>('workspace/fetchMembers', async ({ id }) => {
-  return workspaceService.getMembers(id);
-});
+export const fetchMembers = createAsyncThunk<WorkspaceMember[], { id: string }>(
+  'workspace/fetchMembers',
+  async ({ id }) => workspaceService.getMembers(id)
+);
 
 export const inviteMember = createAsyncThunk<WorkspaceMember, { id: string; email: string; role: 'member' | 'admin' }>(
   'workspace/inviteMember',
-  async ({ id, email, role }) => {
-    return workspaceService.inviteMember(id, { email, role });
-  }
+  async ({ id, email, role }) => workspaceService.inviteMember(id, { email, role })
 );
 
 export const removeMember = createAsyncThunk<{ memberId: string }, { id: string; memberId: string }>(
@@ -78,34 +71,17 @@ export const disableInviteLink = createAsyncThunk<InviteLinkInfo, { id: string }
 
 export const createWorkspace = createAsyncThunk(
   'workspace/createWorkspace',
-  async (workspaceData: {
-    name: string;
-    description?: string;
-    visibility: 'private' | 'public';
-  }) => {
+  async (workspaceData: { name: string; description?: string; visibility: 'private' | 'public' }) => {
     const response = await WorkspaceService.createWorkspace({
       name: workspaceData.name,
       description: workspaceData.description,
-      plan: 'free' // Default to free plan
+      plan: 'free'
     });
     return response.data;
   }
 );
 
-// Async thunk for deleting workspace
-export const deleteWorkspaceAsync = createAsyncThunk<
-  { message: string; id: string }, // returned payload
-  string, // workspaceId
-  { rejectValue: string }
->('workspaces/delete', async (workspaceId, { rejectWithValue }) => {
-  try {
-    const res: ApiResponse<{ message: string }> = await WorkspaceService.deleteWorkspace(workspaceId);
-    return { message: res.data.message, id: workspaceId };
-  } catch (error: any) {
-    return rejectWithValue(error.message || 'Failed to delete workspace');
-  }
-});
-// Combined state interface
+// State interface
 interface WorkspaceState extends BaseWorkspaceState {
   workspaces: Workspace[];
   spaces: Space[];
@@ -169,7 +145,7 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch workspaces';
       })
-  
+
       // Fetch single workspace
       .addCase(fetchWorkspace.pending, (state) => {
         state.loading = true;
@@ -187,7 +163,7 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch workspace';
       })
-  
+
       // Create workspace
       .addCase(createWorkspace.pending, (state) => {
         state.loading = true;
@@ -205,27 +181,11 @@ const workspaceSlice = createSlice({
       .addCase(createWorkspace.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to create workspace';
-      })
-      // Delete workspace
-      
-      .addCase(deleteWorkspaceAsync.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(deleteWorkspaceAsync.fulfilled, (state, action) => {
-        state.loading = false;
-        state.workspaces = state.workspaces.filter(ws => ws._id !== action.payload.id);
-      })
-      .addCase(deleteWorkspaceAsync.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Failed to delete workspace';
       });
 
-  
-    // You can add other thunks (spaces, members, invite links) here similarly...
+    // Other thunks (spaces, members, invite links) can be added here...
   }
 });
-
 
 export const {
   setSelectedSpace,
@@ -237,7 +197,6 @@ export const {
 } = workspaceSlice.actions;
 
 // Selectors
-// Note: accept `any` for state to avoid importing RootState and to be compatible with useSelector typing.
 export const selectWorkspaceState = (state: any) => state.workspace as WorkspaceState;
 export const selectMembers = (state: any) => (state.workspace as WorkspaceState).members;
 export const selectWorkspaceLoading = (state: any) => (state.workspace as WorkspaceState).isLoading;

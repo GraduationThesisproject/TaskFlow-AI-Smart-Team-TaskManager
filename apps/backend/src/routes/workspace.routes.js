@@ -2,7 +2,7 @@ const express = require('express');
 const workspaceController = require('../controllers/workspace.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const { requireWorkspacePermission, requireWorkspaceMember, requireWorkspaceAdmin } = require('../middlewares/permission.middleware');
-
+const authMiddleware = require('../middlewares/auth.middleware');   
 const router = express.Router();
 
 // Validation schemas
@@ -12,16 +12,12 @@ const createWorkspaceSchema = {
     plan: { enum: ['free', 'basic', 'premium', 'enterprise'] }
 };
 
-const deleteWorkspaceSchema = {
-    id: { required: true, objectId: true }
-};
-
-
 const updateWorkspaceSchema = {
     name: { minLength: 2, maxLength: 200 },
     description: { maxLength: 1000 },
     settings: { object: true }
 };
+
 
 const inviteMemberSchema = {
     email: { required: true, email: true },
@@ -49,12 +45,6 @@ router.get('/:id',
 router.post('/', 
     validateMiddleware(createWorkspaceSchema),
     workspaceController.createWorkspace
-);
-
-router.delete('/:id',
-    requireWorkspacePermission('canDeleteWorkspace'), 
-    validateMiddleware(deleteWorkspaceSchema),
-    workspaceController.deleteWorkspace
 );
 
 router.put('/:id', 
@@ -99,5 +89,6 @@ router.post('/:id/transfer-ownership',
     validateMiddleware(transferOwnershipSchema),
     workspaceController.transferOwnership
 );
+
 
 module.exports = router;
