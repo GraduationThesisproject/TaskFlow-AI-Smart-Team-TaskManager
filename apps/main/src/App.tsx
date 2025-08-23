@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Flex, Avatar, AvatarImage, AvatarFallback } from '@taskflow/ui';
-import { Link } from 'react-router-dom';
 import { ThemeProvider } from '@taskflow/theme';
 import { useAuth } from './hooks/useAuth';
 import { Provider } from 'react-redux';
@@ -14,9 +12,9 @@ import { BoardPage } from './pages/board.page';
 import { LandingPage } from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import { NoAccessPage } from './pages/NoAccessPage';
-import { LogoutConfirmDialog, ThemeToggle, AppLayout } from './components';
+import { LogoutConfirmDialog, AppLayout } from './components';
 import { AccessibilityProvider } from './components/common/AccessibilityProvider';
-import { LogOut } from 'lucide-react';
+import UniversalNavbar from './components/common/navbar/UniversalNavbar';
 
 function AppContent() {
   const dispatch = useAppDispatch();
@@ -40,53 +38,21 @@ function AppContent() {
     );
   }
 
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
   return (
     <AppLayout>
-      {isAuthenticated && (
-        <header className="backdrop-blur-sm bg-card/90 border-b border-border/30 w-full sticky top-0 z-50 shadow-sm">
-          <div className="w-full px-6 sm:px-8 lg:px-12 py-6">
-            <Flex justify="between" align="center">
-              <div className="flex items-center gap-3">
-                <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                  <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">T</span>
-                  </div>
-                  <Typography variant="heading-large" className="font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    TaskFlow AI
-                  </Typography>
-                </Link>
-              </div>
-              <div className="flex items-center gap-4">
-                <ThemeToggle />
-                <div className="flex items-center gap-3">
-                  <div className="hidden sm:flex items-center gap-2 text-sm">
-                    <Avatar size="sm">
-                      {user?.user?.avatar && <AvatarImage src={user.user.avatar} alt={user.user.name || 'User'} />}
-                      <AvatarFallback variant="primary">
-                        {user?.user?.name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">
-                      {user?.user?.name || 'User'}
-                    </span>
-                  </div>
+      {/* Universal Navbar - Always displayed */}
+      <UniversalNavbar 
+        user={user || undefined}
+        onLogout={handleLogout}
+        isAuthenticated={isAuthenticated}
+        className="sticky top-0 z-50"
+      />
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowLogoutConfirm(true)}
-                    className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400 transition-all duration-200"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span className="hidden sm:inline">Log out</span>
-                  </Button>
-                </div>
-              </div>
-            </Flex>
-          </div>
-        </header>
-      )}
-
+      {/* Main Content */}
       <main className="flex-1 bg-gradient-to-br from-background via-muted/50 to-background">
         <Routes>
           <Route path="/*" element={<LandingPage />} />

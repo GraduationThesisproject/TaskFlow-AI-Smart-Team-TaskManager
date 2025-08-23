@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { AuthCard, FormField, Button, SocialButton, Typography } from "@taskflow/ui";
 import { useAuth } from "../../hooks/useAuth";
 import type { RegisterData } from "../../types/auth.types";
-import AuthNavbar from "../../components/common/navbar/authNav/AuthNavbar";
 
 // Form validation errors interface
 interface FormErrors {
@@ -114,7 +113,6 @@ export default function SignUp() {
 
   return (
     <div>
-    <AuthNavbar />
     <AuthCard
       title="TaskFlow"
       subtitle="Create Account"
