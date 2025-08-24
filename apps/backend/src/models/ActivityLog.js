@@ -169,8 +169,14 @@ activityLogSchema.statics.findByEntity = function(entityType, entityId) {
 activityLogSchema.statics.findByUser = function(userId, limit = 50) {
   return this.find({ user: userId, isVisible: true })
     .populate('entity.id')
+    .populate({
+      path: 'user',
+      select: 'name avatar',
+      populate: { path: 'avatar', select: 'url thumbnails' }
+    })
     .sort({ createdAt: -1 })
-    .limit(limit);
+    .limit(limit)
+    .lean();
 };
 
 // Static method to find project activities
@@ -188,5 +194,8 @@ activityLogSchema.statics.findByWorkspace = function(workspaceId, limit = 100) {
     .sort({ createdAt: -1 })
     .limit(limit);
 };
+
+activityLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
+
 
 module.exports = mongoose.model('ActivityLog', activityLogSchema);

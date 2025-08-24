@@ -20,7 +20,6 @@ exports.register = async (req, res) => {
         // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            throw error;
             return sendResponse(res, 400, false, 'User already exists with this email');
         }
 
@@ -261,44 +260,28 @@ exports.updateProfile = async (req, res) => {
         // Update basic profile
         if (name) user.name = name;
         
-        // Handle avatar upload
+        // Handle avatar upload (Multer + local File model)
         if (req.uploadedFile) {
-            // Delete old avatar file if exists
+            const File = require('../models/File');
+
+            // Delete old avatar file if exists and different from the new one
             if (user.avatar) {
-                const File = require('../models/File');
-                const oldFile = await File.findOne({ 
-                    url: user.avatar,
-                    uploadedBy: user._id,
-                    category: 'avatar'
-                });
-                
-                if (oldFile) {
-                    await oldFile.deleteFromCloudinary();
+                try {
+                    const oldFile = await File.findById(user.avatar);
+                    if (oldFile && oldFile._id.toString() !== req.uploadedFile._id.toString()) {
+                        await oldFile.deleteFromStorage();
+                    }
+                } catch (e) {
+                    logger.warn('Failed to delete old avatar:', e.message);
                 }
             }
 
-            // Create new file record
-            const File = require('../models/File');
-            const file = await File.create({
-                publicId: req.uploadedFile.publicId,
-                url: req.uploadedFile.url,
-                secureUrl: req.uploadedFile.url,
-                originalName: req.uploadedFile.originalName,
-                mimeType: req.uploadedFile.mimeType,
-                size: req.uploadedFile.size,
-                format: req.uploadedFile.format,
-                resourceType: req.uploadedFile.resourceType,
-                category: 'avatar',
-                uploadedBy: user._id,
-                dimensions: {
-                    width: req.uploadedFile.width,
-                    height: req.uploadedFile.height
-                }
-            });
-
+            // Attach the uploaded file to the user and set avatar reference
+            const file = req.uploadedFile; // Mongoose doc created in processUploadedFiles
             await file.attachTo('User', user._id);
-            user.avatar = file.url;
+            user.avatar = file._id;
         } else if (avatar) {
+            // Allow setting avatar by existing File id (optional)
             user.avatar = avatar;
         }
         
@@ -330,7 +313,7 @@ exports.updateProfile = async (req, res) => {
             entity: { type: 'User', id: user._id, name: user.name },
             metadata: {
                 oldValues: oldValues,
-                newValues: { name, avatar },
+                newValues: { name, avatar: user.avatar },
                 ipAddress: req.ip,
                 userAgent: req.get('User-Agent')
             }
@@ -463,6 +446,7 @@ exports.getSessions = async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         const userSessions = await user.getSessions();
+        console.log("userSessions",userSessions);
 
         const sessions = userSessions.sessions
             .filter(session => session.isActive)
@@ -628,18 +612,37 @@ exports.resetPassword = async (req, res) => {
 exports.getActivityLog = async (req, res) => {
     try {
         const { limit = 50, page = 1 } = req.query;
+        const lim = parseInt(limit) || 50;
+        const skip = (parseInt(page) - 1) * lim;
         
-        const activities = await ActivityLog.findByUser(
-            req.user.id, 
-            parseInt(limit)
-        );
+        // Explicit populate to guarantee avatar URLs
+        const query = ActivityLog.find({ user: req.user.id, isVisible: true })
+            .populate('entity.id')
+            .populate({
+                path: 'user',
+                select: 'name email avatar',
+                populate: { path: 'avatar', select: 'url thumbnails' }
+            })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(lim);
+
+        const [activities, total] = await Promise.all([
+            query.lean(),
+            ActivityLog.countDocuments({ user: req.user.id, isVisible: true })
+        ]);
+
+        // Debug logging
+        console.log('First activity user:', JSON.stringify(activities[0]?.user, null, 2));
+        console.log('User avatar type:', typeof activities[0]?.user?.avatar);
 
         sendResponse(res, 200, true, 'Activity log retrieved successfully', {
             activities,
-            total: activities.length
+            count: activities.length,
+            total
         });
     } catch (error) {
         logger.error('Get activity log error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving activity log');
+        sendResponse(res, 500, false, 'Server error retrieving profile');
     }
 };
