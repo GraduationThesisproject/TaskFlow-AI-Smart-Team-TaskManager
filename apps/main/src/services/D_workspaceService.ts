@@ -93,4 +93,15 @@ export class WorkspaceService {
       throw error;
     }
   }
+
+  // Dev-only: force current authenticated user as owner for a workspace
+  static async forceOwnerDev(id: string): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await axiosInstance.post(`/workspaces/${id}/dev/force-owner`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error forcing owner (dev):', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to force owner');
+    }
+  }
 }

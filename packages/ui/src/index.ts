@@ -3,7 +3,8 @@ export * from './Card';
 export * from './Container';
 export * from './Flex';
 export * from './Gradient';
-export { default as Gradient } from './Gradient';
+import Gradient from './Gradient';
+export { Gradient };
 export * from './Input';
 export * from './TextArea';
 export * from './Typography';
@@ -31,6 +32,7 @@ export * from './Breadcrumbs';
 export * from './EmptyState';
 export * from './Toast';
 export * from './Alert';
+export * from './Skeleton';
 export * from './utils';
 
 // Re-export GridLayout as Grid for backward compatibility

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   Home, 
-  Calendar, 
   Settings, 
   FileText, 
   Menu, 
@@ -10,7 +9,13 @@ import {
   User,
   LogOut,
   Bell,
-  Search
+  Search,
+  Check,
+  Trash2,
+  AlertCircle,
+  CheckCircle,
+  Info,
+  AlertTriangle
 } from 'lucide-react';
 import { 
   Sidebar, 
@@ -29,10 +34,13 @@ import {
   Dropdown,
   DropdownItem,
   Input,
-  Typography
+  Typography,
+  Badge
 } from '@taskflow/ui';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { logoutUser } from '../../store/slices/authSlice';
+import { useNotifications } from '../../hooks/useNotifications';
+import { formatDistanceToNow } from 'date-fns';
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -43,7 +51,6 @@ interface DashboardShellProps {
 const navigationItems = [
   { icon: Home, label: 'Home', href: '/dashboard' },
   { icon: FileText, label: 'Templates', href: '/dashboard/templates' },
-  { icon: Calendar, label: 'Calendar', href: '/dashboard/calendar' },
   { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
 ];
 
@@ -56,7 +63,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   const location = useLocation();
   const dispatch = useAppDispatch();
   
-  const { user, isAuthenticated } = useAppSelector(state => state.auth);
+  const { user } = useAppSelector(state => state.auth);
 
   const handleLogout = async () => {
     try {
@@ -250,9 +257,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                 />
               </div>
               
-              <Button variant="ghost" size="sm">
-                <Bell size={20} />
-              </Button>
+              <NotificationBell />
             </div>
 
             <Dropdown
@@ -292,6 +297,219 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
         </main>
       </div>
     </div>
+  );
+};
+
+// Notification Bell Component
+const NotificationBell: React.FC = () => {
+  const {
+    notifications,
+    stats,
+    loading,
+    error,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearReadNotifications,
+    clearError
+  } = useNotifications();
+
+  const unreadCount = stats?.unread || 0;
+  const hasNotifications = notifications.length > 0;
+
+  // Clear error when component mounts or when error changes
+  React.useEffect(() => {
+    if (error) {
+      console.error('Notification error:', error);
+      // Auto-clear error after 5 seconds
+      const timer = setTimeout(() => {
+        clearError();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, clearError]);
+
+  const NotificationIcon: React.FC<{ type: string }> = ({ type }) => {
+    const iconProps = { size: 16, className: "flex-shrink-0" };
+    
+    switch (type) {
+      case 'success':
+        return <CheckCircle {...iconProps} className="text-green-500" />;
+      case 'warning':
+        return <AlertTriangle {...iconProps} className="text-yellow-500" />;
+      case 'error':
+        return <AlertCircle {...iconProps} className="text-red-500" />;
+      default:
+        return <Info {...iconProps} className="text-blue-500" />;
+    }
+  };
+
+  const handleMarkAsRead = (notificationId: string) => {
+    markAsRead(notificationId);
+  };
+
+  const handleMarkAllAsRead = () => {
+    markAllAsRead();
+  };
+
+  const handleDeleteNotification = (notificationId: string) => {
+    deleteNotification(notificationId);
+  };
+
+  const handleClearReadNotifications = () => {
+    clearReadNotifications();
+  };
+
+  return (
+    <Dropdown
+      trigger={
+        <div className="relative">
+          <Bell size={20} />
+          {unreadCount > 0 && (
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0 min-w-[1.25rem]"
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
+          )}
+        </div>
+      }
+      variant="ghost"
+      size="sm"
+      align="end"
+      contentClassName="w-80"
+    >
+      <div className="p-3 border-b border-border">
+        <div className="flex items-center justify-between">
+          <Typography variant="h4" className="font-semibold">
+            Notifications
+          </Typography>
+          {unreadCount > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {unreadCount} new
+            </Badge>
+          )}
+        </div>
+        
+        {error && (
+          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
+            {error}
+          </div>
+        )}
+        
+        {hasNotifications && (
+          <div className="flex items-center gap-2 mt-2">
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleMarkAllAsRead}
+                disabled={loading}
+                className="text-xs h-6 px-2"
+              >
+                Mark all read
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearReadNotifications}
+              disabled={loading}
+              className="text-xs h-6 px-2"
+            >
+              Clear read
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="max-h-96 overflow-y-auto">
+        {loading ? (
+          <div className="p-4 text-center">
+            <Typography variant="body-small" className="text-muted-foreground">
+              Loading notifications...
+            </Typography>
+          </div>
+        ) : !hasNotifications ? (
+          <div className="p-4 text-center">
+            <Bell size={32} className="mx-auto text-muted-foreground mb-2" />
+            <Typography variant="body-small" className="text-muted-foreground">
+              No notifications yet
+            </Typography>
+          </div>
+        ) : (
+          <div>
+            {notifications.slice(0, 10).map((notification) => (
+              <div 
+                key={notification._id}
+                className={`p-3 border-b border-border hover:bg-muted/50 transition-colors ${
+                  !notification.isRead ? 'bg-blue-50/50' : ''
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <NotificationIcon type={notification.type} />
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <Typography 
+                          variant="body-small" 
+                          className={`font-medium truncate ${!notification.isRead ? 'text-foreground' : 'text-muted-foreground'}`}
+                        >
+                          {notification.title}
+                        </Typography>
+                        <Typography variant="caption" className="text-muted-foreground mt-1 line-clamp-2">
+                          {notification.message}
+                        </Typography>
+                        <Typography variant="caption" className="text-muted-foreground mt-1">
+                          {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                        </Typography>
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                        {!notification.isRead && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleMarkAsRead(notification._id)}
+                            disabled={loading}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Check size={12} />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteNotification(notification._id)}
+                          disabled={loading}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 size={12} />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {!notification.isRead && (
+                      <div className="w-2 h-2 bg-blue-500 rounded-full absolute right-2 top-3" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {notifications.length > 10 && (
+              <div className="p-3 border-t border-border text-center">
+                <Button variant="ghost" size="sm" className="text-xs">
+                  View all notifications
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </Dropdown>
   );
 };
 

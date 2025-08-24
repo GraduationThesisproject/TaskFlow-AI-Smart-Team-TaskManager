@@ -1,9 +1,10 @@
 const express = require('express');
 const workspaceController = require('../controllers/workspace.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { requireWorkspacePermission, requireWorkspaceMember, requireWorkspaceAdmin } = require('../middlewares/permission.middleware');
+const { requireWorkspacePermission, requireWorkspaceMember, requireWorkspaceAdmin, requireAnyPermission } = require('../middlewares/permission.middleware');   
 const authMiddleware = require('../middlewares/auth.middleware');   
 const router = express.Router();
+const isDev = process.env.NODE_ENV !== 'production';
 
 // Validation schemas
 const createWorkspaceSchema = {
@@ -90,5 +91,7 @@ router.post('/:id/transfer-ownership',
     workspaceController.transferOwnership
 );
 
+// Delete workspace - rely on controller for final permission (owner check)
+router.delete('/:id', workspaceController.deleteWorkspace);
 
 module.exports = router;

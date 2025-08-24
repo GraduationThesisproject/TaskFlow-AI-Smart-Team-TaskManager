@@ -249,7 +249,7 @@ const Main = () => {
                 {error && !isLoading && (
                   <tr>
                     <td colSpan={6} className="px-3 py-4 text-sm text-red-600">
-                      {error}
+                      {typeof error === 'string' ? error : 'An unknown error occurred'}
                     </td>
                   </tr>
                 )}

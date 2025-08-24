@@ -20,4 +20,4 @@ export { LogoutConfirmDialog } from './common/LogoutConfirmDialog';
 // export  ThemeToggle  from './common/navbar/ThemeToggleButton';
 export { AppLayout } from './common/AppLayout';
 export { ThemeSettings } from './settings/ThemeSettings';
-export { CreateWorkspaceModal } from "./workspace/CreateWorkspaceModal"
+export { CreateWorkspaceModal } from "./dashboard/home/modals/CreateWorkspaceModal"

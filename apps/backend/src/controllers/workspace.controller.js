@@ -2,6 +2,10 @@ const Workspace = require('../models/Workspace');
 const User = require('../models/User');
 const Invitation = require('../models/Invitation');
 const ActivityLog = require('../models/ActivityLog');
+const Space = require('../models/Space');
+const Board = require('../models/Board');
+const Task = require('../models/Task');
+const UserRoles = require('../models/UserRoles');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
@@ -627,3 +631,103 @@ exports.transferOwnership = async (req, res) => {
     }
 };
 
+// Delete workspace (owner only)
+exports.deleteWorkspace = async (req, res) => {
+    try {
+        const { id: workspaceId } = req.params;
+        const userId = req.user.id;
+
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // Only owner can delete the workspace
+        if (workspace.owner.toString() !== userId) {
+            return sendResponse(res, 403, false, 'Only workspace owner can delete the workspace');
+        }
+
+        // Collect related entities
+        const spaces = await Space.find({ workspace: workspaceId }).select('_id');
+        const spaceIds = spaces.map(s => s._id);
+
+        // Delete related data
+        if (spaceIds.length > 0) {
+            await Promise.all([
+                // Tasks under spaces
+                Task.deleteMany({ space: { $in: spaceIds } }),
+                // Boards under spaces
+                Board.deleteMany({ space: { $in: spaceIds } })
+            ]);
+            // Spaces
+            await Space.deleteMany({ _id: { $in: spaceIds } });
+        }
+
+        // Remove workspace roles from all users
+        await UserRoles.updateMany(
+            { 'workspaces.workspace': workspaceId },
+            { $pull: { workspaces: { workspace: workspaceId } } }
+        );
+
+        // Remove invitations targeting this workspace
+        await Invitation.deleteMany({ 'targetEntity.type': 'workspace', 'targetEntity.id': workspaceId });
+
+        // Log activity before deletion
+        await ActivityLog.logActivity({
+            userId,
+            action: 'workspace_delete',
+            description: `Deleted workspace: ${workspace.name}`,
+            entity: { type: 'Workspace', id: workspaceId, name: workspace.name },
+            workspaceId,
+            metadata: { ipAddress: req.ip },
+            severity: 'warning'
+        });
+
+        // Finally, delete the workspace itself
+        await Workspace.deleteOne({ _id: workspaceId });
+
+        logger.info(`Workspace deleted: ${workspace.name} by ${req.user.email}`);
+
+        return sendResponse(res, 200, true, 'Workspace deleted successfully');
+    } catch (error) {
+        logger.error('Delete workspace error:', error);
+        return sendResponse(res, 500, false, 'Server error deleting workspace');
+    }
+};
+
+// Force set owner (dev)
+exports.forceSetOwnerDev = async (req, res) => {
+    try {
+        const { id: workspaceId } = req.params;
+        const { newOwnerId } = req.body;
+        const userId = req.user.id;
+
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // Update workspace owner
+        workspace.owner = newOwnerId;
+        await workspace.save();
+
+        // Update user roles
+        const newOwnerRoles = await UserRoles.findOne({ userId: newOwnerId });
+        if (!newOwnerRoles) {
+            return sendResponse(res, 404, false, 'New owner roles not found');
+        }
+
+        await newOwnerRoles.updateOne(
+            { userId: userId, 'workspaces.workspace': workspaceId },
+            { $set: { 'workspaces.$.role': 'owner' } }
+        );
+
+        return sendResponse(res, 200, true, 'Ownership updated (dev)', {
+            workspaceId,
+            owner: userId
+        });
+    } catch (error) {
+        logger.error('forceSetOwnerDev error:', error);
+        return sendResponse(res, 500, false, 'Server error force-setting owner');
+    }
+};

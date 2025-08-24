@@ -2,7 +2,7 @@ const express = require('express');
 const authController = require('../controllers/auth.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { uploadMiddlewares } = require('../middlewares/upload.middleware');
+const { uploadMiddlewares, processUploadedFiles } = require('../middlewares/upload.middleware');
 const { rateLimitSensitiveOps } = require('../middlewares/permission.middleware');
 
 const router = express.Router();
@@ -114,6 +114,7 @@ router.put('/profile',
 router.post('/avatar',
     authMiddleware,
     uploadMiddlewares.avatar,
+    processUploadedFiles,
     authController.updateProfile
 );
 
