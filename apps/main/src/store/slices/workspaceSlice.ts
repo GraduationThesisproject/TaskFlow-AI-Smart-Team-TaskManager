@@ -1,16 +1,17 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Space } from '../../types/task.types';
-import { WorkspaceService } from '../../services/D_workspaceService';
+import { WorkspaceService } from "../../services/D_workspaceService.ts";
 import { SpaceService } from '../../services/spaceService';
 import { workspaceService, type InviteLinkInfo } from '../../services/workspace.service.ts';
 import type { Workspace, WorkspaceMember, WorkspaceState as BaseWorkspaceState } from '../../types/workspace.types';
 
-// Async thunks
+// Async thunks - combining both implementations
 export const fetchWorkspace = createAsyncThunk(
   'workspace/fetchWorkspace',
   async (workspaceId: string) => {
     const response = await WorkspaceService.getWorkspace(workspaceId);
+    // Backend returns { workspace: {...}, userRole: '...', userPermissions: {...} }
     return (response.data as any).workspace;
   }
 );
@@ -19,16 +20,19 @@ export const fetchWorkspaces = createAsyncThunk<Workspace[]>(
   'workspace/fetchWorkspaces',
   async () => {
     const response = await WorkspaceService.getWorkspaces();
+    // The response is an object with a workspaces array
     return Array.isArray((response.data as any)?.workspaces) 
       ? (response.data as any).workspaces 
       : [];
   }
 );
 
+
 export const fetchSpacesByWorkspace = createAsyncThunk(
   'workspace/fetchSpacesByWorkspace',
   async (workspaceId: string) => {
     const response = await SpaceService.getSpacesByWorkspace(workspaceId);
+    // Backend returns { spaces: [...], count: number }
     return (response.data as any).spaces;
   }
 );
@@ -37,18 +41,21 @@ export const fetchSpace = createAsyncThunk(
   'workspace/fetchSpace',
   async (spaceId: string) => {
     const response = await SpaceService.getSpace(spaceId);
+    // Backend returns { space: {...}, userRole: '...', userPermissions: {...} }
     return (response.data as any).space;
   }
 );
 
-export const fetchMembers = createAsyncThunk<WorkspaceMember[], { id: string }>(
-  'workspace/fetchMembers',
-  async ({ id }) => workspaceService.getMembers(id)
-);
+// New thunks from the newer implementation
+export const fetchMembers = createAsyncThunk<WorkspaceMember[], { id: string }>('workspace/fetchMembers', async ({ id }) => {
+  return workspaceService.getMembers(id);
+});
 
 export const inviteMember = createAsyncThunk<WorkspaceMember, { id: string; email: string; role: 'member' | 'admin' }>(
   'workspace/inviteMember',
-  async ({ id, email, role }) => workspaceService.inviteMember(id, { email, role })
+  async ({ id, email, role }) => {
+    return workspaceService.inviteMember(id, { email, role });
+  }
 );
 
 export const removeMember = createAsyncThunk<{ memberId: string }, { id: string; memberId: string }>(
@@ -71,17 +78,40 @@ export const disableInviteLink = createAsyncThunk<InviteLinkInfo, { id: string }
 
 export const createWorkspace = createAsyncThunk(
   'workspace/createWorkspace',
-  async (workspaceData: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+  async (workspaceData: {
+    name: string;
+    description?: string;
+    visibility: 'private' | 'public';
+  }) => {
     const response = await WorkspaceService.createWorkspace({
       name: workspaceData.name,
       description: workspaceData.description,
-      plan: 'free'
+      plan: 'free' // Default to free plan
     });
     return response.data;
   }
 );
 
-// State interface
+export const deleteWorkspace = createAsyncThunk<{ id: string; message: string }, { id: string }>(
+  'workspace/deleteWorkspace',
+  async ({ id }) => {
+    const response = await WorkspaceService.deleteWorkspace(id);
+    const message = (response as any)?.message || (response as any)?.data?.message || 'Workspace deleted';
+    return { id, message };
+  }
+);
+
+// Dev-only: force current user as owner for a workspace (repairs old data)
+export const forceOwnerDev = createAsyncThunk<{ id: string; message: string }, { id: string }>(
+  'workspace/forceOwnerDev',
+  async ({ id }) => {
+    const response = await WorkspaceService.forceOwnerDev(id);
+    const message = (response as any)?.message || (response as any)?.data?.message || 'Ownership updated (dev)';
+    return { id, message };
+  }
+);
+
+// Combined state interface
 interface WorkspaceState extends BaseWorkspaceState {
   workspaces: Workspace[];
   spaces: Space[];
@@ -145,7 +175,7 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch workspaces';
       })
-
+  
       // Fetch single workspace
       .addCase(fetchWorkspace.pending, (state) => {
         state.loading = true;
@@ -163,7 +193,7 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch workspace';
       })
-
+  
       // Create workspace
       .addCase(createWorkspace.pending, (state) => {
         state.loading = true;
@@ -181,11 +211,34 @@ const workspaceSlice = createSlice({
       .addCase(createWorkspace.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to create workspace';
+      })
+  
+      // Delete workspace
+      .addCase(deleteWorkspace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        const deletedId = action.payload.id;
+        state.workspaces = (state.workspaces || []).filter((w) => w._id !== deletedId);
+        if (state.currentWorkspace && state.currentWorkspace._id === deletedId) {
+          state.currentWorkspace = null as any;
+          state.currentWorkspaceId = null;
+          state.spaces = [];
+          state.selectedSpace = null;
+        }
+        state.error = null;
+      })
+      .addCase(deleteWorkspace.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to delete workspace';
       });
-
-    // Other thunks (spaces, members, invite links) can be added here...
+ 
+    // You can add other thunks (spaces, members, invite links) here similarly...
   }
 });
+
 
 export const {
   setSelectedSpace,
@@ -197,6 +250,7 @@ export const {
 } = workspaceSlice.actions;
 
 // Selectors
+// Note: accept `any` for state to avoid importing RootState and to be compatible with useSelector typing.
 export const selectWorkspaceState = (state: any) => state.workspace as WorkspaceState;
 export const selectMembers = (state: any) => (state.workspace as WorkspaceState).members;
 export const selectWorkspaceLoading = (state: any) => (state.workspace as WorkspaceState).isLoading;

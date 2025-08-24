@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const UserRoles = require('./UserRoles');
 
 const workspaceSchema = new mongoose.Schema({
   name: {
@@ -320,25 +321,59 @@ workspaceSchema.methods.removeLogo = function() {
   return this.save();
 };
 
-// Method to transfer ownership
-workspaceSchema.methods.transferOwnership = function(newOwnerId) {
+// Method to transfer ownership (also syncs UserRoles)
+workspaceSchema.methods.transferOwnership = async function(newOwnerId) {
   const newOwner = this.members.find(m => m.user.toString() === newOwnerId.toString());
   if (!newOwner) {
     throw new Error('New owner must be a member of the workspace');
   }
-  
-  // Add current owner as admin member
-  this.members.push({
-    user: this.owner,
-    role: 'admin',
-    joinedAt: new Date()
-  });
-  
+
+  const oldOwnerId = this.owner;
+
+  // Add current owner as admin member (if not already)
+  const alreadyAdmin = this.members.some(m => m.user.toString() === oldOwnerId.toString() && m.role === 'admin');
+  if (!alreadyAdmin) {
+    this.members.push({
+      user: oldOwnerId,
+      role: 'admin',
+      joinedAt: new Date()
+    });
+  }
+
   // Remove new owner from members and set as owner
   this.members = this.members.filter(m => m.user.toString() !== newOwnerId.toString());
   this.owner = newOwnerId;
-  
-  return this.save();
+
+  // Persist workspace changes first
+  await this.save();
+
+  // Sync UserRoles: old owner -> admin, new owner -> owner
+  await UserRoles.updateOne(
+    { userId: oldOwnerId, 'workspaces.workspace': this._id },
+    { $set: { 'workspaces.$.role': 'admin' } },
+    { upsert: false }
+  );
+
+  // Ensure document exists for old owner; if none with this workspace, push admin
+  await UserRoles.updateOne(
+    { userId: oldOwnerId, 'workspaces.workspace': { $ne: this._id } },
+    { $push: { workspaces: { workspace: this._id, role: 'admin', permissions: {} } } },
+    { upsert: true }
+  );
+
+  // New owner set to owner
+  await UserRoles.updateOne(
+    { userId: newOwnerId, 'workspaces.workspace': this._id },
+    { $set: { 'workspaces.$.role': 'owner' } },
+    { upsert: false }
+  );
+  await UserRoles.updateOne(
+    { userId: newOwnerId, 'workspaces.workspace': { $ne: this._id } },
+    { $push: { workspaces: { workspace: this._id, role: 'owner', permissions: {} } } },
+    { upsert: true }
+  );
+
+  return this;
 };
 
 // Static method to find workspaces by user
@@ -378,6 +413,29 @@ workspaceSchema.statics.findByBillingStatus = function(status) {
 workspaceSchema.pre('save', function(next) {
   this.usage.membersCount = this.members.length + 1; // +1 for owner
   next();
+});
+
+// Post-save hook: ensure owner has an 'owner' role in UserRoles for this workspace
+workspaceSchema.post('save', async function(doc) {
+  try {
+    // Set or add owner role for current owner
+    const updated = await UserRoles.updateOne(
+      { userId: doc.owner, 'workspaces.workspace': doc._id },
+      { $set: { 'workspaces.$.role': 'owner' } }
+    );
+
+    // If no matching workspace entry was updated, push a new one
+    if (updated.modifiedCount === 0 && updated.matchedCount === 0) {
+      await UserRoles.updateOne(
+        { userId: doc.owner },
+        { $push: { workspaces: { workspace: doc._id, role: 'owner', permissions: {} } } },
+        { upsert: true }
+      );
+    }
+  } catch (e) {
+    // Do not block the save on role sync errors; log if logger available
+    // console.error('Workspace post-save role sync error', e);
+  }
 });
 
 module.exports = mongoose.model('Workspace', workspaceSchema);
