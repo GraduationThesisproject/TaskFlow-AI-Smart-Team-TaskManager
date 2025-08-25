@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
 import { Input } from './Input';
 import { Typography } from './Typography';
-import { Button } from './Button';
 import { cn } from './utils';
-import { 
-  EyeIcon, 
-  EyeSlashIcon, 
-  EnvelopeIcon, 
-  LockClosedIcon, 
-  UserIcon 
-} from '@heroicons/react/24/outline';
+
+import { Mail, Lock, User } from 'lucide-react';
 
 interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -76,24 +70,7 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
               {getIcon()}
             </div>
           )}
-          
-          {/* Password Toggle */}
-          {showPasswordToggle && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 h-auto w-auto p-0 hover:bg-transparent"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? (
-                <EyeSlashIcon className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
-              ) : (
-                <EyeIcon className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
-              )}
-            </Button>
-          )}
+
         </div>
         
         {/* Error Message */}

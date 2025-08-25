@@ -1,5 +1,5 @@
 // Updated types to match backend data model structure
-
+import type { UserPreferences } from "./auth.types";
 export interface User {
   _id: string;
   name: string;
@@ -12,15 +12,15 @@ export interface User {
   metadata?: Record<string, any>;
 }
 
-export interface UserPreferences {
-  notifications?: {
-    email?: Record<string, boolean>;
-    push?: Record<string, boolean>;
-  };
-  theme?: string;
-  language?: string;
-  timezone?: string;
-}
+// export interface UserPreferences {
+//   notifications?: {
+//     email?: Record<string, boolean>;
+//     push?: Record<string, boolean>;
+//   };
+//   theme?: string;
+//   language?: string;
+//   timezone?: string;
+// }
 
 export interface Space {
   _id: string;
@@ -466,21 +466,23 @@ export interface MoveTaskForm {
   position: number;
 }
 
-// Legacy types for backward compatibility
-export enum TaskStatus {
-  TODO = 'todo',
-  IN_PROGRESS = 'in_progress',
-  REVIEW = 'review',
-  DONE = 'done',
-  ARCHIVED = 'archived',
-}
+// Legacy types for backward compatibility (no enums due to erasableSyntaxOnly)
+export const TaskStatus = {
+  TODO: 'todo',
+  IN_PROGRESS: 'in_progress',
+  REVIEW: 'review',
+  DONE: 'done',
+  ARCHIVED: 'archived',
+} as const;
+export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
 
-export enum TaskPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical',
-}
+export const TaskPriority = {
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+  CRITICAL: 'critical',
+} as const;
+export type TaskPriority = typeof TaskPriority[keyof typeof TaskPriority];
 
 export interface Attachment {
   id: string;

@@ -4,12 +4,20 @@ import {
   loginUser, 
   registerUser, 
   logoutUser, 
+  clearError,
+  checkAuthStatus,
+  oauthLogin,
+  oauthRegister,
+  updateUser,
   refreshToken, 
   testConnection, 
-  clearError, 
-  updateUser 
+  verifyEmail,
+  resendVerificationCode,
+  requestPasswordReset,
+  resetPassword
 } from '../store/slices/authSlice';
-import type { LoginCredentials, RegisterData } from '../types/auth.types';
+import type { LoginCredentials, RegisterData, OAuthCallbackData, EmailVerificationData, ResendVerificationData, PasswordResetRequestData, PasswordResetData } from '../types/auth.types';
+import { oauthService } from '../services/oauthService';
 
 export const useAuth = () => {
   const dispatch = useAppDispatch();
@@ -71,6 +79,81 @@ export const useAuth = () => {
     dispatch(updateUser(serializedUserData));
   };
 
+  // OAuth login handler
+  const handleOAuthLogin = useCallback(
+    async (provider: 'google' | 'github',) => {
+      try {
+        const callbackData: OAuthCallbackData = {  provider };
+        const result = await dispatch(oauthLogin(callbackData));
+        return result;
+      } catch (error) {
+        console.error('OAuth login error:', error);
+        throw error;
+      }
+    },
+    [dispatch]
+  );
+
+  const handleOAuthSignup = useCallback(
+    async (provider: 'google' | 'github') => {
+      try {
+        const callbackData: OAuthCallbackData = {provider };
+        const result = await dispatch(oauthRegister(callbackData));
+        return result;
+      } catch (error) {
+        console.error('OAuth signup error:', error);
+        throw error;
+      }
+    },
+    [dispatch]
+  );
+
+  // Handle OAuth callback
+  const handleOAuthCallback = useCallback(
+    async (provider: 'google' | 'github') => {
+      const action = oauthService.getOAuthAction();
+      const callbackData: OAuthCallbackData = { provider };
+      
+      if (action === 'login') {
+        const result = await dispatch(oauthLogin(callbackData));
+        return result;
+      } else {
+        const result = await dispatch(oauthRegister(callbackData));
+        return result;
+      }
+    },
+    [dispatch]
+  );
+
+  // Email verification methods
+  const verifyUserEmail = useCallback(
+    async (verificationData: EmailVerificationData) => {
+      return dispatch(verifyEmail(verificationData));
+    },
+    [dispatch]
+  );
+
+  const resendVerificationCodeEmail = useCallback(
+    async (resendData: ResendVerificationData) => {
+      return await dispatch(resendVerificationCode(resendData)).unwrap();
+    },
+    [dispatch]
+  );
+
+  const requestPasswordResetEmail = useCallback(
+    async (resetData: PasswordResetRequestData) => {
+      return await dispatch(requestPasswordReset(resetData)).unwrap();
+    },
+    [dispatch]
+  );
+
+  const resetUserPassword = useCallback(
+    async (resetData: PasswordResetData) => {
+      return await dispatch(resetPassword(resetData)).unwrap();
+    },
+    [dispatch]
+  );
+
   return {
     user,
     token,
@@ -82,7 +165,15 @@ export const useAuth = () => {
     logout: logoutUserHandler,
     refreshToken: refreshTokenHandler,
     testConnection: testConnectionHandler,
+    clearError,
     clearAuthError,
     updateUser: updateUserData,
+    loginWithOAuth: handleOAuthLogin,
+    signupWithOAuth: handleOAuthSignup,
+    handleOAuthCallback,
+    verifyEmail: verifyUserEmail,
+    resendVerificationCode: resendVerificationCodeEmail,
+    requestPasswordReset: requestPasswordResetEmail,
+    resetPassword: resetUserPassword,
   };
 };
