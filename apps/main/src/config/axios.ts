@@ -3,12 +3,14 @@ import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'a
 import { env } from './env';
 
 // Create axios instance
+// Normalize base URL to ensure it targets the backend API prefix
+const rawBase = (env.API_BASE_URL || env.API_URL || '').trim();
+const trimmed = rawBase.replace(/\/$/, '');
+const baseURL = /\/api$/.test(trimmed) ? trimmed : `${trimmed}/api`;
+
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: env.API_BASE_URL,
+  baseURL,
   timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Request interceptor
@@ -32,6 +34,15 @@ axiosInstance.interceptors.request.use(
       if (env.ENABLE_DEBUG) {
         console.log('🔑 Token added to request headers');
       }
+    }
+    
+    // If sending FormData, let the browser set the multipart Content-Type with boundary
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      if (config.headers) {
+        delete (config.headers as any)['Content-Type'];
+      }
+    } else {
+      // For JSON payloads, axios sets Content-Type automatically when needed
     }
     
     // Optional extra request log in debug mode
