@@ -10,11 +10,15 @@ import WorkSpace from './pages/workSpace';
 import { SpacePage } from './pages/space.page';
 import { BoardPage } from './pages/board.page';
 import { LandingPage } from './pages/LandingPage';
-import Dashboard from './pages/Dashboard';
-import { NoAccessPage } from './pages/NoAccessPage';
+import SignIn from './layouts/Landing/SignIn';
+import SignUP from './layouts/Landing/SignUP';
+import EmailVerification from './layouts/Landing/EmailVerif';
+import OAuthCallback from './components/auth/OAuthCallback';
 import { LogoutConfirmDialog, AppLayout } from './components';
 import { AccessibilityProvider } from './components/common/AccessibilityProvider';
 import UniversalNavbar from './components/common/navbar/UniversalNavbar';
+import Dashboard from './pages/Dashboard';
+import { NoAccessPage } from './pages/NoAccessPage';
 
 function AppContent() {
   const dispatch = useAppDispatch();
@@ -56,6 +60,8 @@ function AppContent() {
       <main className="flex-1 bg-gradient-to-br from-background via-muted/50 to-background">
         <Routes>
           <Route path="/*" element={<LandingPage />} />
+
+          <Route path="/auth/callback/:provider" element={<OAuthCallback />} />
 
           <Route path="/dashboard/*" element={<Dashboard />} />
 

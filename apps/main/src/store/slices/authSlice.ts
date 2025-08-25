@@ -1,7 +1,19 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import type { PayloadAction } from '@reduxjs/toolkit';
-import type { AuthState, LoginCredentials, RegisterData, User } from '../../types/auth.types';
-import { AuthService, AuthControllerClient } from '../../services/authService';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import type { 
+  AuthState, 
+  LoginCredentials, 
+  RegisterData, 
+  AuthResponse, 
+  User,
+  OAuthLoginData,
+  OAuthCallbackData,
+  EmailVerificationData,
+  ResendVerificationData,
+  PasswordResetRequestData,
+  PasswordResetData
+} from '../../types/auth.types';
+import { AuthService } from '../../services/authService';
+import { oauthService } from '../../services/oauthService';
 import { getDeviceId } from '../../utils';
 
 const serializeUser = (userData: any): User => {
@@ -206,61 +218,149 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
-// Update profile (JSON)
-export const updateProfile = createAsyncThunk(
-  'auth/updateProfile',
-  async (payload: { name?: string; avatar?: string; preferences?: any; metadata?: any }, { rejectWithValue }) => {
+export const oauthLogin = createAsyncThunk(
+  'auth/oauthLogin',
+  async (oauthData: OAuthCallbackData, { rejectWithValue }) => {
     try {
-      const resp = await AuthControllerClient.updateProfile(payload);
-      const u = (resp as any)?.data?.user ?? (resp as any)?.data ?? (resp as any)?.user;
-      return serializeUser(u);
+      // Handle OAuth callback and get user info
+      const userInfo = await oauthService.handleCallback(oauthData.code, oauthData.provider);
+      
+      // Send OAuth data to backend for authentication
+      const response = await AuthService.oauthLogin({
+        id: userInfo.id,
+        provider: oauthData.provider,
+        oauthId: userInfo.id,
+        email: userInfo.email,
+        name: userInfo.name,
+        avatar: userInfo.avatar
+      });
+      
+      if (!response.data.token) {
+        throw new Error('No token received from server');
+      }
+      
+      localStorage.setItem('token', response.data.token);
+      
+      const profileResponse = await AuthService.getProfile();
+      
+      // Clear OAuth session data
+      oauthService.clearOAuthSession();
+      
+      return {
+        ...response.data,
+        user: serializeUser(profileResponse.data),
+        token: response.data.token
+      };
     } catch (error: any) {
-      const msg = error.response?.data?.message || error.message || 'Update profile failed';
-      return rejectWithValue(msg);
+      oauthService.clearOAuthSession();
+      const errorMessage = error.response?.data?.message || error.message || 'OAuth login failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
-// Secure profile update (multipart)
-export const updateProfileSecure = createAsyncThunk(
-  'auth/updateProfileSecure',
-  async (formData: FormData, { rejectWithValue }) => {
+export const oauthRegister = createAsyncThunk(
+  'auth/oauthRegister',
+  async (oauthData: OAuthCallbackData, { rejectWithValue }) => {
     try {
-      const resp = await AuthControllerClient.updateProfileSecure(formData);
-      const u = (resp as any)?.data?.user ?? (resp as any)?.data ?? (resp as any)?.user;
-      return serializeUser(u);
+      // Handle OAuth callback and get user info
+      const userInfo = await oauthService.handleCallback(oauthData.code, oauthData.provider);
+      
+      // Send OAuth data to backend for registration
+      const response = await AuthService.oauthRegister({
+        id: userInfo.id,
+        provider: oauthData.provider,
+        oauthId: userInfo.id,
+        email: userInfo.email,
+        name: userInfo.name,
+        avatar: userInfo.avatar
+      });
+      
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      
+      const profileResponse = await AuthService.getProfile();
+      
+      // Clear OAuth session data
+      oauthService.clearOAuthSession();
+      
+      return {
+        ...response.data,
+        user: serializeUser(profileResponse.data),
+        token: response.data.token
+      };
     } catch (error: any) {
-      const msg = error.response?.data?.message || error.message || 'Secure update failed';
-      return rejectWithValue(msg);
+      oauthService.clearOAuthSession();
+      const errorMessage = error.response?.data?.message || error.message || 'OAuth registration failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
-// Change password
-export const changePassword = createAsyncThunk(
-  'auth/changePassword',
-  async (payload: { currentPassword: string; newPassword: string }, { rejectWithValue }) => {
+// Email verification async thunk
+export const verifyEmail = createAsyncThunk(
+  'auth/verifyEmail',
+  async (verificationData: EmailVerificationData, { rejectWithValue }) => {
     try {
-      const resp = await AuthControllerClient.changePassword(payload.currentPassword, payload.newPassword);
-      return resp;
+      const response = await AuthService.verifyEmail(verificationData);
+      
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      
+      const profileResponse = await AuthService.getProfile();
+      
+      return {
+        ...response.data,
+        user: serializeUser(profileResponse.data),
+        token: response.data.token
+      };
     } catch (error: any) {
-      const msg = error.response?.data?.message || error.message || 'Change password failed';
-      return rejectWithValue(msg);
+      const errorMessage = error.response?.data?.message || error.message || 'Email verification failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
-// Update preferences
-export const updatePreferences = createAsyncThunk(
-  'auth/updatePreferences',
-  async (payload: { section: string; updates: any }, { rejectWithValue }) => {
+// Resend verification code async thunk
+export const resendVerificationCode = createAsyncThunk(
+  'auth/resendVerificationCode',
+  async (resendData: ResendVerificationData, { rejectWithValue }) => {
     try {
-      const resp = await AuthControllerClient.updatePreferences(payload.section, payload.updates);
-      const newPrefs = (resp as any)?.data?.preferences ?? (resp as any)?.data;
-      return newPrefs;
+      const response = await AuthService.resendVerificationCode(resendData);
+      return response.data;
     } catch (error: any) {
-      const msg = error.response?.data?.message || error.message || 'Update preferences failed';
-      return rejectWithValue(msg);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to resend verification code';
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+// Request password reset async thunk
+export const requestPasswordReset = createAsyncThunk(
+  'auth/requestPasswordReset',
+  async (resetData: PasswordResetRequestData, { rejectWithValue }) => {
+    try {
+      const response = await AuthService.requestPasswordReset(resetData);
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to request password reset';
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+// Reset password async thunk
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async (resetData: PasswordResetData, { rejectWithValue }) => {
+    try {
+      const response = await AuthService.resetPassword(resetData);
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to reset password';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -405,49 +505,36 @@ const authSlice = createSlice({
       .addCase(testConnection.rejected, (state, action) => {
         state.error = action.payload as string;
       })
-      // Profile updates
-      .addCase(updateProfile.pending, (state) => {
+      // OAuth Login
+      .addCase(oauthLogin.pending, (state) => {
+        state.isLoading = true;
         state.error = null;
       })
-      .addCase(updateProfile.fulfilled, (state, action) => {
-        if (state.user && action.payload) {
-          // Merge updated fields into existing user slice
-          state.user.user = { ...state.user.user, ...(action.payload as any).user };
-          state.user.preferences = { ...state.user.preferences, ...(action.payload as any).preferences };
-          state.user.security = { ...state.user.security, ...(action.payload as any).security };
-        } else if (action.payload) {
-          state.user = action.payload as any;
-        }
-      })
-      .addCase(updateProfile.rejected, (state, action) => {
-        state.error = action.payload as string;
-      })
-      .addCase(updateProfileSecure.pending, (state) => {
+      .addCase(oauthLogin.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isAuthenticated = true;
         state.error = null;
       })
-      .addCase(updateProfileSecure.fulfilled, (state, action) => {
-        if (state.user && action.payload) {
-          state.user.user = { ...state.user.user, ...(action.payload as any).user };
-          state.user.preferences = { ...state.user.preferences, ...(action.payload as any).preferences };
-          state.user.security = { ...state.user.security, ...(action.payload as any).security };
-        } else if (action.payload) {
-          state.user = action.payload as any;
-        }
-      })
-      .addCase(updateProfileSecure.rejected, (state, action) => {
+      .addCase(oauthLogin.rejected, (state, action) => {
+        state.isLoading = false;
         state.error = action.payload as string;
       })
-      // Preferences
-      .addCase(updatePreferences.fulfilled, (state, action) => {
-        if (state.user && action.payload) {
-          state.user.preferences = { ...state.user.preferences, ...(action.payload as any) };
-        }
+      // OAuth Register
+      .addCase(oauthRegister.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
       })
-      .addCase(updatePreferences.rejected, (state, action) => {
-        state.error = action.payload as string;
+      .addCase(oauthRegister.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isAuthenticated = true;
+        state.error = null;
       })
-      // Change password
-      .addCase(changePassword.rejected, (state, action) => {
+      .addCase(oauthRegister.rejected, (state, action) => {
+        state.isLoading = false;
         state.error = action.payload as string;
       });
   },
