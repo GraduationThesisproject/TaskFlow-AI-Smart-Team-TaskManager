@@ -98,6 +98,24 @@ export interface AIPrompt {
   usageCount: number;
 }
 
+// Utility function to get avatar URL
+export const getAvatarUrl = (avatarPath: string): string => {
+  if (!avatarPath) return '';
+  
+  // If it's already a full URL, return as is
+  if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
+    return avatarPath;
+  }
+  
+  // If it's a relative path, construct the full URL
+  if (avatarPath.startsWith('/')) {
+    return `${env.API_BASE_URL}${avatarPath}`;
+  }
+  
+  // If it's just a filename, construct the full URL
+  return `${env.API_BASE_URL}/uploads/avatars/${avatarPath}`;
+};
+
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
