@@ -110,7 +110,7 @@ userRolesSchema.methods.hasWorkspaceRole = function(workspaceId, requiredRole = 
   const userRoleIndex = roleHierarchy.indexOf(workspaceRole.role);
   const requiredRoleIndex = roleHierarchy.indexOf(requiredRole);
   
-  return userRoleIndex >= requiredRoleIndex;
+  return userRoleIndex >= requiredRoleIndex? workspaceRole : null;
 };
 
 // Method to check space permission
