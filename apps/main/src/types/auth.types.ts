@@ -124,7 +124,7 @@ export interface OAuthLoginData {
 }
 
 export interface OAuthCallbackData {
-  code: string;
+  code?: string;
   provider: 'google' | 'github';
 }
 
