@@ -81,9 +81,9 @@ export const useAuth = () => {
 
   // OAuth login handler
   const handleOAuthLogin = useCallback(
-    async (provider: 'google' | 'github', code: string) => {
+    async (provider: 'google' | 'github',) => {
       try {
-        const callbackData: OAuthCallbackData = { code, provider };
+        const callbackData: OAuthCallbackData = {  provider };
         const result = await dispatch(oauthLogin(callbackData));
         return result;
       } catch (error) {
@@ -95,9 +95,9 @@ export const useAuth = () => {
   );
 
   const handleOAuthSignup = useCallback(
-    async (provider: 'google' | 'github', code: string) => {
+    async (provider: 'google' | 'github') => {
       try {
-        const callbackData: OAuthCallbackData = { code, provider };
+        const callbackData: OAuthCallbackData = {provider };
         const result = await dispatch(oauthRegister(callbackData));
         return result;
       } catch (error) {
@@ -110,9 +110,9 @@ export const useAuth = () => {
 
   // Handle OAuth callback
   const handleOAuthCallback = useCallback(
-    async (code: string, provider: 'google' | 'github') => {
+    async (provider: 'google' | 'github') => {
       const action = oauthService.getOAuthAction();
-      const callbackData: OAuthCallbackData = { code, provider };
+      const callbackData: OAuthCallbackData = { provider };
       
       if (action === 'login') {
         const result = await dispatch(oauthLogin(callbackData));
@@ -166,9 +166,10 @@ export const useAuth = () => {
     refreshToken: refreshTokenHandler,
     testConnection: testConnectionHandler,
     clearError,
+    clearAuthError,
     updateUser: updateUserData,
-    loginWithOAuth,
-    signupWithOAuth,
+    loginWithOAuth: handleOAuthLogin,
+    signupWithOAuth: handleOAuthSignup,
     handleOAuthCallback,
     verifyEmail: verifyUserEmail,
     resendVerificationCode: resendVerificationCodeEmail,
