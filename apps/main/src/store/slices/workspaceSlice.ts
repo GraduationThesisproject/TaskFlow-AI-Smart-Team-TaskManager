@@ -346,34 +346,15 @@ const workspaceSlice = createSlice({
       .addCase(disableInviteLink.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Failed to disable invite link';
-      });
       })
+      
+      }})
   
       // Delete workspace
-      .addCase(deleteWorkspace.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(deleteWorkspace.fulfilled, (state, action) => {
-        state.loading = false;
-        const deletedId = action.payload.id;
-        state.workspaces = (state.workspaces || []).filter((w) => w._id !== deletedId);
-        if (state.currentWorkspace && state.currentWorkspace._id === deletedId) {
-          state.currentWorkspace = null as any;
-          state.currentWorkspaceId = null;
-          state.spaces = [];
-          state.selectedSpace = null;
-        }
-        state.error = null;
-      })
-      .addCase(deleteWorkspace.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to delete workspace';
-      });
- 
+    
     // You can add other thunks (spaces, members, invite links) here similarly...
-  }
-});
+  
+
 
 
 export const {
