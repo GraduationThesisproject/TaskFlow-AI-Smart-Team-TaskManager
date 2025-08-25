@@ -1,7 +1,14 @@
-import { Link, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import { useAppSelector } from '../../store';
 
 const Sidebar = () => {
   const { search } = useLocation();
+  const userBasic = useAppSelector((state) => state.auth.user?.user);
+  const displayName =
+    (userBasic?.name?.trim()?.split(' ')?.[0]) ||
+    userBasic?.name ||
+    (userBasic?.email ? userBasic.email.split('@')[0] : undefined) ||
+    'Your';
   return (
     <aside className="h-ful w-60 border-r border-border bg-[hsl(var(--neutral-200))] text-foreground/90 shadow-[0_0_10px_hsl(var(--accent))] 
              ring-1 ring-primary/20 
@@ -30,7 +37,7 @@ const Sidebar = () => {
 
             </div>
             <div className="flex min-w-0 flex-col">
-              <span className="truncate text-sm font-small" style={{color: "hsl(var(--accent))"}}>Douzi Hazem's</span>
+              <span className="truncate text-sm font-small" style={{color: "hsl(var(--accent))"}}>{displayName}'s</span>
               <span className="truncate text-xs text-foreground/70" style={{color: "hsl(var(--accent))"}}>workspace</span>
             </div>
           </div>
@@ -41,9 +48,13 @@ const Sidebar = () => {
           <ul className="flex flex-col gap-1">
             {/* Boards */}
             <li>
-              <Link
-                to={`/workspace/boards${search}`}
-                className="group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors"
+              <NavLink
+                to={`/space${search}`}
+                className={({ isActive }) =>
+                  isActive
+                    ? 'mx-1 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/20 px-3 py-2 text-sm text-foreground shadow-[0_0_0_1px_rgba(0,232,198,0.15),_0_8px_30px_-12px_rgba(0,232,198,0.35)] ring-1 ring-accent/30'
+                    : 'group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors'
+                }
               >
 <svg width="12" height="16" viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g clipPath="url(#clip0_222_439)">
@@ -57,14 +68,19 @@ const Sidebar = () => {
 </svg>
 
                 <span className="font-medium" style={{color: "hsl(var(--primary-foreground))"}}>Boards</span>
-              </Link>
+              </NavLink>
             </li>
 
-            {/* Members (active) */}
+            {/* Members */}
             <li>
-              <Link
-                to={`/workspace/members${search}`}
-                className="mx-1 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/20 px-3 py-2 text-sm text-foreground shadow-[0_0_0_1px_rgba(0,232,198,0.15),_0_8px_30px_-12px_rgba(0,232,198,0.35)] ring-1 ring-accent/30"
+              <NavLink
+                to={`/workspace${search}`}
+                end
+                className={({ isActive }) =>
+                  isActive
+                    ? 'mx-1 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/20 px-3 py-2 text-sm text-foreground shadow-[0_0_0_1px_rgba(0,232,198,0.15),_0_8px_30px_-12px_rgba(0,232,198,0.35)] ring-1 ring-accent/30'
+                    : 'group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors'
+                }
               >
                 <svg className="outline-none [&>path:first-of-type]:hidden" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M20 20H0V0H20V20Z" stroke="#E5E7EB"/>
@@ -79,14 +95,18 @@ const Sidebar = () => {
 </svg>
 
                 <span className="font-medium" style={{color: "hsl(var(--primary-foreground))"}}>Members</span>
-              </Link>
+              </NavLink>
             </li>
 
             {/* Settings */}
             <li>
-              <Link
+              <NavLink
                 to={`/workspace/settings${search}`}
-                className="group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors"
+                className={({ isActive }) =>
+                  isActive
+                    ? 'mx-1 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/20 px-3 py-2 text-sm text-foreground shadow-[0_0_0_1px_rgba(0,232,198,0.15),_0_8px_30px_-12px_rgba(0,232,198,0.35)] ring-1 ring-accent/30'
+                    : 'group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors'
+                }
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g clipPath="url(#clip0_222_448)">
@@ -105,14 +125,18 @@ const Sidebar = () => {
 </svg>
 
                 <span className="font-medium" style={{color: "hsl(var(--primary-foreground))"}}>Settings</span>
-              </Link>
+              </NavLink>
             </li>
 
             {/* Upgrade */}
             <li>
-              <Link
+              <NavLink
                 to={`/workspace/upgrade${search}`}
-                className="group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors"
+                className={({ isActive }) =>
+                  isActive
+                    ? 'mx-1 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/20 px-3 py-2 text-sm text-foreground shadow-[0_0_0_1px_rgba(0,232,198,0.15),_0_8px_30px_-12px_rgba(0,232,198,0.35)] ring-1 ring-accent/30'
+                    : 'group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors'
+                }
               >
                 <svg width="12" height="16" viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g clipPath="url(#clip0_222_452)">
@@ -131,14 +155,18 @@ const Sidebar = () => {
 </svg>
 
                 <span className="font-medium" style={{color: "hsl(var(--primary-foreground))"}}>Upgrade</span>
-              </Link>
+              </NavLink>
             </li>
 
             {/* Reports */}
             <li>
-              <Link
+              <NavLink
                 to={`/workspace/reports${search}`}
-                className="group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors"
+                className={({ isActive }) =>
+                  isActive
+                    ? 'mx-1 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/20 px-3 py-2 text-sm text-foreground shadow-[0_0_0_1px_rgba(0,232,198,0.15),_0_8px_30px_-12px_rgba(0,232,198,0.35)] ring-1 ring-accent/30'
+                    : 'group mx-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground/85 hover:bg-muted/30 hover:text-foreground transition-colors'
+                }
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M16 16H0V0H16V16Z" stroke="#E5E7EB"/>
@@ -146,7 +174,7 @@ const Sidebar = () => {
 </svg>
 
                 <span className="font-medium" style={{color: "hsl(var(--primary-foreground))"}}>Reports</span>
-              </Link>
+              </NavLink>
             </li>
           </ul>
         </nav>
