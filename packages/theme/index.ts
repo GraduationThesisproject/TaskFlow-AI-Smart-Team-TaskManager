@@ -95,14 +95,36 @@ export const applyTheme = (theme: 'light' | 'dark', userPrimaryColor?: string | 
         themeVars['--gradient-accent'] = hsl;
 
         const fg = hslForegroundFor(hsl);
-        themeVars['--primary-foreground'] = fg;
-        themeVars['--accent-foreground'] = fg;
+        // Keep text white for purple hues regardless of lightness to ensure readability
+        const hue = parseFloat(hsl.split(' ')[0]);
+        const isPurple = !Number.isNaN(hue) && hue >= 240 && hue <= 320;
+        const forcedFg = isPurple ? '0 0% 100%' : fg;
+        themeVars['--primary-foreground'] = forcedFg;
+        themeVars['--accent-foreground'] = forcedFg;
       }
     } catch (error) {
       console.warn('Invalid user primary color:', userPrimaryColor);
     }
   }
   
+  // Safeguard: ensure white text for purple hues even if userPrimaryColor wasn't provided
+  const coerceWhiteForPurple = (hslVal?: string) => {
+    if (!hslVal) return false;
+    try {
+      const hue = parseFloat(hslVal.split(' ')[0]);
+      return !Number.isNaN(hue) && hue >= 240 && hue <= 320;
+    } catch {
+      return false;
+    }
+  };
+
+  if (coerceWhiteForPurple(themeVars['--primary'])) {
+    themeVars['--primary-foreground'] = '0 0% 100%';
+  }
+  if (coerceWhiteForPurple(themeVars['--accent'])) {
+    themeVars['--accent-foreground'] = '0 0% 100%';
+  }
+
   Object.entries(themeVars).forEach(([key, value]) => {
     root.style.setProperty(key, value);
   });
