@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import apiClient from '../../utils/apiClient';
+import axiosInstance from '../../config/axios';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../index';
 import type { TemplateItem, TemplatesFilters, TemplatesState } from '../../types/dash.types';
@@ -27,8 +27,8 @@ export const listTemplates = createAsyncThunk(
   async (params: TemplatesFilters | undefined, { rejectWithValue }) => {
     try {
       const query = toQuery(params || {});
-      const res = await apiClient.get<{ success: boolean; data: TemplateItem[] }>(`/templates${query}`);
-      return res.data;
+      const res = await axiosInstance.get<{ success: boolean; data: TemplateItem[] }>(`/templates${query}`);
+      return res.data.data;
     } catch (e: any) {
       return rejectWithValue(e.message || 'Failed to load templates');
     }
@@ -42,8 +42,8 @@ export const listAllTemplates = createAsyncThunk(
     try {
       const merged = { ...(params || {}), scope: 'all' as const };
       const query = toQuery(merged as Record<string, any>);
-      const res = await apiClient.get<{ success: boolean; data: TemplateItem[] }>(`/templates${query}`);
-      return res.data;
+      const res = await axiosInstance.get<{ success: boolean; data: TemplateItem[] }>(`/templates${query}`);
+      return res.data.data;
     } catch (e: any) {
       return rejectWithValue(e.message || 'Failed to load templates (all)');
     }
@@ -54,8 +54,8 @@ export const getTemplate = createAsyncThunk(
   'templates/get',
   async (id: string, { rejectWithValue }) => {
     try {
-      const res = await apiClient.get<{ success: boolean; data: TemplateItem }>(`/templates/${id}`);
-      return res.data;
+      const res = await axiosInstance.get<{ success: boolean; data: TemplateItem }>(`/templates/${id}`);
+      return res.data.data;
     } catch (e: any) {
       return rejectWithValue(e.message || 'Failed to load template');
     }
@@ -66,8 +66,8 @@ export const createTemplate = createAsyncThunk(
   'templates/create',
   async (payload: Partial<TemplateItem>, { rejectWithValue }) => {
     try {
-      const res = await apiClient.post<{ success: boolean; data: TemplateItem }>(`/templates`, payload);
-      return res.data;
+      const res = await axiosInstance.post<{ success: boolean; data: TemplateItem }>(`/templates`, payload);
+      return res.data.data;
     } catch (e: any) {
       return rejectWithValue(e.message || 'Failed to create template');
     }
@@ -78,8 +78,8 @@ export const updateTemplate = createAsyncThunk(
   'templates/update',
   async ({ id, updates }: { id: string; updates: Partial<TemplateItem> }, { rejectWithValue }) => {
     try {
-      const res = await apiClient.put<{ success: boolean; data: TemplateItem }>(`/templates/${id}`, updates);
-      return res.data;
+      const res = await axiosInstance.patch<{ success: boolean; data: TemplateItem }>(`/templates/${id}`, updates);
+      return res.data.data;
     } catch (e: any) {
       return rejectWithValue(e.message || 'Failed to update template');
     }
@@ -90,7 +90,7 @@ export const deleteTemplate = createAsyncThunk(
   'templates/delete',
   async (id: string, { rejectWithValue }) => {
     try {
-      await apiClient.delete<{ success: boolean }>(`/templates/${id}`);
+      await axiosInstance.delete<{ success: boolean }>(`/templates/${id}`);
       return id;
     } catch (e: any) {
       return rejectWithValue(e.message || 'Failed to delete template');
@@ -102,12 +102,8 @@ export const incrementTemplateViews = createAsyncThunk(
   'templates/incrementViews',
   async (id: string, { rejectWithValue }) => {
     try {
-      const res = await apiClient.post<{ success: boolean; data: TemplateItem }>(
-        `/templates/${id}/views`,
-        undefined,
-        { suppressErrorLog: true }
-      );
-      return res.data;
+      const res = await axiosInstance.patch<{ success: boolean; data: TemplateItem }>(`/templates/${id}`, { op: 'increment_views' });
+      return res.data.data;
     } catch (e: any) {
       return rejectWithValue(e.message || 'Failed to increment views');
     }
@@ -118,13 +114,9 @@ export const toggleTemplateLike = createAsyncThunk(
   'templates/toggleLike',
   async (id: string, { rejectWithValue }) => {
     try {
-      const res = await apiClient.post<{ success: boolean; data: TemplateItem }>(
-        `/templates/${id}/like`,
-        undefined,
-        { suppressErrorLog: true }
-      );
+      const res = await axiosInstance.patch<{ success: boolean; data: TemplateItem }>(`/templates/${id}`, { op: 'toggle_like' });
       console.log("toggle like",res.data)
-      return res.data;
+      return res.data.data;
     } catch (e: any) {
       return rejectWithValue(e.message || 'Failed to toggle like');
     }

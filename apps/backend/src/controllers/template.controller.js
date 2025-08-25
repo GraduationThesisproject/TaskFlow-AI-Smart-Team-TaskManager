@@ -176,12 +176,37 @@ exports.update = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { userId, isAdmin } = await getUserAndRoles(req);
+
+    // operation-based updates
+    const op = req.body?.op;
+    if (op === 'increment_views') {
+      const updated = await Template.findByIdAndUpdate(
+        id,
+        { $inc: { views: 1 } },
+        { new: true, runValidators: false }
+      );
+      if (!updated) return res.status(404).json({ success: false, message: 'Template not found' });
+      return ok(res, updated);
+    }
+    if (op === 'toggle_like') {
+      if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+      const existing = await Template.findById(id).select('_id likedBy');
+      if (!existing) return res.status(404).json({ success: false, message: 'Template not found' });
+      const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u) === String(userId));
+      const update = hasLiked ? { $pull: { likedBy: userId } } : { $addToSet: { likedBy: userId } };
+      const updated = await Template.findByIdAndUpdate(id, update, { new: true, runValidators: false });
+      if (!updated) return res.status(404).json({ success: false, message: 'Template not found' });
+      return ok(res, updated);
+    }
+
+    // default: partial update of fields
     const payload = sanitizeTemplatePayload(req.body);
 
     const existing = await Template.findById(id);
     if (!existing) return res.status(404).json({ success: false, message: 'Template not found' });
 
     // Only owner or admin can update. System templates require admin.
+    
     const isOwner = String(existing.createdBy) === String(userId);
     if (existing.isSystem && !isAdmin) {
       return res.status(403).json({ success: false, message: 'Only admins can modify system templates' });
@@ -242,24 +267,29 @@ exports.toggleLike = async (req, res, next) => {
     const { id } = req.params;
     console.log('[templates.toggleLike] incoming', { id, userId: String(userId) });
 
-    const doc = await Template.findById(id);
-    if (!doc) {
+    // Determine whether the user has already liked the template
+    const existing = await Template.findById(id).select('_id likedBy');
+    if (!existing) {
       console.warn('[templates.toggleLike] not found', { id });
       return res.status(404).json({ success: false, message: 'Template not found' });
     }
 
     const uid = String(userId);
-    const hasLiked = Array.isArray(doc.likedBy) && doc.likedBy.some((u) => String(u) === uid);
-    if (hasLiked) {
-      console.log('[templates.toggleLike] UNLIKE', { id, userId: uid });
-      doc.likedBy = doc.likedBy.filter((u) => String(u) !== uid);
-    } else {
-      console.log('[templates.toggleLike] LIKE', { id, userId: uid });
-      doc.likedBy.push(userId);
+    const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u) === uid);
+
+    // Use atomic update to avoid full-document validation (e.g., required content)
+    const update = hasLiked
+      ? { $pull: { likedBy: userId } }
+      : { $addToSet: { likedBy: userId } };
+
+    const updated = await Template.findByIdAndUpdate(id, update, { new: true });
+    if (!updated) {
+      console.warn('[templates.toggleLike] not found after update', { id });
+      return res.status(404).json({ success: false, message: 'Template not found' });
     }
-    await doc.save();
-    console.log('[templates.toggleLike] saved', { id, likes: Array.isArray(doc.likedBy) ? doc.likedBy.length : 0 });
-    return ok(res, doc);
+
+    console.log('[templates.toggleLike] saved', { id, likes: Array.isArray(updated.likedBy) ? updated.likedBy.length : 0 });
+    return ok(res, updated);
   } catch (error) {
     handleError(next, error);
   }
