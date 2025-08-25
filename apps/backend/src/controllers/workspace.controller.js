@@ -58,9 +58,7 @@ exports.getWorkspace = async (req, res) => {
         let userRole = null;
         let userPermissions = null;
         if (userId && req.user.roles) {
-            const userWorkspaceRole = req.user.roles.workspaces.find(ws => 
-                ws.workspace.toString() === workspaceId
-            );
+            const userWorkspaceRole = req.user.roles.hasWorkspaceRole(workspaceId);
             if (userWorkspaceRole) {
                 userRole = userWorkspaceRole.role;
                 userPermissions = userWorkspaceRole.permissions;
