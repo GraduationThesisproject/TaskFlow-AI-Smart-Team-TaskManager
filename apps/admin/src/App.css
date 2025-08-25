@@ -1,4 +1,4 @@
-@import '@taskflow/config/tailwind.css';
+/* Remove non-existent tailwind.css import - using directives in index.css instead */
 
 :root {
   --background: 0 0% 100%;

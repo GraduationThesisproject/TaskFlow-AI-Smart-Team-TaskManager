@@ -142,15 +142,15 @@ export const DropdownItem: React.FC<DropdownItemProps> = ({
   variant,
   className,
 }) => (
-  <div
-    className={cn(dropdownItemVariants({ variant }), className)}
-    onClick={disabled ? undefined : onClick}
-    data-disabled={disabled}
-    role="menuitem"
-    tabIndex={disabled ? -1 : 0}
-  >
-    {children}
-  </div>
+<button
+  type="button"
+  className={cn(dropdownItemVariants({ variant }), className)}
+  onClick={disabled ? undefined : onClick}
+  disabled={disabled}
+  role="menuitem"
+>
+  {children}
+</button>
 );
 
 export const DropdownSeparator: React.FC<{ className?: string }> = ({ className }) => (

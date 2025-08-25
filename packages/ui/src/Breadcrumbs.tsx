@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { cn } from './utils';
 
 export interface BreadcrumbItem {
@@ -17,7 +17,7 @@ export interface BreadcrumbsProps {
 export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
   items,
   className,
-  separator = <ChevronRight className="h-4 w-4 text-muted-foreground" />
+  separator = <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
 }) => {
   return (
     <nav className={cn('flex items-center space-x-1 text-sm text-muted-foreground', className)}>

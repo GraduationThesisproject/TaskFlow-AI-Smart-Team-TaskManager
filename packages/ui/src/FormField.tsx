@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Input } from './Input';
 import { Typography } from './Typography';
 import { cn } from './utils';
+
 import { Mail, Lock, User } from 'lucide-react';
 
 interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -21,11 +22,11 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     const getIcon = () => {
       switch (icon) {
         case 'email':
-          return <Mail className="w-5 h-5 text-muted-foreground" />;
+          return <EnvelopeIcon className="w-5 h-5 text-muted-foreground" />;
         case 'password':
-          return <Lock className="w-5 h-5 text-muted-foreground" />;
+          return <LockClosedIcon className="w-5 h-5 text-muted-foreground" />;
         case 'user':
-          return <User className="w-5 h-5 text-muted-foreground" />;
+          return <UserIcon className="w-5 h-5 text-muted-foreground" />;
         default:
           return null;
       }
@@ -69,6 +70,7 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
               {getIcon()}
             </div>
           )}
+
         </div>
         
         {/* Error Message */}

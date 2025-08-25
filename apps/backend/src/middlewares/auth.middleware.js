@@ -65,6 +65,7 @@ const authMiddleware = async (req, res, next) => {
             isActive: user.isActive
         };
 
+        logger.info(`Auth middleware: User authenticated - ID: ${req.user.id}, Email: ${req.user.email}, Name: ${req.user.name}`);
         next();
     } catch (error) {
         if (error.name === 'JsonWebTokenError') {
