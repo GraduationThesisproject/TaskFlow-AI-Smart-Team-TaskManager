@@ -16,11 +16,13 @@ const AppearanceSettings: React.FC = () => {
   const handleLight = () => {
     localStorage.setItem(storageKey, 'light');
     setTheme('light');
+    // Pick a pleasant light-friendly gradient
   };
 
   const handleDark = () => {
     localStorage.setItem(storageKey, 'dark');
     setTheme('dark');
+    // Pick a vivid dark-friendly gradient
   };
 
   const handleSystem = () => {
