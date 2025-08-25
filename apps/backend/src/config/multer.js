@@ -106,6 +106,41 @@ const fileTypeConfigs = {
   }
 };
 
+// Validate file type configurations
+const validateFileTypeConfigs = () => {
+  const requiredProps = ['folder', 'allowedMimeTypes', 'maxFileSize'];
+  
+  for (const [category, config] of Object.entries(fileTypeConfigs)) {
+    for (const prop of requiredProps) {
+      if (!(prop in config)) {
+        throw new Error(`Missing required property '${prop}' in fileTypeConfigs.${category}`);
+      }
+    }
+    
+    if (!Array.isArray(config.allowedMimeTypes)) {
+      throw new Error(`allowedMimeTypes must be an array in fileTypeConfigs.${category}`);
+    }
+    
+    if (typeof config.maxFileSize !== 'number' || config.maxFileSize <= 0) {
+      throw new Error(`maxFileSize must be a positive number in fileTypeConfigs.${category}`);
+    }
+    
+    if (config.thumbnails && !Array.isArray(config.thumbnails)) {
+      throw new Error(`thumbnails must be an array in fileTypeConfigs.${category}`);
+    }
+  }
+  
+  logger.info('✅ File type configurations validated successfully');
+};
+
+// Validate configurations on module load
+try {
+  validateFileTypeConfigs();
+} catch (error) {
+  logger.error('❌ File type configuration validation failed:', error.message);
+  throw error;
+}
+
 // Generate unique filename
 const generateFilename = (originalname, category = 'general', userId = null) => {
   const ext = path.extname(originalname);
@@ -119,7 +154,7 @@ const generateFilename = (originalname, category = 'general', userId = null) => 
 
 // Configure Multer storage
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: async (req, file, cb) => {
     try {
       // Ensure workspaceId and spaceId are set to prevent undefined errors
       req.workspaceId = req.workspaceId || req.workspace || null;
@@ -136,18 +171,17 @@ const storage = multer.diskStorage({
       logger.info(`Storage destination: uploadPath: ${uploadPath}`);
       
       // Ensure the destination directory exists
-      fs.mkdir(uploadPath, { recursive: true })
-        .then(() => {
-          logger.info(`✅ Destination directory ready: ${uploadPath}`);
-          cb(null, uploadPath);
-        })
-        .catch((error) => {
-          logger.error(`❌ Failed to create destination directory: ${uploadPath}`, error);
-          cb(error);
-        });
+      try {
+        await fs.mkdir(uploadPath, { recursive: true });
+        logger.info(`✅ Destination directory ready: ${uploadPath}`);
+        cb(null, uploadPath);
+      } catch (mkdirError) {
+        logger.error(`❌ Failed to create destination directory: ${uploadPath}`, mkdirError);
+        cb(new Error(`Failed to create upload directory: ${mkdirError.message}`));
+      }
     } catch (error) {
       logger.error(`❌ Storage destination error:`, error);
-      cb(error);
+      cb(new Error(`Storage configuration error: ${error.message}`));
     }
   },
   filename: (req, file, cb) => {
@@ -160,10 +194,23 @@ const storage = multer.diskStorage({
       cb(null, filename);
     } catch (error) {
       logger.error(`❌ Storage filename error:`, error);
-      cb(error);
+      cb(new Error(`Filename generation error: ${error.message}`));
     }
   }
 });
+
+// Helper function to validate file type
+const isValidFileType = (mimeType, allowedTypes) => {
+  return allowedTypes.some(allowedType => {
+    // Handle wildcard MIME types (e.g., 'image/*')
+    if (allowedType.endsWith('/*')) {
+      const baseType = allowedType.split('/')[0];
+      return mimeType.startsWith(baseType + '/');
+    }
+    // Handle exact MIME type matches
+    return mimeType === allowedType;
+  });
+};
 
 // File filter function
 const fileFilter = (req, file, cb) => {
@@ -173,8 +220,11 @@ const fileFilter = (req, file, cb) => {
   logger.info(`File filter: Processing file ${file.originalname}, mimetype: ${file.mimetype}, category: ${category}`);
   logger.info(`File filter: Allowed types for ${category}:`, config.allowedMimeTypes);
   
-  if (config.allowedMimeTypes.includes(file.mimetype)) {
-    logger.info(`File filter: File ${file.originalname} accepted`);
+  // Check if the file's MIME type is allowed
+  const isAllowed = isValidFileType(file.mimetype, config.allowedMimeTypes);
+  
+  if (isAllowed) {
+    logger.info(`File filter: File ${file.originalname} accepted (MIME type: ${file.mimetype})`);
     cb(null, true);
   } else {
     logger.error(`File filter: File type ${file.mimetype} is not allowed for ${category}`);
@@ -193,18 +243,29 @@ const createMulterUpload = (category = 'general') => {
     maxFileSizeMB: (config.maxFileSize / (1024 * 1024)).toFixed(2) + 'MB'
   });
   
+  // Validate category configuration
+  if (!config) {
+    logger.error(`createMulterUpload: Invalid category: ${category}`);
+    throw new Error(`Invalid upload category: ${category}`);
+  }
+  
   return multer({
     storage: storage,
     limits: {
       fileSize: config.maxFileSize
     },
     fileFilter: (req, file, cb) => {
-      // Ensure the fileCategory is set for this request
-      req.fileCategory = category;
-      logger.info(`createMulterUpload: Set req.fileCategory to ${category} for file ${file.originalname}`);
-      
-      // Call the original fileFilter with the updated req object
-      fileFilter(req, file, cb);
+      try {
+        // Ensure the fileCategory is set for this request
+        req.fileCategory = category;
+        logger.info(`createMulterUpload: Set req.fileCategory to ${category} for file ${file.originalname}`);
+        
+        // Call the original fileFilter with the updated req object
+        fileFilter(req, file, cb);
+      } catch (error) {
+        logger.error(`createMulterUpload: Error in fileFilter:`, error);
+        cb(new Error(`File filter error: ${error.message}`));
+      }
     }
   }).single('file'); // Pre-configure for single file upload
 };
@@ -349,6 +410,11 @@ module.exports = {
   getFileStats,
   getFileMimeType,
   fileTypeConfigs, // Export the file type configurations
-  ensureDirectoriesExist
+  ensureDirectoriesExist,
+  deleteFile, // Add the missing deleteFile export
+  isValidFileType, // Export the file type validation helper
+  validateFileTypeConfigs // Export the configuration validation function
 };
+
+
 
