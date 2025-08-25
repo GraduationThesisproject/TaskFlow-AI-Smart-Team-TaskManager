@@ -11,4 +11,14 @@ export default defineConfig({
       '@taskflow/utils': path.resolve(__dirname, '../../packages/utils/src'),
     },
   },
+  server: {
+    port: 5175,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });

@@ -49,9 +49,15 @@ const userSchema = new mongoose.Schema({
     }
   },
   avatar: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'File',
-    default: null
+    type: String,
+    default: null,
+    validate: {
+      validator: function(avatar) {
+        if (!avatar) return true; // null is valid
+        return validator.isURL(avatar) || avatar.startsWith('data:image/');
+      },
+      message: 'Avatar must be a valid URL or data URI'
+    }
   },
   // Account status and verification
   isActive: {
@@ -396,8 +402,8 @@ userSchema.methods.removeMetadata = function(key) {
 };
 
 // Method to update avatar
-userSchema.methods.updateAvatar = function(fileId) {
-  this.avatar = fileId;
+userSchema.methods.updateAvatar = function(avatarUrl) {
+  this.avatar = avatarUrl;
   return this.save();
 };
 

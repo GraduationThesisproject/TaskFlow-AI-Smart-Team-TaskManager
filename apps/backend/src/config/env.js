@@ -22,7 +22,7 @@ JWT_EXPIRES_IN → how long a token lasts (e.g., 7d = 7 days).*/
 
 
     // CORS
-    CORS_ORIGIN: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:5174'],
+    CORS_ORIGIN: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
     
 /*CORS_ORIGIN → list of allowed frontend URLs that can talk to your backend.
 If .env has:
@@ -71,6 +71,9 @@ SMTP_PASS → your email password or API key.
     BASE_URL: process.env.BASE_URL || 'http://localhost:3001',
     UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
     MAX_FILE_SIZE: process.env.MAX_FILE_SIZE || '10485760', // 10MB in bytes
+    
+    // Frontend URL
+    FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
     /*BASE_URL → the base URL of your backend (for file links).
 
 UPLOAD_DIR → the folder where uploaded files are stored.
