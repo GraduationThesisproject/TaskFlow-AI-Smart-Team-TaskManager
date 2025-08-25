@@ -14,7 +14,7 @@ interface FormErrors {
 
 export default function SignUp() {
   const navigate = useNavigate();
-  const { register, isLoading, error, clearAuthError } = useAuth();
+  const { register, isLoading, error, clearAuthError, signupWithOAuth } = useAuth();
   
   // Form state
   const [formData, setFormData] = useState<RegisterData & { confirmPassword: string }>({
@@ -110,6 +110,15 @@ export default function SignUp() {
   // Check if field has error and is touched
   const hasError = (field: keyof FormErrors) => 
     touched[field] && errors[field];
+
+  // Handle OAuth signup
+  const handleOAuthSignup = async (provider: 'google' | 'github') => {
+    try {
+      await signupWithOAuth(provider);
+    } catch (error) {
+      console.error(`OAuth signup with ${provider} failed:`, error);
+    }
+  };
 
   return (
     <div>
@@ -222,12 +231,14 @@ export default function SignUp() {
           <SocialButton
             provider="google"
             disabled={isLoading}
+            onClick={() => handleOAuthSignup('google')}
           >
             Google
           </SocialButton>
           <SocialButton
             provider="github"
             disabled={isLoading}
+            onClick={() => handleOAuthSignup('github')}
           >
             GitHub
           </SocialButton>
