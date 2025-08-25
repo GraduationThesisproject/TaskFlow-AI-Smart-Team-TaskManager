@@ -15,7 +15,7 @@ const axiosInstance: AxiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Get token from localStorage
-    const token = localStorage.getItem('admin_token');
+    const token = localStorage.getItem('adminToken');
     
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -52,8 +52,8 @@ axiosInstance.interceptors.response.use(
       switch (status) {
         case 401:
           // Unauthorized - redirect to admin login
-          localStorage.removeItem('admin_token');
-          window.location.href = '/admin/login';
+          localStorage.removeItem('adminToken');
+          window.location.href = '/login';
           break;
         case 403:
           // Forbidden - admin access denied
