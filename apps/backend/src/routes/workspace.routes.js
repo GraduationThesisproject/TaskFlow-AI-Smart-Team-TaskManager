@@ -1,10 +1,9 @@
 const express = require('express');
 const workspaceController = require('../controllers/workspace.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { requireWorkspacePermission, requireWorkspaceMember, requireWorkspaceAdmin, requireAnyPermission } = require('../middlewares/permission.middleware');   
-const authMiddleware = require('../middlewares/auth.middleware');   
+const { requireWorkspacePermission, requireWorkspaceMember, requireWorkspaceAdmin } = require('../middlewares/permission.middleware');
+
 const router = express.Router();
-const isDev = process.env.NODE_ENV !== 'production';
 
 // Validation schemas
 const createWorkspaceSchema = {
@@ -18,7 +17,6 @@ const updateWorkspaceSchema = {
     description: { maxLength: 1000 },
     settings: { object: true }
 };
-
 
 const inviteMemberSchema = {
     email: { required: true, email: true },
@@ -91,7 +89,10 @@ router.post('/:id/transfer-ownership',
     workspaceController.transferOwnership
 );
 
-// Delete workspace - rely on controller for final permission (owner check)
-router.delete('/:id', workspaceController.deleteWorkspace);
+// Delete workspace - rely on controller for final permission (owner or privileged admin)
+router.delete('/:id',
+    requireWorkspacePermission('canDeleteWorkspace'),
+    workspaceController.deleteWorkspace
+);
 
 module.exports = router;

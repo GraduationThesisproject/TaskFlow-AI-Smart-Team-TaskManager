@@ -15,7 +15,8 @@ import {
   AlertCircle,
   CheckCircle,
   Info,
-  AlertTriangle
+  AlertTriangle,
+  UserPlus
 } from 'lucide-react';
 import { 
   Sidebar, 
@@ -37,16 +38,13 @@ import {
   Typography,
   Badge
 } from '@taskflow/ui';
+
 import { useAppDispatch, useAppSelector } from '../../store';
 import { logoutUser } from '../../store/slices/authSlice';
 import { useNotifications } from '../../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
+import type { DashboardShellProps } from '../../types/dash.types';
 
-interface DashboardShellProps {
-  children: React.ReactNode;
-  title?: string;
-  breadcrumbs?: Array<{ label: string; href?: string }>;
-}
 
 const navigationItems = [
   { icon: Home, label: 'Home', href: '/dashboard' },
@@ -317,6 +315,25 @@ const NotificationBell: React.FC = () => {
   const unreadCount = stats?.unread || 0;
   const hasNotifications = notifications.length > 0;
 
+  // Debug: log notifications and invitations subset on change
+  React.useEffect(() => {
+    if (import.meta.env.VITE_ENABLE_DEBUG) {
+      const invites = notifications.filter(n => n.type === 'workspace_invitation' || n.type === 'space_invitation');
+      console.log('🔔 [NotificationBell] Notifications updated', {
+        total: notifications.length,
+        unread: unreadCount,
+      });
+      if (invites.length) {
+        console.log('🧑‍🤝‍🧑 [NotificationBell] Invitation notifications', invites.map(i => ({
+          id: i._id,
+          type: i.type,
+          title: i.title,
+          createdAt: i.createdAt,
+        })));
+      }
+    }
+  }, [notifications, unreadCount]);
+
   // Clear error when component mounts or when error changes
   React.useEffect(() => {
     if (error) {
@@ -333,6 +350,11 @@ const NotificationBell: React.FC = () => {
     const iconProps = { size: 16, className: "flex-shrink-0" };
     
     switch (type) {
+      case 'workspace_invitation':
+      case 'space_invitation':
+        return <UserPlus {...iconProps} className="text-blue-500" />;
+      case 'invitation_accepted':
+        return <CheckCircle {...iconProps} className="text-green-500" />;
       case 'success':
         return <CheckCircle {...iconProps} className="text-green-500" />;
       case 'warning':
@@ -462,6 +484,23 @@ const NotificationBell: React.FC = () => {
                         <Typography variant="caption" className="text-muted-foreground mt-1 line-clamp-2">
                           {notification.message}
                         </Typography>
+                        {(notification.type === 'workspace_invitation' || notification.type === 'space_invitation') && (
+                          <div className="mt-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs h-6 px-2"
+                              onClick={() => {
+                                if (import.meta.env.VITE_ENABLE_DEBUG) {
+                                  console.log('➡️ [NotificationBell] View invitations clicked');
+                                }
+                                window.location.href = '/dashboard/settings';
+                              }}
+                            >
+                              View invitations
+                            </Button>
+                          </div>
+                        )}
                         <Typography variant="caption" className="text-muted-foreground mt-1">
                           {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                         </Typography>

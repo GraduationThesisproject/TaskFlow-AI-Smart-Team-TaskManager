@@ -26,7 +26,7 @@ const requireSystemAdmin = (req, res, next) => {
 };
 
 // Require workspace permission
-const requireWorkspacePermission = (role = 'member') => {
+const requireWorkspacePermission = (roleOrPermission = 'member') => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
@@ -45,8 +45,18 @@ const requireWorkspacePermission = (role = 'member') => {
             const user = await User.findById(userId);
             const userRoles = await user.getRoles();
 
-            if (!userRoles.hasWorkspaceRole(workspaceId, role)) {
-                return sendResponse(res, 403, false, `Workspace ${role} role required`);
+            // Permission-mode: roleOrPermission starts with 'can'
+            if (typeof roleOrPermission === 'string' && roleOrPermission.startsWith('can')) {
+                const wsRole = userRoles.workspaces.find(ws => ws.workspace.toString() === workspaceId.toString());
+                const allowed = wsRole?.permissions?.[roleOrPermission] === true;
+                if (!allowed) {
+                    return sendResponse(res, 403, false, `Workspace permission '${roleOrPermission}' required`);
+                }
+            } else {
+                // Role-mode: fallback to role hierarchy check
+                if (!userRoles.hasWorkspaceRole(workspaceId, roleOrPermission)) {
+                    return sendResponse(res, 403, false, `Workspace ${roleOrPermission} role required`);
+                }
             }
 
             req.workspace = workspace;

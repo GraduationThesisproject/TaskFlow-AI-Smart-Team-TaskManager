@@ -217,6 +217,9 @@ exports.getMe = async (req, res) => {
             user.getRoles()
         ]);
 
+        // Ensure avatar is populated so client gets URL
+        await user.populate({ path: 'avatar', select: 'url thumbnails' });
+
         // Get active sessions count
         const activeSessions = sessions.sessions.filter(s => s.isActive).length;
 
@@ -305,6 +308,9 @@ exports.updateProfile = async (req, res) => {
             await userPrefs.save();
         }
 
+        // Populate avatar so response contains URL
+        await user.populate({ path: 'avatar', select: 'url thumbnails' });
+
         // Log activity
         await ActivityLog.logActivity({
             userId: user._id,
@@ -327,6 +333,87 @@ exports.updateProfile = async (req, res) => {
     } catch (error) {
         logger.error('Update profile error:', error);
         sendResponse(res, 500, false, 'Server error updating profile');
+    }
+};
+
+// Secure profile update with password verification and optional avatar upload
+exports.updateProfileSecure = async (req, res) => {
+    try {
+        const { currentPassword, name } = req.body;
+
+        // Load user with password for verification
+        const user = await User.findById(req.user.id).select('+password');
+        if (!user) {
+            return sendResponse(res, 404, false, 'User not found');
+        }
+
+        const isValid = await user.comparePassword(currentPassword || '');
+        if (!isValid) {
+            // Cleanup: if a file was uploaded before validation, delete it to avoid orphans
+            if (req.uploadedFile) {
+                try {
+                    await req.uploadedFile.deleteFromStorage();
+                    await req.uploadedFile.deleteOne();
+                } catch (e) {
+                    logger.warn('Cleanup failed for uploaded file on password error:', e.message);
+                }
+            }
+            return sendResponse(res, 400, false, 'Current password is incorrect');
+        }
+
+        const oldValues = {
+            name: user.name,
+            avatar: user.avatar
+        };
+
+        // Update name if provided
+        if (name) user.name = name;
+
+        // Handle avatar if a new file was uploaded
+        if (req.uploadedFile) {
+            const File = require('../models/File');
+            try {
+                if (user.avatar) {
+                    const oldFile = await File.findById(user.avatar);
+                    if (oldFile && oldFile._id.toString() !== req.uploadedFile._id.toString()) {
+                        await oldFile.deleteFromStorage();
+                    }
+                }
+            } catch (e) {
+                logger.warn('Failed to delete old avatar:', e.message);
+            }
+
+            const file = req.uploadedFile;
+            await file.attachTo('User', user._id);
+            user.avatar = file._id;
+        }
+
+        await user.save();
+
+        // Populate avatar so response contains URL
+        await user.populate({ path: 'avatar', select: 'url thumbnails' });
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'profile_update',
+            description: 'User updated profile (secure)',
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: {
+                oldValues,
+                newValues: { name: user.name, avatar: user.avatar },
+                ipAddress: req.ip,
+                userAgent: req.get('User-Agent'),
+                verifiedByPassword: true
+            }
+        });
+
+        return sendResponse(res, 200, true, 'Profile updated successfully', {
+            user: user.getPublicProfile()
+        });
+    } catch (error) {
+        logger.error('Secure update profile error:', error);
+        return sendResponse(res, 500, false, 'Server error updating profile');
     }
 };
 

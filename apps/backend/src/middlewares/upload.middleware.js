@@ -23,7 +23,10 @@ const createUploadMiddleware = (category = 'general', multiple = false, maxCount
     
     const uploadHandler = multiple 
       ? upload.array('files', maxCount)
-      : upload.single('file');
+      : upload.fields([
+          { name: 'file', maxCount: 1 },
+          { name: 'avatar', maxCount: 1 }
+        ]);
     
     uploadHandler(req, res, (error) => {
       if (error) {
@@ -67,6 +70,27 @@ const createUploadMiddleware = (category = 'general', multiple = false, maxCount
           message: 'Upload failed',
           error: error.message
         });
+      }
+      
+      // Normalize single-file uploads: accept either 'file' or 'avatar' and expose as req.file
+      if (!multiple) {
+        // If multer didn't set req.file (because we used fields), map from req.files
+        if (!req.file && req.files && !Array.isArray(req.files)) {
+          const picked = [];
+          if (Array.isArray(req.files.file) && req.files.file[0]) picked.push(req.files.file[0]);
+          if (Array.isArray(req.files.avatar) && req.files.avatar[0]) picked.push(req.files.avatar[0]);
+          if (picked.length > 1) {
+            return res.status(400).json({
+              success: false,
+              message: 'Provide only one file (either "file" or "avatar")'
+            });
+          }
+          if (picked.length === 1) {
+            req.file = picked[0];
+          }
+          // Clear object-form to avoid confusion downstream; processUploadedFiles will use req.file
+          delete req.files;
+        }
       }
       
       // Check if files were uploaded (only if not optional)

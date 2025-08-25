@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { AuthState, LoginCredentials, RegisterData, User } from '../../types/auth.types';
-import { AuthService } from '../../services/authService';
+import { AuthService, AuthControllerClient } from '../../services/authService';
 import { getDeviceId } from '../../utils';
 
 const serializeUser = (userData: any): User => {
@@ -206,6 +206,65 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
+// Update profile (JSON)
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (payload: { name?: string; avatar?: string; preferences?: any; metadata?: any }, { rejectWithValue }) => {
+    try {
+      const resp = await AuthControllerClient.updateProfile(payload);
+      const u = (resp as any)?.data?.user ?? (resp as any)?.data ?? (resp as any)?.user;
+      return serializeUser(u);
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'Update profile failed';
+      return rejectWithValue(msg);
+    }
+  }
+);
+
+// Secure profile update (multipart)
+export const updateProfileSecure = createAsyncThunk(
+  'auth/updateProfileSecure',
+  async (formData: FormData, { rejectWithValue }) => {
+    try {
+      const resp = await AuthControllerClient.updateProfileSecure(formData);
+      const u = (resp as any)?.data?.user ?? (resp as any)?.data ?? (resp as any)?.user;
+      return serializeUser(u);
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'Secure update failed';
+      return rejectWithValue(msg);
+    }
+  }
+);
+
+// Change password
+export const changePassword = createAsyncThunk(
+  'auth/changePassword',
+  async (payload: { currentPassword: string; newPassword: string }, { rejectWithValue }) => {
+    try {
+      const resp = await AuthControllerClient.changePassword(payload.currentPassword, payload.newPassword);
+      return resp;
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'Change password failed';
+      return rejectWithValue(msg);
+    }
+  }
+);
+
+// Update preferences
+export const updatePreferences = createAsyncThunk(
+  'auth/updatePreferences',
+  async (payload: { section: string; updates: any }, { rejectWithValue }) => {
+    try {
+      const resp = await AuthControllerClient.updatePreferences(payload.section, payload.updates);
+      const newPrefs = (resp as any)?.data?.preferences ?? (resp as any)?.data;
+      return newPrefs;
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'Update preferences failed';
+      return rejectWithValue(msg);
+    }
+  }
+);
+
 const initialState: AuthState = {
   user: null,
   token: null,
@@ -344,6 +403,51 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(testConnection.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+      // Profile updates
+      .addCase(updateProfile.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        if (state.user && action.payload) {
+          // Merge updated fields into existing user slice
+          state.user.user = { ...state.user.user, ...(action.payload as any).user };
+          state.user.preferences = { ...state.user.preferences, ...(action.payload as any).preferences };
+          state.user.security = { ...state.user.security, ...(action.payload as any).security };
+        } else if (action.payload) {
+          state.user = action.payload as any;
+        }
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+      .addCase(updateProfileSecure.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(updateProfileSecure.fulfilled, (state, action) => {
+        if (state.user && action.payload) {
+          state.user.user = { ...state.user.user, ...(action.payload as any).user };
+          state.user.preferences = { ...state.user.preferences, ...(action.payload as any).preferences };
+          state.user.security = { ...state.user.security, ...(action.payload as any).security };
+        } else if (action.payload) {
+          state.user = action.payload as any;
+        }
+      })
+      .addCase(updateProfileSecure.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+      // Preferences
+      .addCase(updatePreferences.fulfilled, (state, action) => {
+        if (state.user && action.payload) {
+          state.user.preferences = { ...state.user.preferences, ...(action.payload as any) };
+        }
+      })
+      .addCase(updatePreferences.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+      // Change password
+      .addCase(changePassword.rejected, (state, action) => {
         state.error = action.payload as string;
       });
   },
