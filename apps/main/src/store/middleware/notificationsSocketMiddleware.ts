@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { env } from '../../config/env';
 import { addNotification, fetchNotifications } from '../slices/notificationSlice';
 import { logoutUser } from '../slices/authSlice';
+import { addActivity } from '../slices/activitySlice';
 
 export const notificationsSocketMiddleware: Middleware = (store) => {
   let socket: Socket | null = null;
@@ -38,6 +39,35 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         title: notification?.title,
       });
       store.dispatch(addNotification(notification));
+    });
+
+    // Real-time activities
+    socket.on('activity:new', ({ activity }) => {
+      try {
+        console.log('📝 [notificationsSocketMiddleware] activity:new', {
+          id: activity?._id,
+          action: activity?.action,
+          desc: activity?.description?.slice?.(0, 80)
+        });
+        // Backend sends a full activity with _id/timestamps; our reducer expects a partial.
+        // Dispatching as-is works because reducer will wrap, but to avoid duplication we pass the core fields.
+        store.dispatch(addActivity({
+          user: activity.user,
+          action: activity.action,
+          description: activity.description,
+          entity: activity.entity,
+          relatedEntities: activity.relatedEntities,
+          metadata: activity.metadata,
+          workspace: activity.workspace,
+          project: activity.project,
+          space: activity.space,
+          board: activity.board,
+          severity: activity.severity,
+          isSuccessful: activity.isSuccessful,
+        } as any));
+      } catch (e) {
+        console.warn('⚠️ [notificationsSocketMiddleware] failed to process activity:new', e);
+      }
     });
 
     socket.on('notifications:unreadCount', () => {

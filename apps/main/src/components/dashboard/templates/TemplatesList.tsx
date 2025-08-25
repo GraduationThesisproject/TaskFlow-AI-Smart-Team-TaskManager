@@ -51,9 +51,7 @@ const TemplatesList: React.FC = () => {
       userLiked: Array.isArray((t as any)?.likedBy) && (t as any).likedBy.some((u: any) => String(u) === String((user as any)?.user?._id || (user as any)?.user?.id)),
     }));
     setTemplates(mapped);
-    // Debug: inspect where author names are coming from
-    console.log('[TemplatesList] Auth user object:', user);
-    console.log('[TemplatesList] Mapped authors:', mapped.map(m => m.author));
+    
   }, [storeItems, user]);
 
   const categories = useMemo(() => {

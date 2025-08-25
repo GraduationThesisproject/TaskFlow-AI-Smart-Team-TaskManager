@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from './utils';
 
@@ -97,7 +98,8 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  // Render in a portal to avoid stacking/overflow issues from ancestors
+  const content = (
     <div
       className={cn(modalOverlayVariants({ animation: "fade" }), overlayClassName)}
       onClick={closeOnOverlayClick ? onClose : undefined}
@@ -154,6 +156,9 @@ export const Modal: React.FC<ModalProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(content, document.body);
 };
 
 // Modal sub-components for better composition
