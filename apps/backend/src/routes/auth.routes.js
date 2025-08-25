@@ -144,5 +144,11 @@ router.get('/activity',
     authMiddleware,
     authController.getActivityLog
 );
-
+// OAuth Routes (register only if handlers exist)
+if (typeof authController.googleLogin === 'function') {
+router.get('/google', authController.googleLogin);
+}
+if (typeof authController.googleCallback === 'function') {
+router.get('/google/callback', authController.googleCallback);
+}
 module.exports = router;
