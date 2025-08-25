@@ -1,0 +1,159 @@
+[1mdiff --git a/packages/ui/src/Switch.tsx b/packages/ui/src/Switch.tsx[m
+[1mindex 90fc5b1..082d548 100644[m
+[1m--- a/packages/ui/src/Switch.tsx[m
+[1m+++ b/packages/ui/src/Switch.tsx[m
+[36m@@ -1,48 +1,111 @@[m
+ import React from 'react';[m
+[32m+[m[32mimport { cva, type VariantProps } from 'class-variance-authority';[m
+ import { cn } from './utils';[m
+ [m
+[31m-interface SwitchProps {[m
+[31m-  checked?: boolean;[m
+[31m-  onCheckedChange?: (checked: boolean) => void;[m
+[31m-  disabled?: boolean;[m
+[31m-  className?: string;[m
+[31m-  id?: string;[m
+[32m+[m[32mconst trackVariants = cva([m
+[32m+[m	[32m"relative inline-flex items-center rounded-full transition-colors duration-200 shadow-inner cursor-pointer select-none peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring",[m
+[32m+[m	[32m{[m
+[32m+[m		[32mvariants: {[m
+[32m+[m			[32msize: {[m
+[32m+[m				[32msm: "h-5 w-9",[m
+[32m+[m				[32mmd: "h-6 w-11",[m
+[32m+[m				[32mlg: "h-7 w-14",[m
+[32m+[m			[32m},[m
+[32m+[m			[32mvariant: {[m
+[32m+[m				[32mdefault: "bg-neutral-700",[m
+[32m+[m				[32maccent: "bg-neutral-700",[m
+[32m+[m				[32mneon: "bg-neutral-700",[m
+[32m+[m			[32m},[m
+[32m+[m		[32m},[m
+[32m+[m		[32mdefaultVariants: {[m
+[32m+[m			[32msize: 'md',[m
+[32m+[m			[32mvariant: 'default',[m
+[32m+[m		[32m},[m
+[32m+[m	[32m}[m
+[32m+[m[32m);[m
+[32m+[m
+[32m+[m[32mconst knobVariants = cva([m
+[32m+[m	[32m"absolute rounded-full bg-white shadow-md transition-transform duration-200",[m
+[32m+[m	[32m{[m
+[32m+[m		[32mvariants: {[m
+[32m+[m			[32msize: {[m
+[32m+[m				[32msm: "h-4 w-4 left-0.5 top-0.5",[m
+[32m+[m				[32mmd: "h-5 w-5 left-0.5 top-0.5",[m
+[32m+[m				[32mlg: "h-6 w-6 left-0.5 top-0.5",[m
+[32m+[m			[32m},[m
+[32m+[m		[32m},[m
+[32m+[m		[32mdefaultVariants: {[m
+[32m+[m			[32msize: 'md',[m
+[32m+[m		[32m},[m
+[32m+[m	[32m}[m
+[32m+[m[32m);[m
+[32m+[m
+[32m+[m[32mexport interface SwitchProps[m
+[32m+[m	[32mextends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,[m
+[32m+[m		[32mVariantProps<typeof trackVariants> {[m
+[32m+[m	[32mlabel?: string;[m
+[32m+[m	[32mlabelPosition?: 'left' | 'right';[m
+ }[m
+ [m
+[31m-export const Switch: React.FC<SwitchProps> = ({[m
+[31m-  checked = false,[m
+[31m-  onCheckedChange,[m
+[31m-  disabled = false,[m
+[31m-  className,[m
+[31m-  id[m
+[31m-}) => {[m
+[31m-  const handleToggle = () => {[m
+[31m-    if (!disabled && onCheckedChange) {[m
+[31m-      onCheckedChange(!checked);[m
+[31m-    }[m
+[31m-  };[m
+[31m-[m
+[31m-  return ([m
+[31m-    <button[m
+[31m-      type="button"[m
+[31m-      role="switch"[m
+[31m-      aria-checked={checked}[m
+[31m-      aria-disabled={disabled}[m
+[31m-      disabled={disabled}[m
+[31m-      id={id}[m
+[31m-      onClick={handleToggle}[m
+[31m-      className={cn([m
+[31m-        'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50',[m
+[31m-        checked ? 'bg-primary' : 'bg-input',[m
+[31m-        className[m
+[31m-      )}[m
+[31m-    >[m
+[31m-      <span[m
+[31m-        className={cn([m
+[31m-          'pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform',[m
+[31m-          checked ? 'translate-x-5' : 'translate-x-0'[m
+[31m-        )}[m
+[31m-      />[m
+[31m-    </button>[m
+[31m-  );[m
+[31m-};[m
+[32m+[m[32mconst Switch = React.forwardRef<HTMLInputElement, SwitchProps>([m
+[32m+[m	[32m([m
+[32m+[m		[32m{[m
+[32m+[m			[32mclassName,[m
+[32m+[m			[32msize,[m
+[32m+[m			[32mvariant,[m
+[32m+[m			[32mid,[m
+[32m+[m			[32mlabel,[m
+[32m+[m			[32mlabelPosition = 'right',[m
+[32m+[m			[32m...props[m
+[32m+[m		[32m},[m
+[32m+[m		[32mref[m
+[32m+[m	[32m) => {[m
+[32m+[m		[32mconst switchId = id || `switch-${Math.random().toString(36).slice(2, 9)}`;[m
+[32m+[m
+[32m+[m		[32mreturn ([m
+[32m+[m			[32m<label htmlFor={switchId} className={cn("inline-flex items-center gap-3", className)}>[m
+[32m+[m				[32m{label && labelPosition === 'left' && ([m
+[32m+[m					[32m<span className="text-sm font-medium select-none">{label}</span>[m
+[32m+[m				[32m)}[m
+[32m+[m				[32m<input[m
+[32m+[m					[32mid={switchId}[m
+[32m+[m					[32mtype="checkbox"[m
+[32m+[m					[32mref={ref}[m
+[32m+[m					[32mclassName="sr-only peer"[m
+[32m+[m					[32mrole="switch"[m
+[32m+[m					[32maria-checked={props.checked}[m
+[32m+[m					[32m{...props}[m
+[32m+[m				[32m/>[m
+[32m+[m				[32m<div[m
+[32m+[m					[32mclassName={cn([m
+[32m+[m						[32mtrackVariants({ size, variant }),[m
+[32m+[m						[32mprops.checked && ([m
+[32m+[m							[32mvariant === 'neon'[m
+[32m+[m								[32m? 'bg-gradient-to-r from-[#00EBCB] to-[#007ADF] shadow-[0_0_18px_4px_rgba(0,122,223,0.55)]'[m
+[32m+[m							[32m: variant === 'accent'[m
+[32m+[m								[32m? 'bg-accent shadow-[0_0_14px_3px_rgba(0,232,198,0.45)]'[m
+[32m+[m								[32m: 'bg-primary shadow-[0_0_14px_3px_rgba(0,122,223,0.45)]'[m
+[32m+[m						[32m)[m
+[32m+[m					[32m)}[m
+[32m+[m				[32m>[m
+[32m+[m					[32m<span[m
+[32m+[m						[32mclassName={cn([m
+[32m+[m							[32mknobVariants({ size }),[m
+[32m+[m							[32mprops.checked && (size === 'sm' ? 'translate-x-4' : size === 'lg' ? 'translate-x-7' : 'translate-x-5'),[m
+[32m+[m							[32mprops.checked && (variant === 'neon' ? 'shadow-[0_0_12px_2px_rgba(0,122,223,0.6)]' : '')[m
+[32m+[m						[32m)}[m
+[32m+[m					[32m/>[m
+[32m+[m				[32m</div>[m
+[32m+[m				[32m{label && labelPosition === 'right' && ([m
+[32m+[m					[32m<span className="text-sm font-medium select-none">{label}</span>[m
+[32m+[m				[32m)}[m
+[32m+[m			[32m</label>[m
+[32m+[m		[32m);[m
+[32m+[m	[32m}[m
+[32m+[m[32m);[m
+[32m+[m
+[32m+[m[32mSwitch.displayName = 'Switch';[m
+[32m+[m
+[32m+[m[32mexport { Switch };[m
+[41m+[m
+[41m+[m

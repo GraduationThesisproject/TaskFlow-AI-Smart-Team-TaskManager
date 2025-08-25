@@ -2,6 +2,7 @@ const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
+const config = require('../config/env');
 
 class NotificationService {
     
@@ -357,7 +358,7 @@ class NotificationService {
     }
 
     static getActionUrl(notification) {
-        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const baseUrl = process.env.FRONTEND_URL || config.FRONTEND_URL;
         
         if (notification.relatedEntity) {
             switch (notification.relatedEntity.entityType) {

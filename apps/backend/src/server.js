@@ -5,19 +5,14 @@ const http = require('http');
 const socketIo = require('socket.io');
 
 const app = require('./app');
-//for auth i use those packages from app.js
-/*import express from "express";
- import cors from "cors";
-import dotenv from "dotenv";
-*/
-//for authentication i use those packages from app.js
 const connectDB = require('./config/db');
+const config = require('./config/env');
 //for authentication i use (mongoose ) from connectDB/db.js
 
 
 
 const logger = require('./config/logger');
-const { initializeStorage } = require('./config/multer');
+const { ensureDirectoriesExist } = require('./config/multer');
 const taskSocket = require('./sockets/task.socket');
 const notificationSocket = require('./sockets/notification.socket');
 const workspaceSocket = require('./sockets/workspace.socket');
@@ -28,18 +23,47 @@ const PORT = process.env.PORT || 3001;
 // Connect to database
 connectDB();
 
-// Initialize file storage
-initializeStorage();
+// Initialize file storage directories
+ensureDirectoriesExist();
 
 // Create HTTP server
 const server = http.createServer(app);
 
-// Setup Socket.IO
+// Setup Socket.IO with CORS for WebSocket requests only
+const socketCorsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // Parse CORS_ORIGIN from environment or use defaults
+        let allowedOrigins;
+        if (process.env.CORS_ORIGIN) {
+            allowedOrigins = process.env.CORS_ORIGIN.split(',').map(origin => origin.trim());
+        } else {
+            allowedOrigins = config.CORS_ORIGIN;
+        }
+        
+        console.log('Socket.IO - Allowed CORS origins:', allowedOrigins);
+        console.log('Socket.IO - Request origin:', origin);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log('Socket.IO - CORS blocked origin:', origin);
+            callback(new Error(`Origin ${origin} not allowed by Socket.IO CORS. Allowed: ${allowedOrigins.join(', ')}`));
+        }
+    },
+    methods: ['GET', 'POST'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Socket-ID']
+};
+
+console.log('Socket.IO CORS Configuration:', socketCorsOptions);
+console.log('Config.CORS_ORIGIN:', config.CORS_ORIGIN);
+console.log('Process.env.CORS_ORIGIN:', process.env.CORS_ORIGIN);
+
 const io = socketIo(server, {
-    cors: {
-        origin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'http://localhost:5174'],
-        methods: ['GET', 'POST']
-    }
+    cors: socketCorsOptions
 });
 
 // Make io available globally for notifications
