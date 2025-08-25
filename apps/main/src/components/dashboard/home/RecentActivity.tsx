@@ -6,26 +6,31 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useActivity } from '../../../hooks/useActivity';
 
 const ActivityItemComponent: React.FC<{ activity: ActivityItem }> = ({ activity }) => {
-  // Prefer actor (user) name; fallback to auth user, then generic
+  // Always show the authenticated user's display name (session user)
   const { user: authUser } = useAuth();
-  const displayName = typeof activity.user === 'object'
-    ? (activity.user.name || activity.user.email || 'User')
-    : (authUser?.user?.name || authUser?.user?.email || 'User');
+  const displayName = (authUser as any)?.displayName || authUser?.user?.name || authUser?.user?.email || 'User';
 
   const initials = displayName
     .split(' ')
-    .map(s => s[0])
+    .map((s: string) => s[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
 
-  const avatarUrl = typeof activity.user === 'object' && activity.user.avatar ? activity.user.avatar : undefined;
+  // Use activity avatar if available; otherwise rely on fallback initials
+  const avatarUrl = (typeof activity.user === 'object' && activity.user.avatar) ? activity.user.avatar : undefined;
 
-  // Defensive sanitize/trim description
+  // Defensive sanitize/trim description, then normalize wording
   const sanitizedDescription = String(activity.description || '')
-    .replace(/<[^>]*>/g, '')
+    .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+
+  // Remove leading 'User ', strip emails after 'logged in:', and normalize phrasing
+  const displayDescription = sanitizedDescription
+    .replace(/^user\s+/i, '')
+    .replace(/^logged in:.*$/i, 'Logged in')
+    .replace(/^logged out.*$/i, 'Logged out');
 
   return (
     <div className="flex items-start gap-3 p-2 hover:bg-muted/10 rounded-md transition-colors">
@@ -43,7 +48,7 @@ const ActivityItemComponent: React.FC<{ activity: ActivityItem }> = ({ activity 
           {displayName}
         </Typography>
         <Typography variant="body-small" className="text-muted-foreground break-words">
-          {sanitizedDescription}
+          {displayDescription}
         </Typography>
         <Typography variant="caption" className="text-muted-foreground mt-0.5 block">
           {new Date(activity.createdAt).toLocaleString()}

@@ -194,7 +194,7 @@ export interface Template {
   };
   views: number;
   likes: number;
-  downloads: number;
+  downloads?: number;
   tags: string[];
   createdAt: string;
   updatedAt: string;
@@ -207,7 +207,7 @@ export interface TemplateCardItem {
   author: { name: string; avatar?: string };
   views: number;
   likes: number;
-  downloads: number;
+  downloads?: number;
   tags: string[];
   createdAt: string;
   updatedAt: string;
