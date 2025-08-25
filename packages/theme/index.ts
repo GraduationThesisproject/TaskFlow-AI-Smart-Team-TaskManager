@@ -84,11 +84,19 @@ export const applyTheme = (theme: 'light' | 'dark', userPrimaryColor?: string | 
   // Apply user primary color if provided
   if (userPrimaryColor) {
     try {
-      const color = parseColor(userPrimaryColor);
-      if (color) {
-        themeVars['--primary'] = color;
-        themeVars['--ring'] = color;
-        themeVars['--gradient-primary'] = color;
+      const hsl = toHslString(userPrimaryColor);
+      if (hsl) {
+        // Drive both primary and accent so buttons, rings, and glows match
+        themeVars['--primary'] = hsl;
+        themeVars['--accent'] = hsl;
+        themeVars['--ring'] = hsl;
+        themeVars['--gradient-primary'] = hsl;
+        themeVars['--gradient-secondary'] = hsl;
+        themeVars['--gradient-accent'] = hsl;
+
+        const fg = hslForegroundFor(hsl);
+        themeVars['--primary-foreground'] = fg;
+        themeVars['--accent-foreground'] = fg;
       }
     } catch (error) {
       console.warn('Invalid user primary color:', userPrimaryColor);
@@ -104,35 +112,81 @@ export const applyTheme = (theme: 'light' | 'dark', userPrimaryColor?: string | 
   applyScrollbarStyles();
 };
 
-const parseColor = (color: string): string | null => {
-  // Handle hex colors
+// Convert hex/rgb/hsl strings to an HSL space-separated string: "h s% l%"
+const toHslString = (color: string): string | null => {
+  if (!color) return null;
+
+  // Already HSL
+  if (color.startsWith('hsl(') && color.endsWith(')')) {
+    return color.slice(4, -1).trim();
+  }
+
+  // Hex
   if (color.startsWith('#')) {
     const hex = color.slice(1);
+    let r: number, g: number, b: number;
     if (hex.length === 3) {
-      const r = parseInt(hex[0] + hex[0], 16);
-      const g = parseInt(hex[1] + hex[1], 16);
-      const b = parseInt(hex[2] + hex[2], 16);
-      return `${r} ${g} ${b}`;
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
     } else if (hex.length === 6) {
-      const r = parseInt(hex.slice(0, 2), 16);
-      const g = parseInt(hex.slice(2, 4), 16);
-      const b = parseInt(hex.slice(4, 6), 16);
-      return `${r} ${g} ${b}`;
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+    } else {
+      return null;
     }
+    return rgbToHslString(r, g, b);
   }
-  
-  // Handle HSL colors
-  if (color.startsWith('hsl(') && color.endsWith(')')) {
-    return color.slice(4, -1);
-  }
-  
-  // Handle RGB colors
+
+  // rgb()
   if (color.startsWith('rgb(') && color.endsWith(')')) {
     const values = color.slice(4, -1).split(',').map(v => v.trim());
-    return values.join(' ');
+    if (values.length < 3) return null;
+    const r = parseInt(values[0], 10);
+    const g = parseInt(values[1], 10);
+    const b = parseInt(values[2], 10);
+    return rgbToHslString(r, g, b);
   }
-  
+
   return null;
+};
+
+const rgbToHslString = (r: number, g: number, b: number): string => {
+  const rn = r / 255;
+  const gn = g / 255;
+  const bn = b / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  let h = 0, s = 0, l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case rn: h = (gn - bn) / d + (gn < bn ? 6 : 0); break;
+      case gn: h = (bn - rn) / d + 2; break;
+      case bn: h = (rn - gn) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  const H = Math.round(h * 360);
+  const S = Math.round(s * 100);
+  const L = Math.round(l * 100);
+  return `${H} ${S}% ${L}%`;
+};
+
+// Compute a contrasting foreground (white or near-black) for the given HSL "h s% l%"
+const hslForegroundFor = (hsl: string): string => {
+  try {
+    const parts = hsl.split(' ').map(p => p.replace('%', ''));
+    const l = parseFloat(parts[2]);
+    // If lightness is high, use dark foreground; else use white
+    return l > 60 ? '222.2 84% 4.9%' : '0 0% 100%';
+  } catch {
+    return '0 0% 100%';
+  }
 };
 
 const applyScrollbarStyles = () => {
