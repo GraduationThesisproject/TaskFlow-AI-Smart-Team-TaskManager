@@ -16,6 +16,7 @@ import {
   selectTemplateFilters,
   incrementTemplateViews,
   toggleTemplateLike,
+  listAllTemplates,
 } from '../store/slices/templatesSlice';
 import { selectIsAuthenticated } from '../store/slices/authSlice';
 import type { TemplatesFilters, TemplateItem } from '../types/dash.types';
@@ -36,6 +37,11 @@ export const useTemplates = (): UseTemplatesReturn => {
   const load = useCallback((f?: TemplatesFilters) => {
     const params = f ?? filters;
     dispatch(listTemplates(params) as any);
+  }, [dispatch, filters]);
+
+  const loadAll = useCallback((f?: TemplatesFilters) => {
+    const params = f ?? filters;
+    dispatch(listAllTemplates(params) as any);
   }, [dispatch, filters]);
 
   const fetchOne = useCallback((id: string) => {
@@ -68,7 +74,7 @@ export const useTemplates = (): UseTemplatesReturn => {
       return;
     }
     (dispatch(incrementTemplateViews(id) as any).unwrap() as Promise<any>)
-      .catch((err: any) => {
+      .catch(() => {
         // Swallow 404s to avoid noisy errors when item no longer exists
       });
   }, [dispatch]);
@@ -78,7 +84,7 @@ export const useTemplates = (): UseTemplatesReturn => {
       return;
     }
     // Ensure the ID exists in current store to avoid 404 from stale items
-    const exists = Array.isArray(items) && items.some((t) => (t as any)?._id === id);
+    const exists = Array.isArray(items) && items.some((t) => (t as any)?.id === id);
     if (!exists) {
       dispatch(listTemplates(filters) as any);
       return;
@@ -102,6 +108,7 @@ export const useTemplates = (): UseTemplatesReturn => {
     filters,
 
     load,
+    loadAll,
     fetchOne,
     create,
     update,
@@ -110,5 +117,5 @@ export const useTemplates = (): UseTemplatesReturn => {
     clearSelection,
     incrementViews,
     toggleLike,
-  }), [items, selected, loading, error, filters, load, fetchOne, create, update, remove, updateFilters, clearSelection, incrementViews, toggleLike]);
+  }), [items, selected, loading, error, filters, load, loadAll, fetchOne, create, update, remove, updateFilters, clearSelection, incrementViews, toggleLike]);
 };

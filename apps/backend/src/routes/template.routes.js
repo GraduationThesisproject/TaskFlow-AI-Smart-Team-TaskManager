@@ -46,7 +46,8 @@ const updateTemplateSchema = {
   tags: { array: true, arrayOf: 'string', maxItems: 20 },
   isPublic: { boolean: true },
   status: { enum: ['draft', 'active', 'archived', 'deprecated'] },
-  accessControl: { object: true }
+  accessControl: { object: true },
+  op: { enum: ['increment_views', 'toggle_like'] }
 };
 
 // Custom validators for nested fields
@@ -88,7 +89,8 @@ const validateAccessControl = (req, res, next) => {
 router.get('/', validateMiddleware.validateQuery(listQuerySchema), ctrl.list);
 router.get('/:id', validateMiddleware.validateParams(idParamSchema), ctrl.getById);
 router.post('/', auth, validateMiddleware(createTemplateSchema), validateTagsLength, validateAccessControl, ctrl.create);
-router.put('/:id', auth, validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update);
+router.patch('/:id', auth, validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update);
+router.put('/:id', auth, validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update); // backward compatibility
 router.delete('/:id', auth, validateMiddleware.validateParams(idParamSchema), ctrl.remove);
 
 // Engagement

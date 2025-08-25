@@ -94,6 +94,9 @@ export interface WorkspaceState {
   error: string | null;
 }
 
+// Export a reusable role type for permissions and state slices
+export type WorkspaceRole = WorkspaceMember['role'];
+
 export interface UpcomingDeadlinesProps {
   upcomingDeadlines: Array<{ _id: string; title: string; dueDate: Date; priority: string }>;
 }
