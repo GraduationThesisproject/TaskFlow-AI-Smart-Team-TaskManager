@@ -3,7 +3,13 @@ import { Input } from './Input';
 import { Typography } from './Typography';
 import { Button } from './Button';
 import { cn } from './utils';
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { 
+  EyeIcon, 
+  EyeSlashIcon, 
+  EnvelopeIcon, 
+  LockClosedIcon, 
+  UserIcon 
+} from '@heroicons/react/24/outline';
 
 interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -22,11 +28,11 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     const getIcon = () => {
       switch (icon) {
         case 'email':
-          return <Mail className="w-5 h-5 text-muted-foreground" />;
+          return <EnvelopeIcon className="w-5 h-5 text-muted-foreground" />;
         case 'password':
-          return <Lock className="w-5 h-5 text-muted-foreground" />;
+          return <LockClosedIcon className="w-5 h-5 text-muted-foreground" />;
         case 'user':
-          return <User className="w-5 h-5 text-muted-foreground" />;
+          return <UserIcon className="w-5 h-5 text-muted-foreground" />;
         default:
           return null;
       }
@@ -82,9 +88,9 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? (
-                <EyeOff className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
+                <EyeSlashIcon className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
               ) : (
-                <Eye className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
+                <EyeIcon className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
               )}
             </Button>
           )}
