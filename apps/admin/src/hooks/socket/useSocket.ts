@@ -1,6 +1,5 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { Socket, io } from 'socket.io-client';
-import { SocketMessage, SocketEvent } from '../../types';
 
 interface UseSocketOptions {
   url: string;
@@ -15,13 +14,28 @@ export function useSocket(options: UseSocketOptions) {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
+  // Memoize options to prevent unnecessary re-renders
+  const memoizedOptions = useMemo(() => ({
+    url: options.url,
+    autoConnect: options.autoConnect ?? true,
+    auth: options.auth,
+  }), [options.url, options.autoConnect, options.auth?.token]);
+
   const connect = useCallback(() => {
     if (socketRef.current?.connected) return;
 
     setIsConnecting(true);
-    socketRef.current = io(options.url, {
-      autoConnect: options.autoConnect ?? true,
-      auth: options.auth,
+    socketRef.current = io(memoizedOptions.url, {
+      autoConnect: memoizedOptions.autoConnect,
+      auth: memoizedOptions.auth,
+      // CORS and connection options
+      withCredentials: true,
+      transports: ['websocket', 'polling'],
+      upgrade: true,
+      rememberUpgrade: true,
+      // Error handling
+      timeout: 20000,
+      forceNew: true,
     });
 
     socketRef.current.on('connect', () => {
@@ -32,13 +46,26 @@ export function useSocket(options: UseSocketOptions) {
     socketRef.current.on('disconnect', () => {
       setIsConnected(false);
       setIsConnecting(false);
+      console.log('Socket disconnected');
     });
-  }, [options.url, options.autoConnect, options.auth]);
+
+    socketRef.current.on('connect_error', (error) => {
+      setIsConnected(false);
+      setIsConnecting(false);
+      console.error('Socket connection error:', error);
+    });
+
+    socketRef.current.on('error', (error) => {
+      console.error('Socket error:', error);
+    });
+  }, [memoizedOptions]);
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
       socketRef.current.disconnect();
       socketRef.current = null;
+      setIsConnected(false);
+      setIsConnecting(false);
     }
   }, []);
 
@@ -61,14 +88,14 @@ export function useSocket(options: UseSocketOptions) {
   }, []);
 
   useEffect(() => {
-    if (options.autoConnect) {
+    if (memoizedOptions.autoConnect) {
       connect();
     }
 
     return () => {
       disconnect();
     };
-  }, [connect, disconnect, options.autoConnect]);
+  }, [memoizedOptions.autoConnect, connect, disconnect]);
 
   return {
     socket: socketRef.current,
