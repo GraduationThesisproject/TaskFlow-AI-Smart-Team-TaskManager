@@ -6,6 +6,7 @@ const WorkspaceService = require('../services/workspace.service');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
+const mongoose = require('mongoose');
 
 // Get all workspaces for user
 exports.getAllWorkspaces = async (req, res) => {

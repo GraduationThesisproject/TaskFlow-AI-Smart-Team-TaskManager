@@ -20,7 +20,8 @@ const TemplatesList: React.FC = () => {
 
   // Load templates on mount
   useEffect(() => {
-    load();
+    // Show public templates from all users
+    load({ isPublic: true, status: 'active' });
   }, [load]);
 
   // Map store model -> UI card model

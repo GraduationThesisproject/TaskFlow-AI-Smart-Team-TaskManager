@@ -67,8 +67,8 @@ const handleError = (next, error) => {
 
 exports.list = async (req, res, next) => {
   try {
-    const { type, category, q, isPublic, status = 'active', limit = 50, workspaceId } = req.query;
-    const { userId, roles } = await getUserAndRoles(req);
+    const { type, category, q, isPublic, status = 'active', limit = 50, workspaceId, scope } = req.query;
+    const { userId, roles, isAdmin } = await getUserAndRoles(req);
 
     // Build query
     const query = {};
@@ -77,15 +77,18 @@ exports.list = async (req, res, next) => {
     if (status) query.status = status;
     if (isPublic !== undefined) query.isPublic = isPublic === 'true';
 
-    // Access control: only return items user can access
-    const accessOr = [
-      { isPublic: true },
-      { createdBy: userId },
-      { 'accessControl.allowedUsers': userId }
-    ];
-    if (workspaceId) accessOr.push({ 'accessControl.allowedWorkspaces': workspaceId });
-    if (roles?.systemRole) accessOr.push({ 'accessControl.allowedRoles': roles.systemRole });
-    query.$or = accessOr;
+    // Access control: only return items user can access, unless admin explicitly requests full scope
+    const adminWantsAll = isAdmin && scope === 'all';
+    if (!adminWantsAll) {
+      const accessOr = [
+        { isPublic: true },
+        { createdBy: userId },
+        { 'accessControl.allowedUsers': userId }
+      ];
+      if (workspaceId) accessOr.push({ 'accessControl.allowedWorkspaces': workspaceId });
+      if (roles?.systemRole) accessOr.push({ 'accessControl.allowedRoles': roles.systemRole });
+      query.$or = accessOr;
+    }
 
     let cursor;
     if (q) {
