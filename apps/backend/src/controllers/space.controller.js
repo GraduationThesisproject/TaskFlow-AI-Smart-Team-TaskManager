@@ -11,9 +11,8 @@ exports.getSpaces = async (req, res) => {
         const { workspaceId } = req.params;
         const userId = req.user.id;
 
-        // Check workspace access
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
+        // SECURITY FIX: Use verified roles from auth middleware
+        const userRoles = req.user.roles;
         
         if (!userRoles.hasWorkspaceRole(workspaceId)) {
             return sendResponse(res, 403, false, 'Access denied to workspace');
@@ -55,9 +54,8 @@ exports.getSpace = async (req, res) => {
         const { id: spaceId } = req.params;
         const userId = req.user.id;
 
-        // Check access
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
+        // SECURITY FIX: Use verified roles from auth middleware
+        const userRoles = req.user.roles;
         
         if (!userRoles.hasSpacePermission(spaceId, 'canViewBoards')) {
             return sendResponse(res, 403, false, 'Access denied to this space');
@@ -252,13 +250,38 @@ exports.addMember = async (req, res) => {
             return sendResponse(res, 404, false, 'Space not found');
         }
 
-        // Check permissions using both role model and space membership
-        const user = await User.findById(currentUserId);
-        const userRoles = await user.getRoles();
+        // SECURITY FIX: Use verified roles from auth middleware
+        const userRoles = req.user.roles;
         const hasRolePermission = userRoles.hasSpacePermission(spaceId, 'canManageMembers');
         const hasMemberPermission = space.hasPermission(currentUserId, 'canManageMembers');
         if (!hasRolePermission && !hasMemberPermission) {
             return sendResponse(res, 403, false, 'Insufficient permissions to manage members');
+        }
+
+        // SECURITY FIX: Validate role assignment permissions
+        // Get current user's space role to determine what roles they can assign
+        const currentUserSpaceRole = userRoles.spaces.find(s => 
+            s.space.toString() === spaceId
+        );
+
+        if (!currentUserSpaceRole) {
+            return sendResponse(res, 403, false, 'You are not a member of this space');
+        }
+
+        // Role assignment validation based on current user's role
+        const allowedRoles = ['viewer', 'member', 'admin'];
+        if (!allowedRoles.includes(role)) {
+            return sendResponse(res, 400, false, 'Invalid role specified');
+        }
+
+        // Only space admins can assign admin roles
+        if (role === 'admin' && currentUserSpaceRole.role !== 'admin') {
+            return sendResponse(res, 403, false, 'Only space admins can assign admin roles');
+        }
+
+        // Space admins can assign any role, members can only assign viewer/member roles
+        if (currentUserSpaceRole.role === 'member' && role === 'admin') {
+            return sendResponse(res, 403, false, 'Members can only assign viewer or member roles');
         }
 
         // Ensure new member is part of workspace

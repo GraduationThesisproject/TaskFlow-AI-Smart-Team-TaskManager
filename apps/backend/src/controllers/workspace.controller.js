@@ -17,9 +17,8 @@ exports.getAllWorkspaces = async (req, res) => {
             .populate('members.user', 'name email avatar')
             .sort({ updatedAt: -1 });
 
-        // Get user role for each workspace
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
+        // SECURITY FIX: Use verified roles from auth middleware
+        const userRoles = req.user.roles;
 
         const enrichedWorkspaces = workspaces.map(workspace => {
             const userRole = userRoles.workspaces.find(ws => 
@@ -55,13 +54,11 @@ exports.getWorkspace = async (req, res) => {
             .populate('members.user', 'name email avatar')
             .populate('spaces');
 
-        // Get user's role and permissions (optional when unauthenticated)
+        // SECURITY FIX: Use verified roles from auth middleware
         let userRole = null;
         let userPermissions = null;
-        if (userId) {
-            const user = await User.findById(userId);
-            const userRoles = await user.getRoles();
-            const userWorkspaceRole = userRoles.workspaces.find(ws => 
+        if (userId && req.user.roles) {
+            const userWorkspaceRole = req.user.roles.workspaces.find(ws => 
                 ws.workspace.toString() === workspaceId
             );
             if (userWorkspaceRole) {
@@ -103,9 +100,8 @@ exports.createWorkspace = async (req, res) => {
             }
         });
 
-        // Add owner role to user
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
+        // SECURITY FIX: Use verified roles from auth middleware and add owner role
+        const userRoles = req.user.roles;
         await userRoles.addWorkspaceRole(workspace._id, 'owner');
 
         // Log activity
@@ -140,9 +136,8 @@ exports.updateWorkspace = async (req, res) => {
         const { name, description, settings } = req.body;
         const userId = req.user.id;
 
-        // Check permissions
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
+        // SECURITY FIX: Use verified roles from auth middleware
+        const userRoles = req.user.roles;
         
         const workspaceRole = userRoles.workspaces.find(ws => 
             ws.workspace.toString() === workspaceId
@@ -208,17 +203,36 @@ exports.inviteMember = async (req, res) => {
         const { email, role = 'member', message } = req.body;
         const userId = req.user.id;
 
-        // Check permissions
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
+        // SECURITY FIX: Use verified roles from auth middleware
+        const userRoles = req.user.roles;
         
-        if (!userRoles.hasWorkspaceRole(workspaceId, 'admin')) {
-            return sendResponse(res, 403, false, 'Admin permissions required to invite members');
+        const workspaceRole = userRoles.workspaces.find(ws => 
+            ws.workspace.toString() === workspaceId
+        );
+
+        if (!workspaceRole || !workspaceRole.permissions.canManageMembers) {
+            return sendResponse(res, 403, false, 'Insufficient permissions to invite members');
         }
 
         const workspace = await Workspace.findById(workspaceId);
         if (!workspace) {
             return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // SECURITY FIX: Validate role assignment permissions
+        // Only workspace owners can assign admin roles, admins can only assign member roles
+        if (role === 'admin' && workspaceRole.role !== 'owner') {
+            return sendResponse(res, 403, false, 'Only workspace owners can assign admin roles');
+        }
+
+        if (role === 'owner') {
+            return sendResponse(res, 403, false, 'Cannot assign owner role through invitation');
+        }
+
+        // Validate role is one of the allowed values
+        const allowedRoles = ['member', 'admin'];
+        if (!allowedRoles.includes(role)) {
+            return sendResponse(res, 400, false, 'Invalid role specified');
         }
 
         // Check if user is already a member
@@ -266,7 +280,7 @@ exports.inviteMember = async (req, res) => {
             to: email,
             template: 'workspace-invitation',
             data: {
-                inviterName: user.name,
+                inviterName: req.user.name,
                 workspaceName: workspace.name,
                 workspaceDescription: workspace.description,
                 role,
@@ -300,7 +314,7 @@ exports.inviteMember = async (req, res) => {
         });
     } catch (error) {
         logger.error('Invite member error:', error);
-        sendResponse(res, 500, false, 'Server error sending invitation');
+        sendResponse(res, 500, false, 'Server error inviting member');
     }
 };
 
