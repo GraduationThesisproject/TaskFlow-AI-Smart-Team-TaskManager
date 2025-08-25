@@ -8,7 +8,7 @@ import axiosInstance from '../config/axios';
 import axios from 'axios';
 //the raw axios library, used only in special cases
 import type { ApiResponse } from '../types/task.types';
-import type { LoginCredentials, RegisterData, AuthResponse } from '../types/auth.types';
+import type { LoginCredentials, RegisterData, AuthResponse, OAuthUserData, EmailVerificationData, ResendVerificationData, PasswordResetRequestData, PasswordResetData } from '../types/auth.types';
 // Import TypeScript types from centralized location
 
 // All TypeScript interfaces are now imported from auth.types.ts for better separation of concerns
@@ -180,6 +180,90 @@ Removes stored tokens from browser
       return response.data;
     } catch (error) {
       console.error('Error testing connection:', error);
+      throw error;
+    }
+  }
+
+  // OAuth Login
+  static async oauthLogin(oauthData: OAuthUserData): Promise<ApiResponse<AuthResponse>> {
+    try {
+      const response = await axiosInstance.post('/auth/oauth/login', oauthData);
+      
+      // Store token in localStorage
+      if (response.data.data?.token) {
+        localStorage.setItem('token', response.data.data.token);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error with OAuth login:', error);
+      throw error;
+    }
+  }
+
+  // OAuth Register
+  static async oauthRegister(oauthData: OAuthUserData): Promise<ApiResponse<AuthResponse>> {
+    try {
+      const response = await axiosInstance.post('/auth/oauth/register', oauthData);
+      
+      // Store token in localStorage
+      if (response.data.data?.token) {
+        localStorage.setItem('token', response.data.data.token);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error with OAuth registration:', error);
+      throw error;
+    }
+  }
+
+  // Email Verification
+  static async verifyEmail(verificationData: EmailVerificationData): Promise<ApiResponse<AuthResponse>> {
+    try {
+      const response = await axiosInstance.post('/auth/verify-email', verificationData);
+      
+      // Store token in localStorage if provided
+      if (response.data.data?.token) {
+        localStorage.setItem('token', response.data.data.token);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error verifying email:', error);
+      throw error;
+    }
+  }
+
+  // Resend verification code
+  static async resendVerificationCode(resendData: ResendVerificationData): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await axiosInstance.post('/auth/resend-verification', resendData);
+      return response.data;
+    } catch (error) {
+      console.error('Error resending verification code:', error);
+      throw error;
+    }
+  }
+
+  // Request password reset
+  static async requestPasswordReset(resetData: PasswordResetRequestData): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await axiosInstance.post('/auth/request-password-reset', resetData);
+      return response.data;
+    } catch (error) {
+      console.error('Error requesting password reset:', error);
+      throw error;
+    }
+  }
+
+  // Reset password
+  static async resetPassword(resetData: PasswordResetData): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await axiosInstance.post('/auth/reset-password', resetData);
+      return response.data;
+    } catch (error) {
+      console.error('Error resetting password:', error);
       throw error;
     }
   }
