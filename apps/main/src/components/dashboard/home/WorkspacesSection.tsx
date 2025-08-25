@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import { CreateWorkspaceModal } from "../../../components/dashboard/home/modals/CreateWorkspaceModal";
 import DeleteWorkspaceModal from "../../../components/dashboard/home/modals/DeleteWorkspaceModal";
 import { useWorkspaces } from "../../../hooks/useWorkspaces";
+import { fetchWorkspace } from "../../../store/slices/workspaceSlice";
 
 export const WorkspacesSection = () => {
   const navigate = useNavigate();
@@ -18,7 +19,9 @@ export const WorkspacesSection = () => {
 
   const handleWorkspaceClick = (workspaceId: string) => {
     dispatch(setCurrentWorkspaceId(workspaceId));
-    navigate(`/workspace`);
+    dispatch(fetchWorkspace(workspaceId));
+    navigate(`/workspace`, { state: { workspaceId } });
+
   };
 
   const recentWorkspaces = useMemo(() => {

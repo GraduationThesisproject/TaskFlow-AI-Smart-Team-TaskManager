@@ -14,7 +14,8 @@ export const fetchWorkspace = createAsyncThunk(
     // Backend returns { workspace: {...}, userRole: '...', userPermissions: {...} }
     return (response.data as any).workspace;
   }
-);
+)
+
 
 export const fetchWorkspaces = createAsyncThunk<Workspace[]>(
   'workspace/fetchWorkspaces',
@@ -138,29 +139,14 @@ interface WorkspaceState extends BaseWorkspaceState {
   loading: boolean;
 }
 
-const getPersistedWorkspaceId = (): string | null => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('currentWorkspaceId');
-  }
-  return null;
-};
 
-const setPersistedWorkspaceId = (id: string | null): void => {
-  if (typeof window !== 'undefined') {
-    if (id) {
-      localStorage.setItem('currentWorkspaceId', id);
-    } else {
-      localStorage.removeItem('currentWorkspaceId');
-    }
-  }
-};
 
 const initialState: WorkspaceState = {
   workspaces: [],
   currentWorkspace: null,
   spaces: [],
   selectedSpace: null,
-  currentWorkspaceId: getPersistedWorkspaceId(),
+  currentWorkspaceId:null,
   members: [],
   inviteLink: undefined,
   loading: false,
@@ -189,7 +175,10 @@ const workspaceSlice = createSlice({
     },
     setCurrentWorkspaceId(state, action: PayloadAction<string | null>) {
       state.currentWorkspaceId = action.payload;
-      setPersistedWorkspaceId(action.payload);
+      
+    },
+    setCurrentWorkspace(state, action: PayloadAction<Workspace | null>) {
+      state.currentWorkspace = action.payload;
     },
     resetWorkspaceState: () => initialState,
   },
@@ -209,7 +198,7 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch workspaces';
       })
-  
+      
       // Fetch single workspace
       .addCase(fetchWorkspace.pending, (state) => {
         state.loading = true;
@@ -218,13 +207,6 @@ const workspaceSlice = createSlice({
       .addCase(fetchWorkspace.fulfilled, (state, action) => {
         state.loading = false;
         state.currentWorkspace = action.payload;
-        if (!state.workspaces.find((w) => w._id === action.payload._id)) {
-          state.workspaces = [...state.workspaces, action.payload];
-        }
-        // Ensure members table has data even if fetchMembers hasn't run or failed
-        if (Array.isArray((action.payload as any).members)) {
-          state.members = (action.payload as any).members as unknown as WorkspaceMember[];
-        }
         state.error = null;
       })
       .addCase(fetchWorkspace.rejected, (state, action) => {
