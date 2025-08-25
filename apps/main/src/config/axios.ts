@@ -1,14 +1,16 @@
-import axios from 'axios';
+  import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { env } from './env';
 
 // Create axios instance
+// Normalize base URL to ensure it targets the backend API prefix
+const rawBase = (env.API_BASE_URL || env.API_URL || '').trim();
+const trimmed = rawBase.replace(/\/$/, '');
+const baseURL = /\/api$/.test(trimmed) ? trimmed : `${trimmed}/api`;
+
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: env.API_BASE_URL,
+  baseURL,
   timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Request interceptor
@@ -17,21 +19,34 @@ axiosInstance.interceptors.request.use(
     // Get token from localStorage for each request
     const token = localStorage.getItem('token');
     
-    console.log('🔍 Axios Request:', {
-      method: config.method?.toUpperCase(),
-      url: config.url,
-      baseURL: config.baseURL,
-      fullURL: `${config.baseURL}${config.url}`,
-      hasToken: !!token
-    });
+    if (env.ENABLE_DEBUG) {
+      console.log('🔍 Axios Request:', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        baseURL: config.baseURL,
+        fullURL: `${config.baseURL}${config.url}`,
+        hasToken: !!token
+      });
+    }
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('🔑 Token added to request headers');
+      if (env.ENABLE_DEBUG) {
+        console.log('🔑 Token added to request headers');
+      }
     }
     
-    // Add debug logging in development
-    if (env.IS_DEV) {
+    // If sending FormData, let the browser set the multipart Content-Type with boundary
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      if (config.headers) {
+        delete (config.headers as any)['Content-Type'];
+      }
+    } else {
+      // For JSON payloads, axios sets Content-Type automatically when needed
+    }
+    
+    // Optional extra request log in debug mode
+    if (env.ENABLE_DEBUG) {
       console.log('📡 Making request to:', `${config.baseURL}${config.url}`);
     }
     
@@ -46,8 +61,8 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
-    // Add debug logging in development
-    if (env.IS_DEV) {
+    // Add debug logging when explicitly enabled
+    if (env.ENABLE_DEBUG) {
       console.log('✅ Axios Response:', {
         status: response.status,
         url: response.config.url,

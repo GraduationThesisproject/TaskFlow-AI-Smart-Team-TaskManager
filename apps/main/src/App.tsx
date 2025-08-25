@@ -94,8 +94,7 @@ function App() {
     <Provider store={store}>
       <ThemeProvider 
         defaultTheme="dark" 
-        storageKey="theme"
-      >
+        storageKey="theme"      >
         <AccessibilityProvider>
           <Router>
             <AppContent />

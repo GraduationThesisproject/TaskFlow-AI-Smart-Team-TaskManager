@@ -57,9 +57,6 @@ const templateSchema = new mongoose.Schema({
   category: {
     type: String,
     enum: [
-      'Agile',
-      'Scrum',
-      'Kanban',
       'Marketing',
       'Development',
       'Design',
@@ -73,6 +70,17 @@ const templateSchema = new mongoose.Schema({
     ],
     default: 'General'
   },
+  
+  // Engagement metrics
+  views: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  likedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
   
   tags: [{
     type: String,
@@ -192,6 +200,11 @@ const templateSchema = new mongoose.Schema({
 // Virtual for full version string
 templateSchema.virtual('versionString').get(function() {
   return `${this.version.major}.${this.version.minor}.${this.version.patch}`;
+});
+
+// Virtual likes count
+templateSchema.virtual('likesCount').get(function() {
+  return Array.isArray(this.likedBy) ? this.likedBy.length : 0;
 });
 
 // Virtual for is expired
