@@ -29,6 +29,8 @@ const activityLogSchema = new mongoose.Schema({
       'time_tracking_start', 'time_tracking_stop', 'task_dependency_add', 'task_dependency_remove',
       // Comment actions
       'comment_create', 'comment_update', 'comment_delete', 'comment_resolve',
+      // Template actions
+      'template_create', 'template_update', 'template_delete',
       // Analytics actions
       'analytics_generate', 'analytics_export',
       // Other actions
@@ -44,7 +46,7 @@ const activityLogSchema = new mongoose.Schema({
   entity: {
     type: {
       type: String,
-      enum: ['User', 'Project', 'Workspace', 'Space', 'Board', 'Task', 'Comment', 'File', 'Analytics'],
+      enum: ['User', 'Project', 'Workspace', 'Space', 'Board', 'Task', 'Comment', 'File', 'Analytics', 'Template'],
       required: true
     },
     id: {
@@ -56,7 +58,7 @@ const activityLogSchema = new mongoose.Schema({
   relatedEntities: [{
     type: {
       type: String,
-      enum: ['User', 'Project', 'Workspace', 'Space', 'Board', 'Task', 'Comment', 'File', 'Analytics']
+      enum: ['User', 'Project', 'Workspace', 'Space', 'Board', 'Task', 'Comment', 'File', 'Analytics', 'Template']
     },
     id: mongoose.Schema.Types.ObjectId,
     name: String
@@ -151,6 +153,23 @@ activityLogSchema.statics.logActivity = function({
     board: boardId,
     severity,
     isSuccessful
+  }).then(async (activity) => {
+    try {
+      // Real-time emit to the actor's personal activity room
+      if (global.io) {
+        // Optionally populate lightweight user info for display
+        const populated = await activity.populate('user', 'name avatar');
+        global.io.to(`activities:${userId}`).emit('activity:new', {
+          activity: populated.toObject()
+        });
+
+        // Future: emit to workspace/project/board activity streams if needed
+        // e.g., global.io.to(`workspace:${workspaceId}:activities`).emit('activity:new', {...})
+      }
+    } catch (err) {
+      // Do not block activity creation on emit errors
+    }
+    return activity;
   });
 };
 

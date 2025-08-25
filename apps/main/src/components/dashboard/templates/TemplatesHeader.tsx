@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Button, Typography } from '@taskflow/ui';
 import { Plus } from 'lucide-react';
-import { CreateTemplateModal } from './modals/CreateTemplateModal';
+import CreateTemplateModal from './modals/CreateTemplateModal';
 
 const TemplatesHeader: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const handleCreate = () => setIsCreateOpen(true);
+  const handleCreate = () => {
+    console.debug('[TemplatesHeader] Create Template clicked');
+    setIsCreateOpen(true);
+  };
   const handleClose = () => setIsCreateOpen(false);
 
   return (
@@ -19,7 +22,7 @@ const TemplatesHeader: React.FC = () => {
             Browse and use professional templates for your projects
           </Typography>
         </div>
-        <Button onClick={handleCreate}>
+        <Button type="button" onClick={handleCreate}>
           <Plus className="h-4 w-4 mr-2" />
           Create Template
         </Button>
