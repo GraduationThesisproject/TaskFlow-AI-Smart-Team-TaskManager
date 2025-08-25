@@ -1,8 +1,48 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Button, Typography } from '@taskflow/ui';
 import { Palette } from 'lucide-react';
+import { useTheme, applyTheme } from '@taskflow/theme';
 
 const AppearanceSettings: React.FC = () => {
+  const { theme, setTheme, setUserPrimaryColor, userPrimaryColor } = useTheme();
+  const storageKey = 'taskflow-theme';
+  const [isSystem, setIsSystem] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Consider "system" active when there is no explicit saved theme
+    setIsSystem(!localStorage.getItem(storageKey));
+  }, [theme]);
+
+  const handleLight = () => {
+    localStorage.setItem(storageKey, 'light');
+    setTheme('light');
+  };
+
+  const handleDark = () => {
+    localStorage.setItem(storageKey, 'dark');
+    setTheme('dark');
+  };
+
+  const handleSystem = () => {
+    // Clear explicit preference and follow OS setting
+    localStorage.removeItem(storageKey);
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const resolved = prefersDark ? 'dark' : 'light';
+    applyTheme(resolved, userPrimaryColor);
+    setTheme(resolved);
+    setIsSystem(true);
+  };
+
+  const colorOptions = useMemo(
+    () => [
+      { label: 'Blue', value: '#007ADF' },
+      { label: 'Green', value: '#10B981' },
+      { label: 'Purple', value: '#8B5CF6' },
+      { label: 'Orange', value: '#F59E0B' },
+    ],
+    []
+  );
+
   return (
     <Card className="backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)] hover:shadow-[0_0_28px_hsl(var(--accent)/0.18)] transition-shadow">
       <CardHeader>
@@ -16,18 +56,44 @@ const AppearanceSettings: React.FC = () => {
           <Typography variant="body-medium" className="font-medium mb-2">Theme</Typography>
           <Typography variant="caption" className="text-muted-foreground mb-3 block">Choose your preferred theme</Typography>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">Light</Button>
-            <Button variant="outline" size="sm">Dark</Button>
-            <Button variant="outline" size="sm">System</Button>
+            <Button
+              variant={isSystem ? 'outline' : theme === 'light' ? 'default' : 'outline'}
+              size="sm"
+              onClick={handleLight}
+            >
+              Light
+            </Button>
+            <Button
+              variant={isSystem ? 'outline' : theme === 'dark' ? 'default' : 'outline'}
+              size="sm"
+              onClick={handleDark}
+            >
+              Dark
+            </Button>
+            <Button
+              variant={isSystem ? 'default' : 'outline'}
+              size="sm"
+              onClick={handleSystem}
+            >
+              System
+            </Button>
           </div>
         </div>
         <div>
           <Typography variant="body-medium" className="font-medium mb-2">Accent Color</Typography>
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-500 cursor-pointer border-2 border-transparent hover:border-border"></div>
-            <div className="w-8 h-8 rounded-full bg-green-500 cursor-pointer border-2 border-transparent hover:border-border"></div>
-            <div className="w-8 h-8 rounded-full bg-purple-500 cursor-pointer border-2 border-transparent hover:border-border"></div>
-            <div className="w-8 h-8 rounded-full bg-orange-500 cursor-pointer border-2 border-transparent hover:border-border"></div>
+            {colorOptions.map((c) => (
+              <button
+                key={c.value}
+                aria-label={`Set accent ${c.label}`}
+                onClick={() => setUserPrimaryColor(c.value)}
+                className={`w-8 h-8 rounded-full border-2 transition-colors hover:border-border`}
+                style={{
+                  backgroundColor: c.value,
+                  borderColor: userPrimaryColor === c.value ? 'hsl(var(--ring))' : 'transparent',
+                }}
+              />
+            ))}
           </div>
         </div>
       </CardContent>
