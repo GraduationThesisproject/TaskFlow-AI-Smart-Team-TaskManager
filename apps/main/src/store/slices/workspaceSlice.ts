@@ -47,8 +47,8 @@ export const fetchSpace = createAsyncThunk(
 );
 
 // New thunks from the newer implementation
-export const fetchMembers = createAsyncThunk<WorkspaceMember[], { id: string }>('workspace/fetchMembers', async ({ id }) => {
-  return workspaceService.getMembers(id);
+export const fetchMembers = createAsyncThunk<WorkspaceMember[], { id: string; q?: string }>('workspace/fetchMembers', async ({ id, q }) => {
+  return workspaceService.getMembers(id, q ? { q } : undefined);
 });
 
 export const inviteMember = createAsyncThunk<WorkspaceMember, { id: string; email: string; role: 'member' | 'admin' }>(
@@ -74,6 +74,22 @@ export const generateInviteLink = createAsyncThunk<InviteLinkInfo, { id: string 
 export const disableInviteLink = createAsyncThunk<InviteLinkInfo, { id: string }>(
   'workspace/disableInviteLink',
   async ({ id }) => workspaceService.disableInviteLink(id)
+);
+
+// Update workspace settings
+export const updateWorkspaceSettings = createAsyncThunk<
+  Workspace,
+  { id: string; section: string; updates: Record<string, any> }
+>(
+  'workspace/updateWorkspaceSettings',
+  async ({ id, section, updates }) => {
+    const response = await WorkspaceService.updateWorkspace(id, {
+      // Backend expects { settings: { [section]: updates } }
+      settings: { [section]: updates } as any,
+    } as any);
+    // API returns wrapper with { workspace }
+    return (response.data as any).workspace as Workspace;
+  }
 );
 
 export const createWorkspace = createAsyncThunk(
@@ -103,12 +119,29 @@ interface WorkspaceState extends BaseWorkspaceState {
   loading: boolean;
 }
 
+const getPersistedWorkspaceId = (): string | null => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('currentWorkspaceId');
+  }
+  return null;
+};
+
+const setPersistedWorkspaceId = (id: string | null): void => {
+  if (typeof window !== 'undefined') {
+    if (id) {
+      localStorage.setItem('currentWorkspaceId', id);
+    } else {
+      localStorage.removeItem('currentWorkspaceId');
+    }
+  }
+};
+
 const initialState: WorkspaceState = {
   workspaces: [],
   currentWorkspace: null,
   spaces: [],
   selectedSpace: null,
-  currentWorkspaceId: null,
+  currentWorkspaceId: getPersistedWorkspaceId(),
   members: [],
   inviteLink: undefined,
   loading: false,
@@ -137,6 +170,7 @@ const workspaceSlice = createSlice({
     },
     setCurrentWorkspaceId(state, action: PayloadAction<string | null>) {
       state.currentWorkspaceId = action.payload;
+      setPersistedWorkspaceId(action.payload);
     },
     resetWorkspaceState: () => initialState,
   },
@@ -168,6 +202,10 @@ const workspaceSlice = createSlice({
         if (!state.workspaces.find((w) => w._id === action.payload._id)) {
           state.workspaces = [...state.workspaces, action.payload];
         }
+        // Ensure members table has data even if fetchMembers hasn't run or failed
+        if (Array.isArray((action.payload as any).members)) {
+          state.members = (action.payload as any).members as unknown as WorkspaceMember[];
+        }
         state.error = null;
       })
       .addCase(fetchWorkspace.rejected, (state, action) => {
@@ -192,9 +230,104 @@ const workspaceSlice = createSlice({
       .addCase(createWorkspace.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to create workspace';
+      })
+
+      // Update workspace settings
+      .addCase(updateWorkspaceSettings.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateWorkspaceSettings.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentWorkspace = action.payload;
+        // Optionally keep workspaces list in sync
+        const idx = state.workspaces.findIndex((w) => w._id === action.payload._id);
+        if (idx >= 0) state.workspaces[idx] = action.payload;
+        state.error = null;
+      })
+      .addCase(updateWorkspaceSettings.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to update workspace settings';
+      })
+
+      // Fetch members
+      .addCase(fetchMembers.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchMembers.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.members = Array.isArray(action.payload) ? action.payload : [];
+        console.log('✅ fetchMembers.fulfilled - Members updated:', state.members);
+        state.error = null;
+      })
+      .addCase(fetchMembers.rejected, (state, action) => {
+        state.isLoading = false;
+        console.error('❌ fetchMembers.rejected:', action.error.message);
+        state.error = action.error.message || 'Failed to fetch members';
+      })
+
+      // Invite member
+      .addCase(inviteMember.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(inviteMember.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (action.payload) {
+          state.members = [...state.members, action.payload];
+        }
+        state.error = null;
+      })
+      .addCase(inviteMember.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to invite member';
+      })
+
+      // Remove member
+      .addCase(removeMember.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(removeMember.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.members = state.members.filter(m => m.id !== action.payload.memberId);
+        state.error = null;
+      })
+      .addCase(removeMember.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to remove member';
+      })
+
+      // Generate invite link
+      .addCase(generateInviteLink.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(generateInviteLink.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.inviteLink = action.payload;
+        state.error = null;
+      })
+      .addCase(generateInviteLink.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to generate invite link';
+      })
+
+      // Disable invite link
+      .addCase(disableInviteLink.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(disableInviteLink.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.inviteLink = action.payload;
+        state.error = null;
+      })
+      .addCase(disableInviteLink.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to disable invite link';
       });
-  
-    // You can add other thunks (spaces, members, invite links) here similarly...
   }
 });
 

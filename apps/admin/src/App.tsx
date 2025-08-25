@@ -1,162 +1,75 @@
 import React from 'react';
-import { Button, Card, CardHeader, CardTitle, CardContent, Typography, Badge, Progress } from '@taskflow/ui';
-import { formatDate } from '@taskflow/utils';
-import { ThemeProvider, ThemeToggle } from '@taskflow/theme/ThemeProvider';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { store } from './store';
+import { ThemeProvider } from '@taskflow/theme';
 import './App.css';
+
+// Main Admin Page Component
+import AdminPage from './pages/AdminPage';
+
+// Login Page
+import LoginPage from './pages/LoginPage';
+
+// Notification Context
+import { NotificationProvider } from './contexts/NotificationContext';
+import { LanguageProvider } from './contexts/LanguageContext';
+
+// Protected Route Component that can access Redux state
+const ProtectedRouteWithRedux = ({ children }: { children: React.ReactNode }) => {
+  const state = store.getState();
+  const { isAuthenticated, isLoading } = state.admin;
+  const token = localStorage.getItem('adminToken');
+  
+  // console.log('ProtectedRoute: checking auth state:', { isAuthenticated, isLoading, hasToken: !!token });
+  
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="text-muted-foreground">Checking authentication...</div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Check if authenticated or has token
+  if (!isAuthenticated && !token) {
+    console.log('ProtectedRoute: not authenticated, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
+  
+  // console.log('ProtectedRoute: authenticated, rendering children');
+  return <>{children}</>;
+};
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light">
-      <div className="min-h-screen bg-background p-8">
-        <div className="max-w-6xl mx-auto space-y-8">
-          <header>
-            <div className="flex justify-between items-center mb-8">
-              <Typography variant="heading-xl">
-                TaskFlow Admin Panel
-              </Typography>
-              <ThemeToggle />
-            </div>
-            <Typography variant="body-large" textColor="muted">
-              Manage your team and projects efficiently
-            </Typography>
-          </header>
-
-          {/* Admin Dashboard Overview */}
-          <div className="space-y-4">
-            <Typography variant="heading-large">Dashboard Overview</Typography>
-            
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card variant="default" padding="default">
-                <CardContent className="text-center">
-                  <Typography variant="heading-large" className="text-primary">1,234</Typography>
-                  <Typography variant="body-medium" textColor="muted">Total Users</Typography>
-                </CardContent>
-              </Card>
+    <Provider store={store}>
+      <ThemeProvider defaultTheme="dark">
+        <Router>
+          <div className="min-h-screen bg-background">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/login" element={<LoginPage />} />
               
-              <Card variant="default" padding="default">
-                <CardContent className="text-center">
-                  <Typography variant="heading-large" className="text-success">89</Typography>
-                  <Typography variant="body-medium" textColor="muted">Active Projects</Typography>
-                </CardContent>
-              </Card>
-              
-              <Card variant="default" padding="default">
-                <CardContent className="text-center">
-                  <Typography variant="heading-large" className="text-warning">23</Typography>
-                  <Typography variant="body-medium" textColor="muted">Pending Tasks</Typography>
-                </CardContent>
-              </Card>
-              
-              <Card variant="default" padding="default">
-                <CardContent className="text-center">
-                  <Typography variant="heading-large" className="text-error">5</Typography>
-                  <Typography variant="body-medium" textColor="muted">System Alerts</Typography>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="space-y-2">
-              <Typography variant="body-medium">System Performance</Typography>
-              <Progress value={85} variant="default" showValue />
-            </div>
+              {/* Protected Admin Routes - All handled by AdminPage */}
+              <Route path="/*" element={
+                <ProtectedRouteWithRedux>
+                  <LanguageProvider>
+                    <NotificationProvider authToken={localStorage.getItem('adminToken') || ''}>
+                      <AdminPage />
+                    </NotificationProvider>
+                  </LanguageProvider>
+                </ProtectedRouteWithRedux>
+              } />
+            </Routes>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card variant="default" padding="default">
-              <CardHeader>
-                <CardTitle>Dashboard</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Typography variant="body-medium" textColor="muted">
-                  Overview of your team's activities
-                </Typography>
-                <Button variant="default" size="default" className="w-full">View Dashboard</Button>
-              </CardContent>
-            </Card>
-
-            <Card variant="default" padding="default">
-              <CardHeader>
-                <CardTitle>Team Management</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Typography variant="body-medium" textColor="muted">
-                  Manage team members and permissions
-                </Typography>
-                <div className="flex gap-2">
-                  <Badge variant="success">Admin</Badge>
-                  <Badge variant="default">User</Badge>
-                  <Badge variant="warning">Guest</Badge>
-                </div>
-                <Button variant="outline" size="default" className="w-full">Manage Team</Button>
-              </CardContent>
-            </Card>
-
-            <Card variant="default" padding="default">
-              <CardHeader>
-                <CardTitle>Project Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Typography variant="body-medium" textColor="muted">
-                  Configure project settings and workflows
-                </Typography>
-                <Button variant="secondary" size="default" className="w-full">Settings</Button>
-              </CardContent>
-            </Card>
-
-            <Card variant="default" padding="default">
-              <CardHeader>
-                <CardTitle>Analytics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Typography variant="body-medium" textColor="muted">
-                  View detailed analytics and reports
-                </Typography>
-                <div className="space-y-2">
-                  <Progress value={75} variant="success" />
-                  <Progress value={45} variant="warning" />
-                </div>
-                <Button variant="gradient" size="default" className="w-full">View Analytics</Button>
-              </CardContent>
-            </Card>
-
-            <Card variant="default" padding="default">
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Typography variant="body-medium" textColor="muted">
-                  Add, edit, and manage user accounts
-                </Typography>
-                <div className="flex gap-2">
-                  <Button variant="default" size="sm">Add User</Button>
-                  <Button variant="outline" size="sm">Import</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card variant="default" padding="default">
-              <CardHeader>
-                <CardTitle>System Health</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Typography variant="body-medium" textColor="muted">
-                  Monitor system performance and health
-                </Typography>
-                <div className="flex gap-2">
-                  <Badge variant="success">Online</Badge>
-                  <Badge variant="error">2 Issues</Badge>
-                </div>
-                <Button variant="outline" size="default" className="w-full">View Logs</Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          <footer className="text-center text-sm text-muted-foreground">
-            TaskFlow Admin Panel • Last updated: {formatDate(new Date())}
-          </footer>
-        </div>
-      </div>
-    </ThemeProvider>
+        </Router>
+      </ThemeProvider>
+    </Provider>
   );
 }
 

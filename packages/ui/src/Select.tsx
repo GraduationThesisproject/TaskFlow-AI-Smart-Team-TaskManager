@@ -20,17 +20,38 @@ const selectVariants = cva(
 
 export interface SelectProps
   extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'size'>,
-    VariantProps<typeof selectVariants> {}
+    VariantProps<typeof selectVariants> {
+  options?: Array<{ value: string; label: string }>;
+  onValueChange?: (value: string) => void;
+}
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, selectSize, children, ...props }, ref) => {
+  ({ className, selectSize, children, options, onValueChange, onChange, ...props }, ref) => {
+    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      if (onChange) {
+        onChange(e);
+      }
+      if (onValueChange) {
+        onValueChange(e.target.value);
+      }
+    };
+
     return (
       <select
         className={cn(selectVariants({ selectSize }), className)}
         ref={ref}
+        onChange={handleChange}
         {...props}
       >
-        {children}
+        {options ? (
+          options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))
+        ) : (
+          children
+        )}
       </select>
     );
   }
