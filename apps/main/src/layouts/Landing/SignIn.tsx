@@ -12,7 +12,7 @@ interface FormErrors {
 
 export default function SignIn() {
   const navigate = useNavigate();
-  const { login, isLoading, error, clearAuthError } = useAuth();
+  const { login, isLoading, error, clearAuthError, loginWithOAuth } = useAuth();
   
   // Form state
   const [formData, setFormData] = useState<LoginCredentials>({
@@ -92,6 +92,15 @@ export default function SignIn() {
   // Check if field has error and is touched
   const hasError = (field: keyof FormErrors) => 
     touched[field] && errors[field];
+
+  // Handle OAuth login
+  const handleOAuthLogin = async (provider: 'google' | 'github') => {
+    try {
+      await loginWithOAuth(provider);
+    } catch (error) {
+      console.error(`OAuth login with ${provider} failed:`, error);
+    }
+  };
 
   return (
     <>
@@ -193,12 +202,14 @@ export default function SignIn() {
           <SocialButton
             provider="google"
             disabled={isLoading}
+            onClick={() => handleOAuthLogin('google')}
           >
             Google
           </SocialButton>
           <SocialButton
             provider="github"
             disabled={isLoading}
+            onClick={() => handleOAuthLogin('github')}
           >
             GitHub
           </SocialButton>
