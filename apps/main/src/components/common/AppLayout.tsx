@@ -30,16 +30,16 @@ export function AppLayout({ children, className = '' }: AppLayoutProps) {
 
   useEffect(() => {
     // Apply user primary color if available
-    if (user?.user?.preferences?.primaryColor && !userPrimaryColor) {
+    const primary = user?.preferences?.theme?.primaryColor;
+    if (primary && !userPrimaryColor) {
       // This will be handled by the theme system
     }
-  }, [user?.user?.preferences?.primaryColor, userPrimaryColor]);
+  }, [user?.preferences?.theme?.primaryColor, userPrimaryColor]);
 
   return (
     <div 
       className={`min-h-screen min-h-[100vh] min-h-[calc(var(--vh,1vh)*100)] bg-gradient-to-br from-background via-muted/10 to-background ${className}`}
       style={{
-        height: '100vh',
         height: 'calc(var(--vh, 1vh) * 100)',
       }}
     >

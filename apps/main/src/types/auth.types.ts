@@ -21,7 +21,6 @@ export interface UserPreferences {
   notifications: {
     email: boolean;
     push: boolean;
-    sms: boolean;
     marketing: boolean;
   };
   language: string;
@@ -102,4 +101,52 @@ export interface DeviceInfo {
     os?: string;
     browser?: string;
   };
+}
+
+// OAuth-specific types
+export interface OAuthUserData {
+  id: string;
+  oauthId: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  provider: 'google' | 'github';
+}
+
+export interface OAuthLoginData {
+  id: string;
+  provider: 'google' | 'github';
+  oauthId: string;
+  email: string;
+  name: string;
+  avatar?: string;
+}
+
+export interface OAuthCallbackData {
+  code?: string;
+  provider: 'google' | 'github';
+}
+
+export interface EmailVerificationData {
+  email: string;
+  code: string;
+}
+
+export interface ResendVerificationData {
+  email: string;
+}
+
+export interface PasswordResetRequestData {
+  email: string;
+}
+
+export interface PasswordResetData {
+  token: string;
+  email: string;
+  newPassword: string;
+}
+
+// Extended register data for OAuth
+export interface OAuthRegisterData extends OAuthUserData {
+  // Additional fields can be added here if needed
 }
