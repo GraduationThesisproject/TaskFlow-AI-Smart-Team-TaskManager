@@ -14,7 +14,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   children,
   className,
   collapsed = false,
-  onCollapse,
   width = 'md',
   position = 'left'
 }) => {

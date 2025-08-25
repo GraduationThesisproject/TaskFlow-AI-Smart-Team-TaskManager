@@ -101,24 +101,19 @@ const fileSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  isProcessed: {
-    type: Boolean,
-    default: true
-  },
-  processingStatus: {
-    type: String,
-    enum: ['pending', 'processing', 'completed', 'failed'],
-    default: 'completed'
-  },
   
-  // Download and access tracking
-  downloadCount: {
-    type: Number,
-    default: 0
+  // Additional fields needed for uploads
+  url: {
+    type: String,
+    required: true
   },
-  lastAccessedAt: {
-    type: Date,
-    default: Date.now
+  encoding: {
+    type: String,
+    default: '7bit'
+  },
+  fieldname: {
+    type: String,
+    default: 'file'
   },
   
   // File transformations (for images)
@@ -130,29 +125,7 @@ const fileSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     }
-  }],
-  
-  // Security and compliance
-  scanStatus: {
-    type: String,
-    enum: ['pending', 'clean', 'infected', 'suspicious'],
-    default: 'pending'
-  },
-  scanResults: {
-    scannedAt: Date,
-    threats: [String],
-    scanEngine: String
-  },
-  
-  // File metadata
-  encoding: {
-    type: String,
-    default: '7bit'
-  },
-  fieldname: {
-    type: String,
-    default: 'file'
-  }
+  }]
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -383,8 +356,19 @@ fileSchema.statics.cleanupOrphaned = function() {
 
 // Static method to create from Multer upload
 fileSchema.statics.createFromUpload = function(multerFile, uploadedBy, category = 'general', additionalData = {}) {
-  const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
-  const url = `${baseUrl}/uploads/${multerFile.filename}`;
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3001';
+  
+  // Import fileTypeConfigs from multer config to get the correct storage folder
+  const { fileTypeConfigs } = require('../config/multer');
+  const config = fileTypeConfigs[category] || fileTypeConfigs.general;
+  const storageFolder = config.folder;
+  
+  // Use the actual storage folder name in the URL
+  const url = `${baseUrl}/uploads/${storageFolder}/${multerFile.filename}`;
+  
+  // Log the URL construction for debugging
+  console.log(`File.createFromUpload: category: ${category}, storageFolder: ${storageFolder}, url: ${url}`);
+  
   const crypto = require('crypto');
   const fs = require('fs');
   
@@ -405,6 +389,11 @@ fileSchema.statics.createFromUpload = function(multerFile, uploadedBy, category 
     fieldname: multerFile.fieldname || 'file',
     uploadedBy: uploadedBy,
     category: category,
+    attachedTo: {
+      model: 'User', // Default to User for avatar uploads
+      objectId: uploadedBy,
+      attachedAt: new Date()
+    },
     ...additionalData
   });
 };

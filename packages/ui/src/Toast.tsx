@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { 
+  XMarkIcon, 
+  CheckCircleIcon, 
+  ExclamationCircleIcon, 
+  InformationCircleIcon, 
+  ExclamationTriangleIcon 
+} from '@heroicons/react/24/outline';
 import { cn } from './utils';
 import { Button } from './Button';
 
@@ -17,19 +23,19 @@ export interface ToastProps {
 
 const variantStyles = {
   success: {
-    icon: CheckCircle,
+    icon: CheckCircleIcon,
     className: 'border-success bg-success/10 text-success'
   },
   error: {
-    icon: AlertCircle,
+    icon: ExclamationCircleIcon,
     className: 'border-destructive bg-destructive/10 text-destructive'
   },
   warning: {
-    icon: AlertTriangle,
+    icon: ExclamationTriangleIcon,
     className: 'border-warning bg-warning/10 text-warning'
   },
   info: {
-    icon: Info,
+    icon: InformationCircleIcon,
     className: 'border-info bg-info/10 text-info'
   }
 };
@@ -87,7 +93,7 @@ export const Toast: React.FC<ToastProps> = ({
         onClick={handleClose}
         className="h-6 w-6 p-0 flex-shrink-0"
       >
-        <X className="h-4 w-4" />
+        <XMarkIcon className="h-4 w-4" />
       </Button>
     </div>
   );

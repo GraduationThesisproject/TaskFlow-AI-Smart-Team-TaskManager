@@ -6,23 +6,27 @@ const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
 
 // Require system admin role
-const requireSystemAdmin = (req, res, next) => {
-    (async () => {
-        try {
-            const userId = req.user.id;
-            const user = await User.findById(userId);
-            const userRoles = await user.getRoles();
+const requireSystemAdmin = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        logger.info(`Permission middleware: Checking system admin for user ID: ${userId}`);
+        
+        const user = await User.findById(userId);
+        const userRoles = await user.getRoles();
 
-            if (userRoles.systemRole !== 'admin' && userRoles.systemRole !== 'super_admin') {
-                return sendResponse(res, 403, false, 'System admin permissions required');
-            }
+        logger.info(`Permission middleware: User roles - systemRole: ${userRoles.systemRole}`);
 
-            next();
-        } catch (error) {
-            logger.error('System admin check error:', error);
-            sendResponse(res, 500, false, 'Server error checking admin permissions');
+        if (userRoles.systemRole !== 'admin' && userRoles.systemRole !== 'super_admin') {
+            logger.warn(`Permission middleware: Access denied for user ${userId} with role ${userRoles.systemRole}`);
+            return sendResponse(res, 403, false, 'System admin permissions required');
         }
-    })();
+
+        logger.info(`Permission middleware: Access granted for user ${userId}`);
+        next();
+    } catch (error) {
+        logger.error('System admin check error:', error);
+        sendResponse(res, 500, false, 'Server error checking admin permissions');
+    }
 };
 
 // Require workspace permission
@@ -58,7 +62,7 @@ const requireWorkspacePermission = (role = 'member') => {
     };
 };
 
-// Require space permission (formerly project permission)
+// Require space permission (replaces project permission)
 const requireSpacePermission = (roleOrPermission = 'member') => {
     return async (req, res, next) => {
         try {
@@ -69,12 +73,25 @@ const requireSpacePermission = (roleOrPermission = 'member') => {
                 return sendResponse(res, 400, false, 'Space ID required');
             }
 
-            const user = await User.findById(userId);
-            const userRoles = await user.getRoles();
+            const [user, space] = await Promise.all([
+                User.findById(userId),
+                Space.findById(spaceId)
+            ]);
 
+            if (!space) {
+                return sendResponse(res, 404, false, 'Space not found');
+            }
+
+            const userRoles = await user.getRoles();
+            
             // Check if it's a permission (starts with 'can') or a role
             if (roleOrPermission.startsWith('can')) {
-                if (!userRoles.hasSpacePermission(spaceId, roleOrPermission)) {
+                const hasRolePermission = userRoles.hasSpacePermission(spaceId, roleOrPermission);
+                const hasMemberPermission = (typeof space.hasPermission === 'function')
+                    ? space.hasPermission(userId, roleOrPermission)
+                    : false;
+
+                if (!hasRolePermission && !hasMemberPermission) {
                     return sendResponse(res, 403, false, `Permission '${roleOrPermission}' required`);
                 }
             } else {
@@ -83,7 +100,7 @@ const requireSpacePermission = (roleOrPermission = 'member') => {
                 }
             }
 
-            req.space = await Space.findById(spaceId);
+            req.space = space;
             next();
         } catch (error) {
             logger.error('Space permission check error:', error);
@@ -113,23 +130,24 @@ const requireSpaceSpecificPermission = (permission) => {
             }
 
             const userRoles = await user.getRoles();
-            const hasRolePermission = userRoles.hasSpacePermission(spaceId, permission);
-            const hasMemberPermission = (typeof space.hasPermission === 'function')
-                ? space.hasPermission(userId, permission)
-                : false;
-
-            if (!hasRolePermission && !hasMemberPermission) {
-                return sendResponse(res, 403, false, `Space permission '${permission}' required`);
+            
+            // Check if user has the specific permission
+            const hasPermission = userRoles.hasSpacePermission(spaceId, permission);
+            
+            if (!hasPermission) {
+                return sendResponse(res, 403, false, `Permission '${permission}' required`);
             }
 
             req.space = space;
             next();
         } catch (error) {
-            logger.error('Space permission check error:', error);
-            sendResponse(res, 500, false, 'Server error checking space permissions');
+            logger.error('Space specific permission check error:', error);
+            sendResponse(res, 500, false, 'Server error checking space specific permissions');
         }
     };
 };
+
+
 
 // Require board permission
 const requireBoardPermission = (permission) => {

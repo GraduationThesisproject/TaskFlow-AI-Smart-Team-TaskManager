@@ -1,6 +1,7 @@
 const { createMulterUpload, generateThumbnails, getFileStats } = require('../config/multer');
 const File = require('../models/File');
 const logger = require('../config/logger');
+const express = require('express'); // Added for express.json and express.urlencoded
 
 /**
  * Create upload middleware for specific file category
@@ -21,13 +22,23 @@ const createUploadMiddleware = (category = 'general', multiple = false, maxCount
     req.workspaceId = req.workspaceId || req.workspace || null;
     req.projectId = req.projectId || req.project || null;
     
+    logger.info(`Upload middleware: Processing ${category} upload, multiple: ${multiple}, optional: ${optional}`);
+    
     const uploadHandler = multiple 
       ? upload.array('files', maxCount)
       : upload.single('file');
     
     uploadHandler(req, res, (error) => {
+      // Add request details logging
+      logger.info(`Upload middleware: Request details - Content-Type: ${req.headers['content-type']}, Content-Length: ${req.headers['content-length']}`);
+      logger.info(`Upload middleware: Request method: ${req.method}, URL: ${req.url}`);
+      logger.info(`Upload middleware: Request body keys: ${Object.keys(req.body || {})}`);
+      logger.info(`Upload middleware: Request files: ${req.files ? req.files.length : 'null'}`);
+      logger.info(`Upload middleware: Request file: ${req.file ? 'exists' : 'null'}`);
+      
       if (error) {
         logger.error('Upload middleware error:', error);
+        logger.error('Error details:', { code: error.code, message: error.message, field: error.field });
         
         // Handle specific Multer errors
         if (error.code === 'LIMIT_FILE_SIZE') {
@@ -69,9 +80,22 @@ const createUploadMiddleware = (category = 'general', multiple = false, maxCount
         });
       }
       
+      // Log what we received
+      logger.info(`Upload middleware: Received files - req.file: ${req.file ? 'exists' : 'null'}, req.files: ${req.files ? req.files.length : 'null'}`);
+      if (req.file) {
+        logger.info(`Upload middleware: File details - fieldname: ${req.file.fieldname}, originalname: ${req.file.originalname}, mimetype: ${req.file.mimetype}, size: ${req.file.size}`);
+      }
+      if (req.files && req.files.length > 0) {
+        logger.info(`Upload middleware: Multiple files received: ${req.files.length}`);
+        req.files.forEach((file, index) => {
+          logger.info(`Upload middleware: File ${index} - fieldname: ${file.fieldname}, originalname: ${file.originalname}, mimetype: ${file.mimetype}, size: ${file.size}`);
+        });
+      }
+      
       // Check if files were uploaded (only if not optional)
       if (!optional) {
         if (multiple && (!req.files || req.files.length === 0)) {
+          logger.error('Upload middleware: No files uploaded for multiple upload');
           return res.status(400).json({
             success: false,
             message: 'No files uploaded'
@@ -79,6 +103,10 @@ const createUploadMiddleware = (category = 'general', multiple = false, maxCount
         }
         
         if (!multiple && !req.file) {
+          logger.error('Upload middleware: No file uploaded for single upload');
+          logger.error('Upload middleware: Request body keys:', Object.keys(req.body || {}));
+          logger.error('Upload middleware: Request files:', req.files);
+          logger.error('Upload middleware: Request file:', req.file);
           return res.status(400).json({
             success: false,
             message: 'No file uploaded'
@@ -89,6 +117,72 @@ const createUploadMiddleware = (category = 'general', multiple = false, maxCount
       next();
     });
   };
+};
+
+/**
+ * Create admin route middleware that handles both file uploads and JSON parsing
+ * @param {string} category - File category for uploads
+ * @param {boolean} optional - Whether file upload is optional
+ * @returns {Function} Express middleware
+ */
+const createAdminRouteMiddleware = (category = 'general', optional = true) => {
+  return [
+    // First handle file uploads if present
+    (req, res, next) => {
+      // Check if this is a multipart request (file upload)
+      if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+        logger.info('Admin route middleware: Detected multipart request, processing file upload');
+        logger.info(`Admin route middleware: Setting fileCategory to: ${category}`);
+        
+        // Set the file category for the request BEFORE calling createMulterUpload
+        req.fileCategory = category;
+        
+        const upload = createMulterUpload(category);
+        // upload is now pre-configured with .single('file'), so we don't need to call .single('file') again
+        upload(req, res, (error) => {
+          if (error) {
+            logger.error('Admin route middleware: File upload error:', error);
+            return res.status(400).json({
+              success: false,
+              message: 'File upload failed',
+              error: error.message
+            });
+          }
+          
+          // Check if file was uploaded (only if not optional)
+          if (!optional && !req.file) {
+            logger.error('Admin route middleware: No file uploaded for required upload');
+            return res.status(400).json({
+              success: false,
+              message: 'No file uploaded'
+            });
+          }
+          
+          logger.info('Admin route middleware: File upload processed successfully');
+          logger.info(`Admin route middleware: req.fileCategory set to: ${req.fileCategory}`);
+          next();
+        });
+      } else {
+        // Not a file upload, skip to next middleware
+        logger.info('Admin route middleware: Not a file upload, skipping file processing');
+        next();
+      }
+    },
+    // Then parse JSON body if present
+    (req, res, next) => {
+      if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
+        logger.info('Admin route middleware: Detected JSON request, parsing body');
+        express.json({ limit: '10mb' })(req, res, next);
+      } else if (req.headers['content-type'] && req.headers['content-type'].includes('application/x-www-form-urlencoded')) {
+        logger.info('Admin route middleware: Detected form data, parsing body');
+        express.urlencoded({ extended: true })(req, res, next);
+      } else {
+        // No body parsing needed
+        logger.info('Admin route middleware: No body parsing needed');
+        next();
+      }
+    }
+  ];
 };
 
 /**
@@ -103,7 +197,14 @@ const processUploadedFiles = async (req, res, next) => {
     const category = req.fileCategory || 'general';
     const files = req.files || (req.file ? [req.file] : []);
     
+    logger.info(`processUploadedFiles: Starting processing`);
+    logger.info(`processUploadedFiles: req.fileCategory: ${req.fileCategory}`);
+    logger.info(`processUploadedFiles: category variable: ${category}`);
+    logger.info(`processUploadedFiles: Processing ${files.length} files for category ${category}`);
+    logger.info(`processUploadedFiles: req.file exists: ${!!req.file}, req.files exists: ${!!req.files}`);
+    
     if (files.length === 0) {
+      logger.warn('processUploadedFiles: No files to process, calling next()');
       return next();
     }
     
@@ -111,8 +212,11 @@ const processUploadedFiles = async (req, res, next) => {
     
     for (const file of files) {
       try {
+        logger.info(`processUploadedFiles: Processing file: ${file.filename}, path: ${file.path}`);
+        
         // Get file stats
         const stats = await getFileStats(file.path);
+        logger.info(`processUploadedFiles: File stats:`, stats);
         
         // Create File document using the static method
         const fileDoc = File.createFromUpload(file, uploadedBy, category, {
@@ -123,6 +227,7 @@ const processUploadedFiles = async (req, res, next) => {
         
         // Save file document
         await fileDoc.save();
+        logger.info(`processUploadedFiles: File document saved: ${fileDoc.filename}`);
         
         // Generate thumbnails for images
         const thumbnails = await generateThumbnails(file.path, category);
@@ -144,6 +249,8 @@ const processUploadedFiles = async (req, res, next) => {
     // Attach processed files to request
     req.processedFiles = processedFiles;
     req.uploadedFile = processedFiles[0] || null; // For single file uploads
+    
+    logger.info(`processUploadedFiles: Final processed files count: ${processedFiles.length}, uploadedFile: ${req.uploadedFile ? req.uploadedFile.filename : 'null'}`);
     
     next();
   } catch (error) {
@@ -264,5 +371,6 @@ module.exports = {
   attachFilesToEntity,
   validateUploadPermissions,
   setUploadContext,
-  uploadMiddlewares
+  uploadMiddlewares,
+  createAdminRouteMiddleware
 };
