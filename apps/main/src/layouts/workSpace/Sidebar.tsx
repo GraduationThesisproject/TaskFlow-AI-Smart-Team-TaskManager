@@ -49,7 +49,7 @@ const Sidebar = () => {
             {/* Boards */}
             <li>
               <NavLink
-                to={`/workspace/boards${search}`}
+                to={`/space${search}`}
                 className={({ isActive }) =>
                   isActive
                     ? 'mx-1 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/20 px-3 py-2 text-sm text-foreground shadow-[0_0_0_1px_rgba(0,232,198,0.15),_0_8px_30px_-12px_rgba(0,232,198,0.35)] ring-1 ring-accent/30'
