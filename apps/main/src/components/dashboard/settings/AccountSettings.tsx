@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Button, Typography, Input, Avatar, AvatarImage, AvatarFallback } from '@taskflow/ui';
 import { Shield, Eye, EyeOff } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../../store';
-import { updateProfileSecure } from '../../../store/slices/authSlice';
+import { updateProfileSecure, changePassword } from '../../../store/slices/authSlice';
 
 const AccountSettings: React.FC = () => {
   // Profile state
@@ -108,11 +108,16 @@ const AccountSettings: React.FC = () => {
 
   // Security state
   const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [securityForm, setSecurityForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [securityError, setSecurityError] = useState<string | null>(null);
+  const [securitySuccess, setSecuritySuccess] = useState<string | null>(null);
 
   const onSecurityChange = (
     field: 'currentPassword' | 'newPassword' | 'confirmPassword',
@@ -121,9 +126,36 @@ const AccountSettings: React.FC = () => {
     setSecurityForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleChangePassword = () => {
-    // TODO: wire password change API
-    console.log('Change password clicked', securityForm);
+  const handleChangePassword = async () => {
+    setSecurityError(null);
+    setSecuritySuccess(null);
+
+    const { currentPassword, newPassword, confirmPassword } = securityForm;
+
+    if (!currentPassword) {
+      setSecurityError('Please enter your current password.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 8) {
+      setSecurityError('New password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setSecurityError('New password and confirmation do not match.');
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      await dispatch(changePassword({ currentPassword, newPassword })).unwrap();
+      setSecuritySuccess('Password changed successfully.');
+      setSecurityForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (e) {
+      const msg = (e as any)?.response?.data?.message || (e as any)?.message || 'Failed to change password';
+      setSecurityError(msg);
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const currentAvatarSrc = avatarPreview || (typeof user?.user?.avatar === 'string' ? user?.user?.avatar : (user as any)?.user?.avatar?.url) || undefined;
@@ -207,25 +239,53 @@ const AccountSettings: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">New Password</label>
-              <Input
-                type="password"
-                value={securityForm.newPassword}
-                onChange={(e) => onSecurityChange('newPassword', e.target.value)}
-                placeholder="Enter new password"
-              />
+              <div className="relative">
+                <Input
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={securityForm.newPassword}
+                  onChange={(e) => onSecurityChange('newPassword', e.target.value)}
+                  placeholder="Enter new password"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
           </div>
           <div className="mt-4">
             <label className="block text-sm font-medium text-foreground mb-2">Confirm New Password</label>
-            <Input
-              type="password"
-              value={securityForm.confirmPassword}
-              onChange={(e) => onSecurityChange('confirmPassword', e.target.value)}
-              placeholder="Confirm new password"
-            />
+            <div className="relative">
+              <Input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={securityForm.confirmPassword}
+                onChange={(e) => onSecurityChange('confirmPassword', e.target.value)}
+                placeholder="Confirm new password"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
+          {securityError && (
+            <Typography variant="caption" className="text-red-500 mt-2 block">{securityError}</Typography>
+          )}
+          {securitySuccess && (
+            <Typography variant="caption" className="text-green-600 mt-2 block">{securitySuccess}</Typography>
+          )}
           <div className="mt-4">
-            <Button variant="outline" onClick={handleChangePassword}>Change Password</Button>
+            <Button variant="outline" onClick={handleChangePassword} disabled={isChangingPassword}>
+              {isChangingPassword ? 'Changing...' : 'Change Password'}
+            </Button>
           </div>
         </section>
       </CardContent>

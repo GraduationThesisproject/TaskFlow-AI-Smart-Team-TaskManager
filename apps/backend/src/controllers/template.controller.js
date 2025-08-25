@@ -1,4 +1,5 @@
 const Template = require('../models/Template');
+const ActivityLog = require('../models/ActivityLog');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 
@@ -143,6 +144,25 @@ exports.create = async (req, res, next) => {
     const payload = sanitizeTemplatePayload(req.body);
     const doc = Template.createTemplate(payload, adminId);
     await doc.save();
+
+    // Log activity for real-time updates
+    try {
+      await ActivityLog.logActivity({
+        userId: adminId,
+        action: 'template_create',
+        description: `Created template: ${doc.name}`,
+        entity: { type: 'Template', id: doc._id, name: doc.name },
+        metadata: {
+          isPublic: !!doc.isPublic,
+          type: doc.type,
+          category: doc.category,
+          ipAddress: req.ip,
+        },
+      });
+    } catch (e) {
+      // Don't fail request if activity logging fails
+    }
+
     return ok(res, doc, 201);
   } catch (error) {
     handleError(next, error);
