@@ -312,6 +312,25 @@ const createUser = async (req, res) => {
   try {
     const { username, email, role } = req.body;
 
+    // SECURITY FIX: Validate role parameter
+    const allowedRoles = ['user', 'admin', 'super_admin'];
+    if (!allowedRoles.includes(role)) {
+      return sendResponse(res, 400, false, 'Invalid role specified');
+    }
+
+    // SECURITY FIX: Check if current user has permission to assign this role
+    const currentUserSystemRole = req.user.systemRole;
+
+    // Only super_admin can assign admin or super_admin roles
+    if ((role === 'admin' || role === 'super_admin') && currentUserSystemRole !== 'super_admin') {
+      return sendResponse(res, 403, false, 'Only super administrators can assign admin or super_admin roles');
+    }
+
+    // Regular admins can only assign user roles
+    if (currentUserSystemRole === 'admin' && role !== 'user') {
+      return sendResponse(res, 403, false, 'Admins can only assign user roles');
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
