@@ -341,6 +341,18 @@ exports.updateProfileSecure = async (req, res) => {
     try {
         const { currentPassword, name } = req.body;
 
+        // Debug: log presence of uploaded file
+        try {
+            const f = req.uploadedFile;
+            if (f) {
+                logger.info(`updateProfileSecure: received uploadedFile id=${f._id?.toString?.()} name=${f.filename}`);
+            } else {
+                logger.info('updateProfileSecure: no uploadedFile present');
+            }
+        } catch (e) {
+            logger.warn('updateProfileSecure: failed to log uploadedFile info:', e.message);
+        }
+
         // Load user with password for verification
         const user = await User.findById(req.user.id).select('+password');
         if (!user) {
@@ -386,12 +398,14 @@ exports.updateProfileSecure = async (req, res) => {
             const file = req.uploadedFile;
             await file.attachTo('User', user._id);
             user.avatar = file._id;
+            logger.info(`updateProfileSecure: user ${user._id.toString()} avatar set to file ${file._id.toString()}`);
         }
 
         await user.save();
 
         // Populate avatar so response contains URL
         await user.populate({ path: 'avatar', select: 'url thumbnails' });
+        logger.info(`updateProfileSecure: response avatar url=${user.avatar?.url || user.avatar}`);
 
         // Log activity
         await ActivityLog.logActivity({
