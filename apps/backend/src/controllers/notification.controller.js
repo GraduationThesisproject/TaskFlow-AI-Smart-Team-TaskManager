@@ -356,3 +356,34 @@ exports.deleteReadNotifications = async (req, res) => {
         sendResponse(res, 500, false, 'Server error deleting read notifications');
     }
 };
+
+// Test endpoint to send real-time notification (for development)
+exports.sendTestNotification = async (req, res) => {
+    try {
+        const { recipientId, title, message, type = 'info', priority = 'medium', category = 'system' } = req.body;
+        
+        // Create notification data
+        const notificationData = {
+            title: title || 'Test Notification',
+            message: message || 'This is a test notification sent via Socket.IO',
+            type: type,
+            category: category,
+            priority: priority,
+            sender: req.user.id,
+            relatedEntity: null
+        };
+
+        // Send real-time notification using Socket.IO
+        if (global.io) {
+            const notification = await global.io.sendNotification(recipientId, notificationData);
+            sendResponse(res, 200, true, 'Test notification sent successfully', {
+                notification
+            });
+        } else {
+            sendResponse(res, 500, false, 'Socket.IO not available');
+        }
+    } catch (error) {
+        logger.error('Send test notification error:', error);
+        sendResponse(res, 500, false, 'Server error sending test notification');
+    }
+};
