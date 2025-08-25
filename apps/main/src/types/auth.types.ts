@@ -53,11 +53,11 @@ export interface User {
   roles: UserRoles;
 }
 
-// export type UserRole = 'admin' | 'user' | 'moderator';
+// export type UserRole = 'admin' | 'user' | 'super_admin';
 export const UserRole = {
   ADMIN: 'admin',
   USER: 'user',
-  MODERATOR: 'moderator',
+  SUPER_ADMIN: 'super_admin',
 } as const;
 
 export type UserRole = typeof UserRole[keyof typeof UserRole];

@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const jwt = require('../utils/jwt');
 const Admin = require('../models/Admin');
 const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
@@ -15,11 +15,11 @@ const adminMiddleware = async (req, res, next) => {
       return sendResponse(res, 401, false, 'Access denied. No token provided.');
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    // Verify token using JWT utility
+    const decoded = jwt.verifyToken(token);
     
     // Check if admin exists and is active
-    const admin = await Admin.findById(decoded.id).select('-password');
+    const admin = await Admin.findOne({ userId: decoded.id, isActive: true }).select('-password');
     
     if (!admin) {
       return sendResponse(res, 401, false, 'Access denied. Invalid token.');

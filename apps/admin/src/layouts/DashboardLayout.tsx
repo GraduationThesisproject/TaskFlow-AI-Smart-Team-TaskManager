@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAppSelector } from '../store';
 import { 
   Card, 
   CardHeader, 
@@ -22,13 +23,32 @@ import {
 import { adminService, AnalyticsData } from '../services/adminService';
 
 const DashboardLayout: React.FC = () => {
+  const { isAuthenticated, currentAdmin, isLoading: authLoading } = useAppSelector(state => state.admin);
   const [isLoading, setIsLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('DashboardLayout: useEffect triggered');
+    console.log('DashboardLayout: auth state:', { isAuthenticated, authLoading, hasAdmin: !!currentAdmin });
+    console.log('DashboardLayout: localStorage adminToken:', !!localStorage.getItem('adminToken'));
+    console.log('DashboardLayout: localStorage adminToken value:', localStorage.getItem('adminToken'));
+    console.log('DashboardLayout: localStorage all keys:', Object.keys(localStorage));
+    console.log('DashboardLayout: localStorage all entries:', Object.entries(localStorage));
+    
+    // Only fetch data when authenticated and not loading
+    if (!isAuthenticated || authLoading || !currentAdmin) {
+      console.log('DashboardLayout: Not authenticated or still loading, skipping data fetch');
+      console.log('DashboardLayout: isAuthenticated:', isAuthenticated);
+      console.log('DashboardLayout: authLoading:', authLoading);
+      console.log('DashboardLayout: currentAdmin:', currentAdmin);
+      return;
+    }
+
     const fetchDashboardData = async () => {
       try {
+        console.log('DashboardLayout: Starting to fetch dashboard data...');
+        console.log('DashboardLayout: About to call adminService.getAnalytics...');
         setIsLoading(true);
         setError(null);
         const data = await adminService.getAnalytics('6-months');
@@ -42,12 +62,26 @@ const DashboardLayout: React.FC = () => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [isAuthenticated, authLoading, currentAdmin]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Show loading state when not authenticated
+  if (!isAuthenticated || authLoading || !currentAdmin) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <Typography variant="body-medium" className="text-muted-foreground">
+            Loading dashboard...
+          </Typography>
+        </div>
       </div>
     );
   }

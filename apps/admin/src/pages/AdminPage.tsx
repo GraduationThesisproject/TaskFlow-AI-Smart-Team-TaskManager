@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store';
 import { logoutAdmin, getCurrentAdmin } from '../store/slices/adminSlice';
+import { getAvatarUrl } from '../services/adminService';
 import { Typography, Avatar, Dropdown, DropdownItem } from '@taskflow/ui';
 import { ThemeToggle } from '@taskflow/theme';
 import { ConfirmationDialog } from '../components/common';
@@ -341,7 +342,20 @@ const AdminPage: React.FC = () => {
               trigger={
                 <div className="flex items-center space-x-2 hover:bg-muted p-2 rounded-lg transition-colors cursor-pointer">
                   <Avatar size="sm" className="bg-primary text-primary-foreground flex-shrink-0">
-                    <span className="text-sm font-medium">
+                    {currentAdmin?.avatar ? (
+                      <img 
+                        src={getAvatarUrl(currentAdmin.avatar)} 
+                        alt={currentAdmin?.name || 'Admin'} 
+                        className="w-full h-full object-cover rounded-full"
+                        crossOrigin="anonymous"
+                        onError={(e) => {
+                          // Hide the image on error and show fallback
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <span className={`text-sm font-medium ${currentAdmin?.avatar ? 'hidden' : ''}`}>
                       {currentAdmin?.name?.charAt(0).toUpperCase() || 'A'}
                     </span>
                   </Avatar>

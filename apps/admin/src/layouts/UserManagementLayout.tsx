@@ -19,9 +19,13 @@ import {
   PencilIcon,
   TrashIcon,
   UserPlusIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  XMarkIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import { adminService, User } from '../services/adminService';
+import { AddUserModal, EditUserModal } from '../components/user';
+import { ConfirmationDialog } from '../components/common';
 
 const UserManagementLayout: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -238,7 +242,7 @@ const UserManagementLayout: React.FC = () => {
     switch (role.toLowerCase()) {
       case 'admin':
         return 'error';
-      case 'moderator':
+      case 'super_admin':
         return 'warning';
       case 'user':
         return 'secondary';
@@ -312,7 +316,7 @@ const UserManagementLayout: React.FC = () => {
               options={[
                 { value: 'all', label: 'All Roles' },
                 { value: 'admin', label: 'Admin' },
-                { value: 'moderator', label: 'Moderator' },
+                { value: 'super_admin', label: 'Super Admin' },
                 { value: 'user', label: 'User' }
               ]}
             />

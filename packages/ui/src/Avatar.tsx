@@ -73,10 +73,16 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
 Avatar.displayName = "Avatar";
 
 const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
-  ({ className, ...props }, ref) => (
+  ({ className, onError, ...props }, ref) => (
     <img
       ref={ref}
       className={cn(avatarImageVariants(), className)}
+      onError={(e) => {
+        // Hide the image on error
+        e.currentTarget.style.display = 'none';
+        // Call the original onError if provided
+        onError?.(e);
+      }}
       {...props}
     />
   )
@@ -116,4 +122,58 @@ export const getAvatarColor = (str: string): AvatarFallbackProps['variant'] => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-export { Avatar, AvatarImage, AvatarFallback, avatarVariants };
+// New component that automatically handles image fallbacks
+interface AvatarWithFallbackProps extends AvatarProps {
+  src?: string;
+  alt?: string;
+  fallback?: string;
+}
+
+const AvatarWithFallback = React.forwardRef<HTMLDivElement, AvatarWithFallbackProps>(
+  ({ className, size, src, alt, fallback, children, ...props }, ref) => {
+    const [imageError, setImageError] = React.useState(false);
+    const [imageLoaded, setImageLoaded] = React.useState(false);
+
+    const handleImageError = () => {
+      setImageError(true);
+    };
+
+    const handleImageLoad = () => {
+      setImageLoaded(true);
+      setImageError(false);
+    };
+
+    // Generate fallback initials from alt text or fallback prop
+    const getFallbackText = () => {
+      if (fallback) return fallback;
+      if (alt) return getInitials(alt);
+      return children || '?';
+    };
+
+    return (
+      <div
+        ref={ref}
+        className={cn(avatarVariants({ size }), className)}
+        {...props}
+      >
+        {src && !imageError && (
+          <img
+            src={src}
+            alt={alt}
+            className={cn(avatarImageVariants())}
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+          />
+        )}
+        {(!src || imageError || !imageLoaded) && (
+          <div className={cn(avatarFallbackVariants({ size }))}>
+            {getFallbackText()}
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+AvatarWithFallback.displayName = "AvatarWithFallback";
+
+export { Avatar, AvatarImage, AvatarFallback, AvatarWithFallback, avatarVariants };

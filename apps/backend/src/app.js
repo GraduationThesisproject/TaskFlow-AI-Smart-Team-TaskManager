@@ -95,11 +95,17 @@ app.get('/cors-test', (req, res) => {
 
 // Static file serving for uploads - handle subdirectories properly
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
-  setHeaders: (res, path) => {
-    // Set CORS headers for static files
-    res.setHeader('Access-Control-Allow-Origin', '*');
+  setHeaders: (res, path, stat) => {
+    // Get the origin from the request headers
+    const origin = res.req?.headers?.origin;
+    
+    // Set CORS headers for static files - allow the requesting origin
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     
     // Set proper headers for different file types
     if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png') || path.endsWith('.gif') || path.endsWith('.webp')) {
@@ -113,6 +119,86 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
     }
   }
 }));
+
+// Special route for avatar images to ensure proper CORS handling
+app.get('/uploads/avatars/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(process.cwd(), 'uploads', 'avatars', filename);
+  
+  // Set CORS headers
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // Set proper headers for images
+  res.setHeader('Content-Type', 'image/*');
+  res.setHeader('Cache-Control', 'public, max-age=31536000');
+  
+  // Serve the file
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('Error serving avatar file:', err);
+      res.status(404).json({ error: 'Avatar not found' });
+    }
+  });
+});
+
+// Alternative proxy route for avatars through API
+app.get('/api/avatars/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(process.cwd(), 'uploads', 'avatars', filename);
+  
+  // Set CORS headers
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // Set proper headers for images
+  res.setHeader('Content-Type', 'image/*');
+  res.setHeader('Cache-Control', 'public, max-age=31536000');
+  
+  // Serve the file
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('Error serving avatar file:', err);
+      res.status(404).json({ error: 'Avatar not found' });
+    }
+  });
+});
+
+// Handle OPTIONS requests for avatar files (preflight)
+app.options('/uploads/avatars/:filename', (req, res) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+  res.status(200).end();
+});
+
+// Handle OPTIONS requests for API avatar route (preflight)
+app.options('/api/avatars/:filename', (req, res) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+  res.status(200).end();
+});
 
 // Body parsing middleware for all routes
 app.use(express.json({ limit: '10mb' }));
