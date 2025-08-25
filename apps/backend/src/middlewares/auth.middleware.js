@@ -36,6 +36,9 @@ const authMiddleware = async (req, res, next) => {
             return sendResponse(res, 423, false, 'Account is temporarily locked');
         }
 
+        // SECURITY FIX: Get user's actual roles from database
+        const userRoles = await user.getRoles();
+
         // Get device ID from headers for session validation
         const deviceId = req.header('X-Device-ID');
         
@@ -55,17 +58,21 @@ const authMiddleware = async (req, res, next) => {
             }
         }
 
-        // Add user to request object with enhanced data
+        // Add user to request object with enhanced data including verified roles
         req.user = {
             id: user._id,
             email: user.email,
             name: user.name,
             avatar: user.avatar,
             emailVerified: user.emailVerified,
-            isActive: user.isActive
+            isActive: user.isActive,
+            // SECURITY FIX: Include verified roles from database
+            roles: userRoles,
+            systemRole: userRoles.systemRole,
+            globalRoles: userRoles.globalRoles
         };
 
-        logger.info(`Auth middleware: User authenticated - ID: ${req.user.id}, Email: ${req.user.email}, Name: ${req.user.name}`);
+        logger.info(`Auth middleware: User authenticated - ID: ${req.user.id}, Email: ${req.user.email}, System Role: ${req.user.systemRole}`);
         next();
     } catch (error) {
         if (error.name === 'JsonWebTokenError') {
@@ -79,20 +86,20 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
-// Middleware to check for specific roles
-const requireRole = (roles) => {
+// Middleware to check for specific system roles
+const requireSystemRole = (roles) => {
     return (req, res, next) => {
         if (!req.user) {
             return sendResponse(res, 401, false, 'Authentication required');
         }
 
-        const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+        const userSystemRole = req.user.systemRole;
         const requiredRoles = Array.isArray(roles) ? roles : [roles];
 
-        const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
+        const hasRequiredRole = requiredRoles.includes(userSystemRole);
 
         if (!hasRequiredRole) {
-            return sendResponse(res, 403, false, 'Insufficient permissions');
+            return sendResponse(res, 403, false, 'Insufficient system permissions');
         }
 
         next();
@@ -100,7 +107,7 @@ const requireRole = (roles) => {
 };
 
 // Middleware to check if user is admin
-const requireAdmin = requireRole('admin');
+const requireAdmin = requireSystemRole('admin');
 
 // Middleware for optional authentication (doesn't fail if no token)
 const optionalAuth = async (req, res, next) => {
@@ -123,11 +130,15 @@ const optionalAuth = async (req, res, next) => {
         const user = await User.findById(decoded.id);
         
         if (user) {
+            // SECURITY FIX: Get verified roles from database
+            const userRoles = await user.getRoles();
+            
             req.user = {
                 id: user._id,
                 email: user.email,
                 name: user.name,
-                role: user.role
+                roles: userRoles,
+                systemRole: userRoles.systemRole
             };
         }
 
@@ -140,7 +151,7 @@ const optionalAuth = async (req, res, next) => {
 
 module.exports = {
     authMiddleware,
-    requireRole,
+    requireSystemRole,
     requireAdmin,
     optionalAuth
 };
