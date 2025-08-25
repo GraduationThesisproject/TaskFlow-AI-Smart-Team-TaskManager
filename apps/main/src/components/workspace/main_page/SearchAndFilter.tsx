@@ -1,7 +1,6 @@
 import React from 'react';
 import { Input, Dropdown, DropdownItem } from '@taskflow/ui';
 import { useAppDispatch } from '../../../store';
-import { fetchMembers } from '../../../store/slices/workspaceSlice';
 
 interface SearchAndFilterProps {
   search: string;
@@ -34,9 +33,6 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
             const val = e.target.value;
             setSearch(val);
             // When clearing the search, reset to full members from API
-            if (val.trim().length === 0 && workspaceId) {
-              dispatch(fetchMembers({ id: workspaceId }));
-            }
           }}
           onKeyDown={async (e) => {
             if (e.key === 'Enter') {
@@ -46,7 +42,6 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 console.warn('[API members search] Skipped: invalid workspace id. Provide ?id=<ObjectId> in URL.');
                 return;
               }
-              dispatch(fetchMembers({ id: workspaceId, q }));
             }
           }}
         />
