@@ -4,8 +4,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../index';
 import type { TemplateItem, TemplatesFilters, TemplatesState } from '../../types/dash.types';
 
-
-
+// Initial state
 const initialState: TemplatesState = {
   items: [],
   selected: null,
@@ -32,6 +31,21 @@ export const listTemplates = createAsyncThunk(
       return res.data;
     } catch (e: any) {
       return rejectWithValue(e.message || 'Failed to load templates');
+    }
+  }
+);
+
+// Admin-only: list all templates (backend must support scope=all)
+export const listAllTemplates = createAsyncThunk(
+  'templates/listAll',
+  async (params: TemplatesFilters | undefined, { rejectWithValue }) => {
+    try {
+      const merged = { ...(params || {}), scope: 'all' as const };
+      const query = toQuery(merged as Record<string, any>);
+      const res = await apiClient.get<{ success: boolean; data: TemplateItem[] }>(`/templates${query}`);
+      return res.data;
+    } catch (e: any) {
+      return rejectWithValue(e.message || 'Failed to load templates (all)');
     }
   }
 );
@@ -143,6 +157,19 @@ const templatesSlice = createSlice({
       .addCase(listTemplates.rejected, (state, action) => {
         state.loading = false;
         state.error = (action.payload as string) || 'Failed to load templates';
+      })
+      // list all (admin)
+      .addCase(listAllTemplates.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(listAllTemplates.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload;
+      })
+      .addCase(listAllTemplates.rejected, (state, action) => {
+        state.loading = false;
+        state.error = (action.payload as string) || 'Failed to load templates (all)';
       })
       // get
       .addCase(getTemplate.pending, (state) => {

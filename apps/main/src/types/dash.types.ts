@@ -254,6 +254,9 @@ export interface TemplatesFilters {
   isPublic?: boolean;
   status?: TemplateStatus;
   limit?: number;
+  all?: boolean;
+  // Admin-only: request all templates regardless of access control
+  scope?: 'all';
 }
 
 export interface TemplatesState {
@@ -273,6 +276,8 @@ export interface UseTemplatesReturn {
 
   // Actions
   load: (filters?: TemplatesFilters) => void;
+  // Admin-only: fetch all templates (requires backend support for scope=all)
+  loadAll: (filters?: TemplatesFilters) => void;
   fetchOne: (id: string) => void;
   create: (payload: Partial<TemplateItem>) => Promise<void>;
   update: (id: string, updates: Partial<TemplateItem>) => Promise<void>;
@@ -314,6 +319,9 @@ export interface TemplatesFilters {
   isPublic?: boolean;
   status?: TemplateStatus;
   limit?: number;
+  all?: boolean;
+  // Admin-only: request all templates regardless of access control
+  scope?: 'all';
 }
 
 export type CategoryKey = 'Marketing' | 'Development' | 'Design' | 'Sales' | 'Support' | 'Operations' | 'HR' | 'Finance' | 'General' | 'Custom';

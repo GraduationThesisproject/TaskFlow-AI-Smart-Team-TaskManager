@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/template.controller');
+const auth = require('../middlewares/auth.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const mongoose = require('mongoose');
 
@@ -16,7 +17,8 @@ const listQuerySchema = {
   isPublic: { string: true, pattern: /^(true|false)$/ },
   status: { enum: ['draft', 'active', 'archived', 'deprecated'] },
   limit: { number: true, min: 1, max: 200 },
-  workspaceId: { objectId: true }
+  workspaceId: { objectId: true },
+  scope: { enum: ['all'] }
 };
 
 const createTemplateSchema = {
@@ -85,12 +87,12 @@ const validateAccessControl = (req, res, next) => {
 // CRUD
 router.get('/', validateMiddleware.validateQuery(listQuerySchema), ctrl.list);
 router.get('/:id', validateMiddleware.validateParams(idParamSchema), ctrl.getById);
-router.post('/', validateMiddleware(createTemplateSchema), validateTagsLength, validateAccessControl, ctrl.create);
-router.put('/:id', validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update);
-router.delete('/:id', validateMiddleware.validateParams(idParamSchema), ctrl.remove);
+router.post('/', auth, validateMiddleware(createTemplateSchema), validateTagsLength, validateAccessControl, ctrl.create);
+router.put('/:id', auth, validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update);
+router.delete('/:id', auth, validateMiddleware.validateParams(idParamSchema), ctrl.remove);
 
 // Engagement
 router.post('/:id/views', validateMiddleware.validateParams(idParamSchema), ctrl.incrementViews);
-router.post('/:id/like', validateMiddleware.validateParams(idParamSchema), ctrl.toggleLike);
+router.post('/:id/like', auth, validateMiddleware.validateParams(idParamSchema), ctrl.toggleLike);
 
 module.exports = router;
