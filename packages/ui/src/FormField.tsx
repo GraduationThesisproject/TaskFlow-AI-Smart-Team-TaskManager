@@ -22,11 +22,11 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     const getIcon = () => {
       switch (icon) {
         case 'email':
-          return <EnvelopeIcon className="w-5 h-5 text-muted-foreground" />;
+          return <Mail className="w-5 h-5 text-muted-foreground" />;
         case 'password':
-          return <LockClosedIcon className="w-5 h-5 text-muted-foreground" />;
+          return <Lock className="w-5 h-5 text-muted-foreground" />;
         case 'user':
-          return <UserIcon className="w-5 h-5 text-muted-foreground" />;
+          return <User className="w-5 h-5 text-muted-foreground" />;
         default:
           return null;
       }

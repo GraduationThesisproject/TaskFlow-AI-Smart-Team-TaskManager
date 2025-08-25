@@ -30,6 +30,7 @@ const analyticsRoutes = require('./routes/analytics.routes');
 const tagRoutes = require('./routes/tag.routes');
 const invitationRoutes = require('./routes/invitation.routes');
 const aiRoutes = require('./routes/ai.routes');
+const templateRoutes = require('./routes/template.routes');
 const app = express();
 
 
@@ -132,6 +133,7 @@ app.use('/api/analytics', authMiddleware, analyticsRoutes);
 app.use('/api/tags', authMiddleware, tagRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
+app.use('/api/templates', authMiddleware, templateRoutes);
 
 // 404 handler - using catch-all middleware instead of wildcard
 app.use((req, res) => {

@@ -15,6 +15,7 @@ import type {
 import { AuthService } from '../../services/authService';
 import { oauthService } from '../../services/oauthService';
 import { getDeviceId } from '../../utils';
+import { AuthControllerClient } from '../../services/authService';
 
 const serializeUser = (userData: any): User => {
   if (userData.user) {
@@ -342,7 +343,7 @@ export const requestPasswordReset = createAsyncThunk(
   'auth/requestPasswordReset',
   async (resetData: PasswordResetRequestData, { rejectWithValue }) => {
     try {
-      const response = await AuthService.requestPasswordReset(resetData);
+      const response = await AuthService.requestPasswordReset(resendData);
       return response.data;
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to request password reset';
@@ -360,6 +361,59 @@ export const resetPassword = createAsyncThunk(
       return response.data;
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to reset password';
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+// Secure profile update (multipart form-data)
+export const updateProfileSecure = createAsyncThunk(
+  'auth/updateProfileSecure',
+  async (formData: FormData, { rejectWithValue }) => {
+    try {
+      await AuthControllerClient.updateProfileSecure(formData);
+      // Re-fetch profile to ensure local state is in sync
+      const profileResponse = await AuthService.getProfile();
+      return serializeUser(profileResponse.data);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update profile';
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+// Change password
+export const changePassword = createAsyncThunk(
+  'auth/changePassword',
+  async (
+    payload: { currentPassword: string; newPassword: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { currentPassword, newPassword } = payload;
+      const response = await AuthControllerClient.changePassword(currentPassword, newPassword);
+      return response; // return API response (e.g., message)
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to change password';
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+// Update preferences
+export const updatePreferences = createAsyncThunk(
+  'auth/updatePreferences',
+  async (
+    payload: { section: string; updates: any },
+    { rejectWithValue }
+  ) => {
+    try {
+      await AuthControllerClient.updatePreferences(payload.section, payload.updates);
+      // Re-fetch profile to ensure local state is in sync
+      const profileResponse = await AuthService.getProfile();
+      return serializeUser(profileResponse.data);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update preferences';
       return rejectWithValue(errorMessage);
     }
   }
@@ -534,6 +588,44 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(oauthRegister.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Update Profile Secure
+      .addCase(updateProfileSecure.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateProfileSecure.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload;
+        state.error = null;
+      })
+      .addCase(updateProfileSecure.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Change Password (does not alter user data)
+      .addCase(changePassword.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.error = null;
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+      // Update Preferences
+      .addCase(updatePreferences.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updatePreferences.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload;
+        state.error = null;
+      })
+      .addCase(updatePreferences.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

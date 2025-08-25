@@ -274,6 +274,45 @@ class WorkspaceService {
 
         return newWorkspace;
     }
+
+    // Delete workspace and all related data
+    async deleteWorkspace(workspaceId, userId) {
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            throw new Error('Workspace not found');
+        }
+
+        // Only owner can delete at service level; controller may add broader checks if needed
+        if (workspace.owner.toString() !== userId.toString()) {
+            throw new Error('Only workspace owner can delete the workspace');
+        }
+
+        // Require models locally to avoid duplicate top-level declarations
+        const Task = require('../models/Task');
+        const Board = require('../models/Board');
+        const File = require('../models/File');
+        const Notification = require('../models/Notification');
+        const Checklist = require('../models/Checklist');
+        const Reminder = require('../models/Reminder');
+        const Analytics = require('../models/Analytics');
+        const Tag = require('../models/Tag');
+
+        await Promise.all([
+            Space.deleteMany({ workspace: workspaceId }),
+            Task.deleteMany({ workspace: workspaceId }),
+            Board.deleteMany({ workspace: workspaceId }),
+            File.deleteMany({ workspace: workspaceId }),
+            Notification.deleteMany({ workspace: workspaceId }),
+            Checklist.deleteMany({ workspace: workspaceId }),
+            Reminder.deleteMany({ workspace: workspaceId }),
+            Analytics.deleteMany({ workspace: workspaceId }),
+            Tag.deleteMany({ workspace: workspaceId }),
+        ]);
+
+        await Workspace.findByIdAndDelete(workspaceId);
+
+        return { success: true, message: 'Workspace deleted successfully' };
+    }
 }
 
 module.exports = new WorkspaceService();

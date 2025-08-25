@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Space } from '../../types/task.types';
-import { WorkspaceService } from '../../services/D_workspaceService';
+import { WorkspaceService } from "../../services/D_workspaceService.ts";
 import { SpaceService } from '../../services/spaceService';
 import { workspaceService, type InviteLinkInfo } from '../../services/workspace.service.ts';
 import type { Workspace, WorkspaceMember, WorkspaceState as BaseWorkspaceState } from '../../types/workspace.types';
@@ -105,6 +105,25 @@ export const createWorkspace = createAsyncThunk(
       plan: 'free' // Default to free plan
     });
     return response.data;
+  }
+);
+
+export const deleteWorkspace = createAsyncThunk<{ id: string; message: string }, { id: string }>(
+  'workspace/deleteWorkspace',
+  async ({ id }) => {
+    const response = await WorkspaceService.deleteWorkspace(id);
+    const message = (response as any)?.message || (response as any)?.data?.message || 'Workspace deleted';
+    return { id, message };
+  }
+);
+
+// Dev-only: force current user as owner for a workspace (repairs old data)
+export const forceOwnerDev = createAsyncThunk<{ id: string; message: string }, { id: string }>(
+  'workspace/forceOwnerDev',
+  async ({ id }) => {
+    const response = await WorkspaceService.forceOwnerDev(id);
+    const message = (response as any)?.message || (response as any)?.data?.message || 'Ownership updated (dev)';
+    return { id, message };
   }
 );
 
@@ -327,9 +346,15 @@ const workspaceSlice = createSlice({
       .addCase(disableInviteLink.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Failed to disable invite link';
-      });
-  }
-});
+      })
+      
+      }})
+  
+      // Delete workspace
+    
+    // You can add other thunks (spaces, members, invite links) here similarly...
+  
+
 
 
 export const {
