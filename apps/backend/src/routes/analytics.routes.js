@@ -1,8 +1,4 @@
 const express = require('express');
-const analyticsController = require('../controllers/analytics.controller');
-const validateMiddleware = require('../middlewares/validate.middleware');
-const { requireSpacePermission, requireWorkspacePermission } = require('../middlewares/permission.middleware');
-
 const router = express.Router();
 
 // Validation schemas

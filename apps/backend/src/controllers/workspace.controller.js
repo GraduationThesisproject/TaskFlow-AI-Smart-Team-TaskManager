@@ -2,6 +2,7 @@ const Workspace = require('../models/Workspace');
 const User = require('../models/User');
 const Invitation = require('../models/Invitation');
 const ActivityLog = require('../models/ActivityLog');
+const WorkspaceService = require('../services/workspace.service');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
@@ -624,5 +625,46 @@ exports.transferOwnership = async (req, res) => {
     } catch (error) {
         logger.error('Transfer ownership error:', error);
         sendResponse(res, 500, false, 'Server error transferring ownership');
+    }
+};
+
+
+exports.deleteWorkspace = async (req, res) => {
+    try {
+        const { id: workspaceId } = req.params;
+        const userId = req.user.id;
+
+        // Prevent CastError
+        if (!mongoose.Types.ObjectId.isValid(workspaceId)) {
+            return sendResponse(res, 400, false, 'Invalid workspace ID format');
+        }
+
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+ 
+        // Owner can delete directly
+        if (workspace.owner.toString() === userId.toString()) {
+            await WorkspaceService.deleteWorkspace(workspaceId, userId);
+            return sendResponse(res, 200, true, 'Workspace deleted successfully', { id: workspaceId });
+        }
+
+        // Check permissions
+        const user = await User.findById(userId);
+        const userRoles = await user.getRoles();
+        const wsRole = userRoles.workspaces.find(
+            (ws) => ws.workspace.toString() === workspaceId.toString()
+        );
+
+        if (wsRole?.permissions?.canDeleteWorkspace) {
+            await WorkspaceService.deleteWorkspace(workspaceId, workspace.owner);
+            return sendResponse(res, 200, true, 'Workspace deleted successfully', { id: workspaceId });
+        }
+
+        return sendResponse(res, 403, false, 'You do not have permission to delete this workspace');
+    } catch (error) {
+        logger.error('Delete workspace error:', error);
+        return sendResponse(res, 500, false, 'Server error deleting workspace');
     }
 };

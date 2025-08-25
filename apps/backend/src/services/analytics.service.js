@@ -797,6 +797,170 @@ class AnalyticsService {
         // Implement PDF export logic - would use a library like puppeteer or pdfkit
         throw new Error('PDF export not implemented yet');
     }
+
+    // Generate user analytics (compatible with dashboard controller)
+    static async generateUserAnalytics(userId, options = {}) {
+        try {
+            const { periodType = 'monthly', includeAI = false } = options;
+            
+            // Calculate date range based on period type
+            let days = 30; // default monthly
+            switch (periodType) {
+                case 'daily': days = 1; break;
+                case 'weekly': days = 7; break;
+                case 'monthly': days = 30; break;
+                case 'quarterly': days = 90; break;
+                case 'yearly': days = 365; break;
+            }
+            
+            const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+            const endDate = new Date();
+
+            // Get user tasks
+            const userTasks = await Task.find({
+                $or: [
+                    { assignees: userId },
+                    { reporter: userId }
+                ],
+                archivedAt: null
+            }).populate('assignees', 'name').populate('reporter', 'name');
+
+            // Filter tasks by date range for metrics calculation
+            const periodTasks = userTasks.filter(task => 
+                task.createdAt >= startDate && task.createdAt <= endDate
+            );
+
+            // Calculate task metrics
+            const assignedTasks = userTasks.filter(t => t.assignees.some(a => a._id.toString() === userId));
+            const createdTasks = userTasks.filter(t => t.reporter && t.reporter._id.toString() === userId);
+            const completedTasks = assignedTasks.filter(t => t.status === 'done');
+            const inProgressTasks = assignedTasks.filter(t => t.status === 'in_progress');
+            const todoTasks = assignedTasks.filter(t => t.status === 'todo');
+            const overdueTasks = assignedTasks.filter(t => 
+                t.dueDate && t.dueDate < new Date() && t.status !== 'done'
+            );
+            const highPriorityTasks = assignedTasks.filter(t => 
+                t.priority === 'high' || t.priority === 'critical'
+            );
+
+            const taskMetrics = {
+                total: assignedTasks.length,
+                completed: completedTasks.length,
+                inProgress: inProgressTasks.length,
+                todo: todoTasks.length,
+                overdue: overdueTasks.length,
+                highPriority: highPriorityTasks.length,
+                completionRate: assignedTasks.length > 0 ? 
+                    Math.round((completedTasks.length / assignedTasks.length) * 100) : 0,
+                tasksCreated: createdTasks.length
+            };
+
+            // Calculate productivity metrics
+            const productivityMetrics = {
+                tasksCompletedThisPeriod: periodTasks.filter(t => 
+                    t.status === 'done' && t.assignees.some(a => a._id.toString() === userId)
+                ).length,
+                averageCompletionTime: await this.calculateUserAverageCompletionTime(userId, startDate, endDate),
+                productivityScore: taskMetrics.completionRate
+            };
+
+            // Get activity trend
+            const activityTrend = await this.getUserActivityTrend(userId, startDate);
+
+            const analytics = {
+                taskMetrics,
+                productivityMetrics,
+                activityTrend,
+                period: {
+                    startDate,
+                    endDate,
+                    type: periodType
+                }
+            };
+
+            // Add AI insights if requested
+            if (includeAI) {
+                try {
+                    analytics.aiInsights = await this.generateUserAIInsights(userId, analytics);
+                } catch (error) {
+                    logger.warn('User AI insights generation failed:', error.message);
+                    analytics.aiInsights = {
+                        recommendations: [],
+                        patterns: [],
+                        suggestions: []
+                    };
+                }
+            }
+
+            return analytics;
+
+        } catch (error) {
+            logger.error('Generate user analytics error:', error);
+            throw error;
+        }
+    }
+
+    static async calculateUserAverageCompletionTime(userId, startDate, endDate) {
+        const completedTasks = await Task.find({
+            assignees: userId,
+            status: 'done',
+            completedAt: { $gte: startDate, $lte: endDate },
+            createdAt: { $exists: true }
+        });
+
+        if (completedTasks.length === 0) return 0;
+
+        const totalTime = completedTasks.reduce((sum, task) => {
+            if (task.completedAt && task.createdAt) {
+                return sum + (task.completedAt - task.createdAt);
+            }
+            return sum;
+        }, 0);
+
+        return Math.round(totalTime / completedTasks.length / (1000 * 60 * 60)); // hours
+    }
+
+    static async generateUserAIInsights(userId, analytics) {
+        // Simple rule-based insights for now
+        const insights = {
+            recommendations: [],
+            patterns: [],
+            suggestions: []
+        };
+
+        // Completion rate insights
+        if (analytics.taskMetrics.completionRate < 50) {
+            insights.recommendations.push({
+                type: 'productivity',
+                title: 'Improve Task Completion',
+                description: 'Your completion rate is below 50%. Consider breaking down large tasks into smaller ones.',
+                priority: 'medium'
+            });
+        }
+
+        // Overdue tasks insights
+        if (analytics.taskMetrics.overdue > 0) {
+            insights.recommendations.push({
+                type: 'time_management',
+                title: 'Address Overdue Tasks',
+                description: `You have ${analytics.taskMetrics.overdue} overdue tasks. Prioritize these to improve your workflow.`,
+                priority: 'high'
+            });
+        }
+
+        // High priority tasks insights
+        if (analytics.taskMetrics.highPriority > 5) {
+            insights.suggestions.push({
+                type: 'workload',
+                title: 'High Priority Workload',
+                description: 'You have many high-priority tasks. Consider delegating or rescheduling some tasks.',
+                priority: 'medium'
+            });
+        }
+
+        return insights;
+    }
+
 }
 
 module.exports = AnalyticsService;

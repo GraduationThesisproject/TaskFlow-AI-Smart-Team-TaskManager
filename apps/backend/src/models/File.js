@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const path = require('path');
+const env = require('../config/env');
 
 // NOTE: This File model supports ONLY local disk storage.
 // Cloud/CDN integrations (url field) are not supported in this version.
@@ -28,6 +29,10 @@ const fileSchema = new mongoose.Schema({
   path: {
     type: String,
     required: [true, 'File path is required']
+  },
+  url: {
+    type: String,
+    required: [true, 'Public URL is required']
   },
   extension: {
     type: String,
@@ -398,7 +403,7 @@ fileSchema.statics.createFromUpload = function(multerFile, uploadedBy, category 
   });
 };
 
-    // Pre-save middleware to set workspace/space context and file extension
+// Pre-save middleware to set workspace/space context and file extension
 fileSchema.pre('save', async function(next) {
   // Set file extension if not already set
   if (this.isNew && !this.extension && this.originalName) {
@@ -407,23 +412,20 @@ fileSchema.pre('save', async function(next) {
   
   if (this.isNew && this.attachedTo) {
     try {
-              // Try to determine workspace/space context
+      // Try to determine workspace/space context
       switch (this.attachedTo.model) {
         case 'Task':
           const Task = require('./Task');
           const task = await Task.findById(this.attachedTo.objectId).populate('board');
-                      if (task && task.board && task.board.space) {
-                this.space = task.board.space;
-            }
-          break;
-                  case 'Space':
-            this.space = this.attachedTo.objectId;
-          break;
-        case 'Workspace':
-          this.workspace = this.attachedTo.objectId;
+          if (task && task.board && task.board.space) {
+            this.space = task.board.space;
+          }
           break;
         case 'Space':
           this.space = this.attachedTo.objectId;
+          break;
+        case 'Workspace':
+          this.workspace = this.attachedTo.objectId;
           break;
       }
     } catch (error) {
