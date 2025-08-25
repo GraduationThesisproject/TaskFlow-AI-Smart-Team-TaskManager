@@ -25,49 +25,131 @@ const sendResponse = (res, statusCode, success, message, data = null, meta = nul
 
 // Success response helpers
 const success = (res, message = 'Success', data = null, meta = null) => {
-    return sendResponse(res, 200, true, message, data, meta);
+    const response = {
+        success: true,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    if (data !== null) {
+        response.data = data;
+    }
+
+    if (meta !== null) {
+        response.meta = meta;
+    }
+
+    return res.status(200).json(response);
 };
 
 const created = (res, message = 'Resource created successfully', data = null) => {
-    return sendResponse(res, 201, true, message, data);
+    const response = {
+        success: true,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    if (data !== null) {
+        response.data = data;
+    }
+
+    return res.status(201).json(response);
 };
 
 const noContent = (res, message = 'No content') => {
-    return sendResponse(res, 204, true, message);
+    const response = {
+        success: true,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    return res.status(204).json(response);
 };
 
 // Error response helpers
 const badRequest = (res, message = 'Bad request', errors = null) => {
-    const data = errors ? { errors } : null;
-    return sendResponse(res, 400, false, message, data);
+    const response = {
+        success: false,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    if (errors) {
+        response.data = { errors };
+    }
+
+    return res.status(400).json(response);
 };
 
 const unauthorized = (res, message = 'Unauthorized') => {
-    return sendResponse(res, 401, false, message);
+    const response = {
+        success: false,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    return res.status(401).json(response);
 };
 
 const forbidden = (res, message = 'Forbidden') => {
-    return sendResponse(res, 403, false, message);
+    const response = {
+        success: false,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    return res.status(403).json(response);
 };
 
 const notFound = (res, message = 'Resource not found') => {
-    return sendResponse(res, 404, false, message);
+    const response = {
+        success: false,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    return res.status(404).json(response);
 };
 
 const conflict = (res, message = 'Conflict') => {
-    return sendResponse(res, 409, false, message);
+    const response = {
+        success: false,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    return res.status(409).json(response);
 };
 
 const validationError = (res, errors, message = 'Validation failed') => {
-    return sendResponse(res, 422, false, message, { errors });
+    const response = {
+        success: false,
+        message,
+        timestamp: new Date().toISOString(),
+        data: { errors }
+    };
+
+    return res.status(422).json(response);
 };
 
 const tooManyRequests = (res, message = 'Too many requests') => {
-    return sendResponse(res, 429, false, message);
+    const response = {
+        success: false,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    return res.status(429).json(response);
 };
 
 const serverError = (res, message = 'Internal server error') => {
-    return sendResponse(res, 500, false, message);
+    const response = {
+        success: false,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    return res.status(500).json(response);
 };
 
 // Paginated response helper
@@ -83,7 +165,15 @@ const paginated = (res, data, pagination, message = 'Data retrieved successfully
         }
     };
 
-    return sendResponse(res, 200, true, message, data, meta);
+    const response = {
+        success: true,
+        message,
+        timestamp: new Date().toISOString(),
+        data,
+        meta
+    };
+
+    return res.status(200).json(response);
 };
 
 // Generic error response with proper error handling
@@ -129,7 +219,17 @@ const handleError = (res, error, defaultMessage = 'An error occurred') => {
         };
     }
 
-    return sendResponse(res, statusCode, false, message, data);
+    const response = {
+        success: false,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    if (data !== null) {
+        response.data = data;
+    }
+
+    return res.status(statusCode).json(response);
 };
 
 // API versioning helper
@@ -152,7 +252,14 @@ const cachedResponse = (res, data, cacheTime = 300, message = 'Success') => {
         'ETag': `"${Buffer.from(JSON.stringify(data)).toString('base64')}"`
     });
 
-    return sendResponse(res, 200, true, message, data);
+    const response = {
+        success: true,
+        message,
+        timestamp: new Date().toISOString(),
+        data
+    };
+
+    return res.status(200).json(response);
 };
 
 // JSONP response helper

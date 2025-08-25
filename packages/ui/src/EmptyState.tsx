@@ -35,7 +35,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       </Typography>
       
       {description && (
-        <Typography variant="body" className="mb-6 text-muted-foreground max-w-md">
+        <Typography variant="body-medium" className="mb-6 text-muted-foreground max-w-md">
           {description}
         </Typography>
       )}
