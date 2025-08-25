@@ -77,10 +77,53 @@ export const themes = {
   },
 };
 
-export const applyTheme = (theme: 'light' | 'dark', userPrimaryColor?: string | null) => {
+type GradientPalette = 'orange' | 'purple' | 'green' | 'blue';
+
+// Predefined gradient palettes
+const gradientPalettes: Record<GradientPalette, { primary: string; secondary: string; accent: string; muted?: string }> = {
+  // red -> orange
+  orange: {
+    primary: '0 84% 60%',        // red
+    secondary: '24 100% 50%',    // orange
+    accent: '24 100% 50%',
+  },
+  // purple -> pink
+  purple: {
+    primary: '270 90% 60%',      // purple
+    secondary: '320 85% 65%',    // pink
+    accent: '320 85% 65%',
+  },
+  // dark green -> clear (light) green
+  green: {
+    primary: '140 70% 25%',      // dark green
+    secondary: '142 70% 60%',    // light green
+    accent: '142 70% 60%',
+  },
+  // blue -> cyan
+  blue: {
+    primary: '201 100% 44%',     // blue
+    secondary: '190 100% 50%',   // cyan
+    accent: '190 100% 50%',
+  },
+};
+
+const applyGradientPalette = (vars: Record<string, string>, palette?: GradientPalette) => {
+  if (!palette) return;
+  const p = gradientPalettes[palette];
+  if (!p) return;
+  vars['--gradient-primary'] = p.primary;
+  vars['--gradient-secondary'] = p.secondary;
+  vars['--gradient-accent'] = p.accent;
+  // keep --gradient-muted from theme defaults unless specified
+};
+
+export const applyTheme = (theme: 'light' | 'dark', userPrimaryColor?: string | null, gradientPalette?: GradientPalette) => {
   const root = document.documentElement;
   const themeVars = { ...themes[theme] };
-  
+
+  // Apply selected gradient palette first (can be overridden by userPrimaryColor below)
+  applyGradientPalette(themeVars, gradientPalette);
+
   // Apply user primary color if provided
   if (userPrimaryColor) {
     try {
@@ -90,9 +133,7 @@ export const applyTheme = (theme: 'light' | 'dark', userPrimaryColor?: string | 
         themeVars['--primary'] = hsl;
         themeVars['--accent'] = hsl;
         themeVars['--ring'] = hsl;
-        themeVars['--gradient-primary'] = hsl;
-        themeVars['--gradient-secondary'] = hsl;
-        themeVars['--gradient-accent'] = hsl;
+        // Do not overwrite gradient variables; keep palette-driven gradients
 
         const fg = hslForegroundFor(hsl);
         // Keep text white for purple hues regardless of lightness to ensure readability
@@ -106,7 +147,7 @@ export const applyTheme = (theme: 'light' | 'dark', userPrimaryColor?: string | 
       console.warn('Invalid user primary color:', userPrimaryColor);
     }
   }
-  
+
   // Safeguard: ensure white text for purple hues even if userPrimaryColor wasn't provided
   const coerceWhiteForPurple = (hslVal?: string) => {
     if (!hslVal) return false;
@@ -128,9 +169,9 @@ export const applyTheme = (theme: 'light' | 'dark', userPrimaryColor?: string | 
   Object.entries(themeVars).forEach(([key, value]) => {
     root.style.setProperty(key, value);
   });
-  
+
   root.setAttribute('data-theme', theme);
-  
+
   applyScrollbarStyles();
 };
 
@@ -255,5 +296,7 @@ const applyScrollbarStyles = () => {
 };
 
 export { ThemeProvider, useTheme, ThemeToggle } from './ThemeProvider';
+export type { GradientPalette };
+export { applyGradientPalette };
 export * from './colorUtils';
 export * from './themeManager';

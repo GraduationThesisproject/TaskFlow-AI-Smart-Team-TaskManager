@@ -56,7 +56,6 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onClick, onLike }
               <Heart className="h-4 w-4" fill={template.userLiked ? 'currentColor' : 'none'} />
               <span>{template.likes}</span>
             </button>
-            <span>{template.downloads} downloads</span>
           </div>
           <Typography variant="caption" className="ml-auto whitespace-nowrap">
             {new Date(template.updatedAt).toLocaleDateString()}

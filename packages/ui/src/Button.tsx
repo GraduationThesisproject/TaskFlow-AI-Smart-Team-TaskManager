@@ -7,15 +7,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg",
-        gradient: "bg-gradient-to-r from-primary-500 to-accent-500 text-white hover:from-primary-600 hover:to-accent-600 shadow-md hover:shadow-lg",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_12px_2px_rgba(0,122,223,0.35)] hover:shadow-[0_0_16px_4px_rgba(0,122,223,0.55)]",
+        gradient: "bg-gradient-to-r from-[hsl(var(--gradient-primary))] to-[hsl(var(--gradient-secondary))] text-white shadow-[0_0_12px_2px_rgba(0,122,223,0.35)] hover:shadow-[0_0_18px_5px_rgba(0,122,223,0.55)]",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md hover:shadow-lg",
         outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        accent: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-md hover:shadow-lg",
-        neon: "relative text-white bg-gradient-to-r from-[#00EBCB] to-[#007ADF] shadow-[0_0_16px_3px_rgba(0,186,255,0.35)] hover:shadow-[0_0_22px_5px_rgba(0,186,255,0.55)]",
+        accent: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_0_12px_2px_rgba(0,232,198,0.35)] hover:shadow-[0_0_16px_4px_rgba(0,232,198,0.55)]",
+        neon: "relative text-white bg-gradient-to-r from-[hsl(var(--gradient-primary))] to-[hsl(var(--gradient-secondary))] shadow-[0_0_16px_3px_rgba(0,186,255,0.35)] hover:shadow-[0_0_22px_5px_rgba(0,186,255,0.6)]",
       },
       size: {
         sm: "h-8 px-3 text-xs rounded",
