@@ -26,7 +26,10 @@ const createUploadMiddleware = (category = 'general', multiple = false, maxCount
     
     const uploadHandler = multiple 
       ? upload.array('files', maxCount)
-      : upload.single('file');
+      : upload.fields([
+          { name: 'file', maxCount: 1 },
+          { name: 'avatar', maxCount: 1 }
+        ]);
     
     uploadHandler(req, res, (error) => {
       // Add request details logging

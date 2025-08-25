@@ -30,8 +30,8 @@ export default function UniversalNavbar({
 
   // Determine navbar type based on authentication and location
   const getNavbarType = () => {
-    if (isAuthenticated && location.pathname.startsWith('/dashboard')) {
-      return 'dashboard';
+    if (isAuthenticated ) {
+      return 'auth';
     }
     if (!isAuthenticated && (location.pathname === '/' || location.pathname.startsWith('/landing'))) {
       return 'landing';
@@ -74,7 +74,7 @@ export default function UniversalNavbar({
   ];
 
   // Render Dashboard Navbar
-  if (navbarType === 'dashboard') {
+  if (navbarType === 'auth') {
     return (
       <BaseNavbar className={`bg-black border-b border-gray-700 ${className}`}>
         <NavbarLeft>
@@ -92,6 +92,7 @@ export default function UniversalNavbar({
 
         <NavbarRight>
           <DashboardActions />
+          <ThemeToggleButton />
           <NotificationButton count={notificationCount} />
           <UserProfile user={user} onLogout={onLogout} />
         </NavbarRight>

@@ -1,11 +1,12 @@
-
 // Enhanced API client with automatic token management
+import { env } from '../config/env';
 import tokenManager from './tokenManager';
+
 class ApiClient {
     private baseURL: string;
     private defaultHeaders: Record<string, string>;
 
-    constructor(baseURL: string = '/api') {
+    constructor(baseURL: string = env.API_BASE_URL || '/api') {
         this.baseURL = baseURL;
         this.defaultHeaders = {
             'Content-Type': 'application/json',
@@ -17,10 +18,11 @@ class ApiClient {
         endpoint: string, 
         options: RequestInit & { 
             skipAuth?: boolean;
-            retryOnUnauth?: boolean;
+            retryOnUnauth?: boolean; // default disabled (no backend refresh endpoint)
+            suppressErrorLog?: boolean;
         } = {}
     ): Promise<T> {
-        const { skipAuth = false, retryOnUnauth = true, ...requestOptions } = options;
+        const { skipAuth = false, retryOnUnauth = false, suppressErrorLog = false, ...requestOptions } = options;
         
         const url = `${this.baseURL}${endpoint}`;
         const headers: Record<string, string> = { 
@@ -48,7 +50,6 @@ class ApiClient {
             // Handle unauthorized - attempt token refresh
             if (response.status === 401 && !skipAuth && retryOnUnauth) {
                 // Unauthorized - attempting token refresh
-                
                 const newToken = await tokenManager.refreshAccessToken();
                 if (newToken) {
                     // Retry request with new token
@@ -61,7 +62,7 @@ class ApiClient {
                         throw new Error(`Request failed: ${retryResponse.status} ${retryResponse.statusText}`);
                     }
                 } else {
-                    // Refresh failed - user needs to login
+                    // Refresh not supported or failed - propagate auth error
                     throw new Error('Authentication required');
                 }
             }
@@ -72,7 +73,7 @@ class ApiClient {
 
             return this.parseResponse<T>(response);
         } catch (error) {
-            console.error('API request failed:', error);
+            if (!suppressErrorLog) console.error('API request failed:', error);
             throw error;
         }
     }
@@ -91,11 +92,11 @@ class ApiClient {
     }
 
     // Convenience methods
-    get<T = any>(endpoint: string, options?: RequestInit & { skipAuth?: boolean }): Promise<T> {
+    get<T = any>(endpoint: string, options?: RequestInit & { skipAuth?: boolean; suppressErrorLog?: boolean }): Promise<T> {
         return this.request<T>(endpoint, { ...options, method: 'GET' });
     }
 
-    post<T = any>(endpoint: string, data?: any, options?: RequestInit & { skipAuth?: boolean }): Promise<T> {
+    post<T = any>(endpoint: string, data?: any, options?: RequestInit & { skipAuth?: boolean; suppressErrorLog?: boolean }): Promise<T> {
         return this.request<T>(endpoint, {
             ...options,
             method: 'POST',
@@ -103,7 +104,7 @@ class ApiClient {
         });
     }
 
-    put<T = any>(endpoint: string, data?: any, options?: RequestInit & { skipAuth?: boolean }): Promise<T> {
+    put<T = any>(endpoint: string, data?: any, options?: RequestInit & { skipAuth?: boolean; suppressErrorLog?: boolean }): Promise<T> {
         return this.request<T>(endpoint, {
             ...options,
             method: 'PUT',
@@ -111,7 +112,7 @@ class ApiClient {
         });
     }
 
-    patch<T = any>(endpoint: string, data?: any, options?: RequestInit & { skipAuth?: boolean }): Promise<T> {
+    patch<T = any>(endpoint: string, data?: any, options?: RequestInit & { skipAuth?: boolean; suppressErrorLog?: boolean }): Promise<T> {
         return this.request<T>(endpoint, {
             ...options,
             method: 'PATCH',
@@ -119,7 +120,7 @@ class ApiClient {
         });
     }
 
-    delete<T = any>(endpoint: string, options?: RequestInit & { skipAuth?: boolean }): Promise<T> {
+    delete<T = any>(endpoint: string, options?: RequestInit & { skipAuth?: boolean; suppressErrorLog?: boolean }): Promise<T> {
         return this.request<T>(endpoint, { ...options, method: 'DELETE' });
     }
 
@@ -176,4 +177,4 @@ class ApiClient {
     }
 }
 
-export default new ApiClient();
+export default new ApiClient(env.API_BASE_URL || '/api');

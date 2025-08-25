@@ -11,13 +11,13 @@ const requireSystemAdmin = async (req, res, next) => {
         const userId = req.user.id;
         logger.info(`Permission middleware: Checking system admin for user ID: ${userId}`);
         
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
+        // SECURITY FIX: Use verified roles from auth middleware
+        const userSystemRole = req.user.systemRole;
 
-        logger.info(`Permission middleware: User roles - systemRole: ${userRoles.systemRole}`);
+        logger.info(`Permission middleware: User roles - systemRole: ${userSystemRole}`);
 
-        if (userRoles.systemRole !== 'admin' && userRoles.systemRole !== 'super_admin') {
-            logger.warn(`Permission middleware: Access denied for user ${userId} with role ${userRoles.systemRole}`);
+        if (userSystemRole !== 'admin' && userSystemRole !== 'super_admin') {
+            logger.warn(`Permission middleware: Access denied for user ${userId} with role ${userSystemRole}`);
             return sendResponse(res, 403, false, 'System admin permissions required');
         }
 
@@ -30,7 +30,7 @@ const requireSystemAdmin = async (req, res, next) => {
 };
 
 // Require workspace permission
-const requireWorkspacePermission = (role = 'member') => {
+const requireWorkspacePermission = (roleOrPermission = 'member') => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
@@ -46,11 +46,21 @@ const requireWorkspacePermission = (role = 'member') => {
                 return sendResponse(res, 404, false, 'Workspace not found');
             }
 
-            const user = await User.findById(userId);
-            const userRoles = await user.getRoles();
+            // SECURITY FIX: Use verified roles from auth middleware
+            const userRoles = req.user.roles;
 
-            if (!userRoles.hasWorkspaceRole(workspaceId, role)) {
-                return sendResponse(res, 403, false, `Workspace ${role} role required`);
+            // Permission-mode: roleOrPermission starts with 'can'
+            if (typeof roleOrPermission === 'string' && roleOrPermission.startsWith('can')) {
+                const wsRole = userRoles.workspaces.find(ws => ws.workspace.toString() === workspaceId.toString());
+                const allowed = wsRole?.permissions?.[roleOrPermission] === true;
+                if (!allowed) {
+                    return sendResponse(res, 403, false, `Workspace permission '${roleOrPermission}' required`);
+                }
+            } else {
+                // Role-mode: fallback to role hierarchy check
+                if (!userRoles.hasWorkspaceRole(workspaceId, roleOrPermission)) {
+                    return sendResponse(res, 403, false, `Workspace ${roleOrPermission} role required`);
+                }
             }
 
             req.workspace = workspace;
@@ -73,16 +83,14 @@ const requireSpacePermission = (roleOrPermission = 'member') => {
                 return sendResponse(res, 400, false, 'Space ID required');
             }
 
-            const [user, space] = await Promise.all([
-                User.findById(userId),
-                Space.findById(spaceId)
-            ]);
+            const space = await Space.findById(spaceId);
 
             if (!space) {
                 return sendResponse(res, 404, false, 'Space not found');
             }
 
-            const userRoles = await user.getRoles();
+            // SECURITY FIX: Use verified roles from auth middleware
+            const userRoles = req.user.roles;
             
             // Check if it's a permission (starts with 'can') or a role
             if (roleOrPermission.startsWith('can')) {
@@ -120,16 +128,14 @@ const requireSpaceSpecificPermission = (permission) => {
                 return sendResponse(res, 400, false, 'Space ID required');
             }
 
-            const [user, space] = await Promise.all([
-                User.findById(userId),
-                Space.findById(spaceId)
-            ]);
+            const space = await Space.findById(spaceId);
 
             if (!space) {
                 return sendResponse(res, 404, false, 'Space not found');
             }
 
-            const userRoles = await user.getRoles();
+            // SECURITY FIX: Use verified roles from auth middleware
+            const userRoles = req.user.roles;
             
             // Check if user has the specific permission
             const hasPermission = userRoles.hasSpacePermission(spaceId, permission);
@@ -147,8 +153,6 @@ const requireSpaceSpecificPermission = (permission) => {
     };
 };
 
-
-
 // Require board permission
 const requireBoardPermission = (permission) => {
     return async (req, res, next) => {
@@ -160,8 +164,8 @@ const requireBoardPermission = (permission) => {
                 return sendResponse(res, 400, false, 'Board ID required');
             }
 
-            const user = await User.findById(userId);
-            const userRoles = await user.getRoles();
+            // SECURITY FIX: Use verified roles from auth middleware
+            const userRoles = req.user.roles;
 
             if (!userRoles.hasBoardPermission(boardId, permission)) {
                 return sendResponse(res, 403, false, `Board permission '${permission}' required`);
@@ -255,8 +259,8 @@ const requireTaskAccess = async (req, res, next) => {
             return sendResponse(res, 404, false, 'Task not found');
         }
 
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
+        // SECURITY FIX: Use verified roles from auth middleware
+        const userRoles = req.user.roles;
 
         // Check if user has direct access to task
         const hasDirectAccess = task.assignees.some(a => a.toString() === userId) ||
@@ -288,8 +292,8 @@ const requireTaskEditPermission = async (req, res, next) => {
             return sendResponse(res, 400, false, 'Task context required');
         }
 
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
+        // SECURITY FIX: Use verified roles from auth middleware
+        const userRoles = req.user.roles;
 
         // Check if user can edit task
         const canEdit = task.assignees.some(a => a.toString() === userId) ||

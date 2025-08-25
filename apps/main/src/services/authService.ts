@@ -8,7 +8,7 @@ import axiosInstance from '../config/axios';
 import axios from 'axios';
 //the raw axios library, used only in special cases
 import type { ApiResponse } from '../types/task.types';
-import type { LoginCredentials, RegisterData, AuthResponse } from '../types/auth.types';
+import type { LoginCredentials, RegisterData, AuthResponse, OAuthUserData, EmailVerificationData, ResendVerificationData, PasswordResetRequestData, PasswordResetData } from '../types/auth.types';
 // Import TypeScript types from centralized location
 
 // All TypeScript interfaces are now imported from auth.types.ts for better separation of concerns
@@ -183,16 +183,174 @@ Removes stored tokens from browser
       throw error;
     }
   }
+
+  // OAuth Login
+  static async oauthLogin(oauthData: OAuthUserData): Promise<ApiResponse<AuthResponse>> {
+    try {
+      const response = await axiosInstance.post('/auth/oauth/login', oauthData);
+      
+      // Store token in localStorage
+      if (response.data.data?.token) {
+        localStorage.setItem('token', response.data.data.token);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error with OAuth login:', error);
+      throw error;
+    }
+  }
+
+  // OAuth Register
+  static async oauthRegister(oauthData: OAuthUserData): Promise<ApiResponse<AuthResponse>> {
+    try {
+      const response = await axiosInstance.post('/auth/oauth/register', oauthData);
+      
+      // Store token in localStorage
+      if (response.data.data?.token) {
+        localStorage.setItem('token', response.data.data.token);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error with OAuth registration:', error);
+      throw error;
+    }
+  }
+
+  // Email Verification
+  static async verifyEmail(verificationData: EmailVerificationData): Promise<ApiResponse<AuthResponse>> {
+    try {
+      const response = await axiosInstance.post('/auth/verify-email', verificationData);
+      
+      // Store token in localStorage if provided
+      if (response.data.data?.token) {
+        localStorage.setItem('token', response.data.data.token);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error verifying email:', error);
+      throw error;
+    }
+  }
+
+  // Resend verification code
+  static async resendVerificationCode(resendData: ResendVerificationData): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await axiosInstance.post('/auth/resend-verification', resendData);
+      return response.data;
+    } catch (error) {
+      console.error('Error resending verification code:', error);
+      throw error;
+    }
+  }
+
+  // Request password reset
+  static async requestPasswordReset(resetData: PasswordResetRequestData): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await axiosInstance.post('/auth/request-password-reset', resetData);
+      return response.data;
+    } catch (error) {
+      console.error('Error requesting password reset:', error);
+      throw error;
+    }
+  }
+
+  // Reset password
+  static async resetPassword(resetData: PasswordResetData): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await axiosInstance.post('/auth/reset-password', resetData);
+      return response.data;
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      throw error;
+    }
+  }
 }
-/*What it does:
 
-Checks if backend server is running
-Useful for debugging connection issues
-Doesn't require authentication*/
+// Additional auth endpoints mapped to backend auth.controller routes
+export class AuthControllerClient {
+  // PUT /api/auth/profile (JSON)
+  static async updateProfile(payload: { name?: string; avatar?: string; preferences?: any; metadata?: any }): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.put('/auth/profile', payload);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  }
 
+  // PUT /api/auth/profile/secure (multipart: expects field "avatar")
+  static async updateProfileSecure(formData: FormData): Promise<ApiResponse<any>> {
+    try {
+      // Do not set Content-Type manually; let the browser set the correct multipart boundary
+      const response = await axiosInstance.put('/auth/profile/secure', formData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating secure profile:', error);
+      throw error;
+    }
+  }
 
+  // PUT /api/auth/change-password
+  static async changePassword(currentPassword: string, newPassword: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.put('/auth/change-password', { currentPassword, newPassword });
+      return response.data;
+    } catch (error) {
+      console.error('Error changing password:', error);
+      throw error;
+    }
+  }
 
-//------------------------------------
+  // PUT /api/auth/preferences
+  static async updatePreferences(section: string, updates: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.put('/auth/preferences', { section, updates });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      throw error;
+    }
+  }
+
+  // GET /api/auth/sessions
+  static async getSessions(): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.get('/auth/sessions');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+      throw error;
+    }
+  }
+
+  // DELETE /api/auth/sessions/:sessionId
+  static async endSession(sessionId: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.delete(`/auth/sessions/${sessionId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error ending session:', error);
+      throw error;
+    }
+  }
+
+  // GET /api/auth/activity
+  static async getActivity(): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.get('/auth/activity');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching activity:', error);
+      throw error;
+    }
+  }
+}
+
+/*------------------------------------
 /*How This Integrates with React + Redux
 The Flow:
 React Component calls 
