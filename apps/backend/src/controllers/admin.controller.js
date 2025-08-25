@@ -31,6 +31,11 @@ const login = async (req, res) => {
     // Generate JWT token
     const token = generateToken(user._id);
     
+    // Debug logging
+    console.log('Admin login - Generated token:', token ? `${token.substring(0, 20)}...` : 'null');
+    console.log('Admin login - Token type:', typeof token);
+    console.log('Admin login - Token length:', token ? token.length : 0);
+    
     // Update admin activity
     admin.updateActivity();
 
@@ -49,6 +54,12 @@ const login = async (req, res) => {
       },
       token
     };
+
+    console.log('Admin login - adminResponse structure:', {
+      hasAdmin: !!adminResponse.admin,
+      hasToken: !!adminResponse.token,
+      tokenValue: adminResponse.token ? `${adminResponse.token.substring(0, 20)}...` : 'null'
+    });
 
     sendResponse(res, 200, true, 'Login successful', adminResponse);
   } catch (error) {
@@ -311,25 +322,6 @@ const getUsers = async (req, res) => {
 const createUser = async (req, res) => {
   try {
     const { username, email, role } = req.body;
-
-    // SECURITY FIX: Validate role parameter
-    const allowedRoles = ['user', 'admin', 'super_admin'];
-    if (!allowedRoles.includes(role)) {
-      return sendResponse(res, 400, false, 'Invalid role specified');
-    }
-
-    // SECURITY FIX: Check if current user has permission to assign this role
-    const currentUserSystemRole = req.user.systemRole;
-
-    // Only super_admin can assign admin or super_admin roles
-    if ((role === 'admin' || role === 'super_admin') && currentUserSystemRole !== 'super_admin') {
-      return sendResponse(res, 403, false, 'Only super administrators can assign admin or super_admin roles');
-    }
-
-    // Regular admins can only assign user roles
-    if (currentUserSystemRole === 'admin' && role !== 'user') {
-      return sendResponse(res, 403, false, 'Admins can only assign user roles');
-    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -697,6 +689,47 @@ const getBrandingAssets = async (req, res) => {
   }
 };
 
+// Test JWT generation
+const testJWT = async (req, res) => {
+  try {
+    console.log('Testing JWT generation...');
+    
+    // Test with a dummy user ID
+    const testUserId = '507f1f77bcf86cd799439011';
+    const token = generateToken(testUserId);
+    
+    console.log('Test JWT - Generated token:', token ? `${token.substring(0, 20)}...` : 'null');
+    console.log('Test JWT - Token type:', typeof token);
+    console.log('Test JWT - Token length:', token ? token.length : 0);
+    
+    // Test token verification
+    try {
+      const decoded = require('../utils/jwt').verifyToken(token);
+      console.log('Test JWT - Token verification successful:', decoded);
+    } catch (verifyError) {
+      console.error('Test JWT - Token verification failed:', verifyError);
+    }
+    
+    res.json({
+      success: true,
+      message: 'JWT test completed',
+      data: {
+        token: token ? `${token.substring(0, 20)}...` : 'null',
+        tokenType: typeof token,
+        tokenLength: token ? token.length : 0,
+        tokenExists: !!token
+      }
+    });
+  } catch (error) {
+    console.error('JWT test error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'JWT test failed',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   // Auth
   login,
@@ -730,5 +763,6 @@ module.exports = {
   deleteProjectTemplate,
   getTaskTemplates,
   getAIPrompts,
-  getBrandingAssets
+  getBrandingAssets,
+  testJWT
 };

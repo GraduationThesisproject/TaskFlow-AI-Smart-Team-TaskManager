@@ -17,6 +17,25 @@ const LoginPage: React.FC = () => {
     password: ''
   });
 
+  // Test localStorage functionality
+  useEffect(() => {
+    console.log('LoginPage: Testing localStorage...');
+    try {
+      localStorage.setItem('test', 'test-value');
+      const testValue = localStorage.getItem('test');
+      console.log('LoginPage: localStorage test - stored:', 'test-value', 'retrieved:', testValue);
+      localStorage.removeItem('test');
+      
+      if (testValue !== 'test-value') {
+        console.error('LoginPage: localStorage is not working properly!');
+      } else {
+        console.log('LoginPage: localStorage is working properly');
+      }
+    } catch (error) {
+      console.error('LoginPage: localStorage error:', error);
+    }
+  }, []);
+
   // Redirect if already authenticated
   useEffect(() => {
     console.log('LoginPage: auth state changed:', { isAuthenticated, isLoading, error });
@@ -150,9 +169,6 @@ const LoginPage: React.FC = () => {
             <div className="mt-4 text-center">
               <Typography variant="body-small" className="text-muted-foreground">
                 Forgot your password?{' '}
-                <button className="text-primary hover:underline">
-                  Contact system administrator
-                </button>
               </Typography>
             </div>
           </CardContent>
@@ -161,6 +177,105 @@ const LoginPage: React.FC = () => {
         {/* Theme Toggle */}
         <div className="flex justify-center">
           <ThemeToggle />
+        </div>
+
+        {/* Debug Section */}
+        <div className="text-center space-y-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              console.log('=== LOCALSTORAGE DEBUG ===');
+              console.log('adminToken:', localStorage.getItem('adminToken'));
+              console.log('All localStorage keys:', Object.keys(localStorage));
+              console.log('localStorage length:', localStorage.length);
+              console.log('All localStorage entries:', Object.entries(localStorage));
+              console.log('=======================');
+            }}
+          >
+            Debug localStorage
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              console.log('=== AUTH STATE DEBUG ===');
+              console.log('Redux auth state:', { isAuthenticated, isLoading, error });
+              console.log('localStorage adminToken exists:', !!localStorage.getItem('adminToken'));
+              console.log('localStorage adminToken value:', localStorage.getItem('adminToken'));
+              console.log('=======================');
+            }}
+          >
+            Debug Auth State
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              console.log('=== TOKEN VALIDATION TEST ===');
+              const token = localStorage.getItem('adminToken');
+              if (token) {
+                console.log('Testing token format...');
+                console.log('Token length:', token.length);
+                console.log('Token starts with:', token.substring(0, 20));
+                console.log('Token ends with:', token.substring(token.length - 20));
+                console.log('Token contains "Bearer":', token.includes('Bearer'));
+                console.log('Token looks like JWT:', /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/.test(token));
+              } else {
+                console.log('No token found in localStorage');
+              }
+              console.log('=======================');
+            }}
+          >
+            Test Token Format
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              console.log('=== TEST LOGIN FLOW ===');
+              console.log('Testing with sample credentials...');
+              
+              const testCredentials = {
+                email: 'admin@example.com',
+                password: 'admin123'
+              };
+              
+              console.log('Test credentials:', testCredentials);
+              console.log('localStorage before login:', localStorage.getItem('adminToken'));
+              
+              try {
+                console.log('Dispatching loginAdmin...');
+                const result = await dispatch(loginAdmin(testCredentials)).unwrap();
+                console.log('Test login result:', result);
+                console.log('localStorage after test login:', localStorage.getItem('adminToken'));
+                
+                // Test the token format
+                const token = localStorage.getItem('adminToken');
+                if (token) {
+                  console.log('Token analysis:');
+                  console.log('- Length:', token.length);
+                  console.log('- Type:', typeof token);
+                  console.log('- Starts with:', token.substring(0, 20));
+                  console.log('- Ends with:', token.substring(token.length - 20));
+                  console.log('- Contains "null":', token.includes('null'));
+                  console.log('- Contains "undefined":', token.includes('undefined'));
+                  console.log('- Looks like JWT:', /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/.test(token));
+                } else {
+                  console.log('No token found in localStorage after login');
+                }
+              } catch (error) {
+                console.error('Test login failed:', error);
+              }
+              
+              console.log('=======================');
+            }}
+          >
+            Test Login Flow
+          </Button>
         </div>
 
         {/* Footer */}

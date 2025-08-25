@@ -23,7 +23,7 @@ export interface User {
 export enum UserRole {
   ADMIN = 'admin',
   USER = 'user',
-  MODERATOR = 'moderator',
+  SUPER_ADMIN = 'super_admin',
 }
 
 export enum UserStatus {

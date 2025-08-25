@@ -26,7 +26,7 @@ export interface AddUserModalProps {
 
 const ROLE_OPTIONS = [
   { value: 'user', label: 'User' },
-  { value: 'moderator', label: 'Moderator' },
+  { value: 'super_admin', label: 'Super Admin' },
   { value: 'admin', label: 'Admin' }
 ];
 

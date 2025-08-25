@@ -1,6 +1,6 @@
 const express = require('express');
 const adminController = require('../controllers/admin.controller');
-const authMiddleware = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const { requireSystemAdmin } = require('../middlewares/permission.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const { uploadMiddlewares, processUploadedFiles, createAdminRouteMiddleware } = require('../middlewares/upload.middleware');
@@ -9,6 +9,7 @@ const router = express.Router();
 
 // Admin authentication routes (public)
 router.post('/auth/login', adminController.login);
+router.get('/auth/test-jwt', adminController.testJWT);
 
 // Apply admin authentication middleware to protected routes
 router.use(authMiddleware);

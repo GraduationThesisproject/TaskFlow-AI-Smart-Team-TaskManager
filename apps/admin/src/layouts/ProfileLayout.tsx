@@ -21,6 +21,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAppSelector, useAppDispatch } from '../store';
 import { updateAdminProfileAsync, uploadAdminAvatar } from '../store/slices/adminSlice';
+import { getAvatarUrl } from '../services/adminService';
 import { ConfirmationDialog } from '../components/common';
 
 const ProfileLayout: React.FC = () => {
@@ -38,7 +39,90 @@ const ProfileLayout: React.FC = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [showAvatarRemoveConfirm, setShowAvatarRemoveConfirm] = useState(false);
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Convert avatar URL to data URL as fallback
+  const convertAvatarToDataUrl = async (avatarUrl: string) => {
+    try {
+      // First try the original URL
+      const response = await fetch(avatarUrl, {
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      if (response.ok) {
+        const blob = await response.blob();
+        const dataUrl = URL.createObjectURL(blob);
+        setAvatarDataUrl(dataUrl);
+        return dataUrl;
+      }
+    } catch (error) {
+      console.warn('Failed to convert avatar to data URL from original URL:', error);
+      
+      // Try the API route as fallback
+      try {
+        const apiUrl = getAvatarUrl(avatarUrl);
+        const apiResponse = await fetch(apiUrl, {
+          mode: 'cors',
+          credentials: 'omit'
+        });
+        if (apiResponse.ok) {
+          const blob = await apiResponse.blob();
+          const dataUrl = URL.createObjectURL(blob);
+          setAvatarDataUrl(dataUrl);
+          return dataUrl;
+        }
+      } catch (apiError) {
+        console.warn('Failed to convert avatar to data URL from API route:', apiError);
+      }
+    }
+    return null;
+  };
+
+  // Try to convert avatar when it changes
+  React.useEffect(() => {
+    if (currentAdmin?.avatar && !avatarDataUrl) {
+      convertAvatarToDataUrl(currentAdmin.avatar);
+    }
+  }, [currentAdmin?.avatar, avatarDataUrl]);
+
+  // Cleanup data URL on unmount
+  React.useEffect(() => {
+    return () => {
+      if (avatarDataUrl) {
+        URL.revokeObjectURL(avatarDataUrl);
+      }
+    };
+  }, [avatarDataUrl]);
+
+  // Test avatar URL accessibility
+  const testAvatarUrl = async (url: string) => {
+    try {
+      const response = await fetch(url, {
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      console.log('Avatar URL test result:', {
+        url,
+        status: response.status,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Avatar URL test failed:', { url, error });
+      return false;
+    }
+  };
+
+  // Test avatar URLs when component mounts
+  React.useEffect(() => {
+    if (currentAdmin?.avatar) {
+      console.log('Testing avatar URLs...');
+      testAvatarUrl(currentAdmin.avatar);
+      testAvatarUrl(getAvatarUrl(currentAdmin.avatar));
+    }
+  }, [currentAdmin?.avatar]);
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -172,16 +256,21 @@ const ProfileLayout: React.FC = () => {
                 <Avatar size="xl" className="bg-primary text-primary-foreground">
                   {currentAdmin?.avatar ? (
                     <img 
-                      src={`${currentAdmin.avatar}?v=${encodeURIComponent(currentAdmin.avatar)}`} 
+                      src={avatarDataUrl || getAvatarUrl(currentAdmin.avatar)} 
                       alt={currentAdmin?.name || 'Admin'} 
                       className="w-full h-full object-cover rounded-full"
                       key={currentAdmin.avatar} // Force re-render when avatar changes
+                      crossOrigin="anonymous"
+                      onError={(e) => {
+                        // Hide the image on error and show fallback
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
                     />
-                  ) : (
-                    <span className="text-2xl font-bold">
-                      {currentAdmin?.name?.charAt(0).toUpperCase() || 'A'}
-                    </span>
-                  )}
+                  ) : null}
+                  <span className={`text-2xl font-bold ${currentAdmin?.avatar ? 'hidden' : ''}`}>
+                    {currentAdmin?.name?.charAt(0).toUpperCase() || 'A'}
+                  </span>
                 </Avatar>
                 
                 {isEditing && (

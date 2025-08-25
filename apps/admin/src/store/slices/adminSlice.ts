@@ -23,6 +23,10 @@ export const loginAdmin = createAsyncThunk(
   'admin/login',
   async (credentials: AdminLoginCredentials, { rejectWithValue }) => {
     try {
+      console.log('LoginAdmin thunk: starting login process...');
+      console.log('LoginAdmin thunk: credentials:', credentials);
+      console.log('LoginAdmin thunk: API URL:', `${env.API_BASE_URL}/admin/auth/login`);
+      
       const response = await fetch(`${env.API_BASE_URL}/admin/auth/login`, {
         method: 'POST',
         headers: {
@@ -31,14 +35,35 @@ export const loginAdmin = createAsyncThunk(
         body: JSON.stringify(credentials),
       });
 
+      console.log('LoginAdmin thunk: response status:', response.status);
+      console.log('LoginAdmin thunk: response ok:', response.ok);
+      console.log('LoginAdmin thunk: response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('LoginAdmin thunk: error response:', errorData);
         return rejectWithValue(errorData.message || 'Login failed');
       }
 
       const data: AdminResponse = await response.json();
+      console.log('LoginAdmin thunk: success response raw data:', data);
+      console.log('LoginAdmin thunk: response data type:', typeof data);
+      console.log('LoginAdmin thunk: response data keys:', Object.keys(data || {}));
+      
+      // Additional debugging for the response structure
+      console.log('LoginAdmin thunk: data.success:', data.success);
+      console.log('LoginAdmin thunk: data.message:', data.message);
+      console.log('LoginAdmin thunk: data.data exists:', !!data.data);
+      if (data.data) {
+        console.log('LoginAdmin thunk: data.data keys:', Object.keys(data.data));
+        console.log('LoginAdmin thunk: data.data.admin exists:', !!data.data.admin);
+        console.log('LoginAdmin thunk: data.data.token exists:', !!data.data.token);
+        console.log('LoginAdmin thunk: data.data.token value:', data.data.token ? `${data.data.token.substring(0, 20)}...` : 'undefined');
+      }
+      
       return data;
     } catch (error) {
+      console.error('LoginAdmin thunk: network error:', error);
       return rejectWithValue('Network error occurred');
     }
   }
@@ -192,15 +217,20 @@ const adminSlice = createSlice({
       })
       .addCase(loginAdmin.fulfilled, (state, action) => {
         console.log('AdminSlice: login fulfilled, payload:', action.payload);
+        console.log('AdminSlice: payload type:', typeof action.payload);
+        console.log('AdminSlice: payload keys:', Object.keys(action.payload || {}));
+        
         state.isLoading = false;
         state.isAuthenticated = true;
+        
         // Handle the response format from sendResponse utility
         const responseData = action.payload;
+        console.log('AdminSlice: responseData:', responseData);
 
         // The response is wrapped in a data property by sendResponse utility
         const adminData = responseData.data || responseData;
-        
         console.log('AdminSlice: adminData:', adminData);
+        console.log('AdminSlice: adminData keys:', Object.keys(adminData || {}));
         console.log('AdminSlice: permissions data:', adminData.admin?.permissions);
         
         state.currentAdmin = adminData.admin || adminData;
@@ -225,11 +255,43 @@ const adminSlice = createSlice({
         state.error = null;
         
         // Store token in localStorage - token is in data.token
-        if (adminData.token) {
-          console.log('AdminSlice: storing token in localStorage');
-          localStorage.setItem('adminToken', adminData.token);
+        console.log('AdminSlice: checking for token...');
+        console.log('AdminSlice: adminData.token:', adminData.token);
+        console.log('AdminSlice: responseData.data?.token:', responseData.data?.token);
+        
+        // The token should be in responseData.data.token based on the backend response structure
+        // Backend sends: { success: true, message: "...", data: { admin: {...}, token: "..." } }
+        const token = responseData.data?.token;
+        console.log('AdminSlice: extracted token:', token);
+        
+        if (token && token !== 'null' && token !== 'undefined') {
+          console.log('AdminSlice: storing token in localStorage:', token);
+          localStorage.setItem('adminToken', token);
+          console.log('AdminSlice: token stored, verifying...');
+          const storedToken = localStorage.getItem('adminToken');
+          console.log('AdminSlice: localStorage.getItem("adminToken"):', storedToken);
+          
+          if (storedToken === token) {
+            console.log('AdminSlice: ✅ Token successfully stored in localStorage');
+          } else {
+            console.error('AdminSlice: ❌ Token storage verification failed!');
+            console.error('AdminSlice: Expected:', token);
+            console.error('AdminSlice: Got:', storedToken);
+          }
         } else {
-          console.warn('AdminSlice: no token in response data:', adminData);
+          console.error('AdminSlice: ❌ Invalid token detected:', token);
+          console.error('AdminSlice: Token type:', typeof token);
+          console.error('AdminSlice: Token value:', token);
+          console.error('AdminSlice: responseData structure:', {
+            success: responseData.success,
+            message: responseData.message,
+            hasData: !!responseData.data,
+            dataKeys: responseData.data ? Object.keys(responseData.data) : 'no data',
+            adminDataKeys: adminData ? Object.keys(adminData) : 'no adminData'
+          });
+          
+          // Don't store invalid tokens
+          localStorage.removeItem('adminToken');
         }
         
         console.log('AdminSlice: final state:', { 

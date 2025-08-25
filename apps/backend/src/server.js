@@ -17,6 +17,7 @@ const taskSocket = require('./sockets/task.socket');
 const notificationSocket = require('./sockets/notification.socket');
 const workspaceSocket = require('./sockets/workspace.socket');
 const boardSocket = require('./sockets/board.socket');
+const chatSocket = require('./sockets/chat.socket');
 
 const PORT = process.env.PORT || 3001;
 
@@ -75,6 +76,7 @@ taskSocket(io);
 notificationSocket(io);
 workspaceSocket(io);
 boardSocket(io);
+chatSocket(io);
 
 // Start server
 server.listen(PORT, () => {
