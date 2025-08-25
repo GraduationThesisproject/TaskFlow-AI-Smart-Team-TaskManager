@@ -7,13 +7,20 @@ class TokenManager {
     // Get access token from localStorage
     getAccessToken(): string | null {
         if (typeof window === 'undefined') return null;
-        return localStorage.getItem(this.accessTokenKey);
+        // Support both legacy 'accessToken' and axios-used 'token' keys
+        return (
+            localStorage.getItem(this.accessTokenKey) ||
+            localStorage.getItem('token') ||
+            null
+        );
     }
 
     // Set access token in localStorage
     setAccessToken(token: string): void {
         if (typeof window === 'undefined') return;
+        // Write to both keys to keep axios and fetch clients in sync
         localStorage.setItem(this.accessTokenKey, token);
+        localStorage.setItem('token', token);
     }
 
     // Get refresh token from localStorage
@@ -32,6 +39,7 @@ class TokenManager {
     clearTokens(): void {
         if (typeof window === 'undefined') return;
         localStorage.removeItem(this.accessTokenKey);
+        localStorage.removeItem('token');
         localStorage.removeItem(this.refreshTokenKey);
         localStorage.removeItem(this.tokenExpiryKey);
     }

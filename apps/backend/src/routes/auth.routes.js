@@ -2,7 +2,7 @@ const express = require('express');
 const authController = require('../controllers/auth.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { uploadMiddlewares, processUploadedFiles } = require('../middlewares/upload.middleware');
+const { uploadMiddlewares, processUploadedFiles, createUploadMiddleware } = require('../middlewares/upload.middleware');
 const { rateLimitSensitiveOps } = require('../middlewares/permission.middleware');
 
 const router = express.Router();
@@ -68,6 +68,12 @@ const passwordResetSchema = {
     newPassword: { required: true, minLength: 8 }
 };
 
+const secureProfileUpdateSchema = {
+    name: { minLength: 2, maxLength: 100 },
+    // Make password optional: if provided, validate as string; otherwise skip
+    currentPassword: { string: true }
+};
+
 // Public routes
 router.post('/register', 
     validateMiddleware(registerSchema), 
@@ -109,6 +115,14 @@ router.put('/profile',
     authMiddleware,
     validateMiddleware(updateProfileSchema),
     authController.updateProfile
+);
+
+router.put('/profile/secure',
+    authMiddleware,
+    createUploadMiddleware('avatar', false, 1, true),
+    processUploadedFiles,
+    validateMiddleware(secureProfileUpdateSchema),
+    authController.updateProfileSecure
 );
 
 router.post('/avatar',

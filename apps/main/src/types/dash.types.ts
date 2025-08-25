@@ -127,11 +127,226 @@ export interface DeleteWorkspaceModalProps {
   onConfirm: (workspaceId: string) => Promise<void> | void;
   isLoading?: boolean;
 }
+
 export interface Notification {
   _id: string;
-  type: string;
+  title: string;
   message: string;
+  type: 'info' | 'success' | 'warning' | 'error' | 'workspace_invitation' | 'space_invitation' | 'invitation_accepted';
+  recipientId: string;
+  relatedEntity?: {
+    type: string;
+    id: string;
+    name?: string;
+  };
+  priority: 'low' | 'medium' | 'high';
   isRead: boolean;
   createdAt: string;
+  updatedAt: string;
   sender?: { name: string; avatar?: string };
+
 }
+
+export interface NotificationStats {
+  total: number;
+  unread: number;
+  byType: {
+    info: number;
+    success: number;
+    warning: number;
+    error: number;
+  };
+}
+
+export interface NotificationState {
+  notifications: Notification[];
+  stats: NotificationStats | null;
+  loading: boolean;
+  error: string | null;
+}
+
+export interface UseNotificationsReturn {
+  notifications: Notification[];
+  stats: NotificationStats | null;
+  loading: boolean;
+  error: string | null;
+  fetchNotifications: (params?: any) => void;
+  markAsRead: (notificationId: string) => void;
+  markAllAsRead: () => void;
+  deleteNotification: (notificationId: string) => void;
+  clearReadNotifications: () => void;
+  clearError: () => void;
+}
+
+export interface DashboardShellProps {
+  children: React.ReactNode;
+  title?: string;
+  breadcrumbs?: Array<{ label: string; href?: string }>;
+}
+export interface Template {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  author: {
+    name: string;
+    avatar?: string;
+  };
+  views: number;
+  likes: number;
+  downloads: number;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+export interface TemplateCardItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  author: { name: string; avatar?: string };
+  views: number;
+  likes: number;
+  downloads: number;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  userLiked?: boolean;
+}
+
+export interface TemplateCardProps {
+  template: TemplateCardItem;
+  onClick: (template: TemplateCardItem) => void;
+  onLike?: (template: TemplateCardItem) => void;
+}
+
+// Types
+export type TemplateType = 'task' | 'board' | 'space' | 'workflow' | 'checklist';
+export type TemplateStatus = 'draft' | 'active' | 'archived' | 'deprecated';
+
+export interface TemplateItem {
+  _id: string;
+  name: string;
+  description?: string;
+  type: TemplateType;
+  content: Record<string, any>;
+  category?: string;
+  tags?: string[];
+  isPublic?: boolean;
+  status?: TemplateStatus;
+  accessControl?: {
+    allowedUsers?: string[];
+    allowedWorkspaces?: string[];
+    allowedRoles?: string[];
+  };
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  views?: number;
+  likedBy?: string[];
+}
+
+export interface TemplatesFilters {
+  workspaceId?: string;
+  type?: TemplateType;
+  category?: string;
+  q?: string;
+  isPublic?: boolean;
+  status?: TemplateStatus;
+  limit?: number;
+}
+
+export interface TemplatesState {
+  items: TemplateItem[];
+  selected: TemplateItem | null;
+  loading: boolean;
+  error: string | null;
+  filters: TemplatesFilters;
+}
+
+export interface UseTemplatesReturn {
+  items: TemplateItem[];
+  selected: TemplateItem | null;
+  loading: boolean;
+  error: string | null;
+  filters: TemplatesFilters;
+
+  // Actions
+  load: (filters?: TemplatesFilters) => void;
+  fetchOne: (id: string) => void;
+  create: (payload: Partial<TemplateItem>) => Promise<void>;
+  update: (id: string, updates: Partial<TemplateItem>) => Promise<void>;
+  remove: (id: string) => Promise<void>;
+  updateFilters: (patch: Partial<TemplatesFilters>) => void;
+  clearSelection: () => void;
+  incrementViews: (id: string) => void;
+  toggleLike: (id: string) => void;
+}
+// Types
+
+export interface TemplateItem {
+  _id: string;
+  name: string;
+  description?: string;
+  type: TemplateType;
+  content: Record<string, any>;
+  category?: string;
+  tags?: string[];
+  isPublic?: boolean;
+  status?: TemplateStatus;
+  accessControl?: {
+    allowedUsers?: string[];
+    allowedWorkspaces?: string[];
+    allowedRoles?: string[];
+  };
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  views?: number;
+  likedBy?: string[];
+}
+
+export interface TemplatesFilters {
+  workspaceId?: string;
+  type?: TemplateType;
+  category?: string;
+  q?: string;
+  isPublic?: boolean;
+  status?: TemplateStatus;
+  limit?: number;
+}
+
+export type CategoryKey = 'Marketing' | 'Development' | 'Design' | 'Sales' | 'Support' | 'Operations' | 'HR' | 'Finance' | 'General' | 'Custom';
+
+export interface Category {
+  key: CategoryKey;
+  label: string;
+  icon: React.ReactNode;
+  count: number;
+}
+
+export interface CreateTemplateModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const TYPE_OPTIONS: { value: TemplateType; label: string }[] = [
+  { value: 'task', label: 'Task' },
+  { value: 'board', label: 'Board' },
+  { value: 'space', label: 'Space' },
+  { value: 'workflow', label: 'Workflow' },
+  { value: 'checklist', label: 'Checklist' },
+];
+
+export const CATEGORY_OPTIONS = [
+  { value: 'Marketing', label: 'Marketing' },
+  { value: 'Development', label: 'Development' },
+  { value: 'Design', label: 'Design' },
+  { value: 'Sales', label: 'Sales' },
+  { value: 'Support', label: 'Support' },
+  { value: 'Operations', label: 'Operations' },
+  { value: 'HR', label: 'HR' },
+  { value: 'Finance', label: 'Finance' },
+  { value: 'General', label: 'General' },
+  { value: 'Custom', label: 'Custom' },
+]

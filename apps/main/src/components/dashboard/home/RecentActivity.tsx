@@ -12,25 +12,20 @@ const ActivityItemComponent: React.FC<{ activity: ActivityItem }> = ({ activity 
     ? (activity.user.name || activity.user.email || 'User')
     : (authUser?.user?.name || authUser?.user?.email || 'User');
 
-  // Derive avatar URL (normalized in slice, but handle both shapes just in case)
-  const avatarUrl = typeof activity.user === 'object'
-    ? (typeof activity.user.avatar === 'string' ? activity.user.avatar : (activity.user as any)?.avatar?.url)
-    : undefined;
-
-  // Initials fallback from display name
   const initials = displayName
     .split(' ')
-    .filter(Boolean)
+    .map(s => s[0])
+    .join('')
     .slice(0, 2)
-    .map(s => s[0]?.toUpperCase())
-    .join('') || 'U';
+    .toUpperCase();
 
-  // Remove email from login description but keep rest of text
-  let sanitizedDescription = activity.description || activity.action;
-  sanitizedDescription = sanitizedDescription.replace(
-    /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i,
-    ''
-  ).trim();
+  const avatarUrl = typeof activity.user === 'object' && activity.user.avatar ? activity.user.avatar : undefined;
+
+  // Defensive sanitize/trim description
+  const sanitizedDescription = String(activity.description || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   return (
     <div className="flex items-start gap-3 p-2 hover:bg-muted/10 rounded-md transition-colors">
@@ -58,7 +53,6 @@ const ActivityItemComponent: React.FC<{ activity: ActivityItem }> = ({ activity 
   );
 };
 
-
 export const RecentActivity: React.FC = () => {
   const { activities, loading, error } = useActivity(true, { limit: 5 });
 
@@ -70,16 +64,21 @@ export const RecentActivity: React.FC = () => {
 
   if (error) {
     return (
-      <EmptyState
-        icon={<AlertCircle className="h-8 w-8 text-destructive" />}
-        title="Error loading activities"
-        description={error}
-      />
+      <Card className="h-auto backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)]">
+        <CardHeader className="py-2">
+          <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent className="py-2">
+          <Typography variant="body-medium" className="text-red-600 flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" /> Failed to load activity.
+          </Typography>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <Card className="h-auto">
+    <Card className="h-auto backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)]">
       <CardHeader className="py-2">
         <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
       </CardHeader>

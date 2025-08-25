@@ -21,7 +21,6 @@ export interface UserPreferences {
   notifications: {
     email: boolean;
     push: boolean;
-    sms: boolean;
     marketing: boolean;
   };
   language: string;
