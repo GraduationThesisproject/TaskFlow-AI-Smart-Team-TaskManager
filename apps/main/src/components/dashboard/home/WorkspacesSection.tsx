@@ -20,7 +20,7 @@ export const WorkspacesSection = () => {
   const handleWorkspaceClick = (workspaceId: string) => {
     dispatch(setCurrentWorkspaceId(workspaceId));
     dispatch(fetchWorkspace(workspaceId));
-    navigate(`/workspace`, { state: { workspaceId } });
+    navigate(`/workspace?id=${workspaceId}`);
 
   };
 

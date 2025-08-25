@@ -3,7 +3,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Space } from '../../types/task.types';
 import { WorkspaceService } from "../../services/D_workspaceService.ts";
 import { SpaceService } from '../../services/spaceService';
-import { workspaceService, type InviteLinkInfo } from '../../services/workspace.service.ts';
+
 import type { Workspace, WorkspaceMember, WorkspaceState as BaseWorkspaceState } from '../../types/workspace.types';
 
 // Async thunks - combining both implementations
@@ -48,34 +48,6 @@ export const fetchSpace = createAsyncThunk(
 );
 
 // New thunks from the newer implementation
-export const fetchMembers = createAsyncThunk<WorkspaceMember[], { id: string; q?: string }>('workspace/fetchMembers', async ({ id, q }) => {
-  return workspaceService.getMembers(id, q ? { q } : undefined);
-});
-
-export const inviteMember = createAsyncThunk<WorkspaceMember, { id: string; email: string; role: 'member' | 'admin' }>(
-  'workspace/inviteMember',
-  async ({ id, email, role }) => {
-    return workspaceService.inviteMember(id, { email, role });
-  }
-);
-
-export const removeMember = createAsyncThunk<{ memberId: string }, { id: string; memberId: string }>(
-  'workspace/removeMember',
-  async ({ id, memberId }) => {
-    await workspaceService.removeMember(id, memberId);
-    return { memberId };
-  }
-);
-
-export const generateInviteLink = createAsyncThunk<InviteLinkInfo, { id: string }>(
-  'workspace/generateInviteLink',
-  async ({ id }) => workspaceService.generateInviteLink(id)
-);
-
-export const disableInviteLink = createAsyncThunk<InviteLinkInfo, { id: string }>(
-  'workspace/disableInviteLink',
-  async ({ id }) => workspaceService.disableInviteLink(id)
-);
 
 // Update workspace settings
 export const updateWorkspaceSettings = createAsyncThunk<
@@ -135,7 +107,6 @@ interface WorkspaceState extends BaseWorkspaceState {
   selectedSpace: Space | null;
   currentWorkspaceId: string | null;
   members: WorkspaceMember[];
-  inviteLink?: InviteLinkInfo;
   loading: boolean;
 }
 
@@ -148,7 +119,6 @@ const initialState: WorkspaceState = {
   selectedSpace: null,
   currentWorkspaceId:null,
   members: [],
-  inviteLink: undefined,
   loading: false,
   isLoading: false,
   error: null,
@@ -249,85 +219,6 @@ const workspaceSlice = createSlice({
       .addCase(updateWorkspaceSettings.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to update workspace settings';
-      })
-
-      // Fetch members
-      .addCase(fetchMembers.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchMembers.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.members = Array.isArray(action.payload) ? action.payload : [];
-        console.log('✅ fetchMembers.fulfilled - Members updated:', state.members);
-        state.error = null;
-      })
-      .addCase(fetchMembers.rejected, (state, action) => {
-        state.isLoading = false;
-        console.error('❌ fetchMembers.rejected:', action.error.message);
-        state.error = action.error.message || 'Failed to fetch members';
-      })
-
-      // Invite member
-      .addCase(inviteMember.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(inviteMember.fulfilled, (state, action) => {
-        state.isLoading = false;
-        if (action.payload) {
-          state.members = [...state.members, action.payload];
-        }
-        state.error = null;
-      })
-      .addCase(inviteMember.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to invite member';
-      })
-
-      // Remove member
-      .addCase(removeMember.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(removeMember.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.members = state.members.filter(m => m.id !== action.payload.memberId);
-        state.error = null;
-      })
-      .addCase(removeMember.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to remove member';
-      })
-
-      // Generate invite link
-      .addCase(generateInviteLink.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(generateInviteLink.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.inviteLink = action.payload;
-        state.error = null;
-      })
-      .addCase(generateInviteLink.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to generate invite link';
-      })
-
-      // Disable invite link
-      .addCase(disableInviteLink.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(disableInviteLink.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.inviteLink = action.payload;
-        state.error = null;
-      })
-      .addCase(disableInviteLink.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to disable invite link';
       })
       
       }})

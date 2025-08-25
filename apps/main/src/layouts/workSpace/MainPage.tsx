@@ -11,13 +11,8 @@ import { Modal, ModalBody, ModalFooter } from '@taskflow/ui';
 import { Button } from '@taskflow/ui';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { useLocation } from 'react-router-dom';
-import { workspaceService } from '../../services/workspace.service';
 import {
   fetchWorkspace,
-  fetchMembers,
-  removeMember,
-  generateInviteLink,
-  disableInviteLink,
   selectMembers,
   selectWorkspaceLoading,
   selectWorkspaceError,
@@ -44,6 +39,7 @@ const Main = () => {
   const location = useLocation();
   const query = new URLSearchParams(location.search);
   const rawWorkspaceId = query.get('id') || '';
+  console.log(rawWorkspaceId);
   const isValidObjectId = (v: string) => /^[0-9a-fA-F]{24}$/.test(v);
   const currentWorkspace = useAppSelector((s: any) => s.workspace.currentWorkspace);
   const workspaces = useAppSelector((s: any) => s.workspace.workspaces) as Array<{ _id: string }> | undefined;
@@ -75,7 +71,6 @@ const Main = () => {
     console.log('Loading workspace data for ID:', workspaceId);
     dispatch(setCurrentWorkspaceId(workspaceId));
     dispatch(fetchWorkspace(workspaceId));
-    dispatch(fetchMembers({ id: workspaceId }));
   }, [dispatch, workspaceId]);
 
   // Debug logging for members data
@@ -117,7 +112,7 @@ const Main = () => {
       console.warn('[Workspace] Cannot remove member: missing/invalid workspace id.');
       return;
     }
-    dispatch(removeMember({ id: workspaceId, memberId }));
+    
   };
   
   // For Invite Section button - Generate shareable link and show in modal
@@ -126,16 +121,6 @@ const Main = () => {
       console.warn('[Workspace] Cannot generate invite: missing/invalid workspace id.');
       return;
     }
-    dispatch(generateInviteLink({ id: workspaceId }))
-      .unwrap()
-      .then((result) => {
-        setGeneratedInviteLink(result.link || '');
-        setShowInviteLinkModal(true);
-      })
-      .catch((error) => {
-        console.error('Failed to generate invite link:', error);
-        alert('Failed to generate invite link: ' + error.message);
-      });
   };
 
   // For Members Table button - Open email invitation form (placeholder for now)
@@ -146,16 +131,16 @@ const Main = () => {
     }
     // TODO: Open a form modal to collect email and role, then call workspaceService.inviteMember
     const email = prompt('Enter email address to invite:');
-    if (email) {
-      workspaceService.inviteMember(workspaceId, { email, role: 'member' })
-        .then(() => {
-          alert('Invitation sent successfully!');
-        })
-        .catch((error) => {
-          console.error('Failed to send invitation:', error);
-          alert('Failed to send invitation: ' + error.message);
-        });
-    }
+    // if (email) {
+    //   workspaceService.inviteMember(workspaceId, { email, role: 'member' })
+    //     .then(() => {
+    //       alert('Invitation sent successfully!');
+    //     })
+    //     .catch((error) => {
+    //       console.error('Failed to send invitation:', error);
+    //       alert('Failed to send invitation: ' + error.message);
+    //     });
+    // }
   };
 
   const copyInviteLink = () => {
@@ -168,7 +153,6 @@ const Main = () => {
       console.warn('[Workspace] Cannot disable invite: missing/invalid workspace id.');
       return;
     }
-    dispatch(disableInviteLink({ id: workspaceId }));
   };
 
     // Auto-fire API search when user types 2+ chars (debounced)
@@ -181,14 +165,14 @@ const Main = () => {
         return;
       }
       const t = setTimeout(async () => {
-        try {
-          const apiMembers = await workspaceService.getMembers(workspaceId, { q });
-          // eslint-disable-next-line no-console
-          console.log('[API members search]', { query: q, count: apiMembers.length, members: apiMembers });
-        } catch (err) {
-          // eslint-disable-next-line no-console
-          console.error('[API members search error]', err);
-        }
+        // try {
+        //   const apiMembers = await workspaceService.getMembers(workspaceId, { q });
+        //   // eslint-disable-next-line no-console
+        //   console.log('[API members search]', { query: q, count: apiMembers.length, members: apiMembers });
+        // } catch (err) {
+        //   // eslint-disable-next-line no-console
+        //   console.error('[API members search error]', err);
+        // }
       }, 300);
       return () => clearTimeout(t);
     }, [search, workspaceId]);

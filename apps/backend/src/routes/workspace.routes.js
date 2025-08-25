@@ -37,7 +37,6 @@ const transferOwnershipSchema = {
 router.get('/', workspaceController.getAllWorkspaces);
 
 router.get('/:id', 
-    requireWorkspaceMember,
     workspaceController.getWorkspace
 );
 
@@ -63,7 +62,6 @@ router.post('/accept-invitation/:token',
 );
 
 router.get('/:id/members',
-    requireWorkspaceMember,
     workspaceController.getWorkspaceMembers
 );
 
@@ -79,7 +77,7 @@ router.put('/:id/settings',
 );
 
 router.get('/:id/analytics',
-    requireWorkspaceMember,
+
     workspaceController.getWorkspaceAnalytics
 );
 

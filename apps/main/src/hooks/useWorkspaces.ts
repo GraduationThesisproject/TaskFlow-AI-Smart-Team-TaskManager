@@ -5,11 +5,7 @@ import {
   fetchWorkspaces,
   fetchWorkspace, 
   fetchSpacesByWorkspace,
-  fetchMembers,
-  inviteMember,
-  removeMember,
-  generateInviteLink,
-  disableInviteLink,
+
   createWorkspace,
   deleteWorkspace
 } from '../store/slices/workspaceSlice';
@@ -25,7 +21,6 @@ interface UseWorkspacesReturn {
   spaces: any[];
   selectedSpace: any;
   members: any[];
-  inviteLink: any;
   loading: boolean;
   error: string | null;
   
@@ -63,7 +58,6 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
     spaces,
     selectedSpace,
     members,
-    inviteLink,
     loading,
     isLoading,
     error
@@ -87,7 +81,6 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
     if (env.ENABLE_DEBUG) {
       console.log('👥 Loading members for workspace:', id);
     }
-    dispatch(fetchMembers({ id }) as any);
   }, [dispatch]);
 
   const refetchWorkspaces = useCallback(() => {
@@ -102,26 +95,12 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
     if (env.ENABLE_DEBUG) {
       console.log('📧 Inviting member:', email, 'as', role);
     }
-    
-    try {
-      await dispatch(inviteMember({ id: workspaceId, email, role }) as any).unwrap();
-    } catch (error) {
-      console.error('Failed to invite member:', error);
-      throw error;
-    }
   }, [dispatch, workspaceId]);
 
   const removeWorkspaceMember = useCallback(async (memberId: string) => {
     if (!workspaceId) throw new Error('No workspace selected');
     if (env.ENABLE_DEBUG) {
       console.log('🗑️ Removing member:', memberId);
-    }
-    
-    try {
-      await dispatch(removeMember({ id: workspaceId, memberId }) as any).unwrap();
-    } catch (error) {
-      console.error('Failed to remove member:', error);
-      throw error;
     }
   }, [dispatch, workspaceId]);
 
@@ -130,13 +109,6 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
     if (env.ENABLE_DEBUG) {
       console.log('🔗 Creating invite link for workspace:', workspaceId);
     }
-    
-    try {
-      await dispatch(generateInviteLink({ id: workspaceId }) as any).unwrap();
-    } catch (error) {
-      console.error('Failed to generate invite link:', error);
-      throw error;
-    }
   }, [dispatch, workspaceId]);
 
   const disableWorkspaceInviteLink = useCallback(async () => {
@@ -144,14 +116,9 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
     if (env.ENABLE_DEBUG) {
       console.log('🚫 Disabling invite link for workspace:', workspaceId);
     }
-    
-    try {
-      await dispatch(disableInviteLink({ id: workspaceId }) as any).unwrap();
-    } catch (error) {
-      console.error('Failed to disable invite link:', error);
-      throw error;
-    }
   }, [dispatch, workspaceId]);
+
+
 
   const createNewWorkspace = useCallback(async (workspaceData: {
     name: string;
@@ -206,7 +173,6 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
     spaces,
     selectedSpace,
     members,
-    inviteLink,
     loading: loading || isLoading,
     error,
 
