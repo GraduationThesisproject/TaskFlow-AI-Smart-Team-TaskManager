@@ -748,242 +748,192 @@ exports.getActivityLog = async (req, res) => {
     }
 };
 
-// OAuth Token Exchange
-exports.oauthTokenExchange = async (req, res) => {
-    try {
-        const { code, provider, redirectUri } = req.body;
-        
-        if (!code || !provider || !redirectUri) {
-            return sendResponse(res, 400, false, 'Missing required OAuth parameters');
-        }
 
-        // Exchange code for access token
-        const tokenData = await exchangeCodeForToken(code, provider, redirectUri);
-        
-        // Get user info from provider
-        const userInfo = await getUserInfoFromProvider(tokenData.access_token, provider);
-        
-        sendResponse(res, 200, true, 'OAuth token exchange successful', {
-            user: userInfo,
-            tokens: tokenData
-        });
-    } catch (error) {
-        logger.error('OAuth token exchange error:', error);
-        sendResponse(res, 500, false, 'OAuth token exchange failed');
-    }
+// Generate JWT token
+const generateToken = (userId) => {
+    console.log('🔑 Generating JWT token for user ID:', userId);
+    console.log('🔑 JWT_SECRET available:', !!process.env.JWT_SECRET);
+    console.log('🔑 JWT_SECRET length:', process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0);
+    
+    const token = jwt.sign(
+        { id: userId },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '7d' }
+    );
+    
+    console.log('🔑 JWT token generated successfully');
+    console.log('🔑 Token length:', token.length);
+    console.log('🔑 Token (first 20 chars):', token.substring(0, 20) + '...');
+    
+    return token;
 };
-
-// Helper function to exchange code for token
-async function exchangeCodeForToken(code, provider, redirectUri) {
-    const axios = require('axios');
+// Google OAuth login
+exports.googleLogin = (req, res, next) => {
+    console.log('🔵 Google OAuth Login Started');
+    console.log('🔵 Request query params:', req.query);
+    console.log('🔵 Request headers:', req.headers);
     
-    let tokenUrl, clientId, clientSecret;
+    // Check if Google OAuth strategy is available
+    if (!passport._strategies || !passport._strategies.google) {
+        console.log('❌ Google OAuth strategy not available');
+        return sendResponse(res, 503, false, 'Google OAuth is not configured');
+    }
     
-    if (provider === 'google') {
-        tokenUrl = 'https://oauth2.googleapis.com/token';
-        clientId = process.env.GOOGLE_CLIENT_ID;
-        clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    } else if (provider === 'github') {
-        tokenUrl = 'https://github.com/login/oauth/access_token';
-        clientId = process.env.GITHUB_CLIENT_ID;
-        clientSecret = process.env.GITHUB_CLIENT_SECRET;
-    } else {
-        throw new Error(`Unsupported OAuth provider: ${provider}`);
-    }
-
-    const tokenData = {
-        client_id: clientId,
-        client_secret: clientSecret,
-        code: code,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code'
-    };
-
-    const response = await axios.post(tokenUrl, tokenData, {
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json'
-        }
-    });
-
-    return response.data;
-}
-
-// Helper function to get user info from provider
-async function getUserInfoFromProvider(accessToken, provider) {
-    const axios = require('axios');
+    console.log('✅ Google OAuth strategy found, proceeding with authentication');
+    console.log('🔵 Redirecting to Google OAuth...');
     
-    let userInfoUrl;
-    
-    if (provider === 'google') {
-        userInfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
-    } else if (provider === 'github') {
-        userInfoUrl = 'https://api.github.com/user';
-    } else {
-        throw new Error(`Unsupported OAuth provider: ${provider}`);
-    }
-
-    const response = await axios.get(userInfoUrl, {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/json'
-        }
-    });
-
-    const userInfo = response.data;
-
-    // Normalize user info across providers
-    if (provider === 'google') {
-        return {
-            id: userInfo.id,
-            email: userInfo.email,
-            name: userInfo.name,
-            avatar: userInfo.picture,
-            provider: 'google'
-        };
-    } else if (provider === 'github') {
-        // For GitHub, get email separately if not public
-        let email = userInfo.email;
-        if (!email) {
-            try {
-                const emailResponse = await axios.get('https://api.github.com/user/emails', {
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Accept': 'application/json',
-                        'User-Agent': 'TaskFlow-AI-Smart-Team-TaskManager'
-                    }
-                });
-                const emails = emailResponse.data;
-                const primaryEmail = emails.find(e => e.primary);
-                email = primaryEmail?.email || emails[0]?.email;
-            } catch (error) {
-                logger.warn('Failed to fetch GitHub user email:', error);
-            }
-        }
-
-        return {
-            id: userInfo.id.toString(),
-            email: email,
-            name: userInfo.name || userInfo.login,
-            avatar: userInfo.avatar_url,
-            provider: 'github'
-        };
-    }
-
-    return userInfo;
-}
-
-// OAuth Register
-exports.oauthRegister = async (req, res) => {
-    try {
-        const { name, email, avatar, provider } = req.body;
-        
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return sendResponse(res, 400, false, 'User already exists with this email');
-        }
-
-        // Create new user with OAuth data
-        const user = await User.createWithDefaults({
-            name,
-            email,
-            avatar,
-            isEmailVerified: true, // OAuth users are pre-verified
-            authProvider: provider
-        });
-
-        // Create initial session
-        const userSessions = await user.getSessions();
-        await userSessions.createSession({
-            deviceId: 'oauth-' + Date.now(),
-            deviceInfo: { type: 'web', provider },
-            ipAddress: req.ip,
-            rememberMe: false
-        });
-
-        // Generate tokens
-        const accessToken = jwt.generateAccessToken(user._id);
-        const refreshToken = jwt.generateRefreshToken(user._id);
-
-        // Log activity
-        await ActivityLog.create({
-            userId: user._id,
-            action: 'oauth_register',
-            details: { provider },
-            ipAddress: req.ip
-        });
-
-        logger.info(`OAuth registration successful for user: ${user.email} via ${provider}`);
-
-        sendResponse(res, 201, true, 'OAuth registration successful', {
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                avatar: user.avatar,
-                isEmailVerified: user.isEmailVerified
-            },
-            tokens: {
-                accessToken,
-                refreshToken
-            }
-        });
-    } catch (error) {
-        logger.error('OAuth registration error:', error);
-        sendResponse(res, 500, false, 'Server error during OAuth registration');
-    }
+    passport.authenticate('google', {
+        scope: ['profile', 'email']
+    })(req, res, next);
 };
-
-// OAuth Login
-exports.oauthLogin = async (req, res) => {
-    try {
-        const { email, provider } = req.body;
+// Google OAuth callback
+exports.googleCallback = async (req, res, next) => {
+    console.log('🔵 Google OAuth Callback Started');
+    console.log('🔵 Request query params:', req.query);
+    console.log('🔵 Request headers:', req.headers);
+    
+    // Check if Google OAuth strategy is available
+    if (!passport._strategies || !passport._strategies.google) {
+        console.log('❌ Google OAuth strategy not available');
+        return sendResponse(res, 503, false, 'Google OAuth is not configured');
+    }
+    
+    console.log('🔵 Google OAuth strategy found, proceeding with authentication');
+    
+    passport.authenticate('google', { session: false }, async (err, user) => {
+        console.log('🔵 Passport authenticate callback executed');
+        console.log('🔵 Error:', err);
+        console.log('🔵 User object:', user);
         
-        // Find user by email
-        const user = await User.findOne({ email });
+        if (err) {
+            console.log('❌ Google OAuth error occurred:', err);
+            logger.error('Google OAuth error:', err);
+            return sendResponse(res, 500, false, 'Authentication failed');
+        }
+        
         if (!user) {
-            return sendResponse(res, 404, false, 'User not found');
+            console.log('❌ No user returned from Google OAuth');
+            return sendResponse(res, 401, false, 'Authentication failed');
         }
-
-        // Create session
-        const userSessions = await user.getSessions();
-        await userSessions.createSession({
-            deviceId: 'oauth-' + Date.now(),
-            deviceInfo: { type: 'web', provider },
-            ipAddress: req.ip,
-            rememberMe: false
+        
+        console.log('✅ Google OAuth user authenticated successfully');
+        console.log('✅ User details:', {
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            provider: user.provider,
+            avatar: user.avatar
         });
-
-        // Generate tokens
-        const accessToken = jwt.generateToken(user._id);
-        const refreshToken = jwt.generateRefreshToken(user._id);
-
-        // Log activity
-        await ActivityLog.create({
-            userId: user._id,
-            action: 'oauth_login',
-            details: { provider },
-            ipAddress: req.ip
-        });
-
-        logger.info(`OAuth login successful for user: ${user.email} via ${provider}`);
-
-        sendResponse(res, 200, true, 'OAuth login successful', {
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                avatar: user.avatar,
-                isEmailVerified: user.isEmailVerified
-            },
-            tokens: {
-                accessToken,
-                refreshToken
-            }
-        });
-    } catch (error) {
-        logger.error('OAuth login error:', error);
-        sendResponse(res, 500, false, 'Server error during OAuth login');
+        
+        try {
+            // Update last login
+            console.log('🔵 Updating last login timestamp');
+            user.lastLogin = new Date();
+            await user.save();
+            console.log('✅ Last login updated successfully');
+            
+            // Generate token
+            console.log('🔵 Generating JWT token for user:', user._id);
+            const token = generateToken(user._id);
+            console.log('✅ JWT token generated successfully');
+            console.log('✅ Token (first 20 chars):', token.substring(0, 20) + '...');
+            
+            // Redirect to frontend with token
+            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=google`;
+            console.log('🔵 Redirecting to frontend with token');
+            console.log('🔵 Redirect URL:', redirectUrl);
+            
+            res.redirect(redirectUrl);
+            console.log('✅ Google OAuth callback completed successfully');
+        } catch (error) {
+            console.log('❌ Google callback error occurred:', error);
+            logger.error('Google callback error:', error);
+            return sendResponse(res, 500, false, 'Authentication failed');
+        }
+    })(req, res, next);
+};
+// GitHub OAuth login
+exports.githubLogin = (req, res, next) => {
+    console.log('🟣 GitHub OAuth Login Started');
+    console.log('🟣 Request query params:', req.query);
+    console.log('🟣 Request headers:', req.headers);
+    
+    // Check if GitHub OAuth strategy is available
+    if (!passport._strategies || !passport._strategies.github) {
+        console.log('❌ GitHub OAuth strategy not available');
+        return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
     }
+    
+    console.log('✅ GitHub OAuth strategy found, proceeding with authentication');
+    console.log('🟣 Redirecting to GitHub OAuth...');
+    
+    passport.authenticate('github', {
+        scope: ['user:email']
+    })(req, res, next);
+};
+// GitHub OAuth callback
+exports.githubCallback = async (req, res, next) => {
+    console.log('🟣 GitHub OAuth Callback Started');
+    console.log('🟣 Request query params:', req.query);
+    console.log('🟣 Request headers:', req.headers);
+    
+    // Check if GitHub OAuth strategy is available
+    if (!passport._strategies || !passport._strategies.github) {
+        console.log('❌ GitHub OAuth strategy not available');
+        return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
+    }
+    
+    console.log('🟣 GitHub OAuth strategy found, proceeding with authentication');
+    
+    passport.authenticate('github', { session: false }, async (err, user) => {
+        console.log('🟣 Passport authenticate callback executed');
+        console.log('🟣 Error:', err);
+        console.log('🟣 User object:', user);
+        
+        if (err) {
+            console.log('❌ GitHub OAuth error occurred:', err);
+            logger.error('GitHub OAuth error:', err);
+            return sendResponse(res, 500, false, 'Authentication failed');
+        }
+        
+        if (!user) {
+            console.log('❌ No user returned from GitHub OAuth');
+            return sendResponse(res, 401, false, 'Authentication failed');
+        }
+        
+        console.log('✅ GitHub OAuth user authenticated successfully');
+        console.log('✅ User details:', {
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            provider: user.provider,
+            avatar: user.avatar
+        });
+        
+        try {
+            // Update last login
+            console.log('🟣 Updating last login timestamp');
+            user.lastLogin = new Date();
+            await user.save();
+            console.log('✅ Last login updated successfully');
+            
+            // Generate token
+            console.log('🟣 Generating JWT token for user:', user._id);
+            const token = generateToken(user._id);
+            console.log('✅ JWT token generated successfully');
+            console.log('✅ Token (first 20 chars):', token.substring(0, 20) + '...');
+            
+            // Redirect to frontend with token
+            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=github`;
+            console.log('🟣 Redirecting to frontend with token');
+            console.log('🟣 Redirect URL:', redirectUrl);
+            
+            res.redirect(redirectUrl);
+            console.log('✅ GitHub OAuth callback completed successfully');
+        } catch (error) {
+            console.log('❌ GitHub callback error occurred:', error);
+            logger.error('GitHub callback error:', error);
+            return sendResponse(res, 500, false, 'Authentication failed');
+        }
+    })(req, res, next);
 };

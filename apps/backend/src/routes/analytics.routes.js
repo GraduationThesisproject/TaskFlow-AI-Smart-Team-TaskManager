@@ -2,8 +2,6 @@ const express = require('express');
 const analyticsController = require('../controllers/analytics.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const router = express.Router();
-const analyticsController = require('../controllers/analytics.controller');
-const validateMiddleware = require('../middlewares/validate.middleware');
 // Validation schemas
 const generateAnalyticsSchema = {
     periodType: { enum: ['daily', 'weekly', 'monthly', 'quarterly', 'yearly', 'custom'] },

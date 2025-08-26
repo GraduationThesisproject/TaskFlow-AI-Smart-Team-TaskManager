@@ -356,6 +356,16 @@ class EmailService {
         if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
             logger.warn('Email configuration missing. Email features will be disabled.');
             return;
+            
+        }
+
+        // For development, use console logging if using placeholder password
+        if (env.NODE_ENV === 'development' && 
+            (env.SMTP_PASS === "epwj octj wqlk zsbc" || 
+             env.SMTP_PASS.includes('your_') || 
+             env.SMTP_PASS.includes('placeholder'))) {
+            logger.warn('Using development mode - emails will be logged to console');
+            return;
         }
 
         this.transporter = nodemailer.createTransport({

@@ -1,61 +1,42 @@
-/**
- * OAuth Service for Google and GitHub authentication
- * Handles OAuth flows, token management, and user data retrieval
- */
+import { env } from '../config/env';
 
-export interface OAuthConfig {
+export type OAuthProvider = 'google' | 'github';
+type OAuthAction = 'login' | 'signup';
+
+interface OAuthConfig {
   clientId: string;
-  redirectUri: string;
   scope: string;
-}
-
-export interface OAuthProvider {
-  name: 'google' | 'github';
-  config: OAuthConfig;
   authUrl: string;
-  tokenUrl: string;
-  userInfoUrl: string;
 }
 
-export interface OAuthUserInfo {
-  id: string;
-  email: string;
-  name: string;
-  avatar?: string;
-  provider: 'google' | 'github';
+interface OAuthResponse {
+  code: string;
+  provider: OAuthProvider;
+  redirectUri: string;
+  action?: OAuthAction;
 }
-
-
-
-
-// OAuth provider configurations
-const OAUTH_PROVIDERS: Record<'google' | 'github', OAuthProvider> = {
-  google: {
-    name: 'google',
-    config: {
-      clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '191438889605-63mmkae1me5ndih2og4u7hqdl1naknle.apps.googleusercontent.com',
-      redirectUri: `${window.location.origin}/auth/callback/google`,
-      scope: 'openid email profile'
-    },
-    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-    tokenUrl: 'https://oauth2.googleapis.com/token',
-    userInfoUrl: 'https://www.googleapis.com/oauth2/v2/userinfo'
-  },
-  github: {
-    name: 'github',
-    config: {
-      clientId: import.meta.env.VITE_GITHUB_CLIENT_ID || '',
-      redirectUri: `${window.location.origin}/auth/callback/github`,
-      scope: 'user:email'
-    },
-    authUrl: 'https://github.com/login/oauth/authorize',
-    tokenUrl: 'https://github.com/login/oauth/access_token',
-    userInfoUrl: 'https://api.github.com/user'
-  }
-};
 
 class OAuthService {
   private static instance: OAuthService;
+  private readonly baseURL: string;
+  private readonly storageKey = 'taskflow_oauth';
+  private readonly config: Record<OAuthProvider, OAuthConfig>;
+
+  private constructor() {
+    this.baseURL = env.API_URL || 'http://localhost:3000/api';
+    this.config = {
+      google: {
+        clientId: env.VITE_GOOGLE_CLIENT_ID || '',
+        scope: 'email profile',
+        authUrl: `${this.baseURL}/auth/google`
+      },
+      github: {
+        clientId: env.VITE_GITHUB_CLIENT_ID || '',
+        scope: 'user:email',
+        authUrl: `${this.baseURL}/auth/github`
+      }
+    };
+  }
 
   static getInstance(): OAuthService {
     if (!OAuthService.instance) {
@@ -65,133 +46,135 @@ class OAuthService {
   }
 
   /**
+   * Get OAuth URL for the specified provider
+   */
+  public getOAuthUrl(provider: OAuthProvider, action: OAuthAction): string {
+    const config = this.config[provider];
+    if (!config.clientId) {
+      throw new Error(`${provider} OAuth is not properly configured`);
+    }
+
+    const state = this.generateState();
+    const redirectUri = `${window.location.origin}/auth/callback/${provider}`;
+    
+    const params = new URLSearchParams({
+      client_id: config.clientId,
+      redirect_uri: redirectUri,
+      scope: config.scope,
+      state,
+      response_type: 'code',
+      access_type: 'offline',
+      prompt: 'consent'
+    });
+
+    this.saveOAuthState(state, { provider, action });
+    return `${config.authUrl}?${params.toString()}`;
+  }
+
+  /**
+   * Generate a cryptographically secure random state string
+   */
+  private generateState(): string {
+    const array = new Uint8Array(32);
+    window.crypto.getRandomValues(array);
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  /**
+   * Save OAuth state and action to session storage
+   */
+  private saveOAuthState(state: string, data: { provider: OAuthProvider; action: OAuthAction }): void {
+    sessionStorage.setItem(
+      this.storageKey,
+      JSON.stringify({
+        state,
+        ...data,
+        timestamp: Date.now()
+      })
+    );
+  }
+
+  /**
+   * Get and clear stored OAuth state
+   */
+  private getAndClearOAuthState(): { state: string; provider: OAuthProvider; action: OAuthAction } | null {
+    const data = sessionStorage.getItem(this.storageKey);
+    sessionStorage.removeItem(this.storageKey);
+    
+    if (!data) return null;
+    
+    try {
+      const parsed = JSON.parse(data);
+      // Clear state if it's older than 10 minutes
+      if (Date.now() - parsed.timestamp > 600000) {
+        return null;
+      }
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * Verify the OAuth state parameter
+   */
+  public verifyOAuthState(state: string): { provider: OAuthProvider; action: OAuthAction } | null {
+    const stored = this.getAndClearOAuthState();
+    if (!stored || stored.state !== state) {
+      return null;
+    }
+    return { provider: stored.provider, action: stored.action };
+  }
+
+  /**
    * Initiate OAuth login flow
    */
-  async initiateLogin(provider: 'google' | 'github'): Promise<void> {
-    const oauthProvider = OAUTH_PROVIDERS[provider];
-    if (!oauthProvider) {
-      throw new Error(`Unsupported OAuth provider: ${provider}`);
-    }
-
-    if (!oauthProvider.config.clientId) {
-      throw new Error(`${provider} OAuth client ID not configured`);
-    }
-
-    // Store provider and intended action in sessionStorage
-    sessionStorage.setItem('oauth_provider', provider);
-    sessionStorage.setItem('oauth_action', 'login');
-
-    // Build authorization URL
-    const authUrl = this.buildAuthUrl(oauthProvider);
-    
-    // Redirect to OAuth provider
-    window.location.href = authUrl;
+  public async initiateLogin(provider: OAuthProvider): Promise<void> {
+    window.location.href = this.getOAuthUrl(provider, 'login');
   }
 
   /**
    * Initiate OAuth signup flow
    */
-  async initiateSignup(provider: 'google' | 'github'): Promise<void> {
-    const oauthProvider = OAUTH_PROVIDERS[provider];
-    if (!oauthProvider) {
-      throw new Error(`Unsupported OAuth provider: ${provider}`);
+  public async initiateSignup(provider: OAuthProvider): Promise<void> {
+    window.location.href = this.getOAuthUrl(provider, 'signup');
+  }
+
+  /**
+   * Handle OAuth callback and return OAuth response
+   */
+  public async handleCallback(url: string): Promise<OAuthResponse> {
+    const urlObj = new URL(url);
+    const code = urlObj.searchParams.get('code');
+    const state = urlObj.searchParams.get('state');
+    const error = urlObj.searchParams.get('error');
+
+    if (error) {
+      throw new Error(`OAuth error: ${error}`);
     }
 
-    if (!oauthProvider.config.clientId) {
-      throw new Error(`${provider} OAuth client ID not configured`);
+    if (!code || !state) {
+      throw new Error('Missing required OAuth parameters');
     }
 
-    // Store provider and intended action in sessionStorage
-    sessionStorage.setItem('oauth_provider', provider);
-    sessionStorage.setItem('oauth_action', 'signup');
-
-    // Build authorization URL
-    const authUrl = this.buildAuthUrl(oauthProvider);
-    
-    // Redirect to OAuth provider
-    window.location.href = authUrl;
-  }
-
-  /**
-   * Handle OAuth callback - send code to backend for processing
-   */
-  async handleCallback(code: string, provider: 'google' | 'github'): Promise<any> {
-    const oauthProvider = OAUTH_PROVIDERS[provider];
-    if (!oauthProvider) {
-      throw new Error(`Unsupported OAuth provider: ${provider}`);
+    const verified = this.verifyOAuthState(state);
+    if (!verified) {
+      throw new Error('Invalid or expired OAuth state');
     }
 
-    try {
-      // Send authorization code to backend for secure token exchange
-      return {
-        code,
-        provider,
-        redirectUri: oauthProvider.config.redirectUri
-      };
-    } catch (error) {
-      console.error(`OAuth ${provider} callback error:`, error);
-      throw error;
-    }
+    return {
+      code,
+      provider: verified.provider,
+      redirectUri: `${window.location.origin}/auth/callback/${verified.provider}`,
+      action: verified.action
+    };
   }
 
   /**
-   * Build OAuth authorization URL
+   * Clear all OAuth related data
    */
-  private buildAuthUrl(provider: OAuthProvider): string {
-    const params = new URLSearchParams({
-      client_id: provider.config.clientId,
-      redirect_uri: provider.config.redirectUri,
-      scope: provider.config.scope,
-      response_type: 'code',
-      state: this.generateState(), // CSRF protection
-    });
-
-    // Add provider-specific parameters
-    if (provider.name === 'google') {
-      params.append('access_type', 'offline');
-      params.append('prompt', 'consent');
-    }
-
-    return `${provider.authUrl}?${params.toString()}`;
-  }
-
-
-  /**
-   * Generate random state for CSRF protection
-   */
-  private generateState(): string {
-    return Math.random().toString(36).substring(2, 15) + 
-           Math.random().toString(36).substring(2, 15);
-  }
-
-  /**
-   * Get stored OAuth action (login/signup)
-   */
-  getOAuthAction(): 'login' | 'signup' | null {
-    return sessionStorage.getItem('oauth_action') as 'login' | 'signup' | null;
-  }
-
-  /**
-   * Get stored OAuth provider
-   */
-  getOAuthProvider(): 'google' | 'github' | null {
-    return sessionStorage.getItem('oauth_provider') as 'google' | 'github' | null;
-  }
-
-  /**
-   * Clear OAuth session data
-   */
-  clearOAuthSession(): void {
-    sessionStorage.removeItem('oauth_provider');
-    sessionStorage.removeItem('oauth_action');
-  }
-
-  /**
-   * Check if OAuth is configured for a provider
-   */
-  isProviderConfigured(provider: 'google' | 'github'): boolean {
-    const oauthProvider = OAUTH_PROVIDERS[provider];
-    return !!(oauthProvider && oauthProvider.config.clientId);
+  public clearOAuthSession(): void {
+    sessionStorage.removeItem(this.storageKey);
   }
 }
 

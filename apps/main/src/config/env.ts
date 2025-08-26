@@ -24,6 +24,8 @@ export const env = {
   COMMIT_HASH: import.meta.env.VITE_COMMIT_HASH,
   VITE_GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
   VITE_GOOGLE_CLIENT_SECRET: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
+  VITE_GITHUB_CLIENT_ID: import.meta.env.VITE_GITHUB_CLIENT_ID,
+  VITE_GITHUB_CLIENT_SECRET: import.meta.env.VITE_GITHUB_CLIENT_SECRET,
   NODE_ENV: import.meta.env.NODE_ENV,
   MODE: import.meta.env.MODE
 } as const;

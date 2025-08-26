@@ -160,15 +160,11 @@ router.get('/activity',
     authController.getActivityLog
 );
 
-router.post('/oauth/token-exchange', authController.oauthTokenExchange);
-router.post('/oauth/register', authController.oauthRegister);
-router.post('/oauth/login', authController.oauthLogin);
-
-// OAuth Routes (register only if handlers exist)
-if (typeof authController.googleLogin === 'function') {
+// OAuth Routes
 router.get('/google', authController.googleLogin);
-}
-if (typeof authController.googleCallback === 'function') {
 router.get('/google/callback', authController.googleCallback);
-}
+
+router.get('/github', authController.githubLogin);
+router.get('/github/callback', authController.githubCallback);
+
 module.exports = router;
