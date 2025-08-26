@@ -112,9 +112,9 @@ const UserManagementLayout: React.FC = () => {
     try {
       // Update user data
       await adminService.updateUser(userId, {
-        name: userData.username,
+        username: userData.username,
         email: userData.email,
-        isActive: userData.isActive
+        status: userData.isActive ? 'Active' : 'Inactive'
       });
 
       // Update role if changed
@@ -134,7 +134,6 @@ const UserManagementLayout: React.FC = () => {
   const handleViewUser = (user: User) => {
     setSelectedUser(user);
     // Open view modal or navigate to user details
-    console.log('View user:', user);
   };
 
   const handleEditUser = (user: User) => {

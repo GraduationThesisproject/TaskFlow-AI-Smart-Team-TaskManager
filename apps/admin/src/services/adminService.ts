@@ -140,27 +140,15 @@ export interface UsersResponse {
 class AdminService {
   private getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('adminToken');
-    console.log('AdminService: getAuthHeaders - token found:', !!token);
-    console.log('AdminService: getAuthHeaders - token value:', token ? `${token.substring(0, 20)}...` : 'null');
-    console.log('AdminService: getAuthHeaders - localStorage keys:', Object.keys(localStorage));
-    console.log('AdminService: getAuthHeaders - localStorage length:', localStorage.length);
     
     if (!token) {
-      console.warn('AdminService: No adminToken found in localStorage!');
-      console.warn('AdminService: This will cause 401 errors on all authenticated requests');
-      console.warn('AdminService: All localStorage contents:', Object.entries(localStorage));
-    } else {
-      console.log('AdminService: Token found, length:', token.length);
-      console.log('AdminService: Token starts with:', token.substring(0, 10));
-      console.log('AdminService: Token ends with:', token.substring(token.length - 10));
+      throw new Error('No admin token found. Please log in again.');
     }
     
     const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     };
-    
-    console.log('AdminService: Final headers being sent:', headers);
     
     return headers;
   }
@@ -248,15 +236,44 @@ class AdminService {
   }
 
   async updateUser(userId: string, userData: Partial<User>): Promise<void> {
+    // Map frontend fields to backend fields
+    const backendData: any = {};
+    
+    if (userData.username !== undefined) {
+      backendData.name = userData.username;
+    }
+    
+    if (userData.email !== undefined) {
+      backendData.email = userData.email;
+    }
+    
+    if (userData.status !== undefined) {
+      // Map status to isActive
+      backendData.isActive = userData.status === 'Active';
+    }
+
     const response = await fetch(`${API_BASE}/users/${userId}`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
-      body: JSON.stringify(userData),
+      body: JSON.stringify(backendData),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Failed to update user');
+    }
+  }
+
+  async updateUserRole(userId: string, newRole: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/users/${userId}/role`, {
+      method: 'PATCH',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ newRole }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update user role');
     }
   }
 
@@ -303,27 +320,19 @@ class AdminService {
 
   // Analytics
   async getAnalytics(timeRange: string = '6-months'): Promise<AnalyticsData> {
-    console.log('AdminService: getAnalytics called with timeRange:', timeRange);
-    console.log('AdminService: getAnalytics - API URL:', `${API_BASE}/analytics?timeRange=${timeRange}`);
     
     const headers = this.getAuthHeaders();
-    console.log('AdminService: getAnalytics - headers:', headers);
     
     const response = await fetch(`${API_BASE}/analytics?timeRange=${timeRange}`, {
       headers,
     });
 
-    console.log('AdminService: getAnalytics - response status:', response.status);
-    console.log('AdminService: getAnalytics - response ok:', response.ok);
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
-      console.error('AdminService: getAnalytics - error response:', errorData);
       throw new Error(errorData.message || 'Failed to get analytics');
     }
 
     const data = await response.json();
-    console.log('AdminService: getAnalytics - success response:', data);
     return data.data;
   }
 

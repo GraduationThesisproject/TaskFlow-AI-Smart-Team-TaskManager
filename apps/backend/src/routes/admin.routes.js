@@ -2,8 +2,9 @@ const express = require('express');
 const adminController = require('../controllers/admin.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { requireSystemAdmin } = require('../middlewares/permission.middleware');
-const validateMiddleware = require('../middlewares/validate.middleware');
-const { uploadMiddlewares, processUploadedFiles, createAdminRouteMiddleware } = require('../middlewares/upload.middleware');
+
+// const { processUploadedFiles, uploadMiddlewares } = require('../middlewares/upload.middleware');
+
 
 const router = express.Router();
 
@@ -19,15 +20,11 @@ router.use(requireSystemAdmin);
 router.post('/auth/logout', adminController.logout);
 router.get('/auth/me', adminController.getCurrentAdmin);
 router.post('/auth/change-password', adminController.changePassword);
-router.put('/auth/profile', 
-  ...createAdminRouteMiddleware('general', true), // Handle both JSON and file uploads
-  adminController.updateProfile
-);
-router.post('/auth/avatar', 
-  ...createAdminRouteMiddleware('avatar', false), // Handle both JSON and file uploads, file required
-  processUploadedFiles,
-  adminController.uploadAvatar
-);
+// Profile update route (simplified for now)
+router.put('/auth/profile', adminController.updateProfile);
+
+// Avatar upload route (simplified for now)
+router.post('/auth/avatar', adminController.uploadAvatar);
 
 // User management routes
 router.get('/users', adminController.getUsers);
@@ -38,6 +35,7 @@ router.delete('/users/:userId', adminController.deleteUser);
 router.post('/users/:userId/ban', adminController.deactivateUser);
 router.post('/users/:userId/activate', adminController.activateUser);
 router.post('/users/reset-password', adminController.resetUserPassword);
+router.patch('/users/:userId/role', adminController.changeUserRole);
 
 // Analytics routes
 router.get('/analytics', adminController.getAnalytics);

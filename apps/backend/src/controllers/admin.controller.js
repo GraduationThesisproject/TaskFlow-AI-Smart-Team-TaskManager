@@ -31,11 +31,6 @@ const login = async (req, res) => {
     // Generate JWT token
     const token = generateToken(user._id);
     
-    // Debug logging
-    console.log('Admin login - Generated token:', token ? `${token.substring(0, 20)}...` : 'null');
-    console.log('Admin login - Token type:', typeof token);
-    console.log('Admin login - Token length:', token ? token.length : 0);
-    
     // Update admin activity
     admin.updateActivity();
 
@@ -54,12 +49,6 @@ const login = async (req, res) => {
       },
       token
     };
-
-    console.log('Admin login - adminResponse structure:', {
-      hasAdmin: !!adminResponse.admin,
-      hasToken: !!adminResponse.token,
-      tokenValue: adminResponse.token ? `${adminResponse.token.substring(0, 20)}...` : 'null'
-    });
 
     sendResponse(res, 200, true, 'Login successful', adminResponse);
   } catch (error) {
@@ -470,6 +459,56 @@ const resetUserPassword = async (req, res) => {
   }
 };
 
+const changeUserRole = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { newRole } = req.body;
+
+    // Validate the new role
+    if (!['user', 'admin', 'super_admin'].includes(newRole)) {
+      return sendResponse(res, 400, false, 'Invalid role. Must be one of: user, admin, super_admin');
+    }
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return sendResponse(res, 404, false, 'User not found');
+    }
+
+    // Get or create user roles document
+    let userRoles = await UserRoles.findOne({ userId });
+    
+    if (!userRoles) {
+      // Create new user roles document if it doesn't exist
+      userRoles = new UserRoles({
+        userId: user._id,
+        systemRole: newRole
+      });
+    } else {
+      // Update existing role
+      userRoles.systemRole = newRole;
+    }
+
+    await userRoles.save();
+
+    // Log the role change for audit purposes
+    logger.info(`User role changed: User ${user.email} (${user._id}) role changed to ${newRole} by admin ${req.user.id}`);
+
+    // Return updated user with roles
+    const updatedUser = await User.findById(userId)
+      .populate('roles')
+      .select('-password');
+
+    sendResponse(res, 200, true, `User role changed to ${newRole} successfully`, { 
+      user: updatedUser,
+      newRole 
+    });
+  } catch (error) {
+    logger.error('Change user role error:', error);
+    sendResponse(res, 500, false, 'Server error changing user role');
+  }
+};
+
 // Analytics
 const getAnalytics = async (req, res) => {
   try {
@@ -692,22 +731,16 @@ const getBrandingAssets = async (req, res) => {
 // Test JWT generation
 const testJWT = async (req, res) => {
   try {
-    console.log('Testing JWT generation...');
-    
     // Test with a dummy user ID
     const testUserId = '507f1f77bcf86cd799439011';
     const token = generateToken(testUserId);
     
-    console.log('Test JWT - Generated token:', token ? `${token.substring(0, 20)}...` : 'null');
-    console.log('Test JWT - Token type:', typeof token);
-    console.log('Test JWT - Token length:', token ? token.length : 0);
-    
     // Test token verification
     try {
       const decoded = require('../utils/jwt').verifyToken(token);
-      console.log('Test JWT - Token verification successful:', decoded);
+      // Token verification successful
     } catch (verifyError) {
-      console.error('Test JWT - Token verification failed:', verifyError);
+      // Token verification failed
     }
     
     res.json({
@@ -721,7 +754,6 @@ const testJWT = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('JWT test error:', error);
     res.status(500).json({
       success: false,
       message: 'JWT test failed',
@@ -748,6 +780,7 @@ module.exports = {
   deactivateUser: banUser, // Keep the old name for backward compatibility
   activateUser,
   resetUserPassword,
+  changeUserRole,
   
   // Analytics
   getAnalytics,
