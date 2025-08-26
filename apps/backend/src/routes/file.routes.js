@@ -17,7 +17,7 @@ const {
 } = require('../middlewares/upload.middleware');
 
 // Apply authentication to all routes
-router.use(authMiddleware);
+router.use((req, res, next) => authMiddleware(req, res, next));
 
 // Single file upload routes by category
 router.post('/upload/avatar', 

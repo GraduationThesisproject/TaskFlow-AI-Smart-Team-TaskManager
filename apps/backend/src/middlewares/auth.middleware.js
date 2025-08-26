@@ -153,7 +153,8 @@ module.exports = {
     authMiddleware,
     requireSystemRole,
     requireAdmin,
-    optionalAuth
+    optionalAuth,
+    default: authMiddleware,
 };
 
 // Export default as authMiddleware for backward compatibility

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Typography, Switch, Button } from '@taskflow/ui';
 import { Save } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../../store';
-import  updatePreferences  from '../../../store/slices/authSlice';
+import { updatePreferences } from '../../../store/slices/authSlice';
 
 export interface NotificationSettingsState {
   emailNotifications: boolean;

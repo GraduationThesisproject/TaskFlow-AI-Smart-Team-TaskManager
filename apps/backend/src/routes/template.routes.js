@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/template.controller');
+const { authMiddleware, optionalAuth } = require('../middlewares/auth.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const mongoose = require('mongoose');
 
@@ -16,7 +17,8 @@ const listQuerySchema = {
   isPublic: { string: true, pattern: /^(true|false)$/ },
   status: { enum: ['draft', 'active', 'archived', 'deprecated'] },
   limit: { number: true, min: 1, max: 200 },
-  workspaceId: { objectId: true }
+  workspaceId: { objectId: true },
+  scope: { enum: ['all'] }
 };
 
 const createTemplateSchema = {
@@ -44,7 +46,8 @@ const updateTemplateSchema = {
   tags: { array: true, arrayOf: 'string', maxItems: 20 },
   isPublic: { boolean: true },
   status: { enum: ['draft', 'active', 'archived', 'deprecated'] },
-  accessControl: { object: true }
+  accessControl: { object: true },
+  op: { enum: ['increment_views', 'toggle_like'] }
 };
 
 // Custom validators for nested fields
@@ -84,13 +87,14 @@ const validateAccessControl = (req, res, next) => {
 
 // CRUD
 router.get('/', validateMiddleware.validateQuery(listQuerySchema), ctrl.list);
-router.get('/:id', validateMiddleware.validateParams(idParamSchema), ctrl.getById);
-router.post('/', validateMiddleware(createTemplateSchema), validateTagsLength, validateAccessControl, ctrl.create);
-router.put('/:id', validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update);
-router.delete('/:id', validateMiddleware.validateParams(idParamSchema), ctrl.remove);
+router.get('/:id', optionalAuth, validateMiddleware.validateParams(idParamSchema), ctrl.getById);
+router.post('/', authMiddleware, validateMiddleware(createTemplateSchema), validateTagsLength, validateAccessControl, ctrl.create);
+router.patch('/:id', authMiddleware, validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update);
+router.put('/:id', authMiddleware, validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update); // backward compatibility
+router.delete('/:id', authMiddleware, validateMiddleware.validateParams(idParamSchema), ctrl.remove);
 
 // Engagement
-router.post('/:id/views', validateMiddleware.validateParams(idParamSchema), ctrl.incrementViews);
-router.post('/:id/like', validateMiddleware.validateParams(idParamSchema), ctrl.toggleLike);
+router.post('/:id/views', authMiddleware, validateMiddleware.validateParams(idParamSchema), ctrl.incrementViews);
+router.post('/:id/like', authMiddleware, validateMiddleware.validateParams(idParamSchema), ctrl.toggleLike);
 
 module.exports = router;

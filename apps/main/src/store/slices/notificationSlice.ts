@@ -102,14 +102,30 @@ const notificationSlice = createSlice({
       state.error = null;
     },
     addNotification: (state, action: PayloadAction<Notification>) => {
-      state.notifications.unshift(action.payload);
-      if (state.stats) {
-        state.stats.total += 1;
-        if (!action.payload.isRead) {
-          state.stats.unread += 1;
-        }
-        state.stats.byType[action.payload.type] += 1;
+      // Ensure notifications is an array before mutating
+      if (!Array.isArray(state.notifications)) {
+        state.notifications = [];
       }
+      state.notifications.unshift(action.payload);
+      // Ensure stats and byType structure exists before updating
+      if (!state.stats) {
+        state.stats = {
+          total: 0,
+          unread: 0,
+          byType: { info: 0, success: 0, warning: 0, error: 0 },
+        };
+      }
+      if (!state.stats.byType) {
+        state.stats.byType = { info: 0, success: 0, warning: 0, error: 0 } as any;
+      }
+      state.stats.total += 1;
+      if (!action.payload.isRead) {
+        state.stats.unread += 1;
+      }
+      if (state.stats.byType[action.payload.type] === undefined) {
+        state.stats.byType[action.payload.type] = 0 as any;
+      }
+      state.stats.byType[action.payload.type] += 1;
     },
     updateNotificationStatus: (state, action: PayloadAction<{ id: string; isRead: boolean }>) => {
       const notification = state.notifications.find(n => n._id === action.payload.id);
@@ -134,8 +150,23 @@ const notificationSlice = createSlice({
       })
       .addCase(fetchNotifications.fulfilled, (state, action) => {
         state.loading = false;
-        state.notifications = action.payload.notifications;
-        state.stats = action.payload.stats;
+        state.notifications = Array.isArray(action.payload.notifications)
+          ? action.payload.notifications
+          : [];
+        const s = action.payload.stats || {} as any;
+        const baseByType = { info: 0, success: 0, warning: 0, error: 0 };
+        const computed = {
+          total: typeof s.total === 'number' ? s.total : state.notifications.length,
+          unread: typeof s.unread === 'number' ? s.unread : state.notifications.filter(n => !n.isRead).length,
+          byType: {
+            info: s.byType?.info ?? 0,
+            success: s.byType?.success ?? 0,
+            warning: s.byType?.warning ?? 0,
+            error: s.byType?.error ?? 0,
+          },
+        } as any;
+        // Ensure keys exist even if backend omitted byType
+        state.stats = { ...computed, byType: { ...baseByType, ...computed.byType } };
       })
       .addCase(fetchNotifications.rejected, (state, action) => {
         state.loading = false;
