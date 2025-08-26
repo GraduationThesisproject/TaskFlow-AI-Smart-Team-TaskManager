@@ -5,7 +5,20 @@ const validateMiddleware = require('../middlewares/validate.middleware');
 const { uploadMiddlewares, processUploadedFiles, createUploadMiddleware } = require('../middlewares/upload.middleware');
 const { rateLimitSensitiveOps } = require('../middlewares/permission.middleware');
 
-const router = express.Router();
+// Robust router initialization to avoid "router.post is not a function"
+function createRouter() {
+  try {
+    const r = express.Router();
+    if (r && typeof r.post === 'function' && typeof r.get === 'function') return r;
+  } catch (_) {}
+  try {
+    // Fallback to the underlying router package used by Express v5
+    const fallback = require('router')();
+    if (fallback && typeof fallback.post === 'function' && typeof fallback.get === 'function') return fallback;
+  } catch (_) {}
+  throw new Error('Failed to initialize Router');
+}
+const router = createRouter();
 
 // Validation schemas
 const registerSchema = {

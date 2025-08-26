@@ -11,8 +11,8 @@ export const fetchWorkspace = createAsyncThunk(
   'workspace/fetchWorkspace',
   async (workspaceId: string) => {
     const response = await WorkspaceService.getWorkspace(workspaceId);
-    // Backend returns { workspace: {...}, userRole: '...', userPermissions: {...} }
-    return (response.data as any).workspace;
+    // Backend returns data: { workspace: {...}, userRole: '...', userPermissions: {...} }
+    return (response as any).workspace;
   }
 );
 
@@ -21,19 +21,40 @@ export const fetchWorkspaces = createAsyncThunk<Workspace[]>(
   async () => {
     const response = await WorkspaceService.getWorkspaces();
     // The response is an object with a workspaces array
-    return Array.isArray((response.data as any)?.workspaces) 
-      ? (response.data as any).workspaces 
+    return Array.isArray((response as any)?.workspaces)
+      ? (response as any).workspaces
       : [];
   }
 );
 
+// Public: fetch all public workspaces
+export const fetchWorkspacesPublic = createAsyncThunk<Workspace[]>(
+  'workspace/fetchWorkspacesPublic',
+  async () => {
+    const response = await WorkspaceService.getPublicWorkspaces();
+    return Array.isArray((response as any)?.workspaces)
+      ? (response as any).workspaces
+      : [];
+  }
+);
+
+// Admin: fetch all global workspaces
+export const fetchWorkspacesGlobal = createAsyncThunk<Workspace[]>(
+  'workspace/fetchWorkspacesGlobal',
+  async () => {
+    const response = await WorkspaceService.getAllWorkspacesGlobal();
+    return Array.isArray((response as any)?.workspaces)
+      ? (response as any).workspaces
+      : [];
+  }
+);
 
 export const fetchSpacesByWorkspace = createAsyncThunk(
   'workspace/fetchSpacesByWorkspace',
   async (workspaceId: string) => {
     const response = await SpaceService.getSpacesByWorkspace(workspaceId);
     // Backend returns { spaces: [...], count: number }
-    return (response.data as any).spaces;
+    return (response as any).spaces;
   }
 );
 
@@ -42,7 +63,7 @@ export const fetchSpace = createAsyncThunk(
   async (spaceId: string) => {
     const response = await SpaceService.getSpace(spaceId);
     // Backend returns { space: {...}, userRole: '...', userPermissions: {...} }
-    return (response.data as any).space;
+    return (response as any).space;
   }
 );
 
@@ -87,8 +108,8 @@ export const updateWorkspaceSettings = createAsyncThunk<
       // Backend expects { settings: { [section]: updates } }
       settings: { [section]: updates } as any,
     } as any);
-    // API returns wrapper with { workspace }
-    return (response.data as any).workspace as Workspace;
+    // API returns data with { workspace }
+    return (response as any).workspace as Workspace;
   }
 );
 
@@ -104,7 +125,8 @@ export const createWorkspace = createAsyncThunk(
       description: workspaceData.description,
       plan: 'free' // Default to free plan
     });
-    return response.data;
+    // Return just the created workspace object
+    return (response as any)?.workspace ?? response;
   }
 );
 
@@ -208,6 +230,34 @@ const workspaceSlice = createSlice({
       .addCase(fetchWorkspaces.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch workspaces';
+      })
+      // Fetch public workspaces
+      .addCase(fetchWorkspacesPublic.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchWorkspacesPublic.fulfilled, (state, action) => {
+        state.loading = false;
+        state.workspaces = Array.isArray(action.payload) ? action.payload : [];
+        state.error = null;
+      })
+      .addCase(fetchWorkspacesPublic.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch public workspaces';
+      })
+      // Fetch all workspaces (global)
+      .addCase(fetchWorkspacesGlobal.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchWorkspacesGlobal.fulfilled, (state, action) => {
+        state.loading = false;
+        state.workspaces = Array.isArray(action.payload) ? action.payload : [];
+        state.error = null;
+      })
+      .addCase(fetchWorkspacesGlobal.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch global workspaces';
       })
   
       // Fetch single workspace

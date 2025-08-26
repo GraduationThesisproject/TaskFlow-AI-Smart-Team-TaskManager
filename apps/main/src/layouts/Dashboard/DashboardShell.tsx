@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Home, Settings, FileText, BarChart3, X } from 'lucide-react';
+import { Home, Settings, FileText, BarChart3, X, Users } from 'lucide-react';
+
 import {
   Sidebar,
   SidebarHeader,
@@ -16,6 +17,7 @@ import type { DashboardShellProps } from '../../types/dash.types';
 
 const navigationItems = [
   { icon: Home, label: 'Home', href: '/dashboard' },
+  { icon: Users, label: 'Workspaces', href: '/dashboard/workspaces' },
   { icon: FileText, label: 'Templates', href: '/dashboard/templates' },
   { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics' },
   { icon: Settings, label: 'Settings', href: '/dashboard/settings' },

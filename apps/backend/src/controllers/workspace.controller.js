@@ -43,6 +43,26 @@ exports.getAllWorkspaces = async (req, res) => {
     }
 };
 
+// Get all public workspaces (accessible to any authenticated user)
+exports.getPublicWorkspaces = async (req, res) => {
+    try {
+        const workspaces = await Workspace.find({ isActive: true, isPublic: true })
+            .populate('owner', 'name email avatar')
+            .sort({ updatedAt: -1 })
+            .lean();
+
+        return sendResponse(res, 200, true, 'Public workspaces retrieved successfully', {
+            workspaces,
+            count: Array.isArray(workspaces) ? workspaces.length : 0,
+        });
+    } catch (error) {
+        logger.error('Get public workspaces error:', error);
+        return sendResponse(res, 500, false, 'Server error retrieving public workspaces');
+    }
+};
+
+
+
 // Get single workspace
 exports.getWorkspace = async (req, res) => {
     try {

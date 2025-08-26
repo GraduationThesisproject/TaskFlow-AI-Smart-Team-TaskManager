@@ -104,6 +104,11 @@ const workspaceSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ActivityLog'
   }],
+  // Visibility: when true, all users can see this workspace (read-only unless they join/invited)
+  isPublic: {
+    type: Boolean,
+    default: false
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -182,6 +187,7 @@ workspaceSchema.virtual('availableFeatures').get(function() {
 workspaceSchema.index({ owner: 1 });
 workspaceSchema.index({ 'members.user': 1 });
 workspaceSchema.index({ isActive: 1 });
+workspaceSchema.index({ isPublic: 1 });
 workspaceSchema.index({ plan: 1 });
 workspaceSchema.index({ 'billing.status': 1 });
 

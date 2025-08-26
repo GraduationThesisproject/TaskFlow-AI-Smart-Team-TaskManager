@@ -72,4 +72,3 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onClick, onLike }
 };
 
 export default TemplateCard;
-

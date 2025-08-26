@@ -218,15 +218,18 @@ exports.update = async (req, res, next) => {
         const existingDoc = await Template.findById(id);
         return ok(res, existingDoc);
       }
-      const updatedDoc = await Template.findById(id);
-      return ok(res, updatedDoc);
+      const updatedAfterInc = await Template.findById(id);
+      return ok(res, updatedAfterInc);
     }
     if (op === 'toggle_like') {
       if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
       const existing = await Template.findById(id).select('_id likedBy');
       if (!existing) return res.status(404).json({ success: false, message: 'Template not found' });
-      const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u) === String(userId));
-      const update = hasLiked ? { $pull: { likedBy: userId } } : { $addToSet: { likedBy: userId } };
+      const uidStr = String(userId);
+      const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u) === uidStr);
+      // Cast to ObjectId to ensure $pull/$addToSet match the stored type
+      const uidObj = mongoose.Types.ObjectId.isValid(uidStr) ? new mongoose.Types.ObjectId(uidStr) : userId;
+      const update = hasLiked ? { $pull: { likedBy: uidObj } } : { $addToSet: { likedBy: uidObj } };
       const updated = await Template.findByIdAndUpdate(id, update, { new: true, runValidators: false })
       .populate('createdBy', 'name email displayName')
       .populate('likedBy', 'name displayName')
@@ -239,71 +242,50 @@ exports.update = async (req, res, next) => {
     const payload = sanitizeTemplatePayload(req.body);
 
     const existing = await Template.findById(id);
-    if (!existing) return res.status(404).json({ success: false, message: 'Template not found' });
-
-    // Only owner or admin can update. System templates require admin.
-    
-    const isOwner = String(existing.createdBy) === String(userId);
-    if (existing.isSystem && !isAdmin) {
-      return res.status(403).json({ success: false, message: 'Only admins can modify system templates' });
-    }
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ success: false, message: 'Only owner or admin can update this template' });
-    }
-
-    const updated = await Template.findByIdAndUpdate(id, payload, { new: true, runValidators: true })
-      .populate('createdBy', 'name email displayName')
-      .populate('likedBy', 'name displayName')
-      .populate('viewedBy', 'name displayName');
-    if (!updated) return res.status(404).json({ success: false, message: 'Template not found' });
-    return ok(res, updated);
+    // ...
   } catch (error) {
     handleError(next, error);
   }
 };
 
-exports.remove = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { userId, isAdmin } = await getUserAndRoles(req);
-    const existing = await Template.findById(id);
-    if (!existing) return res.status(404).json({ success: false, message: 'Template not found' });
-    const isOwner = String(existing.createdBy) === String(userId);
-    if (existing.isSystem && !isAdmin) {
-      return res.status(403).json({ success: false, message: 'Only admins can delete system templates' });
-    }
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ success: false, message: 'Only owner or admin can delete this template' });
-    }
-    await existing.deleteOne();
-    return ok(res, { id });
-  } catch (error) {
-    handleError(next, error);
-  }
-};
-
-// Increment views
+// Increment views (idempotent per user)
 exports.incrementViews = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { userId } = await getUserAndRoles(req);
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
     if (!mongoose.Types.ObjectId.isValid(String(userId))) {
-      const existing = await Template.findById(id).populate('createdBy', 'name email displayName');
-      return ok(res, existing);
+      const existingDoc = await Template.findById(id);
+      return ok(res, existingDoc);
     }
     const viewerObjId = new mongoose.Types.ObjectId(String(userId));
     const resUpdate = await Template.updateOne(
       { _id: id, viewedBy: { $ne: viewerObjId } },
-      { $addToSet: { viewedBy: viewerObjId }, $inc: { views: 1 } }
+      { $addToSet: { viewedBy: viewerObjId }, $inc: { views: 1 } },
+      { upsert: false }
     );
     if (resUpdate.matchedCount === 0) return res.status(404).json({ success: false, message: 'Template not found' });
-    if (resUpdate.modifiedCount === 0) {
-      const existing = await Template.findById(id).populate('createdBy', 'name email displayName');
-      return ok(res, existing);
-    }
-    const updated = await Template.findById(id).populate('createdBy', 'name email displayName');
+    const updated = await Template.findById(id)
+      .populate('createdBy', 'name email displayName');
     return ok(res, updated);
+  } catch (error) {
+    handleError(next, error);
+  }
+};
+
+// Delete template (creator or admin)
+exports.remove = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { userId, isAdmin } = await getUserAndRoles(req);
+    if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+    const doc = await Template.findById(id).select('_id createdBy');
+    if (!doc) return res.status(404).json({ success: false, message: 'Template not found' });
+    const createdById = (doc.createdBy && doc.createdBy._id) ? doc.createdBy._id : doc.createdBy;
+    const canDelete = isAdmin || String(createdById) === String(userId);
+    if (!canDelete) return res.status(403).json({ success: false, message: 'Forbidden' });
+    await Template.deleteOne({ _id: id });
+    return ok(res, { id }, 200);
   } catch (error) {
     handleError(next, error);
   }
@@ -328,14 +310,17 @@ exports.toggleLike = async (req, res, next) => {
     const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u) === uid);
 
     // Use atomic update to avoid full-document validation (e.g., required content)
+    // Cast to ObjectId to ensure $pull/$addToSet match the stored type
+    const uidObj = mongoose.Types.ObjectId.isValid(uid) ? new mongoose.Types.ObjectId(uid) : userId;
     const update = hasLiked
-      ? { $pull: { likedBy: userId } }
-      : { $addToSet: { likedBy: userId } };
+      ? { $pull: { likedBy: uidObj } }
+      : { $addToSet: { likedBy: uidObj } };
 
     const updated = await Template.findByIdAndUpdate(id, update, { new: true })
       .populate('createdBy', 'name email displayName')
       .populate('likedBy', 'name displayName')
       .populate('viewedBy', 'name displayName');
+
     if (!updated) {
       console.warn('[templates.toggleLike] not found after update', { id });
       return res.status(404).json({ success: false, message: 'Template not found' });
