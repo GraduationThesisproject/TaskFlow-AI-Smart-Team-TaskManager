@@ -57,26 +57,7 @@ export const fetchWorkspacesPublic = createAsyncThunk<Workspace[]>(
   }
 );
 
-// Admin: fetch all global workspaces
-export const fetchWorkspacesGlobal = createAsyncThunk<Workspace[]>(
-  'workspace/fetchWorkspacesGlobal',
-  async () => {
-    const response = await WorkspaceService.getAllWorkspacesGlobal();
-    console.log('[fetchWorkspacesGlobal] raw response:', response);
-    const raw: any = response as any;
-    const list = Array.isArray(raw)
-      ? raw
-      : Array.isArray(raw?.workspaces)
-      ? raw.workspaces
-      : Array.isArray(raw?.data?.workspaces)
-      ? raw.data.workspaces
-      : Array.isArray(raw?.data)
-      ? raw.data
-      : [];
-    console.log('[fetchWorkspacesGlobal] extracted workspaces length:', list.length);
-    return list;
-  }
-);
+
 
 export const fetchSpacesByWorkspace = createAsyncThunk(
   'workspace/fetchSpacesByWorkspace',
@@ -262,20 +243,6 @@ const workspaceSlice = createSlice({
         console.error('❌ fetchWorkspacesPublic.rejected:', action.error.message);
         state.error = action.error.message || 'Failed to fetch public workspaces';
       })
-      // Fetch all workspaces (global)
-      .addCase(fetchWorkspacesGlobal.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchWorkspacesGlobal.fulfilled, (state, action) => {
-        state.loading = false;
-        state.workspaces = Array.isArray(action.payload) ? action.payload : [];
-        state.error = null;
-      })
-      .addCase(fetchWorkspacesGlobal.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to fetch global workspaces';
-      })
   
       // Fetch single workspace
       .addCase(fetchWorkspace.pending, (state) => {
@@ -331,94 +298,6 @@ const workspaceSlice = createSlice({
       
       }})
 
-
-      // Fetch members
-      .addCase(fetchMembers.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchMembers.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.members = Array.isArray(action.payload) ? action.payload : [];
-        console.log('✅ fetchMembers.fulfilled - Members updated:', state.members);
-        state.error = null;
-      })
-      .addCase(fetchMembers.rejected, (state, action) => {
-        state.isLoading = false;
-        console.error('❌ fetchMembers.rejected:', action.error.message);
-        state.error = action.error.message || 'Failed to fetch members';
-      })
-
-      // Invite member
-      .addCase(inviteMember.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(inviteMember.fulfilled, (state, action) => {
-        state.isLoading = false;
-        if (action.payload) {
-          state.members = [...state.members, action.payload];
-        }
-        state.error = null;
-      })
-      .addCase(inviteMember.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to invite member';
-      })
-
-      // Remove member
-      .addCase(removeMember.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(removeMember.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.members = state.members.filter(m => m.id !== action.payload.memberId);
-        state.error = null;
-      })
-      .addCase(removeMember.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to remove member';
-      })
-
-      // Generate invite link
-      .addCase(generateInviteLink.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(generateInviteLink.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.inviteLink = action.payload;
-        state.error = null;
-      })
-      .addCase(generateInviteLink.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to generate invite link';
-      })
-
-      // Disable invite link
-      .addCase(disableInviteLink.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(disableInviteLink.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.inviteLink = action.payload;
-        state.error = null;
-      })
-      .addCase(disableInviteLink.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to disable invite link';
-      })
-      .addCase(deleteWorkspace.fulfilled, (state, action) => {
-        state.loading = false;
-        state.workspaces = state.workspaces.filter(w => w._id !== action.payload.id);
-        state.error = null;
-    })
-      
-      }})
-  
-      // Delete workspace
     
     // You can add other thunks (spaces, members, invite links) here similarly...
   
