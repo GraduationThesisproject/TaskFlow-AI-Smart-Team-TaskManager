@@ -1,4 +1,4 @@
-import { Card, CardHeader, CardTitle, CardContent, Typography, Button, Badge, EmptyState, Skeleton, Gradient } from "@taskflow/ui";
+import { Card, CardHeader, CardTitle, CardContent, Typography, Button, Badge, EmptyState, Skeleton } from "@taskflow/ui";
 import { Plus, Users, Trash } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../../../store";
@@ -34,20 +34,13 @@ export const WorkspacesSection = () => {
           <div className="flex items-center justify-between">
             <CardTitle>Your Workspaces</CardTitle>
             <Button
-              variant="default"
+              variant="outline"
               size="sm"
               onClick={() => setIsModalOpen(true)}
-              className={`relative overflow-hidden group rounded-md transition-all
-                shadow-[0_0_18px_hsl(var(--accent)/0.55)] hover:shadow-[0_0_32px_hsl(var(--accent)/0.75)]
-                ring-1 ring-[hsl(var(--accent))/0.6] border border-[hsl(var(--accent))/0.6]
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--accent))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--neutral-900))]
-                ${isModalOpen ? 'ring-2 ring-[hsl(var(--accent))] shadow-[0_0_48px_hsl(var(--accent)/0.95)]' : ''}
-              `}
+              className="ml-2 flex items-center gap-2 border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
             >
-              <Gradient variant="primary" direction="to-r" className="pointer-events-none absolute -inset-6 opacity-25 group-hover:opacity-45 transition-opacity duration-300" />
-              <span className="relative z-10 flex items-center">
-                <Plus className="h-4 w-4 mr-2" /> New Workspace
-              </span>
+              <Plus className="h-4 w-4" />
+              <span>New Workspace</span>
             </Button>
           </div>
         </CardHeader>
@@ -71,7 +64,6 @@ export const WorkspacesSection = () => {
                   className="relative overflow-hidden group border rounded-lg p-4 cursor-pointer flex flex-col justify-between ring-1 ring-accent/10 border-[hsl(var(--accent))]/20 shadow-[0_0_12px_hsl(var(--accent)/0.10)] hover:shadow-[0_0_26px_hsl(var(--accent)/0.22)] transition-all"
                   onClick={() => handleWorkspaceClick(ws._id)}
                 >
-                  <Gradient variant="primary" direction="to-r" className="pointer-events-none absolute -inset-8 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
                   <div className="flex items-center justify-between mb-2">
                     <Typography variant="body-medium" className="font-medium truncate max-w-[70%]" title={ws.name}>
                       {ws.name}
