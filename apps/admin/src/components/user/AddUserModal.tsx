@@ -38,7 +38,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
   const [formData, setFormData] = useState<AddUserFormData>({
     username: '',
     email: '',
-    role: 'user'
+    role: 'moderator'
   });
   
   const [isLoading, setIsLoading] = useState(false);
@@ -95,7 +95,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
     setFormData({
       username: '',
       email: '',
-      role: 'user'
+      role: 'moderator'
     });
     setErrors({});
     setIsLoading(false);

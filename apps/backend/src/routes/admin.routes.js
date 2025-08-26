@@ -2,6 +2,10 @@ const express = require('express');
 const adminController = require('../controllers/admin.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { requireSystemAdmin } = require('../middlewares/permission.middleware');
+const { 
+  requireUserManagementAccess, 
+  requireUserManagementPermission 
+} = require('../middlewares/accessControl.middleware');
 
 // const { processUploadedFiles, uploadMiddlewares } = require('../middlewares/upload.middleware');
 
@@ -26,16 +30,19 @@ router.put('/auth/profile', adminController.updateProfile);
 // Avatar upload route (simplified for now)
 router.post('/auth/avatar', adminController.uploadAvatar);
 
-// User management routes
-router.get('/users', adminController.getUsers);
-router.post('/users', adminController.createUser);
-router.get('/users/:userId', adminController.getUser);
-router.put('/users/:userId', adminController.updateUser);
+// User management routes - specific routes first
+router.get('/users', requireUserManagementAccess('view'), adminController.getUsers);
+router.post('/users', requireUserManagementAccess('limited'), adminController.createUser);
+router.post('/users/add-with-email', requireUserManagementAccess('limited'), adminController.addUserWithEmail);
+router.get('/users/available-roles', requireUserManagementAccess('view'), adminController.getAvailableRoles);
+router.post('/users/reset-password', requireUserManagementAccess('limited'), adminController.resetUserPassword);
 
-router.post('/users/:userId/ban', adminController.deactivateUser);
-router.post('/users/:userId/activate', adminController.activateUser);
-router.post('/users/reset-password', adminController.resetUserPassword);
-router.patch('/users/:userId/role', adminController.changeUserRole);
+// Parameterized user routes - after specific routes
+router.get('/users/:userId', requireUserManagementAccess('view'), adminController.getUser);
+router.put('/users/:userId', requireUserManagementAccess('limited'), adminController.updateUser);
+router.post('/users/:userId/ban', requireUserManagementPermission('delete'), adminController.deactivateUser);
+router.post('/users/:userId/activate', requireUserManagementAccess('limited'), adminController.activateUser);
+router.patch('/users/:userId/role', requireUserManagementPermission('role_assign'), adminController.changeUserRole);
 
 // Analytics routes
 router.get('/analytics', adminController.getAnalytics);

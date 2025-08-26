@@ -447,8 +447,8 @@ const changeUserRole = async (req, res) => {
     const { newRole } = req.body;
 
     // Validate the new role
-    if (!['user', 'admin', 'super_admin'].includes(newRole)) {
-      return sendResponse(res, 400, false, 'Invalid role. Must be one of: user, admin, super_admin');
+    if (!['user', 'admin', 'super_admin', 'moderator'].includes(newRole)) {
+      return sendResponse(res, 400, false, 'Invalid role. Must be one of: user, admin, super_admin, moderator');
     }
 
     // Check if user exists
@@ -488,6 +488,106 @@ const changeUserRole = async (req, res) => {
   } catch (error) {
     logger.error('Change user role error:', error);
     sendResponse(res, 500, false, 'Server error changing user role');
+  }
+};
+
+// Add new user with email and password
+const addUserWithEmail = async (req, res) => {
+  try {
+    const { username, email, password, role } = req.body;
+
+    // Validate required fields
+    if (!username || !email || !password || !role) {
+      return sendResponse(res, 400, false, 'Username, email, password, and role are required');
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return sendResponse(res, 400, false, 'Invalid email format');
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return sendResponse(res, 400, false, 'Password must be at least 8 characters long');
+    }
+
+    // Validate role
+    if (!['admin', 'super_admin', 'moderator'].includes(role)) {
+      return sendResponse(res, 400, false, 'Invalid role. Must be one of: admin, super_admin, moderator');
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return sendResponse(res, 400, false, 'User with this email already exists');
+    }
+
+    // Create new user
+    const user = new User({
+      name: username,
+      email,
+      password
+    });
+
+    await user.save();
+
+    // Set user role
+    await UserRoles.findOneAndUpdate(
+      { userId: user._id },
+      { systemRole: role },
+      { upsert: true, new: true }
+    );
+
+    // Log the user creation for audit purposes
+    logger.info(`New user created: ${email} with role ${role} by admin ${req.user.id}`);
+
+    // Return created user (without password)
+    const createdUser = await User.findById(user._id).select('-password');
+    const userRoles = await UserRoles.findOne({ userId: user._id });
+
+    sendResponse(res, 201, true, 'User created successfully', { 
+      user: {
+        ...createdUser.toObject(),
+        role: userRoles?.systemRole || role
+      }
+    });
+  } catch (error) {
+    logger.error('Add user with email error:', error);
+    sendResponse(res, 500, false, 'Server error creating user');
+  }
+};
+
+// Get available roles for the current user
+const getAvailableRoles = async (req, res) => {
+  try {
+    const userSystemRole = req.user.systemRole;
+    let availableRoles = [];
+
+    // Super Admin can assign all roles
+    if (userSystemRole === 'super_admin') {
+      availableRoles = ['admin', 'super_admin', 'moderator'];
+    }
+    // Admin can assign admin and moderator roles
+    else if (userSystemRole === 'admin') {
+      availableRoles = ['admin', 'moderator'];
+    }
+    // Moderator can only assign moderator role
+    else if (userSystemRole === 'moderator') {
+      availableRoles = ['moderator'];
+    }
+    // Regular users cannot assign roles
+    else {
+      availableRoles = [];
+    }
+
+    sendResponse(res, 200, true, 'Available roles retrieved successfully', { 
+      availableRoles,
+      userRole: userSystemRole
+    });
+  } catch (error) {
+    logger.error('Get available roles error:', error);
+    sendResponse(res, 500, false, 'Server error retrieving available roles');
   }
 };
 
@@ -758,6 +858,8 @@ module.exports = {
   createUser,
   getUser,
   updateUser,
+  addUserWithEmail,
+  getAvailableRoles,
 
   deactivateUser: banUser, // Keep the old name for backward compatibility
   activateUser,

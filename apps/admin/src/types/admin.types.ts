@@ -19,6 +19,7 @@ export interface Admin {
 export enum AdminRole {
   SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
+  MODERATOR = 'moderator',
 }
 
 export interface Permission {
