@@ -31,7 +31,7 @@ class ChatService {
    */
   async getActiveChats(): Promise<Chat[]> {
     try {
-      console.log('ChatService: getActiveChats called');
+      // console.log('ChatService: getActiveChats called');
       
       const response = await fetch(`${this.baseUrl}/admin/active`, {
         method: 'GET',
@@ -181,7 +181,7 @@ class ChatService {
    */
   async getChatStats(): Promise<ChatStats> {
     try {
-      console.log('ChatService: getChatStats called');
+      // console.log('ChatService: getChatStats called');
       
       const response = await fetch(`${this.baseUrl}/admin/stats`, {
         method: 'GET',

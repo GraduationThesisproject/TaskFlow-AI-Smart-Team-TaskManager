@@ -277,17 +277,7 @@ class AdminService {
     }
   }
 
-  async deleteUser(userId: string): Promise<void> {
-    const response = await fetch(`${API_BASE}/users/${userId}`, {
-      method: 'DELETE',
-      headers: this.getAuthHeaders(),
-    });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete user');
-    }
-  }
 
   async deactivateUser(userId: string): Promise<void> {
     const response = await fetch(`${API_BASE}/users/${userId}/ban`, {

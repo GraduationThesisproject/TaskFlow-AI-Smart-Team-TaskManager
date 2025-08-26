@@ -17,14 +17,13 @@ import {
   MagnifyingGlassIcon,
   EyeIcon,
   PencilIcon,
-  TrashIcon,
   UserPlusIcon,
   ExclamationTriangleIcon,
   XMarkIcon,
   CheckIcon
 } from '@heroicons/react/24/outline';
 import { adminService, User } from '../services/adminService';
-import { AddUserModal, EditUserModal } from '../components/user';
+import { AddUserModal, EditUserModal, ViewUserModal } from '../components/user';
 import { ConfirmationDialog } from '../components/common';
 
 const UserManagementLayout: React.FC = () => {
@@ -34,6 +33,7 @@ const UserManagementLayout: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [showViewUserModal, setShowViewUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -133,7 +133,7 @@ const UserManagementLayout: React.FC = () => {
 
   const handleViewUser = (user: User) => {
     setSelectedUser(user);
-    // Open view modal or navigate to user details
+    setShowViewUserModal(true);
   };
 
   const handleEditUser = (user: User) => {
@@ -158,27 +158,9 @@ const UserManagementLayout: React.FC = () => {
     });
   };
 
-  const handleDeleteUser = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    showConfirmation(
-      'Delete User',
-      `Are you sure you want to delete ${user?.username}? This action cannot be undone and will permanently remove the user account.`,
-      'danger',
-      async () => {
-        try {
-          await adminService.deleteUser(userId);
-          setUsers(users.filter(user => user.id !== userId));
-          setPagination(prev => ({ ...prev, total: prev.total - 1 }));
-          setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
-        } catch (err) {
-          alert('Failed to delete user: ' + (err instanceof Error ? err.message : 'Unknown error'));
-        }
-      },
-      'Delete User'
-    );
-  };
 
-  const handleBanUser = (userId: string) => {
+
+  const handleDeactivateUser = (userId: string) => {
     const user = users.find(u => u.id === userId);
     showConfirmation(
       'Deactivate User',
@@ -290,7 +272,7 @@ const UserManagementLayout: React.FC = () => {
           User Management
         </Typography>
         <Typography variant="body-medium" className="text-muted-foreground">
-          Manage user accounts, roles, and permissions across the platform
+          Manage user accounts, roles, and status (active/inactive) across the platform
         </Typography>
       </div>
 
@@ -362,7 +344,7 @@ const UserManagementLayout: React.FC = () => {
                     <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Last Login</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Created</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Actions</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Manage</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -437,22 +419,14 @@ const UserManagementLayout: React.FC = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleBanUser(user.id)}
+                              onClick={() => handleDeactivateUser(user.id)}
                               title="Deactivate user"
                               className="text-orange-600 hover:text-orange-700"
                             >
                               <XMarkIcon className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.id)}
-                            title="Delete user"
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </Button>
+                          
                         </div>
                       </td>
                     </tr>
@@ -462,6 +436,11 @@ const UserManagementLayout: React.FC = () => {
             </div>
           )}
         </CardContent>
+        <div className="px-6 pb-4">
+          <Typography variant="body-small" className="text-muted-foreground">
+            💡 <strong>Status Management:</strong> Users can be activated (Active) or deactivated (Inactive). Deactivated users cannot access the platform but their data is preserved.
+          </Typography>
+        </div>
       </Card>
 
       {/* Pagination */}
@@ -505,6 +484,15 @@ const UserManagementLayout: React.FC = () => {
           setSelectedUser(null);
         }}
         onSubmit={handleUpdateUser}
+        user={selectedUser}
+      />
+
+      <ViewUserModal
+        isOpen={showViewUserModal}
+        onClose={() => {
+          setShowViewUserModal(false);
+          setSelectedUser(null);
+        }}
         user={selectedUser}
       />
 
