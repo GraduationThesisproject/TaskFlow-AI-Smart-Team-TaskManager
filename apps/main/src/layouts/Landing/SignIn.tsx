@@ -162,6 +162,7 @@ export default function SignIn() {
             size="sm"
             className="text-primary hover:text-primary/80 p-0 h-auto text-sm"
             disabled={isLoading}
+            onClick={() => navigate('/forgot-password')}
           >
             Forgot password?
           </Button>

@@ -80,6 +80,13 @@ UPLOAD_DIR → the folder where uploaded files are stored.
 
 MAX_FILE_SIZE → maximum allowed file size (here 10 MB). */
 
+
+// OAuth
+GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL,
+
+
     // Power BI Configuration
     POWERBI_CLIENT_ID: process.env.POWERBI_CLIENT_ID,
     POWERBI_CLIENT_SECRET: process.env.POWERBI_CLIENT_SECRET,
