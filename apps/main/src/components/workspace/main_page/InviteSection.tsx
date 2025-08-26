@@ -19,7 +19,7 @@ const InviteSection: React.FC<InviteSectionProps> = ({
   return (
     <section className="mb-5 rounded-xl p-4 shadow-[0_0_10px_hsl(var(--accent))] 
          ring-1 ring-primary/20 
-         backdrop-blur bg-neutral-100">
+         backdrop-blur bg-background">
       <h3 className="text-base font-semibold mb-4" style={{ color: 'hsl(var(--primary-foreground))' }}>
         Invite members to join you
       </h3>
@@ -49,7 +49,7 @@ const InviteSection: React.FC<InviteSectionProps> = ({
           <OutlineBtn onClick={onDisableInvite}>Disable invite link</OutlineBtn>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 rounded-xl px-3 bg-neutral-200">
+          <div className="flex items-center gap-2 rounded-xl px-3 bg-background">
             <Input className="w-56 bg-transparent text-sm outline-none border-none focus-visible:ring-0" placeholder="Filter by name" value={search} onChange={(e) => setSearch(e.target.value)} />
             <GhostIconBtn />
           </div>

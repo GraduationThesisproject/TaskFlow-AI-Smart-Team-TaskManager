@@ -48,6 +48,32 @@ const workspaceSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Space'
   }],
+  inviteTokens: [{
+    token: {
+      type: String,
+      required: true
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    expiresAt: {
+      type: Date,
+      required: true
+    },
+    used: {
+      type: Boolean,
+      default: false
+    },
+    usedAt: {
+      type: Date
+    },
+    usedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  }],
   settings: {
     permissions: {
       defaultMemberRole: {

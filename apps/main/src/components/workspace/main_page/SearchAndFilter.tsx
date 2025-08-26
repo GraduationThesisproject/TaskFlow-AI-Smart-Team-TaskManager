@@ -23,7 +23,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   return (
     <div className="mb-4 flex flex-col gap-3 md:flex-row mb-6">
       <div
-        className="flex flex-1 items-center gap-2 rounded-md px-3 py-2 bg-neutral-100"
+        className="flex flex-1 items-center gap-2 rounded-md px-3 py-2 bg-background"
       >
         <Input
           className="w-full bg-transparent text-sm placeholder:opacity-70 border-none focus-visible:ring-0"
