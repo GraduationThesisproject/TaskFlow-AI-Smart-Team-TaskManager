@@ -19,7 +19,7 @@ const workspaceSocket = require('./sockets/workspace.socket');
 const boardSocket = require('./sockets/board.socket');
 const chatSocket = require('./sockets/chat.socket');
 
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3001;
 
 // Connect to database
 connectDB();
@@ -44,13 +44,9 @@ const socketCorsOptions = {
             allowedOrigins = config.CORS_ORIGIN;
         }
         
-        console.log('Socket.IO - Allowed CORS origins:', allowedOrigins);
-        console.log('Socket.IO - Request origin:', origin);
-        
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
-            console.log('Socket.IO - CORS blocked origin:', origin);
             callback(new Error(`Origin ${origin} not allowed by Socket.IO CORS. Allowed: ${allowedOrigins.join(', ')}`));
         }
     },
@@ -59,9 +55,7 @@ const socketCorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Socket-ID']
 };
 
-console.log('Socket.IO CORS Configuration:', socketCorsOptions);
-console.log('Config.CORS_ORIGIN:', config.CORS_ORIGIN);
-console.log('Process.env.CORS_ORIGIN:', process.env.CORS_ORIGIN);
+
 
 const io = socketIo(server, {
     cors: socketCorsOptions

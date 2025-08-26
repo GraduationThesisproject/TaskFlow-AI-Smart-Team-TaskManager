@@ -289,8 +289,8 @@ const getUsers = async (req, res) => {
           email: user.email,
           role: userRole?.systemRole || 'User',
           status: user.isActive ? 'Active' : 'Inactive',
-          lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never',
-          createdAt: user.createdAt.toLocaleDateString(),
+          lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toISOString() : 'Never',
+          createdAt: user.createdAt.toISOString(),
           avatar: user.avatar
         };
       })
@@ -318,8 +318,9 @@ const createUser = async (req, res) => {
       return sendResponse(res, 400, false, 'User with this email already exists');
     }
 
-    // Create user with temporary password
-    const tempPassword = Math.random().toString(36).slice(-8);
+    // Create user with the specified password "user123!"
+    const tempPassword = 'user123!';
+    
     const user = new User({
       name: username,
       email,
@@ -377,26 +378,7 @@ const updateUser = async (req, res) => {
   }
 };
 
-const deleteUser = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    
-    // Check if user exists
-    const user = await User.findById(userId);
-    if (!user) {
-      return sendResponse(res, 404, false, 'User not found');
-    }
 
-    // Soft delete - mark as inactive
-    user.isActive = false;
-    await user.save();
-
-    sendResponse(res, 200, true, 'User deleted successfully');
-  } catch (error) {
-    logger.error('Delete user error:', error);
-    sendResponse(res, 500, false, 'Server error deleting user');
-  }
-};
 
 const banUser = async (req, res) => {
   try {
@@ -776,7 +758,7 @@ module.exports = {
   createUser,
   getUser,
   updateUser,
-  deleteUser,
+
   deactivateUser: banUser, // Keep the old name for backward compatibility
   activateUser,
   resetUserPassword,
