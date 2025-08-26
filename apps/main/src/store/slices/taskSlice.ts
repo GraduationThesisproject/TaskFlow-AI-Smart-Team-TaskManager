@@ -5,7 +5,6 @@ import type {
   Column, 
   Board, 
   Space, 
-  Workspace, 
   TaskState, 
   CreateTaskForm, 
   UpdateTaskForm, 
@@ -159,7 +158,6 @@ const initialState: TaskState = {
   columns: [],
   boards: [],
   spaces: [],
-  workspaces: [], // This will be populated by the BoardService.getBoardsBySpace
   currentTask: null,
   currentBoard: null,
   currentSpace: null,
