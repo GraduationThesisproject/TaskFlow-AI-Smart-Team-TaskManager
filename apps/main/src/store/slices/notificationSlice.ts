@@ -140,6 +140,9 @@ const notificationSlice = createSlice({
       .addCase(fetchNotifications.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch notifications';
+        // Ensure notifications is always an array even on error
+        state.notifications = [];
+        state.stats = null;
       })
       
       // Mark as read

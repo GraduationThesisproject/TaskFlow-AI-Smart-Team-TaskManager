@@ -160,4 +160,11 @@ router.get('/activity',
     authController.getActivityLog
 );
 
+// OAuth Routes
+router.get('/google', authController.googleLogin);
+router.get('/google/callback', authController.googleCallback);
+
+router.get('/github', authController.githubLogin);
+router.get('/github/callback', authController.githubCallback);
+
 module.exports = router;
