@@ -1,11 +1,11 @@
-import { useCallback } from 'react';
-import { useAppDispatch, useAppSelector } from '../store';
+import { useCallback, useState } from 'react';
+import { useAppDispatch, useAppSelector, type AppDispatch } from '../store';
+import { useNavigate } from 'react-router-dom';
 import { 
   loginUser, 
   registerUser, 
   logoutUser, 
   clearError,
-  checkAuthStatus,
   oauthLogin,
   oauthRegister,
   updateUser,
@@ -18,6 +18,19 @@ import {
 } from '../store/slices/authSlice';
 import type { LoginCredentials, RegisterData, OAuthCallbackData, EmailVerificationData, ResendVerificationData, PasswordResetRequestData, PasswordResetData } from '../types/auth.types';
 import { oauthService } from '../services/oauthService';
+import { AuthService } from '../services/authService';
+
+type UseOAuthReturn = {
+  loginWithOAuth: (provider: 'google' | 'github') => void;
+  signupWithOAuth: (provider: 'google' | 'github') => void;
+};
+
+type UseOAuthCallbackReturn = {
+  handleOAuthCallback: (provider: 'google' | 'github', code: string, state?: string) => Promise<any>;
+  isProcessing: boolean;
+  error: string | null;
+  clearError: () => void;
+};
 
 export const useAuth = () => {
   const dispatch = useAppDispatch();
@@ -65,6 +78,50 @@ export const useAuth = () => {
     [dispatch]
   );
 
+  const loginWithOAuth = useCallback(
+    (provider: 'google' | 'github') => {
+      try {
+        return oauthService.initiateLogin(provider);
+      } catch (error) {
+        console.error('OAuth login error:', error);
+        throw error;
+      }
+    },
+    []
+  );
+
+  const signupWithOAuth = useCallback(
+    (provider: 'google' | 'github') => {
+      try {
+        return oauthService.initiateSignup(provider);
+      } catch (error) {
+        console.error('OAuth signup error:', error);
+        throw error;
+      }
+    },
+    []
+  );
+
+  const handleOAuthCallback = useCallback(
+    async (provider: 'google' | 'github', code: string, state?: string) => {
+      try {
+        const result = await oauthService.handleCallback(window.location.href);
+        
+        if (result.action === 'login') {
+          const loginResult = await dispatch(oauthLogin({ code, provider }));
+          return loginResult;
+        } else {
+          const registerResult = await dispatch(oauthRegister({ code, provider }));
+          return registerResult;
+        }
+      } catch (error) {
+        console.error('OAuth callback error:', error);
+        throw error;
+      }
+    },
+    [dispatch]
+  );
+
   const updateUserData = (userData: any) => {
     const serializedUserData = Object.keys(userData).reduce((acc, key) => {
       const value = userData[key];
@@ -78,52 +135,6 @@ export const useAuth = () => {
     
     dispatch(updateUser(serializedUserData));
   };
-
-  // OAuth login handler
-  const handleOAuthLogin = useCallback(
-    async (provider: 'google' | 'github',) => {
-      try {
-        const callbackData: OAuthCallbackData = {  provider };
-        const result = await dispatch(oauthLogin(callbackData));
-        return result;
-      } catch (error) {
-        console.error('OAuth login error:', error);
-        throw error;
-      }
-    },
-    [dispatch]
-  );
-
-  const handleOAuthSignup = useCallback(
-    async (provider: 'google' | 'github') => {
-      try {
-        const callbackData: OAuthCallbackData = {provider };
-        const result = await dispatch(oauthRegister(callbackData));
-        return result;
-      } catch (error) {
-        console.error('OAuth signup error:', error);
-        throw error;
-      }
-    },
-    [dispatch]
-  );
-
-  // Handle OAuth callback
-  const handleOAuthCallback = useCallback(
-    async (provider: 'google' | 'github') => {
-      const action = oauthService.getOAuthAction();
-      const callbackData: OAuthCallbackData = { provider };
-      
-      if (action === 'login') {
-        const result = await dispatch(oauthLogin(callbackData));
-        return result;
-      } else {
-        const result = await dispatch(oauthRegister(callbackData));
-        return result;
-      }
-    },
-    [dispatch]
-  );
 
   // Email verification methods
   const verifyUserEmail = useCallback(
@@ -140,14 +151,14 @@ export const useAuth = () => {
     [dispatch]
   );
 
-  const requestPasswordResetEmail = useCallback(
+  const requestPasswordResetHandler = useCallback(
     async (resetData: PasswordResetRequestData) => {
       return await dispatch(requestPasswordReset(resetData)).unwrap();
     },
     [dispatch]
   );
 
-  const resetUserPassword = useCallback(
+  const resetPasswordHandler = useCallback(
     async (resetData: PasswordResetData) => {
       return await dispatch(resetPassword(resetData)).unwrap();
     },
@@ -163,17 +174,52 @@ export const useAuth = () => {
     login,
     register,
     logout: logoutUserHandler,
-    refreshToken: refreshTokenHandler,
-    testConnection: testConnectionHandler,
-    clearError,
     clearAuthError,
+    clearError: clearAuthError,
     updateUser: updateUserData,
-    loginWithOAuth: handleOAuthLogin,
-    signupWithOAuth: handleOAuthSignup,
+    loginWithOAuth,
+    signupWithOAuth,
     handleOAuthCallback,
     verifyEmail: verifyUserEmail,
-    resendVerificationCode: resendVerificationCodeEmail,
-    requestPasswordReset: requestPasswordResetEmail,
-    resetPassword: resetUserPassword,
+    resendVerification: resendVerificationCodeEmail,
+    requestPasswordReset: requestPasswordResetHandler,
+    resetPassword: resetPasswordHandler,
+    testConnection: testConnectionHandler,
+    refreshToken: refreshTokenHandler,
+  };
+};
+
+// Export standalone OAuth hooks for components that only need OAuth functionality
+export const useOAuth = (): UseOAuthReturn => {
+  const { loginWithOAuth, signupWithOAuth } = useAuth();
+  return { loginWithOAuth, signupWithOAuth };
+};
+
+export const useOAuthCallback = (): UseOAuthCallbackReturn => {
+  const { handleOAuthCallback } = useAuth();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCallback = useCallback(
+    async (provider: 'google' | 'github', code: string, state?: string) => {
+      try {
+        setIsProcessing(true);
+        setError(null);
+        return await handleOAuthCallback(provider, code, state);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'OAuth callback failed');
+        throw err;
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [handleOAuthCallback]
+  );
+
+  return {
+    handleOAuthCallback: handleCallback,
+    isProcessing,
+    error,
+    clearError: () => setError(null),
   };
 };

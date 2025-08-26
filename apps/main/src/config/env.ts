@@ -22,6 +22,12 @@ export const env = {
   // Build Info
   BUILD_TIME: import.meta.env.VITE_BUILD_TIME,
   COMMIT_HASH: import.meta.env.VITE_COMMIT_HASH,
+  VITE_GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+  VITE_GOOGLE_CLIENT_SECRET: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
+  VITE_GITHUB_CLIENT_ID: import.meta.env.VITE_GITHUB_CLIENT_ID,
+  VITE_GITHUB_CLIENT_SECRET: import.meta.env.VITE_GITHUB_CLIENT_SECRET,
+  NODE_ENV: import.meta.env.NODE_ENV,
+  MODE: import.meta.env.MODE
 } as const;
 
 // Development helpers (remove in production)
@@ -78,3 +84,5 @@ export function getEnvVar(key: keyof Env, fallback?: string): string {
 export function isFeatureEnabled(feature: keyof Pick<Env, 'ENABLE_ANALYTICS' | 'ENABLE_DEBUG'>): boolean {
   return env[feature] === true;
 }
+
+

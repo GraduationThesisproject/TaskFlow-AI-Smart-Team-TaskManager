@@ -61,7 +61,7 @@ function AppContent() {
         <Routes>
           <Route path="/*" element={<LandingPage />} />
 
-          <Route path="/auth/callback/:provider" element={<OAuthCallback />} />
+          <Route path="/auth/callback" element={<OAuthCallback />} />
 
           <Route path="/dashboard/*" element={<Dashboard />} />
 
