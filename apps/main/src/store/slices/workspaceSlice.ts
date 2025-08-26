@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Space } from '../../types/task.types';
-import { WorkspaceService } from "../../services/D_workspaceService.ts";
+import { WorkspaceService, type InviteLinkInfo } from "../../services/D_workspaceService.ts";
 import { SpaceService } from '../../services/spaceService';
 
 import type { Workspace, WorkspaceMember, WorkspaceState as BaseWorkspaceState } from '../../types/workspace.types';
@@ -28,6 +28,14 @@ export const fetchWorkspaces = createAsyncThunk<Workspace[]>(
   }
 );
 
+export const generateInviteLink = createAsyncThunk<InviteLinkInfo, { id: string }>(
+  'workspace/generateInviteLink',
+  async ({ id }) => {
+    const response = await WorkspaceService.generateInviteLink(id);
+    return response.data;
+  }
+);
+
 
 export const fetchSpacesByWorkspace = createAsyncThunk(
   'workspace/fetchSpacesByWorkspace',
@@ -48,7 +56,17 @@ export const fetchSpace = createAsyncThunk(
 );
 
 // New thunks from the newer implementation
-
+export const inviteMember = createAsyncThunk<WorkspaceMember, { id: string; email: string; role: 'member' | 'admin' }>(
+  'workspace/inviteMember',
+  async ({ id, email, role }, { rejectWithValue }) => {
+    try {
+      const response = await WorkspaceService.inviteMember(id, { email, role });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error|| 'Failed to invite member');
+    }
+  }
+);
 // Update workspace settings
 export const updateWorkspaceSettings = createAsyncThunk<
   Workspace,
@@ -168,7 +186,22 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch workspaces';
       })
-      
+      //invite memebrs
+      .addCase(inviteMember.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(inviteMember.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (action.payload) {
+          state.members = [...state.members, action.payload];
+        }
+        state.error = null;
+      })
+      .addCase(inviteMember.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to invite member';
+      })
       // Fetch single workspace
       .addCase(fetchWorkspace.pending, (state) => {
         state.loading = true;
@@ -222,8 +255,7 @@ const workspaceSlice = createSlice({
       })
       
       }})
-  
-      // Delete workspace
+
     
     // You can add other thunks (spaces, members, invite links) here similarly...
   

@@ -6,22 +6,30 @@ const WorkspaceService = require('../services/workspace.service');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
+const crypto = require('crypto');
 
-// Get all workspaces for user
+// Get all workspaces for the current user
 exports.getAllWorkspaces = async (req, res) => {
     try {
         const userId = req.user.id;
-
-        const workspaces = await Workspace.findByUser(userId)
-            .populate('owner', 'name email avatar')
-            .populate('members.user', 'name email avatar')
-            .sort({ updatedAt: -1 });
+        
+        // Find all workspaces where the user is a member
+        const workspaces = await Workspace.find({
+            $or: [
+                { owner: userId },
+                { 'members.user': userId }
+            ]
+        })
+        .populate('owner', 'name email avatar')
+        .populate('members.user', 'name email avatar')
+        .sort({ updatedAt: -1 });
 
         // SECURITY FIX: Use verified roles from auth middleware
-        const userRoles = req.user.roles;
+        const userRoles = req.user.roles || {};
+        const userWorkspaces = userRoles.workspaces || [];
 
         const enrichedWorkspaces = workspaces.map(workspace => {
-            const userRole = userRoles.workspaces.find(ws => 
+            const userRole = userWorkspaces.find(ws => 
                 ws.workspace.toString() === workspace._id.toString()
             );
 
@@ -41,6 +49,8 @@ exports.getAllWorkspaces = async (req, res) => {
         sendResponse(res, 500, false, 'Server error retrieving workspaces');
     }
 };
+
+
 
 // Get single workspace
 exports.getWorkspace = async (req, res) => {
@@ -372,6 +382,65 @@ exports.acceptInvitation = async (req, res) => {
     } catch (error) {
         logger.error('Accept invitation error:', error);
         sendResponse(res, 500, false, 'Server error accepting invitation');
+    }
+};
+
+// Generate invite link for workspace
+exports.generateInviteLink = async (req, res) => {
+    try {
+        const { id: workspaceId } = req.params;
+        const userId = req.user.id;
+
+        // Find the workspace
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // Debug log workspace members
+        console.log('Workspace members:', workspace.members);
+        console.log('Current user ID:', userId);
+
+        // Check if user is a member with invite permissions
+        const member = workspace.members.find(m => {
+            const isUser = m.user && (m.user._id ? m.user._id.toString() === userId.toString() : m.user.toString() === userId.toString());
+            const hasPermission = ['admin', 'owner'].includes(m.role);
+            console.log(`Member check - User: ${m.user}, Role: ${m.role}, isUser: ${isUser}, hasPermission: ${hasPermission}`);
+            return isUser && hasPermission;
+        });
+
+        if (!member) {
+            console.log('Permission denied - Member not found or insufficient permissions');
+            return sendResponse(res, 403, false, 'You need to be an admin or owner to generate invite links');
+        }
+
+        // Generate a unique token for the invite link
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // Link expires in 7 days
+
+        // Save the invite token to the workspace
+        workspace.inviteTokens = workspace.inviteTokens || [];
+        workspace.inviteTokens.push({
+            token,
+            createdBy: userId,
+            expiresAt,
+            used: false
+        });
+
+        await workspace.save();
+
+        // Construct the invite link
+        const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/join-workspace?token=${token}&workspace=${workspaceId}`;
+
+        sendResponse(res, 200, true, 'Invite link generated successfully', {
+            link: inviteLink,
+            expiresAt,
+            enabled: true
+        });
+    } catch (error) {
+        logger.error('Generate invite link error:', error);
+        sendResponse(res, 500, false, 'Failed to generate invite link');
     }
 };
 

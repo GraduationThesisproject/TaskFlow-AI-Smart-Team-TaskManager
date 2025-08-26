@@ -40,6 +40,12 @@ router.get('/:id',
     workspaceController.getWorkspace
 );
 
+// Generate invite link for workspace
+router.get('/:id/invite-link', 
+    requireWorkspacePermission('canInviteMembers'),
+    workspaceController.generateInviteLink
+);
+
 router.post('/', 
     validateMiddleware(createWorkspaceSchema),
     workspaceController.createWorkspace

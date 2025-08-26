@@ -17,7 +17,9 @@ import {
   selectWorkspaceLoading,
   selectWorkspaceError,
   setCurrentWorkspaceId,
+  generateInviteLink,
 } from '../../store/slices/workspaceSlice';
+import { WorkspaceService} from '../../services';
 
 interface User {
   _id?: string;
@@ -121,6 +123,16 @@ const Main = () => {
       console.warn('[Workspace] Cannot generate invite: missing/invalid workspace id.');
       return;
     }
+    dispatch(generateInviteLink({ id: workspaceId }))
+      .unwrap()
+      .then((result) => {
+        setGeneratedInviteLink(result.link || '');
+        setShowInviteLinkModal(true);
+      })
+      .catch((error) => {
+        console.error('Failed to generate invite link:', error);
+        alert('Failed to generate invite link: ' + error.message);
+      });
   };
 
   // For Members Table button - Open email invitation form (placeholder for now)
@@ -131,16 +143,16 @@ const Main = () => {
     }
     // TODO: Open a form modal to collect email and role, then call workspaceService.inviteMember
     const email = prompt('Enter email address to invite:');
-    // if (email) {
-    //   workspaceService.inviteMember(workspaceId, { email, role: 'member' })
-    //     .then(() => {
-    //       alert('Invitation sent successfully!');
-    //     })
-    //     .catch((error) => {
-    //       console.error('Failed to send invitation:', error);
-    //       alert('Failed to send invitation: ' + error.message);
-    //     });
-    // }
+    if (email) {
+      WorkspaceService.inviteMember(workspaceId, { email, role: 'member' })
+        .then(() => {
+          alert('Invitation sent successfully!');
+        })
+        .catch((error) => {
+          console.error('Failed to send invitation:', error);
+          alert('Failed to send invitation: ' + error.message);
+        });
+    }
   };
 
   const copyInviteLink = () => {
@@ -178,7 +190,7 @@ const Main = () => {
     }, [search, workspaceId]);
 
   return (
-    <div className="flex min-h-screen bg-neutral-0">
+    <div className="flex min-h-screen bg-background">
       <Sidebar />
       <div className="flex-1 p-6">
         <PageHeader />
@@ -224,14 +236,14 @@ const Main = () => {
                   type="text"
                   value={generatedInviteLink}
                   readOnly
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm text-black"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-background text-sm text-black"
                 />
                 <Button onClick={copyInviteLink} variant="outline" size="sm">
                   Copy
                 </Button>
               </div>
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm ">
               <p>• This link will expire in 7 days</p>
               <p>• Anyone with this link can join your workspace</p>
               <p>• You can disable this link anytime using "Disable invite link"</p>

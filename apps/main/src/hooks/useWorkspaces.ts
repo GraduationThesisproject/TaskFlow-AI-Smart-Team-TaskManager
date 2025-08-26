@@ -5,7 +5,7 @@ import {
   fetchWorkspaces,
   fetchWorkspace, 
   fetchSpacesByWorkspace,
-
+  generateInviteLink,
   createWorkspace,
   deleteWorkspace
 } from '../store/slices/workspaceSlice';
@@ -108,6 +108,13 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
     if (!workspaceId) throw new Error('No workspace selected');
     if (env.ENABLE_DEBUG) {
       console.log('🔗 Creating invite link for workspace:', workspaceId);
+    }
+    
+    try {
+      await dispatch(generateInviteLink({ id: workspaceId }) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to generate invite link:', error);
+      throw error;
     }
   }, [dispatch, workspaceId]);
 
