@@ -323,29 +323,45 @@ userSchema.methods.verifyEmail = function(token) {
 
 // Method to get related models with lazy loading
 userSchema.methods.getPreferences = async function() {
-  if (!this.preferences) {
+  const UserPreferences = mongoose.model('UserPreferences');
+  
+  // First try to find existing preferences in database
+  let prefs = await UserPreferences.findOne({ userId: this._id });
+  
+  if (!prefs) {
     // Create default preferences if they don't exist
-    const UserPreferences = mongoose.model('UserPreferences');
-    const prefs = new UserPreferences({ userId: this._id });
+    prefs = new UserPreferences({ userId: this._id });
     await prefs.save();
-    this.preferences = prefs._id;
-    await this.save();
-    return prefs;
+    
+    // Update user reference if not already set
+    if (!this.preferences) {
+      this.preferences = prefs._id;
+      await this.save();
+    }
   }
-  return await mongoose.model('UserPreferences').findOne({ userId: this._id });
+  
+  return prefs;
 };
 
 userSchema.methods.getSessions = async function() {
-  if (!this.sessions) {
+  const UserSessions = mongoose.model('UserSessions');
+  
+  // First try to find existing sessions in database
+  let sessions = await UserSessions.findOne({ userId: this._id });
+  
+  if (!sessions) {
     // Create default sessions if they don't exist
-    const UserSessions = mongoose.model('UserSessions');
-    const sessions = new UserSessions({ userId: this._id });
+    sessions = new UserSessions({ userId: this._id });
     await sessions.save();
-    this.sessions = sessions._id;
-    await this.save();
-    return sessions;
+    
+    // Update user reference if not already set
+    if (!this.sessions) {
+      this.sessions = sessions._id;
+      await this.save();
+    }
   }
-  return await mongoose.model('UserSessions').findOne({ userId: this._id });
+  
+  return sessions;
 };
 
 userSchema.methods.getRoles = async function() {
