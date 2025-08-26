@@ -360,8 +360,58 @@ export interface Notification {
   updatedAt: string;
 }
 
-// State management types
+// State management types - Separated for different slices
 export interface TaskState {
+  tasks: Task[];
+  currentTask: Task | null;
+  loading: boolean;
+  error: string | null;
+  filters: TaskFilters;
+  sortBy: {
+    field: keyof Task;
+    direction: 'asc' | 'desc';
+  };
+  searchQuery: string;
+  socketConnected: boolean;
+  dragState: {
+    isDragging: boolean;
+    draggedTask: Task | null;
+    sourceColumn: string | null;
+    targetColumn: string | null;
+  };
+}
+
+export interface BoardState {
+  boards: Board[];
+  currentBoard: Board | null;
+  loading: boolean;
+  error: string | null;
+  socketConnected: boolean;
+}
+
+export interface ColumnState {
+  columns: Column[];
+  loading: boolean;
+  error: string | null;
+  socketConnected: boolean;
+  dragState: {
+    isDragging: boolean;
+    draggedColumn: Column | null;
+    sourcePosition: number | null;
+    targetPosition: number | null;
+  };
+}
+
+export interface SpaceState {
+  spaces: Space[];
+  currentSpace: Space | null;
+  loading: boolean;
+  error: string | null;
+  socketConnected: boolean;
+}
+
+// Legacy combined state for backward compatibility (will be removed)
+export interface CombinedTaskState {
   tasks: Task[];
   columns: Column[];
   boards: Board[];
