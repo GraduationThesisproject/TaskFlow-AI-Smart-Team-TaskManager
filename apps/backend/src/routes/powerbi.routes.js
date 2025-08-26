@@ -1,11 +1,9 @@
 const express = require('express');
-const { adminMiddleware } = require('../middlewares/admin.middleware');
 const powerbiController = require('../controllers/powerbi.controller');
 
 const router = express.Router();
 
-// Apply admin middleware to all routes
-router.use(adminMiddleware);
+// Note: No middleware applied here - routes will use the authMiddleware from app.js
 
 // Power BI authentication and configuration
 router.post('/auth/token', powerbiController.getAccessToken);

@@ -6,7 +6,6 @@ import {
   SendMessageRequest, 
   UpdateChatStatusRequest, 
   AssignChatRequest,
-  ChatFilters,
   ChatSearchRequest
 } from '../types/chat.types';
 
