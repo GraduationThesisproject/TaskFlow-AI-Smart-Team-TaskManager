@@ -1,7 +1,7 @@
 const express = require('express');
 const invitationController = require('../controllers/invitation.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const authMiddleware = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const { requireSystemAdmin } = require('../middlewares/permission.middleware');
 
 const router = express.Router();

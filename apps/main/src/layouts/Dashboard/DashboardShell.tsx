@@ -5,17 +5,12 @@ import {
   Sidebar,
   SidebarHeader,
   SidebarContent,
-  SidebarFooter,
   SidebarNav,
   SidebarNavItem,
   Button,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
   Typography,
 } from '@taskflow/ui';
 
-import { useAppSelector } from '../../store';
 import type { DashboardShellProps } from '../../types/dash.types';
 
 
@@ -33,7 +28,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   
-  const { user } = useAppSelector(state => state.auth);
+  // User info removed from sidebar footer per requirements
 
   const isActiveRoute = (href: string) => {
     if (href === '/dashboard') {
@@ -91,26 +86,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           </SidebarNav>
         </SidebarContent>
 
-        <SidebarFooter>
-          <div className="flex items-center gap-3">
-            <Avatar size="sm">
-              <AvatarImage src={user?.user?.avatar} alt={user?.user?.name} />
-              <AvatarFallback variant="primary" size="sm">
-                {user?.user?.name?.charAt(0) || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            {!sidebarCollapsed && (
-              <div className="flex-1 min-w-0">
-                <Typography variant="body-small" className="font-medium truncate">
-                  {user?.user?.name || 'User'}
-                </Typography>
-                <Typography variant="caption" className="text-muted-foreground truncate">
-                  {user?.user?.email}
-                </Typography>
-              </div>
-            )}
-          </div>
-        </SidebarFooter>
+
       </Sidebar>
 
       {/* Mobile Sidebar Overlay */}
@@ -174,24 +150,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           </SidebarNav>
         </SidebarContent>
 
-        <SidebarFooter>
-          <div className="flex items-center gap-3">
-            <Avatar size="sm">
-              <AvatarImage src={user?.user?.avatar} alt={user?.user?.name} />
-              <AvatarFallback variant="primary" size="sm">
-                {user?.user?.name?.charAt(0) || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <Typography variant="body-small" className="font-medium truncate">
-                {user?.user?.name || 'User'}
-              </Typography>
-              <Typography variant="caption" className="text-muted-foreground truncate">
-                {user?.user?.email}
-              </Typography>
-            </div>
-          </div>
-        </SidebarFooter>
+ 
       </Sidebar>
 
       {/* Main Content */}

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback } from '@taskflow/ui';
+import React from 'react';import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback, Badge } from '@taskflow/ui';
 import { Heart } from 'lucide-react';
+;
 import type { TemplateCardProps } from '../../../types/dash.types';
 
 const TemplateCard: React.FC<TemplateCardProps> = ({ template, onClick, onLike }) => {
@@ -37,12 +37,12 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onClick, onLike }
 
         <div className="flex flex-wrap gap-1 mb-3">
           {template.tags.slice(0, 3).map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs">
+            <Badge key={tag} variant='default' className="text-xs">
               {tag}
             </Badge>
           ))}
           {template.tags.length > 3 && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant='default' className="text-xs">
               +{template.tags.length - 3}
             </Badge>
           )}
@@ -72,3 +72,4 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onClick, onLike }
 };
 
 export default TemplateCard;
+

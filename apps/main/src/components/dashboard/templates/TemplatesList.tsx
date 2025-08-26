@@ -4,15 +4,16 @@ import { EmptyState, Button, Input, Typography } from '@taskflow/ui';
 import { FileText, Grid, List, Search, Plus } from 'lucide-react';
 import type { TemplateCardItem } from '../../../types/dash.types';
 import { useTemplates } from '../../../hooks/useTemplates';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAppSelector } from '../../../store';
+import { selectUserBasic } from '../../../store/slices/authSlice';
 import { CATEGORY_OPTIONS } from '../../../types/dash.types';
 import { CreateTemplateModal } from './modals/CreateTemplateModal';
 
 // Category options are sourced from Create Template modal options
 
 const TemplatesList: React.FC = () => {
-  const { items: storeItems, loading, error, load, fetchOne, toggleLike } = useTemplates();
-  const { user } = useAuth();
+  const { items: storeItems, loading, error, load, incrementViews, toggleLike } = useTemplates();
+  const userBasic = useAppSelector(selectUserBasic) as any;
   const [templates, setTemplates] = useState<TemplateCardItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<'all' | string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,16 +50,43 @@ const TemplatesList: React.FC = () => {
           || 'Unknown',
       },
       views: (t as any)?.views ?? 0,
-      likes: Array.isArray((t as any)?.likedBy) ? (t as any).likedBy.length : 0,
+      // Prefer server numeric likes; fallback to likedBy length
+      likes: typeof (t as any)?.likes === 'number'
+        ? (t as any).likes
+        : Array.isArray((t as any)?.likedBy)
+          ? (t as any).likedBy.length
+          : 0,
       downloads: 0,
       tags: t.tags ?? [],
       createdAt: t.createdAt ?? new Date().toISOString(),
       updatedAt: t.updatedAt ?? new Date().toISOString(),
-      userLiked: Array.isArray((t as any)?.likedBy) && (t as any).likedBy.some((u: any) => String(u) === String((user as any)?.user?._id || (user as any)?.user?.id)),
+      // handle both ObjectId[] and populated user[]
+      userLiked: Array.isArray((t as any)?.likedBy) && (t as any).likedBy.some((u: any) => {
+        const uid = String((userBasic as any)?._id || (userBasic as any)?.id || '');
+        if (!uid) return false;
+        return typeof u === 'string' || typeof u === 'number'
+          ? String(u) === uid
+          : String(u?._id) === uid;
+      }),
+      // pass through for tooltips (names populated by backend when available)
+      likedBy: Array.isArray((t as any)?.likedBy)
+        ? (t as any).likedBy.map((u: any) => (
+            typeof u === 'string' || typeof u === 'number'
+              ? { _id: String(u) }
+              : { _id: String(u?._id), name: u?.name, displayName: u?.displayName }
+          ))
+        : [],
+      viewedBy: Array.isArray((t as any)?.viewedBy)
+        ? (t as any).viewedBy.map((u: any) => (
+            typeof u === 'string' || typeof u === 'number'
+              ? { _id: String(u) }
+              : { _id: String(u?._id), name: u?.name, displayName: u?.displayName }
+          ))
+        : [],
     }));
     setTemplates(mapped);
     
-  }, [storeItems, user]);
+  }, [storeItems, userBasic]);
 
   const categories = useMemo(() => {
     // Initialize counts for each category from Create Template options
@@ -116,8 +144,10 @@ const TemplatesList: React.FC = () => {
   }, [templates, activeCategory, searchQuery, sortBy]);
 
   const handleTemplateClick = (t: TemplateCardItem) => {
-    // Fetching the template will auto-increment views on the backend
-    fetchOne(t.id);
+    // Explicitly increment views (unique per user) on open
+    incrementViews(t.id);
+    // Optionally fetch details if needed elsewhere
+    // fetchOne(t.id);
     console.log('Template clicked:', t);
   };
 
@@ -209,11 +239,11 @@ const TemplatesList: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsCreateOpen(true)}
-              className="flex h-40 w-full max-w-md items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
+              className="flex h-24 w-full max-w-md items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                <span>Create new template</span>
+                <Plus className="h-4 w-4" />
+                <span className="text-sm">Create new template</span>
               </div>
             </button>
           </div>
@@ -240,11 +270,11 @@ const TemplatesList: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(true)}
-                  className="flex h-40 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
+                  className="flex h-24 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <Plus className="h-5 w-5" />
-                    <span>Create new template</span>
+                    <Plus className="h-4 w-4" />
+                    <span className="text-sm">Create new template</span>
                   </div>
                 </button>
               )}

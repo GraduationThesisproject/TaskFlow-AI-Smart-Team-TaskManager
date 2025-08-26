@@ -14,13 +14,15 @@ import {
   selectTemplatesError,
   selectTemplateSelected,
   selectTemplateFilters,
-  incrementTemplateViews,
   toggleTemplateLike,
   listAllTemplates,
+  toggleLikeLocal,
+  incrementTemplateViews,
 } from '../store/slices/templatesSlice';
-import { selectIsAuthenticated } from '../store/slices/authSlice';
+import { selectIsAuthenticated, selectUserBasic } from '../store/slices/authSlice';
 import type { TemplatesFilters, TemplateItem } from '../types/dash.types';
 import type { UseTemplatesReturn } from '../types/dash.types';
+import type { UserBasic } from '../types/auth.types';
 
 
 
@@ -32,7 +34,8 @@ export const useTemplates = (): UseTemplatesReturn => {
   const error = useAppSelector(selectTemplatesError);
   const selected = useAppSelector(selectTemplateSelected);
   const filters = useAppSelector(selectTemplateFilters);
-  const isAuthenticated = useAppSelector(selectIsAuthenticated as any);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const userBasic = useAppSelector(selectUserBasic) as UserBasic | undefined;
 
   useEffect(() => {
     // Log the list of templates whenever it changes
@@ -73,37 +76,61 @@ export const useTemplates = (): UseTemplatesReturn => {
     dispatch(clearSelected());
   }, [dispatch]);
 
+  // Views are incremented uniquely by backend on GET /templates/:id
   const incrementViews = useCallback((id: string) => {
-    if (!id || id.length !== 24) {
-      if (env.ENABLE_DEBUG) console.warn('incrementViews: invalid id, skipping', id);
-      return;
-    }
-    (dispatch(incrementTemplateViews(id) as any).unwrap() as Promise<any>)
-      .catch(() => {
-        // Swallow 404s to avoid noisy errors when item no longer exists
-      });
+    // Alias to fetchOne: backend increments views on GET /templates/:id
+    if (!id) return;
+    dispatch(incrementTemplateViews(id) as any);
   }, [dispatch]);
 
   const toggleLike = useCallback((id: string) => {
-    if (!id || id.length !== 24) {
-      return;
+    if (!id || id.length !== 24) return;
+    const userId: string | undefined = userBasic?._id || (userBasic as any)?.id;
+    if (!userId) return;
+    if (env.ENABLE_DEBUG) {
+      const before = Array.isArray(items) ? (items as any[]).find((t) => t?._id === id) : undefined;
+      console.debug('[toggleLike] before', {
+        id,
+        likes: before?.likes,
+        likedByLen: Array.isArray(before?.likedBy) ? before.likedBy.length : undefined,
+        hasUser: Array.isArray(before?.likedBy) ? before.likedBy.some((e: any) => String(e?._id ?? e) === String(userId)) : undefined,
+      });
     }
-    // Ensure the ID exists in current store to avoid 404 from stale items
-    const exists = Array.isArray(items) && items.some((t) => (t as any)?.id === id);
-    if (!exists) {
-      dispatch(listTemplates(filters) as any);
-      return;
+    // Optimistic update
+    dispatch(toggleLikeLocal({ id, userId }));
+    if (env.ENABLE_DEBUG) {
+      const afterOpt = Array.isArray(items) ? (items as any[]).find((t) => t?._id === id) : undefined;
+      console.debug('[toggleLike] after optimistic', {
+        id,
+        likes: afterOpt?.likes,
+        likedByLen: Array.isArray(afterOpt?.likedBy) ? afterOpt.likedBy.length : undefined,
+        hasUser: Array.isArray(afterOpt?.likedBy) ? afterOpt.likedBy.some((e: any) => String(e?._id ?? e) === String(userId)) : undefined,
+      });
     }
-    (dispatch(toggleTemplateLike(id) as any).unwrap() as Promise<any>)
+    (dispatch(toggleTemplateLike({ id, userId }) as any).unwrap() as Promise<any>)
+      .then((payload: any) => {
+        if (env.ENABLE_DEBUG) {
+          const afterFulfilled = Array.isArray((items as any)) ? (items as any[]).find((t) => t?._id === id) : undefined;
+          console.debug('[toggleLike] fulfilled', {
+            id,
+            serverLikes: typeof payload?.likes === 'number' ? payload.likes : undefined,
+            likes: afterFulfilled?.likes,
+            likedByLen: Array.isArray(afterFulfilled?.likedBy) ? afterFulfilled.likedBy.length : undefined,
+            hasUser: Array.isArray(afterFulfilled?.likedBy) ? afterFulfilled.likedBy.some((e: any) => String(e?._id ?? e) === String(userId)) : undefined,
+          });
+        }
+      })
       .catch((err: any) => {
+        // Revert optimistic update on failure
+        dispatch(toggleLikeLocal({ id, userId }));
         const msg = err?.message || String(err);
         if (/404|not found/i.test(msg)) {
           dispatch(listTemplates(filters) as any);
         } else if (env.ENABLE_DEBUG) {
-          console.warn('toggleLike failed, ignoring', msg);
+          console.warn('toggleLike failed, reverted optimistic update', msg);
         }
       });
-   }, [dispatch, items, filters]);
+   }, [dispatch, items, filters, userBasic]);
 
   return useMemo(() => ({
     items,

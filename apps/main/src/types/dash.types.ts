@@ -213,6 +213,9 @@ export interface TemplateCardItem {
   createdAt: string;
   updatedAt: string;
   userLiked?: boolean;
+  // Populated from backend: arrays of users who liked/viewed (names populated)
+  likedBy?: Array<{ _id: string; name?: string; displayName?: string }>;
+  viewedBy?: Array<{ _id: string; name?: string; displayName?: string }>;
 }
 
 export interface TemplateCardProps {

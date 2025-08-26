@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/template.controller');
-const auth = require('../middlewares/auth.middleware');
+const { authMiddleware, optionalAuth } = require('../middlewares/auth.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const mongoose = require('mongoose');
 
@@ -87,14 +87,14 @@ const validateAccessControl = (req, res, next) => {
 
 // CRUD
 router.get('/', validateMiddleware.validateQuery(listQuerySchema), ctrl.list);
-router.get('/:id', validateMiddleware.validateParams(idParamSchema), ctrl.getById);
-router.post('/', auth, validateMiddleware(createTemplateSchema), validateTagsLength, validateAccessControl, ctrl.create);
-router.patch('/:id', auth, validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update);
-router.put('/:id', auth, validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update); // backward compatibility
-router.delete('/:id', auth, validateMiddleware.validateParams(idParamSchema), ctrl.remove);
+router.get('/:id', optionalAuth, validateMiddleware.validateParams(idParamSchema), ctrl.getById);
+router.post('/', authMiddleware, validateMiddleware(createTemplateSchema), validateTagsLength, validateAccessControl, ctrl.create);
+router.patch('/:id', authMiddleware, validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update);
+router.put('/:id', authMiddleware, validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update); // backward compatibility
+router.delete('/:id', authMiddleware, validateMiddleware.validateParams(idParamSchema), ctrl.remove);
 
 // Engagement
-router.post('/:id/views', validateMiddleware.validateParams(idParamSchema), ctrl.incrementViews);
-router.post('/:id/like', auth, validateMiddleware.validateParams(idParamSchema), ctrl.toggleLike);
+router.post('/:id/views', authMiddleware, validateMiddleware.validateParams(idParamSchema), ctrl.incrementViews);
+router.post('/:id/like', authMiddleware, validateMiddleware.validateParams(idParamSchema), ctrl.toggleLike);
 
 module.exports = router;
