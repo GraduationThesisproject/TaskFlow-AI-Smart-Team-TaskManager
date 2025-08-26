@@ -2,7 +2,7 @@ const express = require('express');
 const workspaceController = require('../controllers/workspace.controller');
 const { requireAuth, requireAdmin } = require('../middlewares/auth.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { requireWorkspacePermission, requireWorkspaceMember, requireWorkspaceAdmin } = require('../middlewares/permission.middleware');
+const { requireWorkspacePermission, requireWorkspaceMember } = require('../middlewares/permission.middleware');
 
 const router = express.Router();
 

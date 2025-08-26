@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { DashboardShell } from "./DashboardShell";
 import { Typography, Skeleton, EmptyState, Card, CardContent } from "@taskflow/ui";
 import { useWorkspaces } from "../../hooks/useWorkspaces";
@@ -14,6 +14,25 @@ const WorkspacesLayout: React.FC = () => {
         new Date(a.updatedAt || a.createdAt).getTime()
     );
   }, [workspaces]);
+
+  // Log public workspaces when they are loaded/updated
+  useEffect(() => {
+    if (!loading && !error) {
+      try {
+        console.log("Public workspaces (raw):", workspaces);
+        console.table(
+          (sortedWorkspaces || []).map((ws: any) => ({
+            id: ws?._id,
+            name: ws?.name,
+            updatedAt: ws?.updatedAt,
+            createdAt: ws?.createdAt,
+          }))
+        );
+      } catch (e) {
+        // no-op
+      }
+    }
+  }, [loading, error, workspaces, sortedWorkspaces]);
 
   return (
     <DashboardShell>

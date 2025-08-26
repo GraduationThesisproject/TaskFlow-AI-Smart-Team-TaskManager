@@ -4,7 +4,6 @@ import { useAppDispatch, useAppSelector } from '../store';
 import { 
   fetchWorkspaces,
   fetchWorkspacesPublic,
-  fetchWorkspacesGlobal,
   fetchWorkspace, 
   fetchSpacesByWorkspace,
   fetchMembers,
@@ -96,16 +95,14 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
 
   const refetchWorkspaces = useCallback(() => {
     if (env.ENABLE_DEBUG) {
-      console.log('🔄 Refetching all workspaces', isPublic ? '(public)' : global ? '(global)' : '(scoped)');
+      console.log('🔄 Refetching all workspaces', isPublic ? '(public)' : '(scoped)');
     }
     if (isPublic) {
       dispatch(fetchWorkspacesPublic() as any);
-    } else if (global) {
-      dispatch(fetchWorkspacesGlobal() as any);
     } else {
       dispatch(fetchWorkspaces() as any);
     }
-  }, [dispatch, global, isPublic]);
+  }, [dispatch, isPublic]);
 
   const inviteNewMember = useCallback(async (email: string, role: 'member' | 'admin') => {
     if (!workspaceId) throw new Error('No workspace selected');

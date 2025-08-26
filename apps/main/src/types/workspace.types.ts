@@ -11,6 +11,7 @@ export interface Workspace {
   settings: WorkspaceSettings;
   plan: 'free' | 'basic' | 'premium' | 'enterprise';
   isActive: boolean;
+  isPublic?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,6 +55,7 @@ export interface CreateWorkspaceData {
   name: string;
   description?: string;
   plan?: 'free' | 'basic' | 'premium' | 'enterprise';
+  isPublic?: boolean;
 }
 
 export interface UpdateWorkspaceData {

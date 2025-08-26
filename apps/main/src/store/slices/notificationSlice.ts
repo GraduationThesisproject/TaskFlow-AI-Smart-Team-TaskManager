@@ -102,11 +102,19 @@ const notificationSlice = createSlice({
       state.error = null;
     },
     addNotification: (state, action: PayloadAction<Notification>) => {
+      // Ensure notifications is an array before mutating
+      if (!Array.isArray(state.notifications)) {
+        state.notifications = [];
+      }
       state.notifications.unshift(action.payload);
       if (state.stats) {
         state.stats.total += 1;
         if (!action.payload.isRead) {
           state.stats.unread += 1;
+        }
+        // Safeguard byType counters
+        if (state.stats.byType[action.payload.type] === undefined) {
+          state.stats.byType[action.payload.type] = 0 as any;
         }
         state.stats.byType[action.payload.type] += 1;
       }
@@ -134,7 +142,9 @@ const notificationSlice = createSlice({
       })
       .addCase(fetchNotifications.fulfilled, (state, action) => {
         state.loading = false;
-        state.notifications = action.payload.notifications;
+        state.notifications = Array.isArray(action.payload.notifications)
+          ? action.payload.notifications
+          : [];
         state.stats = action.payload.stats;
       })
       .addCase(fetchNotifications.rejected, (state, action) => {
