@@ -122,7 +122,7 @@ function AppContent() {
 
           <Route path="/workspace/*" element={<WorkSpace />} />
 
-          <Route path="/space/*" element={<SpacePage />} />
+          <Route path="/space/*" element={<SpacePage/>} />
 
           <Route path="/board/*" element={<BoardPage />} />
 
