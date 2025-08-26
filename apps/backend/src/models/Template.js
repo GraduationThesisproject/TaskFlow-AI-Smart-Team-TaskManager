@@ -81,6 +81,12 @@ const templateSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   }],
+  // Track unique viewers to ensure one view per user
+  viewedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: undefined
+  }],
   
   tags: [{
     type: String,
@@ -486,7 +492,9 @@ templateSchema.pre('save', function(next) {
 
 // Auto-populate creator on all find queries
 templateSchema.pre(/^find/, function(next) {
-  this.populate('createdBy', 'name email displayName');
+  this.populate('createdBy', 'name email displayName')
+      .populate('likedBy', 'name displayName')
+      .populate('viewedBy', 'name displayName');
   next();
 });
 

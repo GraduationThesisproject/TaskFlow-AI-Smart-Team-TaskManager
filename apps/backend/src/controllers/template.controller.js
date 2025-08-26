@@ -116,23 +116,43 @@ exports.getById = async (req, res, next) => {
     }
     const { userId, isAdmin } = await getUserAndRoles(req);
 
+    const createdById = (item.createdBy && item.createdBy._id) ? item.createdBy._id : item.createdBy;
     const canAccess = item.isSystem || item.isPublic ||
-      String(item.createdBy) === String(userId) ||
+      String(createdById) === String(userId) ||
       (Array.isArray(item.accessControl?.allowedUsers) && item.accessControl.allowedUsers.some(u => String(u) === String(userId)));
     if (!canAccess && !isAdmin) {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
-    // Auto-increment views when the template is fetched
-    console.log('[templates.getById] increment views', { id });
-    const updated = await Template.findByIdAndUpdate(
-      id,
-      { $inc: { views: 1 } },
-      { new: true }
-    ).populate('createdBy', 'name email displayName');
-    if (!updated) {
-      console.warn('[templates.getById] not found after update', { id });
-      return res.status(404).json({ success: false, message: 'Template not found' });
+    // Increment views at most once per authenticated user
+    // Prefer req.user._id if available (usually an ObjectId), else fall back to userId from getUserAndRoles
+    const viewerIdRaw = (req.user?._id || req.user?.id) ?? userId;
+    let updated = item;
+    if (viewerIdRaw && mongoose.Types.ObjectId.isValid(String(viewerIdRaw))) {
+      const viewerObjId = new mongoose.Types.ObjectId(String(viewerIdRaw));
+      console.log('[templates.getById] attempt unique increment', { id, viewerId: String(viewerIdRaw) });
+      const resUpdate = await Template.updateOne(
+        { _id: id, viewedBy: { $ne: viewerObjId } },
+        { $addToSet: { viewedBy: viewerObjId }, $inc: { views: 1 } }
+      );
+      if (resUpdate.modifiedCount > 0) {
+        console.log('[templates.getById] incremented', { id, viewerId: String(viewerIdRaw) });
+        updated = await Template.findById(id).populate('createdBy', 'name email displayName');
+      } else {
+        console.log('[templates.getById] already viewed, no increment', { id, viewerId: String(viewerIdRaw) });
+      }
+    } else if (userId && String(createdById) === String(userId)) {
+      // Owner fallback: if current user is the owner but userId is not a valid ObjectId,
+      // record exactly one owner view using the template's createdBy ObjectId
+      const ownerObjId = new mongoose.Types.ObjectId(String(createdById));
+      console.log('[templates.getById] owner fallback increment', { id, owner: String(createdById) });
+      const resUpdate = await Template.updateOne(
+        { _id: id, viewedBy: { $ne: ownerObjId } },
+        { $addToSet: { viewedBy: ownerObjId }, $inc: { views: 1 } }
+      );
+      if (resUpdate.modifiedCount > 0) {
+        updated = await Template.findById(id).populate('createdBy', 'name email displayName');
+      }
     }
     return ok(res, updated);
   } catch (error) {
@@ -181,13 +201,25 @@ exports.update = async (req, res, next) => {
     // operation-based updates
     const op = req.body?.op;
     if (op === 'increment_views') {
-      const updated = await Template.findByIdAndUpdate(
-        id,
-        { $inc: { views: 1 } },
-        { new: true, runValidators: false }
+      if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+      if (!mongoose.Types.ObjectId.isValid(String(userId))) {
+        const existingDoc = await Template.findById(id);
+        return ok(res, existingDoc);
+      }
+      // Increment only if this user hasn't viewed before
+      const viewerObjId = new mongoose.Types.ObjectId(String(userId));
+      const resUpdate = await Template.updateOne(
+        { _id: id, viewedBy: { $ne: viewerObjId } },
+        { $addToSet: { viewedBy: viewerObjId }, $inc: { views: 1 } },
+        { upsert: false }
       );
-      if (!updated) return res.status(404).json({ success: false, message: 'Template not found' });
-      return ok(res, updated);
+      if (resUpdate.matchedCount === 0) return res.status(404).json({ success: false, message: 'Template not found' });
+      if (resUpdate.modifiedCount === 0) {
+        const existingDoc = await Template.findById(id);
+        return ok(res, existingDoc);
+      }
+      const updatedDoc = await Template.findById(id);
+      return ok(res, updatedDoc);
     }
     if (op === 'toggle_like') {
       if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
@@ -195,7 +227,10 @@ exports.update = async (req, res, next) => {
       if (!existing) return res.status(404).json({ success: false, message: 'Template not found' });
       const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u) === String(userId));
       const update = hasLiked ? { $pull: { likedBy: userId } } : { $addToSet: { likedBy: userId } };
-      const updated = await Template.findByIdAndUpdate(id, update, { new: true, runValidators: false }).populate('createdBy', 'name email displayName');
+      const updated = await Template.findByIdAndUpdate(id, update, { new: true, runValidators: false })
+      .populate('createdBy', 'name email displayName')
+      .populate('likedBy', 'name displayName')
+      .populate('viewedBy', 'name displayName');
       if (!updated) return res.status(404).json({ success: false, message: 'Template not found' });
       return ok(res, updated);
     }
@@ -216,7 +251,10 @@ exports.update = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Only owner or admin can update this template' });
     }
 
-    const updated = await Template.findByIdAndUpdate(id, payload, { new: true, runValidators: true }).populate('createdBy', 'name email displayName');
+    const updated = await Template.findByIdAndUpdate(id, payload, { new: true, runValidators: true })
+      .populate('createdBy', 'name email displayName')
+      .populate('likedBy', 'name displayName')
+      .populate('viewedBy', 'name displayName');
     if (!updated) return res.status(404).json({ success: false, message: 'Template not found' });
     return ok(res, updated);
   } catch (error) {
@@ -248,13 +286,24 @@ exports.remove = async (req, res, next) => {
 exports.incrementViews = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const doc = await Template.findByIdAndUpdate(
-      id,
-      { $inc: { views: 1 } },
-      { new: true }
-    ).populate('createdBy', 'name email displayName');
-    if (!doc) return res.status(404).json({ success: false, message: 'Template not found' });
-    return ok(res, doc);
+    const { userId } = await getUserAndRoles(req);
+    if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+    if (!mongoose.Types.ObjectId.isValid(String(userId))) {
+      const existing = await Template.findById(id).populate('createdBy', 'name email displayName');
+      return ok(res, existing);
+    }
+    const viewerObjId = new mongoose.Types.ObjectId(String(userId));
+    const resUpdate = await Template.updateOne(
+      { _id: id, viewedBy: { $ne: viewerObjId } },
+      { $addToSet: { viewedBy: viewerObjId }, $inc: { views: 1 } }
+    );
+    if (resUpdate.matchedCount === 0) return res.status(404).json({ success: false, message: 'Template not found' });
+    if (resUpdate.modifiedCount === 0) {
+      const existing = await Template.findById(id).populate('createdBy', 'name email displayName');
+      return ok(res, existing);
+    }
+    const updated = await Template.findById(id).populate('createdBy', 'name email displayName');
+    return ok(res, updated);
   } catch (error) {
     handleError(next, error);
   }
@@ -283,7 +332,10 @@ exports.toggleLike = async (req, res, next) => {
       ? { $pull: { likedBy: userId } }
       : { $addToSet: { likedBy: userId } };
 
-    const updated = await Template.findByIdAndUpdate(id, update, { new: true });
+    const updated = await Template.findByIdAndUpdate(id, update, { new: true })
+      .populate('createdBy', 'name email displayName')
+      .populate('likedBy', 'name displayName')
+      .populate('viewedBy', 'name displayName');
     if (!updated) {
       console.warn('[templates.toggleLike] not found after update', { id });
       return res.status(404).json({ success: false, message: 'Template not found' });
