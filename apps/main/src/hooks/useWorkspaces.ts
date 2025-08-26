@@ -3,6 +3,7 @@ import { env } from '../config/env';
 import { useAppDispatch, useAppSelector } from '../store';
 import { 
   fetchWorkspaces,
+  fetchWorkspacesPublic,
   fetchWorkspace, 
   fetchSpacesByWorkspace,
   generateInviteLink,
@@ -13,6 +14,8 @@ import {
 interface UseWorkspacesParams {
   workspaceId?: string;
   autoFetch?: boolean;
+  global?: boolean;
+  public?: boolean;
 }
 
 interface UseWorkspacesReturn {
@@ -45,11 +48,11 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
   const dispatch = useAppDispatch();
   
   // Handle both old string parameter and new object parameter for backward compatibility
-  const { workspaceId, autoFetch = true } = useMemo(() => {
+  const { workspaceId, autoFetch = true, global = false, public: isPublic = false } = useMemo(() => {
     if (typeof params === 'string') {
-      return { workspaceId: params, autoFetch: true };
+      return { workspaceId: params, autoFetch: true, global: false, public: false };
     }
-    return params || { autoFetch: true };
+    return params || { autoFetch: true, global: false, public: false };
   }, [params]);
   
   const {
@@ -85,10 +88,14 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
 
   const refetchWorkspaces = useCallback(() => {
     if (env.ENABLE_DEBUG) {
-      console.log('🔄 Refetching all workspaces');
+      console.log('🔄 Refetching all workspaces', isPublic ? '(public)' : '(scoped)');
     }
-    dispatch(fetchWorkspaces() as any);
-  }, [dispatch]);
+    if (isPublic) {
+      dispatch(fetchWorkspacesPublic() as any);
+    } else {
+      dispatch(fetchWorkspaces() as any);
+    }
+  }, [dispatch, isPublic]);
 
   const inviteNewMember = useCallback(async (email: string, role: 'member' | 'admin') => {
     if (!workspaceId) throw new Error('No workspace selected');
@@ -139,12 +146,12 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
     try {
       await dispatch(createWorkspace(workspaceData) as any).unwrap();
       // Refetch all workspaces after creation
-      dispatch(fetchWorkspaces() as any);
+      refetchWorkspaces();
     } catch (error) {
       console.error('Failed to create workspace:', error);
       throw error;
     }
-  }, [dispatch]);
+  }, [dispatch, refetchWorkspaces]);
 
   const deleteWorkspaceById = useCallback(async (id: string) => {
     if (env.ENABLE_DEBUG) {

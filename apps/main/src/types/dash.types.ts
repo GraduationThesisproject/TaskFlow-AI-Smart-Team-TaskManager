@@ -203,6 +203,7 @@ export interface TemplateCardItem {
   id: string;
   title: string;
   description: string;
+  type?: TemplateType;
   category: string;
   author: { name: string; avatar?: string };
   views: number;
@@ -212,6 +213,9 @@ export interface TemplateCardItem {
   createdAt: string;
   updatedAt: string;
   userLiked?: boolean;
+  // Populated from backend: arrays of users who liked/viewed (names populated)
+  likedBy?: Array<{ _id: string; name?: string; displayName?: string }>;
+  viewedBy?: Array<{ _id: string; name?: string; displayName?: string }>;
 }
 
 export interface TemplateCardProps {
@@ -254,6 +258,9 @@ export interface TemplatesFilters {
   isPublic?: boolean;
   status?: TemplateStatus;
   limit?: number;
+  all?: boolean;
+  // Admin-only: request all templates regardless of access control
+  scope?: 'all';
 }
 
 export interface TemplatesState {
@@ -273,6 +280,8 @@ export interface UseTemplatesReturn {
 
   // Actions
   load: (filters?: TemplatesFilters) => void;
+  // Admin-only: fetch all templates (requires backend support for scope=all)
+  loadAll: (filters?: TemplatesFilters) => void;
   fetchOne: (id: string) => void;
   create: (payload: Partial<TemplateItem>) => Promise<void>;
   update: (id: string, updates: Partial<TemplateItem>) => Promise<void>;
@@ -314,6 +323,9 @@ export interface TemplatesFilters {
   isPublic?: boolean;
   status?: TemplateStatus;
   limit?: number;
+  all?: boolean;
+  // Admin-only: request all templates regardless of access control
+  scope?: 'all';
 }
 
 export type CategoryKey = 'Marketing' | 'Development' | 'Design' | 'Sales' | 'Support' | 'Operations' | 'HR' | 'Finance' | 'General' | 'Custom';

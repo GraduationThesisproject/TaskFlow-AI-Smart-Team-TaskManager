@@ -11,6 +11,7 @@ export interface Workspace {
   settings: WorkspaceSettings;
   plan: 'free' | 'basic' | 'premium' | 'enterprise';
   isActive: boolean;
+  isPublic?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,6 +55,7 @@ export interface CreateWorkspaceData {
   name: string;
   description?: string;
   plan?: 'free' | 'basic' | 'premium' | 'enterprise';
+  isPublic?: boolean;
 }
 
 export interface UpdateWorkspaceData {
@@ -93,6 +95,9 @@ export interface WorkspaceState {
   isLoading: boolean;
   error: string | null;
 }
+
+// Export a reusable role type for permissions and state slices
+export type WorkspaceRole = WorkspaceMember['role'];
 
 export interface UpcomingDeadlinesProps {
   upcomingDeadlines: Array<{ _id: string; title: string; dueDate: Date; priority: string }>;
