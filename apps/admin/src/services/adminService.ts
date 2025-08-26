@@ -235,6 +235,36 @@ class AdminService {
     return data.data;
   }
 
+  async addUserWithEmail(userData: { username: string; email: string; password: string; role: string }): Promise<{ user: any }> {
+    const response = await fetch(`${API_BASE}/users/add-with-email`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(userData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to add user with email');
+    }
+
+    const data = await response.json();
+    return data.data;
+  }
+
+  async getAvailableRoles(): Promise<{ availableRoles: string[]; userRole: string }> {
+    const response = await fetch(`${API_BASE}/users/available-roles`, {
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to get available roles');
+    }
+
+    const data = await response.json();
+    return data.data;
+  }
+
   async updateUser(userId: string, userData: Partial<User>): Promise<void> {
     // Map frontend fields to backend fields
     const backendData: any = {};

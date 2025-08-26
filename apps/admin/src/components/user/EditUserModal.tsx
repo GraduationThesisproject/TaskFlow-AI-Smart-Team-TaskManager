@@ -43,7 +43,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
   const [formData, setFormData] = useState<EditUserFormData>({
     username: '',
     email: '',
-    role: 'user',
+    role: 'moderator',
     isActive: true
   });
   
@@ -56,7 +56,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
       setFormData({
         username: user.username || '',
         email: user.email || '',
-        role: user.role || 'user',
+        role: user.role || 'moderator',
         isActive: user.status === 'Active'
       });
     }

@@ -9,7 +9,7 @@ const adminSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'superadmin'],
+    enum: ['admin', 'super_admin', 'moderator'],
     default: 'admin',
     required: true
   },
@@ -76,12 +76,12 @@ const adminSchema = new mongoose.Schema({
 
 // Virtual for admin level
 adminSchema.virtual('isSuperAdmin').get(function() {
-  return this.role === 'superadmin';
+  return this.role === 'super_admin';
 });
 
-// Virtual for effective permissions (superadmin gets all permissions)
+// Virtual for effective permissions (super_admin gets all permissions)
 adminSchema.virtual('effectivePermissions').get(function() {
-  if (this.role === 'superadmin') {
+  if (this.role === 'super_admin') {
     return {
       manageUsers: true,
       manageWorkspaces: true,
