@@ -11,7 +11,6 @@ const Dashboard: React.FC = () => {
         <Route path="" element={<Home/>} />
         <Route path="Templates" element={<Templates/>} />
         <Route path="Settings" element={<Settings/>} />
-        <Route path="/home" element={<Home/>} />
         <Route path="/templates" element={<Templates/>} />
         <Route path="/settings" element={<Settings/>} />
       </Routes>

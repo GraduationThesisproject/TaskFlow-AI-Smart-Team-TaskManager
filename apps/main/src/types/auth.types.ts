@@ -53,6 +53,14 @@ export interface User {
   roles: UserRoles;
 }
 
+// Backend response structure for /auth/me endpoint
+export interface UserProfileResponse {
+  user: UserBasic;
+  preferences: UserPreferences;
+  security: UserSecurity;
+  roles: UserRoles;
+}
+
 // export type UserRole = 'admin' | 'user' | 'moderator';
 export const UserRole = {
   ADMIN: 'admin',

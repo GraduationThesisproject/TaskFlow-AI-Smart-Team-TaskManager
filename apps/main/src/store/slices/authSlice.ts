@@ -223,8 +223,17 @@ export const oauthLogin = createAsyncThunk(
   'auth/oauthLogin',
   async (oauthData: OAuthCallbackData, { rejectWithValue }) => {
     try {
-      // Handle OAuth callback and get user info
-      const userInfo = await oauthService.handleCallback(oauthData.code, oauthData.provider);
+      // Get OAuth callback data
+      const callbackData = await oauthService.handleCallback(oauthData.code || '', oauthData.provider);
+      
+      // Exchange code for tokens and user info via backend
+      const tokenExchangeResponse = await AuthService.oauthTokenExchange(
+        callbackData.code,
+        callbackData.provider,
+        callbackData.redirectUri
+      );
+      
+      const userInfo = tokenExchangeResponse.data.user;
       
       // Send OAuth data to backend for authentication
       const response = await AuthService.oauthLogin({
@@ -264,8 +273,17 @@ export const oauthRegister = createAsyncThunk(
   'auth/oauthRegister',
   async (oauthData: OAuthCallbackData, { rejectWithValue }) => {
     try {
-      // Handle OAuth callback and get user info
-      const userInfo = await oauthService.handleCallback(oauthData.code, oauthData.provider);
+      // Get OAuth callback data
+      const callbackData = await oauthService.handleCallback(oauthData.code || '', oauthData.provider);
+      
+      // Exchange code for tokens and user info via backend
+      const tokenExchangeResponse = await AuthService.oauthTokenExchange(
+        callbackData.code,
+        callbackData.provider,
+        callbackData.redirectUri
+      );
+      
+      const userInfo = tokenExchangeResponse.data.user;
       
       // Send OAuth data to backend for registration
       const response = await AuthService.oauthRegister({
@@ -343,7 +361,7 @@ export const requestPasswordReset = createAsyncThunk(
   'auth/requestPasswordReset',
   async (resetData: PasswordResetRequestData, { rejectWithValue }) => {
     try {
-      const response = await AuthService.requestPasswordReset(resendData);
+      const response = await AuthService.requestPasswordReset(resetData);
       return response.data;
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to request password reset';

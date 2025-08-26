@@ -10,6 +10,10 @@ const env = require('./config/env');
 
 require('./models');
 
+// Import passport configuration for OAuth
+const passport = require('passport');
+require('./config/passport');
+
 // Import middleware
 const errorMiddleware = require('./middlewares/error.middleware');
 const authMiddleware = require('./middlewares/auth.middleware');
@@ -26,7 +30,7 @@ const fileRoutes = require('./routes/file.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const checklistRoutes = require('./routes/checklist.routes');
 const reminderRoutes = require('./routes/reminder.routes');
-const analyticsRoutes = require('./routes/analytics.routes');
+
 const tagRoutes = require('./routes/tag.routes');
 const invitationRoutes = require('./routes/invitation.routes');
 const aiRoutes = require('./routes/ai.routes');
@@ -118,6 +122,9 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Initialize passport middleware
+app.use(passport.initialize());
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
@@ -129,7 +136,7 @@ app.use('/api/tasks', authMiddleware, taskRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/checklists', authMiddleware, checklistRoutes);
 app.use('/api/reminders', authMiddleware, reminderRoutes);
-app.use('/api/analytics', authMiddleware, analyticsRoutes);
+
 app.use('/api/tags', authMiddleware, tagRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
