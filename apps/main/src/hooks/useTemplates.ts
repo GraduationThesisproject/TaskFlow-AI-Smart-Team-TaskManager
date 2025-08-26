@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import { env } from '../config/env';
 import { useAppDispatch, useAppSelector } from '../store';
 import {
@@ -33,6 +33,11 @@ export const useTemplates = (): UseTemplatesReturn => {
   const selected = useAppSelector(selectTemplateSelected);
   const filters = useAppSelector(selectTemplateFilters);
   const isAuthenticated = useAppSelector(selectIsAuthenticated as any);
+
+  useEffect(() => {
+    // Log the list of templates whenever it changes
+    console.log('Templates list:', items);
+  }, [items]);
 
   const load = useCallback((f?: TemplatesFilters) => {
     const params = f ?? filters;

@@ -203,6 +203,7 @@ export interface TemplateCardItem {
   id: string;
   title: string;
   description: string;
+  type?: TemplateType;
   category: string;
   author: { name: string; avatar?: string };
   views: number;

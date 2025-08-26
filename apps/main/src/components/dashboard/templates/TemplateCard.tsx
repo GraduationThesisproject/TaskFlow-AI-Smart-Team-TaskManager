@@ -1,20 +1,25 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Badge, Typography, Avatar, AvatarImage, AvatarFallback } from '@taskflow/ui';
+import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback } from '@taskflow/ui';
 import { Heart } from 'lucide-react';
 import type { TemplateCardProps } from '../../../types/dash.types';
 
 const TemplateCard: React.FC<TemplateCardProps> = ({ template, onClick, onLike }) => {
+  const title = template.title || '';
+  const displayTitle = title.length > 10 ? `${title.slice(0, 10)}…` : title;
+
   return (
     <Card className="cursor-pointer rounded-lg overflow-hidden backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)] hover:shadow-[0_0_28px_hsl(var(--accent)/0.18)] transition-shadow" onClick={() => onClick(template)}>
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg mb-2">{template.title}</CardTitle>
+            <CardTitle className="text-lg mb-1">{displayTitle}</CardTitle>
+            <Typography variant="caption" className="text-muted-foreground mb-2">
+              {(template.type ?? 'template')}{template.category ? ` • ${template.category}` : ''}
+            </Typography>
             <Typography variant="body-small" className="text-muted-foreground mb-3">
               {template.description}
             </Typography>
           </div>
-          <Badge variant="secondary">{template.category}</Badge>
         </div>
       </CardHeader>
       <CardContent>

@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import TemplateCard  from './TemplateCard';
 import { EmptyState, Button, Input, Typography } from '@taskflow/ui';
-import { FileText, Grid, List, Search } from 'lucide-react';
+import { FileText, Grid, List, Search, Plus } from 'lucide-react';
 import type { TemplateCardItem } from '../../../types/dash.types';
 import { useTemplates } from '../../../hooks/useTemplates';
 import { useAuth } from '../../../hooks/useAuth';
 import { CATEGORY_OPTIONS } from '../../../types/dash.types';
+import { CreateTemplateModal } from './modals/CreateTemplateModal';
 
 // Category options are sourced from Create Template modal options
 
@@ -17,6 +18,7 @@ const TemplatesList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'name'>('newest');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // Load templates on mount
   useEffect(() => {
@@ -31,17 +33,20 @@ const TemplatesList: React.FC = () => {
       id: t._id,
       title: t.name,
       description: t.description ?? '',
+      type: (t as any)?.type,
       category: t.category ?? 'General',
       author: {
         name:
-          // Prefer populated creator info if available
+          // Prefer populated creator info if available (displayName is a virtual)
           (typeof (t as any)?.createdBy === 'object'
-            ? ((t as any).createdBy.name || (t as any).createdBy.email)
+            ? (
+                (t as any).createdBy.displayName
+                || (t as any).createdBy.name
+                || (t as any).createdBy.email
+              )
             : undefined)
-          // Fallback to current authenticated user
-          || ((user as any)?.displayName || user?.user?.name || user?.user?.email)
-          // Generic fallback
-          || 'User',
+          // If not populated, avoid attributing to the current user; use a neutral placeholder
+          || 'Unknown',
       },
       views: (t as any)?.views ?? 0,
       likes: Array.isArray((t as any)?.likedBy) ? (t as any).likedBy.length : 0,
@@ -199,29 +204,60 @@ const TemplatesList: React.FC = () => {
 
       {/* Templates Grid/List */}
       {!loading && !error && filteredTemplates.length === 0 ? (
-        <EmptyState
-          icon={<FileText className="h-12 w-12" />}
-          title="No templates found"
-          description={
-            searchQuery
-              ? `No templates match "${searchQuery}". Try adjusting your search.`
-              : 'No templates available in this category.'
-          }
-          action={
-            searchQuery
-              ? { label: 'Clear Search', onClick: () => setSearchQuery(''), variant: 'outline' }
-              : undefined
-          }
-        />
+        <div className="space-y-6">
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => setIsCreateOpen(true)}
+              className="flex h-40 w-full max-w-md items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                <span>Create new template</span>
+              </div>
+            </button>
+          </div>
+          <EmptyState
+            icon={<FileText className="h-12 w-12" />}
+            title="No templates found"
+            description={
+              searchQuery
+                ? `No templates match "${searchQuery}". Try adjusting your search.`
+                : 'No templates available yet. Create your first template to get started.'
+            }
+            action={
+              searchQuery
+                ? { label: 'Clear Search', onClick: () => setSearchQuery(''), variant: 'outline' }
+                : undefined
+            }
+          />
+        </div>
       ) : (
         !loading && !error && (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
-            {filteredTemplates.map((template) => (
-              <TemplateCard key={template.id} template={template} onClick={handleTemplateClick} onLike={handleLike} />
-            ))}
-          </div>
+          <>
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+              {viewMode === 'grid' && (
+                <button
+                  type="button"
+                  onClick={() => setIsCreateOpen(true)}
+                  className="flex h-40 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    <span>Create new template</span>
+                  </div>
+                </button>
+              )}
+
+              {filteredTemplates.map((template) => (
+                <TemplateCard key={template.id} template={template} onClick={handleTemplateClick} onLike={handleLike} />
+              ))}
+            </div>
+          </>
         )
       )}
+      {/* Modal mount (always available) */}
+      <CreateTemplateModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
     </>
   );
 };

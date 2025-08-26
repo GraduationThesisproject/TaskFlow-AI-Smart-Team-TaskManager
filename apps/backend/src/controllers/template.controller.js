@@ -97,7 +97,8 @@ exports.list = async (req, res, next) => {
       cursor = Template.find(query).sort({ createdAt: -1 }).limit(Number(limit));
     }
 
-    const items = await cursor;
+    // Populate owner info for display (name/email)
+    const items = await cursor.populate('createdBy', 'name email displayName');
     return ok(res, items);
   } catch (error) {
     handleError(next, error);
@@ -108,7 +109,7 @@ exports.getById = async (req, res, next) => {
   try {
     const { id } = req.params;
     console.log('[templates.getById] incoming', { id });
-    const item = await Template.findById(id);
+    const item = await Template.findById(id).populate('createdBy', 'name email displayName');
     if (!item) {
       console.warn('[templates.getById] not found', { id });
       return res.status(404).json({ success: false, message: 'Template not found' });
@@ -128,7 +129,7 @@ exports.getById = async (req, res, next) => {
       id,
       { $inc: { views: 1 } },
       { new: true }
-    );
+    ).populate('createdBy', 'name email displayName');
     if (!updated) {
       console.warn('[templates.getById] not found after update', { id });
       return res.status(404).json({ success: false, message: 'Template not found' });
@@ -194,7 +195,7 @@ exports.update = async (req, res, next) => {
       if (!existing) return res.status(404).json({ success: false, message: 'Template not found' });
       const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u) === String(userId));
       const update = hasLiked ? { $pull: { likedBy: userId } } : { $addToSet: { likedBy: userId } };
-      const updated = await Template.findByIdAndUpdate(id, update, { new: true, runValidators: false });
+      const updated = await Template.findByIdAndUpdate(id, update, { new: true, runValidators: false }).populate('createdBy', 'name email displayName');
       if (!updated) return res.status(404).json({ success: false, message: 'Template not found' });
       return ok(res, updated);
     }
@@ -215,7 +216,7 @@ exports.update = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Only owner or admin can update this template' });
     }
 
-    const updated = await Template.findByIdAndUpdate(id, payload, { new: true, runValidators: true });
+    const updated = await Template.findByIdAndUpdate(id, payload, { new: true, runValidators: true }).populate('createdBy', 'name email displayName');
     if (!updated) return res.status(404).json({ success: false, message: 'Template not found' });
     return ok(res, updated);
   } catch (error) {
@@ -251,7 +252,7 @@ exports.incrementViews = async (req, res, next) => {
       id,
       { $inc: { views: 1 } },
       { new: true }
-    );
+    ).populate('createdBy', 'name email displayName');
     if (!doc) return res.status(404).json({ success: false, message: 'Template not found' });
     return ok(res, doc);
   } catch (error) {
