@@ -17,6 +17,8 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         accent: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_0_12px_2px_rgba(0,232,198,0.35)] hover:shadow-[0_0_16px_4px_rgba(0,232,198,0.55)]",
         neon: "relative text-white bg-gradient-to-r from-[hsl(var(--gradient-primary))] to-[hsl(var(--gradient-secondary))] shadow-[0_0_16px_3px_rgba(0,186,255,0.35)] hover:shadow-[0_0_22px_5px_rgba(0,186,255,0.6)]",
+        // New: use for add/create actions to get a circular moving glow on hover
+        add: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-full orbit-glow shadow-[0_0_12px_2px_rgba(0,122,223,0.35)] hover:shadow-[0_0_16px_4px_rgba(0,122,223,0.55)]",
       },
       size: {
         sm: "h-8 px-3 text-xs rounded",

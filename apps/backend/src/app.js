@@ -17,6 +17,7 @@ require('./config/passport');
 // Import middleware
 const errorMiddleware = require('./middlewares/error.middleware');
 const { authMiddleware } = require('./middlewares/auth.middleware');
+const { authMiddleware } = require('./middlewares/auth.middleware');
 const { fileServeMiddleware } = require('./middlewares/serve.middleware');
 
 // Import routes
