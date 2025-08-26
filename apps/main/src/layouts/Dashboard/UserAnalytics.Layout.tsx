@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { CalendarClock, CheckCircle2, Folder, ListChecks, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@taskflow/ui';
 import { Typography } from '@taskflow/ui';
+import { useAuth } from '../../hooks/useAuth';
 
 // Response shape is made flexible to avoid tight coupling with backend
 // Only rely on fields we render and guard with optional chaining
@@ -67,6 +68,13 @@ const UserAnalyticsLayout: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [range, setRange] = useState<'1m' | '3m' | '6m' | '12m'>('3m');
+  const { user } = useAuth();
+  const displayName =
+    (user as any)?.user?.name ||
+    (user as any)?.user?.fullName ||
+    (user as any)?.user?.username ||
+    (user as any)?.user?.email ||
+    'Your';
 
   useEffect(() => {
     let cancelled = false;
@@ -99,7 +107,7 @@ const UserAnalyticsLayout: React.FC = () => {
     <DashboardShell title="My Analytics">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <Typography variant="h1" className="text-2xl font-bold">Single User Analytics</Typography>
+          <Typography variant="h1" className="text-2xl font-bold">{displayName} Analytics</Typography>
           <Typography variant="caption" className="text-muted-foreground">Personal insights based on your activity</Typography>
         </div>
         <div className="flex items-center gap-3">

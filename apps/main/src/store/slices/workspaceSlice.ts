@@ -32,9 +32,19 @@ export const fetchWorkspacesPublic = createAsyncThunk<Workspace[]>(
   'workspace/fetchWorkspacesPublic',
   async () => {
     const response = await WorkspaceService.getPublicWorkspaces();
-    return Array.isArray((response as any)?.workspaces)
-      ? (response as any).workspaces
+    console.log('[fetchWorkspacesPublic] raw response:', response);
+    const raw: any = response as any;
+    const list = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.workspaces)
+      ? raw.workspaces
+      : Array.isArray(raw?.data?.workspaces)
+      ? raw.data.workspaces
+      : Array.isArray(raw?.data)
+      ? raw.data
       : [];
+    console.log('[fetchWorkspacesPublic] extracted workspaces length:', list.length);
+    return list;
   }
 );
 
@@ -43,9 +53,19 @@ export const fetchWorkspacesGlobal = createAsyncThunk<Workspace[]>(
   'workspace/fetchWorkspacesGlobal',
   async () => {
     const response = await WorkspaceService.getAllWorkspacesGlobal();
-    return Array.isArray((response as any)?.workspaces)
-      ? (response as any).workspaces
+    console.log('[fetchWorkspacesGlobal] raw response:', response);
+    const raw: any = response as any;
+    const list = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.workspaces)
+      ? raw.workspaces
+      : Array.isArray(raw?.data?.workspaces)
+      ? raw.data.workspaces
+      : Array.isArray(raw?.data)
+      ? raw.data
       : [];
+    console.log('[fetchWorkspacesGlobal] extracted workspaces length:', list.length);
+    return list;
   }
 );
 
@@ -123,9 +143,9 @@ export const createWorkspace = createAsyncThunk(
     const response = await WorkspaceService.createWorkspace({
       name: workspaceData.name,
       description: workspaceData.description,
-      plan: 'free' // Default to free plan
+      plan: 'free',
+      isPublic: workspaceData.visibility === 'public', // <-- toggle here
     });
-    // Return just the created workspace object
     return (response as any)?.workspace ?? response;
   }
 );
@@ -140,6 +160,7 @@ export const deleteWorkspace = createAsyncThunk<{ id: string; message: string },
 );
 
 // Dev-only: force current user as owner for a workspace (repairs old data)
+
 export const forceOwnerDev = createAsyncThunk<{ id: string; message: string }, { id: string }>(
   'workspace/forceOwnerDev',
   async ({ id }) => {
@@ -235,14 +256,17 @@ const workspaceSlice = createSlice({
       .addCase(fetchWorkspacesPublic.pending, (state) => {
         state.loading = true;
         state.error = null;
+        console.log('⏳ fetchWorkspacesPublic.pending');
       })
       .addCase(fetchWorkspacesPublic.fulfilled, (state, action) => {
         state.loading = false;
         state.workspaces = Array.isArray(action.payload) ? action.payload : [];
+        console.log('✅ fetchWorkspacesPublic.fulfilled - workspaces count:', state.workspaces.length);
         state.error = null;
       })
       .addCase(fetchWorkspacesPublic.rejected, (state, action) => {
         state.loading = false;
+        console.error('❌ fetchWorkspacesPublic.rejected:', action.error.message);
         state.error = action.error.message || 'Failed to fetch public workspaces';
       })
       // Fetch all workspaces (global)
@@ -397,6 +421,11 @@ const workspaceSlice = createSlice({
         state.isLoading = false;
         state.error = action.error.message || 'Failed to disable invite link';
       })
+      .addCase(deleteWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        state.workspaces = state.workspaces.filter(w => w._id !== action.payload.id);
+        state.error = null;
+    })
       
       }})
   

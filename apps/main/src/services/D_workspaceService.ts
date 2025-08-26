@@ -115,9 +115,12 @@ export class WorkspaceService {
   static async getAllWorkspacesGlobal(): Promise<ApiResponse<Workspace[]>> {
     try {
       const response = await axiosInstance.get('/workspaces/public');
-      console.log('response.data.data', response.data.data);
+      console.log('[WorkspaceService.getAllWorkspacesGlobal] response.data:', response.data);
+      console.log('[WorkspaceService.getAllWorkspacesGlobal] response.data.data:', response.data.data);
       // Backend sendResponse shape: { success, message, data: { workspaces, count } }
-      return response.data.data;
+      const payload = response.data?.data;
+      const arr = Array.isArray(payload?.workspaces) ? payload.workspaces : Array.isArray(payload) ? payload : [];
+      return arr as any;
     } catch (error) {
       console.error('Error fetching global workspaces:', error);
       throw error;
@@ -128,8 +131,12 @@ export class WorkspaceService {
   static async getPublicWorkspaces(): Promise<ApiResponse<Workspace[]>> {
     try {
       const response = await axiosInstance.get('/workspaces/public');
+      console.log('[WorkspaceService.getPublicWorkspaces] response.data:', response.data);
+      console.log('[WorkspaceService.getPublicWorkspaces] response.data.data:', response.data.data);
       // Backend sendResponse shape: { success, message, data: { workspaces, count } }
-      return response.data.data;
+      const payload = response.data?.data;
+      const arr = Array.isArray(payload?.workspaces) ? payload.workspaces : Array.isArray(payload) ? payload : [];
+      return arr as any;
     } catch (error) {
       console.error('Error fetching public workspaces:', error);
       throw error;
