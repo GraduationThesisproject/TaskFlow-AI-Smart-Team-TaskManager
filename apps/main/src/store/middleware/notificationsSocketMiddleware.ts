@@ -65,6 +65,37 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
           severity: activity.severity,
           isSuccessful: activity.isSuccessful,
         } as any));
+
+        // Frontend stopgap: also surface key activities as notifications so the bell updates
+        // until the backend emits `notification:new`.
+        if (activity?.action) {
+          const titleMap: Record<string, string> = {
+            workspace_create: 'Workspace created',
+            workspace_update: 'Workspace updated',
+            workspace_delete: 'Workspace deleted',
+          };
+
+          const title = titleMap[activity.action] || 'Activity';
+          const now = new Date().toISOString();
+          const relatedEntity = activity.workspace
+            ? { type: 'workspace', id: activity.workspace, name: activity?.metadata?.workspaceName }
+            : activity.project
+            ? { type: 'project', id: activity.project, name: activity?.metadata?.projectName }
+            : undefined;
+
+          store.dispatch(addNotification({
+            _id: activity._id || activity.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            title,
+            message: activity.description || '',
+            type: activity.isSuccessful === false ? 'warning' : 'success',
+            recipientId: activity.user?._id || activity.user?.id || '',
+            relatedEntity: relatedEntity as any,
+            priority: 'low',
+            isRead: false,
+            createdAt: now,
+            updatedAt: now,
+          } as any));
+        }
       } catch (e) {
         console.warn('⚠️ [notificationsSocketMiddleware] failed to process activity:new', e);
       }

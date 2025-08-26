@@ -36,11 +36,20 @@ export const CreateWorkspaceModal: React.FC<CreateWorkspaceModalProps> = ({ isOp
   const handleSubmit = async () => {
     if (!validateForm()) return;
     setError(null);
-
+  
     try {
-      await createNewWorkspace({ ...formData });
+      // Pass visibility as required by createNewWorkspace typings
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        isPublic: formData.visibility === 'public', // <-- map string to boolean
+        visibility: formData.visibility,
+      };
+  
+      await createNewWorkspace(payload);
       
       // Reset form and close modal
+
       setFormData({ name: '', description: '', visibility: 'private' });
       onClose();
     } catch (err: any) {

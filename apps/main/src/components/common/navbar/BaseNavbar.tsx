@@ -14,7 +14,7 @@ export const BaseNavbar: React.FC<BaseNavbarProps> = ({ children, className = ''
 };
 
 interface NavbarSectionProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
 }
 
