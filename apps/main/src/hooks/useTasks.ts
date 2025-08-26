@@ -1,14 +1,18 @@
 import { useSelector, useDispatch } from 'react-redux';
-import type { Task } from '../types/task.types';
+import type { Task, Column, Board } from '../types/task.types';
 import type { RootState } from '../store';
 import {
   fetchTasks,
+  fetchBoard,
+  fetchSpace,
   createTask,
   updateTask,
   deleteTask,
   moveTask,
   fetchTasksByColumn,
   fetchTasksBySpace,
+  fetchBoardsBySpace,
+  fetchColumnsByBoard,
   setCurrentTask,
   updateFilters,
   updateSort,
@@ -27,7 +31,12 @@ export const useTasks = () => {
     error,
     filters,
     sortBy,
-    searchQuery
+    searchQuery,
+    columns,
+    boards,
+    spaces,
+    currentBoard,
+    currentSpace
   } = useSelector((state: RootState) => state.tasks);
 
   // Compute derived state
@@ -115,12 +124,28 @@ export const useTasks = () => {
   };
 
   // Additional API actions
+  const loadBoard = (boardId: string) => {
+    dispatch(fetchBoard(boardId) as any);
+  };
+
+  const loadSpace = (spaceId: string) => {
+    dispatch(fetchSpace(spaceId) as any);
+  };
+
   const loadTasksByColumn = (columnId: string) => {
     dispatch(fetchTasksByColumn(columnId) as any);
   };
 
   const loadTasksBySpace = (spaceId: string) => {
     dispatch(fetchTasksBySpace(spaceId) as any);
+  };
+
+  const loadBoardsBySpace = (spaceId: string) => {
+    dispatch(fetchBoardsBySpace(spaceId) as any);
+  };
+
+  const loadColumnsByBoard = (boardId: string) => {
+    dispatch(fetchColumnsByBoard(boardId) as any);
   };
 
   return {
@@ -140,12 +165,21 @@ export const useTasks = () => {
     timelineTasks,
     highPriorityTasks,
     overdueTasks,
+    columns,
+    boards,
+    spaces,
+    currentBoard,
+    currentSpace,
 
     // Actions
     loadTasks,
     loadTaskById,
+    loadBoard,
+    loadSpace,
     loadTasksByColumn,
     loadTasksBySpace,
+    loadBoardsBySpace,
+    loadColumnsByBoard,
     addTask,
     editTask,
     removeTask,
