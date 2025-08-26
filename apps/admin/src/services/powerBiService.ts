@@ -94,7 +94,14 @@ class PowerBIService {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch Power BI workspaces');
+        const errorData = await response.json();
+        
+        // Check if it's a configuration error
+        if (response.status === 503 && errorData.error === 'POWERBI_NOT_CONFIGURED') {
+          throw new Error('Power BI is not configured. Please contact your administrator to set up Power BI integration.');
+        }
+        
+        throw new Error(errorData.message || 'Failed to fetch Power BI workspaces');
       }
 
       const data = await response.json();
@@ -211,6 +218,28 @@ class PowerBIService {
       return data.dataset;
     } catch (error) {
       console.error('PowerBIService: Error getting dataset schema:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check Power BI configuration status
+   */
+  async getConfigurationStatus(): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/config/status`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get Power BI configuration status');
+      }
+
+      const data = await response.json();
+      return data.status;
+    } catch (error) {
+      console.error('PowerBIService: Error getting configuration status:', error);
       throw error;
     }
   }

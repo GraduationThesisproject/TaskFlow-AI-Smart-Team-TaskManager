@@ -25,7 +25,18 @@ class PowerBIController {
       return success(res, 'Power BI workspaces retrieved successfully', { workspaces });
     } catch (error) {
       logger.error('PowerBI Controller: Error fetching workspaces:', error);
-      return serverError(res, 'Failed to fetch Power BI workspaces');
+      
+      // Check if it's a configuration error
+      if (error.message.includes('not configured')) {
+        return res.status(503).json({
+          success: false,
+          message: error.message,
+          error: 'POWERBI_NOT_CONFIGURED',
+          data: null
+        });
+      }
+      
+      return serverError(res, error.message || 'Failed to fetch Power BI workspaces');
     }
   }
 

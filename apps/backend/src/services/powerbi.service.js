@@ -163,11 +163,20 @@ class PowerBIService {
    */
   async getWorkspaces() {
     try {
+      // Check configuration first
+      this.checkConfiguration();
+      
       const data = await this.makeRequest('/groups');
       return data.value || [];
     } catch (error) {
       logger.error('PowerBI Service: Error fetching workspaces:', error);
-      throw error;
+      
+      // If it's a configuration error, provide a helpful message
+      if (error.message.includes('placeholder values') || error.message.includes('not configured')) {
+        throw new Error('Power BI is not configured. Please contact your administrator to set up Power BI integration.');
+      }
+      
+      throw new Error('Failed to fetch Power BI workspaces. Please try again later.');
     }
   }
 
