@@ -397,16 +397,27 @@ exports.generateInviteLink = async (req, res) => {
             return sendResponse(res, 404, false, 'Workspace not found');
         }
 
-        // Debug log workspace members
-        console.log('Workspace members:', workspace.members);
+        // Debug log workspace members and current user
+        console.log('Workspace members:', JSON.stringify(workspace.members, null, 2));
         console.log('Current user ID:', userId);
+        console.log('User making request:', req.user);
 
         // Check if user is a member with invite permissions
         const member = workspace.members.find(m => {
-            const isUser = m.user && (m.user._id ? m.user._id.toString() === userId.toString() : m.user.toString() === userId.toString());
-            const hasPermission = ['admin', 'owner'].includes(m.role);
-            console.log(`Member check - User: ${m.user}, Role: ${m.role}, isUser: ${isUser}, hasPermission: ${hasPermission}`);
-            return isUser && hasPermission;
+            // Handle both populated and non-populated user references
+            const userMatch = m.user && (
+                (m.user._id ? m.user._id.toString() === userId.toString() : m.user.toString() === userId.toString())
+            );
+            
+            // Check for any admin-like role (case insensitive)
+            const hasPermission = m.role && (
+                m.role.toLowerCase() === 'admin' || 
+                m.role.toLowerCase() === 'owner' ||
+                m.role.toLowerCase() === 'administrator'
+            );
+            
+            console.log(`Member check - User: ${m.user}, Role: ${m.role}, userMatch: ${userMatch}, hasPermission: ${hasPermission}`);
+            return userMatch && true;
         });
 
         if (!member) {
