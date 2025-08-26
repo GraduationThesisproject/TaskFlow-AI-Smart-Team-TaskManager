@@ -201,6 +201,21 @@ Removes stored tokens from browser
     }
   }
 
+  // OAuth Token Exchange
+  static async oauthTokenExchange(code: string, provider: string, redirectUri: string): Promise<any> {
+    try {
+      const response = await axiosInstance.post('/auth/oauth/token-exchange', {
+        code,
+        provider,
+        redirectUri
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error with OAuth token exchange:', error);
+      throw error;
+    }
+  }
+
   // OAuth Register
   static async oauthRegister(oauthData: OAuthUserData): Promise<ApiResponse<AuthResponse>> {
     try {
@@ -249,7 +264,7 @@ Removes stored tokens from browser
   // Request password reset
   static async requestPasswordReset(resetData: PasswordResetRequestData): Promise<ApiResponse<{ message: string }>> {
     try {
-      const response = await axiosInstance.post('/auth/request-password-reset', resetData);
+      const response = await axiosInstance.post('/auth/password-reset/request', resetData);
       return response.data;
     } catch (error) {
       console.error('Error requesting password reset:', error);
@@ -260,7 +275,7 @@ Removes stored tokens from browser
   // Reset password
   static async resetPassword(resetData: PasswordResetData): Promise<ApiResponse<{ message: string }>> {
     try {
-      const response = await axiosInstance.post('/auth/reset-password', resetData);
+      const response = await axiosInstance.post('/auth/password-reset/confirm', resetData);
       return response.data;
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -268,15 +283,89 @@ Removes stored tokens from browser
     }
   }
 }
-/*What it does:
 
-Checks if backend server is running
-Useful for debugging connection issues
-Doesn't require authentication*/
+// Additional auth endpoints mapped to backend auth.controller routes
+export class AuthControllerClient {
+  // ... (rest of the code remains the same)
+  static async updateProfile(payload: { name?: string; avatar?: string; preferences?: any; metadata?: any }): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.put('/auth/profile', payload);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  }
 
+  // PUT /api/auth/profile/secure (multipart: expects field "avatar")
+  static async updateProfileSecure(formData: FormData): Promise<ApiResponse<any>> {
+    try {
+      // Do not set Content-Type manually; let the browser set the correct multipart boundary
+      const response = await axiosInstance.put('/auth/profile/secure', formData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating secure profile:', error);
+      throw error;
+    }
+  }
 
+  // PUT /api/auth/change-password
+  static async changePassword(currentPassword: string, newPassword: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.put('/auth/change-password', { currentPassword, newPassword });
+      return response.data;
+    } catch (error) {
+      console.error('Error changing password:', error);
+      throw error;
+    }
+  }
 
-//------------------------------------
+  // PUT /api/auth/preferences
+  static async updatePreferences(section: string, updates: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.put('/auth/preferences', { section, updates });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      throw error;
+    }
+  }
+
+  // GET /api/auth/sessions
+  static async getSessions(): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.get('/auth/sessions');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+      throw error;
+    }
+  }
+
+  // DELETE /api/auth/sessions/:sessionId
+  static async endSession(sessionId: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.delete(`/auth/sessions/${sessionId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error ending session:', error);
+      throw error;
+    }
+  }
+
+  // GET /api/auth/activity
+  static async getActivity(): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.get('/auth/activity');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching activity:', error);
+      throw error;
+    }
+  }
+}
+
+/*------------------------------------
 /*How This Integrates with React + Redux
 The Flow:
 React Component calls 

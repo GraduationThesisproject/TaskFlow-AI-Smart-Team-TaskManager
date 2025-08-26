@@ -358,7 +358,7 @@ class EmailService {
             return;
         }
 
-        this.transporter = nodemailer.createTransporter({
+        this.transporter = nodemailer.createTransport({
             host: env.SMTP_HOST,
             port: env.SMTP_PORT,
             secure: env.SMTP_PORT == 465, // true for 465, false for other ports
@@ -385,6 +385,25 @@ class EmailService {
     async sendEmail({ to, subject, template, data = {}, attachments = [] }) {
         try {
             if (!this.transporter) {
+                // In development mode, log the email instead of sending it
+                if (env.NODE_ENV === 'development') {
+                    logger.info('📧 DEVELOPMENT MODE - Email would be sent:', {
+                        to,
+                        subject: template ? templates[template]?.subject : subject,
+                        template,
+                        data,
+                        resetUrl: data.resetUrl || 'N/A'
+                    });
+                    
+                    // For password reset, log the reset URL prominently
+                    if (template === 'password-reset' && data.resetUrl) {
+                        console.log('\n🔗 PASSWORD RESET URL (for testing):');
+                        console.log('   ' + data.resetUrl);
+                        console.log('   Copy this URL to test password reset\n');
+                    }
+                    
+                    return { messageId: 'dev-mode-' + Date.now() };
+                }
                 throw new Error('Email transporter not configured');
             }
 

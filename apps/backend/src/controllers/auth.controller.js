@@ -20,7 +20,6 @@ exports.register = async (req, res) => {
         // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            throw error;
             return sendResponse(res, 400, false, 'User already exists with this email');
         }
 
@@ -218,6 +217,9 @@ exports.getMe = async (req, res) => {
             user.getRoles()
         ]);
 
+        // Ensure avatar is populated so client gets URL
+        await user.populate({ path: 'avatar', select: 'url thumbnails' });
+
         // Get active sessions count
         const activeSessions = sessions.sessions.filter(s => s.isActive).length;
 
@@ -261,44 +263,28 @@ exports.updateProfile = async (req, res) => {
         // Update basic profile
         if (name) user.name = name;
         
-        // Handle avatar upload
+        // Handle avatar upload (Multer + local File model)
         if (req.uploadedFile) {
-            // Delete old avatar file if exists
+            const File = require('../models/File');
+
+            // Delete old avatar file if exists and different from the new one
             if (user.avatar) {
-                const File = require('../models/File');
-                const oldFile = await File.findOne({ 
-                    url: user.avatar,
-                    uploadedBy: user._id,
-                    category: 'avatar'
-                });
-                
-                if (oldFile) {
-                    await oldFile.deleteFromCloudinary();
+                try {
+                    const oldFile = await File.findById(user.avatar);
+                    if (oldFile && oldFile._id.toString() !== req.uploadedFile._id.toString()) {
+                        await oldFile.deleteFromStorage();
+                    }
+                } catch (e) {
+                    logger.warn('Failed to delete old avatar:', e.message);
                 }
             }
 
-            // Create new file record
-            const File = require('../models/File');
-            const file = await File.create({
-                publicId: req.uploadedFile.publicId,
-                url: req.uploadedFile.url,
-                secureUrl: req.uploadedFile.url,
-                originalName: req.uploadedFile.originalName,
-                mimeType: req.uploadedFile.mimeType,
-                size: req.uploadedFile.size,
-                format: req.uploadedFile.format,
-                resourceType: req.uploadedFile.resourceType,
-                category: 'avatar',
-                uploadedBy: user._id,
-                dimensions: {
-                    width: req.uploadedFile.width,
-                    height: req.uploadedFile.height
-                }
-            });
-
+            // Attach the uploaded file to the user and set avatar reference
+            const file = req.uploadedFile; // Mongoose doc created in processUploadedFiles
             await file.attachTo('User', user._id);
-            user.avatar = file.url;
+            user.avatar = file._id;
         } else if (avatar) {
+            // Allow setting avatar by existing File id (optional)
             user.avatar = avatar;
         }
         
@@ -322,6 +308,9 @@ exports.updateProfile = async (req, res) => {
             await userPrefs.save();
         }
 
+        // Populate avatar so response contains URL
+        await user.populate({ path: 'avatar', select: 'url thumbnails' });
+
         // Log activity
         await ActivityLog.logActivity({
             userId: user._id,
@@ -330,7 +319,7 @@ exports.updateProfile = async (req, res) => {
             entity: { type: 'User', id: user._id, name: user.name },
             metadata: {
                 oldValues: oldValues,
-                newValues: { name, avatar },
+                newValues: { name, avatar: user.avatar },
                 ipAddress: req.ip,
                 userAgent: req.get('User-Agent')
             }
@@ -344,6 +333,101 @@ exports.updateProfile = async (req, res) => {
     } catch (error) {
         logger.error('Update profile error:', error);
         sendResponse(res, 500, false, 'Server error updating profile');
+    }
+};
+
+// Secure profile update with password verification and optional avatar upload
+exports.updateProfileSecure = async (req, res) => {
+    try {
+        const { currentPassword, name } = req.body;
+
+        // Debug: log presence of uploaded file
+        try {
+            const f = req.uploadedFile;
+            if (f) {
+                logger.info(`updateProfileSecure: received uploadedFile id=${f._id?.toString?.()} name=${f.filename}`);
+            } else {
+                logger.info('updateProfileSecure: no uploadedFile present');
+            }
+        } catch (e) {
+            logger.warn('updateProfileSecure: failed to log uploadedFile info:', e.message);
+        }
+
+        // Load user with password for verification
+        const user = await User.findById(req.user.id).select('+password');
+        if (!user) {
+            return sendResponse(res, 404, false, 'User not found');
+        }
+
+        const isValid = await user.comparePassword(currentPassword || '');
+        if (!isValid) {
+            // Cleanup: if a file was uploaded before validation, delete it to avoid orphans
+            if (req.uploadedFile) {
+                try {
+                    await req.uploadedFile.deleteFromStorage();
+                    await req.uploadedFile.deleteOne();
+                } catch (e) {
+                    logger.warn('Cleanup failed for uploaded file on password error:', e.message);
+                }
+            }
+            return sendResponse(res, 400, false, 'Current password is incorrect');
+        }
+
+        const oldValues = {
+            name: user.name,
+            avatar: user.avatar
+        };
+
+        // Update name if provided
+        if (name) user.name = name;
+
+        // Handle avatar if a new file was uploaded
+        if (req.uploadedFile) {
+            const File = require('../models/File');
+            try {
+                if (user.avatar) {
+                    const oldFile = await File.findById(user.avatar);
+                    if (oldFile && oldFile._id.toString() !== req.uploadedFile._id.toString()) {
+                        await oldFile.deleteFromStorage();
+                    }
+                }
+            } catch (e) {
+                logger.warn('Failed to delete old avatar:', e.message);
+            }
+
+            const file = req.uploadedFile;
+            await file.attachTo('User', user._id);
+            user.avatar = file._id;
+            logger.info(`updateProfileSecure: user ${user._id.toString()} avatar set to file ${file._id.toString()}`);
+        }
+
+        await user.save();
+
+        // Populate avatar so response contains URL
+        await user.populate({ path: 'avatar', select: 'url thumbnails' });
+        logger.info(`updateProfileSecure: response avatar url=${user.avatar?.url || user.avatar}`);
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'profile_update',
+            description: 'User updated profile (secure)',
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: {
+                oldValues,
+                newValues: { name: user.name, avatar: user.avatar },
+                ipAddress: req.ip,
+                userAgent: req.get('User-Agent'),
+                verifiedByPassword: true
+            }
+        });
+
+        return sendResponse(res, 200, true, 'Profile updated successfully', {
+            user: user.getPublicProfile()
+        });
+    } catch (error) {
+        logger.error('Secure update profile error:', error);
+        return sendResponse(res, 500, false, 'Server error updating profile');
     }
 };
 
@@ -463,6 +547,7 @@ exports.getSessions = async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         const userSessions = await user.getSessions();
+        console.log("userSessions",userSessions);
 
         const sessions = userSessions.sessions
             .filter(session => session.isActive)
@@ -628,18 +713,277 @@ exports.resetPassword = async (req, res) => {
 exports.getActivityLog = async (req, res) => {
     try {
         const { limit = 50, page = 1 } = req.query;
+        const lim = parseInt(limit) || 50;
+        const skip = (parseInt(page) - 1) * lim;
         
-        const activities = await ActivityLog.findByUser(
-            req.user.id, 
-            parseInt(limit)
-        );
+        // Explicit populate to guarantee avatar URLs
+        const query = ActivityLog.find({ user: req.user.id, isVisible: true })
+            .populate('entity.id')
+            .populate({
+                path: 'user',
+                select: 'name email avatar',
+                populate: { path: 'avatar', select: 'url thumbnails' }
+            })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(lim);
+
+        const [activities, total] = await Promise.all([
+            query.lean(),
+            ActivityLog.countDocuments({ user: req.user.id, isVisible: true })
+        ]);
+
+        // Debug logging
+        console.log('First activity user:', JSON.stringify(activities[0]?.user, null, 2));
+        console.log('User avatar type:', typeof activities[0]?.user?.avatar);
 
         sendResponse(res, 200, true, 'Activity log retrieved successfully', {
             activities,
-            total: activities.length
+            count: activities.length,
+            total
         });
     } catch (error) {
         logger.error('Get activity log error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving activity log');
+        sendResponse(res, 500, false, 'Server error retrieving profile');
+    }
+};
+
+// OAuth Token Exchange
+exports.oauthTokenExchange = async (req, res) => {
+    try {
+        const { code, provider, redirectUri } = req.body;
+        
+        if (!code || !provider || !redirectUri) {
+            return sendResponse(res, 400, false, 'Missing required OAuth parameters');
+        }
+
+        // Exchange code for access token
+        const tokenData = await exchangeCodeForToken(code, provider, redirectUri);
+        
+        // Get user info from provider
+        const userInfo = await getUserInfoFromProvider(tokenData.access_token, provider);
+        
+        sendResponse(res, 200, true, 'OAuth token exchange successful', {
+            user: userInfo,
+            tokens: tokenData
+        });
+    } catch (error) {
+        logger.error('OAuth token exchange error:', error);
+        sendResponse(res, 500, false, 'OAuth token exchange failed');
+    }
+};
+
+// Helper function to exchange code for token
+async function exchangeCodeForToken(code, provider, redirectUri) {
+    const axios = require('axios');
+    
+    let tokenUrl, clientId, clientSecret;
+    
+    if (provider === 'google') {
+        tokenUrl = 'https://oauth2.googleapis.com/token';
+        clientId = process.env.GOOGLE_CLIENT_ID;
+        clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    } else if (provider === 'github') {
+        tokenUrl = 'https://github.com/login/oauth/access_token';
+        clientId = process.env.GITHUB_CLIENT_ID;
+        clientSecret = process.env.GITHUB_CLIENT_SECRET;
+    } else {
+        throw new Error(`Unsupported OAuth provider: ${provider}`);
+    }
+
+    const tokenData = {
+        client_id: clientId,
+        client_secret: clientSecret,
+        code: code,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code'
+    };
+
+    const response = await axios.post(tokenUrl, tokenData, {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
+        }
+    });
+
+    return response.data;
+}
+
+// Helper function to get user info from provider
+async function getUserInfoFromProvider(accessToken, provider) {
+    const axios = require('axios');
+    
+    let userInfoUrl;
+    
+    if (provider === 'google') {
+        userInfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+    } else if (provider === 'github') {
+        userInfoUrl = 'https://api.github.com/user';
+    } else {
+        throw new Error(`Unsupported OAuth provider: ${provider}`);
+    }
+
+    const response = await axios.get(userInfoUrl, {
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json'
+        }
+    });
+
+    const userInfo = response.data;
+
+    // Normalize user info across providers
+    if (provider === 'google') {
+        return {
+            id: userInfo.id,
+            email: userInfo.email,
+            name: userInfo.name,
+            avatar: userInfo.picture,
+            provider: 'google'
+        };
+    } else if (provider === 'github') {
+        // For GitHub, get email separately if not public
+        let email = userInfo.email;
+        if (!email) {
+            try {
+                const emailResponse = await axios.get('https://api.github.com/user/emails', {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Accept': 'application/json',
+                        'User-Agent': 'TaskFlow-AI-Smart-Team-TaskManager'
+                    }
+                });
+                const emails = emailResponse.data;
+                const primaryEmail = emails.find(e => e.primary);
+                email = primaryEmail?.email || emails[0]?.email;
+            } catch (error) {
+                logger.warn('Failed to fetch GitHub user email:', error);
+            }
+        }
+
+        return {
+            id: userInfo.id.toString(),
+            email: email,
+            name: userInfo.name || userInfo.login,
+            avatar: userInfo.avatar_url,
+            provider: 'github'
+        };
+    }
+
+    return userInfo;
+}
+
+// OAuth Register
+exports.oauthRegister = async (req, res) => {
+    try {
+        const { name, email, avatar, provider } = req.body;
+        
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return sendResponse(res, 400, false, 'User already exists with this email');
+        }
+
+        // Create new user with OAuth data
+        const user = await User.createWithDefaults({
+            name,
+            email,
+            avatar,
+            isEmailVerified: true, // OAuth users are pre-verified
+            authProvider: provider
+        });
+
+        // Create initial session
+        const userSessions = await user.getSessions();
+        await userSessions.createSession({
+            deviceId: 'oauth-' + Date.now(),
+            deviceInfo: { type: 'web', provider },
+            ipAddress: req.ip,
+            rememberMe: false
+        });
+
+        // Generate tokens
+        const accessToken = jwt.generateAccessToken(user._id);
+        const refreshToken = jwt.generateRefreshToken(user._id);
+
+        // Log activity
+        await ActivityLog.create({
+            userId: user._id,
+            action: 'oauth_register',
+            details: { provider },
+            ipAddress: req.ip
+        });
+
+        logger.info(`OAuth registration successful for user: ${user.email} via ${provider}`);
+
+        sendResponse(res, 201, true, 'OAuth registration successful', {
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                avatar: user.avatar,
+                isEmailVerified: user.isEmailVerified
+            },
+            tokens: {
+                accessToken,
+                refreshToken
+            }
+        });
+    } catch (error) {
+        logger.error('OAuth registration error:', error);
+        sendResponse(res, 500, false, 'Server error during OAuth registration');
+    }
+};
+
+// OAuth Login
+exports.oauthLogin = async (req, res) => {
+    try {
+        const { email, provider } = req.body;
+        
+        // Find user by email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return sendResponse(res, 404, false, 'User not found');
+        }
+
+        // Create session
+        const userSessions = await user.getSessions();
+        await userSessions.createSession({
+            deviceId: 'oauth-' + Date.now(),
+            deviceInfo: { type: 'web', provider },
+            ipAddress: req.ip,
+            rememberMe: false
+        });
+
+        // Generate tokens
+        const accessToken = jwt.generateToken(user._id);
+        const refreshToken = jwt.generateRefreshToken(user._id);
+
+        // Log activity
+        await ActivityLog.create({
+            userId: user._id,
+            action: 'oauth_login',
+            details: { provider },
+            ipAddress: req.ip
+        });
+
+        logger.info(`OAuth login successful for user: ${user.email} via ${provider}`);
+
+        sendResponse(res, 200, true, 'OAuth login successful', {
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                avatar: user.avatar,
+                isEmailVerified: user.isEmailVerified
+            },
+            tokens: {
+                accessToken,
+                refreshToken
+            }
+        });
+    } catch (error) {
+        logger.error('OAuth login error:', error);
+        sendResponse(res, 500, false, 'Server error during OAuth login');
     }
 };

@@ -46,6 +46,8 @@ const handleNotificationSocket = (io) => {
 
         // Join user's personal notification room
         socket.join(`notifications:${socket.userId}`);
+        // Also join user's activity room for real-time activity stream
+        socket.join(`activities:${socket.userId}`);
         
         // Send unread notification count on connection
         socket.on('notifications:getUnreadCount', async () => {

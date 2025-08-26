@@ -22,8 +22,8 @@ export const generateThemeWithCustomColors = (
   primaryColor?: string,
   accentColor?: string
 ): Record<string, string> => {
-  const baseThemeVars = themes[baseTheme];
-  const customTheme: Record<string, string> = { ...baseThemeVars } as Record<string, string>;
+  const baseThemeVars: Record<string, string> = { ...themes[baseTheme] };
+  const customTheme: Record<string, string> = { ...baseThemeVars };
   
   // Apply custom primary color if provided
   if (primaryColor) {

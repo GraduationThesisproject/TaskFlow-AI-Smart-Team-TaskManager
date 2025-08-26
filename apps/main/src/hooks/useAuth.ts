@@ -5,7 +5,6 @@ import {
   registerUser, 
   logoutUser, 
   clearError,
-  checkAuthStatus,
   oauthLogin,
   oauthRegister,
   updateUser,
@@ -81,11 +80,10 @@ export const useAuth = () => {
 
   // OAuth login handler
   const handleOAuthLogin = useCallback(
-    async (provider: 'google' | 'github',) => {
+    async (provider: 'google' | 'github') => {
       try {
-        const callbackData: OAuthCallbackData = {  provider };
-        const result = await dispatch(oauthLogin(callbackData));
-        return result;
+        // This initiates OAuth flow, no code needed yet
+        return oauthService.initiateLogin(provider);
       } catch (error) {
         console.error('OAuth login error:', error);
         throw error;
@@ -97,9 +95,8 @@ export const useAuth = () => {
   const handleOAuthSignup = useCallback(
     async (provider: 'google' | 'github') => {
       try {
-        const callbackData: OAuthCallbackData = {provider };
-        const result = await dispatch(oauthRegister(callbackData));
-        return result;
+        // This initiates OAuth signup flow, no code needed yet
+        return oauthService.initiateSignup(provider);
       } catch (error) {
         console.error('OAuth signup error:', error);
         throw error;
@@ -110,9 +107,9 @@ export const useAuth = () => {
 
   // Handle OAuth callback
   const handleOAuthCallback = useCallback(
-    async (provider: 'google' | 'github') => {
+    async (code: string, provider: 'google' | 'github') => {
       const action = oauthService.getOAuthAction();
-      const callbackData: OAuthCallbackData = { provider };
+      const callbackData: OAuthCallbackData = { code, provider };
       
       if (action === 'login') {
         const result = await dispatch(oauthLogin(callbackData));

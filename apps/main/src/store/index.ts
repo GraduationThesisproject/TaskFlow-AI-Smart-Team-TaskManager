@@ -1,14 +1,16 @@
 import { configureStore } from '@reduxjs/toolkit';
+import { notificationsSocketMiddleware } from './middleware/notificationsSocketMiddleware';
 import { useDispatch, useSelector } from 'react-redux';
 import type { TypedUseSelectorHook} from 'react-redux';
 
 // Import reducers here
-
-// import workspaceReducer from './slices/workspaceSlice';
 import appReducer from './slices/appSlice.ts';
 import taskReducer from './slices/taskSlice.ts';
 import workspaceReducer from './slices/workspaceSlice.ts';
 import authReducer from './slices/authSlice.ts';
+import activityReducer from './slices/activitySlice';
+import notificationReducer from './slices/notificationSlice';
+import templatesReducer from './slices/templatesSlice.ts';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +18,9 @@ export const store = configureStore({
     tasks: taskReducer,
     workspace: workspaceReducer,
     auth: authReducer,
+    activity: activityReducer,
+    notifications: notificationReducer,
+    templates: templatesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -36,7 +41,7 @@ export const store = configureStore({
         // Warn about non-serializable values in development
         warnAfter: 128,
       },
-    }),
+    }).concat(notificationsSocketMiddleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
