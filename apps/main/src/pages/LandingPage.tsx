@@ -3,6 +3,8 @@ import { Routes, Route, Link } from "react-router-dom";
 import SignIn from "../layouts/Landing/SignIn";
 import SignUp from "../layouts/Landing/SignUP";
 import EmailVerification from "../layouts/Landing/EmailVerif";
+import RecoverPassword from "../layouts/Landing/RecoverPass";
+import ForgotPassword from "../layouts/Landing/ForgotPassword";
 import { Button } from "@taskflow/ui";
 import { Card, CardContent } from "@taskflow/ui";
 import { Input } from "@taskflow/ui";
@@ -359,6 +361,8 @@ export const LandingPage = () => {
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/verify-email" element={<EmailVerification />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<RecoverPassword />} />
             </Routes>
         </div>
     );

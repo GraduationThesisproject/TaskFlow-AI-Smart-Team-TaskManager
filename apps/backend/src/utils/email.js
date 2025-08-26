@@ -356,9 +356,19 @@ class EmailService {
         if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
             logger.warn('Email configuration missing. Email features will be disabled.');
             return;
+            
         }
 
-        this.transporter = nodemailer.createTransporter({
+        // For development, use console logging if using placeholder password
+        if (env.NODE_ENV === 'development' && 
+            (env.SMTP_PASS === "epwj octj wqlk zsbc" || 
+             env.SMTP_PASS.includes('your_') || 
+             env.SMTP_PASS.includes('placeholder'))) {
+            logger.warn('Using development mode - emails will be logged to console');
+            return;
+        }
+
+        this.transporter = nodemailer.createTransport({
             host: env.SMTP_HOST,
             port: env.SMTP_PORT,
             secure: env.SMTP_PORT == 465, // true for 465, false for other ports
@@ -385,6 +395,25 @@ class EmailService {
     async sendEmail({ to, subject, template, data = {}, attachments = [] }) {
         try {
             if (!this.transporter) {
+                // In development mode, log the email instead of sending it
+                if (env.NODE_ENV === 'development') {
+                    logger.info('📧 DEVELOPMENT MODE - Email would be sent:', {
+                        to,
+                        subject: template ? templates[template]?.subject : subject,
+                        template,
+                        data,
+                        resetUrl: data.resetUrl || 'N/A'
+                    });
+                    
+                    // For password reset, log the reset URL prominently
+                    if (template === 'password-reset' && data.resetUrl) {
+                        console.log('\n🔗 PASSWORD RESET URL (for testing):');
+                        console.log('   ' + data.resetUrl);
+                        console.log('   Copy this URL to test password reset\n');
+                    }
+                    
+                    return { messageId: 'dev-mode-' + Date.now() };
+                }
                 throw new Error('Email transporter not configured');
             }
 

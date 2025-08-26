@@ -312,16 +312,20 @@ const NotificationBell: React.FC = () => {
     clearError
   } = useNotifications();
 
+  // Ensure notifications is always an array
+  const notificationsArray = Array.isArray(notifications) ? notifications : [];
   const unreadCount = stats?.unread || 0;
-  const hasNotifications = notifications.length > 0;
+  const hasNotifications = notificationsArray.length > 0;
 
   // Debug: log notifications and invitations subset on change
   React.useEffect(() => {
     if (import.meta.env.VITE_ENABLE_DEBUG) {
-      const invites = notifications.filter(n => n.type === 'workspace_invitation' || n.type === 'space_invitation');
+      const invites = notificationsArray.filter(n => n.type === 'workspace_invitation' || n.type === 'space_invitation');
       console.log('🔔 [NotificationBell] Notifications updated', {
-        total: notifications.length,
+        total: notificationsArray.length,
         unread: unreadCount,
+        isArray: Array.isArray(notifications),
+        notificationsType: typeof notifications,
       });
       if (invites.length) {
         console.log('🧑‍🤝‍🧑 [NotificationBell] Invitation notifications', invites.map(i => ({
@@ -332,7 +336,7 @@ const NotificationBell: React.FC = () => {
         })));
       }
     }
-  }, [notifications, unreadCount]);
+  }, [notificationsArray, unreadCount, notifications]);
 
   // Clear error when component mounts or when error changes
   React.useEffect(() => {
@@ -462,7 +466,7 @@ const NotificationBell: React.FC = () => {
           </div>
         ) : (
           <div>
-            {notifications.slice(0, 10).map((notification) => (
+            {notificationsArray.slice(0, 10).map((notification) => (
               <div 
                 key={notification._id}
                 className={`p-3 border-b border-border hover:bg-muted/50 transition-colors ${
