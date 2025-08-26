@@ -2,10 +2,6 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { 
   Task, 
-  Column, 
-  Board, 
-  Space, 
-  Workspace, 
   TaskState, 
   CreateTaskForm, 
   UpdateTaskForm, 
@@ -13,8 +9,6 @@ import type {
   TaskFilters 
 } from '../../types/task.types';
 import { TaskService } from '../../services/taskService';
-import { BoardService } from '../../services/boardService';
-import { SpaceService } from '../../services/spaceService';
 
 // Async thunks for API calls
 export const fetchTasks = createAsyncThunk(
@@ -22,22 +16,6 @@ export const fetchTasks = createAsyncThunk(
   async (boardId: string) => {
     const response = await TaskService.getTasks({ boardId });
     return response.data?.items || response.data || [];
-  }
-);
-
-export const fetchBoard = createAsyncThunk(
-  'tasks/fetchBoard',
-  async (boardId: string) => {
-    const response = await BoardService.getBoard(boardId);
-    return response.data;
-  }
-);
-
-export const fetchSpace = createAsyncThunk(
-  'tasks/fetchSpace',
-  async (spaceId: string) => {
-    const response = await SpaceService.getSpace(spaceId);
-    return response.data;
   }
 );
 
@@ -86,22 +64,6 @@ export const fetchTasksBySpace = createAsyncThunk(
   async (spaceId: string) => {
     const response = await TaskService.getTasks({ spaceId });
     return response.data?.items || response.data || [];
-  }
-);
-
-export const fetchBoardsBySpace = createAsyncThunk(
-  'tasks/fetchBoardsBySpace',
-  async (spaceId: string) => {
-    const response = await BoardService.getBoardsBySpace(spaceId);
-    return response.data || [];
-  }
-);
-
-export const fetchColumnsByBoard = createAsyncThunk(
-  'tasks/fetchColumnsByBoard',
-  async (boardId: string) => {
-    const response = await BoardService.getColumnsByBoard(boardId);
-    return response.data || [];
   }
 );
 
@@ -156,13 +118,7 @@ export const stopTimeTracking = createAsyncThunk(
 // Initial state
 const initialState: TaskState = {
   tasks: [],
-  columns: [],
-  boards: [],
-  spaces: [],
-  workspaces: [], // This will be populated by the BoardService.getBoardsBySpace
   currentTask: null,
-  currentBoard: null,
-  currentSpace: null,
   loading: false,
   error: null,
   filters: {
@@ -180,7 +136,6 @@ const initialState: TaskState = {
   dragState: {
     isDragging: false,
     draggedTask: null,
-    draggedColumn: null,
     sourceColumn: null,
     targetColumn: null
   }
@@ -194,16 +149,6 @@ const taskSlice = createSlice({
     // Set current task
     setCurrentTask: (state, action: PayloadAction<Task | null>) => {
       state.currentTask = action.payload;
-    },
-    
-    // Set current board
-    setCurrentBoard: (state, action: PayloadAction<Board | null>) => {
-      state.currentBoard = action.payload;
-    },
-    
-    // Set current space
-    setCurrentSpace: (state, action: PayloadAction<Space | null>) => {
-      state.currentSpace = action.payload;
     },
     
     // Update filters
@@ -242,12 +187,11 @@ const taskSlice = createSlice({
     },
     
     // Start dragging
-    startDragging: (state, action: PayloadAction<{ task: Task; column: Column }>) => {
+    startDragging: (state, action: PayloadAction<{ task: Task; sourceColumn: string }>) => {
       state.dragState = {
         isDragging: true,
         draggedTask: action.payload.task,
-        draggedColumn: action.payload.column,
-        sourceColumn: action.payload.column._id,
+        sourceColumn: action.payload.sourceColumn,
         targetColumn: null
       };
     },
@@ -257,7 +201,6 @@ const taskSlice = createSlice({
       state.dragState = {
         isDragging: false,
         draggedTask: null,
-        draggedColumn: null,
         sourceColumn: null,
         targetColumn: null
       };
@@ -285,24 +228,6 @@ const taskSlice = createSlice({
       if (state.currentTask?._id === action.payload) {
         state.currentTask = null;
       }
-    },
-    
-    // Update column in real-time (for socket events)
-    updateColumnRealTime: (state, action: PayloadAction<Column>) => {
-      const index = state.columns.findIndex(col => col._id === action.payload._id);
-      if (index !== -1) {
-        state.columns[index] = action.payload;
-      }
-    },
-    
-    // Add column in real-time (for socket events)
-    addColumnRealTime: (state, action: PayloadAction<Column>) => {
-      state.columns.push(action.payload);
-    },
-    
-    // Remove column in real-time (for socket events)
-    removeColumnRealTime: (state, action: PayloadAction<string>) => {
-      state.columns = state.columns.filter(col => col._id !== action.payload);
     }
   },
   extraReducers: (builder) => {
@@ -319,38 +244,6 @@ const taskSlice = createSlice({
       .addCase(fetchTasks.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch tasks';
-      });
-    
-    // Fetch board
-    builder
-      .addCase(fetchBoard.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchBoard.fulfilled, (state, action) => {
-        state.loading = false;
-        state.currentBoard = action.payload;
-        // state.columns = getColumnsByBoard(action.payload._id); // This line is removed as per the new_code
-      })
-      .addCase(fetchBoard.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to fetch board';
-      });
-    
-    // Fetch space
-    builder
-      .addCase(fetchSpace.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchSpace.fulfilled, (state, action) => {
-        state.loading = false;
-        state.currentSpace = action.payload;
-        // state.boards = getBoardsBySpace(action.payload._id); // This line is removed as per the new_code
-      })
-      .addCase(fetchSpace.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to fetch space';
       });
     
     // Create task
@@ -433,8 +326,6 @@ const taskSlice = createSlice({
 // Export actions
 export const {
   setCurrentTask,
-  setCurrentBoard,
-  setCurrentSpace,
   updateFilters,
   clearFilters,
   updateSort,
@@ -445,10 +336,7 @@ export const {
   stopDragging,
   updateTaskRealTime,
   addTaskRealTime,
-  removeTaskRealTime,
-  updateColumnRealTime,
-  addColumnRealTime,
-  removeColumnRealTime
+  removeTaskRealTime
 } = taskSlice.actions;
 
 // Export reducer
@@ -456,12 +344,7 @@ export default taskSlice.reducer;
 
 // Selectors
 export const selectTasks = (state: { tasks: TaskState }) => state.tasks.tasks;
-export const selectColumns = (state: { tasks: TaskState }) => state.tasks.columns;
-export const selectBoards = (state: { tasks: TaskState }) => state.tasks.boards;
-export const selectSpaces = (state: { tasks: TaskState }) => state.tasks.spaces;
 export const selectCurrentTask = (state: { tasks: TaskState }) => state.tasks.currentTask;
-export const selectCurrentBoard = (state: { tasks: TaskState }) => state.tasks.currentBoard;
-export const selectCurrentSpace = (state: { tasks: TaskState }) => state.tasks.currentSpace;
 export const selectLoading = (state: { tasks: TaskState }) => state.tasks.loading;
 export const selectError = (state: { tasks: TaskState }) => state.tasks.error;
 export const selectFilters = (state: { tasks: TaskState }) => state.tasks.filters;
