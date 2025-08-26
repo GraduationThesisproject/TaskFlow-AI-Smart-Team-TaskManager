@@ -484,4 +484,10 @@ templateSchema.pre('save', function(next) {
   next();
 });
 
+// Auto-populate creator on all find queries
+templateSchema.pre(/^find/, function(next) {
+  this.populate('createdBy', 'name email displayName');
+  next();
+});
+
 module.exports = mongoose.model('Template', templateSchema);

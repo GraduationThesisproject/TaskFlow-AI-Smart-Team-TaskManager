@@ -46,3 +46,8 @@ body {
 [data-rbd-draggable-id] {
   user-select: none;
 }
+
+/* Root sizing retained to allow containers to manage scroll themselves */
+html, body, #root {
+  height: 100%;
+}

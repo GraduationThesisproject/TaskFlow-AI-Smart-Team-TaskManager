@@ -294,3 +294,74 @@ exports.exportAnalytics = async (req, res) => {
         sendResponse(res, 500, false, 'Server error exporting analytics');
     }
 };
+
+// Get current user's analytics
+exports.getUserAnalytics = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        // Frontend passes range like '1m' | '3m' | '6m' | '12m'. Map to periodType.
+        const { range = '3m' } = req.query;
+
+        // Map range to period type understood by service
+        // daily (1d) | weekly (7d) | monthly (30d) | quarterly (90d) | yearly (365d)
+        let periodType = 'monthly';
+        switch (range) {
+            case '1m': periodType = 'monthly'; break;
+            case '3m': periodType = 'quarterly'; break;
+            case '6m': periodType = 'yearly'; break; // closest aggregation window
+            case '12m': periodType = 'yearly'; break;
+            default: periodType = 'monthly';
+        }
+
+        const analyticsService = require('../services/analytics.service');
+        const analytics = await analyticsService.generateUserAnalytics(userId, { periodType, includeAI: false });
+
+        // Shape response for frontend expectations (safe fallbacks)
+        // Basic metrics
+        const tasksAssigned = analytics?.taskMetrics?.total || 0;
+        const tasksCompleted = analytics?.taskMetrics?.completed || 0;
+        const completionRate = analytics?.taskMetrics?.completionRate || 0;
+
+        // Last active
+        const lastActivity = await ActivityLog.findOne({ userId }).sort({ createdAt: -1 }).select('createdAt');
+
+        // Task status breakdown
+        const taskStatusBreakdown = {
+            completed: analytics?.taskMetrics?.completed || 0,
+            inProgress: analytics?.taskMetrics?.inProgress || 0,
+            pending: analytics?.taskMetrics?.todo || 0,
+            overdue: analytics?.taskMetrics?.overdue || 0
+        };
+
+        // Activity heatmap: transform activityTrend -> [{ date, value }]
+        const activityHeatmap = (analytics?.activityTrend || []).map(p => ({ date: p.date, value: p.activityCount }));
+
+        // Recent tasks (last 5 involving the user)
+        const recentTasksDocs = await Task.find({
+            $or: [{ assignees: userId }, { reporter: userId }]
+        }).sort({ updatedAt: -1 }).limit(5).select('title status updatedAt');
+
+        const recentTasks = recentTasksDocs.map(t => ({
+            id: t._id.toString(),
+            title: t.title,
+            status: t.status,
+            updatedAt: t.updatedAt
+        }));
+
+        // Optional fields not strictly needed by UI but included when available
+        // Projects concept maps closest to Spaces in this app; keep undefined to let UI fallback safely
+
+        return sendResponse(res, 200, true, 'User analytics retrieved successfully', {
+            tasksAssigned,
+            tasksCompleted,
+            completionRate,
+            lastActiveAt: lastActivity?.createdAt || null,
+            taskStatusBreakdown,
+            activityHeatmap,
+            recentTasks
+        });
+    } catch (error) {
+        logger.error('Get user analytics error:', error);
+        return sendResponse(res, 500, false, 'Server error retrieving user analytics');
+    }
+};

@@ -29,6 +29,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({ isOpen
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) newErrors.name = 'Template name required';
+    if (formData.name.trim().length > 10) newErrors.name = 'Name must be at most 10 characters';
     if (!formData.type) newErrors.type = 'Type is required';
     if (!formData.category) newErrors.category = 'Category is required';
     setErrors(newErrors);
@@ -96,6 +97,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({ isOpen
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               disabled={loading}
+              maxLength={10}
               className={errors.name ? 'border-destructive' : ''}
             />
             {errors.name && <Typography variant="caption" className="text-destructive">{errors.name}</Typography>}
