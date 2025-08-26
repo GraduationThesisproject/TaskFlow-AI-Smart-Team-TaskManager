@@ -100,6 +100,35 @@ export class WorkspaceService {
     }
   }
 
+  static async generateInviteLink(id: string): Promise<ApiResponse<{ link: string; enabled: boolean }>> {
+    try {
+      const response = await axiosInstance.get(`/workspaces/${id}/invite-link`);
+      return response.data;
+    } catch (error) {
+      console.error('Error generating invite link:', error);
+      throw error;
+    }
+  }
+
+  static async disableInviteLink(id: string): Promise<ApiResponse<{ link: string; enabled: boolean }>> {
+    try {
+      const response = await axiosInstance.post(`/workspaces/${id}/disable-invite-link`);
+      return response.data;
+    } catch (error) {
+      console.error('Error disabling invite link:', error);
+      throw error;
+    }
+  }
+
+  static async getWorkspaceInvitations(id: string): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await axiosInstance.get(`/invitations/entity/workspace/${id}?status=pending`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching workspace invitations:', error);
+      throw error;
+    }
+  }
   // Dev-only: force current authenticated user as owner for a workspace
   static async forceOwnerDev(id: string): Promise<ApiResponse<{ message: string }>> {
     try {

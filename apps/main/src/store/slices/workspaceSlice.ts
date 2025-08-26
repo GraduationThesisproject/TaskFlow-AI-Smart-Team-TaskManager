@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Space } from '../../types/task.types';
-import { WorkspaceService } from "../../services/D_workspaceService.ts";
+import { WorkspaceService, type InviteLinkInfo } from "../../services/D_workspaceService.ts";
 import { SpaceService } from '../../services/spaceService';
-import { workspaceService, type InviteLinkInfo } from '../../services/workspace.service.ts';
+
 import type { Workspace, WorkspaceMember, WorkspaceState as BaseWorkspaceState } from '../../types/workspace.types';
 
 // Async thunks - combining both implementations
@@ -14,7 +14,8 @@ export const fetchWorkspace = createAsyncThunk(
     // Backend returns data: { workspace: {...}, userRole: '...', userPermissions: {...} }
     return (response as any).workspace;
   }
-);
+)
+
 
 export const fetchWorkspaces = createAsyncThunk<Workspace[]>(
   'workspace/fetchWorkspaces',
@@ -24,6 +25,14 @@ export const fetchWorkspaces = createAsyncThunk<Workspace[]>(
     return Array.isArray((response as any)?.workspaces)
       ? (response as any).workspaces
       : [];
+  }
+);
+
+export const generateInviteLink = createAsyncThunk<InviteLinkInfo, { id: string }>(
+  'workspace/generateInviteLink',
+  async ({ id }) => {
+    const response = await WorkspaceService.generateInviteLink(id);
+    return response.data;
   }
 );
 
@@ -88,35 +97,17 @@ export const fetchSpace = createAsyncThunk(
 );
 
 // New thunks from the newer implementation
-export const fetchMembers = createAsyncThunk<WorkspaceMember[], { id: string; q?: string }>('workspace/fetchMembers', async ({ id, q }) => {
-  return workspaceService.getMembers(id, q ? { q } : undefined);
-});
-
 export const inviteMember = createAsyncThunk<WorkspaceMember, { id: string; email: string; role: 'member' | 'admin' }>(
   'workspace/inviteMember',
-  async ({ id, email, role }) => {
-    return workspaceService.inviteMember(id, { email, role });
+  async ({ id, email, role }, { rejectWithValue }) => {
+    try {
+      const response = await WorkspaceService.inviteMember(id, { email, role });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error|| 'Failed to invite member');
+    }
   }
 );
-
-export const removeMember = createAsyncThunk<{ memberId: string }, { id: string; memberId: string }>(
-  'workspace/removeMember',
-  async ({ id, memberId }) => {
-    await workspaceService.removeMember(id, memberId);
-    return { memberId };
-  }
-);
-
-export const generateInviteLink = createAsyncThunk<InviteLinkInfo, { id: string }>(
-  'workspace/generateInviteLink',
-  async ({ id }) => workspaceService.generateInviteLink(id)
-);
-
-export const disableInviteLink = createAsyncThunk<InviteLinkInfo, { id: string }>(
-  'workspace/disableInviteLink',
-  async ({ id }) => workspaceService.disableInviteLink(id)
-);
-
 // Update workspace settings
 export const updateWorkspaceSettings = createAsyncThunk<
   Workspace,
@@ -177,35 +168,18 @@ interface WorkspaceState extends BaseWorkspaceState {
   selectedSpace: Space | null;
   currentWorkspaceId: string | null;
   members: WorkspaceMember[];
-  inviteLink?: InviteLinkInfo;
   loading: boolean;
 }
 
-const getPersistedWorkspaceId = (): string | null => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('currentWorkspaceId');
-  }
-  return null;
-};
 
-const setPersistedWorkspaceId = (id: string | null): void => {
-  if (typeof window !== 'undefined') {
-    if (id) {
-      localStorage.setItem('currentWorkspaceId', id);
-    } else {
-      localStorage.removeItem('currentWorkspaceId');
-    }
-  }
-};
 
 const initialState: WorkspaceState = {
   workspaces: [],
   currentWorkspace: null,
   spaces: [],
   selectedSpace: null,
-  currentWorkspaceId: getPersistedWorkspaceId(),
+  currentWorkspaceId:null,
   members: [],
-  inviteLink: undefined,
   loading: false,
   isLoading: false,
   error: null,
@@ -232,7 +206,10 @@ const workspaceSlice = createSlice({
     },
     setCurrentWorkspaceId(state, action: PayloadAction<string | null>) {
       state.currentWorkspaceId = action.payload;
-      setPersistedWorkspaceId(action.payload);
+      
+    },
+    setCurrentWorkspace(state, action: PayloadAction<Workspace | null>) {
+      state.currentWorkspace = action.payload;
     },
     resetWorkspaceState: () => initialState,
   },
@@ -251,6 +228,22 @@ const workspaceSlice = createSlice({
       .addCase(fetchWorkspaces.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch workspaces';
+      })
+      //invite memebrs
+      .addCase(inviteMember.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(inviteMember.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (action.payload) {
+          state.members = [...state.members, action.payload];
+        }
+        state.error = null;
+      })
+      .addCase(inviteMember.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to invite member';
       })
       // Fetch public workspaces
       .addCase(fetchWorkspacesPublic.pending, (state) => {
@@ -292,13 +285,6 @@ const workspaceSlice = createSlice({
       .addCase(fetchWorkspace.fulfilled, (state, action) => {
         state.loading = false;
         state.currentWorkspace = action.payload;
-        if (!state.workspaces.find((w) => w._id === action.payload._id)) {
-          state.workspaces = [...state.workspaces, action.payload];
-        }
-        // Ensure members table has data even if fetchMembers hasn't run or failed
-        if (Array.isArray((action.payload as any).members)) {
-          state.members = (action.payload as any).members as unknown as WorkspaceMember[];
-        }
         state.error = null;
       })
       .addCase(fetchWorkspace.rejected, (state, action) => {
@@ -342,6 +328,9 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to update workspace settings';
       })
+      
+      }})
+
 
       // Fetch members
       .addCase(fetchMembers.pending, (state) => {

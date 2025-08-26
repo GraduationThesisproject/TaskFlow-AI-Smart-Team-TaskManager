@@ -44,7 +44,7 @@ const MembersTable: React.FC<MembersTableProps> = ({
     <section
       className="mb-5 rounded-xl p-4 ring-1 shadow-[0_0_10px_hsl(var(--accent))] 
          ring-1 ring-primary/20 
-         backdrop-blur bg-neutral-100"
+         backdrop-blur bg-background"
     >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
@@ -68,7 +68,7 @@ const MembersTable: React.FC<MembersTableProps> = ({
       <div className="overflow-hidden rounded-lg">
         <table className="w-full table-auto border-separate border-spacing-y-2">
           <thead>
-            <tr className="text-left text-sm " style={{ color: 'hsl(var(--neutral-1000))' }}>
+            <tr className="text-left text-sm " style={{ color: 'hsl(var(--primary-foreground))' }}>
               <th className="px-3 py-2 border-b border-neutral-100 ">Member</th>
               <th className="px-3 py-2 border-b border-neutral-100">Email</th>
               <th className="px-3 py-2 border-b border-neutral-100">Role</th>

@@ -192,11 +192,11 @@ function SettingsLayout() {
   const newGuestSharingSetting = !!settings?.permissions?.allowGuestInvites ? 'Only admins can invite guests' : 'Anyone can invite guests';
 
   return (
-    <div className="flex min-h-screen text-[hsl(var(--foreground))]">
+    <div className="flex min-h-screen text-[hsl(var(--foreground))] ">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <div>
-          <div className="bg-neutral-0 shadow-[0_0_0_1px_rgba(0,232,198,0.12),_0_8px_30px_-12px_rgba(0,232,198,0.25)] ring-1 ring-accent/10 px-5 sm:px-6 lg:px-8 py-6">
+          <div className="bg-background shadow-[0_0_0_1px_rgba(0,232,198,0.12),_0_8px_30px_-12px_rgba(0,232,198,0.25)] ring-1 ring-accent/10 px-5 sm:px-6 lg:px-8 py-6">
             <SettingsHeader title="Workspace Settings" status={currentVisibility} />
             <SettingsList
               sections={sections}
