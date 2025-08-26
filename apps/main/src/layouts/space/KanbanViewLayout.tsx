@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import type { DropResult } from 'react-beautiful-dnd';
-import { useTaskManager } from '../../hooks';
+import { useSpaceTasks } from '../../hooks';
 import { useTheme } from '../../hooks';
-import type { Task, Column } from '../../types/task.types';
+import type { Task, Column } from '../../store/slices/taskSlice';
 import { 
   Card, 
   CardContent, 
@@ -28,7 +28,7 @@ export const KanbanViewLayout: React.FC = () => {
   const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState<string>('');
 
-  // Use the task manager hook
+  // Use the space tasks hook
   const {
     tasks,
     columns,
@@ -37,15 +37,22 @@ export const KanbanViewLayout: React.FC = () => {
     loading,
     error,
     taskStats,
+    tasksByColumn,
+    socketConnected,
     addTask,
     addColumn,
+    moveTaskToColumn,
     removeTask,
     editColumn,
     removeColumn,
-    reorderColumns,
+    reorderColumnsAction,
     selectTask,
     selectBoard,
-  } = useTaskManager();
+  } = useSpaceTasks({
+    spaceId,
+    boardId,
+    autoConnect: true,
+  });
 
   // Handle task creation
   const handleAddTask = async (taskData: Partial<Task>) => {
@@ -55,7 +62,7 @@ export const KanbanViewLayout: React.FC = () => {
         ...taskData,
         space: spaceId!,
         board: boardId!,
-        position: 0, // Will be calculated by the backend
+        position: tasksByColumn[taskData.column!]?.length || 0,
       });
     } catch (error) {
       console.error('Failed to add task:', error);
@@ -98,16 +105,14 @@ export const KanbanViewLayout: React.FC = () => {
       const taskId = result.draggableId;
 
       try {
-        // TODO: Implement moveTask functionality in the new hook structure
-        console.log('Moving task', taskId, 'from', sourceColumnId, 'to', destinationColumnId);
+        await moveTaskToColumn(taskId, destinationColumnId, destination.index);
       } catch (error) {
         console.error('Failed to move task:', error);
       }
     } else if (type === 'COLUMN') {
       // Handle column reordering
       try {
-        // TODO: Implement column reordering with proper column IDs
-        console.log('Reordering columns from', source.index, 'to', destination.index);
+        await reorderColumnsAction(source.index, destination.index);
       } catch (error) {
         console.error('Failed to reorder columns:', error);
       }

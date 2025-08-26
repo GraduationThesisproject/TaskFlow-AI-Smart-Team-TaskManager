@@ -4,9 +4,11 @@ const UserPreferences = require('../models/UserPreferences');
 const ActivityLog = require('../models/ActivityLog');
 const Invitation = require('../models/Invitation');
 const jwt = require('../utils/jwt');
+const { generateToken } = require('../utils/jwt');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
+const passport = require('passport');
 const { error } = require('console');
 
 
@@ -210,12 +212,10 @@ exports.getMe = async (req, res) => {
             return sendResponse(res, 404, false, 'User not found');
         }
 
-        // Get related data
-        const [preferences, sessions, roles] = await Promise.all([
-            user.getPreferences(),
-            user.getSessions(),
-            user.getRoles()
-        ]);
+        // Get related data sequentially to avoid parallel save conflicts
+        const preferences = await user.getPreferences();
+        const sessions = await user.getSessions();
+        const roles = await user.getRoles();
 
         // Ensure avatar is populated so client gets URL
         await user.populate({ path: 'avatar', select: 'url thumbnails' });
@@ -746,4 +746,185 @@ exports.getActivityLog = async (req, res) => {
         logger.error('Get activity log error:', error);
         sendResponse(res, 500, false, 'Server error retrieving profile');
     }
+};
+
+
+
+// Google OAuth login
+exports.googleLogin = (req, res, next) => {
+    console.log('🔵 Google OAuth Login Started');
+    console.log('🔵 Request query params:', req.query);
+    console.log('🔵 Request headers:', req.headers);
+    
+    // Check if Google OAuth strategy is available
+    if (!passport._strategies || !passport._strategies.google) {
+        console.log('❌ Google OAuth strategy not available');
+        return sendResponse(res, 503, false, 'Google OAuth is not configured');
+    }
+    
+    console.log('✅ Google OAuth strategy found, proceeding with authentication');
+    console.log('🔵 Redirecting to Google OAuth...');
+    
+    // Use the scope from query params if provided, otherwise use default
+    const scope = req.query.scope || 'profile email';
+    
+    passport.authenticate('google', {
+        scope: scope.split(' '),
+        accessType: req.query.access_type || 'offline',
+        prompt: req.query.prompt || 'consent'
+    })(req, res, next);
+};
+// Google OAuth callback
+exports.googleCallback = async (req, res, next) => {
+    console.log('🔵 Google OAuth Callback Started');
+    console.log('🔵 Request query params:', req.query);
+    console.log('🔵 Request headers:', req.headers);
+    
+    // Check if Google OAuth strategy is available
+    if (!passport._strategies || !passport._strategies.google) {
+        console.log('❌ Google OAuth strategy not available');
+        return sendResponse(res, 503, false, 'Google OAuth is not configured');
+    }
+    
+    console.log('🔵 Google OAuth strategy found, proceeding with authentication');
+    
+    passport.authenticate('google', { session: false }, async (err, user) => {
+        console.log('🔵 Passport authenticate callback executed');
+        console.log('🔵 Error:', err);
+        console.log('🔵 User object:', user);
+        
+        if (err) {
+            console.log('❌ Google OAuth error occurred:', err);
+            logger.error('Google OAuth error:', err);
+            return sendResponse(res, 500, false, 'Authentication failed');
+        }
+        
+        if (!user) {
+            console.log('❌ No user returned from Google OAuth');
+            return sendResponse(res, 401, false, 'Authentication failed');
+        }
+        
+        console.log('✅ Google OAuth user authenticated successfully');
+        console.log('✅ User details:', {
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            provider: user.provider,
+            avatar: user.avatar
+        });
+        
+        try {
+            // Update last login
+            console.log('🔵 Updating last login timestamp');
+            user.lastLogin = new Date();
+            await user.save();
+            console.log('✅ Last login updated successfully');
+            
+            // Generate token
+            console.log('🔵 Generating JWT token for user:', user._id);
+            const token = generateToken(user._id);
+            console.log('✅ JWT token generated successfully');
+            console.log('✅ Token (first 20 chars):', token.substring(0, 20) + '...');
+            
+            // Redirect to frontend with token
+            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=google`;
+            console.log('🔵 Redirecting to frontend with token');
+            console.log('🔵 Redirect URL:', redirectUrl);
+            
+            res.redirect(redirectUrl);
+            console.log('✅ Google OAuth callback completed successfully');
+        } catch (error) {
+            console.log('❌ Google callback error occurred:', error);
+            logger.error('Google callback error:', error);
+            return sendResponse(res, 500, false, 'Authentication failed');
+        }
+    })(req, res, next);
+};
+// GitHub OAuth login
+exports.githubLogin = (req, res, next) => {
+    console.log('🟣 GitHub OAuth Login Started');
+    console.log('🟣 Request query params:', req.query);
+    console.log('🟣 Request headers:', req.headers);
+    
+    // Check if GitHub OAuth strategy is available
+    if (!passport._strategies || !passport._strategies.github) {
+        console.log('❌ GitHub OAuth strategy not available');
+        return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
+    }
+    
+    console.log('✅ GitHub OAuth strategy found, proceeding with authentication');
+    console.log('🟣 Redirecting to GitHub OAuth...');
+    
+    // Use the scope from query params if provided, otherwise use default
+    const scope = req.query.scope || 'user:email';
+    
+    passport.authenticate('github', {
+        scope: scope.split(' ')
+    })(req, res, next);
+};
+// GitHub OAuth callback
+exports.githubCallback = async (req, res, next) => {
+    console.log('🟣 GitHub OAuth Callback Started');
+    console.log('🟣 Request query params:', req.query);
+    console.log('🟣 Request headers:', req.headers);
+    
+    // Check if GitHub OAuth strategy is available
+    if (!passport._strategies || !passport._strategies.github) {
+        console.log('❌ GitHub OAuth strategy not available');
+        return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
+    }
+    
+    console.log('🟣 GitHub OAuth strategy found, proceeding with authentication');
+    
+    passport.authenticate('github', { session: false }, async (err, user) => {
+        console.log('🟣 Passport authenticate callback executed');
+        console.log('🟣 Error:', err);
+        console.log('🟣 User object:', user);
+        
+        if (err) {
+            console.log('❌ GitHub OAuth error occurred:', err);
+            logger.error('GitHub OAuth error:', err);
+            return sendResponse(res, 500, false, 'Authentication failed');
+        }
+        
+        if (!user) {
+            console.log('❌ No user returned from GitHub OAuth');
+            return sendResponse(res, 401, false, 'Authentication failed');
+        }
+        
+        console.log('✅ GitHub OAuth user authenticated successfully');
+        console.log('✅ User details:', {
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            provider: user.provider,
+            avatar: user.avatar
+        });
+        
+        try {
+            // Update last login
+            console.log('🟣 Updating last login timestamp');
+            user.lastLogin = new Date();
+            await user.save();
+            console.log('✅ Last login updated successfully');
+            
+            // Generate token
+            console.log('🟣 Generating JWT token for user:', user._id);
+            const token = generateToken(user._id);
+            console.log('✅ JWT token generated successfully');
+            console.log('✅ Token (first 20 chars):', token.substring(0, 20) + '...');
+            
+            // Redirect to frontend with token
+            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=github`;
+            console.log('🟣 Redirecting to frontend with token');
+            console.log('🟣 Redirect URL:', redirectUrl);
+            
+            res.redirect(redirectUrl);
+            console.log('✅ GitHub OAuth callback completed successfully');
+        } catch (error) {
+            console.log('❌ GitHub callback error occurred:', error);
+            logger.error('GitHub callback error:', error);
+            return sendResponse(res, 500, false, 'Authentication failed');
+        }
+    })(req, res, next);
 };

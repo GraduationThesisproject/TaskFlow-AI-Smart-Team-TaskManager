@@ -6,9 +6,6 @@ import type { TypedUseSelectorHook} from 'react-redux';
 // Import reducers here
 import appReducer from './slices/appSlice.ts';
 import taskReducer from './slices/taskSlice.ts';
-import boardReducer from './slices/boardSlice.ts';
-import columnReducer from './slices/columnSlice.ts';
-import spaceReducer from './slices/spaceSlice.ts';
 import workspaceReducer from './slices/workspaceSlice.ts';
 import authReducer from './slices/authSlice.ts';
 import activityReducer from './slices/activitySlice';
@@ -19,9 +16,6 @@ export const store = configureStore({
   reducer: {
     app: appReducer,
     tasks: taskReducer,
-    boards: boardReducer,
-    columns: columnReducer,
-    spaces: spaceReducer,
     workspace: workspaceReducer,
     auth: authReducer,
     activity: activityReducer,

@@ -201,6 +201,21 @@ Removes stored tokens from browser
     }
   }
 
+  // OAuth Token Exchange
+  static async oauthTokenExchange(code: string, provider: string, redirectUri: string): Promise<any> {
+    try {
+      const response = await axiosInstance.post('/auth/oauth/token-exchange', {
+        code,
+        provider,
+        redirectUri
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error with OAuth token exchange:', error);
+      throw error;
+    }
+  }
+
   // OAuth Register
   static async oauthRegister(oauthData: OAuthUserData): Promise<ApiResponse<AuthResponse>> {
     try {
@@ -249,7 +264,7 @@ Removes stored tokens from browser
   // Request password reset
   static async requestPasswordReset(resetData: PasswordResetRequestData): Promise<ApiResponse<{ message: string }>> {
     try {
-      const response = await axiosInstance.post('/auth/request-password-reset', resetData);
+      const response = await axiosInstance.post('/auth/password-reset/request', resetData);
       return response.data;
     } catch (error) {
       console.error('Error requesting password reset:', error);
@@ -260,7 +275,7 @@ Removes stored tokens from browser
   // Reset password
   static async resetPassword(resetData: PasswordResetData): Promise<ApiResponse<{ message: string }>> {
     try {
-      const response = await axiosInstance.post('/auth/reset-password', resetData);
+      const response = await axiosInstance.post('/auth/password-reset/confirm', resetData);
       return response.data;
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -271,7 +286,7 @@ Removes stored tokens from browser
 
 // Additional auth endpoints mapped to backend auth.controller routes
 export class AuthControllerClient {
-  // PUT /api/auth/profile (JSON)
+  // ... (rest of the code remains the same)
   static async updateProfile(payload: { name?: string; avatar?: string; preferences?: any; metadata?: any }): Promise<ApiResponse<any>> {
     try {
       const response = await axiosInstance.put('/auth/profile', payload);
