@@ -1,7 +1,7 @@
 const express = require('express');
 const workspaceController = require('../controllers/workspace.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { requireWorkspacePermission, requireWorkspaceMember, requireWorkspaceAdmin } = require('../middlewares/permission.middleware');
+const {requireWorkspacePermission, requireWorkspaceMember, requireWorkspaceAdmin } = require('../middlewares/permission.middleware');
 
 const router = express.Router();
 
@@ -37,8 +37,13 @@ const transferOwnershipSchema = {
 router.get('/', workspaceController.getAllWorkspaces);
 
 router.get('/:id', 
-    requireWorkspaceMember,
     workspaceController.getWorkspace
+);
+
+// Generate invite link for workspace
+router.get('/:id/invite-link', 
+    
+    workspaceController.generateInviteLink
 );
 
 router.post('/', 
@@ -63,7 +68,6 @@ router.post('/accept-invitation/:token',
 );
 
 router.get('/:id/members',
-    requireWorkspaceMember,
     workspaceController.getWorkspaceMembers
 );
 
@@ -79,7 +83,7 @@ router.put('/:id/settings',
 );
 
 router.get('/:id/analytics',
-    requireWorkspaceMember,
+
     workspaceController.getWorkspaceAnalytics
 );
 

@@ -28,7 +28,7 @@ const VisibilitySettingsModal: React.FC<VisibilitySettingsModalProps> = ({
     >
       <ModalBody>
         <div className="space-y-3">
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+          <div className="p-3 bg-background border border-yellow-200 rounded-md">
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
