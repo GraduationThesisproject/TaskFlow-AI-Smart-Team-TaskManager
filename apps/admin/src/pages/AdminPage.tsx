@@ -18,7 +18,8 @@ import {
   UserIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  ChatBubbleLeftIcon
 } from '@heroicons/react/24/outline';
 
 // Import NotificationBell component
@@ -34,6 +35,8 @@ import SystemHealthLayout from '../layouts/SystemHealthLayout';
 import NotificationsLayout from '../layouts/NotificationsLayout';
 import SettingsLayout from '../layouts/SettingsLayout';
 import ProfileLayout from '../layouts/ProfileLayout';
+import PowerBILayout from '../layouts/PowerBILayout';
+import ChatLayout from '../layouts/ChatLayout';
 
 // Import language context and translation hook
 import { useLanguageContext } from '../contexts/LanguageContext';
@@ -93,17 +96,31 @@ const AdminPage: React.FC = () => {
       layout: IntegrationsLayout
     },
     {
-      name: t('navigation.systemHealth'),
+      name: 'System Health',
       path: '/system-health',
       icon: HeartIcon,
       description: 'Monitor system performance and health',
       layout: SystemHealthLayout
     },
     {
-      name: t('navigation.notifications'),
+      name: 'Power BI',
+      path: '/powerbi',
+      icon: ChartBarIcon,
+      description: 'Power BI reports and analytics',
+      layout: PowerBILayout
+    },
+    {
+      name: 'Customer Support',
+      path: '/chat',
+      icon: ChatBubbleLeftIcon,
+      description: 'Manage customer support chats and inquiries',
+      layout: ChatLayout
+    },
+    {
+      name: 'Notifications',
       path: '/notifications',
       icon: BellIcon,
-      description: 'System announcements and communication',
+      description: 'Manage system notifications and alerts',
       layout: NotificationsLayout
     },
     {

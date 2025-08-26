@@ -158,4 +158,3 @@ module.exports = {
 
 // Export default as authMiddleware for backward compatibility
 module.exports.default = authMiddleware;
-module.exports = authMiddleware;

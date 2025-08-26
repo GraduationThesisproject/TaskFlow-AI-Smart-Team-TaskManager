@@ -1,6 +1,6 @@
 const express = require('express');
 const authController = require('../controllers/auth.controller');
-const authMiddleware = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const { uploadMiddlewares, processUploadedFiles, createUploadMiddleware } = require('../middlewares/upload.middleware');
 const { rateLimitSensitiveOps } = require('../middlewares/permission.middleware');

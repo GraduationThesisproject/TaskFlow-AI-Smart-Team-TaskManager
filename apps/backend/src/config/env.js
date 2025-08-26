@@ -11,7 +11,7 @@ module.exports = {
     // Database
     DATABASE_URL: process.env.DATABASE_URL || 'mongodb://localhost:27017/taskflow',
     /*DATABASE_URL → where MongoDB is located.
-If .env doesn’t have it, it falls back to mongodb://localhost:27017/taskflow (local MongoDB).*/
+If .env doesn't have it, it falls back to mongodb://localhost:27017/taskflow (local MongoDB).*/
 
     // JWT
     JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key-here',
@@ -79,4 +79,12 @@ SMTP_PASS → your email password or API key.
 UPLOAD_DIR → the folder where uploaded files are stored.
 
 MAX_FILE_SIZE → maximum allowed file size (here 10 MB). */
+
+    // Power BI Configuration
+    POWERBI_CLIENT_ID: process.env.POWERBI_CLIENT_ID,
+    POWERBI_CLIENT_SECRET: process.env.POWERBI_CLIENT_SECRET,
+    POWERBI_TENANT_ID: process.env.POWERBI_TENANT_ID,
+    /*POWERBI_CLIENT_ID → Azure AD app registration client ID for Power BI API access.
+    POWERBI_CLIENT_SECRET → Azure AD app registration client secret.
+    POWERBI_TENANT_ID → Azure AD tenant ID for your organization.*/
 };

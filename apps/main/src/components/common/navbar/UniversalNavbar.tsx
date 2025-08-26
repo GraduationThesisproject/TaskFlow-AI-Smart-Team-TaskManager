@@ -22,7 +22,8 @@ export default function UniversalNavbar({
   user, 
   onLogout, 
   isAuthenticated = false, 
-  className = "" 
+  className = "",
+  onChatClick
 }: UniversalNavbarProps) {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -91,7 +92,7 @@ export default function UniversalNavbar({
         </NavbarCenter>
 
         <NavbarRight>
-          <DashboardActions />
+          <DashboardActions onChatClick={onChatClick} />
           <ThemeToggleButton />
           <NotificationButton count={notificationCount} />
           <UserProfile user={user} onLogout={onLogout} />
