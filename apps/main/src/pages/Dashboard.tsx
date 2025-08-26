@@ -11,14 +11,10 @@ const Dashboard: React.FC = () => {
     <div>
       <Routes>
         <Route path="" element={<Home/>} />
-        <Route path="workspaces" element={<WorkspacesLayout/>} />
-        <Route path="Templates" element={<Templates/>} />
-        <Route path="Settings" element={<Settings/>} />
-        <Route path="analytics" element={<UserAnalyticsLayout/>} />
+        <Route path="/settings" element={<Settings/>} />
         <Route path="/home" element={<Home/>} />
         <Route path="/workspaces" element={<WorkspacesLayout/>} />
         <Route path="/templates" element={<Templates/>} />
-        <Route path="/settings" element={<Settings/>} />
         <Route path="/analytics" element={<UserAnalyticsLayout/>} />
       </Routes>
     </div>
