@@ -11,18 +11,15 @@ import { Modal, ModalBody, ModalFooter } from '@taskflow/ui';
 import { Button } from '@taskflow/ui';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { useLocation } from 'react-router-dom';
-import { workspaceService } from '../../services/workspace.service';
 import {
   fetchWorkspace,
-  fetchMembers,
-  removeMember,
-  generateInviteLink,
-  disableInviteLink,
   selectMembers,
   selectWorkspaceLoading,
   selectWorkspaceError,
   setCurrentWorkspaceId,
+  generateInviteLink,
 } from '../../store/slices/workspaceSlice';
+import { WorkspaceService} from '../../services';
 
 interface User {
   _id?: string;
@@ -44,6 +41,7 @@ const Main = () => {
   const location = useLocation();
   const query = new URLSearchParams(location.search);
   const rawWorkspaceId = query.get('id') || '';
+  console.log(rawWorkspaceId);
   const isValidObjectId = (v: string) => /^[0-9a-fA-F]{24}$/.test(v);
   const currentWorkspace = useAppSelector((s: any) => s.workspace.currentWorkspace);
   const workspaces = useAppSelector((s: any) => s.workspace.workspaces) as Array<{ _id: string }> | undefined;
@@ -75,7 +73,6 @@ const Main = () => {
     console.log('Loading workspace data for ID:', workspaceId);
     dispatch(setCurrentWorkspaceId(workspaceId));
     dispatch(fetchWorkspace(workspaceId));
-    dispatch(fetchMembers({ id: workspaceId }));
   }, [dispatch, workspaceId]);
 
   // Debug logging for members data
@@ -117,7 +114,7 @@ const Main = () => {
       console.warn('[Workspace] Cannot remove member: missing/invalid workspace id.');
       return;
     }
-    dispatch(removeMember({ id: workspaceId, memberId }));
+    
   };
   
   // For Invite Section button - Generate shareable link and show in modal
@@ -147,7 +144,7 @@ const Main = () => {
     // TODO: Open a form modal to collect email and role, then call workspaceService.inviteMember
     const email = prompt('Enter email address to invite:');
     if (email) {
-      workspaceService.inviteMember(workspaceId, { email, role: 'member' })
+      WorkspaceService.inviteMember(workspaceId, { email, role: 'member' })
         .then(() => {
           alert('Invitation sent successfully!');
         })
@@ -168,7 +165,6 @@ const Main = () => {
       console.warn('[Workspace] Cannot disable invite: missing/invalid workspace id.');
       return;
     }
-    dispatch(disableInviteLink({ id: workspaceId }));
   };
 
     // Auto-fire API search when user types 2+ chars (debounced)
@@ -181,20 +177,20 @@ const Main = () => {
         return;
       }
       const t = setTimeout(async () => {
-        try {
-          const apiMembers = await workspaceService.getMembers(workspaceId, { q });
-          // eslint-disable-next-line no-console
-          console.log('[API members search]', { query: q, count: apiMembers.length, members: apiMembers });
-        } catch (err) {
-          // eslint-disable-next-line no-console
-          console.error('[API members search error]', err);
-        }
+        // try {
+        //   const apiMembers = await workspaceService.getMembers(workspaceId, { q });
+        //   // eslint-disable-next-line no-console
+        //   console.log('[API members search]', { query: q, count: apiMembers.length, members: apiMembers });
+        // } catch (err) {
+        //   // eslint-disable-next-line no-console
+        //   console.error('[API members search error]', err);
+        // }
       }, 300);
       return () => clearTimeout(t);
     }, [search, workspaceId]);
 
   return (
-    <div className="flex min-h-screen bg-neutral-0">
+    <div className="flex min-h-screen bg-background">
       <Sidebar />
       <div className="flex-1 p-6">
         <PageHeader />
@@ -240,14 +236,14 @@ const Main = () => {
                   type="text"
                   value={generatedInviteLink}
                   readOnly
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm text-black"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-background text-sm text-black"
                 />
                 <Button onClick={copyInviteLink} variant="outline" size="sm">
                   Copy
                 </Button>
               </div>
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm ">
               <p>• This link will expire in 7 days</p>
               <p>• Anyone with this link can join your workspace</p>
               <p>• You can disable this link anytime using "Disable invite link"</p>

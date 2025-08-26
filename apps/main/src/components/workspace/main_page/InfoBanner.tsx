@@ -9,7 +9,7 @@ const InfoBanner: React.FC<InfoBannerProps> = ({ workspaceId }) => {
     <div
       className="mb-4 p-3 ring-1 flex flex-row items-center gap-2 rounded-md shadow-[0_0_10px_hsl(var(--accent))] 
          ring-1 ring-primary/20 
-         backdrop-blur bg-neutral-100"
+         backdrop-blur bg-background"
       style={{
         background: 'linear-gradient(90deg, hsl(var(--info)) 0%, hsl(var(--accent)) 100%)',
         color: 'hsl(var(--primary-foreground))',

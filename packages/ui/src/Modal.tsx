@@ -20,7 +20,7 @@ const modalOverlayVariants = cva(
 );
 
 const modalContentVariants = cva(
-  "relative z-50 w-full max-h-[90vh] overflow-auto bg-card border border-border rounded-lg shadow-xl",
+  "relative z-50 w-full max-h-[90vh] overflow-auto bg-background border border-border rounded-lg shadow-xl",
   {
     variants: {
       size: {

@@ -26,7 +26,7 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({ title, status }) => {
         <Typography variant="h1" className="text-3xl font-bold">
           {title}
         </Typography>
-        <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 text-neutral-200 text-xs font-medium px-2 py-0.5">
+        <span className="inline-flex items-center gap-1 rounded-md bg-background text-xs font-medium px-2 py-0.5">
           {status}
         </span>
       </div>
