@@ -1,11 +1,10 @@
 import { useEffect, useCallback, useMemo } from 'react';
-import { env } from '../config/env';
 import { useAppDispatch, useAppSelector } from '../store';
 import { 
   fetchWorkspaces,
-  fetchWorkspacesPublic,
   fetchWorkspace, 
   fetchSpacesByWorkspace,
+  inviteMember,
   generateInviteLink,
   createWorkspace,
   deleteWorkspace
@@ -24,17 +23,22 @@ interface UseWorkspacesReturn {
   spaces: any[];
   selectedSpace: any;
   members: any[];
+  // Optional because invite link state/handler may not be wired in all contexts yet
+  inviteLink?: any;
   loading: boolean;
   error: string | null;
   
   // Actions
   loadWorkspace: (id: string) => void;
   loadSpaces: (id: string) => void;
-  loadMembers: (id: string) => void;
+  // Optional: not implemented in this hook currently
+  loadMembers?: (id: string) => void;
   inviteNewMember: (email: string, role: 'member' | 'admin') => Promise<void>;
-  removeWorkspaceMember: (memberId: string) => Promise<void>;
+  // Optional: not implemented in this hook currently
+  removeWorkspaceMember?: (memberId: string) => Promise<void>;
   createInviteLink: () => Promise<void>;
-  disableWorkspaceInviteLink: () => Promise<void>;
+  // Optional: not implemented in this hook currently
+  disableWorkspaceInviteLink?: () => Promise<void>;
   createNewWorkspace: (workspaceData: {
     name: string;
     description?: string;
@@ -48,11 +52,11 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
   const dispatch = useAppDispatch();
   
   // Handle both old string parameter and new object parameter for backward compatibility
-  const { workspaceId, autoFetch = true, global = false, public: isPublic = false } = useMemo(() => {
+  const { workspaceId, autoFetch = true} = useMemo(() => {
     if (typeof params === 'string') {
-      return { workspaceId: params, autoFetch: true, global: false, public: false };
+      return { workspaceId: params, autoFetch: true };
     }
-    return params || { autoFetch: true, global: false, public: false };
+    return params || { autoFetch: true };
   }, [params]);
   
   const {
@@ -67,68 +71,43 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
   } = useAppSelector(state => state.workspace);
 
   const loadWorkspace = useCallback((id: string) => {
-    if (env.ENABLE_DEBUG) {
-      console.log('🏢 Loading workspace:', id);
-    }
+    
     dispatch(fetchWorkspace(id) as any);
   }, [dispatch]);
 
   const loadSpaces = useCallback((id: string) => {
-    if (env.ENABLE_DEBUG) {
-      console.log('🏗️ Loading spaces for workspace:', id);
-    }
+
     dispatch(fetchSpacesByWorkspace(id) as any);
   }, [dispatch]);
 
-  const loadMembers = useCallback((id: string) => {
-    if (env.ENABLE_DEBUG) {
-      console.log('👥 Loading members for workspace:', id);
-    }
-  }, [dispatch]);
+
 
   const refetchWorkspaces = useCallback(() => {
-    if (env.ENABLE_DEBUG) {
-      console.log('🔄 Refetching all workspaces', isPublic ? '(public)' : '(scoped)');
-    }
-    if (isPublic) {
-      dispatch(fetchWorkspacesPublic() as any);
-    } else {
-      dispatch(fetchWorkspaces() as any);
-    }
-  }, [dispatch, isPublic]);
+  
+    dispatch(fetchWorkspaces() as any);
+  }, [dispatch]);
 
   const inviteNewMember = useCallback(async (email: string, role: 'member' | 'admin') => {
     if (!workspaceId) throw new Error('No workspace selected');
-    if (env.ENABLE_DEBUG) {
-      console.log('📧 Inviting member:', email, 'as', role);
+    
+    try {
+      await dispatch(inviteMember({ id: workspaceId, email, role }) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to invite member:', error);
+      throw error;
     }
   }, [dispatch, workspaceId]);
 
-  const removeWorkspaceMember = useCallback(async (memberId: string) => {
-    if (!workspaceId) throw new Error('No workspace selected');
-    if (env.ENABLE_DEBUG) {
-      console.log('🗑️ Removing member:', memberId);
-    }
-  }, [dispatch, workspaceId]);
+ 
 
   const createInviteLink = useCallback(async () => {
     if (!workspaceId) throw new Error('No workspace selected');
-    if (env.ENABLE_DEBUG) {
-      console.log('🔗 Creating invite link for workspace:', workspaceId);
-    }
     
     try {
       await dispatch(generateInviteLink({ id: workspaceId }) as any).unwrap();
     } catch (error) {
       console.error('Failed to generate invite link:', error);
       throw error;
-    }
-  }, [dispatch, workspaceId]);
-
-  const disableWorkspaceInviteLink = useCallback(async () => {
-    if (!workspaceId) throw new Error('No workspace selected');
-    if (env.ENABLE_DEBUG) {
-      console.log('🚫 Disabling invite link for workspace:', workspaceId);
     }
   }, [dispatch, workspaceId]);
 
@@ -139,9 +118,7 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
     description?: string;
     visibility: 'private' | 'public';
   }) => {
-    if (env.ENABLE_DEBUG) {
-      console.log('➕ Creating new workspace:', workspaceData.name);
-    }
+    
     
     try {
       await dispatch(createWorkspace(workspaceData) as any).unwrap();
@@ -154,9 +131,7 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
   }, [dispatch, refetchWorkspaces]);
 
   const deleteWorkspaceById = useCallback(async (id: string) => {
-    if (env.ENABLE_DEBUG) {
-      console.log('🗑️ Deleting workspace:', id);
-    }
+    
     try {
       await dispatch(deleteWorkspace({ id }) as any).unwrap();
     } catch (error) {
@@ -177,9 +152,8 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
     if (autoFetch && workspaceId) {
       loadWorkspace(workspaceId);
       loadSpaces(workspaceId);
-      loadMembers(workspaceId);
     }
-  }, [autoFetch, workspaceId, loadWorkspace, loadSpaces, loadMembers]);
+  }, [autoFetch, workspaceId, loadWorkspace, loadSpaces]);
 
   return {
     workspaces,
@@ -193,11 +167,8 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
     // Actions
     loadWorkspace,
     loadSpaces,
-    loadMembers,
     inviteNewMember,
-    removeWorkspaceMember,
     createInviteLink,
-    disableWorkspaceInviteLink,
     createNewWorkspace,
     refetchWorkspaces,
     deleteWorkspaceById,
