@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Disable text selection for all elements */
+* {
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE10+/Edge */
+  user-select: none; /* Standard */
+}
+
+/* Allow text selection for inputs and textareas */
+input,
+textarea,
+[contenteditable] {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
 :root {
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
@@ -45,4 +63,52 @@ body {
 /* Prevent text selection on draggable elements */
 [data-rbd-draggable-id] {
   user-select: none;
+}
+
+/* Root sizing retained to allow containers to manage scroll themselves */
+html, body, #root {
+  height: 100%;
+}
+
+/* Ensure the orbit keyframes exist even if Tailwind doesn't emit them */
+@keyframes orbit {
+  0% { --tw-glow-angle: 0deg; }
+  100% { --tw-glow-angle: 360deg; }
+}
+
+/* Animated orbit glow ring utility */
+@layer utilities {
+  .orbit-glow {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .orbit-glow::before {
+    content: "";
+    position: absolute;
+    inset: -2px; /* slight bleed to avoid gaps */
+    border-radius: inherit;
+    z-index: 1; /* render above content edges, inner area is masked out */
+    /* Create a ring using conic-gradient that rotates via --tw-glow-angle */
+    background: conic-gradient(from var(--tw-glow-angle, 0deg),
+      hsla(var(--accent), 0) 0deg,
+      hsla(var(--accent), 0.0) 300deg,
+      hsla(var(--accent), 0.8) 330deg,
+      hsla(var(--accent), 0) 360deg
+    );
+
+    /* Cut out the inner area so only the border shows */
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    padding: 2px; /* ring thickness */
+    pointer-events: none;
+    opacity: 0; /* only visible on hover */
+    transition: opacity 150ms ease;
+  }
+
+  .orbit-glow:hover::before {
+    opacity: 1;
+    animation: orbit 1.2s linear infinite;
+  }
 }

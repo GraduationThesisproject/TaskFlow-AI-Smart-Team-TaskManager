@@ -6,15 +6,15 @@ const WorkspaceService = require('../services/workspace.service');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
-const crypto = require('crypto');
+const mongoose = require('mongoose');
 
-// Get all workspaces for the current user
+// Get all workspaces for a specific user (owner or member)
 exports.getAllWorkspaces = async (req, res) => {
     try {
-        const userId = req.user.id;
-        
-        // Find all workspaces where the user is a member
+        const userId = req.user?.id;
+
         const workspaces = await Workspace.find({
+            isActive: true,
             $or: [
                 { owner: userId },
                 { 'members.user': userId }
@@ -22,33 +22,37 @@ exports.getAllWorkspaces = async (req, res) => {
         })
         .populate('owner', 'name email avatar')
         .populate('members.user', 'name email avatar')
-        .sort({ updatedAt: -1 });
+        .sort({ updatedAt: -1 })
+        .lean();
 
-        // SECURITY FIX: Use verified roles from auth middleware
-        const userRoles = req.user.roles || {};
-        const userWorkspaces = userRoles.workspaces || [];
-
-        const enrichedWorkspaces = workspaces.map(workspace => {
-            const userRole = userWorkspaces.find(ws => 
-                ws.workspace.toString() === workspace._id.toString()
+        // Attach userRole and permissions
+        const enrichedWorkspaces = workspaces.map(ws => {
+            const member = ws.members.find(
+                m => m.user?._id?.toString() === userId.toString()
             );
 
             return {
-                ...workspace.toObject(),
-                userRole: userRole ? userRole.role : null,
-                userPermissions: userRole ? userRole.permissions : null
+                ...ws,
+                _id: ws._id.toString(),
+                userRole: member
+                    ? member.role
+                    : (ws.owner._id.toString() === userId ? 'owner' : null),
+                userPermissions: member ? member.permissions : null
             };
         });
 
-        sendResponse(res, 200, true, 'Workspaces retrieved successfully', {
+        sendResponse(res, 200, true, 'User workspaces retrieved successfully', {
             workspaces: enrichedWorkspaces,
             count: enrichedWorkspaces.length
         });
     } catch (error) {
-        logger.error('Get workspaces error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving workspaces');
+        logger.error('Get user workspaces error:', error);
+        sendResponse(res, 500, false, 'Server error retrieving user workspaces');
     }
 };
+
+
+
 
 
 
@@ -94,7 +98,7 @@ exports.getWorkspace = async (req, res) => {
 // Create new workspace
 exports.createWorkspace = async (req, res) => {
     try {
-        const { name, description, plan = 'free' } = req.body;
+        const { name, description, plan = 'free'} = req.body;
         const userId = req.user.id;
 
         const workspace = await Workspace.create({
@@ -105,10 +109,35 @@ exports.createWorkspace = async (req, res) => {
             members: [], // Owner is not included in members array
             usage: {
                 membersCount: 1 // Owner counts as 1
+            },
+            settings: {
+                features: {
+                    integrations: true,
+                    aiSuggestions: true,
+                    timeTracking: true,
+                    fileAttachments: true,
+                    customFields: true
+                },
+                notifications: {
+                    emailDigests: true,
+                    slackIntegration: false,
+                    webhooks: []
+                },
+                permissions: {
+                    defaultMemberRole: 'member',
+                    allowMemberInvites: true,
+                    requireApprovalForMembers: false,
+                    maxMembers: null,
+                },
+                defaultBoardVisibility: "workspace",
+                branding: {
+                    logo: null,
+                    primaryColor: "#3B82F6"
+                }
             }
         });
 
-        // SECURITY FIX: Use verified roles from auth middleware and add owner role
+        // Add owner role
         const userRoles = req.user.roles;
         await userRoles.addWorkspaceRole(workspace._id, 'owner');
 
@@ -136,6 +165,7 @@ exports.createWorkspace = async (req, res) => {
         sendResponse(res, 500, false, 'Server error creating workspace');
     }
 };
+
 
 // Update workspace
 exports.updateWorkspace = async (req, res) => {
@@ -732,9 +762,6 @@ exports.deleteWorkspace = async (req, res) => {
         }
 
         const workspace = await Workspace.findById(workspaceId);
-        if (!workspace) {
-            return sendResponse(res, 404, false, 'Workspace not found');
-        }
  
         // Owner can delete directly
         if (workspace.owner.toString() === userId.toString()) {

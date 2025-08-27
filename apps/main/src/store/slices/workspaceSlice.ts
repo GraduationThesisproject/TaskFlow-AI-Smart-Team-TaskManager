@@ -11,8 +11,13 @@ export const fetchWorkspace = createAsyncThunk(
   'workspace/fetchWorkspace',
   async (workspaceId: string) => {
     const response = await WorkspaceService.getWorkspace(workspaceId);
-    // Backend returns { workspace: {...}, userRole: '...', userPermissions: {...} }
-    return (response.data as any).workspace;
+    // Backend returns data: { workspace: {...}, userRole: '...', userPermissions: {...} }
+    const ws: any = response as any;
+    return {
+      ...ws,
+      _id: ws?._id ?? ws?.id,
+      id: ws?.id ?? (typeof ws?._id === 'object' ? String(ws._id) : ws?._id),
+    };
   }
 )
 
@@ -22,9 +27,16 @@ export const fetchWorkspaces = createAsyncThunk<Workspace[]>(
   async () => {
     const response = await WorkspaceService.getWorkspaces();
     // The response is an object with a workspaces array
-    return Array.isArray((response.data as any)?.workspaces) 
-      ? (response.data as any).workspaces 
+    const list = Array.isArray((response as any)?.workspaces)
+      ? (response as any).workspaces
+      : Array.isArray(response)
+      ? (response as any)
       : [];
+    return list.map((ws: any) => ({
+      ...ws,
+      _id: ws?._id ?? ws?.id,
+      id: ws?.id ?? (typeof ws?._id === 'object' ? String(ws._id) : ws?._id),
+    }));
   }
 );
 
@@ -32,17 +44,39 @@ export const generateInviteLink = createAsyncThunk<InviteLinkInfo, { id: string 
   'workspace/generateInviteLink',
   async ({ id }) => {
     const response = await WorkspaceService.generateInviteLink(id);
-    return response.data;
+    return response
   }
 );
 
+
+
+// Admin: fetch all global workspaces
+export const fetchWorkspacesGlobal = createAsyncThunk<Workspace[]>(
+  'workspace/fetchWorkspacesGlobal',
+  async () => {
+    const response = await WorkspaceService.getWorkspaces();
+    console.log('[fetchWorkspacesGlobal] raw response:', response);
+    const raw: any = response as any;
+    const list = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.workspaces)
+      ? raw.workspaces
+      : Array.isArray(raw?.data?.workspaces)
+      ? raw.data.workspaces
+      : Array.isArray(raw?.data)
+      ? raw.data
+      : [];
+    console.log('[fetchWorkspacesGlobal] extracted workspaces length:', list.length);
+    return list;
+  }
+);
 
 export const fetchSpacesByWorkspace = createAsyncThunk(
   'workspace/fetchSpacesByWorkspace',
   async (workspaceId: string) => {
     const response = await SpaceService.getSpacesByWorkspace(workspaceId);
     // Backend returns { spaces: [...], count: number }
-    return (response.data as any).spaces;
+    return (response as any).spaces;
   }
 );
 
@@ -51,7 +85,7 @@ export const fetchSpace = createAsyncThunk(
   async (spaceId: string) => {
     const response = await SpaceService.getSpace(spaceId);
     // Backend returns { space: {...}, userRole: '...', userPermissions: {...} }
-    return (response.data as any).space;
+    return (response as any).space;
   }
 );
 
@@ -61,7 +95,7 @@ export const inviteMember = createAsyncThunk<WorkspaceMember, { id: string; emai
   async ({ id, email, role }, { rejectWithValue }) => {
     try {
       const response = await WorkspaceService.inviteMember(id, { email, role });
-      return response.data;
+      return response;
     } catch (error) {
       return rejectWithValue(error|| 'Failed to invite member');
     }
@@ -78,8 +112,8 @@ export const updateWorkspaceSettings = createAsyncThunk<
       // Backend expects { settings: { [section]: updates } }
       settings: { [section]: updates } as any,
     } as any);
-    // API returns wrapper with { workspace }
-    return (response.data as any).workspace as Workspace;
+    // API returns data with { workspace }
+    return (response as any).workspace as Workspace;
   }
 );
 
@@ -93,9 +127,14 @@ export const createWorkspace = createAsyncThunk(
     const response = await WorkspaceService.createWorkspace({
       name: workspaceData.name,
       description: workspaceData.description,
-      plan: 'free' // Default to free plan
+      plan: 'free',
     });
-    return response.data;
+    const ws: any = (response as any)?.workspace ?? response;
+    return {
+      ...ws,
+      _id: ws?._id ?? ws?.id,
+      id: ws?.id ?? (typeof ws?._id === 'object' ? String(ws._id) : ws?._id),
+    };
   }
 );
 
@@ -109,6 +148,7 @@ export const deleteWorkspace = createAsyncThunk<{ id: string; message: string },
 );
 
 // Dev-only: force current user as owner for a workspace (repairs old data)
+
 export const forceOwnerDev = createAsyncThunk<{ id: string; message: string }, { id: string }>(
   'workspace/forceOwnerDev',
   async ({ id }) => {
@@ -167,6 +207,16 @@ const workspaceSlice = createSlice({
     },
     setCurrentWorkspace(state, action: PayloadAction<Workspace | null>) {
       state.currentWorkspace = action.payload;
+    },
+    removeWorkspaceById(state, action: PayloadAction<string>) {
+      const id = action.payload;
+      state.workspaces = (state.workspaces || []).filter((w) => (w as any)._id !== id && (w as any).id !== id);
+      if (state.currentWorkspace && ((state.currentWorkspace as any)._id === id || (state.currentWorkspace as any).id === id)) {
+        state.currentWorkspace = null;
+      }
+      if (state.currentWorkspaceId === id) {
+        state.currentWorkspaceId = null;
+      }
     },
     resetWorkspaceState: () => initialState,
   },
@@ -253,6 +303,29 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to update workspace settings';
       })
+      // Delete workspace
+      .addCase(deleteWorkspace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        const id = action.payload?.id;
+        if (id) {
+          state.workspaces = (state.workspaces || []).filter((w) => (w as any)._id !== id && (w as any).id !== id);
+          if (state.currentWorkspace && ((state.currentWorkspace as any)._id === id || (state.currentWorkspace as any).id === id)) {
+            state.currentWorkspace = null;
+          }
+          if (state.currentWorkspaceId === id) {
+            state.currentWorkspaceId = null;
+          }
+        }
+        state.error = null;
+      })
+      .addCase(deleteWorkspace.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to delete workspace';
+      })
       
       }})
 
@@ -268,6 +341,7 @@ export const {
   setLoading,
   clearError,
   setCurrentWorkspaceId,
+  removeWorkspaceById,
   resetWorkspaceState,
 } = workspaceSlice.actions;
 
