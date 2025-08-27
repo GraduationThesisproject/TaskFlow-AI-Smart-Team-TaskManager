@@ -46,17 +46,15 @@ export function useSocket(options: UseSocketOptions) {
     socketRef.current.on('disconnect', () => {
       setIsConnected(false);
       setIsConnecting(false);
-      console.log('Socket disconnected');
     });
 
     socketRef.current.on('connect_error', (error) => {
       setIsConnected(false);
       setIsConnecting(false);
-      console.error('Socket connection error:', error);
     });
 
     socketRef.current.on('error', (error) => {
-      console.error('Socket error:', error);
+      // Socket error handling
     });
   }, [memoizedOptions]);
 

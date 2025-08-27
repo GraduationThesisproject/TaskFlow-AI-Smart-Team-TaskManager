@@ -104,14 +104,26 @@ exports.login = async (req, res) => {
 
         if (user.isLocked) return sendResponse(res, 423, false, 'Account is temporarily locked');
 
-        const session = await userSessions.createSession({
-            deviceId: deviceId || 'web-' + Date.now(),
-            deviceInfo: deviceInfo || { type: 'web' },
-            ipAddress: req.ip,
-            rememberMe
-        });
+            // Create new session
+            const session = await userSessions.createSession({
+                deviceId: deviceId || 'web-' + Date.now(),
+                deviceInfo: deviceInfo || { type: 'web' },
+                ipAddress: req.ip,
+                rememberMe
+            });
+            // Log successful attempt
+            await userSessions.logLoginAttempt(true, req.ip, deviceInfo);
 
-        await userSessions.logLoginAttempt(true, req.ip, deviceInfo);
+            // Check if 2FA is enabled
+            if (user.hasTwoFactorAuth) {
+                // Return response indicating 2FA is required
+                return sendResponse(res, 200, true, '2FA required', {
+                    requires2FA: true,
+                    userId: user._id,
+                    message: 'Two-factor authentication is required. Please enter your 6-digit code.',
+                    sessionId: session._id
+                });
+            }
 
         const expiresIn = rememberMe ? '30d' : '7d';
         const token = jwt.generateToken(user._id, expiresIn);
@@ -135,56 +147,374 @@ exports.login = async (req, res) => {
     }
 };
 
-// ------------------ GOOGLE OAUTH ------------------
-exports.googleLogin = (req, res, next) => {
-    if (!passport._strategies?.google) return sendResponse(res, 503, false, 'Google OAuth is not configured');
-    const scope = req.query.scope || 'profile email';
-    passport.authenticate('google', { scope: scope.split(' '), accessType: req.query.access_type || 'offline', prompt: req.query.prompt || 'consent' })(req, res, next);
-};
+// Complete login with 2FA verification
+exports.completeLoginWith2FA = async (req, res) => {
+    try {
+        const { userId, token, sessionId, rememberMe = false, rememberDevice = false } = req.body;
 
-exports.googleCallback = async (req, res, next) => {
-    if (!passport._strategies?.google) return sendResponse(res, 503, false, 'Google OAuth is not configured');
-
-    passport.authenticate('google', { session: false }, async (err, user) => {
-        if (err || !user) return sendResponse(res, err ? 500 : 401, false, 'Authentication failed');
-
-        try {
-            user.lastLogin = new Date();
-            await user.save();
-            const token = generateToken(user._id);
-            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=google`;
-            res.redirect(redirectUrl);
-        } catch (error) {
-            logger.error('Google callback error:', error);
-            return sendResponse(res, 500, false, 'Authentication failed');
+        if (!userId || !token || !sessionId) {
+            return sendResponse(res, 400, false, 'User ID, token, and session ID are required');
         }
-    })(req, res, next);
-};
 
-// ------------------ GITHUB OAUTH ------------------
-exports.githubLogin = (req, res, next) => {
-    if (!passport._strategies?.github) return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
-    const scope = req.query.scope || 'user:email';
-    passport.authenticate('github', { scope: scope.split(' ') })(req, res, next);
-};
-
-exports.githubCallback = async (req, res, next) => {
-    if (!passport._strategies?.github) return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
-
-    passport.authenticate('github', { session: false }, async (err, user) => {
-        if (err || !user) return sendResponse(res, err ? 500 : 401, false, 'Authentication failed');
-
-        try {
-            user.lastLogin = new Date();
-            await user.save();
-            const token = generateToken(user._id);
-            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=github`;
-            res.redirect(redirectUrl);
-        } catch (error) {
-            logger.error('GitHub callback error:', error);
-            return sendResponse(res, 500, false, 'Authentication failed');
+        // Find user and include 2FA fields
+        const user = await User.findById(userId).select('+twoFactorAuth.secret +twoFactorAuth.backupCodes');
+        if (!user) {
+            return sendResponse(res, 404, false, 'User not found');
         }
-    })(req, res, next);
+
+        if (!user.hasTwoFactorAuth) {
+            return sendResponse(res, 400, false, '2FA is not enabled for this account');
+        }
+
+        // Verify 2FA token
+        const TwoFactorAuthService = require('../services/twoFactorAuth.service');
+        let isValid = false;
+
+        // Check if it's a backup code
+        const backupCode = user.twoFactorAuth.backupCodes.find(
+            bc => bc.code === token && !bc.used
+        );
+
+        if (backupCode) {
+            // Use backup code
+            backupCode.used = true;
+            backupCode.usedAt = new Date();
+            user.twoFactorAuth.lastUsed = new Date();
+            isValid = true;
+        } else {
+            // Verify TOTP token
+            isValid = TwoFactorAuthService.verifyToken(token, user.twoFactorAuth.secret);
+        }
+
+        if (!isValid) {
+            return sendResponse(res, 401, false, 'Invalid verification code');
+        }
+
+        // Update user's 2FA last used timestamp
+        if (!backupCode) {
+            user.twoFactorAuth.lastUsed = new Date();
+        }
+        await user.save();
+
+        // Get user sessions
+        const userSessions = await user.getSessions();
+        
+        // Activate the session
+        const session = await userSessions.activateSession(sessionId);
+        if (!session) {
+            return sendResponse(res, 400, false, 'Invalid session');
+        }
+
+        // Generate JWT token
+        const expiresIn = rememberMe ? '30d' : '7d';
+        const jwtToken = jwt.generateToken(user._id, expiresIn);
+
+        // Generate device token if remember device is requested
+        let deviceToken = null;
+        if (rememberDevice) {
+            const deviceId = req.headers['x-device-id'] || 'unknown';
+            const userAgent = req.headers['user-agent'] || 'unknown';
+            deviceToken = TwoFactorAuthService.generateDeviceToken(deviceId, userAgent);
+        }
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'user_login_2fa',
+            description: `User completed login with 2FA: ${user.email}`,
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: {
+                ipAddress: req.ip,
+                userAgent: req.get('User-Agent'),
+                rememberMe,
+                rememberDevice,
+                usedBackupCode: !!backupCode
+            }
+        });
+
+        logger.info(`User completed login with 2FA: ${user.email}`);
+
+        sendResponse(res, 200, true, 'Login completed successfully', {
+            token: jwtToken,
+            user: user.getPublicProfile(),
+            sessionInfo: {
+                rememberMe,
+                expiresIn,
+                deviceId: session.deviceId
+            },
+            deviceToken,
+            requiresNewBackupCodes: user.twoFactorAuth.backupCodes.filter(bc => !bc.used).length < 3
+        });
+
+    } catch (error) {
+        logger.error('Complete login with 2FA error:', error);
+        sendResponse(res, 500, false, 'Server error during 2FA verification');
+    }
+};
+
+// Get current user with full profile
+exports.getMe = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return sendResponse(res, 404, false, 'User not found');
+        }
+
+        // Get related data sequentially to avoid parallel save conflicts
+        const preferences = await user.getPreferences();
+        const sessions = await user.getSessions();
+        const roles = await user.getRoles();
+
+        // Ensure avatar is populated so client gets URL
+        await user.populate({ path: 'avatar', select: 'url thumbnails' });
+
+        // Get active sessions count
+        const activeSessions = sessions.sessions.filter(s => s.isActive).length;
+
+        sendResponse(res, 200, true, 'User profile retrieved', {
+            user: user.getPublicProfile(),
+            preferences,
+            security: {
+                activeSessions,
+                emailVerified: user.emailVerified,
+                twoFactorEnabled: user.hasTwoFactorAuth,
+                lastLogin: user.lastLogin,
+                hasOAuthProviders: user.hasOAuthProviders
+            },
+            roles: {
+                workspaces: roles.workspaces.length,
+                spaces: roles.spaces.length
+            }
+        });
+    } catch (error) {
+        logger.error('Get profile error:', error);
+        sendResponse(res, 500, false, 'Server error retrieving profile');
+    }
+};
+
+// Update user profile
+exports.updateProfile = async (req, res) => {
+    try {
+        const { name, avatar, preferences, metadata } = req.body;
+        
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return sendResponse(res, 404, false, 'User not found');
+        }
+
+        // Store old values for audit log
+        const oldValues = {
+            name: user.name,
+            avatar: user.avatar
+        };
+
+        // Update basic profile
+        if (name) user.name = name;
+        
+        // Handle avatar upload (Multer + local File model)
+        if (req.uploadedFile) {
+            const File = require('../models/File');
+
+            // Delete old avatar file if exists and different from the new one
+            if (user.avatar) {
+                try {
+                    const oldFile = await File.findById(user.avatar);
+                    if (oldFile && oldFile._id.toString() !== req.uploadedFile._id.toString()) {
+                        await oldFile.deleteFromStorage();
+                    }
+                } catch (e) {
+                    logger.warn('Failed to delete old avatar:', e.message);
+                }
+            }
+
+            // Attach the uploaded file to the user and set avatar reference
+            const file = req.uploadedFile; // Mongoose doc created in processUploadedFiles
+            await file.attachTo('User', user._id);
+            user.avatar = file._id;
+        } else if (avatar) {
+            // Allow setting avatar by existing File id (optional)
+            user.avatar = avatar;
+        }
+        
+        // Update metadata if provided
+        if (metadata) {
+            Object.entries(metadata).forEach(([key, value]) => {
+                user.addMetadata(key, value);
+            });
+        }
+
+        await user.save();
+
+        // Update preferences if provided
+        if (preferences) {
+            const userPrefs = await user.getPreferences();
+            Object.entries(preferences).forEach(([section, updates]) => {
+                if (userPrefs[section]) {
+                    Object.assign(userPrefs[section], updates);
+                }
+            });
+            await userPrefs.save();
+        }
+
+        // Populate avatar so response contains URL
+        await user.populate({ path: 'avatar', select: 'url thumbnails' });
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'profile_update',
+            description: 'User updated profile',
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: {
+                oldValues: oldValues,
+                newValues: { name, avatar: user.avatar },
+                ipAddress: req.ip,
+                userAgent: req.get('User-Agent')
+            }
+        });
+
+        logger.info(`Profile updated: ${user.email}`);
+
+        sendResponse(res, 200, true, 'Profile updated successfully', {
+            user: user.getPublicProfile()
+        });
+    } catch (error) {
+        logger.error('Update profile error:', error);
+        sendResponse(res, 500, false, 'Server error updating profile');
+    }
+};
+
+// Secure profile update with password verification and optional avatar upload
+exports.updateProfileSecure = async (req, res) => {
+    try {
+        const { currentPassword, name } = req.body;
+
+        // Debug: log presence of uploaded file
+        try {
+            const f = req.uploadedFile;
+            if (f) {
+                logger.info(`updateProfileSecure: received uploadedFile id=${f._id?.toString?.()} name=${f.filename}`);
+            } else {
+                logger.info('updateProfileSecure: no uploadedFile present');
+            }
+        } catch (e) {
+            logger.warn('updateProfileSecure: failed to log uploadedFile info:', e.message);
+        }
+
+        // Load user with password for verification
+        const user = await User.findById(req.user.id).select('+password');
+        if (!user) {
+            return sendResponse(res, 404, false, 'User not found');
+        }
+
+        const isValid = await user.comparePassword(currentPassword || '');
+        if (!isValid) {
+            // Cleanup: if a file was uploaded before validation, delete it to avoid orphans
+            if (req.uploadedFile) {
+                try {
+                    await req.uploadedFile.deleteFromStorage();
+                    await req.uploadedFile.deleteOne();
+                } catch (e) {
+                    logger.warn('Cleanup failed for uploaded file on password error:', e.message);
+                }
+            }
+            return sendResponse(res, 400, false, 'Current password is incorrect');
+        }
+
+        const oldValues = {
+            name: user.name,
+            avatar: user.avatar
+        };
+
+        // Update name if provided
+        if (name) user.name = name;
+
+        // Handle avatar if a new file was uploaded
+        if (req.uploadedFile) {
+            const File = require('../models/File');
+            try {
+                if (user.avatar) {
+                    const oldFile = await File.findById(user.avatar);
+                    if (oldFile && oldFile._id.toString() !== req.uploadedFile._id.toString()) {
+                        await oldFile.deleteFromStorage();
+                    }
+                }
+            } catch (e) {
+                logger.warn('Failed to delete old avatar:', e.message);
+            }
+
+            const file = req.uploadedFile;
+            await file.attachTo('User', user._id);
+            user.avatar = file._id;
+            logger.info(`updateProfileSecure: user ${user._id.toString()} avatar set to file ${file._id.toString()}`);
+        }
+
+        await user.save();
+
+        // Populate avatar so response contains URL
+        await user.populate({ path: 'avatar', select: 'url thumbnails' });
+        logger.info(`updateProfileSecure: response avatar url=${user.avatar?.url || user.avatar}`);
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'profile_update',
+            description: 'User updated profile (secure)',
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: {
+                oldValues,
+                newValues: { name: user.name, avatar: user.avatar },
+                ipAddress: req.ip,
+                userAgent: req.get('User-Agent'),
+                verifiedByPassword: true
+            }
+        });
+
+        return sendResponse(res, 200, true, 'Profile updated successfully', {
+            user: user.getPublicProfile()
+        });
+    } catch (error) {
+        logger.error('Secure update profile error:', error);
+        return sendResponse(res, 500, false, 'Server error updating profile');
+    }
+};
+
+// Logout user
+exports.logout = async (req, res) => {
+    try {
+        const { deviceId, allDevices = false } = req.body;
+        
+        const user = await User.findById(req.user.id);
+        const userSessions = await user.getSessions();
+
+        if (allDevices) {
+            await userSessions.endAllSessions();
+        } else if (deviceId) {
+            const session = userSessions.getSessionByDevice(deviceId);
+            if (session) {
+                await userSessions.endSession(session.sessionId);
+            }
+        }
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'user_logout',
+            description: allDevices ? 'User logged out from all devices' : 'User logged out',
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: {
+                deviceId,
+                allDevices,
+                ipAddress: req.ip
+            }
+        });
+
+        logger.info(`User logged out: ${req.user.id}`);
+        sendResponse(res, 200, true, 'Logout successful');
+    } catch (error) {
+        logger.error('Logout error:', error);
+        sendResponse(res, 500, false, 'Server error during logout');
+    }
 };
 
 // ------------------ CHANGE PASSWORD ------------------

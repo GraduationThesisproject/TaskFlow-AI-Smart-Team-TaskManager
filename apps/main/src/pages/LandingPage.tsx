@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import SignIn from "../layouts/Landing/SignIn";
 import SignUp from "../layouts/Landing/SignUP";
 import EmailVerification from "../layouts/Landing/EmailVerif";
@@ -19,10 +19,17 @@ import {
   Twitter,
   Github,
   Linkedin,
-  Facebook
+  Facebook,
+  MessageCircle
 } from "lucide-react";
 
 const LandingPageHome = () => {
+  const navigate = useNavigate();
+
+  const handleChatClick = () => {
+    navigate('/support');
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Hero Section */}
@@ -313,6 +320,15 @@ const LandingPageHome = () => {
                     </Typography>
                   </li>
                 ))}
+                <li>
+                  <button
+                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
+                    onClick={() => navigate('/chat')}
+                  >
+                    <MessageCircle className="w-4 h-4 group-hover:text-blue-500" />
+                    <Typography variant="small">Live Chat</Typography>
+                  </button>
+                </li>
               </ul>
             </div>
 

@@ -54,9 +54,20 @@ const userSchema = new mongoose.Schema({
     validate: {
       validator: function(avatar) {
         if (!avatar) return true; // null is valid
-        return validator.isURL(avatar) || avatar.startsWith('data:image/');
+        if (avatar.startsWith('data:image/')) return true; // data URI is valid
+        
+        // Check if it's a valid URL
+        if (validator.isURL(avatar)) return true;
+        
+        // Allow localhost URLs for development (common in dev environments)
+        if (avatar.includes('localhost') || avatar.includes('127.0.0.1')) return true;
+        
+        // Allow relative paths (common in production)
+        if (avatar.startsWith('/uploads/') || avatar.startsWith('./uploads/')) return true;
+        
+        return false;
       },
-      message: 'Avatar must be a valid URL or data URI'
+      message: 'Avatar must be a valid URL, data URI, localhost URL, or relative path'
     }
   },
   // Account status and verification
@@ -93,6 +104,32 @@ const userSchema = new mongoose.Schema({
   hasTwoFactorAuth: {
     type: Boolean,
     default: false
+  },
+  
+  // Two-Factor Authentication fields
+  twoFactorAuth: {
+    secret: {
+      type: String,
+      select: false // Don't include in queries by default for security
+    },
+    backupCodes: [{
+      code: {
+        type: String,
+        select: false
+      },
+      used: {
+        type: Boolean,
+        default: false
+      },
+      usedAt: Date
+    }],
+    recoveryToken: {
+      type: String,
+      select: false
+    },
+    recoveryTokenExpires: Date,
+    enabledAt: Date,
+    lastUsed: Date
   },
   
   // References to separated models
@@ -180,6 +217,7 @@ userSchema.index({ lockUntil: 1 });
 userSchema.index({ loginAttempts: 1 });
 userSchema.index({ hasOAuthProviders: 1 });
 userSchema.index({ hasTwoFactorAuth: 1 });
+userSchema.index({ 'twoFactorAuth.enabledAt': 1 });
 
 // Text search indexes for faster, ranked search
 userSchema.index({ name: 'text', email: 'text' });
