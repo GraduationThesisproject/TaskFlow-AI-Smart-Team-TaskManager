@@ -13,8 +13,10 @@ const AccountSummary: React.FC = () => {
       <CardContent>
         <div className="flex items-center gap-3 mb-4">
           <Avatar size="sm">
-            <AvatarImage src={user?.user?.avatar} alt={user?.user?.name} />
-            <AvatarFallback variant="primary" size="sm">
+            {user?.user?.avatar && (
+              <AvatarImage src={user.user.avatar} alt={user.user.name || 'User'} />
+            )}
+            <AvatarFallback variant="primary">
               {user?.user?.name?.charAt(0) || 'U'}
             </AvatarFallback>
           </Avatar>

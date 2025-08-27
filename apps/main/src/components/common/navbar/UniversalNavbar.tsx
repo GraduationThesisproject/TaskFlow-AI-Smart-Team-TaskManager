@@ -71,9 +71,9 @@ export default function UniversalNavbar({
         </NavbarLeft>
 
         <NavbarRight>
-          <DashboardActions onChatClick={onChatClick} />
+          {isAuthenticated && <DashboardActions />}
           <ThemeToggleButton />
-          <UserProfile user={user} onLogout={onLogout} />
+          <UserProfile user={isAuthenticated ? user : undefined} onLogout={onLogout} />
         </NavbarRight>
       </BaseNavbar>
     );
@@ -91,7 +91,7 @@ export default function UniversalNavbar({
       </NavbarCenter>
 
       <NavbarRight>
-        <UserProfile user={user} onLogout={onLogout} />
+        <UserProfile user={isAuthenticated ? user : undefined} onLogout={onLogout} />
       </NavbarRight>
 
       {/* Mobile dropdown (visible only on small screens) */}
