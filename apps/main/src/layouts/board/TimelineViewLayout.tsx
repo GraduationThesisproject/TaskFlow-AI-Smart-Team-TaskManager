@@ -1,6 +1,6 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTasks, useTheme } from '../../hooks';
+import React, { useEffect, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useTasks, useTheme, useSpaceManager } from '../../hooks';
 import type { Task } from '../../types/task.types';
 import {
   Button,
@@ -19,25 +19,54 @@ import {
   getAvatarColor
 } from '@taskflow/ui';
 
-// Extended interface for timeline tasks
-interface TimelineTask extends Task {
-  startDate: string;
-  endDate: string;
-  category: string;
-  progress: number;
-}
-
 export const TimelineViewLayout: React.FC = () => {
   const navigate = useNavigate();
+  const { boardId } = useParams<{ boardId: string }>();
   const { theme } = useTheme();
+  const { currentBoard, boardLoading, boardError } = useSpaceManager();
   const {
-    timelineTasks,
+    tasks,
     loading,
     error,
-    taskStats,
+    loadTasks,
+    loadColumnsByBoard,
   } = useTasks();
 
-  const months = ['Jan 2024', 'Feb 2024', 'Mar 2024', 'Apr 2024', 'May 2024', 'Jun 2024'];
+  // Load data when component mounts
+  useEffect(() => {
+    if (boardId) {
+      loadTasks(boardId);
+      loadColumnsByBoard(boardId);
+    }
+  }, [boardId, loadTasks, loadColumnsByBoard]);
+
+  // Generate timeline data from tasks
+  const timelineData = useMemo(() => {
+    if (!tasks.length) return [];
+    
+    // Group tasks by month based on due date
+    const months = ['Jan 2024', 'Feb 2024', 'Mar 2024', 'Apr 2024', 'May 2024', 'Jun 2024'];
+    const monthData = months.map((month, monthIndex) => {
+      const monthStart = new Date(2024, monthIndex, 1);
+      const monthEnd = new Date(2024, monthIndex + 1, 0);
+      
+      const monthTasks = tasks.filter(task => {
+        if (!task.dueDate) return false;
+        const dueDate = new Date(task.dueDate);
+        return dueDate >= monthStart && dueDate <= monthEnd;
+      });
+
+      return {
+        month,
+        monthIndex,
+        tasks: monthTasks,
+        startDate: monthStart,
+        endDate: monthEnd
+      };
+    });
+
+    return monthData;
+  }, [tasks]);
 
   const getStatusVariant = (status: Task['status']) => {
     switch (status) {
@@ -45,6 +74,7 @@ export const TimelineViewLayout: React.FC = () => {
       case 'in_progress': return 'in-progress';
       case 'done': return 'completed';
       case 'todo': return 'to-do';
+      case 'archived': return 'default';
       default: return 'default';
     }
   };
@@ -55,6 +85,7 @@ export const TimelineViewLayout: React.FC = () => {
       case 'in_progress': return 'accent';
       case 'done': return 'success';
       case 'todo': return 'warning';
+      case 'archived': return 'default';
       default: return 'default';
     }
   };
@@ -67,23 +98,22 @@ export const TimelineViewLayout: React.FC = () => {
     });
   };
 
-  const getTimelinePosition = (startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+  const getTimelinePosition = (dueDate: string, estimatedHours: number = 0) => {
+    const due = new Date(dueDate);
     const projectStart = new Date('2024-01-01');
     const projectEnd = new Date('2024-06-30');
 
     const totalDays = (projectEnd.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24);
-    const startOffset = (start.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24);
-    const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-
-    const left = (startOffset / totalDays) * 100;
-    const width = (duration / totalDays) * 100;
+    const dueOffset = (due.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24);
+    
+    // Calculate width based on estimated hours (1 hour = 0.1% of timeline)
+    const width = Math.max(2, Math.min(20, estimatedHours * 0.1));
+    const left = Math.max(0, Math.min(100 - width, (dueOffset / totalDays) * 100));
 
     return { left: `${left}%`, width: `${width}%` };
   };
 
-  if (loading) {
+  if (boardLoading || loading) {
     return (
       <Loading
         fullScreen
@@ -93,13 +123,13 @@ export const TimelineViewLayout: React.FC = () => {
     );
   }
 
-    if (error) {
+  if (boardError || error) {
     return (
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <Card variant="outlined" className="text-center">
           <CardContent className="p-8">
             <Typography variant="heading-large" className="text-error mb-4">
-              {error}
+              {boardError || error || 'Failed to load timeline'}
             </Typography>
             <Button 
               variant="outline" 
@@ -113,10 +143,41 @@ export const TimelineViewLayout: React.FC = () => {
     );
   }
 
+  if (!currentBoard) {
+    return (
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <Card variant="outlined" className="text-center">
+          <CardContent className="p-8">
+            <Typography variant="heading-large" className="text-muted mb-4">
+              Board not found
+            </Typography>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate(-1)}
+            >
+              Go Back
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const months = ['Jan 2024', 'Feb 2024', 'Mar 2024', 'Apr 2024', 'May 2024', 'Jun 2024'];
+
   return (
     <div className="min-h-screen bg-transparent text-foreground w-full">
       <div className="w-full px-6 sm:px-8 lg:px-12 py-8">
 
+        {/* Header */}
+        <div className="mb-6">
+          <Typography variant="heading-large" className="mb-2">
+            {currentBoard.name} Timeline
+          </Typography>
+          <Typography variant="body-medium" textColor="muted">
+            Project timeline from January to June 2024
+          </Typography>
+        </div>
 
         {/* Legend */}
         <div className="mb-6">
@@ -149,7 +210,7 @@ export const TimelineViewLayout: React.FC = () => {
 
             {/* Timeline Header */}
             <div className="grid grid-cols-7 gap-4 mb-4">
-              <Typography variant="small">Project</Typography>
+              <Typography variant="small">Task</Typography>
               {months.map((month) => (
                 <Typography key={month} variant="small" className="text-center">
                   {month}
@@ -159,64 +220,88 @@ export const TimelineViewLayout: React.FC = () => {
 
             {/* Timeline Rows */}
             <Stack spacing="md">
-              {(timelineTasks as TimelineTask[]).map((project) => {
-                const position = getTimelinePosition(project.startDate, project.endDate);
+              {tasks.length === 0 ? (
+                <div className="text-center py-8">
+                  <Typography variant="body-medium" textColor="muted" className="mb-4">
+                    No tasks found for this timeline
+                  </Typography>
+                  <Button 
+                    variant="outline"
+                    onClick={() => navigate(`/boards/${boardId}/tasks/new`)}
+                  >
+                    Create First Task
+                  </Button>
+                </div>
+              ) : (
+                tasks.map((task) => {
+                  if (!task.dueDate) return null; // Skip tasks without due dates
+                  
+                  const position = getTimelinePosition(task.dueDate, task.estimatedHours);
 
-                return (
-                  <div key={project._id} className="grid grid-cols-7 gap-4 items-center">
-                    {/* Project Info */}
-                    <Stack spacing="xs">
-                      <Flex gap="sm" align="center">
-                        <Badge variant={getStatusVariant(project.status)} size="sm" />
-                                                 <Typography variant="body-medium" className="font-semibold">
-                           {project.title}
-                         </Typography>
-                      </Flex>
-                      <Typography variant="body-small" textColor="muted">
-                        {project.category}
-                      </Typography>
-                      <Typography variant="body-small" textColor="muted">
-                        {project.progress}%
-                      </Typography>
-                    </Stack>
+                  return (
+                    <div key={task._id} className="grid grid-cols-7 gap-4 items-center">
+                      {/* Task Info */}
+                      <Stack spacing="xs">
+                        <Flex gap="sm" align="center">
+                          <Badge variant={getStatusVariant(task.status)} size="sm" />
+                          <Typography variant="body-medium" className="font-semibold">
+                            {task.title}
+                          </Typography>
+                        </Flex>
+                        <Typography variant="body-small" textColor="muted">
+                          {task.priority}
+                        </Typography>
+                        <Typography variant="body-small" textColor="muted">
+                          {task.estimatedHours || 0}h
+                        </Typography>
+                      </Stack>
 
-                    {/* Timeline Bar */}
-                    <div className="col-span-6">
-                      <div className="relative h-8 bg-muted rounded">
-                        {/* Progress Bar */}
-                        <div
-                          className={`absolute top-1 bottom-1 rounded ${getProgressVariant(project.status) === 'accent' ? 'bg-accent' : getProgressVariant(project.status) === 'info' ? 'bg-info' : getProgressVariant(project.status) === 'success' ? 'bg-success' : 'bg-warning'}`}
-                          style={{
-                            left: position.left,
-                            width: position.width
-                          }}
-                        >
-                          {/* Assignee Avatar */}
-                          <div className="absolute -right-3 top-1/2 transform -translate-y-1/2">
-                            {project.assignees.map((assignee: string, index: number) => (
-                              <Avatar key={index} size="sm">
-                                <AvatarFallback variant={getAvatarColor(assignee)} size="sm">
-                                  {getInitials(assignee)}
-                                </AvatarFallback>
-                              </Avatar>
-                            ))}
+                      {/* Timeline Bar */}
+                      <div className="col-span-6">
+                        <div className="relative h-8 bg-muted rounded">
+                          {/* Progress Bar */}
+                          <div
+                            className={`absolute top-1 bottom-1 rounded ${getProgressVariant(task.status) === 'accent' ? 'bg-accent' : getProgressVariant(task.status) === 'info' ? 'bg-info' : getProgressVariant(task.status) === 'success' ? 'bg-success' : 'bg-warning'}`}
+                            style={{
+                              left: position.left,
+                              width: position.width
+                            }}
+                          >
+                            {/* Assignee Avatar */}
+                            <div className="absolute -right-3 top-1/2 transform -translate-y-1/2">
+                              {task.assignees.length > 0 ? (
+                                task.assignees.map((assignee, index) => (
+                                  <Avatar key={index} size="sm">
+                                    <AvatarFallback variant={getAvatarColor(assignee)} size="sm">
+                                      {getInitials(assignee)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                ))
+                              ) : (
+                                <Avatar size="sm">
+                                  <AvatarFallback variant="default" size="sm">
+                                    ?
+                                  </AvatarFallback>
+                                </Avatar>
+                              )}
+                            </div>
                           </div>
                         </div>
+
+                        {/* Due Date */}
+                        <Typography variant="caption" textColor="muted" className="mt-1">
+                          Due: {formatDate(task.dueDate)}
+                        </Typography>
+
+                        {/* Assignee Count */}
+                        <Typography variant="caption" textColor="muted">
+                          {task.assignees.length} assignee{task.assignees.length !== 1 ? 's' : ''}
+                        </Typography>
                       </div>
-
-                      {/* Date Range */}
-                      <Typography variant="caption" textColor="muted" className="mt-1">
-                        {formatDate(project.startDate)} - {formatDate(project.endDate)}
-                      </Typography>
-
-                      {/* Assignee Count */}
-                      <Typography variant="caption" textColor="muted">
-                        {project.assignees.length} assignee{project.assignees.length !== 1 ? 's' : ''}
-                      </Typography>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </Stack>
           </CardContent>
         </Card>
