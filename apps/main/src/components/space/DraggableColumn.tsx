@@ -32,7 +32,15 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
   onEditColumn,
   onDeleteColumn,
 }) => {
+  // Debug logging
+  console.log('DraggableColumn render:', { 
+    columnId: column._id, 
+    columnName: column.name, 
+    index,
+    tasksCount: tasks.length 
+  });
   const getColumnColor = (color?: string) => {
+    // Handle semantic colors
     switch (color) {
       case 'primary': return 'bg-blue-500';
       case 'secondary': return 'bg-purple-500';
@@ -45,6 +53,7 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
   };
 
   const getColumnProgressColor = (color?: string) => {
+    // Handle semantic colors
     switch (color) {
       case 'primary': return 'bg-blue-200';
       case 'secondary': return 'bg-purple-200';
@@ -69,12 +78,23 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
             snapshot.isDragging ? 'opacity-50 rotate-2' : ''
           }`}
         >
-          <Card className="h-fit border-0 shadow-xl bg-card/95 backdrop-blur-sm border border-border/40 rounded-2xl">
+          <Card 
+            className="h-fit border-0 shadow-xl backdrop-blur-sm rounded-2xl transition-all duration-300 hover:shadow-2xl"
+            style={{
+              backgroundColor: column.style?.backgroundColor || '#F9FAFB',
+              boxShadow: `0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)`,
+              border: `1px solid ${column.style?.backgroundColor ? `${column.style.backgroundColor}20` : 'rgba(255, 255, 255, 0.1)'}`
+            }}
+          >
             <CardHeader className="p-6 pb-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
+                  {column.style?.icon && (
+                    <span className="text-xl">{column.style.icon}</span>
+                  )}
                   <div 
-                    className={`w-3 h-3 rounded-full ${getColumnColor(column.color)}`}
+                    className={`w-3 h-3 rounded-full ${getColumnColor(column.style?.color || column.color)}`}
+                    style={column.style?.color?.startsWith('#') ? { backgroundColor: column.style.color } : {}}
                     {...provided.dragHandleProps}
                   />
                   <Typography variant="h4" className="font-bold">
@@ -85,14 +105,24 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                   <Badge variant="secondary" className="bg-muted/50">
                     {tasks.length} tasks
                   </Badge>
-                  <div className="relative">
+                  <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => onEditColumn(column._id)}
                       className="w-8 h-8 p-0"
+                      title="Edit Column"
                     >
                       ⚙️
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDeleteColumn(column._id)}
+                      className="w-8 h-8 p-0 text-red-500 hover:text-red-700"
+                      title="Delete Column"
+                    >
+                      🗑️
                     </Button>
                   </div>
                 </div>
@@ -110,8 +140,11 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
-                    className={`h-2 rounded-full transition-all duration-300 ${getColumnProgressColor(column.color)}`}
-                    style={{ width: `${progressPercentage}%` }}
+                    className={`h-2 rounded-full transition-all duration-300 ${getColumnProgressColor(column.style?.color || column.color)}`}
+                    style={{ 
+                      width: `${progressPercentage}%`,
+                      backgroundColor: column.style?.color?.startsWith('#') ? column.style.color + '40' : undefined
+                    }}
                   />
                 </div>
               </div>

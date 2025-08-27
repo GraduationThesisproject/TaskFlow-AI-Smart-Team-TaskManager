@@ -24,21 +24,12 @@ import {
   getAvatarColor
 } from '@taskflow/ui';
 
-// Define subtask interface since it's not in the main types
-interface Subtask {
-  id: string;
-  title: string;
-  completed: boolean;
-  dueDate?: string;
-  assignee?: string;
-}
-
 interface TaskDetailsLayoutProps {
   taskId?: string;
 }
 
 export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: propTaskId }) => {
-  const { taskId: paramTaskId } = useParams<{ taskId: string }>();
+  const { taskId: paramTaskId, boardId } = useParams<{ taskId: string; boardId: string }>();
   const navigate = useNavigate();
   const taskId = propTaskId || paramTaskId;
   
@@ -51,16 +42,14 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
     removeTask,
   } = useTasks();
 
-  const [localTask, setLocalTask] = useState<Partial<Task & { subtasks?: Subtask[]; labels?: string[]; estimatedTime?: string; progress?: number }>>({});
+  const [localTask, setLocalTask] = useState<Partial<Task>>({});
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (taskId) {
-      // Since loadTaskById doesn't take parameters, we'll need to handle this differently
-      // For now, we'll just log the taskId
-      // Task ID to load
+      loadTaskById(taskId);
     }
-  }, [taskId]);
+  }, [taskId, loadTaskById]);
 
   useEffect(() => {
     if (currentTask) {
@@ -83,7 +72,13 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
     if (taskId && confirm('Are you sure you want to delete this task?')) {
       try {
         await removeTask(taskId);
-        navigate('/space');
+        // Redirect to the board page where the task was located
+        if (currentTask?.board) {
+          navigate(`/board/${currentTask.board}`);
+        } else {
+          // Fallback to space page if board info is not available
+          navigate('/space');
+        }
       } catch (error) {
         console.error('Failed to delete task:', error);
       }
@@ -93,7 +88,7 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
   const handleSubtaskToggle = (subtaskId: string, completed: boolean) => {
     if (!localTask.subtasks) return;
     
-    const updatedSubtasks = localTask.subtasks.map((subtask: Subtask) =>
+    const updatedSubtasks = localTask.subtasks.map(subtask =>
       subtask.id === subtaskId ? { ...subtask, completed } : subtask
     );
     
@@ -101,17 +96,17 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
       ...localTask,
       subtasks: updatedSubtasks,
       progress: updatedSubtasks.length > 0 
-        ? (updatedSubtasks.filter((st: Subtask) => st.completed).length / updatedSubtasks.length) * 100
+        ? (updatedSubtasks.filter(st => st.completed).length / updatedSubtasks.length) * 100
         : 0
     });
   };
 
   const getPriorityVariant = (priority: Task['priority']) => {
     switch (priority) {
-      case 'critical': return 'very-high';
-      case 'high': return 'high';
-      case 'medium': return 'medium';
-      case 'low': return 'low';
+      case 'Very High': return 'very-high';
+      case 'High': return 'high';
+      case 'Medium': return 'medium';
+      case 'Low': return 'low';
       default: return 'default';
     }
   };
@@ -136,7 +131,14 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
             </Typography>
             <Button 
               variant="outline" 
-              onClick={() => navigate('/space')}
+              onClick={() => {
+                if (boardId) {
+                  navigate(`/board/${boardId}`);
+                } else {
+                  // Fallback to space page
+                  navigate('/space');
+                }
+              }}
             >
               Back to Tasks
             </Button>
@@ -146,7 +148,7 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
     );
   }
 
-  const completedSubtasks = localTask.subtasks?.filter((st: Subtask) => st.completed).length || 0;
+  const completedSubtasks = localTask.subtasks?.filter(st => st.completed).length || 0;
   const totalSubtasks = localTask.subtasks?.length || 0;
 
   return (
@@ -163,10 +165,10 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
                 onChange={(e) => setLocalTask({ ...localTask, status: e.target.value as Task['status'] })}
                 disabled={!isEditing}
               >
-                <option value="todo">To Do</option>
-                <option value="in_progress">In Progress</option>
-                <option value="review">In Review</option>
-                <option value="done">Completed</option>
+                <option value="To Do">To Do</option>
+                <option value="In Progress">In Progress</option>
+                <option value="In Review">In Review</option>
+                <option value="Completed">Completed</option>
               </Select>
               <Badge variant={getPriorityVariant(localTask.priority!)} size="sm">
                 {localTask.priority} Priority
@@ -176,7 +178,7 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
 
           {/* Assignees */}
           <Flex gap="sm" align="center" className="mb-6">
-            {localTask.assignees?.map((assignee: string, index: number) => (
+            {localTask.assignees?.map((assignee, index) => (
               <Avatar key={index} size="sm">
                 <AvatarFallback variant={getAvatarColor(assignee)} size="sm">
                   {getInitials(assignee)}
@@ -229,7 +231,7 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
             
             <CardContent>
               <Stack spacing="sm">
-                {localTask.subtasks?.map((subtask: Subtask) => (
+                {localTask.subtasks?.map((subtask) => (
                   <Card key={subtask.id} variant="ghost" className="p-3">
                     <Flex justify="between" align="center">
                       <Flex gap="md" align="center">
@@ -250,8 +252,8 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
                           {subtask.dueDate}
                         </Typography>
                         <Avatar size="sm">
-                          <AvatarFallback variant={getAvatarColor(subtask.assignee || '')} size="sm">
-                            {getInitials(subtask.assignee || '')}
+                          <AvatarFallback variant={getAvatarColor(subtask.assignee)} size="sm">
+                            {getInitials(subtask.assignee)}
                           </AvatarFallback>
                         </Avatar>
                       </Flex>
@@ -333,7 +335,7 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
                  Labels
                </Typography>
                <Flex gap="sm" wrap="wrap">
-                {localTask.labels?.map((label: string, index: number) => (
+                {localTask.labels?.map((label, index) => (
                   <Badge key={index} variant="secondary" size="sm">
                     {label}
                   </Badge>
@@ -369,10 +371,10 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
                  Dependencies
                </Typography>
               <Stack spacing="sm">
-                {localTask.dependencies?.map((dep: any, index: number) => (
+                {localTask.dependencies?.map((dep, index) => (
                   <Flex key={index} gap="sm" align="center">
                     <span>🔗</span>
-                    <Typography variant="body-small">{dep.task || dep}</Typography>
+                    <Typography variant="body-small">{dep}</Typography>
                   </Flex>
                 ))}
               </Stack>
@@ -394,7 +396,15 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
                   <Button onClick={() => setIsEditing(true)}>
                     Edit Task
                   </Button>
-                  <Button variant="outline" onClick={() => navigate('/space')}>
+                  <Button variant="outline" onClick={() => {
+                    // Navigate back to the board where the task is located
+                    if (currentTask?.board) {
+                      navigate(`/board/${currentTask.board}`);
+                    } else {
+                      // Fallback to space page if board info is not available
+                      navigate('/space');
+                    }
+                  }}>
                     Back to Tasks
                   </Button>
                   <Button variant="destructive" onClick={handleDelete}>

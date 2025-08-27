@@ -126,7 +126,7 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
                 {/* Header with Label and Priority */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex flex-wrap gap-1">
-                    {task.tags.slice(0, 2).map((tag, index) => (
+                    {task.tags && task.tags.slice(0, 2).map((tag, index) => (
                       <Badge
                         key={index}
                         variant="secondary"
@@ -169,13 +169,7 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
                 {/* Task Details */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    {task.comments.length > 0 && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-lg">💬</span>
-                        <span>{task.comments.length}</span>
-                      </div>
-                    )}
-                    {task.attachments.length > 0 && (
+                    {task.attachments && task.attachments.length > 0 && (
                       <div className="flex items-center gap-1">
                         <span className="text-lg">📎</span>
                         <span>{task.attachments.length}</span>
@@ -191,7 +185,7 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
                 </div>
 
                 {/* Assignees */}
-                {task.assignees.length > 0 && (
+                {task.assignees && task.assignees.length > 0 && (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       {task.assignees.slice(0, 3).map((assignee, index) => (

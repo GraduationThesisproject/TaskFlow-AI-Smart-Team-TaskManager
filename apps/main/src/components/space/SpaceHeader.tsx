@@ -29,9 +29,23 @@ export const SpaceHeader: React.FC<SpaceHeaderProps> = ({
     onSettings,
     onMembers
 }) => {
+    // Add error handling for missing space data
+    if (!space) {
+        return (
+            <div className="bg-card border-b border-border p-6">
+                <Typography variant="heading-xl">Loading space...</Typography>
+            </div>
+        );
+    }
+
     const getProgressPercentage = (completed: number, total: number) => {
         return total > 0 ? Math.round((completed / total) * 100) : 0;
     };
+
+    // Debug logging
+    console.log('SpaceHeader - space:', space);
+    console.log('SpaceHeader - members:', space.members);
+    console.log('SpaceHeader - first member:', space.members?.[0]);
 
     return (
         <div className="bg-card border-b border-border">
@@ -41,16 +55,16 @@ export const SpaceHeader: React.FC<SpaceHeaderProps> = ({
                     <div className="flex items-center gap-4">
                         <div 
                             className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-sm"
-                            style={{ backgroundColor: `${space.color}20` }}
+                            style={{ backgroundColor: `${space.color || '#3B82F6'}20` }}
                         >
-                            {space.icon}
+                            {space.icon || '🏠'}
                         </div>
                         <div>
                             <Typography variant="heading-xl" className="font-bold mb-1">
-                                {space.name}
+                                {space.name || 'Untitled Space'}
                             </Typography>
                             <Typography variant="body-small" textColor="muted">
-                                {space.description}
+                                {space.description || 'No description available'}
                             </Typography>
                         </div>
                     </div>
@@ -73,7 +87,7 @@ export const SpaceHeader: React.FC<SpaceHeaderProps> = ({
                         <div className="flex items-center justify-between">
                             <div>
                                 <Typography variant="body-small" textColor="muted">Total Boards</Typography>
-                                <Typography variant="heading-xl" className="font-bold">{space.totalBoards}</Typography>
+                                <Typography variant="heading-xl" className="font-bold">{space.totalBoards || 0}</Typography>
                             </div>
                             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +101,7 @@ export const SpaceHeader: React.FC<SpaceHeaderProps> = ({
                         <div className="flex items-center justify-between">
                             <div>
                                 <Typography variant="body-small" textColor="muted">Total Tasks</Typography>
-                                <Typography variant="heading-xl" className="font-bold">{space.totalTasks}</Typography>
+                                <Typography variant="heading-xl" className="font-bold">{space.totalTasks || 0}</Typography>
                             </div>
                             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                                 <span className="text-green-600 text-lg">📊</span>
@@ -99,7 +113,7 @@ export const SpaceHeader: React.FC<SpaceHeaderProps> = ({
                         <div className="flex items-center justify-between">
                             <div>
                                 <Typography variant="body-small" textColor="muted">Completed</Typography>
-                                <Typography variant="heading-xl" className="font-bold">{space.completedTasks}</Typography>
+                                <Typography variant="heading-xl" className="font-bold">{space.completedTasks || 0}</Typography>
                             </div>
                             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                                 <span className="text-purple-600 text-lg">📅</span>
@@ -112,7 +126,7 @@ export const SpaceHeader: React.FC<SpaceHeaderProps> = ({
                             <div>
                                 <Typography variant="body-small" textColor="muted">Progress</Typography>
                                 <Typography variant="heading-xl" className="font-bold">
-                                    {getProgressPercentage(space.completedTasks, space.totalTasks)}%
+                                    {getProgressPercentage(space.completedTasks || 0, space.totalTasks || 0)}%
                                 </Typography>
                             </div>
                             <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -123,26 +137,28 @@ export const SpaceHeader: React.FC<SpaceHeaderProps> = ({
                 </div>
 
                 {/* Members Section */}
-                {space.members.length > 0 && (
+                {(space.members || []).filter(member => member && member.name).length > 0 && (
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <Typography variant="body-small" textColor="muted">
                                 Team Members:
                             </Typography>
                             <div className="flex -space-x-2">
-                                {space.members.slice(0, 5).map((member, index) => (
+                                {(space.members || []).filter(member => member && member.name).slice(0, 5).map((member, index) => (
                                     <Avatar 
                                         key={member.id}
                                         size="sm"
                                         className="border-2 border-white"
                                     >
-                                        {member.name.charAt(0).toUpperCase()}
+                                        {typeof member.name === 'string' && member.name.length > 0 
+                                            ? member.name.charAt(0).toUpperCase() 
+                                            : '?'}
                                     </Avatar>
                                 ))}
-                                {space.members.length > 5 && (
+                                {(space.members || []).filter(member => member && member.name).length > 5 && (
                                     <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center border-2 border-white">
                                         <Typography variant="body-small" className="text-xs">
-                                            +{space.members.length - 5}
+                                            +{(space.members || []).filter(member => member && member.name).length - 5}
                                         </Typography>
                                     </div>
                                 )}

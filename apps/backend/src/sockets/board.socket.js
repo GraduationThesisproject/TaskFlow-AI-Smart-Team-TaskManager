@@ -46,6 +46,9 @@ const handleBoardSocket = (io) => {
     io.on('connection', (socket) => {
         logger.info(`User connected: ${socket.user.name} (${socket.id})`);
 
+        // Join user's personal room for notifications
+        socket.join(`user:${socket.userId}`);
+
         // Join board room
         socket.on('board:join', async (data) => {
             try {
@@ -57,12 +60,10 @@ const handleBoardSocket = (io) => {
                     return;
                 }
 
-                // Check access permissions
-                const user = await User.findById(socket.userId);
-                const userRoles = await user.getRoles();
-                
-                if (!userRoles.hasBoardPermission(boardId, 'canView')) {
-                    socket.emit('error', { message: 'Access denied to board' });
+                // Check if user is a member of the board
+                const isMember = await Board.isMember(boardId, socket.userId);
+                if (!isMember) {
+                    socket.emit('error', { code: 'FORBIDDEN', message: 'Access denied to board' });
                     return;
                 }
 
