@@ -30,7 +30,7 @@ const ConfirmationDialogDemo: React.FC = () => {
   };
 
   const handleConfirm = () => {
-    console.log('Action confirmed!');
+    // Action confirmed
     setShowDialog(false);
   };
 

@@ -1,37 +1,34 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": false,
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./apps/*/src"],
-      "@taskflow/ui": ["./packages/ui/src"],
-      "@taskflow/config": ["./packages/config"],
-      "@taskflow/theme": ["./packages/theme"],
-      "@taskflow/utils": ["./packages/utils/src"]
-    }
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "incremental": true
   },
-  "include": [],
-  "references": [
-    { "path": "./apps/backend" },
-    { "path": "./apps/admin" },
-    { "path": "./apps/main" },
-    { "path": "./apps/mobile" },
-    { "path": "./packages/ui" },
-    { "path": "./packages/theme" },
-    { "path": "./packages/utils" }
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
   ]
 }

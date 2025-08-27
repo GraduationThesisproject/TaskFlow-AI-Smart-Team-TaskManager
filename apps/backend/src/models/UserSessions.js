@@ -191,6 +191,48 @@ userSessionsSchema.methods.getSessionByDevice = function(deviceId) {
   );
 };
 
+// Method to activate/validate session by sessionId
+userSessionsSchema.methods.activateSession = function(sessionId) {
+  console.log('activateSession Debug - Looking for sessionId:', sessionId);
+  console.log('activateSession Debug - sessionId type:', typeof sessionId);
+  console.log('activateSession Debug - sessionId length:', sessionId?.length);
+  console.log('activateSession Debug - Total sessions:', this.sessions.length);
+  
+  // Log each session for comparison
+  this.sessions.forEach((session, index) => {
+    console.log(`activateSession Debug - Session ${index}:`, {
+      sessionId: session.sessionId,
+      sessionIdType: typeof session.sessionId,
+      sessionIdLength: session.sessionId?.length,
+      isActive: session.isActive,
+      deviceId: session.deviceId,
+      matches: session.sessionId === sessionId
+    });
+  });
+  
+  const session = this.sessions.find(s => {
+    const matches = s.sessionId === sessionId;
+    console.log(`activateSession Debug - Comparing "${s.sessionId}" === "${sessionId}": ${matches}`);
+    return matches;
+  });
+  
+  console.log('activateSession Debug - Found session:', session ? {
+    sessionId: session.sessionId,
+    isActive: session.isActive,
+    deviceId: session.deviceId
+  } : 'null');
+  
+  if (session && session.isActive) {
+    // Update last activity
+    session.lastActivityAt = new Date();
+    console.log('activateSession Debug - Session activated successfully');
+    return session;
+  }
+  
+  console.log('activateSession Debug - Session activation failed - session exists:', !!session, 'isActive:', session?.isActive);
+  return null;
+};
+
 // Method to add suspicious activity
 userSessionsSchema.methods.addSuspiciousActivity = function(activityData) {
   this.security.suspiciousActivities.push(activityData);

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAppSelector } from '../store';
 import { 
   Card, 
   CardHeader, 
@@ -22,11 +23,17 @@ import {
 import { adminService, AnalyticsData } from '../services/adminService';
 
 const DashboardLayout: React.FC = () => {
+  const { isAuthenticated, currentAdmin, isLoading: authLoading } = useAppSelector(state => state.admin);
   const [isLoading, setIsLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Only fetch data when authenticated and not loading
+    if (!isAuthenticated || authLoading || !currentAdmin) {
+      return;
+    }
+
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
@@ -35,19 +42,32 @@ const DashboardLayout: React.FC = () => {
         setAnalyticsData(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
-        console.error('Dashboard data fetch error:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, []);
+  }, [isAuthenticated, authLoading, currentAdmin]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Show loading state when not authenticated
+  if (!isAuthenticated || authLoading || !currentAdmin) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <Typography variant="body-medium" className="text-muted-foreground">
+            Loading dashboard...
+          </Typography>
+        </div>
       </div>
     );
   }
