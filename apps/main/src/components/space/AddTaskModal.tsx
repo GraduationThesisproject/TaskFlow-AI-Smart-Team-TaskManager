@@ -13,13 +13,16 @@ import {
   Stack,
   Flex
 } from '@taskflow/ui';
-import type { Task, Column } from '../../store/slices/taskSlice';
+import type { Task } from '../../types/task.types';
+import type { Column } from '../../types/board.types';
+import { UserService, type User } from '../../services/userService';
 
 interface AddTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (taskData: Partial<Task>) => Promise<void>;
   selectedColumn?: string;
+  selectedBoard?: string;
   columns?: Column[];
 }
 
@@ -42,6 +45,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   onClose,
   onSubmit,
   selectedColumn,
+  selectedBoard,
   columns = [],
 }) => {
   const [formData, setFormData] = useState<Partial<Task>>({
@@ -49,23 +53,106 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
     description: '',
     priority: 'medium',
     status: 'todo',
+    board: selectedBoard || '',
     column: selectedColumn || '',
     estimatedHours: 0,
+    dueDate: '',
     tags: [],
     assignees: [],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [assigneeInput, setAssigneeInput] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (selectedColumn) {
       setFormData(prev => ({ ...prev, column: selectedColumn }));
     }
-  }, [selectedColumn]);
+    if (selectedBoard) {
+      setFormData(prev => ({ ...prev, board: selectedBoard }));
+    }
+  }, [selectedColumn, selectedBoard]);
+
+  // Load users for autocomplete
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        setIsLoadingUsers(true);
+        const response = await UserService.getUsers();
+        setUsers(response.data || []);
+      } catch (error) {
+        console.error('Failed to load users:', error);
+      } finally {
+        setIsLoadingUsers(false);
+      }
+    };
+
+    if (isOpen) {
+      loadUsers();
+    }
+  }, [isOpen]);
+
+  // Filter users based on input
+  useEffect(() => {
+    if (assigneeInput.trim()) {
+      const filtered = users.filter(user => 
+        user.name.toLowerCase().includes(assigneeInput.toLowerCase()) ||
+        user.email.toLowerCase().includes(assigneeInput.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+      setShowUserDropdown(filtered.length > 0);
+    } else {
+      setFilteredUsers([]);
+      setShowUserDropdown(false);
+    }
+  }, [assigneeInput, users]);
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Title validation
+    if (!formData.title?.trim()) {
+      newErrors.title = 'Title is required';
+    } else if (formData.title.trim().length < 3) {
+      newErrors.title = 'Title must be at least 3 characters long';
+    } else if (formData.title.trim().length > 200) {
+      newErrors.title = 'Title must be less than 200 characters';
+    }
+
+    // Column validation - only required if no column is pre-selected
+    if (!selectedColumn && !formData.column) {
+      newErrors.column = 'Please select a column';
+    }
+
+    // Due date validation
+    if (formData.dueDate) {
+      const dueDate = new Date(formData.dueDate);
+      const now = new Date();
+      if (dueDate < now) {
+        newErrors.dueDate = 'Due date cannot be in the past';
+      }
+    }
+
+    // Estimated hours validation
+    if (formData.estimatedHours && formData.estimatedHours < 0) {
+      newErrors.estimatedHours = 'Estimated hours cannot be negative';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleInputChange = (field: keyof Task, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
 
   const handleAddTag = () => {
@@ -92,7 +179,20 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
         assignees: [...(prev.assignees || []), assigneeInput.trim()]
       }));
       setAssigneeInput('');
+      setShowUserDropdown(false);
     }
+  };
+
+  const handleSelectUser = (user: User) => {
+    const userDisplay = user.name || user.email;
+    if (!formData.assignees?.includes(userDisplay)) {
+      setFormData(prev => ({
+        ...prev,
+        assignees: [...(prev.assignees || []), userDisplay]
+      }));
+    }
+    setAssigneeInput('');
+    setShowUserDropdown(false);
   };
 
   const handleRemoveAssignee = (assigneeToRemove: string) => {
@@ -104,14 +204,33 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title?.trim() || !formData.column) return;
+    
+    if (!validateForm()) {
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      await onSubmit(formData);
+      // Transform formData to match CreateTaskForm interface
+      const taskData = {
+        title: formData.title || '',
+        description: formData.description || '',
+        boardId: formData.board || '',
+        columnId: formData.column || '',
+        priority: formData.priority || 'medium',
+        assignees: formData.assignees || [],
+        tags: formData.tags || [],
+        estimatedHours: formData.estimatedHours || 0,
+        dueDate: formData.dueDate || '',
+        position: formData.position || 0,
+      };
+      
+      await onSubmit(taskData);
       handleClose();
     } catch (error) {
       console.error('Failed to create task:', error);
+      // Show error message to user
+      setErrors({ submit: 'Failed to create task. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -125,6 +244,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       status: 'todo',
       column: selectedColumn || '',
       estimatedHours: 0,
+      dueDate: '',
       tags: [],
       assignees: [],
     });
@@ -149,6 +269,15 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       
       <form onSubmit={handleSubmit}>
         <ModalBody>
+          {/* General Error Message */}
+          {errors.submit && (
+            <div className="mb-4 p-3 bg-error/10 border border-error/20 rounded-lg">
+              <Typography variant="body-small" className="text-error">
+                {errors.submit}
+              </Typography>
+            </div>
+          )}
+          
           <Stack spacing="lg">
             {/* Basic Information */}
             <div>
@@ -165,7 +294,13 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                     onChange={(e) => handleInputChange('title', e.target.value)}
                     placeholder="Enter task title"
                     required
+                    className={errors.title ? 'border-error' : ''}
                   />
+                  {errors.title && (
+                    <Typography variant="body-small" className="mt-1 text-error">
+                      {errors.title}
+                    </Typography>
+                  )}
                 </div>
                 
                 <div>
@@ -224,23 +359,46 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Typography variant="body-small" className="mb-1 text-muted-foreground">
-                      Column *
-                    </Typography>
-                    <Select
-                      value={formData.column}
-                      onChange={(e) => handleInputChange('column', e.target.value)}
-                      required
-                    >
-                      <SelectOption value="">Select column</SelectOption>
-                      {columns.map(column => (
-                        <SelectOption key={column._id} value={column._id}>
-                          {column.name}
-                        </SelectOption>
-                      ))}
-                    </Select>
-                  </div>
+                  {/* Only show column selection if no column is pre-selected */}
+                  {!selectedColumn && (
+                    <div>
+                      <Typography variant="body-small" className="mb-1 text-muted-foreground">
+                        Column *
+                      </Typography>
+                      <Select
+                        value={formData.column}
+                        onChange={(e) => handleInputChange('column', e.target.value)}
+                        required
+                        className={errors.column ? 'border-error' : ''}
+                      >
+                        <SelectOption value="">Select column</SelectOption>
+                        {columns.map(column => (
+                          <SelectOption key={column._id} value={column._id}>
+                            {column.name}
+                          </SelectOption>
+                        ))}
+                      </Select>
+                      {errors.column && (
+                        <Typography variant="body-small" className="mt-1 text-error">
+                          {errors.column}
+                        </Typography>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Show selected column info if column is pre-selected */}
+                  {selectedColumn && (
+                    <div>
+                      <Typography variant="body-small" className="mb-1 text-muted-foreground">
+                        Column
+                      </Typography>
+                      <div className="p-3 border border-border rounded-lg bg-muted/20">
+                        <Typography variant="body-medium" className="font-medium">
+                          {columns.find(col => col._id === selectedColumn)?.name || 'Unknown Column'}
+                        </Typography>
+                      </div>
+                    </div>
+                  )}
                   
                   <div>
                     <Typography variant="body-small" className="mb-1 text-muted-foreground">
@@ -255,6 +413,24 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                       placeholder="0"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Typography variant="body-small" className="mb-1 text-muted-foreground">
+                    Due Date
+                  </Typography>
+                  <Input
+                    type="datetime-local"
+                    value={formData.dueDate || ''}
+                    onChange={(e) => handleInputChange('dueDate', e.target.value)}
+                    min={new Date().toISOString().slice(0, 16)}
+                    className={errors.dueDate ? 'border-error' : ''}
+                  />
+                  {errors.dueDate && (
+                    <Typography variant="body-small" className="mt-1 text-error">
+                      {errors.dueDate}
+                    </Typography>
+                  )}
                 </div>
               </Stack>
             </div>
@@ -304,22 +480,49 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 Assignees
               </Typography>
               <div className="space-y-2">
-                <div className="flex gap-2">
+                <div className="relative">
                   <Input
                     value={assigneeInput}
                     onChange={(e) => setAssigneeInput(e.target.value)}
-                    placeholder="Add an assignee"
+                    placeholder="Search users by name or email"
                     onKeyPress={(e) => handleKeyPress(e, handleAddAssignee)}
+                    onFocus={() => setShowUserDropdown(assigneeInput.trim().length > 0 && filteredUsers.length > 0)}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddAssignee}
-                    disabled={!assigneeInput.trim()}
-                  >
-                    Add
-                  </Button>
+                  
+                  {/* User Autocomplete Dropdown */}
+                  {showUserDropdown && (
+                    <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {isLoadingUsers ? (
+                        <div className="p-3 text-center text-muted-foreground">
+                          Loading users...
+                        </div>
+                      ) : filteredUsers.length > 0 ? (
+                        filteredUsers.map(user => (
+                          <div
+                            key={user._id}
+                            className="p-3 hover:bg-muted cursor-pointer border-b border-border last:border-b-0"
+                            onClick={() => handleSelectUser(user)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium">
+                                {user.name?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="font-medium">{user.name}</div>
+                                <div className="text-sm text-muted-foreground">{user.email}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : assigneeInput.trim() && (
+                        <div className="p-3 text-center text-muted-foreground">
+                          No users found
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+                
                 {formData.assignees && formData.assignees.length > 0 && (
                   <Flex wrap="wrap" gap="sm">
                     {formData.assignees.map(assignee => (
@@ -350,7 +553,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
           </Button>
           <Button
             type="submit"
-            disabled={!formData.title?.trim() || !formData.column || isSubmitting}
+            disabled={Object.keys(errors).length > 0 || isSubmitting}
           >
             {isSubmitting ? 'Creating...' : 'Create Task'}
           </Button>

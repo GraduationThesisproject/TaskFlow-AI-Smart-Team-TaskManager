@@ -26,9 +26,14 @@ const addMemberSchema = {
     role: { enum: ['viewer', 'member', 'admin'], default: 'member' }
 };
 
-// Routes
-router.get('/workspace/:workspaceId', 
+// Routes - Support both URL patterns for backward compatibility
+router.get('/workspace/:workspaceId',
     spaceController.getSpaces
+);
+
+// Add route that matches frontend expectation: /spaces?workspace=workspaceId
+router.get('/',
+    spaceController.getSpacesByWorkspace
 );
 
 router.get('/:id', 
