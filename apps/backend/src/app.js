@@ -36,6 +36,7 @@ const invitationRoutes = require('./routes/invitation.routes');
 const aiRoutes = require('./routes/ai.routes');
 const templateRoutes = require('./routes/template.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
+const userRoutes = require('./routes/user.routes');
 const app = express();
 
 
@@ -145,6 +146,9 @@ app.use('/api/analytics', authMiddleware, analyticsRoutes);
 // Make templates routes publicly accessible for GET requests.
 // Controller methods still enforce auth for mutations (create/update/delete/like).
 app.use('/api/templates', templateRoutes);
+app.use('/api/templates', authMiddleware, templateRoutes);
+app.use('/api/users', userRoutes);
+
 
 // 404 handler - using catch-all middleware instead of wildcard
 app.use((req, res) => {

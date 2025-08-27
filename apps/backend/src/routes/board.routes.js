@@ -58,4 +58,9 @@ router.put('/:id/columns/:columnId',
 
 router.delete('/:id/columns/:columnId', boardController.deleteColumn);
 
+// Add missing column routes identified in analysis
+router.get('/:id/columns', boardController.getColumns);
+
+router.patch('/:id/columns/reorder', boardController.reorderColumns);
+
 module.exports = router;

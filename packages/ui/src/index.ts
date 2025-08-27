@@ -6,7 +6,7 @@ export * from './Gradient';
 import Gradient from './Gradient';
 export { Gradient };
 export * from './Input';
-export * from './TextArea';
+export * from './Textarea';
 export * from './Typography';
 export * from './AuthCard';
 export * from './FormField';
@@ -33,6 +33,9 @@ export * from './EmptyState';
 export * from './Toast';
 export * from './Alert';
 export * from './Skeleton';
+export * from './ColorPicker';
+export * from './IconPicker';
+export * from './Popover';
 export * from './utils';
 
 // Re-export GridLayout as Grid for backward compatibility

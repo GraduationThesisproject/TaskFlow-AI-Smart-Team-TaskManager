@@ -1,10 +1,11 @@
 import axiosInstance from '../config/axios';
-import type { Board, Column, ApiResponse, PaginatedResponse } from '../types/task.types';
+import type { Board, Column } from '../types/board.types';
+import type { ApiResponse } from '../types/task.types';
 
 export interface CreateBoardData {
   name: string;
   description?: string;
-  type: 'kanban' | 'list' | 'table';
+  type: 'kanban' | 'list' | 'calendar' | 'timeline';
   visibility: 'public' | 'private';
   spaceId: string;
   settings?: any;
@@ -20,12 +21,19 @@ export interface CreateColumnData {
   name: string;
   boardId: string;
   position: number;
+  color?: string;
+  backgroundColor?: string;
+  icon?: string | null;
   settings?: any;
 }
 
 export interface UpdateColumnData {
   name?: string;
   position?: number;
+  color?: string;
+  backgroundColor?: string;
+  icon?: string | null;
+  boardId?: string;
   settings?: any;
 }
 
@@ -33,7 +41,7 @@ export class BoardService {
   // Get boards by space
   static async getBoardsBySpace(spaceId: string): Promise<ApiResponse<Board[]>> {
     try {
-      const response = await axiosInstance.get(`/boards?space=${spaceId}`);
+      const response = await axiosInstance.get(`/boards/space/${spaceId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching boards:', error);
@@ -99,7 +107,12 @@ export class BoardService {
   // Create new column
   static async createColumn(data: CreateColumnData): Promise<ApiResponse<Column>> {
     try {
-      const response = await axiosInstance.post('/boards/columns', data);
+      // The backend route is POST /boards/:id/columns, so we need the boardId
+      const { boardId, ...columnData } = data as any;
+      if (!boardId) {
+        throw new Error('boardId is required to create a column');
+      }
+      const response = await axiosInstance.post(`/boards/${boardId}/columns`, columnData);
       return response.data;
     } catch (error) {
       console.error('Error creating column:', error);
@@ -110,7 +123,13 @@ export class BoardService {
   // Update column
   static async updateColumn(id: string, data: UpdateColumnData): Promise<ApiResponse<Column>> {
     try {
-      const response = await axiosInstance.put(`/boards/columns/${id}`, data);
+      // The backend expects PUT /boards/:boardId/columns/:columnId
+      // We need to extract boardId from the data or pass it separately
+      const { boardId, ...columnData } = data as any;
+      if (!boardId) {
+        throw new Error('boardId is required to update a column');
+      }
+      const response = await axiosInstance.put(`/boards/${boardId}/columns/${id}`, columnData);
       return response.data;
     } catch (error) {
       console.error('Error updating column:', error);
@@ -119,9 +138,13 @@ export class BoardService {
   }
 
   // Delete column
-  static async deleteColumn(id: string): Promise<ApiResponse<any>> {
+  static async deleteColumn(id: string, boardId?: string): Promise<ApiResponse<any>> {
     try {
-      const response = await axiosInstance.delete(`/boards/columns/${id}`);
+      // The backend expects DELETE /boards/:boardId/columns/:columnId
+      if (!boardId) {
+        throw new Error('boardId is required to delete a column');
+      }
+      const response = await axiosInstance.delete(`/boards/${boardId}/columns/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error deleting column:', error);

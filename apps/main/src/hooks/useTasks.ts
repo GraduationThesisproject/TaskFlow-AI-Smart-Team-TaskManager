@@ -1,5 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
-import type { Task, Column, Board } from '../types/task.types';
+import type { Task } from '../types/task.types';
+import type { Column, Board } from '../types/board.types';
 import type { RootState } from '../store';
 import {
   fetchTasks,
@@ -13,6 +14,10 @@ import {
   fetchTasksBySpace,
   fetchBoardsBySpace,
   fetchColumnsByBoard,
+  createColumn,
+  updateColumn,
+  deleteColumn,
+  reorderColumns,
   setCurrentTask,
   updateFilters,
   updateSort,
@@ -36,7 +41,8 @@ export const useTasks = () => {
     boards,
     spaces,
     currentBoard,
-    currentSpace
+    currentSpace,
+    comments,
   } = useSelector((state: RootState) => state.tasks);
 
   // Compute derived state
@@ -148,9 +154,77 @@ export const useTasks = () => {
     dispatch(fetchColumnsByBoard(boardId) as any);
   };
 
+  const createColumnLocal = async (boardId: string, columnData: { 
+    name: string; 
+    position: number; 
+    color?: string;
+    settings?: any;
+  }) => {
+    try {
+      await dispatch(createColumn({ boardId, columnData }) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to create column:', error);
+      throw error;
+    }
+  };
+
+  const updateColumnLocal = async (columnId: string, columnData: Partial<Column>) => {
+    console.log('updateColumnLocal called with columnId:', columnId, 'columnData:', columnData);
+    try {
+      // We need to get the boardId from the current board or from the column data
+      const boardId = currentBoard?._id;
+      console.log('Current board ID:', boardId);
+      if (!boardId) {
+        throw new Error('No board ID available for column update');
+      }
+      const payload = { 
+        columnId, 
+        columnData: { ...columnData, boardId } as any 
+      };
+      console.log('Dispatching updateColumn with payload:', payload);
+      await dispatch(updateColumn(payload) as any).unwrap();
+      console.log('updateColumn dispatch completed successfully');
+    } catch (error) {
+      console.error('Failed to update column:', error);
+      throw error;
+    }
+  };
+
+  const deleteColumnLocal = async (columnId: string) => {
+    console.log('deleteColumnLocal called with columnId:', columnId);
+    try {
+      const boardId = currentBoard?._id;
+      console.log('Current board ID for deletion:', boardId);
+      if (!boardId) {
+        throw new Error('No board ID available for column deletion');
+      }
+      const payload = { columnId, boardId };
+      console.log('Dispatching deleteColumn with payload:', payload);
+      await dispatch(deleteColumn(payload) as any).unwrap();
+      console.log('deleteColumn dispatch completed successfully');
+    } catch (error) {
+      console.error('Failed to delete column:', error);
+      throw error;
+    }
+  };
+
+  const reorderColumnsLocal = async (boardId: string, columnIds: string[]) => {
+    try {
+      await dispatch(reorderColumns({ boardId, columnOrder: columnIds }) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to reorder columns:', error);
+      throw error;
+    }
+  };
+
+  const safeTasks = tasks;
+  const safeColumns = columns;
+  const safeBoards = boards;
+  const safeSpaces = spaces;
+
   return {
     // State
-    tasks,
+    tasks: safeTasks,
     currentTask,
     loading,
     error,
@@ -165,11 +239,12 @@ export const useTasks = () => {
     timelineTasks,
     highPriorityTasks,
     overdueTasks,
-    columns,
-    boards,
-    spaces,
+    columns: safeColumns,
+    boards: safeBoards,
+    spaces: safeSpaces,
     currentBoard,
     currentSpace,
+    comments,
 
     // Actions
     loadTasks,
@@ -184,6 +259,11 @@ export const useTasks = () => {
     editTask,
     removeTask,
     selectTask,
+    moveTask,
+    createColumn: createColumnLocal,
+    updateColumn: updateColumnLocal,
+    deleteColumn: deleteColumnLocal,
+    reorderColumns: reorderColumnsLocal,
     updateFilters: updateFiltersLocal,
     updateSortBy,
     updateSearchQuery: updateSearchQueryLocal,

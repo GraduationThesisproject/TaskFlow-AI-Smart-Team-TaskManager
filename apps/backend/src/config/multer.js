@@ -267,8 +267,7 @@ const createMulterUpload = (category = 'general') => {
         cb(new Error(`File filter error: ${error.message}`));
       }
     }
-  }).single('avatar');
-  
+  }); // Return multer instance without pre-configuring upload type
 };
 
 // Generate thumbnails for images
