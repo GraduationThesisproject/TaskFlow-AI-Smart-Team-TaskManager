@@ -133,7 +133,7 @@ adminSchema.index({ lastActivity: -1 });
 
 // Method to check if admin has specific permission
 adminSchema.methods.hasPermission = function(permission) {
-  if (this.role === 'superadmin') {
+  if (this.role === 'super_admin') {
     return true;
   }
   return this.permissions[permission] === true;
@@ -141,7 +141,7 @@ adminSchema.methods.hasPermission = function(permission) {
 
 // Method to check if admin has any of the given permissions
 adminSchema.methods.hasAnyPermission = function(permissions) {
-  if (this.role === 'superadmin') {
+  if (this.role === 'super_admin') {
     return true;
   }
   return permissions.some(permission => this.permissions[permission] === true);
@@ -149,7 +149,7 @@ adminSchema.methods.hasAnyPermission = function(permissions) {
 
 // Method to check if admin has all of the given permissions
 adminSchema.methods.hasAllPermissions = function(permissions) {
-  if (this.role === 'superadmin') {
+  if (this.role === 'super_admin') {
     return true;
   }
   return permissions.every(permission => this.permissions[permission] === true);
@@ -157,7 +157,7 @@ adminSchema.methods.hasAllPermissions = function(permissions) {
 
 // Method to grant permission
 adminSchema.methods.grantPermission = function(permission) {
-  if (this.role !== 'superadmin') {
+  if (this.role !== 'super_admin') {
     this.permissions[permission] = true;
   }
   return this.save();
@@ -165,16 +165,17 @@ adminSchema.methods.grantPermission = function(permission) {
 
 // Method to revoke permission
 adminSchema.methods.revokePermission = function(permission) {
-  if (this.role !== 'superadmin') {
+  if (this.role !== 'super_admin') {
     this.permissions[permission] = false;
   }
   return this.save();
 };
 
-// Method to update last activity
+// Method to update last activity (simplified to avoid loops)
 adminSchema.methods.updateActivity = function() {
+  // Just update the local property without saving
   this.lastActivity = new Date();
-  return this.save();
+  return Promise.resolve();
 };
 
 // Method to assign space
@@ -227,21 +228,21 @@ adminSchema.statics.findActive = function() {
   return this.find({ isActive: true }).populate('userId', 'name email avatar');
 };
 
-// Static method to find superadmins
-adminSchema.statics.findSuperAdmins = function() {
-  return this.find({ role: 'superadmin', isActive: true }).populate('userId', 'name email avatar');
-};
-
-// Static method to find admins by permission
-adminSchema.statics.findByPermission = function(permission) {
-  return this.find({
-    $or: [
-      { role: 'superadmin' },
-      { [`permissions.${permission}`]: true }
-    ],
-    isActive: true
-  }).populate('userId', 'name email avatar');
-};
+  // Static method to find superadmins
+  adminSchema.statics.findSuperAdmins = function() {
+    return this.find({ role: 'super_admin', isActive: true }).populate('userId', 'name email avatar');
+  };
+  
+  // Static method to find admins by permission
+  adminSchema.statics.findByPermission = function(permission) {
+    return this.find({
+      $or: [
+        { role: 'super_admin' },
+        { [`permissions.${permission}`]: true }
+      ],
+      isActive: true
+    }).populate('userId', 'name email avatar');
+  };
 
 // Static method to find inactive admins
 adminSchema.statics.findInactive = function(daysThreshold = 30) {
@@ -267,7 +268,7 @@ adminSchema.statics.createAdmin = function(userId, role = 'admin', customData = 
   };
 
   // Superadmin gets all permissions
-  if (role === 'superadmin' || role === 'super_admin') {
+  if (role === 'super_admin') {
     Object.keys(defaultPermissions).forEach(key => {
       defaultPermissions[key] = true;
     });
@@ -312,7 +313,7 @@ adminSchema.statics.createAdmin = function(userId, role = 'admin', customData = 
 // Pre-save middleware to ensure superadmin has all permissions
 adminSchema.pre('save', async function(next) {
   // Ensure superadmin has all permissions
-  if (this.role === 'superadmin') {
+  if (this.role === 'super_admin') {
     Object.keys(this.permissions).forEach(key => {
       this.permissions[key] = true;
     });
@@ -334,6 +335,11 @@ adminSchema.pre('save', async function(next) {
 // Post-save middleware to update user roles if needed
 adminSchema.post('save', async function(doc) {
   try {
+    // Skip for admin-only users (no userId)
+    if (!doc.userId) {
+      return;
+    }
+
     const User = mongoose.model('User');
     const UserRoles = mongoose.model('UserRoles');
     

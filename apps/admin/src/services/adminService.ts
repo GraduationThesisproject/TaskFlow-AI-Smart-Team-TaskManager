@@ -292,6 +292,23 @@ class AdminService {
     return data.data;
   }
 
+  // Add Admin User - Creates admin panel user with password
+  async addAdminUser(adminData: { email: string; password: string; role: string }): Promise<{ admin: { id: string; email: string; role: string } }> {
+    const response = await fetch(`${API_BASE}/users/add-admin`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(adminData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to add admin user');
+    }
+
+    const data = await response.json();
+    return data.data;
+  }
+
   async getAvailableRoles(): Promise<{ availableRoles: string[]; userRole: string }> {
     const response = await fetch(`${API_BASE}/users/available-roles`, {
       headers: this.getAuthHeaders(),

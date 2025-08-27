@@ -13,7 +13,7 @@ const login = async (req, res) => {
     const { deviceId, deviceInfo } = req.body.device || {};
 
     // First, try to find admin-only user (no regular User model)
-    let admin = await Admin.findOne({ userEmail: email, isActive: true });
+    let admin = await Admin.findOne({ userEmail: email, isActive: true }).select('+userPassword');
     let user = null;
     let isPasswordValid = false;
 
@@ -88,9 +88,6 @@ const login = async (req, res) => {
 
     // Generate JWT token
     const token = generateToken(user ? user._id : admin._id);
-    
-    // Update admin activity
-    admin.updateActivity();
 
     // Return admin info and token
     const adminResponse = {
@@ -843,6 +840,136 @@ const addUserWithEmail = async (req, res) => {
   }
 };
 
+// Add new admin panel user with email, password, and role (for direct admin creation)
+const addAdminUser = async (req, res) => {
+  try {
+    const { email, password, role } = req.body;
+
+    // Validate required fields
+    if (!email || !password || !role) {
+      return sendResponse(res, 400, false, 'Email, password, and role are required');
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return sendResponse(res, 400, false, 'Invalid email format');
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return sendResponse(res, 400, false, 'Password must be at least 8 characters long');
+    }
+
+    // Validate role
+    if (!['admin', 'super_admin', 'moderator'].includes(role)) {
+      return sendResponse(res, 400, false, 'Invalid role. Must be one of: admin, super_admin, moderator');
+    }
+
+    // Check if admin user already exists
+    const Admin = require('../models/Admin');
+    const existingAdmin = await Admin.findOne({ 'userEmail': email });
+    if (existingAdmin) {
+      return sendResponse(res, 400, false, 'Admin user with this email already exists');
+    }
+
+    // Create Admin model entry with password for admin panel access
+    const adminEntry = new Admin({
+      userEmail: email,
+      userName: email.split('@')[0], // Use email prefix as username
+      userPassword: password, // This will be hashed by the pre-save middleware
+      role: role,
+      isActive: true,
+      type: 'admin_only'
+    });
+
+    await adminEntry.save();
+
+    // Log the admin user creation for audit purposes
+    logger.info(`New admin panel user created: ${email} with role ${role} by admin ${req.user.id}`);
+
+    // Return created admin user info
+    sendResponse(res, 201, true, 'Admin panel user created successfully', { 
+      admin: {
+        id: adminEntry._id,
+        email: email,
+        role: role,
+        isActive: adminEntry.isActive,
+        createdAt: adminEntry.createdAt
+      }
+    });
+  } catch (error) {
+    logger.error('Add admin user error:', error);
+    sendResponse(res, 500, false, 'Server error creating admin user');
+  }
+};
+
+// Setup first admin user (public endpoint, only works when no admins exist)
+const setupFirstAdmin = async (req, res) => {
+  try {
+    const { email, password, role = 'super_admin' } = req.body;
+
+    // Validate required fields
+    if (!email || !password) {
+      return sendResponse(res, 400, false, 'Email and password are required');
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return sendResponse(res, 400, false, 'Invalid email format');
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return sendResponse(res, 400, false, 'Password must be at least 8 characters long');
+    }
+
+    // Check if any admin users already exist
+    const Admin = require('../models/Admin');
+    const existingAdminCount = await Admin.countDocuments();
+    
+    if (existingAdminCount > 0) {
+      return sendResponse(res, 403, false, 'First admin already exists. Use the protected endpoint to create additional admin users.');
+    }
+
+    // Check if admin user with this email already exists
+    const existingAdmin = await Admin.findOne({ 'userEmail': email });
+    if (existingAdmin) {
+      return sendResponse(res, 400, false, 'Admin user with this email already exists');
+    }
+
+    // Create the first admin user
+    const adminEntry = new Admin({
+      userEmail: email,
+      userName: email.split('@')[0], // Use email prefix as username
+      userPassword: password, // This will be hashed by the pre-save middleware
+      role: role,
+      isActive: true,
+      type: 'admin_only'
+    });
+
+    await adminEntry.save();
+
+    // Log the first admin user creation
+    logger.info(`First admin user created: ${email} with role ${role}`);
+
+    // Return created admin user info
+    sendResponse(res, 201, true, 'First admin user created successfully', { 
+      admin: {
+        id: adminEntry._id,
+        email: email,
+        role: role,
+        isActive: adminEntry.isActive,
+        createdAt: adminEntry.createdAt
+      }
+    });
+  } catch (error) {
+    logger.error('Setup first admin error:', error);
+    sendResponse(res, 500, false, 'Server error creating first admin user');
+  }
+};
+
 // Get available roles for the current user
 const getAvailableRoles = async (req, res) => {
   try {
@@ -1138,6 +1265,7 @@ module.exports = {
   changePassword,
   updateProfile,
   uploadAvatar,
+  setupFirstAdmin,
   
   // User Management
   getUsers,
@@ -1146,6 +1274,7 @@ module.exports = {
   getUser,
   updateUser,
   addUserWithEmail,
+  addAdminUser,
   getAvailableRoles,
 
   deactivateUser: banUser, // Keep the old name for backward compatibility
