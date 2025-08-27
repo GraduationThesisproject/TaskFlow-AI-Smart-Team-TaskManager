@@ -110,6 +110,8 @@ const SettingsLayout: React.FC = () => {
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   const [addAdminForm, setAddAdminForm] = useState({
     email: '',
+    password: '',
+    confirmPassword: '',
     role: 'moderator'
   });
   const [addAdminStatus, setAddAdminStatus] = useState({
@@ -244,8 +246,18 @@ const SettingsLayout: React.FC = () => {
 
   // Admin Users Management Functions
   const handleAddAdmin = async () => {
-    if (!addAdminForm.email || !addAdminForm.role) {
-      setAddAdminStatus({ isLoading: false, message: 'Email and role are required', isError: true });
+    if (!addAdminForm.email || !addAdminForm.password || !addAdminForm.confirmPassword || !addAdminForm.role) {
+      setAddAdminStatus({ isLoading: false, message: 'All fields are required', isError: true });
+      return;
+    }
+
+    if (addAdminForm.password !== addAdminForm.confirmPassword) {
+      setAddAdminStatus({ isLoading: false, message: 'Passwords do not match', isError: true });
+      return;
+    }
+
+    if (addAdminForm.password.length < 8) {
+      setAddAdminStatus({ isLoading: false, message: 'Password must be at least 8 characters long', isError: true });
       return;
     }
 
@@ -255,19 +267,26 @@ const SettingsLayout: React.FC = () => {
       return;
     }
 
-    try {
+        try {
       setAddAdminStatus({ isLoading: true, message: '', isError: false });
       
       // Add admin user via API
+      const response = await adminService.addAdminUser({
+        email: addAdminForm.email,
+        password: addAdminForm.password,
+        role: addAdminForm.role
+      });
+      
+      // Add to local state
       const newAdmin = {
-        id: Date.now().toString(), // Temporary ID
+        id: response.admin.id || Date.now().toString(),
         email: addAdminForm.email,
         role: addAdminForm.role,
         isActive: true
       };
       
       setAdminUsers(prev => [...prev, newAdmin]);
-      setAddAdminForm({ email: '', role: 'moderator' });
+      setAddAdminForm({ email: '', password: '', confirmPassword: '', role: 'moderator' });
       setShowAddAdminModal(false);
       setAddAdminStatus({ isLoading: false, message: 'Admin user added successfully!', isError: false });
       
@@ -1475,29 +1494,54 @@ const SettingsLayout: React.FC = () => {
                 </div>
               )}
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="adminEmail" className="text-sm font-medium">Email Address</label>
-                  <Input
-                    id="adminEmail"
-                    type="email"
-                    value={addAdminForm.email}
-                    onChange={(e) => setAddAdminForm(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="Enter admin email address"
-                  />
-                </div>
+                             <div className="space-y-4">
+                 <div className="space-y-2">
+                   <label htmlFor="adminEmail" className="text-sm font-medium">Email Address</label>
+                   <Input
+                     id="adminEmail"
+                     type="email"
+                     value={addAdminForm.email}
+                     onChange={(e) => setAddAdminForm(prev => ({ ...prev, email: e.target.value }))}
+                     placeholder="Enter admin email address"
+                   />
+                 </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="adminRole" className="text-sm font-medium">Admin Role</label>
-                  <Select
-                    value={addAdminForm.role}
-                    onChange={(e) => setAddAdminForm(prev => ({ ...prev, role: e.target.value }))}
-                  >
-                    <option value="moderator">Moderator - Basic admin access with limited permissions</option>
-                    <option value="admin">Admin - Full admin access with most permissions</option>
-                    <option value="super_admin">Super Admin - Complete system access with all permissions</option>
-                  </Select>
-                </div>
+                 <div className="space-y-2">
+                   <label htmlFor="adminPassword" className="text-sm font-medium">Password</label>
+                   <Input
+                     id="adminPassword"
+                     type="password"
+                     value={addAdminForm.password}
+                     onChange={(e) => setAddAdminForm(prev => ({ ...prev, password: e.target.value }))}
+                     placeholder="Enter password (min 8 characters)"
+                   />
+                   <div className="text-xs text-muted-foreground">
+                     Must be at least 8 characters long
+                   </div>
+                 </div>
+
+                 <div className="space-y-2">
+                   <label htmlFor="adminConfirmPassword" className="text-sm font-medium">Confirm Password</label>
+                   <Input
+                     id="adminConfirmPassword"
+                     type="password"
+                     value={addAdminForm.confirmPassword}
+                     onChange={(e) => setAddAdminForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                     placeholder="Confirm password"
+                   />
+                 </div>
+
+                 <div className="space-y-2">
+                   <label htmlFor="adminRole" className="text-sm font-medium">Admin Role</label>
+                   <Select
+                     value={addAdminForm.role}
+                     onChange={(e) => setAddAdminForm(prev => ({ ...prev, role: e.target.value }))}
+                   >
+                     <option value="moderator">Moderator - Basic admin access with limited permissions</option>
+                     <option value="admin">Admin - Full admin access with most permissions</option>
+                     <option value="super_admin">Super Admin - Complete system access with all permissions</option>
+                   </Select>
+                 </div>
 
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
                   <Typography variant="body-small" className="text-blue-700">

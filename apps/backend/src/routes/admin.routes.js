@@ -17,6 +17,9 @@ router.post('/auth/login', adminController.login);
 router.post('/auth/login/2fa-complete', adminController.completeLoginWith2FA);
 router.get('/auth/test-jwt', adminController.testJWT);
 
+// Public endpoint for creating the first admin user (only works when no admins exist)
+router.post('/auth/setup-first-admin', adminController.setupFirstAdmin);
+
 // Apply admin authentication middleware to protected routes
 router.use(authMiddleware);
 router.use(requireSystemAdmin);
@@ -36,6 +39,7 @@ router.get('/users', requireUserManagementAccess('view'), adminController.getUse
 router.get('/app-users', requireUserManagementAccess('view'), adminController.getAppUsers); // Regular app users
 router.post('/users', requireUserManagementAccess('limited'), adminController.createUser);
 router.post('/users/add-with-email', requireUserManagementAccess('limited'), adminController.addUserWithEmail);
+router.post('/users/add-admin', requireUserManagementAccess('limited'), adminController.addAdminUser);
 router.get('/users/available-roles', requireUserManagementAccess('view'), adminController.getAvailableRoles);
 router.post('/users/reset-password', requireUserManagementAccess('limited'), adminController.resetUserPassword);
 
