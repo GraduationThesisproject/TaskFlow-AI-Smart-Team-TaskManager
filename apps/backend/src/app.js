@@ -16,7 +16,7 @@ require('./config/passport');
 
 // Import middleware
 const errorMiddleware = require('./middlewares/error.middleware');
-const authMiddleware = require('./middlewares/auth.middleware');
+const { authMiddleware } = require('./middlewares/auth.middleware');
 const { fileServeMiddleware } = require('./middlewares/serve.middleware');
 
 // Import routes
@@ -143,6 +143,7 @@ app.use('/api/invitations', invitationRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
 app.use('/api/templates', authMiddleware, templateRoutes);
 app.use('/api/users', userRoutes);
+
 
 // 404 handler - using catch-all middleware instead of wildcard
 app.use((req, res) => {

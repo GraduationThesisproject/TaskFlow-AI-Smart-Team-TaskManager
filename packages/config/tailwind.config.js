@@ -99,10 +99,16 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
+        // Rotating CSS variable-based angle for conic-gradient borders
+        orbit: {
+          "0%": { "--tw-glow-angle": "0deg" },
+          "100%": { "--tw-glow-angle": "360deg" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        orbit: "orbit 1.2s linear infinite",
       },
     },
   },

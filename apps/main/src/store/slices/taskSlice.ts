@@ -256,6 +256,7 @@ export const toggleCommentResolve = createAsyncThunk(
 // Initial state
 const initialState: TaskState = {
   tasks: [],
+
   currentTask: null,
   currentBoard: null,
   currentSpace: null,
