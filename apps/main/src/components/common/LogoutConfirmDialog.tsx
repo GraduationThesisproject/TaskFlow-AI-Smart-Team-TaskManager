@@ -52,7 +52,7 @@ export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
             <div className="w-10 h-10 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
               <LogOut className="w-5 h-5 text-red-500" />
             </div>
-            <Typography variant="heading-medium">Logout</Typography>
+            <Typography variant="body-medium">Logout</Typography>
           </div>
           <Button
             variant="ghost"
@@ -90,7 +90,7 @@ export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
           </div>
         )}
 
-        <Flex gap="small" className="justify-end">
+        <Flex gap="xs" className="justify-end">
           <Button
             variant="ghost"
             onClick={onClose}

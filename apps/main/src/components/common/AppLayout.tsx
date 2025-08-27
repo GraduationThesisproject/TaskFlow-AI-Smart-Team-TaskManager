@@ -38,10 +38,7 @@ export function AppLayout({ children, className = '' }: AppLayoutProps) {
 
   return (
     <div 
-      className={`min-h-screen min-h-[100vh] min-h-[calc(var(--vh,1vh)*100)] bg-gradient-to-br from-background via-muted/10 to-background ${className}`}
-      style={{
-        height: 'calc(var(--vh, 1vh) * 100)',
-      }}
+      className={`bg-gradient-to-br from-background via-muted/10 to-background ${className}`}
     >
       {children}
     </div>
