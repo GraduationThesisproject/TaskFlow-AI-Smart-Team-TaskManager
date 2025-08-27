@@ -1,14 +1,13 @@
 import type { 
   Task, 
-  Column, 
-  Board, 
-  Space, 
   CreateTaskForm, 
   UpdateTaskForm, 
   MoveTaskForm,
+  Comment,
   ApiResponse,
   PaginatedResponse 
 } from '../types/task.types';
+
 import axiosInstance from '../config/axios';
 
 // Task API Service
@@ -169,6 +168,87 @@ export class TaskService {
       return response.data;
     } catch (error) {
       console.error('Error stopping time tracking:', error);
+      throw error;
+    }
+  }
+
+  // Comment-related methods
+  static async getTaskComments(taskId: string): Promise<ApiResponse<Comment[]>> {
+    try {
+      const response = await axiosInstance.get(`/tasks/${taskId}/comments`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching task comments:', error);
+      throw error;
+    }
+  }
+
+  static async addComment(taskId: string, commentData: { content: string; mentions?: string[]; parentCommentId?: string }): Promise<ApiResponse<Comment>> {
+    try {
+      const response = await axiosInstance.post(`/tasks/${taskId}/comments`, commentData);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      throw error;
+    }
+  }
+
+  static async updateComment(commentId: string, commentData: { content: string }): Promise<ApiResponse<Comment>> {
+    try {
+      const response = await axiosInstance.put(`/comments/${commentId}`, commentData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      throw error;
+    }
+  }
+
+  static async deleteComment(commentId: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.delete(`/comments/${commentId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      throw error;
+    }
+  }
+
+  static async addCommentReaction(commentId: string, reactionData: { emoji: string }): Promise<ApiResponse<Comment>> {
+    try {
+      const response = await axiosInstance.post(`/comments/${commentId}/reactions`, reactionData);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding comment reaction:', error);
+      throw error;
+    }
+  }
+
+  static async removeCommentReaction(commentId: string, emoji: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.delete(`/comments/${commentId}/reactions`, { data: { emoji } });
+      return response.data;
+    } catch (error) {
+      console.error('Error removing comment reaction:', error);
+      throw error;
+    }
+  }
+
+  static async toggleCommentPin(commentId: string): Promise<ApiResponse<Comment>> {
+    try {
+      const response = await axiosInstance.post(`/comments/${commentId}/pin`);
+      return response.data;
+    } catch (error) {
+      console.error('Error toggling comment pin:', error);
+      throw error;
+    }
+  }
+
+  static async toggleCommentResolve(commentId: string): Promise<ApiResponse<Comment>> {
+    try {
+      const response = await axiosInstance.post(`/comments/${commentId}/resolve`);
+      return response.data;
+    } catch (error) {
+      console.error('Error toggling comment resolve:', error);
       throw error;
     }
   }

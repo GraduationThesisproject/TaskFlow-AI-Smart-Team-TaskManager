@@ -2,6 +2,11 @@
 module.exports = {
   content: [],
   darkMode: ["class"],
+  safelist: [
+    {
+      pattern: /^bg-\[#([0-9A-F]{6})\]$/i,
+    },
+  ],
   theme: {
     extend: {
       colors: {

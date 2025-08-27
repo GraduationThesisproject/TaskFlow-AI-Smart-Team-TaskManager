@@ -421,6 +421,53 @@ spaceSchema.statics.findNeedingAttention = function() {
   });
 };
 
+// Static method to get space with boards and columns
+spaceSchema.statics.getSpaceWithStats = async function(spaceId, userId) {
+  const space = await this.findById(spaceId)
+    .populate('workspace', 'name')
+    .populate('members.user', 'name email avatar')
+    .lean();
+
+  if (!space) {
+    throw new Error('Space not found');
+  }
+
+  // Get boards for this space
+  const Board = require('./Board');
+  const boards = await Board.find({ 
+    space: spaceId, 
+    isArchived: { $ne: true } 
+  }).lean();
+
+  const boardIds = boards.map(b => b._id);
+  
+  // Get columns for all boards
+  const Column = require('./Column');
+  const columns = await Column.find({ 
+    board: { $in: boardIds } 
+  }).lean();
+
+  // Group columns by board
+  const columnsByBoard = columns.reduce((acc, column) => {
+    if (!acc[column.board]) {
+      acc[column.board] = [];
+    }
+    acc[column.board].push(column);
+    return acc;
+  }, {});
+
+  // Attach columns to boards
+  const boardsWithColumns = boards.map(board => ({
+    ...board,
+    columns: columnsByBoard[board._id] || []
+  }));
+
+  return {
+    ...space,
+    boards: boardsWithColumns
+  };
+};
+
 // Pre-save middleware to update member count
 spaceSchema.pre('save', function(next) {
   this.stats.activeMembersCount = this.members.length;

@@ -350,4 +350,10 @@ taskSchema.pre('save', function(next) {
   next();
 });
 
+// Database indexes for performance
+taskSchema.index({ board: 1, column: 1, position: 1 });
+taskSchema.index({ assignees: 1 });
+taskSchema.index({ status: 1, dueDate: 1 });
+taskSchema.index({ title: 'text', description: 'text' });
+
 module.exports = mongoose.model('Task', taskSchema);

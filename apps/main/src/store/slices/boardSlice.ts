@@ -3,7 +3,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import type { 
   Board, 
   BoardState 
-} from '../../types/task.types';
+} from '../../types/board.types';
 import { BoardService } from '../../services/boardService';
 
 // Async thunks for API calls
@@ -96,7 +96,7 @@ const boardSlice = createSlice({
     }
   },
   extraReducers: (builder) => {
-    // Fetch board
+    // Fetch single board
     builder
       .addCase(fetchBoard.pending, (state) => {
         state.loading = true;
@@ -105,12 +105,19 @@ const boardSlice = createSlice({
       .addCase(fetchBoard.fulfilled, (state, action) => {
         state.loading = false;
         state.currentBoard = action.payload;
+        // Also add to boards array if not already present
+        const existingIndex = state.boards.findIndex(board => board._id === action.payload._id);
+        if (existingIndex === -1) {
+          state.boards.push(action.payload);
+        } else {
+          state.boards[existingIndex] = action.payload;
+        }
       })
       .addCase(fetchBoard.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch board';
       });
-    
+
     // Fetch boards by space
     builder
       .addCase(fetchBoardsBySpace.pending, (state) => {
@@ -119,7 +126,8 @@ const boardSlice = createSlice({
       })
       .addCase(fetchBoardsBySpace.fulfilled, (state, action) => {
         state.loading = false;
-        state.boards = action.payload;
+        const responseData = action.payload as any;
+        state.boards = responseData.boards || [];
       })
       .addCase(fetchBoardsBySpace.rejected, (state, action) => {
         state.loading = false;
@@ -134,7 +142,12 @@ const boardSlice = createSlice({
       })
       .addCase(createBoard.fulfilled, (state, action) => {
         state.loading = false;
-        state.boards.push(action.payload);
+        // The response might have a board property or be the board directly
+        const responseData = action.payload as any;
+        const board = responseData.board || responseData;
+        if (board) {
+          state.boards.push(board);
+        }
       })
       .addCase(createBoard.rejected, (state, action) => {
         state.loading = false;
