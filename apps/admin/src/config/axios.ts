@@ -21,10 +21,7 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Add debug logging in development
-    if (env.IS_DEV) {
-      console.log('Admin API Request:', config.method?.toUpperCase(), config.url);
-    }
+
     
     return config;
   },
@@ -37,11 +34,6 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
-    // Add debug logging in development
-    if (env.IS_DEV) {
-      console.log('Admin API Response:', response.status, response.config.url);
-    }
-    
     return response;
   },
   (error) => {

@@ -29,33 +29,19 @@ const DashboardLayout: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('DashboardLayout: useEffect triggered');
-    console.log('DashboardLayout: auth state:', { isAuthenticated, authLoading, hasAdmin: !!currentAdmin });
-    console.log('DashboardLayout: localStorage adminToken:', !!localStorage.getItem('adminToken'));
-    console.log('DashboardLayout: localStorage adminToken value:', localStorage.getItem('adminToken'));
-    console.log('DashboardLayout: localStorage all keys:', Object.keys(localStorage));
-    console.log('DashboardLayout: localStorage all entries:', Object.entries(localStorage));
-    
     // Only fetch data when authenticated and not loading
     if (!isAuthenticated || authLoading || !currentAdmin) {
-      console.log('DashboardLayout: Not authenticated or still loading, skipping data fetch');
-      console.log('DashboardLayout: isAuthenticated:', isAuthenticated);
-      console.log('DashboardLayout: authLoading:', authLoading);
-      console.log('DashboardLayout: currentAdmin:', currentAdmin);
       return;
     }
 
     const fetchDashboardData = async () => {
       try {
-        console.log('DashboardLayout: Starting to fetch dashboard data...');
-        console.log('DashboardLayout: About to call adminService.getAnalytics...');
         setIsLoading(true);
         setError(null);
         const data = await adminService.getAnalytics('6-months');
         setAnalyticsData(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
-        console.error('Dashboard data fetch error:', err);
       } finally {
         setIsLoading(false);
       }

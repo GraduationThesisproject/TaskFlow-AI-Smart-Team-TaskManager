@@ -88,9 +88,26 @@ process.on('SIGINT', () => {
     });
 });
 
+// Handle unhandled promise rejections without crashing
 process.on('unhandledRejection', (err, promise) => {
-    logger.error('Unhandled Promise Rejection:', err.message);
+    logger.error('Unhandled Promise Rejection:', {
+        error: err.message,
+        stack: err.stack,
+        promise: promise
+    });
+    // Don't crash the server, just log the error
+    // The server will continue running
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+    logger.error('Uncaught Exception:', {
+        error: err.message,
+        stack: err.stack
+    });
+    // Only exit for uncaught exceptions (not promise rejections)
     server.close(() => {
+        logger.error('Server closed due to uncaught exception');
         process.exit(1);
     });
 });

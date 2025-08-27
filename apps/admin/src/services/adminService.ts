@@ -307,6 +307,10 @@ class AdminService {
     }
   }
 
+  async changeUserRole(userId: string, newRole: string): Promise<void> {
+    return this.updateUserRole(userId, newRole);
+  }
+
 
 
   async deactivateUser(userId: string): Promise<void> {

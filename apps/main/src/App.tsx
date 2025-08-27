@@ -22,6 +22,9 @@ import { NoAccessPage } from './pages/NoAccessPage';
 import ChatPage from './pages/ChatPage';
 import ChatWidget from './components/chat/ChatWidget';
 import { MessageCircle, X } from 'lucide-react';
+import { SocketProvider } from './contexts/SocketContext';
+import { SocketDebugger } from './components/debug/SocketDebugger';
+import { SocketConnectionTest } from './components/debug/SocketConnectionTest';
 
 // Support Page Component
 const SupportPage = () => {
@@ -173,6 +176,12 @@ function AppContent() {
         onConfirm={logout}
         userName={user?.user?.name || 'User'}
       />
+      
+      {/* Socket Debugger - Remove this in production */}
+      {process.env.NODE_ENV === 'development' && <SocketDebugger />}
+      
+      {/* Socket Connection Test - Remove this in production */}
+      {process.env.NODE_ENV === 'development' && <SocketConnectionTest />}
     </AppLayout>
   );
 }
@@ -185,7 +194,9 @@ function App() {
         storageKey="theme"      >
         <AccessibilityProvider>
           <Router>
-            <AppContent />
+            <SocketProvider>
+              <AppContent />
+            </SocketProvider>
           </Router>
         </AccessibilityProvider>
       </ThemeProvider>

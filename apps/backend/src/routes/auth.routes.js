@@ -98,6 +98,10 @@ router.post('/login',
     authController.login
 );
 
+router.post('/login/2fa-complete', 
+    authController.completeLoginWith2FA
+);
+
 router.post('/password-reset/request',
     validateMiddleware(passwordResetRequestSchema),
     authController.requestPasswordReset

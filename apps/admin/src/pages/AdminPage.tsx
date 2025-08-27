@@ -141,40 +141,25 @@ const AdminPage: React.FC = () => {
 
   // Check authentication on mount
   React.useEffect(() => {
-    // console.log('AdminPage: useEffect triggered:', { isAuthenticated, isLoading, hasCurrentAdmin: !!currentAdmin });
     if (!isAuthenticated && !isLoading) {
       const token = localStorage.getItem('adminToken');
-      // console.log('AdminPage: checking token:', !!token);
       if (token) {
-        // console.log('AdminPage: token found, dispatching getCurrentAdmin');
         dispatch(getCurrentAdmin());
       } else {
-        console.log('AdminPage: no token, navigating to login');
         navigate('/login');
       }
     }
   }, [dispatch, isAuthenticated, isLoading, navigate]);
 
   const handleLogout = async () => {
-    console.log('=== LOGOUT DEBUG START ===');
-    console.log('Logout started...');
-    console.log('Current state before logout:', { isAuthenticated, currentAdmin });
-    console.log('Current location:', location.pathname);
-    console.log('Token in localStorage:', !!localStorage.getItem('adminToken'));
-    
     try {
-      console.log('Dispatching logoutAdmin...');
       await dispatch(logoutAdmin()).unwrap();
-      console.log('Logout successful, navigating to login...');
       navigate('/login');
     } catch (error) {
-      console.error('Logout failed:', error);
       // Force logout by clearing local state
-      console.log('Force clearing localStorage and navigating...');
       localStorage.removeItem('adminToken');
       navigate('/login');
     }
-    console.log('=== LOGOUT DEBUG END ===');
   };
 
   const handleLogoutConfirm = () => {
@@ -194,8 +179,6 @@ const AdminPage: React.FC = () => {
     { 
       label: 'Profile', 
       action: () => {
-        console.log('=== PROFILE CLICKED ===');
-        console.log('Profile clicked');
         navigate('/profile');
       },
       icon: UserIcon 
@@ -203,8 +186,6 @@ const AdminPage: React.FC = () => {
     { 
       label: 'Settings', 
       action: () => {
-        console.log('=== SETTINGS CLICKED ===');
-        console.log('Settings clicked');
         navigate('/settings');
       },
       icon: CogIcon 
@@ -212,8 +193,6 @@ const AdminPage: React.FC = () => {
     { 
       label: 'Logout', 
       action: () => {
-        console.log('=== LOGOUT CLICKED FROM DROPDOWN ===');
-        console.log('Logout clicked from menu');
         setShowLogoutConfirm(true);
       },
       icon: ArrowRightOnRectangleIcon,

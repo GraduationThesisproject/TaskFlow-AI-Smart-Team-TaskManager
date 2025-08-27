@@ -66,7 +66,6 @@ const ChatLayout: React.FC = () => {
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated || !currentAdmin) {
-      console.log('ChatLayout: Not authenticated, redirecting to login');
       navigate('/login');
       return;
     }
@@ -89,8 +88,6 @@ const ChatLayout: React.FC = () => {
 
   // Socket event handlers
   function handleNewChatRequest(chatRequest: NewChatRequest) {
-    console.log('ChatLayout: New chat request received:', chatRequest);
-    
     // Create a new chat object from the request
     const newChat: Chat = {
       _id: chatRequest.chatId,
@@ -120,8 +117,6 @@ const ChatLayout: React.FC = () => {
   }
 
   function handleNewMessage(message: ChatMessage) {
-    console.log('ChatLayout: New message received:', message);
-    
     // Add message to the selected chat if it's the current one
     if (selectedChat && selectedChat._id === message.chatId) {
       setMessages(prev => [...prev, message]);
@@ -148,13 +143,10 @@ const ChatLayout: React.FC = () => {
   }
 
   function handleTypingIndicator(typing: any) {
-    console.log('ChatLayout: Typing indicator:', typing);
     // Typing indicators are handled by the hook
   }
 
   function handleStatusUpdate(update: any) {
-    console.log('ChatLayout: Status update:', update);
-    
     setChats(prev => prev.map(chat => {
       if (chat._id === update.chatId) {
         return { ...chat, status: update.status as any };
@@ -164,8 +156,6 @@ const ChatLayout: React.FC = () => {
   }
 
   function handleChatAccepted(chatId: string, adminId: string) {
-    console.log('ChatLayout: Chat accepted:', chatId, adminId);
-    
     setChats(prev => prev.map(chat => {
       if (chat._id === chatId) {
         return { ...chat, status: 'active' };
@@ -175,8 +165,6 @@ const ChatLayout: React.FC = () => {
   }
 
   function handleChatClosed(chatId: string, reason?: string) {
-    console.log('ChatLayout: Chat closed:', chatId, reason);
-    
     setChats(prev => prev.map(chat => {
       if (chat._id === chatId) {
         return { ...chat, status: 'closed' };
@@ -191,8 +179,6 @@ const ChatLayout: React.FC = () => {
   }
 
   function handleUserOnline(userId: string, isOnline: boolean) {
-    console.log('ChatLayout: User online status:', userId, isOnline);
-    
     setChats(prev => prev.map(chat => ({
       ...chat,
       participants: chat.participants.map(participant => {
