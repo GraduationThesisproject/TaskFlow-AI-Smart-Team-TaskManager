@@ -2,8 +2,8 @@ const express = require('express');
 const authController = require('../controllers/auth.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { uploadMiddlewares, processUploadedFiles, createUploadMiddleware } = require('../middlewares/upload.middleware');
 const { rateLimitSensitiveOps } = require('../middlewares/permission.middleware');
+const { createMulterUpload } = require('../config/multer');
 
 // Robust router initialization to avoid "router.post is not a function"
 function createRouter() {
@@ -55,11 +55,11 @@ const changePasswordSchema = {
     newPassword: { required: true, minLength: 8 }
 };
 
-const updateProfileSchema = {
+
+const secureProfileUpdateSchema = {
     name: { minLength: 2, maxLength: 100 },
-    avatar: { string: true },
-    preferences: { object: true },
-    metadata: { object: true }
+    currentPassword: { required: true },
+    newPassword: { required: true, minLength: 8 }
 };
 
 const updatePreferencesSchema = {
@@ -74,17 +74,12 @@ const logoutSchema = {
 
 const passwordResetRequestSchema = {
     email: { required: true, email: true }
+    
 };
 
 const passwordResetSchema = {
     token: { required: true, string: true },
     newPassword: { required: true, minLength: 8 }
-};
-
-const secureProfileUpdateSchema = {
-    name: { minLength: 2, maxLength: 100 },
-    // Make password optional: if provided, validate as string; otherwise skip
-    currentPassword: { string: true }
 };
 
 // Public routes
@@ -103,10 +98,6 @@ router.post('/password-reset/request',
     authController.requestPasswordReset
 );
 
-router.post('/password-reset/confirm',
-    validateMiddleware(passwordResetSchema),
-    authController.resetPassword
-);
 
 router.get('/verify-email/:token',
     authController.verifyEmail
@@ -124,26 +115,21 @@ router.post('/logout',
     authController.logout
 );
 
-router.put('/profile', 
-    authMiddleware,
-    validateMiddleware(updateProfileSchema),
-    authController.updateProfile
-);
 
-router.put('/profile/secure',
+const uploadAvatar = createMulterUpload('avatar', false);
+router.put(
+    '/profile/secure',
+    uploadAvatar,       // Multer handles avatar file and populates req.body
+    (req, res, next) => {
+                       // Optional: simple validation here manually
+      const { currentPassword, name } = req.body;
+      if (!currentPassword) return res.status(400).json({ message: 'Current password required' });
+      if (name && name.length < 2) return res.status(400).json({ message: 'Name too short' });
+      next();
+    },
     authMiddleware,
-    createUploadMiddleware('avatar', false, 1, true),
-    processUploadedFiles,
-    validateMiddleware(secureProfileUpdateSchema),
     authController.updateProfileSecure
-);
-
-router.post('/avatar',
-    authMiddleware,
-    uploadMiddlewares.avatar,
-    processUploadedFiles,
-    authController.updateProfile
-);
+  );
 
 router.put('/change-password',
     authMiddleware,

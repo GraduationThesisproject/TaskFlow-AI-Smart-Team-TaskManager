@@ -9,23 +9,19 @@ const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
 const passport = require('passport');
-const { error } = require('console');
 
 
-
-// Register new user
+// ------------------ REGISTER ------------------
 exports.register = async (req, res) => {
     try {
         const { name, email, password, inviteToken } = req.body;
         const { userAgent, deviceId, deviceInfo } = req.body.device || {};
 
-        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return sendResponse(res, 400, false, 'User already exists with this email');
         }
 
-        // Handle invitation if token provided
         let invitation = null;
         if (inviteToken) {
             invitation = await Invitation.findByToken(inviteToken);
@@ -34,14 +30,8 @@ exports.register = async (req, res) => {
             }
         }
 
-        // Create new user with default related models
-        const user = await User.createWithDefaults({
-            name,
-            email,
-            password
-        });
+        const user = await User.createWithDefaults({ name, email, password });
 
-        // Create initial session
         const userSessions = await user.getSessions();
         await userSessions.createSession({
             deviceId: deviceId || 'web-' + Date.now(),
@@ -50,13 +40,9 @@ exports.register = async (req, res) => {
             rememberMe: false
         });
 
-        // Process invitation if exists
         if (invitation) {
             await invitation.accept(user._id);
-            
-            // Add user to the invited entity with proper role
             const userRoles = await user.getRoles();
-            
             switch (invitation.targetEntity.type) {
                 case 'Workspace':
                     await userRoles.addWorkspaceRole(invitation.targetEntity.id, invitation.role);
@@ -67,36 +53,22 @@ exports.register = async (req, res) => {
             }
         }
 
-        // Generate JWT token
         const token = jwt.generateToken(user._id);
 
-        // Send welcome email
         try {
-            await sendEmail({
-                to: user.email,
-                template: 'welcome',
-                data: { name: user.name }
-            });
+            await sendEmail({ to: user.email, template: 'welcome', data: { name: user.name } });
         } catch (emailError) {
             logger.warn('Welcome email failed:', emailError);
         }
 
-        // Log activity
         await ActivityLog.logActivity({
             userId: user._id,
             action: 'user_register',
             description: `User registered: ${email}`,
             entity: { type: 'User', id: user._id, name: user.name },
-            metadata: {
-                ipAddress: req.ip,
-                userAgent: req.get('User-Agent'),
-                deviceInfo,
-                hasInvitation: !!invitation
-            },
+            metadata: { ipAddress: req.ip, userAgent: req.get('User-Agent'), deviceInfo, hasInvitation: !!invitation },
             severity: 'info'
         });
-
-        logger.info(`User registered: ${email}`);
 
         sendResponse(res, 201, true, 'User registered successfully', {
             token,
@@ -108,368 +80,114 @@ exports.register = async (req, res) => {
             } : null
         });
     } catch (error) {
-        throw error;
         logger.error('Register error:', error);
         sendResponse(res, 500, false, 'Server error during registration');
     }
 };
 
-// Login user
+// ------------------ LOGIN ------------------
 exports.login = async (req, res) => {
     try {
         const { email, password, rememberMe = false } = req.body;
         const { deviceId, deviceInfo } = req.body.device || {};
 
-        // Find user and include password
         const user = await User.findOne({ email, isActive: true }).select('+password');
-        if (!user) {
+        if (!user) return sendResponse(res, 401, false, 'Invalid email or password');
+
+        const userSessions = await user.getSessions();
+
+        const isValidPassword = await user.comparePassword(password);
+        if (!isValidPassword) {
+            await userSessions.logLoginAttempt(false, req.ip, deviceInfo, 'Invalid password');
             return sendResponse(res, 401, false, 'Invalid email or password');
         }
 
-        // Get user sessions for logging
-        const userSessions = await user.getSessions();
+        if (user.isLocked) return sendResponse(res, 423, false, 'Account is temporarily locked');
 
-        try {
-            // Compare password (this handles account lockout automatically)
-            const isValidPassword = await user.comparePassword(password);
-            
-            if (!isValidPassword) {
-                // Log failed attempt
-                await userSessions.logLoginAttempt(
-                    false, 
-                    req.ip, 
-                    deviceInfo, 
-                    'Invalid password'
-                );
-                
-                return sendResponse(res, 401, false, 'Invalid email or password');
-            }
+        const session = await userSessions.createSession({
+            deviceId: deviceId || 'web-' + Date.now(),
+            deviceInfo: deviceInfo || { type: 'web' },
+            ipAddress: req.ip,
+            rememberMe
+        });
 
-            // Check if account is locked
-            if (user.isLocked) {
-                return sendResponse(res, 423, false, 'Account is temporarily locked due to too many failed attempts');
-            }
+        await userSessions.logLoginAttempt(true, req.ip, deviceInfo);
 
-            // Create new session
-            const session = await userSessions.createSession({
-                deviceId: deviceId || 'web-' + Date.now(),
-                deviceInfo: deviceInfo || { type: 'web' },
-                ipAddress: req.ip,
-                rememberMe
-            });
-            // Log successful attempt
-            await userSessions.logLoginAttempt(true, req.ip, deviceInfo);
+        const expiresIn = rememberMe ? '30d' : '7d';
+        const token = jwt.generateToken(user._id, expiresIn);
 
-            // Generate JWT token
-            const expiresIn = rememberMe ? '30d' : '7d';
-            const token = jwt.generateToken(user._id, expiresIn);
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'user_login',
+            description: `User logged in: ${email}`,
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: { ipAddress: req.ip, userAgent: req.get('User-Agent'), deviceInfo, rememberMe }
+        });
 
-            // Log activity
-            await ActivityLog.logActivity({
-                userId: user._id,
-                action: 'user_login',
-                description: `User logged in: ${email}`,
-                entity: { type: 'User', id: user._id, name: user.name },
-                metadata: {
-                    ipAddress: req.ip,
-                    userAgent: req.get('User-Agent'),
-                    deviceInfo,
-                    rememberMe
-                }
-            });
-
-            logger.info(`User logged in: ${email}`);
-
-            sendResponse(res, 200, true, 'Login successful', {
-                token,
-                user: user.getPublicProfile(),
-                sessionInfo: {
-                    rememberMe,
-                    expiresIn,
-                    deviceId: session.deviceId
-                }
-            });
-
-        } catch (error) {
-            if (error.message.includes('locked')) {
-                await userSessions.logLoginAttempt(false, req.ip, deviceInfo, 'Account locked');
-                return sendResponse(res, 423, false, error.message);
-            }
-            throw error;
-        }
-
+        sendResponse(res, 200, true, 'Login successful', {
+            token,
+            user: user.getPublicProfile(),
+            sessionInfo: { rememberMe, expiresIn, deviceId: session.deviceId }
+        });
     } catch (error) {
         logger.error('Login error:', error);
         sendResponse(res, 500, false, 'Server error during login');
     }
 };
 
-// Get current user with full profile
-exports.getMe = async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return sendResponse(res, 404, false, 'User not found');
-        }
-
-        // Get related data sequentially to avoid parallel save conflicts
-        const preferences = await user.getPreferences();
-        const sessions = await user.getSessions();
-        const roles = await user.getRoles();
-
-        // Ensure avatar is populated so client gets URL
-        await user.populate({ path: 'avatar', select: 'url thumbnails' });
-
-        // Get active sessions count
-        const activeSessions = sessions.sessions.filter(s => s.isActive).length;
-
-        sendResponse(res, 200, true, 'User profile retrieved', {
-            user: user.getPublicProfile(),
-            preferences,
-            security: {
-                activeSessions,
-                emailVerified: user.emailVerified,
-                twoFactorEnabled: user.hasTwoFactorAuth,
-                lastLogin: user.lastLogin,
-                hasOAuthProviders: user.hasOAuthProviders
-            },
-            roles: {
-                workspaces: roles.workspaces.length,
-                spaces: roles.spaces.length
-            }
-        });
-    } catch (error) {
-        logger.error('Get profile error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving profile');
-    }
+// ------------------ GOOGLE OAUTH ------------------
+exports.googleLogin = (req, res, next) => {
+    if (!passport._strategies?.google) return sendResponse(res, 503, false, 'Google OAuth is not configured');
+    const scope = req.query.scope || 'profile email';
+    passport.authenticate('google', { scope: scope.split(' '), accessType: req.query.access_type || 'offline', prompt: req.query.prompt || 'consent' })(req, res, next);
 };
 
-// Update user profile
-exports.updateProfile = async (req, res) => {
-    try {
-        const { name, avatar, preferences, metadata } = req.body;
-        
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return sendResponse(res, 404, false, 'User not found');
-        }
+exports.googleCallback = async (req, res, next) => {
+    if (!passport._strategies?.google) return sendResponse(res, 503, false, 'Google OAuth is not configured');
 
-        // Store old values for audit log
-        const oldValues = {
-            name: user.name,
-            avatar: user.avatar
-        };
+    passport.authenticate('google', { session: false }, async (err, user) => {
+        if (err || !user) return sendResponse(res, err ? 500 : 401, false, 'Authentication failed');
 
-        // Update basic profile
-        if (name) user.name = name;
-        
-        // Handle avatar upload (Multer + local File model)
-        if (req.uploadedFile) {
-            const File = require('../models/File');
-
-            // Delete old avatar file if exists and different from the new one
-            if (user.avatar) {
-                try {
-                    const oldFile = await File.findById(user.avatar);
-                    if (oldFile && oldFile._id.toString() !== req.uploadedFile._id.toString()) {
-                        await oldFile.deleteFromStorage();
-                    }
-                } catch (e) {
-                    logger.warn('Failed to delete old avatar:', e.message);
-                }
-            }
-
-            // Attach the uploaded file to the user and set avatar reference
-            const file = req.uploadedFile; // Mongoose doc created in processUploadedFiles
-            await file.attachTo('User', user._id);
-            user.avatar = file._id;
-        } else if (avatar) {
-            // Allow setting avatar by existing File id (optional)
-            user.avatar = avatar;
-        }
-        
-        // Update metadata if provided
-        if (metadata) {
-            Object.entries(metadata).forEach(([key, value]) => {
-                user.addMetadata(key, value);
-            });
-        }
-
-        await user.save();
-
-        // Update preferences if provided
-        if (preferences) {
-            const userPrefs = await user.getPreferences();
-            Object.entries(preferences).forEach(([section, updates]) => {
-                if (userPrefs[section]) {
-                    Object.assign(userPrefs[section], updates);
-                }
-            });
-            await userPrefs.save();
-        }
-
-        // Populate avatar so response contains URL
-        await user.populate({ path: 'avatar', select: 'url thumbnails' });
-
-        // Log activity
-        await ActivityLog.logActivity({
-            userId: user._id,
-            action: 'profile_update',
-            description: 'User updated profile',
-            entity: { type: 'User', id: user._id, name: user.name },
-            metadata: {
-                oldValues: oldValues,
-                newValues: { name, avatar: user.avatar },
-                ipAddress: req.ip,
-                userAgent: req.get('User-Agent')
-            }
-        });
-
-        logger.info(`Profile updated: ${user.email}`);
-
-        sendResponse(res, 200, true, 'Profile updated successfully', {
-            user: user.getPublicProfile()
-        });
-    } catch (error) {
-        logger.error('Update profile error:', error);
-        sendResponse(res, 500, false, 'Server error updating profile');
-    }
-};
-
-// Secure profile update with password verification and optional avatar upload
-exports.updateProfileSecure = async (req, res) => {
-    try {
-        const { currentPassword, name } = req.body;
-
-        // Debug: log presence of uploaded file
         try {
-            const f = req.uploadedFile;
-            if (f) {
-                logger.info(`updateProfileSecure: received uploadedFile id=${f._id?.toString?.()} name=${f.filename}`);
-            } else {
-                logger.info('updateProfileSecure: no uploadedFile present');
-            }
-        } catch (e) {
-            logger.warn('updateProfileSecure: failed to log uploadedFile info:', e.message);
+            user.lastLogin = new Date();
+            await user.save();
+            const token = generateToken(user._id);
+            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=google`;
+            res.redirect(redirectUrl);
+        } catch (error) {
+            logger.error('Google callback error:', error);
+            return sendResponse(res, 500, false, 'Authentication failed');
         }
-
-        // Load user with password for verification
-        const user = await User.findById(req.user.id).select('+password');
-        if (!user) {
-            return sendResponse(res, 404, false, 'User not found');
-        }
-
-        const isValid = await user.comparePassword(currentPassword || '');
-        if (!isValid) {
-            // Cleanup: if a file was uploaded before validation, delete it to avoid orphans
-            if (req.uploadedFile) {
-                try {
-                    await req.uploadedFile.deleteFromStorage();
-                    await req.uploadedFile.deleteOne();
-                } catch (e) {
-                    logger.warn('Cleanup failed for uploaded file on password error:', e.message);
-                }
-            }
-            return sendResponse(res, 400, false, 'Current password is incorrect');
-        }
-
-        const oldValues = {
-            name: user.name,
-            avatar: user.avatar
-        };
-
-        // Update name if provided
-        if (name) user.name = name;
-
-        // Handle avatar if a new file was uploaded
-        if (req.uploadedFile) {
-            const File = require('../models/File');
-            try {
-                if (user.avatar) {
-                    const oldFile = await File.findById(user.avatar);
-                    if (oldFile && oldFile._id.toString() !== req.uploadedFile._id.toString()) {
-                        await oldFile.deleteFromStorage();
-                    }
-                }
-            } catch (e) {
-                logger.warn('Failed to delete old avatar:', e.message);
-            }
-
-            const file = req.uploadedFile;
-            await file.attachTo('User', user._id);
-            user.avatar = file._id;
-            logger.info(`updateProfileSecure: user ${user._id.toString()} avatar set to file ${file._id.toString()}`);
-        }
-
-        await user.save();
-
-        // Populate avatar so response contains URL
-        await user.populate({ path: 'avatar', select: 'url thumbnails' });
-        logger.info(`updateProfileSecure: response avatar url=${user.avatar?.url || user.avatar}`);
-
-        // Log activity
-        await ActivityLog.logActivity({
-            userId: user._id,
-            action: 'profile_update',
-            description: 'User updated profile (secure)',
-            entity: { type: 'User', id: user._id, name: user.name },
-            metadata: {
-                oldValues,
-                newValues: { name: user.name, avatar: user.avatar },
-                ipAddress: req.ip,
-                userAgent: req.get('User-Agent'),
-                verifiedByPassword: true
-            }
-        });
-
-        return sendResponse(res, 200, true, 'Profile updated successfully', {
-            user: user.getPublicProfile()
-        });
-    } catch (error) {
-        logger.error('Secure update profile error:', error);
-        return sendResponse(res, 500, false, 'Server error updating profile');
-    }
+    })(req, res, next);
 };
 
-// Logout user
-exports.logout = async (req, res) => {
-    try {
-        const { deviceId, allDevices = false } = req.body;
-        
-        const user = await User.findById(req.user.id);
-        const userSessions = await user.getSessions();
-
-        if (allDevices) {
-            await userSessions.endAllSessions();
-        } else if (deviceId) {
-            const session = userSessions.getSessionByDevice(deviceId);
-            if (session) {
-                await userSessions.endSession(session.sessionId);
-            }
-        }
-
-        // Log activity
-        await ActivityLog.logActivity({
-            userId: user._id,
-            action: 'user_logout',
-            description: allDevices ? 'User logged out from all devices' : 'User logged out',
-            entity: { type: 'User', id: user._id, name: user.name },
-            metadata: {
-                deviceId,
-                allDevices,
-                ipAddress: req.ip
-            }
-        });
-
-        logger.info(`User logged out: ${req.user.id}`);
-        sendResponse(res, 200, true, 'Logout successful');
-    } catch (error) {
-        logger.error('Logout error:', error);
-        sendResponse(res, 500, false, 'Server error during logout');
-    }
+// ------------------ GITHUB OAUTH ------------------
+exports.githubLogin = (req, res, next) => {
+    if (!passport._strategies?.github) return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
+    const scope = req.query.scope || 'user:email';
+    passport.authenticate('github', { scope: scope.split(' ') })(req, res, next);
 };
 
-// Change password
+exports.githubCallback = async (req, res, next) => {
+    if (!passport._strategies?.github) return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
+
+    passport.authenticate('github', { session: false }, async (err, user) => {
+        if (err || !user) return sendResponse(res, err ? 500 : 401, false, 'Authentication failed');
+
+        try {
+            user.lastLogin = new Date();
+            await user.save();
+            const token = generateToken(user._id);
+            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=github`;
+            res.redirect(redirectUrl);
+        } catch (error) {
+            logger.error('GitHub callback error:', error);
+            return sendResponse(res, 500, false, 'Authentication failed');
+        }
+    })(req, res, next);
+};
+
+// ------------------ CHANGE PASSWORD ------------------
 exports.changePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
@@ -513,7 +231,8 @@ exports.changePassword = async (req, res) => {
     }
 };
 
-// Update preferences
+
+// ------------------ UPDATE PREFERENCES ------------------
 exports.updatePreferences = async (req, res) => {
     try {
         const { section, updates } = req.body;
@@ -542,7 +261,7 @@ exports.updatePreferences = async (req, res) => {
     }
 };
 
-// Get user sessions
+// ------------------ GET SESSIONS ------------------
 exports.getSessions = async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
@@ -570,7 +289,7 @@ exports.getSessions = async (req, res) => {
     }
 };
 
-// End specific session
+// ------------------ END SESSION ------------------
 exports.endSession = async (req, res) => {
     try {
         const { sessionId } = req.params;
@@ -587,7 +306,7 @@ exports.endSession = async (req, res) => {
     }
 };
 
-// Verify email
+// ------------------ VERIFY EMAIL ------------------
 exports.verifyEmail = async (req, res) => {
     try {
         const { token } = req.params;
@@ -621,7 +340,7 @@ exports.verifyEmail = async (req, res) => {
     }
 };
 
-// Request password reset
+// ------------------ REQUEST PASSWORD RESET ------------------
 exports.requestPasswordReset = async (req, res) => {
     try {
         const { email } = req.body;
@@ -663,7 +382,7 @@ exports.requestPasswordReset = async (req, res) => {
     }
 };
 
-// Reset password
+// ------------------ RESET PASSWORD ------------------
 exports.resetPassword = async (req, res) => {
     try {
         const { token, newPassword } = req.body;
@@ -709,7 +428,7 @@ exports.resetPassword = async (req, res) => {
     }
 };
 
-// Get user activity log
+// ------------------ GET ACTIVITY LOG ------------------
 exports.getActivityLog = async (req, res) => {
     try {
         const { limit = 50, page = 1 } = req.query;
@@ -748,183 +467,109 @@ exports.getActivityLog = async (req, res) => {
     }
 };
 
-
-
-// Google OAuth login
-exports.googleLogin = (req, res, next) => {
-    console.log('🔵 Google OAuth Login Started');
-    console.log('🔵 Request query params:', req.query);
-    console.log('🔵 Request headers:', req.headers);
-    
-    // Check if Google OAuth strategy is available
-    if (!passport._strategies || !passport._strategies.google) {
-        console.log('❌ Google OAuth strategy not available');
-        return sendResponse(res, 503, false, 'Google OAuth is not configured');
-    }
-    
-    console.log('✅ Google OAuth strategy found, proceeding with authentication');
-    console.log('🔵 Redirecting to Google OAuth...');
-    
-    // Use the scope from query params if provided, otherwise use default
-    const scope = req.query.scope || 'profile email';
-    
-    passport.authenticate('google', {
-        scope: scope.split(' '),
-        accessType: req.query.access_type || 'offline',
-        prompt: req.query.prompt || 'consent'
-    })(req, res, next);
-};
-// Google OAuth callback
-exports.googleCallback = async (req, res, next) => {
-    console.log('🔵 Google OAuth Callback Started');
-    console.log('🔵 Request query params:', req.query);
-    console.log('🔵 Request headers:', req.headers);
-    
-    // Check if Google OAuth strategy is available
-    if (!passport._strategies || !passport._strategies.google) {
-        console.log('❌ Google OAuth strategy not available');
-        return sendResponse(res, 503, false, 'Google OAuth is not configured');
-    }
-    
-    console.log('🔵 Google OAuth strategy found, proceeding with authentication');
-    
-    passport.authenticate('google', { session: false }, async (err, user) => {
-        console.log('🔵 Passport authenticate callback executed');
-        console.log('🔵 Error:', err);
-        console.log('🔵 User object:', user);
-        
-        if (err) {
-            console.log('❌ Google OAuth error occurred:', err);
-            logger.error('Google OAuth error:', err);
-            return sendResponse(res, 500, false, 'Authentication failed');
-        }
-        
+// ------------------ GET ME ------------------
+exports.getMe = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
         if (!user) {
-            console.log('❌ No user returned from Google OAuth');
-            return sendResponse(res, 401, false, 'Authentication failed');
+            return sendResponse(res, 404, false, 'User not found');
         }
-        
-        console.log('✅ Google OAuth user authenticated successfully');
-        console.log('✅ User details:', {
-            id: user._id,
-            email: user.email,
-            name: user.name,
-            provider: user.provider,
-            avatar: user.avatar
+
+        // Get related data sequentially to avoid parallel save conflicts
+        const preferences = await user.getPreferences();
+        const sessions = await user.getSessions();
+        const roles = await user.getRoles();
+
+        // Ensure avatar is populated so client gets URL
+        await user.populate({ path: 'avatar', select: 'url thumbnails' });
+
+        // Get active sessions count
+        const activeSessions = sessions.sessions.filter(s => s.isActive).length;
+
+        sendResponse(res, 200, true, 'User profile retrieved', {
+            user: user.getPublicProfile(),
+            preferences,
+            security: {
+                activeSessions,
+                emailVerified: user.emailVerified,
+                twoFactorEnabled: user.hasTwoFactorAuth,
+                lastLogin: user.lastLogin,
+                hasOAuthProviders: user.hasOAuthProviders
+            },
+            roles: {
+                workspaces: roles.workspaces.length,
+                spaces: roles.spaces.length
+            }
         });
-        
-        try {
-            // Update last login
-            console.log('🔵 Updating last login timestamp');
-            user.lastLogin = new Date();
-            await user.save();
-            console.log('✅ Last login updated successfully');
-            
-            // Generate token
-            console.log('🔵 Generating JWT token for user:', user._id);
-            const token = generateToken(user._id);
-            console.log('✅ JWT token generated successfully');
-            console.log('✅ Token (first 20 chars):', token.substring(0, 20) + '...');
-            
-            // Redirect to frontend with token
-            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=google`;
-            console.log('🔵 Redirecting to frontend with token');
-            console.log('🔵 Redirect URL:', redirectUrl);
-            
-            res.redirect(redirectUrl);
-            console.log('✅ Google OAuth callback completed successfully');
-        } catch (error) {
-            console.log('❌ Google callback error occurred:', error);
-            logger.error('Google callback error:', error);
-            return sendResponse(res, 500, false, 'Authentication failed');
-        }
-    })(req, res, next);
-};
-// GitHub OAuth login
-exports.githubLogin = (req, res, next) => {
-    console.log('🟣 GitHub OAuth Login Started');
-    console.log('🟣 Request query params:', req.query);
-    console.log('🟣 Request headers:', req.headers);
-    
-    // Check if GitHub OAuth strategy is available
-    if (!passport._strategies || !passport._strategies.github) {
-        console.log('❌ GitHub OAuth strategy not available');
-        return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
+    } catch (error) {
+        logger.error('Get profile error:', error);
+        sendResponse(res, 500, false, 'Server error retrieving profile');
     }
-    
-    console.log('✅ GitHub OAuth strategy found, proceeding with authentication');
-    console.log('🟣 Redirecting to GitHub OAuth...');
-    
-    // Use the scope from query params if provided, otherwise use default
-    const scope = req.query.scope || 'user:email';
-    
-    passport.authenticate('github', {
-        scope: scope.split(' ')
-    })(req, res, next);
 };
-// GitHub OAuth callback
-exports.githubCallback = async (req, res, next) => {
-    console.log('🟣 GitHub OAuth Callback Started');
-    console.log('🟣 Request query params:', req.query);
-    console.log('🟣 Request headers:', req.headers);
-    
-    // Check if GitHub OAuth strategy is available
-    if (!passport._strategies || !passport._strategies.github) {
-        console.log('❌ GitHub OAuth strategy not available');
-        return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
-    }
-    
-    console.log('🟣 GitHub OAuth strategy found, proceeding with authentication');
-    
-    passport.authenticate('github', { session: false }, async (err, user) => {
-        console.log('🟣 Passport authenticate callback executed');
-        console.log('🟣 Error:', err);
-        console.log('🟣 User object:', user);
+
+// ------------------ LOGOUT ------------------
+exports.logout = async (req, res) => {
+    try {
+        const { deviceId, allDevices = false } = req.body;
         
-        if (err) {
-            console.log('❌ GitHub OAuth error occurred:', err);
-            logger.error('GitHub OAuth error:', err);
-            return sendResponse(res, 500, false, 'Authentication failed');
+        const user = await User.findById(req.user.id);
+        const userSessions = await user.getSessions();
+
+        if (allDevices) {
+            await userSessions.endAllSessions();
+        } else if (deviceId) {
+            const session = userSessions.getSessionByDevice(deviceId);
+            if (session) {
+                await userSessions.endSession(session.sessionId);
+            }
         }
-        
-        if (!user) {
-            console.log('❌ No user returned from GitHub OAuth');
-            return sendResponse(res, 401, false, 'Authentication failed');
-        }
-        
-        console.log('✅ GitHub OAuth user authenticated successfully');
-        console.log('✅ User details:', {
-            id: user._id,
-            email: user.email,
-            name: user.name,
-            provider: user.provider,
-            avatar: user.avatar
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'user_logout',
+            description: allDevices ? 'User logged out from all devices' : 'User logged out',
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: {
+                deviceId,
+                allDevices,
+                ipAddress: req.ip
+            }
         });
-        
-        try {
-            // Update last login
-            console.log('🟣 Updating last login timestamp');
-            user.lastLogin = new Date();
-            await user.save();
-            console.log('✅ Last login updated successfully');
-            
-            // Generate token
-            console.log('🟣 Generating JWT token for user:', user._id);
-            const token = generateToken(user._id);
-            console.log('✅ JWT token generated successfully');
-            console.log('✅ Token (first 20 chars):', token.substring(0, 20) + '...');
-            
-            // Redirect to frontend with token
-            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=github`;
-            console.log('🟣 Redirecting to frontend with token');
-            console.log('🟣 Redirect URL:', redirectUrl);
-            
-            res.redirect(redirectUrl);
-            console.log('✅ GitHub OAuth callback completed successfully');
-        } catch (error) {
-            console.log('❌ GitHub callback error occurred:', error);
-            logger.error('GitHub callback error:', error);
-            return sendResponse(res, 500, false, 'Authentication failed');
-        }
-    })(req, res, next);
+
+        logger.info(`User logged out: ${req.user.id}`);
+        sendResponse(res, 200, true, 'Logout successful');
+    } catch (error) {
+        logger.error('Logout error:', error);
+        sendResponse(res, 500, false, 'Server error during logout');
+    }
 };
+// ------------------ UPDATE PROFILE SECURE ------------------
+
+exports.updateProfileSecure = async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const { name, currentPassword } = req.body;
+      const avatarFile = req.file;
+  
+      if (!currentPassword) return res.status(400).json({ message: 'Current password required' });
+      if (name && (name.length < 2 || name.length > 100)) return res.status(400).json({ message: 'Name invalid' });
+  
+      const user = await User.findById(userId);
+      if (!(await user.comparePassword(currentPassword))) {
+        return res.status(400).json({ message: 'Incorrect current password' });
+      }
+  
+      if (name) user.name = name;
+      if (avatarFile) user.avatar = {
+        url: `/uploads/avatars/${avatarFile.filename}`,
+        filename: avatarFile.filename
+      };
+  
+      await user.save();
+      res.json({ message: 'Profile updated successfully', user });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Server error' });
+    }
+  };
