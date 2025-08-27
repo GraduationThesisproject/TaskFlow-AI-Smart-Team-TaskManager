@@ -4,12 +4,40 @@ const adminSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Admin must be associated with a user'],
-    unique: true
+    required: false, // Can be null for admin-only users
+    unique: true,
+    sparse: true // Allow multiple null values
+  },
+  // Admin-only user fields (when userId is null)
+  userEmail: {
+    type: String,
+    required: function() {
+      return !this.userId; // Required only when userId is null
+    },
+    unique: true,
+    sparse: true,
+    lowercase: true,
+    trim: true
+  },
+  userName: {
+    type: String,
+    required: function() {
+      return !this.userId; // Required only when userId is null
+    },
+    trim: true,
+    maxlength: [100, 'Username cannot exceed 100 characters']
+  },
+  userPassword: {
+    type: String,
+    required: function() {
+      return !this.userId; // Required only when userId is null
+    },
+    select: false, // Don't include password in queries by default
+    minlength: [8, 'Password must be at least 8 characters long']
   },
   role: {
     type: String,
-    enum: ['admin', 'superadmin'],
+    enum: ['admin', 'super_admin', 'moderator'],
     default: 'admin',
     required: true
   },
@@ -76,12 +104,12 @@ const adminSchema = new mongoose.Schema({
 
 // Virtual for admin level
 adminSchema.virtual('isSuperAdmin').get(function() {
-  return this.role === 'superadmin';
+  return this.role === 'super_admin';
 });
 
-// Virtual for effective permissions (superadmin gets all permissions)
+// Virtual for effective permissions (super_admin gets all permissions)
 adminSchema.virtual('effectivePermissions').get(function() {
-  if (this.role === 'superadmin') {
+  if (this.role === 'super_admin') {
     return {
       manageUsers: true,
       manageWorkspaces: true,
@@ -170,12 +198,28 @@ adminSchema.methods.getPublicProfile = function() {
   return {
     _id: this._id,
     userId: this.userId,
+    userEmail: this.userEmail,
+    userName: this.userName,
     role: this.role,
     isActive: this.isActive,
     lastActivity: this.lastActivity,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt
   };
+};
+
+// Method to compare password for admin-only users
+adminSchema.methods.comparePassword = async function(candidatePassword) {
+  if (!this.userPassword) {
+    return false;
+  }
+  
+  try {
+    const bcrypt = require('bcryptjs');
+    return await bcrypt.compare(candidatePassword, this.userPassword);
+  } catch (error) {
+    return false;
+  }
 };
 
 // Static method to find active admins
@@ -209,7 +253,7 @@ adminSchema.statics.findInactive = function(daysThreshold = 30) {
 };
 
 // Static method to create admin with default permissions
-adminSchema.statics.createAdmin = function(userId, role = 'admin', customPermissions = {}) {
+adminSchema.statics.createAdmin = function(userId, role = 'admin', customData = {}) {
   const defaultPermissions = {
     manageUsers: false,
     manageWorkspaces: false,
@@ -223,26 +267,67 @@ adminSchema.statics.createAdmin = function(userId, role = 'admin', customPermiss
   };
 
   // Superadmin gets all permissions
-  if (role === 'superadmin') {
+  if (role === 'superadmin' || role === 'super_admin') {
     Object.keys(defaultPermissions).forEach(key => {
       defaultPermissions[key] = true;
     });
   }
 
-  return new this({
+  // Admin gets most permissions except managing other admins
+  if (role === 'admin') {
+    defaultPermissions.manageUsers = true;
+    defaultPermissions.manageWorkspaces = true;
+    defaultPermissions.manageTemplates = true;
+    defaultPermissions.viewAnalytics = true;
+    defaultPermissions.systemSettings = true;
+    defaultPermissions.viewSystemLogs = true;
+    defaultPermissions.manageQuotas = true;
+    defaultPermissions.manageAIJobs = true;
+  }
+
+  // Moderator gets limited permissions
+  if (role === 'moderator') {
+    defaultPermissions.manageUsers = true;
+    defaultPermissions.viewAnalytics = true;
+    defaultPermissions.viewSystemLogs = true;
+  }
+
+  // Create admin object
+  const adminData = {
     userId,
     role,
-    permissions: { ...defaultPermissions, ...customPermissions }
-  });
+    permissions: { ...defaultPermissions, ...customData.permissions }
+  };
+
+  // If userId is null, this is an admin-only user
+  if (!userId && customData.userEmail && customData.userName) {
+    adminData.userEmail = customData.userEmail;
+    adminData.userName = customData.userName;
+    adminData.userPassword = customData.userPassword;
+  }
+
+  return new this(adminData);
 };
 
 // Pre-save middleware to ensure superadmin has all permissions
-adminSchema.pre('save', function(next) {
+adminSchema.pre('save', async function(next) {
+  // Ensure superadmin has all permissions
   if (this.role === 'superadmin') {
     Object.keys(this.permissions).forEach(key => {
       this.permissions[key] = true;
     });
   }
+
+  // Hash password for admin-only users if it's modified
+  if (this.isModified('userPassword') && this.userPassword) {
+    try {
+      const bcrypt = require('bcryptjs');
+      this.userPassword = await bcrypt.hash(this.userPassword, 12);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
   next();
 });
 

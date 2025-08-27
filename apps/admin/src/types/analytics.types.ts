@@ -75,3 +75,92 @@ export interface DateRange {
   start: Date;
   end: Date;
 }
+
+// Power BI Integration Types
+export interface PowerBIIntegration {
+  isEnabled: boolean;
+  workspaces: PowerBIWorkspace[];
+  selectedWorkspace: string | null;
+  selectedReport: string | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface PowerBIWorkspace {
+  id: string;
+  name: string;
+  type: string;
+  state: string;
+  capacityId?: string;
+  reports: PowerBIReport[];
+  datasets: PowerBIDataset[];
+}
+
+export interface PowerBIReport {
+  id: string;
+  name: string;
+  embedUrl: string;
+  datasetId: string;
+  webUrl: string;
+  description?: string;
+  createdDate: string;
+  modifiedDate: string;
+}
+
+export interface PowerBIDataset {
+  id: string;
+  name: string;
+  description?: string;
+  tables: PowerBITable[];
+  refreshSchedule?: string;
+  lastRefresh?: string;
+  nextRefresh?: string;
+}
+
+export interface PowerBITable {
+  name: string;
+  displayName: string;
+  columns: PowerBIColumn[];
+  rows?: any[];
+  rowCount?: number;
+}
+
+export interface PowerBIColumn {
+  name: string;
+  displayName: string;
+  dataType: string;
+  formatString?: string;
+  isHidden?: boolean;
+}
+
+export interface PowerBIEmbedConfig {
+  reportId: string;
+  workspaceId: string;
+  embedToken: string;
+  embedUrl: string;
+  permissions: string[];
+  settings: PowerBIEmbedSettings;
+}
+
+export interface PowerBIEmbedSettings {
+  filterPaneEnabled: boolean;
+  navContentPaneEnabled: boolean;
+  bookmarksPaneEnabled: boolean;
+  useCustomSaveAsDialog: boolean;
+  panes: PowerBIPaneSettings;
+}
+
+export interface PowerBIPaneSettings {
+  filters: {
+    visible: boolean;
+    expanded: boolean;
+  };
+  bookmarks: {
+    visible: boolean;
+    expanded: boolean;
+  };
+  pageNavigation: {
+    visible: boolean;
+    expanded: boolean;
+  };
+}

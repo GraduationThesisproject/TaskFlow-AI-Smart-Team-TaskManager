@@ -44,7 +44,6 @@
     "show:ports": "echo \"Backend: http://localhost:3001\" && echo \"Main App: http://localhost:5173\" && echo \"Admin Panel: http://localhost:5175\" && echo \"Mobile: Expo DevTools (port 19000)\"",
     "show:status": "echo \"TaskFlow AI Development Environment\" && echo \"===============================\" && npm run show:ports",
     "dev:all:win": "concurrently -k -p \"[{name}]\" -n \"Backend,Main,Admin,Mobile\" -c \"red,blue,green,magenta\" \"npm run dev:backend\" \"npm run dev:main\" \"npm run dev:admin\" \"npm run dev:mobile\"",
-    "dev:web:win": "concurrently -k -p \"[{name}]\" -n \"Backend,Main,Admin\" -c \"red,blue,green\" \"npm run dev:backend\" \"npm run dev:main\" \"npm run dev:admin\"",
     "start:win": "npm run dev:all:win",
     "start:web:win": "npm run dev:web:win"
   },
@@ -66,7 +65,12 @@
   },
   "packageManager": "npm@9.0.0",
   "dependencies": {
+    "@azure/identity": "^4.11.1",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "axios": "^1.11.0",
     "mongoose": "^8.17.2",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "qrcode": "^1.5.4",
+    "speakeasy": "^2.0.0"
   }
 }
