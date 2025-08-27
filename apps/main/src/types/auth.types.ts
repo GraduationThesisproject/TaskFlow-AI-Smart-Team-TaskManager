@@ -64,7 +64,7 @@ export interface UserProfileResponse {
 // export type UserRole = 'admin' | 'user' | 'moderator';
 export const UserRole = {
   ADMIN: 'admin',
-  USER: 'user',
+  SUPER_ADMIN: 'super_admin',
   MODERATOR: 'moderator',
 } as const;
 

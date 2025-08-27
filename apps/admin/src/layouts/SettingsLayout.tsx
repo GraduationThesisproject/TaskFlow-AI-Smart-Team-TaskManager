@@ -21,14 +21,16 @@ import {
   ChartBarIcon
 } from '@heroicons/react/24/outline';
 import { useLanguageContext } from '../contexts/LanguageContext';
-import { useTranslation } from '../hooks/useTranslation';
-import { SUPPORTED_LANGUAGES } from '../hooks/useLanguage';
+
+
 import { adminService } from '../services/adminService';
+import TwoFactorAuthManager from '../components/security/TwoFactorAuthManager';
+
 
 const SettingsLayout: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('security');
   const { currentLanguage, changeLanguage } = useLanguageContext();
-  const { t } = useTranslation();
+
 
   // System Settings
   const [systemSettings, setSystemSettings] = useState({
@@ -43,8 +45,7 @@ const SettingsLayout: React.FC = () => {
     passwordMinLength: 8,
     requireSpecialChars: true,
     requireNumbers: true,
-    sessionTimeout: 30,
-    enable2FA: false
+    sessionTimeout: 30
   });
 
   // Password Change State
@@ -60,23 +61,41 @@ const SettingsLayout: React.FC = () => {
     isError: false
   });
 
-  // Email Change State
-  const [emailChange, setEmailChange] = useState({
-    currentPassword: '',
-    newEmail: '',
-    confirmEmail: ''
+  // Add User State
+  const [addUser, setAddUser] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: 'moderator'
   });
 
-  const [emailChangeStatus, setEmailChangeStatus] = useState({
+  const [addUserStatus, setAddUserStatus] = useState({
     isLoading: false,
     message: '',
     isError: false
   });
 
+  // Role Management State
+  const [roleManagement, setRoleManagement] = useState({
+    selectedUserId: '',
+    newRole: 'moderator'
+  });
+
+  const [roleManagementStatus, setRoleManagementStatus] = useState({
+    isLoading: false,
+    message: '',
+    isError: false
+  });
+
+  // Available roles for current user
+  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
+  const [currentUserRole, setCurrentUserRole] = useState<string>('');
+
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
-  const [showEmailChangeModal, setShowEmailChangeModal] = useState(false);
-  const [showEmailConfirm, setShowEmailConfirm] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showRoleManagementModal, setShowRoleManagementModal] = useState(false);
 
   // Password strength calculation
   const getPasswordStrength = (password: string) => {
@@ -109,8 +128,6 @@ const SettingsLayout: React.FC = () => {
   });
 
   const saveSettings = (section: string) => {
-    console.log(`Saving ${section} settings...`);
-    
     // If language changed, apply it immediately
     if (section === 'general' && systemSettings.language !== currentLanguage) {
       changeLanguage(systemSettings.language);
@@ -222,91 +239,125 @@ const SettingsLayout: React.FC = () => {
     setPasswordChangeStatus({ isLoading: false, message: '', isError: false });
   };
 
-  // Email Change Functions
-  const handleEmailChange = async () => {
+  // Add User Functions
+  const handleAddUser = async () => {
     // Validation
-    if (!emailChange.currentPassword || !emailChange.newEmail || !emailChange.confirmEmail) {
-      setEmailChangeStatus({ isLoading: false, message: 'All fields are required', isError: true });
+    if (!addUser.username || !addUser.email || !addUser.password || !addUser.confirmPassword) {
+      setAddUserStatus({ isLoading: false, message: 'All fields are required', isError: true });
       return;
     }
 
-    if (emailChange.newEmail !== emailChange.confirmEmail) {
-      setEmailChangeStatus({ isLoading: false, message: 'New emails do not match', isError: true });
+    if (addUser.password !== addUser.confirmPassword) {
+      setAddUserStatus({ isLoading: false, message: 'Passwords do not match', isError: true });
       return;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailChange.newEmail)) {
-      setEmailChangeStatus({ isLoading: false, message: 'Please enter a valid email address', isError: true });
+    if (!emailRegex.test(addUser.email)) {
+      setAddUserStatus({ isLoading: false, message: 'Please enter a valid email address', isError: true });
       return;
     }
 
-    // Show confirmation dialog
-    setShowEmailConfirm(true);
-  };
-
-  const confirmEmailChange = async () => {
-    // Reset status
-    setEmailChangeStatus({ isLoading: true, message: '', isError: false });
+    // Password strength validation
+    if (addUser.password.length < 8) {
+      setAddUserStatus({ isLoading: false, message: 'Password must be at least 8 characters long', isError: true });
+      return;
+    }
 
     try {
-      // Here you would make an API call to change the email
-      // For now, we'll simulate the API call
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+      setAddUserStatus({ isLoading: true, message: '', isError: false });
       
-      // Success
-      setEmailChangeStatus({ 
+      await adminService.addUserWithEmail({
+        username: addUser.username,
+        email: addUser.email,
+        password: addUser.password,
+        role: addUser.role
+      });
+
+      setAddUserStatus({ 
         isLoading: false, 
-        message: 'Email changed successfully! Please check your new email for verification.', 
+        message: 'User added successfully!', 
         isError: false 
       });
-      
-      // Clear form
-      setEmailChange({
-        currentPassword: '',
-        newEmail: '',
-        confirmEmail: ''
+
+      // Reset form
+      setAddUser({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        role: 'moderator'
       });
-      
-      // Hide confirmation dialog
-      setShowEmailConfirm(false);
-      
-      // Clear success message after 5 seconds
+
+      // Close modal after success
       setTimeout(() => {
-        setEmailChangeStatus(prev => ({ ...prev, message: '' }));
-      }, 5000);
-      
-    } catch (error: any) {
-      setEmailChangeStatus({ 
+        setShowAddUserModal(false);
+        setAddUserStatus({ isLoading: false, message: '', isError: false });
+      }, 2000);
+
+    } catch (error) {
+      setAddUserStatus({ 
         isLoading: false, 
-        message: error.message || 'Failed to change email. Please try again.', 
+        message: error instanceof Error ? error.message : 'Failed to add user', 
         isError: true 
       });
     }
   };
 
-  const clearEmailChangeStatus = () => {
-    setEmailChangeStatus({ isLoading: false, message: '', isError: false });
+  // Role Management Functions
+  const handleRoleChange = async () => {
+    if (!roleManagement.selectedUserId || !roleManagement.newRole) {
+      setRoleManagementStatus({ isLoading: false, message: 'User ID and new role are required', isError: true });
+      return;
+    }
+
+    try {
+      setRoleManagementStatus({ isLoading: true, message: '', isError: false });
+      
+      await adminService.updateUserRole(roleManagement.selectedUserId, roleManagement.newRole);
+
+      setRoleManagementStatus({ 
+        isLoading: false, 
+        message: 'User role updated successfully!', 
+        isError: false 
+      });
+
+      // Reset form
+      setRoleManagement({
+        selectedUserId: '',
+        newRole: 'moderator'
+      });
+
+      // Close modal after success
+      setTimeout(() => {
+        setShowRoleManagementModal(false);
+        setRoleManagementStatus({ isLoading: false, message: '', isError: false });
+      }, 2000);
+
+    } catch (error) {
+      setRoleManagementStatus({ 
+        isLoading: false, 
+        message: error instanceof Error ? error.message : 'Failed to update user role', 
+        isError: true 
+      });
+    }
   };
 
-  const openEmailChangeModal = () => {
-    setShowEmailChangeModal(true);
-    // Clear any previous status messages
-    setEmailChangeStatus({ isLoading: false, message: '', isError: false });
-    // Clear form
-    setEmailChange({
-      currentPassword: '',
-      newEmail: '',
-      confirmEmail: ''
-    });
-  };
+  // Load available roles on component mount
+  React.useEffect(() => {
+    const loadAvailableRoles = async () => {
+      try {
+        const rolesData = await adminService.getAvailableRoles();
+        setAvailableRoles(rolesData.availableRoles);
+        setCurrentUserRole(rolesData.userRole);
+      } catch (error) {
+        console.error('Failed to load available roles:', error);
+      }
+    };
 
-  const closeEmailChangeModal = () => {
-    setShowEmailChangeModal(false);
-    setShowEmailConfirm(false);
-    setEmailChangeStatus({ isLoading: false, message: '', isError: false });
-  };
+    loadAvailableRoles();
+  }, []);
 
   return (
     <Container size="7xl">
@@ -503,7 +554,7 @@ const SettingsLayout: React.FC = () => {
                     <Switch
                       id="requireSpecialChars"
                       checked={securitySettings.requireSpecialChars}
-                      onChange={(e) => setSecuritySettings(prev => ({ ...prev, requireSpecialChars: e.target.checked }))}
+                      onCheckedChange={(checked) => setSecuritySettings(prev => ({ ...prev, requireSpecialChars: checked }))}
                     />
                     <label htmlFor="requireSpecialChars" className="text-sm font-medium">Require special characters</label>
                   </div>
@@ -512,18 +563,9 @@ const SettingsLayout: React.FC = () => {
                     <Switch
                       id="requireNumbers"
                       checked={securitySettings.requireNumbers}
-                      onChange={(e) => setSecuritySettings(prev => ({ ...prev, requireNumbers: e.target.checked }))}
+                      onCheckedChange={(checked) => setSecuritySettings(prev => ({ ...prev, requireNumbers: checked }))}
                     />
                     <label htmlFor="requireNumbers" className="text-sm font-medium">Require numbers</label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="enable2FA"
-                      checked={securitySettings.enable2FA}
-                      onChange={(e) => setSecuritySettings(prev => ({ ...prev, enable2FA: e.target.checked }))}
-                    />
-                    <label htmlFor="enable2FA" className="text-sm font-medium">Enable Two-Factor Authentication</label>
                   </div>
                 </div>
               </div>
@@ -543,43 +585,28 @@ const SettingsLayout: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <Typography variant="h3">Change Password</Typography>
-                
-                <div className="p-4 border border-border rounded-lg bg-muted/30">
-                  <Typography variant="body-medium" className="text-muted-foreground mb-4">
-                    Click the button below to change your password securely.
-                  </Typography>
-                  
-                  <Button 
-                    onClick={openPasswordChangeModal}
-                    className="flex items-center space-x-2"
-                  >
-                    <ShieldCheckIcon className="h-4 w-4" />
-                    Change Password
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <Typography variant="h3">Change Email</Typography>
-                
-                <div className="p-4 border border-border rounded-lg bg-muted/30">
-                  <Typography variant="body-medium" className="text-muted-foreground mb-4">
-                    Click the button below to change your email address securely.
-                  </Typography>
-                  
-                                     <Button 
-                     onClick={openEmailChangeModal}
+                             <div className="space-y-4">
+                 <Typography variant="h3">Change Password</Typography>
+                 
+                 <div className="p-4 border border-border rounded-lg bg-muted/30">
+                   <Typography variant="body-medium" className="text-muted-foreground mb-4">
+                     Click the button below to change your password securely.
+                   </Typography>
+                   
+                   <Button 
+                     onClick={openPasswordChangeModal}
                      className="flex items-center space-x-2"
                    >
-                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                     </svg>
-                     Change Email
+                     <ShieldCheckIcon className="h-4 w-4" />
+                     Change Password
                    </Button>
-                </div>
-              </div>
+                 </div>
+               </div>
+
+               <div className="space-y-4">
+                 <Typography variant="h3">Two-Factor Authentication</Typography>
+                 <TwoFactorAuthManager />
+               </div>
 
               <div className="flex justify-end">
                 <Button onClick={() => saveSettings('security')}>
@@ -708,107 +735,6 @@ const SettingsLayout: React.FC = () => {
             </div>
           </div>
         )}
-
-        {/* Email Change Modal */}
-        {showEmailChangeModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-background border border-border rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-3">
-                  <svg className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <Typography variant="h3">Change Email</Typography>
-                </div>
-                <button
-                  onClick={closeEmailChangeModal}
-                  className="text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Status Message */}
-              {emailChangeStatus.message && (
-                <div className={`p-3 rounded-md mb-4 ${
-                  emailChangeStatus.isError 
-                    ? 'bg-red-100 border border-red-300 text-red-700' 
-                    : 'bg-green-100 border border-green-300 text-green-700'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <span>{emailChangeStatus.message}</span>
-                    <button
-                      onClick={clearEmailChangeStatus}
-                      className="text-sm hover:opacity-70"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="modalCurrentPasswordEmail" className="text-sm font-medium">Current Password</label>
-                  <Input
-                    id="modalCurrentPasswordEmail"
-                    type="password"
-                    value={emailChange.currentPassword}
-                    onChange={(e) => setEmailChange(prev => ({ ...prev, currentPassword: e.target.value }))}
-                    placeholder="Enter your current password"
-                  />
-                  <div className="text-xs text-muted-foreground">
-                    Required for security verification
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="modalNewEmail" className="text-sm font-medium">New Email Address</label>
-                  <Input
-                    id="modalNewEmail"
-                    type="email"
-                    value={emailChange.newEmail}
-                    onChange={(e) => setEmailChange(prev => ({ ...prev, newEmail: e.target.value }))}
-                    placeholder="Enter your new email address"
-                  />
-                  <div className="text-xs text-muted-foreground">
-                    Must be a valid email address
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="modalConfirmEmail" className="text-sm font-medium">Confirm New Email</label>
-                  <Input
-                    id="modalConfirmEmail"
-                    type="email"
-                    value={emailChange.confirmEmail}
-                    onChange={(e) => setEmailChange(prev => ({ ...prev, confirmEmail: e.target.value }))}
-                    placeholder="Confirm your new email address"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 mt-6">
-                <Button 
-                  variant="outline" 
-                  onClick={closeEmailChangeModal}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleEmailChange}
-                  disabled={emailChangeStatus.isLoading}
-                  className="min-w-[120px]"
-                >
-                  Change Email
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Password Change Confirmation Modal */}
         {showPasswordConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -842,35 +768,205 @@ const SettingsLayout: React.FC = () => {
           </div>
         )}
 
-        {/* Email Change Confirmation Modal */}
-        {showEmailConfirm && (
+        {/* Add User Modal */}
+        {showAddUserModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full mx-4">
-              <div className="flex items-center space-x-3 mb-4">
-                <svg className="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                <Typography variant="h3">Confirm Email Change</Typography>
+            <div className="bg-background border border-border rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <svg className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <Typography variant="h3">Add New User</Typography>
+                </div>
+                <button
+                  onClick={() => setShowAddUserModal(false)}
+                  className="text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              
-              <Typography variant="body-medium" className="text-muted-foreground mb-6">
-                Are you sure you want to change your email address? This action will require email verification and may affect your login credentials.
-              </Typography>
-              
-              <div className="flex space-x-3">
+
+              {/* Status Message */}
+              {addUserStatus.message && (
+                <div className={`p-3 rounded-md mb-4 ${
+                  addUserStatus.isError 
+                    ? 'bg-red-100 border border-red-300 text-red-700' 
+                    : 'bg-green-100 border border-green-300 text-green-700'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span>{addUserStatus.message}</span>
+                    <button
+                      onClick={() => setAddUserStatus({ isLoading: false, message: '', isError: false })}
+                      className="text-sm hover:opacity-70"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="modalUsername" className="text-sm font-medium">Username</label>
+                  <Input
+                    id="modalUsername"
+                    value={addUser.username}
+                    onChange={(e) => setAddUser(prev => ({ ...prev, username: e.target.value }))}
+                    placeholder="Enter username"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="modalEmail" className="text-sm font-medium">Email Address</label>
+                  <Input
+                    id="modalEmail"
+                    type="email"
+                    value={addUser.email}
+                    onChange={(e) => setAddUser(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="Enter email address"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="modalRole" className="text-sm font-medium">Role</label>
+                  <Select
+                    value={addUser.role}
+                    onValueChange={(value) => setAddUser(prev => ({ ...prev, role: value }))}
+                  >
+                    {availableRoles.map(role => (
+                      <option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</option>
+                    ))}
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="modalPassword" className="text-sm font-medium">Password</label>
+                  <Input
+                    id="modalPassword"
+                    type="password"
+                    value={addUser.password}
+                    onChange={(e) => setAddUser(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Enter password"
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    Must be at least 8 characters long
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="modalConfirmPassword" className="text-sm font-medium">Confirm Password</label>
+                  <Input
+                    id="modalConfirmPassword"
+                    type="password"
+                    value={addUser.confirmPassword}
+                    onChange={(e) => setAddUser(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    placeholder="Confirm password"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
                 <Button 
                   variant="outline" 
-                  onClick={() => setShowEmailConfirm(false)}
-                  className="flex-1"
+                  onClick={() => setShowAddUserModal(false)}
                 >
                   Cancel
                 </Button>
                 <Button 
-                  onClick={confirmEmailChange}
-                  disabled={emailChangeStatus.isLoading}
-                  className="flex-1"
+                  onClick={handleAddUser}
+                  disabled={addUserStatus.isLoading}
+                  className="min-w-[120px]"
                 >
-                  {emailChangeStatus.isLoading ? 'Changing...' : 'Confirm Change'}
+                  {addUserStatus.isLoading ? 'Adding...' : 'Add User'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Role Management Modal */}
+        {showRoleManagementModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-background border border-border rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <svg className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  <Typography variant="h3">Manage User Role</Typography>
+                </div>
+                <button
+                  onClick={() => setShowRoleManagementModal(false)}
+                  className="text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Status Message */}
+              {roleManagementStatus.message && (
+                <div className={`p-3 rounded-md mb-4 ${
+                  roleManagementStatus.isError 
+                    ? 'bg-red-100 border border-red-300 text-red-700' 
+                    : 'bg-green-100 border border-green-300 text-green-700'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span>{roleManagementStatus.message}</span>
+                    <button
+                      onClick={() => setRoleManagementStatus({ isLoading: false, message: '', isError: false })}
+                      className="text-sm hover:opacity-70"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="modalUserId" className="text-sm font-medium">User ID</label>
+                  <Input
+                    id="modalUserId"
+                    value={roleManagement.selectedUserId}
+                    onChange={(e) => setRoleManagement(prev => ({ ...prev, selectedUserId: e.target.value }))}
+                    placeholder="Enter user ID"
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    Enter the ID of the user whose role you want to change
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="modalNewRole" className="text-sm font-medium">New Role</label>
+                  <Select
+                    value={roleManagement.newRole}
+                    onValueChange={(value) => setRoleManagement(prev => ({ ...prev, newRole: value }))}
+                  >
+                    {availableRoles.map(role => (
+                      <option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowRoleManagementModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleRoleChange}
+                  disabled={roleManagementStatus.isLoading}
+                  className="min-w-[120px]"
+                >
+                  {roleManagementStatus.isLoading ? 'Updating...' : 'Update Role'}
                 </Button>
               </div>
             </div>
@@ -894,7 +990,7 @@ const SettingsLayout: React.FC = () => {
                     <Switch
                       id="emailNotifications"
                       checked={notificationSettings.emailNotifications}
-                      onChange={(e) => setNotificationSettings(prev => ({ ...prev, emailNotifications: e.target.checked }))}
+                      onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, emailNotifications: checked }))}
                     />
                     <label htmlFor="emailNotifications" className="text-sm font-medium">Email Notifications</label>
                   </div>
@@ -903,7 +999,7 @@ const SettingsLayout: React.FC = () => {
                     <Switch
                       id="pushNotifications"
                       checked={notificationSettings.pushNotifications}
-                      onChange={(e) => setNotificationSettings(prev => ({ ...prev, pushNotifications: e.target.checked }))}
+                      onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, pushNotifications: checked }))}
                     />
                     <label htmlFor="pushNotifications" className="text-sm font-medium">Push Notifications</label>
                   </div>
@@ -912,7 +1008,7 @@ const SettingsLayout: React.FC = () => {
                     <Switch
                       id="slackNotifications"
                       checked={notificationSettings.slackNotifications}
-                      onChange={(e) => setNotificationSettings(prev => ({ ...prev, slackNotifications: e.target.checked }))}
+                      onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, slackNotifications: checked }))}
                     />
                     <label htmlFor="slackNotifications" className="text-sm font-medium">Slack Notifications</label>
                   </div>
@@ -1052,11 +1148,10 @@ const SettingsLayout: React.FC = () => {
                  <Grid cols={2} className="gap-6">
                    <div className="space-y-2">
                      <label htmlFor="defaultRole" className="text-sm font-medium">Default User Role</label>
-                     <Select defaultValue="user">
+                     <Select defaultValue="moderator">
                        <option value="admin">Administrator</option>
-                       <option value="manager">Manager</option>
-                       <option value="user">User</option>
-                       <option value="viewer">Viewer</option>
+                       <option value="moderator">Moderator</option>
+                       <option value="super_admin">Super Admin</option>
                      </Select>
                    </div>
 
@@ -1077,16 +1172,14 @@ const SettingsLayout: React.FC = () => {
                     <thead className="bg-muted">
                       <tr>
                         <th className="px-4 py-2 text-left">Permission</th>
+                        <th className="px-4 py-2 text-center">Super Admin</th>
                         <th className="px-4 py-2 text-center">Admin</th>
-                        <th className="px-4 py-2 text-center">Manager</th>
-                        <th className="px-4 py-2 text-center">User</th>
-                        <th className="px-4 py-2 text-center">Viewer</th>
+                        <th className="px-4 py-2 text-center">Moderator</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr className="border-t">
                         <td className="px-4 py-2">View Dashboard</td>
-                        <td className="px-4 py-2 text-center">✓</td>
                         <td className="px-4 py-2 text-center">✓</td>
                         <td className="px-4 py-2 text-center">✓</td>
                         <td className="px-4 py-2 text-center">✓</td>
@@ -1096,19 +1189,16 @@ const SettingsLayout: React.FC = () => {
                         <td className="px-4 py-2 text-center">✓</td>
                         <td className="px-4 py-2 text-center">✓</td>
                         <td className="px-4 py-2 text-center">✓</td>
-                        <td className="px-4 py-2 text-center">✗</td>
                       </tr>
                       <tr className="border-t">
                         <td className="px-4 py-2">Manage Users</td>
                         <td className="px-4 py-2 text-center">✓</td>
                         <td className="px-4 py-2 text-center">✓</td>
                         <td className="px-4 py-2 text-center">✗</td>
-                        <td className="px-4 py-2 text-center">✗</td>
                       </tr>
                       <tr className="border-t">
                         <td className="px-4 py-2">System Settings</td>
                         <td className="px-4 py-2 text-center">✓</td>
-                        <td className="px-4 py-2 text-center">✗</td>
                         <td className="px-4 py-2 text-center">✗</td>
                         <td className="px-4 py-2 text-center">✗</td>
                       </tr>
@@ -1143,22 +1233,22 @@ const SettingsLayout: React.FC = () => {
                  <Typography variant="h3">Data Collection</Typography>
                  <div className="space-y-3">
                    <div className="flex items-center space-x-2">
-                     <Switch defaultChecked onChange={(e) => console.log('Usage analytics:', e.target.checked)} />
+                     <Switch defaultChecked />
                      <label className="text-sm font-medium">Enable usage analytics</label>
                    </div>
 
                    <div className="flex items-center space-x-2">
-                     <Switch defaultChecked onChange={(e) => console.log('User behavior:', e.target.checked)} />
+                     <Switch defaultChecked />
                      <label className="text-sm font-medium">Track user behavior</label>
                    </div>
 
                    <div className="flex items-center space-x-2">
-                     <Switch defaultChecked onChange={(e) => console.log('Performance monitoring:', e.target.checked)} />
+                     <Switch defaultChecked />
                      <label className="text-sm font-medium">Performance monitoring</label>
                    </div>
 
                    <div className="flex items-center space-x-2">
-                     <Switch onChange={(e) => console.log('Error tracking:', e.target.checked)} />
+                     <Switch />
                      <label className="text-sm font-medium">Error tracking and reporting</label>
                    </div>
                  </div>

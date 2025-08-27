@@ -1,5 +1,7 @@
 export * from './Button';
 export * from './Card';
+// Re-export CardContent as CardBody for backward compatibility
+export { CardContent as CardBody } from './Card';
 export * from './Container';
 export * from './Flex';
 export * from './Gradient';
@@ -15,6 +17,7 @@ export * from './Badge';
 export * from './Progress';
 export * from './Avatar';
 export * from './Select';
+export * from './SelectItem';
 export * from './Stack';
 export * from './Layout';
 export * from './Mobile';
