@@ -44,6 +44,9 @@ const handleWorkspaceSocket = (io) => {
     io.on('connection', (socket) => {
         logger.info(`User connected: ${socket.user.name} (${socket.id})`);
 
+        // Join user's personal room for notifications
+        socket.join(`user:${socket.userId}`);
+
         // Join workspace rooms
         socket.on('workspace:join', async (data) => {
             try {

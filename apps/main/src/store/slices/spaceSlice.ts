@@ -3,7 +3,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import type { 
   Space, 
   SpaceState 
-} from '../../types/task.types';
+} from '../../types/space.types';
 import { SpaceService } from '../../services/spaceService';
 
 // Async thunks for API calls
@@ -128,7 +128,9 @@ const spaceSlice = createSlice({
       })
       .addCase(fetchSpace.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentSpace = action.payload;
+        // The response might have a space property or be the space directly
+        const responseData = action.payload as any;
+        state.currentSpace = responseData.space || responseData;
       })
       .addCase(fetchSpace.rejected, (state, action) => {
         state.loading = false;

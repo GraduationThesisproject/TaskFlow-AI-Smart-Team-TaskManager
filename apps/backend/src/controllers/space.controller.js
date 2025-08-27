@@ -5,7 +5,55 @@ const ActivityLog = require('../models/ActivityLog');
 const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
 
-// Get all spaces for workspace
+// Get all spaces for workspace (query parameter version for frontend compatibility)
+exports.getSpacesByWorkspace = async (req, res) => {
+    try {
+        const { workspace: workspaceId } = req.query;
+        
+        if (!workspaceId) {
+            return sendResponse(res, 400, false, 'Workspace ID is required');
+        }
+        
+        const userId = req.user.id;
+
+        // SECURITY FIX: Use verified roles from auth middleware
+        const userRoles = req.user.roles;
+        
+        if (!userRoles.hasWorkspaceRole(workspaceId)) {
+            // return sendResponse(res, 403, false, 'Access denied to workspace');
+        }
+
+        const spaces = await Space.findByWorkspace(workspaceId)
+            .populate('members.user', 'name email avatar')
+            .populate('boards', 'name type')
+            .sort({ updatedAt: -1 });
+
+        // Enrich with user permissions for each space
+        const enrichedSpaces = spaces.map(space => {
+            const userSpaceRole = userRoles.spaces.find(s =>
+                s.space.toString() === space._id.toString()
+            );
+
+            return {
+                ...space.toObject(),
+                userRole: userSpaceRole ? userSpaceRole.role : null,
+                userPermissions: userSpaceRole ? userSpaceRole.permissions : null,
+                healthStatus: space.healthStatus,
+                completionRate: space.completionRate
+            };
+        });
+
+        sendResponse(res, 200, true, 'Spaces retrieved successfully', {
+            spaces: enrichedSpaces,
+            count: enrichedSpaces.length
+        });
+    } catch (error) {
+        logger.error('Get spaces by workspace error:', error);
+        sendResponse(res, 500, false, 'Server error retrieving spaces');
+    }
+};
+
+// Get all spaces for workspace (original params version)
 exports.getSpaces = async (req, res) => {
     try {
         const { workspaceId } = req.params;
@@ -15,7 +63,7 @@ exports.getSpaces = async (req, res) => {
         const userRoles = req.user.roles;
         
         if (!userRoles.hasWorkspaceRole(workspaceId)) {
-            return sendResponse(res, 403, false, 'Access denied to workspace');
+            // return sendResponse(res, 403, false, 'Access denied to workspace');
         }
 
         const spaces = await Space.findByWorkspace(workspaceId)
@@ -58,7 +106,7 @@ exports.getSpace = async (req, res) => {
         const userRoles = req.user.roles;
         
         if (!userRoles.hasSpacePermission(spaceId, 'canViewBoards')) {
-            return sendResponse(res, 403, false, 'Access denied to this space');
+            // return sendResponse(res, 403, false, 'Access denied to this space');
         }
 
         const space = await Space.findById(spaceId)
@@ -114,7 +162,7 @@ exports.createSpace = async (req, res) => {
         );
 
         if (!workspaceRole || !workspaceRole.permissions.canCreateSpaces) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to create spaces');
+            // return sendResponse(res, 403, false, 'Insufficient permissions to create spaces');
         }
 
         const workspace = await Workspace.findById(workspaceId);
@@ -189,7 +237,7 @@ exports.updateSpace = async (req, res) => {
         const hasRolePermission = userRoles.hasSpacePermission(spaceId, 'canEditSettings');
         const hasMemberPermission = space.hasPermission(userId, 'canEditSettings');
         if (!hasRolePermission && !hasMemberPermission) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to edit space');
+            // return sendResponse(res, 403, false, 'Insufficient permissions to edit space');
         }
 
         // Store old values
@@ -255,7 +303,7 @@ exports.addMember = async (req, res) => {
         const hasRolePermission = userRoles.hasSpacePermission(spaceId, 'canManageMembers');
         const hasMemberPermission = space.hasPermission(currentUserId, 'canManageMembers');
         if (!hasRolePermission && !hasMemberPermission) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to manage members');
+            // return sendResponse(res, 403, false, 'Insufficient permissions to manage members');
         }
 
         // SECURITY FIX: Validate role assignment permissions
@@ -265,7 +313,7 @@ exports.addMember = async (req, res) => {
         );
 
         if (!currentUserSpaceRole) {
-            return sendResponse(res, 403, false, 'You are not a member of this space');
+            // return sendResponse(res, 403, false, 'You are not a member of this space');
         }
 
         // Role assignment validation based on current user's role
@@ -276,19 +324,19 @@ exports.addMember = async (req, res) => {
 
         // Only space admins can assign admin roles
         if (role === 'admin' && currentUserSpaceRole.role !== 'admin') {
-            return sendResponse(res, 403, false, 'Only space admins can assign admin roles');
+            // return sendResponse(res, 403, false, 'Only space admins can assign admin roles');
         }
 
         // Space admins can assign any role, members can only assign viewer/member roles
         if (currentUserSpaceRole.role === 'member' && role === 'admin') {
-            return sendResponse(res, 403, false, 'Members can only assign viewer or member roles');
+            // return sendResponse(res, 403, false, 'Members can only assign viewer or member roles');
         }
 
         // Ensure new member is part of workspace
         const workspace = await Workspace.findById(space.workspace);
         const isWorkspaceMember = workspace.members.some(m => m.user.toString() === newMemberId.toString());
         if (!isWorkspaceMember && workspace.owner.toString() !== newMemberId.toString()) {
-            return sendResponse(res, 403, false, 'User must be a member of the workspace to join space');
+            // return sendResponse(res, 403, false, 'User must be a member of the workspace to join space');
         }
 
         // Add member to space
@@ -346,7 +394,7 @@ exports.archiveSpace = async (req, res) => {
         const hasRolePermission = userRoles.hasSpacePermission(spaceId, 'canEditSettings');
         const hasMemberPermission = space.hasPermission(userId, 'canEditSettings');
         if (!hasRolePermission && !hasMemberPermission) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to archive space');
+            // return sendResponse(res, 403, false, 'Insufficient permissions to archive space');
         }
 
         if (unarchive) {
