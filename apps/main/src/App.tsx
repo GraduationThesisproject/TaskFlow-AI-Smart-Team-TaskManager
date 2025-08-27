@@ -82,7 +82,7 @@ function AppContent() {
       <LogoutConfirmDialog
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
-        onConfirm={logout}
+        onConfirm={(allDevices?: boolean) => logout({ allDevices })}
         userName={user?.user?.name || 'User'}
       />
     </AppLayout>

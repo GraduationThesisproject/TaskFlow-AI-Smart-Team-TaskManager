@@ -12,7 +12,12 @@ export const fetchWorkspace = createAsyncThunk(
   async (workspaceId: string) => {
     const response = await WorkspaceService.getWorkspace(workspaceId);
     // Backend returns data: { workspace: {...}, userRole: '...', userPermissions: {...} }
-    return (response as any).workspace;
+    const ws: any = response as any;
+    return {
+      ...ws,
+      _id: ws?._id ?? ws?.id,
+      id: ws?.id ?? (typeof ws?._id === 'object' ? String(ws._id) : ws?._id),
+    };
   }
 )
 
@@ -22,9 +27,16 @@ export const fetchWorkspaces = createAsyncThunk<Workspace[]>(
   async () => {
     const response = await WorkspaceService.getWorkspaces();
     // The response is an object with a workspaces array
-    return Array.isArray((response as any)?.workspaces)
+    const list = Array.isArray((response as any)?.workspaces)
       ? (response as any).workspaces
+      : Array.isArray(response)
+      ? (response as any)
       : [];
+    return list.map((ws: any) => ({
+      ...ws,
+      _id: ws?._id ?? ws?.id,
+      id: ws?.id ?? (typeof ws?._id === 'object' ? String(ws._id) : ws?._id),
+    }));
   }
 );
 
@@ -32,16 +44,18 @@ export const generateInviteLink = createAsyncThunk<InviteLinkInfo, { id: string 
   'workspace/generateInviteLink',
   async ({ id }) => {
     const response = await WorkspaceService.generateInviteLink(id);
-    return response.data;
+    return response
   }
 );
 
-// Public: fetch all public workspaces
-export const fetchWorkspacesPublic = createAsyncThunk<Workspace[]>(
-  'workspace/fetchWorkspacesPublic',
+
+
+// Admin: fetch all global workspaces
+export const fetchWorkspacesGlobal = createAsyncThunk<Workspace[]>(
+  'workspace/fetchWorkspacesGlobal',
   async () => {
-    const response = await WorkspaceService.getPublicWorkspaces();
-    console.log('[fetchWorkspacesPublic] raw response:', response);
+    const response = await WorkspaceService.getWorkspaces();
+    console.log('[fetchWorkspacesGlobal] raw response:', response);
     const raw: any = response as any;
     const list = Array.isArray(raw)
       ? raw
@@ -52,12 +66,10 @@ export const fetchWorkspacesPublic = createAsyncThunk<Workspace[]>(
       : Array.isArray(raw?.data)
       ? raw.data
       : [];
-    console.log('[fetchWorkspacesPublic] extracted workspaces length:', list.length);
+    console.log('[fetchWorkspacesGlobal] extracted workspaces length:', list.length);
     return list;
   }
 );
-
-
 
 export const fetchSpacesByWorkspace = createAsyncThunk(
   'workspace/fetchSpacesByWorkspace',
@@ -83,7 +95,7 @@ export const inviteMember = createAsyncThunk<WorkspaceMember, { id: string; emai
   async ({ id, email, role }, { rejectWithValue }) => {
     try {
       const response = await WorkspaceService.inviteMember(id, { email, role });
-      return response.data;
+      return response;
     } catch (error) {
       return rejectWithValue(error|| 'Failed to invite member');
     }
@@ -116,9 +128,13 @@ export const createWorkspace = createAsyncThunk(
       name: workspaceData.name,
       description: workspaceData.description,
       plan: 'free',
-      isPublic: workspaceData.visibility === 'public', // <-- toggle here
     });
-    return (response as any)?.workspace ?? response;
+    const ws: any = (response as any)?.workspace ?? response;
+    return {
+      ...ws,
+      _id: ws?._id ?? ws?.id,
+      id: ws?.id ?? (typeof ws?._id === 'object' ? String(ws._id) : ws?._id),
+    };
   }
 );
 
@@ -192,6 +208,16 @@ const workspaceSlice = createSlice({
     setCurrentWorkspace(state, action: PayloadAction<Workspace | null>) {
       state.currentWorkspace = action.payload;
     },
+    removeWorkspaceById(state, action: PayloadAction<string>) {
+      const id = action.payload;
+      state.workspaces = (state.workspaces || []).filter((w) => (w as any)._id !== id && (w as any).id !== id);
+      if (state.currentWorkspace && ((state.currentWorkspace as any)._id === id || (state.currentWorkspace as any).id === id)) {
+        state.currentWorkspace = null;
+      }
+      if (state.currentWorkspaceId === id) {
+        state.currentWorkspaceId = null;
+      }
+    },
     resetWorkspaceState: () => initialState,
   },
   extraReducers: (builder) => {
@@ -226,24 +252,6 @@ const workspaceSlice = createSlice({
         state.isLoading = false;
         state.error = action.error.message || 'Failed to invite member';
       })
-      // Fetch public workspaces
-      .addCase(fetchWorkspacesPublic.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        console.log('⏳ fetchWorkspacesPublic.pending');
-      })
-      .addCase(fetchWorkspacesPublic.fulfilled, (state, action) => {
-        state.loading = false;
-        state.workspaces = Array.isArray(action.payload) ? action.payload : [];
-        console.log('✅ fetchWorkspacesPublic.fulfilled - workspaces count:', state.workspaces.length);
-        state.error = null;
-      })
-      .addCase(fetchWorkspacesPublic.rejected, (state, action) => {
-        state.loading = false;
-        console.error('❌ fetchWorkspacesPublic.rejected:', action.error.message);
-        state.error = action.error.message || 'Failed to fetch public workspaces';
-      })
-  
       // Fetch single workspace
       .addCase(fetchWorkspace.pending, (state) => {
         state.loading = true;
@@ -295,6 +303,29 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to update workspace settings';
       })
+      // Delete workspace
+      .addCase(deleteWorkspace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        const id = action.payload?.id;
+        if (id) {
+          state.workspaces = (state.workspaces || []).filter((w) => (w as any)._id !== id && (w as any).id !== id);
+          if (state.currentWorkspace && ((state.currentWorkspace as any)._id === id || (state.currentWorkspace as any).id === id)) {
+            state.currentWorkspace = null;
+          }
+          if (state.currentWorkspaceId === id) {
+            state.currentWorkspaceId = null;
+          }
+        }
+        state.error = null;
+      })
+      .addCase(deleteWorkspace.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to delete workspace';
+      })
       
       }})
 
@@ -310,6 +341,7 @@ export const {
   setLoading,
   clearError,
   setCurrentWorkspaceId,
+  removeWorkspaceById,
   resetWorkspaceState,
 } = workspaceSlice.actions;
 

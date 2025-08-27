@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent, Typography, Button, Badge, EmptyState, Skeleton } from "@taskflow/ui";
 import { Plus, Users, Trash } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAppDispatch } from "../../../store";
+import { useAppDispatch, useAppSelector } from "../../../store";
 import { setCurrentWorkspaceId } from "../../../store/slices/workspaceSlice";
 import { useMemo, useState } from "react";
 import { CreateWorkspaceModal } from "../../../components/dashboard/home/modals/CreateWorkspaceModal";
@@ -13,6 +13,7 @@ export const WorkspacesSection = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { workspaces, loading, error } = useWorkspaces();
+  const { user } = useAppSelector((s) => s.auth);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<{ id: string; name?: string } | null>(null);
@@ -24,11 +25,14 @@ export const WorkspacesSection = () => {
 
   };
 
-  const recentWorkspaces = useMemo(() => {
+  const sortedWorkspaces = useMemo(() => {
+    const userId = user?.user?._id || user?.user?._id;
+    console.log("userId", userId);
+    console.log("workspaces", workspaces);
+    // Show all workspaces (no membership filtering), sorted by updatedAt/createdAt desc
     return [...workspaces]
-      .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
-      .slice(0, 4);
-  }, [workspaces]);
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
+  }, [workspaces, user]);
 
   return (
     <>
@@ -59,9 +63,10 @@ export const WorkspacesSection = () => {
               title="Error loading workspaces"
               description={error}
             />
-          ) : recentWorkspaces.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {recentWorkspaces.map(ws => (
+          ) : sortedWorkspaces.length > 0 ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {sortedWorkspaces.slice(0, 4).map(ws => (
                 <div
                   key={ws._id}
                   className="relative overflow-hidden group border rounded-lg p-4 cursor-pointer flex flex-col justify-between ring-1 ring-accent/10 border-[hsl(var(--accent))]/20 shadow-[0_0_12px_hsl(var(--accent)/0.10)] hover:shadow-[0_0_26px_hsl(var(--accent)/0.22)] transition-all"
@@ -91,6 +96,19 @@ export const WorkspacesSection = () => {
                   </Typography>
                 </div>
               ))}
+              </div>
+              {sortedWorkspaces.length > 4 && (
+                <div className="flex justify-center pt-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => navigate('/dashboard/workspaces')}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    View all {sortedWorkspaces.length} workspaces →
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <EmptyState
