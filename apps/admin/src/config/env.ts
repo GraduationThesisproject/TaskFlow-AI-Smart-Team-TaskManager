@@ -12,6 +12,12 @@ export const env = {
   ENABLE_ANALYTICS: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
   ENABLE_NOTIFICATIONS: import.meta.env.VITE_ENABLE_NOTIFICATIONS === 'true',
   ENABLE_ADMIN_FEATURES: import.meta.env.VITE_ENABLE_ADMIN_FEATURES === 'true',
+  ENABLE_POWERBI: import.meta.env.VITE_ENABLE_POWERBI === 'true',
+  
+  // Power BI Configuration
+  POWERBI_CLIENT_ID: import.meta.env.VITE_POWERBI_CLIENT_ID || '',
+  POWERBI_TENANT_ID: import.meta.env.VITE_POWERBI_TENANT_ID || '',
+  POWERBI_WORKSPACE_ID: import.meta.env.VITE_POWERBI_WORKSPACE_ID || '',
   
   // Development
   DEBUG_MODE: import.meta.env.VITE_DEBUG_MODE === 'true',

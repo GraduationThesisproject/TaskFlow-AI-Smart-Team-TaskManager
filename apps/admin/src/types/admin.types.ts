@@ -47,7 +47,12 @@ export interface AdminResponse {
   message: string;
   timestamp: string;
   data: {
-    admin: Admin;
-    token: string;
+    admin?: Admin;
+    token?: string;
+    // 2FA fields
+    requires2FA?: boolean;
+    userId?: string;
+    sessionId?: string;
+    message?: string;
   };
 }
