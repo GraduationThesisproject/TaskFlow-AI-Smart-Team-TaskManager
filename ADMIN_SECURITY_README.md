@@ -18,12 +18,15 @@ When you add an email in the security settings, it creates an **admin panel user
 - **Moderator**: Basic admin access with limited permissions
 
 ### 🛡️ Security Features
-- Automatic Admin model creation when adding admin users
-- Permission-based access control
-- User activation/deactivation
-- Role assignment and management
-- Secure password requirements
-- Audit logging
+- **Admin User Management**: Create, edit, and manage admin panel users
+- **Role-Based Access Control**: Super Admin, Admin, and Moderator roles
+- **Password Management**: Change password functionality with validation
+- **Security Configuration**: System-wide security policies and settings
+- **Password Policies**: Configurable password requirements and expiry
+- **Account Security**: Login attempt limits, lockout duration, 2FA settings
+- **Session Management**: Configurable session timeouts
+- **User Activation/Deactivation**: Enable/disable admin access
+- **Audit Logging**: Track all admin actions and changes
 
 ## Architecture
 
@@ -79,6 +82,28 @@ When you add an email in the security settings, it creates an **admin panel user
    - Admin model is automatically created with role-specific permissions
    - User can immediately access admin panel
    - **This user will NOT have access to regular app features**
+
+### Security Configuration
+
+1. **Password Policies**
+   - Minimum password length (6-20 characters)
+   - Require uppercase letters
+   - Require lowercase letters
+   - Require numbers
+   - Require special characters
+   - Password expiry settings (30-365 days)
+
+2. **Account Security**
+   - Maximum login attempts (3-10)
+   - Lockout duration (5-60 minutes)
+   - Two-factor authentication requirement
+   - Session timeout settings (15-480 minutes)
+
+3. **Change Password**
+   - Current password verification
+   - New password with policy validation
+   - Password confirmation
+   - Real-time policy compliance checking
 
 **Important**: Adding an email here creates an admin panel user only. This user cannot access workspaces, tasks, or other app features unless they are also created as regular users separately.
 
