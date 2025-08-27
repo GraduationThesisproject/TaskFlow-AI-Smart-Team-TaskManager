@@ -8,7 +8,7 @@ const {
   deleteFileById,
   getUserFiles
 } = require('../controllers/file.controller');
-const { authMiddleware } = require('../middlewares/auth.middleware');
+const {authMiddleware} = require('../middlewares/auth.middleware');
 const { 
   uploadMiddlewares, 
   processUploadedFiles, 

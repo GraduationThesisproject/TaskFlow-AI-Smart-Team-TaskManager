@@ -44,6 +44,7 @@ export interface UniversalNavbarProps {
   onLogout?: () => void;
   isAuthenticated?: boolean;
   className?: string;
+  onChatClick?: () => void;
 }
 
 // Component Props

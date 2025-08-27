@@ -22,6 +22,7 @@ const { fileServeMiddleware } = require('./middlewares/serve.middleware');
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
+const twoFactorAuthRoutes = require('./routes/twoFactorAuth.routes');
 const workspaceRoutes = require('./routes/workspace.routes');
 const spaceRoutes = require('./routes/space.routes');
 const boardRoutes = require('./routes/board.routes');
@@ -35,8 +36,8 @@ const tagRoutes = require('./routes/tag.routes');
 const invitationRoutes = require('./routes/invitation.routes');
 const aiRoutes = require('./routes/ai.routes');
 const templateRoutes = require('./routes/template.routes');
-const analyticsRoutes = require('./routes/analytics.routes');
-const userRoutes = require('./routes/user.routes');
+const powerbiRoutes = require('./routes/powerbi.routes');
+const chatRoutes = require('./routes/chat.routes');
 const app = express();
 
 
@@ -58,25 +59,19 @@ const corsOptions = {
             allowedOrigins = env.CORS_ORIGIN;
         }
         
-        console.log('Allowed CORS origins:', allowedOrigins);
-        console.log('Request origin:', origin);
-        
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
-            console.log('CORS blocked origin:', origin);
             callback(new Error(`Origin ${origin} not allowed by CORS. Allowed: ${allowedOrigins.join(', ')}`));
         }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Socket-ID'],
     exposedHeaders: ['X-Socket-ID']
 };
 
-console.log('CORS Configuration:', corsOptions);
 app.use(cors(corsOptions));
-
 
 // Logging
 app.use(morgan('combined'));
@@ -101,11 +96,17 @@ app.get('/cors-test', (req, res) => {
 
 // Static file serving for uploads - handle subdirectories properly
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
-  setHeaders: (res, path) => {
-    // Set CORS headers for static files
-    res.setHeader('Access-Control-Allow-Origin', '*');
+  setHeaders: (res, path, stat) => {
+    // Get the origin from the request headers
+    const origin = res.req?.headers?.origin;
+    
+    // Set CORS headers for static files - allow the requesting origin
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     
     // Set proper headers for different file types
     if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png') || path.endsWith('.gif') || path.endsWith('.webp')) {
@@ -120,6 +121,86 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
   }
 }));
 
+// Special route for avatar images to ensure proper CORS handling
+app.get('/uploads/avatars/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(process.cwd(), 'uploads', 'avatars', filename);
+  
+  // Set CORS headers
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // Set proper headers for images
+  res.setHeader('Content-Type', 'image/*');
+  res.setHeader('Cache-Control', 'public, max-age=31536000');
+  
+  // Serve the file
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('Error serving avatar file:', err);
+      res.status(404).json({ error: 'Avatar not found' });
+    }
+  });
+});
+
+// Alternative proxy route for avatars through API
+app.get('/api/avatars/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(process.cwd(), 'uploads', 'avatars', filename);
+  
+  // Set CORS headers
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // Set proper headers for images
+  res.setHeader('Content-Type', 'image/*');
+  res.setHeader('Cache-Control', 'public, max-age=31536000');
+  
+  // Serve the file
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('Error serving avatar file:', err);
+      res.status(404).json({ error: 'Avatar not found' });
+    }
+  });
+});
+
+// Handle OPTIONS requests for avatar files (preflight)
+app.options('/uploads/avatars/:filename', (req, res) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+  res.status(200).end();
+});
+
+// Handle OPTIONS requests for API avatar route (preflight)
+app.options('/api/avatars/:filename', (req, res) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+  res.status(200).end();
+});
+
 // Body parsing middleware for all routes
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -130,6 +211,7 @@ app.use(passport.initialize());
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/2fa', twoFactorAuthRoutes);
 app.use('/api/files', authMiddleware, fileRoutes);
 app.use('/api/workspaces', authMiddleware, workspaceRoutes);
 app.use('/api/spaces', authMiddleware, spaceRoutes);
@@ -147,8 +229,8 @@ app.use('/api/analytics', authMiddleware, analyticsRoutes);
 // Controller methods still enforce auth for mutations (create/update/delete/like).
 app.use('/api/templates', templateRoutes);
 app.use('/api/templates', authMiddleware, templateRoutes);
-app.use('/api/users', userRoutes);
-
+app.use('/api/powerbi', authMiddleware, powerbiRoutes);
+app.use('/api/chat', chatRoutes);
 
 // 404 handler - using catch-all middleware instead of wildcard
 app.use((req, res) => {

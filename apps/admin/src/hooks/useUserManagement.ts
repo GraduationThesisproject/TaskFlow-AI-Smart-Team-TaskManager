@@ -9,10 +9,9 @@ export const useUserManagement = () => {
     setIsLoading(true);
     try {
       // Implement user fetching logic
-      console.log('Fetching users...');
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
     } catch (error) {
-      console.error('Error fetching users:', error);
+      // Error handling
     } finally {
       setIsLoading(false);
     }
@@ -21,30 +20,27 @@ export const useUserManagement = () => {
   const createUser = useCallback(async (userData: Partial<User>) => {
     try {
       // Implement user creation logic
-      console.log('Creating user:', userData);
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
     } catch (error) {
-      console.error('Error creating user:', error);
+      // Error handling
     }
   }, []);
 
   const updateUser = useCallback(async (userId: string, data: Partial<User>) => {
     try {
       // Implement user update logic
-      console.log('Updating user:', userId, data);
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
     } catch (error) {
-      console.error('Error updating user:', error);
+      // Error handling
     }
   }, []);
 
   const deleteUser = useCallback(async (userId: string) => {
     try {
       // Implement user deletion logic
-      console.log('Deleting user:', userId);
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
     } catch (error) {
-      console.error('Error deleting user:', error);
+      // Error handling
     }
   }, []);
 

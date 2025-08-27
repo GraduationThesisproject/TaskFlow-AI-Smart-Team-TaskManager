@@ -2,10 +2,11 @@ const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 
 // Generate JWT token
-const generateToken = (userId, expiresIn = env.JWT_EXPIRES_IN) => {
+const generateToken = (userId, expiresIn = env.JWT_EXPIRES_IN, additionalPayload = {}) => {
     const payload = {
         id: userId,
-        iat: Math.floor(Date.now() / 1000)
+        iat: Math.floor(Date.now() / 1000),
+        ...additionalPayload
     };
 
     return jwt.sign(payload, env.JWT_SECRET, {
@@ -13,6 +14,11 @@ const generateToken = (userId, expiresIn = env.JWT_EXPIRES_IN) => {
         issuer: 'taskflow-api',
         audience: 'taskflow-users'
     });
+};
+
+// Generate admin JWT token with model field
+const generateAdminToken = (userId, expiresIn = env.JWT_EXPIRES_IN) => {
+    return generateToken(userId, expiresIn, { model: 'Admin' });
 };
 
 // Verify JWT token
@@ -113,6 +119,7 @@ const getTokenExpiration = (token) => {
 
 module.exports = {
     generateToken,
+    generateAdminToken,
     verifyToken,
     generateRefreshToken,
     verifyRefreshToken,

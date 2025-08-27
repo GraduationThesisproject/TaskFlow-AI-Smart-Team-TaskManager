@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store';
 import { logoutAdmin, getCurrentAdmin } from '../store/slices/adminSlice';
+import { getAvatarUrl } from '../services/adminService';
 import { Typography, Avatar, Dropdown, DropdownItem } from '@taskflow/ui';
 import { ThemeToggle } from '@taskflow/theme';
 import { ConfirmationDialog } from '../components/common';
@@ -17,7 +18,8 @@ import {
   UserIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  ChatBubbleLeftIcon
 } from '@heroicons/react/24/outline';
 
 // Import NotificationBell component
@@ -33,6 +35,8 @@ import SystemHealthLayout from '../layouts/SystemHealthLayout';
 import NotificationsLayout from '../layouts/NotificationsLayout';
 import SettingsLayout from '../layouts/SettingsLayout';
 import ProfileLayout from '../layouts/ProfileLayout';
+import PowerBILayout from '../layouts/PowerBILayout';
+import ChatLayout from '../layouts/ChatLayout';
 
 // Import language context and translation hook
 import { useLanguageContext } from '../contexts/LanguageContext';
@@ -92,17 +96,31 @@ const AdminPage: React.FC = () => {
       layout: IntegrationsLayout
     },
     {
-      name: t('navigation.systemHealth'),
+      name: 'System Health',
       path: '/system-health',
       icon: HeartIcon,
       description: 'Monitor system performance and health',
       layout: SystemHealthLayout
     },
     {
-      name: t('navigation.notifications'),
+      name: 'Power BI',
+      path: '/powerbi',
+      icon: ChartBarIcon,
+      description: 'Power BI reports and analytics',
+      layout: PowerBILayout
+    },
+    {
+      name: 'Customer Support',
+      path: '/chat',
+      icon: ChatBubbleLeftIcon,
+      description: 'Manage customer support chats and inquiries',
+      layout: ChatLayout
+    },
+    {
+      name: 'Notifications',
       path: '/notifications',
       icon: BellIcon,
-      description: 'System announcements and communication',
+      description: 'Manage system notifications and alerts',
       layout: NotificationsLayout
     },
     {
@@ -123,40 +141,25 @@ const AdminPage: React.FC = () => {
 
   // Check authentication on mount
   React.useEffect(() => {
-    // console.log('AdminPage: useEffect triggered:', { isAuthenticated, isLoading, hasCurrentAdmin: !!currentAdmin });
     if (!isAuthenticated && !isLoading) {
       const token = localStorage.getItem('adminToken');
-      // console.log('AdminPage: checking token:', !!token);
       if (token) {
-        // console.log('AdminPage: token found, dispatching getCurrentAdmin');
         dispatch(getCurrentAdmin());
       } else {
-        console.log('AdminPage: no token, navigating to login');
         navigate('/login');
       }
     }
   }, [dispatch, isAuthenticated, isLoading, navigate]);
 
   const handleLogout = async () => {
-    console.log('=== LOGOUT DEBUG START ===');
-    console.log('Logout started...');
-    console.log('Current state before logout:', { isAuthenticated, currentAdmin });
-    console.log('Current location:', location.pathname);
-    console.log('Token in localStorage:', !!localStorage.getItem('adminToken'));
-    
     try {
-      console.log('Dispatching logoutAdmin...');
       await dispatch(logoutAdmin()).unwrap();
-      console.log('Logout successful, navigating to login...');
       navigate('/login');
     } catch (error) {
-      console.error('Logout failed:', error);
       // Force logout by clearing local state
-      console.log('Force clearing localStorage and navigating...');
       localStorage.removeItem('adminToken');
       navigate('/login');
     }
-    console.log('=== LOGOUT DEBUG END ===');
   };
 
   const handleLogoutConfirm = () => {
@@ -176,8 +179,6 @@ const AdminPage: React.FC = () => {
     { 
       label: 'Profile', 
       action: () => {
-        console.log('=== PROFILE CLICKED ===');
-        console.log('Profile clicked');
         navigate('/profile');
       },
       icon: UserIcon 
@@ -185,8 +186,6 @@ const AdminPage: React.FC = () => {
     { 
       label: 'Settings', 
       action: () => {
-        console.log('=== SETTINGS CLICKED ===');
-        console.log('Settings clicked');
         navigate('/settings');
       },
       icon: CogIcon 
@@ -194,8 +193,6 @@ const AdminPage: React.FC = () => {
     { 
       label: 'Logout', 
       action: () => {
-        console.log('=== LOGOUT CLICKED FROM DROPDOWN ===');
-        console.log('Logout clicked from menu');
         setShowLogoutConfirm(true);
       },
       icon: ArrowRightOnRectangleIcon,
@@ -341,7 +338,20 @@ const AdminPage: React.FC = () => {
               trigger={
                 <div className="flex items-center space-x-2 hover:bg-muted p-2 rounded-lg transition-colors cursor-pointer">
                   <Avatar size="sm" className="bg-primary text-primary-foreground flex-shrink-0">
-                    <span className="text-sm font-medium">
+                    {currentAdmin?.avatar ? (
+                      <img 
+                        src={getAvatarUrl(currentAdmin.avatar)} 
+                        alt={currentAdmin?.name || 'Admin'} 
+                        className="w-full h-full object-cover rounded-full"
+                        crossOrigin="anonymous"
+                        onError={(e) => {
+                          // Hide the image on error and show fallback
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <span className={`text-sm font-medium ${currentAdmin?.avatar ? 'hidden' : ''}`}>
                       {currentAdmin?.name?.charAt(0).toUpperCase() || 'A'}
                     </span>
                   </Avatar>
