@@ -1,4 +1,6 @@
+const mongoose = require('mongoose');
 const Task = require('../models/Task');
+const Column = require('../models/Column');
 const Comment = require('../models/Comment');
 const Notification = require('../models/Notification');
 const Analytics = require('../models/Analytics');
@@ -50,71 +52,108 @@ class TaskService {
         };
     }
 
-    // Get tasks with advanced filtering
+    // Get tasks with advanced filtering, pagination, and totals
     async getFilteredTasks(filters, userId) {
-        let query = { archivedAt: null };
+        const { page = 1, limit = 25 } = filters;
+        const allowedSort = ['createdAt', 'updatedAt', 'priority', 'dueDate', 'position', 'title'];
+        const sortBy = allowedSort.includes(filters.sortBy) ? filters.sortBy : 'createdAt';
+        const sortOrder = filters.sortOrder === 'asc' ? 1 : -1;
 
-        // Apply filters
-        if (filters.boardId) query.board = filters.boardId;
-        if (filters.assignee) query.assignees = filters.assignee;
-        if (filters.status) query.status = filters.status;
-        if (filters.priority) query.priority = filters.priority;
+        const match = { archivedAt: null };
+        
+        // Apply filters with proper ObjectId casting
+        if (filters.boardId) match.board = new mongoose.Types.ObjectId(filters.boardId);
+        if (filters.columnId) match.column = new mongoose.Types.ObjectId(filters.columnId);
+        if (filters.assignee) match.assignees = new mongoose.Types.ObjectId(filters.assignee);
+        if (filters.status) match.status = filters.status;
+        if (filters.priority) match.priority = filters.priority;
+        
         if (filters.dueDate) {
             const date = new Date(filters.dueDate);
-            query.dueDate = {
+            match.dueDate = {
                 $gte: date,
                 $lt: new Date(date.getTime() + 24 * 60 * 60 * 1000)
             };
         }
+        
         if (filters.overdue) {
-            query.dueDate = { $lt: new Date() };
-            query.status = { $ne: 'done' };
+            match.dueDate = { $lt: new Date() };
+            match.status = { $ne: 'done' };
         }
+        
         if (filters.assignedToMe) {
-            query.assignees = userId;
+            match.assignees = new mongoose.Types.ObjectId(userId);
         }
         
         // Handle search query
         if (filters.search) {
-            query.$or = [
+            match.$or = [
                 { title: { $regex: filters.search, $options: 'i' } },
                 { description: { $regex: filters.search, $options: 'i' } }
             ];
         }
 
-        const sortOptions = this.getSortOptions(filters.sortBy, filters.sortOrder);
-        
-        // Handle custom priority sorting
-        if (sortOptions.priorityOrder) {
-            const priorityOrder = { 'critical': 4, 'high': 3, 'medium': 2, 'low': 1 };
-            const order = sortOptions.priorityOrder;
-            delete sortOptions.priorityOrder;
-            
-            const tasks = await Task.find(query)
-                .populate('assignees', 'name email avatar')
-                .populate('reporter', 'name email avatar')
-                .populate('board', 'name')
-                .populate('column', 'name color')
-                .sort(sortOptions)
-                .limit(parseInt(filters.limit) || 50);
-            
-            // Sort by priority manually
-            return tasks.sort((a, b) => {
-                const aPriority = priorityOrder[a.priority] || 0;
-                const bPriority = priorityOrder[b.priority] || 0;
-                return order === 1 ? aPriority - bPriority : bPriority - aPriority;
-            });
-        }
-        
-        const tasks = await Task.find(query)
-            .populate('assignees', 'name email avatar')
-            .populate('reporter', 'name email avatar')
-            .populate('board', 'name')
-            .populate('column', 'name color')
-            .sort(sortOptions)
-            .limit(parseInt(filters.limit) || 50);
+        const pipeline = [
+            { $match: match },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'assignees',
+                    foreignField: '_id',
+                    as: 'assignees'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'reporter',
+                    foreignField: '_id',
+                    as: 'reporter'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'boards',
+                    localField: 'board',
+                    foreignField: '_id',
+                    as: 'board'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'columns',
+                    localField: 'column',
+                    foreignField: '_id',
+                    as: 'column'
+                }
+            },
+            {
+                $addFields: {
+                    reporter: { $arrayElemAt: ['$reporter', 0] },
+                    board: { $arrayElemAt: ['$board', 0] },
+                    column: { $arrayElemAt: ['$column', 0] }
+                }
+            },
+            { $sort: { [sortBy]: sortOrder } },
+            {
+                $facet: {
+                    data: [
+                        { $skip: (page - 1) * limit },
+                        { $limit: limit }
+                    ],
+                    meta: [{ $count: 'total' }]
+                }
+            }
+        ];
 
-        return tasks;
+        const [{ data, meta }] = await Task.aggregate(pipeline);
+        return { 
+            data, 
+            total: meta?.[0]?.total ?? 0, 
+            page, 
+            limit,
+            totalPages: Math.ceil((meta?.[0]?.total ?? 0) / limit)
+        };
     }
 
     // Get sort options based on sort criteria
@@ -406,6 +445,58 @@ class TaskService {
         };
 
         return recommendations;
+    }
+
+    // Move task with transaction and proper automation handling
+    async moveTask(taskId, targetColumnId, position, userId) {
+        const session = await Task.db.startSession();
+        
+        try {
+            return await session.withTransaction(async () => {
+                const task = await Task.findById(taskId).session(session);
+                if (!task) {
+                    throw new Error('Task not found');
+                }
+
+                const sourceColumn = await Column.findById(task.column).session(session);
+                const targetColumn = await Column.findById(targetColumnId).session(session);
+                
+                if (!targetColumn) {
+                    throw new Error('Target column not found');
+                }
+
+                // Remove from source column
+                if (sourceColumn) {
+                    await sourceColumn.removeTask(taskId);
+                }
+
+                // Add to target column at specified position
+                await targetColumn.addTask(taskId, position);
+
+                // Update task properties
+                task.column = targetColumnId;
+                task.position = position;
+                task.movedAt = new Date();
+
+                // Handle column automation - treat mapping as object, not Map
+                const mapping = targetColumn.settings?.automation?.statusMapping || {};
+                if (targetColumn.settings?.automation?.autoUpdateStatus && mapping[targetColumn.name]) {
+                    task.status = mapping[targetColumn.name];
+                }
+
+                await task.save({ session });
+
+                // Populate task for response
+                await task.populate('assignees', 'name email avatar');
+                await task.populate('reporter', 'name email avatar');
+                await task.populate('board', 'name');
+                await task.populate('column', 'name color');
+
+                return task;
+            });
+        } finally {
+            session.endSession();
+        }
     }
 
     // Bulk update tasks

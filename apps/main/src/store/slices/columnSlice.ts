@@ -1,9 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { 
-  Column, 
-  ColumnState 
-} from '../../types/task.types';
+import type { Column, ColumnState } from '../../types/board.types';
 import { BoardService } from '../../services/boardService';
 
 // Async thunks for API calls
@@ -50,6 +47,7 @@ export const reorderColumns = createAsyncThunk(
 // Initial state
 const initialState: ColumnState = {
   columns: [],
+  currentColumn: null,
   loading: false,
   error: null,
   socketConnected: false,

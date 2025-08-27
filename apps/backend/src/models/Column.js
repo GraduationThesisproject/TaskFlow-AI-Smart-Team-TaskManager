@@ -36,12 +36,12 @@ const columnSchema = new mongoose.Schema({
   limit: {
     type: Number,
     default: null,
-    min: [1, 'Column limit must be at least 1']
+    min: [0, 'Column limit must be at least 0 (0 = no limit)']
   },
   settings: {
     wipLimit: {
       enabled: { type: Boolean, default: false },
-      limit: { type: Number, default: null, min: 1 },
+      limit: { type: Number, default: null, min: [0, 'WIP limit must be at least 0 (0 = no limit)'] },
       strictMode: { type: Boolean, default: false } // Prevents adding tasks beyond limit
     },
     sorting: {
@@ -452,5 +452,8 @@ columnSchema.pre('save', function(next) {
   
   next();
 });
+
+// Database indexes for performance
+columnSchema.index({ board: 1, position: 1 });
 
 module.exports = mongoose.model('Column', columnSchema);

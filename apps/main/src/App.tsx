@@ -127,7 +127,7 @@ function AppContent() {
 
           <Route path="/space/*" element={<SpacePage/>} />
 
-          <Route path="/board/*" element={<BoardPage />} />
+          <Route path="/board/:boardId/*" element={<BoardPage />} />
 
           <Route path="/chat" element={<ChatPage />} />
 
