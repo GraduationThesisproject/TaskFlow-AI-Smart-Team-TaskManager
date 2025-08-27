@@ -1,5 +1,6 @@
 import axiosInstance from '../config/axios';
-import type { Space, ApiResponse, PaginatedResponse } from '../types/task.types';
+import type { Space } from '../types/space.types';
+import type { ApiResponse } from '../types/task.types';
 
 export interface CreateSpaceData {
   name: string;
