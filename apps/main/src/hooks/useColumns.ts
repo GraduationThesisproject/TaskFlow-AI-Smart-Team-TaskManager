@@ -1,12 +1,15 @@
 import { useSelector, useDispatch } from 'react-redux';
-import type { Column } from '../types/task.types';
+import { useCallback } from 'react';
+import type { Column } from '../types/board.types';
 import type { RootState } from '../store';
 import {
   fetchColumnsByBoard,
   createColumn,
   updateColumn,
   deleteColumn,
-  reorderColumns,
+  reorderColumns
+} from '../store/slices/taskSlice';
+import {
   startDraggingColumn,
   stopDraggingColumn
 } from '../store/slices/columnSlice';
@@ -14,79 +17,93 @@ import {
 export const useColumns = () => {
   const dispatch = useDispatch();
   
-  // Select state from Redux store
+  // Select state from Redux store - Use task slice since it contains the columns data
   const {
     columns,
     loading,
-    error,
-    dragState
-  } = useSelector((state: RootState) => state.columns);
+    error
+  } = useSelector((state: RootState) => state.tasks);
+  
+  // Get drag state from column slice
+  const { dragState } = useSelector((state: RootState) => state.columns);
 
   // API actions
-  const loadColumnsByBoard = (boardId: string) => {
+  const loadColumnsByBoard = useCallback((boardId: string) => {
     dispatch(fetchColumnsByBoard(boardId) as any);
-  };
+  }, [dispatch]);
 
-  const addColumn = async (columnData: any) => {
+  const addColumn = useCallback(async (columnData: { name: string; boardId: string; position: number; color?: string; backgroundColor?: string; icon?: string | null; settings?: any }) => {
     try {
-      await dispatch(createColumn(columnData) as any).unwrap();
+      // Extract boardId from columnData if it exists, otherwise we need to get it from context
+      const { boardId, ...columnDataWithoutBoardId } = columnData;
+      if (!boardId) {
+        throw new Error('boardId is required to create a column');
+      }
+      await dispatch(createColumn({ boardId, columnData: columnDataWithoutBoardId }) as any).unwrap();
     } catch (error) {
       console.error('Failed to create column:', error);
       throw error;
     }
-  };
+  }, [dispatch]);
 
-  const editColumn = async (columnId: string, columnData: any) => {
+  const editColumn = useCallback(async (columnId: string, columnData: any, boardId?: string) => {
     try {
-      await dispatch(updateColumn({ id: columnId, columnData }) as any).unwrap();
+      if (!boardId) {
+        throw new Error('boardId is required to update a column');
+      }
+      await dispatch(updateColumn({ columnId, columnData: { ...columnData, boardId } }) as any).unwrap();
     } catch (error) {
       console.error('Failed to update column:', error);
       throw error;
     }
-  };
+  }, [dispatch]);
 
-  const removeColumn = async (columnId: string) => {
+  const removeColumn = useCallback(async (columnId: string, boardId?: string) => {
     try {
-      await dispatch(deleteColumn(columnId) as any).unwrap();
+      if (!boardId) {
+        throw new Error('boardId is required to delete a column');
+      }
+      await dispatch(deleteColumn({ columnId, boardId }) as any).unwrap();
     } catch (error) {
       console.error('Failed to delete column:', error);
       throw error;
     }
-  };
+  }, [dispatch]);
 
-  const reorderColumnsAction = async (boardId: string, columnIds: string[]) => {
+  const reorderColumnsAction = useCallback(async (boardId: string, columnIds: string[]) => {
     try {
-      await dispatch(reorderColumns({ boardId, columnIds }) as any).unwrap();
+      await dispatch(reorderColumns({ boardId, columnOrder: columnIds }) as any).unwrap();
     } catch (error) {
       console.error('Failed to reorder columns:', error);
       throw error;
     }
-  };
+  }, [dispatch]);
 
-  const startDragging = (column: Column, position: number) => {
+  const startDragging = useCallback((column: Column, position: number) => {
     dispatch(startDraggingColumn({ column, position }));
-  };
+  }, [dispatch]);
 
-  const stopDragging = () => {
+  const stopDragging = useCallback(() => {
     dispatch(stopDraggingColumn());
-  };
+  }, [dispatch]);
 
-  // Computed values
-  const sortedColumns = [...columns].sort((a, b) => a.position - b.position);
-  const activeColumns = columns.filter(col => !col.isArchived);
-  const archivedColumns = columns.filter(col => col.isArchived);
+  // Computed values - Add defensive programming to handle null/undefined columns
+  const columnsArray = Array.isArray(columns) ? columns : [];
+  const sortedColumns = [...columnsArray].sort((a, b) => a.position - b.position);
+  const activeColumns = columnsArray.filter(col => !col.isArchived);
+  const archivedColumns = columnsArray.filter(col => col.isArchived);
 
-  const getColumnsByBoard = (boardId: string) => {
-    return columns.filter(col => col.board === boardId);
-  };
+  const getColumnsByBoard = useCallback((boardId: string) => {
+    return columnsArray.filter(col => col.board === boardId);
+  }, [columnsArray]);
 
-  const getSortedColumnsByBoard = (boardId: string) => {
+  const getSortedColumnsByBoard = useCallback((boardId: string) => {
     return getColumnsByBoard(boardId).sort((a, b) => a.position - b.position);
-  };
+  }, [getColumnsByBoard]);
 
   return {
     // State
-    columns,
+    columns: columnsArray,
     loading,
     error,
     dragState,

@@ -1,5 +1,5 @@
 import { useSelector, useDispatch } from 'react-redux';
-import type { Space } from '../types/task.types';
+import type { Space } from '../types/space.types';
 import type { RootState } from '../store';
 import {
   fetchSpace,

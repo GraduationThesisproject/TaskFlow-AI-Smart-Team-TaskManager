@@ -1,5 +1,4 @@
 import type { UserBasic } from './auth.types';
-import type { Task } from './task.types';
 
 export interface Workspace {
   _id: string;
@@ -68,24 +67,7 @@ export interface InviteMemberData {
   message?: string;
 }
 
-export interface Board {
-  id: string;
-  name: string;
-  description?: string;
-  columns: Column[];
-  tasks: Task[];
-  createdAt: Date;
-  updatedAt: Date;
-}
 
-export interface Column {
-  id: string;
-  name: string;
-  order: number;
-  tasks: Task[];
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 export interface WorkspaceState {
   workspaces: Workspace[];

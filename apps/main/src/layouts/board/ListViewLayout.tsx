@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSpaceTasks, useTheme } from '../../hooks';
-import type { Task } from '../../store/slices/taskSlice';
+import { useTasks, useTheme, useSpaceManager } from '../../hooks';
+import type { Task } from '../../types/task.types';
 import { 
   Button, 
   Card, 
@@ -33,11 +33,14 @@ export const ListViewLayout: React.FC = () => {
     sortBy,
     searchQuery,
     taskStats,
+    uniqueCategories,
+    uniqueAssignees,
+    uniquePriorities,
     updateFilters,
     updateSortBy,
     updateSearchQuery,
     resetFilters,
-  } = useSpaceTasks({ spaceId: 'space1', boardId: 'board1' });
+  } = useTasks();
 
   const getStatusVariant = (status: Task['status']) => {
     switch (status) {
@@ -173,11 +176,11 @@ export const ListViewLayout: React.FC = () => {
           </div>
 
           {/* Table Body */}
-          <div className="divide-y divide-border/20">
-            {tasks.map((task) => (
-              <div 
-                key={task._id} 
-                className="grid grid-cols-6 gap-6 p-6 hover:bg-muted/10 cursor-pointer transition-all duration-200 group"
+                     <div className="divide-y divide-border/20">
+             {tasks.map((task) => (
+               <div 
+                 key={task._id} 
+                 className="grid grid-cols-6 gap-6 p-6 hover:bg-muted/10 cursor-pointer transition-all duration-200 group"
                 onClick={() => handleTaskClick(task)}
               >
                 {/* Task Column */}
@@ -190,15 +193,15 @@ export const ListViewLayout: React.FC = () => {
                       <span className="text-success">✓</span>
                     )}
                   </Flex>
-                  <Typography variant="body-medium" className="font-semibold">
-                    {task.title}
-                  </Typography>
+                                     <Typography variant="body-medium" className="font-semibold">
+                     {task.title}
+                   </Typography>
                   <Flex gap="md" align="center">
                     <Typography variant="caption" textColor="muted">
-                      💬 {task.comments.length}
+                      💬 {task.timeEntries?.length || 0}
                     </Typography>
                     <Typography variant="caption" textColor="muted">
-                      📎 {task.attachments.length}
+                      📎 {task.attachments?.length || 0}
                     </Typography>
                     <Typography variant="caption" textColor="muted">
                       ⏱️ {task.estimatedHours || 0}h
@@ -241,7 +244,7 @@ export const ListViewLayout: React.FC = () => {
                 <Flex align="center">
                   <Flex gap="xs" align="center">
                     {task.assignees.slice(0, 2).map((assignee, index) => (
-                      <Avatar key={`${task._id}-${index}`} size="sm">
+                      <Avatar key={index} size="sm">
                         <AvatarFallback variant={getAvatarColor(assignee)} size="sm">
                           {getInitials(assignee)}
                         </AvatarFallback>
@@ -258,7 +261,7 @@ export const ListViewLayout: React.FC = () => {
                 {/* Due Date Column */}
                 <Flex align="center">
                   <Typography variant="body-small">
-                    {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
+                    {task.dueDate}
                   </Typography>
                 </Flex>
               </div>

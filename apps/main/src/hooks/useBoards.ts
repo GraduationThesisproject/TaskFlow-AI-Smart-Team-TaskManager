@@ -1,5 +1,5 @@
 import { useSelector, useDispatch } from 'react-redux';
-import type { Board } from '../types/task.types';
+import type { Board } from '../types/board.types';
 import type { RootState } from '../store';
 import {
   fetchBoard,
