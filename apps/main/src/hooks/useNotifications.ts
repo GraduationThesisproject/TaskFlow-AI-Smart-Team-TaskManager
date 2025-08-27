@@ -16,7 +16,7 @@ import type { UseNotificationsReturn } from '../types/dash.types';
 export const useNotifications = (): UseNotificationsReturn => {
   const dispatch = useAppDispatch();
   const { notifications, stats, loading, error } = useAppSelector((state: RootState) => state.notifications);
-  const { token } = useAppSelector((state: RootState) => state.auth);
+  const token = useAppSelector((state: RootState) => state.auth.token);
 
   // Feature flag to disable notifications when backend is not available
   const NOTIFICATIONS_ENABLED = true;

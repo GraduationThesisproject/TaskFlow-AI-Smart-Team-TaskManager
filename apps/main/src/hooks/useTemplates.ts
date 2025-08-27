@@ -1,4 +1,5 @@
-import { useCallback, useMemo } from 'react';
+
+import { useCallback, useMemo, useEffect } from 'react';
 import { env } from '../config/env';
 import { useAppDispatch, useAppSelector } from '../store';
 import {
@@ -14,12 +15,15 @@ import {
   selectTemplatesError,
   selectTemplateSelected,
   selectTemplateFilters,
-  incrementTemplateViews,
   toggleTemplateLike,
+  listAllTemplates,
+  toggleLikeLocal,
+  incrementTemplateViews,
 } from '../store/slices/templatesSlice';
-import { selectIsAuthenticated } from '../store/slices/authSlice';
+import { selectIsAuthenticated, selectUserBasic } from '../store/slices/authSlice';
 import type { TemplatesFilters, TemplateItem } from '../types/dash.types';
 import type { UseTemplatesReturn } from '../types/dash.types';
+import type { UserBasic } from '../types/auth.types';
 
 
 
@@ -31,85 +35,103 @@ export const useTemplates = (): UseTemplatesReturn => {
   const error = useAppSelector(selectTemplatesError);
   const selected = useAppSelector(selectTemplateSelected);
   const filters = useAppSelector(selectTemplateFilters);
-  const isAuthenticated = useAppSelector(selectIsAuthenticated as any);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const userBasic = useAppSelector(selectUserBasic) as UserBasic | undefined;
+
+  useEffect(() => {
+    // Log the list of templates whenever it changes
+    console.log('Templates list:', items);
+  }, [items]);
 
   const load = useCallback((f?: TemplatesFilters) => {
     const params = f ?? filters;
-    if (!isAuthenticated) {
-      if (env.ENABLE_DEBUG) console.log('⏭️ Skipping templates load: not authenticated');
-      return;
-    }
-    if (env.ENABLE_DEBUG) console.log('📄 Loading templates with filters:', params);
     dispatch(listTemplates(params) as any);
-  }, [dispatch, filters, isAuthenticated]);
+  }, [dispatch, filters]);
+
+  const loadAll = useCallback((f?: TemplatesFilters) => {
+    const params = f ?? filters;
+    dispatch(listAllTemplates(params) as any);
+  }, [dispatch, filters]);
 
   const fetchOne = useCallback((id: string) => {
-    if (env.ENABLE_DEBUG) console.log('📄 Fetching template:', id);
     dispatch(getTemplate(id) as any);
   }, [dispatch]);
 
   const create = useCallback(async (payload: Partial<TemplateItem>) => {
-    if (env.ENABLE_DEBUG) console.log('➕ Creating template');
     await dispatch(createTemplate(payload) as any).unwrap();
   }, [dispatch]);
 
   const update = useCallback(async (id: string, updates: Partial<TemplateItem>) => {
-    if (env.ENABLE_DEBUG) console.log('✏️ Updating template:', id);
     await dispatch(updateTemplate({ id, updates }) as any).unwrap();
   }, [dispatch]);
 
   const remove = useCallback(async (id: string) => {
-    if (env.ENABLE_DEBUG) console.log('🗑️ Deleting template:', id);
     await dispatch(deleteTemplate(id) as any).unwrap();
   }, [dispatch]);
 
   const updateFilters = useCallback((patch: Partial<TemplatesFilters>) => {
-    if (env.ENABLE_DEBUG) console.log('⚙️ Updating template filters:', patch);
     dispatch(setFilters(patch));
   }, [dispatch]);
 
   const clearSelection = useCallback(() => {
-    if (env.ENABLE_DEBUG) console.log('🧹 Clearing selected template');
     dispatch(clearSelected());
   }, [dispatch]);
 
+  // Views are incremented uniquely by backend on GET /templates/:id
   const incrementViews = useCallback((id: string) => {
-    if (!id || id.length !== 24) {
-      if (env.ENABLE_DEBUG) console.warn('incrementViews: invalid id, skipping', id);
-      return;
-    }
-    if (env.ENABLE_DEBUG) console.log('👀 Incrementing template views:', id);
-    (dispatch(incrementTemplateViews(id) as any).unwrap() as Promise<any>)
-      .catch((err: any) => {
-        // Swallow 404s to avoid noisy errors when item no longer exists
-        if (env.ENABLE_DEBUG) console.warn('incrementViews failed (likely 404), ignoring', err?.message || err);
-      });
+    // Alias to fetchOne: backend increments views on GET /templates/:id
+    if (!id) return;
+    dispatch(incrementTemplateViews(id) as any);
   }, [dispatch]);
 
   const toggleLike = useCallback((id: string) => {
-    if (!id || id.length !== 24) {
-      if (env.ENABLE_DEBUG) console.warn('toggleLike: invalid id, skipping', id);
-      return;
+    if (!id || id.length !== 24) return;
+    const userId: string | undefined = userBasic?._id || (userBasic as any)?.id;
+    if (!userId) return;
+    if (env.ENABLE_DEBUG) {
+      const before = Array.isArray(items) ? (items as any[]).find((t) => t?._id === id) : undefined;
+      console.debug('[toggleLike] before', {
+        id,
+        likes: before?.likes,
+        likedByLen: Array.isArray(before?.likedBy) ? before.likedBy.length : undefined,
+        hasUser: Array.isArray(before?.likedBy) ? before.likedBy.some((e: any) => String(e?._id ?? e) === String(userId)) : undefined,
+      });
     }
-    // Ensure the ID exists in current store to avoid 404 from stale items
-    const exists = Array.isArray(items) && items.some((t) => (t as any)?._id === id);
-    if (!exists) {
-      if (env.ENABLE_DEBUG) console.warn('toggleLike: id not in current store, refreshing list', id);
-      dispatch(listTemplates(filters) as any);
-      return;
+    // Optimistic update
+    dispatch(toggleLikeLocal({ id, userId }));
+    if (env.ENABLE_DEBUG) {
+      const afterOpt = Array.isArray(items) ? (items as any[]).find((t) => t?._id === id) : undefined;
+      console.debug('[toggleLike] after optimistic', {
+        id,
+        likes: afterOpt?.likes,
+        likedByLen: Array.isArray(afterOpt?.likedBy) ? afterOpt.likedBy.length : undefined,
+        hasUser: Array.isArray(afterOpt?.likedBy) ? afterOpt.likedBy.some((e: any) => String(e?._id ?? e) === String(userId)) : undefined,
+      });
     }
-    if (env.ENABLE_DEBUG) console.log('❤️ Toggling like for template:', id);
-    (dispatch(toggleTemplateLike(id) as any).unwrap() as Promise<any>)
+    (dispatch(toggleTemplateLike({ id, userId }) as any).unwrap() as Promise<any>)
+      .then((payload: any) => {
+        if (env.ENABLE_DEBUG) {
+          const afterFulfilled = Array.isArray((items as any)) ? (items as any[]).find((t) => t?._id === id) : undefined;
+          console.debug('[toggleLike] fulfilled', {
+            id,
+            serverLikes: typeof payload?.likes === 'number' ? payload.likes : undefined,
+            likes: afterFulfilled?.likes,
+            likedByLen: Array.isArray(afterFulfilled?.likedBy) ? afterFulfilled.likedBy.length : undefined,
+            hasUser: Array.isArray(afterFulfilled?.likedBy) ? afterFulfilled.likedBy.some((e: any) => String(e?._id ?? e) === String(userId)) : undefined,
+          });
+        }
+      })
       .catch((err: any) => {
+        // Revert optimistic update on failure
+        dispatch(toggleLikeLocal({ id, userId }));
         const msg = err?.message || String(err);
         if (/404|not found/i.test(msg)) {
-          if (env.ENABLE_DEBUG) console.warn('toggleLike: template not found, refreshing list');
           dispatch(listTemplates(filters) as any);
         } else if (env.ENABLE_DEBUG) {
-          console.warn('toggleLike failed, ignoring', msg);
+          console.warn('toggleLike failed, reverted optimistic update', msg);
         }
       });
-   }, [dispatch, items, filters]);
+   }, [dispatch, items, filters, userBasic]);
 
   return useMemo(() => ({
     items,
@@ -119,6 +141,7 @@ export const useTemplates = (): UseTemplatesReturn => {
     filters,
 
     load,
+    loadAll,
     fetchOne,
     create,
     update,
@@ -127,5 +150,5 @@ export const useTemplates = (): UseTemplatesReturn => {
     clearSelection,
     incrementViews,
     toggleLike,
-  }), [items, selected, loading, error, filters, load, fetchOne, create, update, remove, updateFilters, clearSelection, incrementViews, toggleLike]);
+  }), [items, selected, loading, error, filters, load, loadAll, fetchOne, create, update, remove, updateFilters, clearSelection, incrementViews, toggleLike]);
 };

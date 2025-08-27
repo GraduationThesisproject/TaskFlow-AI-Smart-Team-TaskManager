@@ -26,10 +26,7 @@ const createUploadMiddleware = (category = 'general', multiple = false, maxCount
     
     const uploadHandler = multiple 
       ? upload.array('files', maxCount)
-      : upload.fields([
-          { name: 'file', maxCount: 1 },
-          { name: 'avatar', maxCount: 1 }
-        ]);
+      : upload.single('avatar'); // single-file upload for avatar
     
     uploadHandler(req, res, (error) => {
       // Add request details logging
@@ -360,7 +357,7 @@ const setUploadContext = () => {
 
 // Pre-configured middleware for common use cases
 const uploadMiddlewares = {
-  avatar: createUploadMiddleware('avatar', false),
+  avatar: createMulterUpload('avatar'), // <- call .single here
   taskAttachment: createUploadMiddleware('task_attachment', true, 10, true), // Make task attachments optional
   commentAttachment: createUploadMiddleware('comment_attachment', true, 5, true), // Make comment attachments optional
   logo: createUploadMiddleware('logo', false),

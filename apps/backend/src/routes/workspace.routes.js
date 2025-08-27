@@ -95,7 +95,7 @@ router.post('/:id/transfer-ownership',
 
 // Delete workspace - rely on controller for final permission (owner or privileged admin)
 router.delete('/:id',
-    requireWorkspacePermission('canDeleteWorkspace'),
+    requireWorkspaceMember,
     workspaceController.deleteWorkspace
 );
 

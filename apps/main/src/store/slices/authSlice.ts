@@ -15,7 +15,6 @@ import type {
 import { AuthService } from '../../services/authService';
 import { oauthService } from '../../services/oauthService';
 import { getDeviceId } from '../../utils';
-import { AuthControllerClient } from '../../services/authService';
 
 const serializeUser = (userData: any): User => {
   if (userData.user) {
@@ -63,7 +62,7 @@ const serializeUser = (userData: any): User => {
       user: serializedBasicUser,
       preferences: {
         theme: { mode: 'system' },
-        notifications: { email: true, push: true, sms: false, marketing: false },
+        notifications: { email: true, push: true,/* sms: false,*/ marketing: false },
         language: 'en',
         timezone: 'UTC',
         dateFormat: 'MM/DD/YYYY',
@@ -200,19 +199,29 @@ export const checkAuthStatus = createAsyncThunk(
 
 export const logoutUser = createAsyncThunk(
   'auth/logout',
-  async (params: { allDevices?: boolean } = {}, { rejectWithValue }) => {
+  async (params: { allDevices?: boolean, navigate?: (path: string) => void } = {}, { rejectWithValue }) => {
     try {
-      const { allDevices = false } = params;
-      
+      const { allDevices = false, navigate } = params;
       const deviceId = getDeviceId();
       
       await AuthService.logout(deviceId, allDevices);
       
       localStorage.removeItem('token');
       
+      // Redirect to landing page after successful logout
+      if (navigate) {
+        navigate('/');
+      } else if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+      
       return true;
     } catch (error: any) {
       localStorage.removeItem('token');
+      // Still redirect even if there's an error with the API call
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
       const errorMessage = error.response?.data?.message || error.message || 'Logout failed';
       return rejectWithValue(errorMessage);
     }
@@ -224,7 +233,7 @@ export const oauthLogin = createAsyncThunk(
   async (oauthData: OAuthCallbackData, { rejectWithValue }) => {
     try {
       // Get OAuth callback data
-      const callbackData = await oauthService.handleCallback(oauthData.code || '', oauthData.provider);
+      const callbackData = await oauthService.handleCallback(oauthData.code || '',/* oauthData.provider*/);
       
       // Exchange code for tokens and user info via backend
       const tokenExchangeResponse = await AuthService.oauthTokenExchange(
@@ -274,7 +283,7 @@ export const oauthRegister = createAsyncThunk(
   async (oauthData: OAuthCallbackData, { rejectWithValue }) => {
     try {
       // Get OAuth callback data
-      const callbackData = await oauthService.handleCallback(oauthData.code || '', oauthData.provider);
+      const callbackData = await oauthService.handleCallback(oauthData.code || '',/* oauthData.provider*/);
       
       // Exchange code for tokens and user info via backend
       const tokenExchangeResponse = await AuthService.oauthTokenExchange(
@@ -387,15 +396,16 @@ export const resetPassword = createAsyncThunk(
 // Secure profile update (multipart form-data)
 export const updateProfileSecure = createAsyncThunk(
   'auth/updateProfileSecure',
-  async (formData: FormData, { rejectWithValue }) => {
+  async (
+    payload: { name?: string; currentPassword: string; avatar?: File | null },
+    thunkAPI
+  ) => {
     try {
-      await AuthControllerClient.updateProfileSecure(formData);
-      // Re-fetch profile to ensure local state is in sync
-      const profileResponse = await AuthService.getProfile();
-      return serializeUser(profileResponse.data);
+      const response = await AuthService.updateProfile(payload);
+      console.log("data", response);
+      return response.data;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to update profile';
-      return rejectWithValue(errorMessage);
+      return thunkAPI.rejectWithValue(error.response?.data || { message: error.message });
     }
   }
 );
@@ -409,7 +419,7 @@ export const changePassword = createAsyncThunk(
   ) => {
     try {
       const { currentPassword, newPassword } = payload;
-      const response = await AuthControllerClient.changePassword(currentPassword, newPassword);
+      const response = await AuthService.changePassword(currentPassword, newPassword);
       return response; // return API response (e.g., message)
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to change password';
@@ -426,7 +436,7 @@ export const updatePreferences = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await AuthControllerClient.updatePreferences(payload.section, payload.updates);
+      await AuthService.updatePreferences(payload.section, payload.updates);
       // Re-fetch profile to ensure local state is in sync
       const profileResponse = await AuthService.getProfile();
       return serializeUser(profileResponse.data);
