@@ -18,6 +18,19 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  if (!user?.user) {
+    return (
+      <Button
+        variant="default"
+        size="sm"
+        onClick={() => (window.location.href = '/signin')}
+        className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm hover:shadow-md"
+      >
+        Sign In
+      </Button>
+    );
+  }
+
   return (
     <div className={`relative flex items-center gap-2 ${className}`}>
       {/* Global Notification Bell */}
@@ -31,15 +44,15 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         className="flex items-center gap-2 hover:bg-secondary/60 transition-colors"
       >
         <Avatar size="sm">
-          {user?.user?.avatar && (
+          {user.user.avatar && (
             <AvatarImage src={user.user.avatar} alt={user.user.name || 'User'} />
           )}
           <AvatarFallback variant="primary">
-            {user?.user?.name?.charAt(0) || 'U'}
+            {user.user.name?.charAt(0) || 'U'}
           </AvatarFallback>
         </Avatar>
         <span className="hidden sm:inline font-medium">
-          {user?.user?.name || 'User'}
+          {user.user.name || 'User'}
         </span>
       </Button>
 
