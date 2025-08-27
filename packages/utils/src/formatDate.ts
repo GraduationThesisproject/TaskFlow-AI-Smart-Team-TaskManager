@@ -2,7 +2,45 @@
  * Format a date to a readable string
  */
 export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOptions): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  let dateObj: Date;
+  
+  if (typeof date === 'string') {
+    // Handle special cases
+    if (date === 'Never' || !date || date.trim() === '') {
+      return 'Unknown';
+    }
+    
+    // Try to parse the date string (ISO strings are most reliable)
+    const parsed = new Date(date);
+    
+    // Check if the date is valid
+    if (isNaN(parsed.getTime())) {
+      // If parsing fails, try to handle common formats
+      if (date.includes('/')) {
+        // Handle MM/DD/YYYY format (fallback for old data)
+        const parts = date.split('/');
+        if (parts.length === 3) {
+          const month = parseInt(parts[0]) - 1; // Month is 0-indexed
+          const day = parseInt(parts[1]);
+          const year = parseInt(parts[2]);
+          dateObj = new Date(year, month, day);
+        } else {
+          return 'Invalid Date';
+        }
+      } else {
+        return 'Invalid Date';
+      }
+    } else {
+      dateObj = parsed;
+    }
+  } else {
+    dateObj = date;
+  }
+  
+  // Final validation
+  if (isNaN(dateObj.getTime())) {
+    return 'Invalid Date';
+  }
   
   const defaultOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',

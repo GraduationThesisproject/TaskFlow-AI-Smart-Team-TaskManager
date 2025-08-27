@@ -14,6 +14,18 @@ export interface User {
   avatar?: string;
 }
 
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  lastActivity?: string;
+  permissions?: Record<string, boolean>;
+  type: 'regular_user' | 'admin_only';
+  createdAt: string;
+}
+
 export interface AnalyticsData {
   totalUsers: number;
   activeUsers: {
@@ -98,6 +110,24 @@ export interface AIPrompt {
   usageCount: number;
 }
 
+// Utility function to get avatar URL
+export const getAvatarUrl = (avatarPath: string): string => {
+  if (!avatarPath) return '';
+  
+  // If it's already a full URL, return as is
+  if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
+    return avatarPath;
+  }
+  
+  // If it's a relative path, construct the full URL
+  if (avatarPath.startsWith('/')) {
+    return `${env.API_BASE_URL}${avatarPath}`;
+  }
+  
+  // If it's just a filename, construct the full URL
+  return `${env.API_BASE_URL}/uploads/avatars/${avatarPath}`;
+};
+
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
@@ -122,11 +152,17 @@ export interface UsersResponse {
 class AdminService {
   private getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('adminToken');
-    // console.log('AdminService: getAuthHeaders - token:', !!token, token ? `${token.substring(0, 10)}...` : 'none');
-    return {
+    
+    if (!token) {
+      throw new Error('No admin token found. Please log in again.');
+    }
+    
+    const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     };
+    
+    return headers;
   }
 
   // Authentication
@@ -183,12 +219,41 @@ class AdminService {
     if (params.role) searchParams.append('role', params.role);
     if (params.status) searchParams.append('status', params.status);
 
-    const response = await fetch(`${API_BASE}/users?${searchParams}`, {
+    // Use the new app-users endpoint for regular app users
+    const response = await fetch(`${API_BASE}/app-users?${searchParams}`, {
       headers: this.getAuthHeaders(),
     });
 
     if (!response.ok) {
       throw new Error('Failed to get users');
+    }
+
+    const data = await response.json();
+    return data.data;
+  }
+
+  // Admin User Management - Get admin panel users
+  async getAdminUsers(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: string;
+    status?: string;
+  } = {}): Promise<{ users: AdminUser[]; total: number; page: number; limit: number }> {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.append('page', params.page.toString());
+    if (params.limit) searchParams.append('limit', params.limit.toString());
+    if (params.search) searchParams.append('search', params.search);
+    if (params.role) searchParams.append('role', params.role);
+    if (params.status) searchParams.append('status', params.status);
+
+    // Use the users endpoint for admin users
+    const response = await fetch(`${API_BASE}/users?${searchParams}`, {
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get admin users');
     }
 
     const data = await response.json();
@@ -211,11 +276,57 @@ class AdminService {
     return data.data;
   }
 
+  async addUserWithEmail(userData: { username: string; email: string; password: string; role: string }): Promise<{ user: any }> {
+    const response = await fetch(`${API_BASE}/users/add-with-email`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(userData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to add user with email');
+    }
+
+    const data = await response.json();
+    return data.data;
+  }
+
+  async getAvailableRoles(): Promise<{ availableRoles: string[]; userRole: string }> {
+    const response = await fetch(`${API_BASE}/users/available-roles`, {
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to get available roles');
+    }
+
+    const data = await response.json();
+    return data.data;
+  }
+
   async updateUser(userId: string, userData: Partial<User>): Promise<void> {
+    // Map frontend fields to backend fields
+    const backendData: any = {};
+    
+    if (userData.username !== undefined) {
+      backendData.name = userData.username;
+    }
+    
+    if (userData.email !== undefined) {
+      backendData.email = userData.email;
+    }
+    
+    if (userData.status !== undefined) {
+      // Map status to isActive
+      backendData.isActive = userData.status === 'Active';
+    }
+
     const response = await fetch(`${API_BASE}/users/${userId}`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
-      body: JSON.stringify(userData),
+      body: JSON.stringify(backendData),
     });
 
     if (!response.ok) {
@@ -224,17 +335,26 @@ class AdminService {
     }
   }
 
-  async deleteUser(userId: string): Promise<void> {
-    const response = await fetch(`${API_BASE}/users/${userId}`, {
-      method: 'DELETE',
+  async updateUserRole(userId: string, newRole: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/users/${userId}/role`, {
+      method: 'PATCH',
       headers: this.getAuthHeaders(),
+      body: JSON.stringify({ newRole }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete user');
+      throw new Error(errorData.message || 'Failed to update user role');
     }
   }
+
+  async changeUserRole(userId: string, newRole: string): Promise<void> {
+    return this.updateUserRole(userId, newRole);
+  }
+
+
+
+
 
   async deactivateUser(userId: string): Promise<void> {
     const response = await fetch(`${API_BASE}/users/${userId}/ban`, {
@@ -267,12 +387,16 @@ class AdminService {
 
   // Analytics
   async getAnalytics(timeRange: string = '6-months'): Promise<AnalyticsData> {
+    
+    const headers = this.getAuthHeaders();
+    
     const response = await fetch(`${API_BASE}/analytics?timeRange=${timeRange}`, {
-      headers: this.getAuthHeaders(),
+      headers,
     });
 
     if (!response.ok) {
-      throw new Error('Failed to get analytics');
+      const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
+      throw new Error(errorData.message || 'Failed to get analytics');
     }
 
     const data = await response.json();

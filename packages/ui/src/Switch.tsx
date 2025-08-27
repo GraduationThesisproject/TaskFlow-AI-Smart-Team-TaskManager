@@ -41,10 +41,11 @@ const knobVariants = cva(
 );
 
 export interface SwitchProps
-	extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
+	extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'onChange'>,
 		VariantProps<typeof trackVariants> {
 	label?: string;
 	labelPosition?: 'left' | 'right';
+	onCheckedChange?: (checked: boolean) => void;
 }
 
 const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
@@ -56,11 +57,19 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
 			id,
 			label,
 			labelPosition = 'right',
+			onCheckedChange,
 			...props
 		},
 		ref
 	) => {
 		const switchId = id || `switch-${Math.random().toString(36).slice(2, 9)}`;
+
+		const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+			onCheckedChange?.(e.target.checked);
+			if (props.onChange) {
+				props.onChange(e);
+			}
+		};
 
 		return (
 			<label htmlFor={switchId} className={cn("inline-flex items-center gap-3", className)}>
@@ -74,6 +83,7 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
 					className="sr-only peer"
 					role="switch"
 					aria-checked={props.checked}
+					onChange={handleChange}
 					{...props}
 				/>
 				<div
