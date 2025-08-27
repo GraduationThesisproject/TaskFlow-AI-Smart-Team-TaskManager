@@ -89,9 +89,6 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
             <CardHeader className="p-6 pb-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  {column.style?.icon && (
-                    <span className="text-xl">{column.style.icon}</span>
-                  )}
                   <div 
                     className={`w-3 h-3 rounded-full ${getColumnColor(column.style?.color || column.color)}`}
                     style={column.style?.color?.startsWith('#') ? { backgroundColor: column.style.color } : {}}
