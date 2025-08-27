@@ -123,14 +123,14 @@ router.post('/logout',
 const uploadAvatar = createMulterUpload('avatar', false);
 router.put(
     '/profile/secure',
-    uploadAvatar,       // Multer handles avatar file and populates req.body
-    (req, res, next) => {
-                       // Optional: simple validation here manually
-      const { currentPassword, name } = req.body;
-      if (!currentPassword) return res.status(400).json({ message: 'Current password required' });
-      if (name && name.length < 2) return res.status(400).json({ message: 'Name too short' });
-      next();
-    },
+    // uploadAvatar,       // Multer handles avatar file and populates req.body
+    // (req, res, next) => {
+    //                    // Optional: simple validation here manually
+    //   const { currentPassword, name } = req.body;
+    //   if (!currentPassword) return res.status(400).json({ message: 'Current password required' });
+    //   if (name && name.length < 2) return res.status(400).json({ message: 'Name too short' });
+    //   next();
+    // },
     authMiddleware,
     authController.updateProfileSecure
   );
