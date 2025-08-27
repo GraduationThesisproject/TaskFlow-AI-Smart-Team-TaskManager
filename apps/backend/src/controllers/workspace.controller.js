@@ -9,18 +9,16 @@ const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
 const mongoose = require('mongoose');
 
-// Get all workspaces for user + public workspaces
+// Get all workspaces for a specific user (owner or member)
 exports.getAllWorkspaces = async (req, res) => {
     try {
         const userId = req.user?.id;
 
-        // Fetch workspaces where user is a member OR public
         const workspaces = await Workspace.find({
             isActive: true,
             $or: [
-                { 'members.user': userId },
                 { owner: userId },
-                { isPublic: true }
+                { 'members.user': userId }
             ]
         })
         .populate('owner', 'name email avatar')
@@ -28,51 +26,33 @@ exports.getAllWorkspaces = async (req, res) => {
         .sort({ updatedAt: -1 })
         .lean();
 
-        // Attach user role info if user is a member
-        const enrichedWorkspaces = workspaces.map(workspace => {
-            const member = workspace.members.find(m => m.user._id.toString() === userId.toString());
+        // Attach userRole and permissions
+        const enrichedWorkspaces = workspaces.map(ws => {
+            const member = ws.members.find(
+                m => m.user?._id?.toString() === userId.toString()
+            );
+
             return {
-                ...workspace,
-                userRole: member ? member.role : null,
+                ...ws,
+                _id: ws._id.toString(),
+                userRole: member
+                    ? member.role
+                    : (ws.owner._id.toString() === userId ? 'owner' : null),
                 userPermissions: member ? member.permissions : null
             };
         });
 
-        sendResponse(res, 200, true, 'Workspaces retrieved successfully', {
+        sendResponse(res, 200, true, 'User workspaces retrieved successfully', {
             workspaces: enrichedWorkspaces,
             count: enrichedWorkspaces.length
         });
     } catch (error) {
-        logger.error('Get workspaces error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving workspaces');
+        logger.error('Get user workspaces error:', error);
+        sendResponse(res, 500, false, 'Server error retrieving user workspaces');
     }
 };
 
 
-
-// Get all public workspaces (accessible to any authenticated user)
-exports.getPublicWorkspaces = async (req, res) => {
-    try {
-        const workspaces = await Workspace.find({
-            isActive: true,
-            $or: [
-                { 'settings.permissions.publicJoin': true },
-                { isPublic: true } // fallback if you still use isPublic toggle
-            ]
-        })
-        .populate('owner', 'name email avatar')
-        .sort({ updatedAt: -1 })
-        .lean();
-
-        return sendResponse(res, 200, true, 'Public workspaces retrieved successfully', {
-            workspaces,
-            count: workspaces.length
-        });
-    } catch (error) {
-        logger.error('Get public workspaces error:', error);
-        return sendResponse(res, 500, false, 'Server error retrieving public workspaces');
-    }
-};
 
 
 
@@ -119,7 +99,7 @@ exports.getWorkspace = async (req, res) => {
 // Create new workspace
 exports.createWorkspace = async (req, res) => {
     try {
-        const { name, description, plan = 'free', isPublic = false } = req.body;
+        const { name, description, plan = 'free'} = req.body;
         const userId = req.user.id;
 
         const workspace = await Workspace.create({
@@ -127,7 +107,6 @@ exports.createWorkspace = async (req, res) => {
             description,
             owner: userId,
             plan,
-            isPublic, // <-- this allows toggle
             members: [], // Owner is not included in members array
             usage: {
                 membersCount: 1 // Owner counts as 1
@@ -150,7 +129,6 @@ exports.createWorkspace = async (req, res) => {
                     allowMemberInvites: true,
                     requireApprovalForMembers: false,
                     maxMembers: null,
-                    publicJoin: isPublic     // <-- public toggle
                 },
                 defaultBoardVisibility: "workspace",
                 branding: {
@@ -173,7 +151,6 @@ exports.createWorkspace = async (req, res) => {
             workspaceId: workspace._id,
             metadata: {
                 plan,
-                isPublic,
                 ipAddress: req.ip
             }
         });
@@ -784,9 +761,6 @@ exports.deleteWorkspace = async (req, res) => {
         }
 
         const workspace = await Workspace.findById(workspaceId);
-        if (!workspace) {
-            return sendResponse(res, 404, false, 'Workspace not found');
-        }
  
         // Owner can delete directly
         if (workspace.owner.toString() === userId.toString()) {

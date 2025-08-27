@@ -54,8 +54,9 @@ export const useAuth = () => {
     [dispatch]
   );
 
-  const logoutUserHandler = useCallback(async (allDevices: boolean = false) => {
-    await dispatch(logoutUser({ allDevices }));
+  const logoutUserHandler = useCallback(async (params: { allDevices?: boolean, navigate?: (path: string) => void } = {}) => {
+    const { allDevices = false, navigate } = params;
+    await dispatch(logoutUser({ allDevices, navigate }));
   }, [dispatch]);
 
   const clearAuthError = useCallback(() => {
