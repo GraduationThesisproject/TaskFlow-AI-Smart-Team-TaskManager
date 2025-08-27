@@ -85,23 +85,44 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
               userSelect: 'none',
             }}
           >
-            <Card className="h-fit border-0 shadow-xl bg-card/95 backdrop-blur-sm border border-border/40 rounded-2xl">
+            <Card 
+              className="h-fit border-0 shadow-xl backdrop-blur-sm rounded-2xl transition-all duration-300 hover:shadow-2xl"
+              style={{
+                backgroundColor: column.style?.backgroundColor || '#F9FAFB',
+                boxShadow: `0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)`,
+                border: `1px solid ${column.style?.backgroundColor ? `${column.style.backgroundColor}20` : 'rgba(255, 255, 255, 0.1)'}`
+              }}
+            >
               <CardHeader className="p-6 pb-4">
                 <div 
-                  className="flex items-center justify-between mb-3 cursor-move hover:bg-muted/20 rounded-lg p-2 -m-2 transition-colors"
+                  className="flex items-center justify-between mb-3 cursor-move rounded-lg p-2 -m-2 transition-all duration-200"
+                  style={{
+                    background: column.style?.backgroundColor ? `${column.style.backgroundColor}15` : 'rgba(255, 255, 255, 0.05)'
+                  }}
                   {...provided.dragHandleProps}
                 >
                   <div className="flex items-center gap-3">
+                    {column.style?.icon && (
+                      <span className="text-2xl drop-shadow-sm">{column.style.icon}</span>
+                    )}
                     <div 
-                      className={`w-3 h-3 rounded-full ${getColumnColor(column.color)}`}
+                      className={`w-3 h-3 rounded-full shadow-sm ${getColumnColor(column.style?.color || column.color)}`}
+                      style={column.style?.color?.startsWith('#') ? { backgroundColor: column.style.color } : {}}
                     />
-                    <Typography variant="h4" className="font-bold">
+                    <Typography variant="h4" className="font-bold drop-shadow-sm">
                       {column.name}
                     </Typography>
                     <span className="text-muted-foreground text-sm opacity-60">⋮⋮</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-muted/50">
+                    <Badge 
+                      variant="secondary" 
+                      className="backdrop-blur-sm border-0 shadow-sm"
+                      style={{
+                        backgroundColor: column.style?.backgroundColor ? `${column.style.backgroundColor}25` : 'rgba(255, 255, 255, 0.1)',
+                        color: column.style?.backgroundColor ? '#374151' : 'inherit'
+                      }}
+                    >
                       {tasks.length} tasks
                     </Badge>
                     <div className="relative">
@@ -109,7 +130,10 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                         variant="ghost"
                         size="sm"
                         onClick={() => onEditColumn(column._id)}
-                        className="w-8 h-8 p-0"
+                        className="w-8 h-8 p-0 hover:scale-110 transition-transform duration-200"
+                        style={{
+                          backgroundColor: column.style?.backgroundColor ? `${column.style.backgroundColor}20` : 'rgba(255, 255, 255, 0.05)'
+                        }}
                       >
                         ⚙️
                       </Button>
@@ -117,28 +141,43 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                   </div>
                 </div>
 
-                {/* Progress Bar */}
+                                {/* Progress Bar */}
                 <div className="mb-4">
                   <div className="flex justify-between items-center mb-2">
-                    <Typography variant="body-small" className="text-muted-foreground">
+                    <Typography variant="body-small" className="text-muted-foreground drop-shadow-sm">
                       {Math.round(progressPercentage)}% Done
                     </Typography>
-                    <Typography variant="body-small" className="text-muted-foreground">
+                    <Typography variant="body-small" className="text-muted-foreground drop-shadow-sm">
                       {completedTasks}/{tasks.length}
                     </Typography>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="w-full rounded-full h-2 shadow-inner"
+                    style={{
+                      backgroundColor: column.style?.backgroundColor ? `${column.style.backgroundColor}30` : 'rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
                     <div
-                      className={`h-2 rounded-full transition-all duration-300 ${getColumnProgressColor(column.color)}`}
-                      style={{ width: `${progressPercentage}%` }}
+                      className="h-2 rounded-full transition-all duration-300 shadow-sm"
+                      style={{ 
+                        width: `${progressPercentage}%`,
+                        backgroundColor: column.style?.color?.startsWith('#') ? column.style.color : undefined,
+                        backgroundImage: column.style?.color?.startsWith('#') ? `linear-gradient(90deg, ${column.style.color}, ${column.style.color}dd)` : undefined
+                      }}
                     />
                   </div>
                 </div>
 
                 {/* WIP Limit Warning */}
                 {column.wipLimit && tasks.length > column.wipLimit && (
-                  <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <Typography variant="body-small" className="text-red-600 dark:text-red-400">
+                  <div 
+                    className="mb-4 p-3 rounded-lg backdrop-blur-sm shadow-sm"
+                    style={{
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.2)'
+                    }}
+                  >
+                    <Typography variant="body-small" className="text-red-600 dark:text-red-400 drop-shadow-sm">
                       ⚠️ WIP Limit exceeded ({tasks.length}/{column.wipLimit})
                     </Typography>
                   </div>
@@ -148,16 +187,19 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
               <CardContent className="p-6 pt-0">
                 <Droppable droppableId={column._id} type="TASK">
                   {(provided, snapshot) => (
-                    <div
+                                        <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                                           className={`min-h-[200px] transition-all duration-200 ${
-                       snapshot.isDraggingOver 
-                         ? theme === 'dark' 
-                           ? 'bg-blue-900/30 rounded-lg border-2 border-blue-600' 
-                           : 'bg-blue-100 rounded-lg border-2 border-blue-300'
-                         : ''
-                     }`}
+                      className={`min-h-[200px] transition-all duration-200 rounded-lg ${
+                        snapshot.isDraggingOver 
+                          ? 'backdrop-blur-sm shadow-lg border-2 border-blue-400/50' 
+                          : ''
+                      }`}
+                      style={{
+                        backgroundColor: snapshot.isDraggingOver 
+                          ? 'rgba(59, 130, 246, 0.1)' 
+                          : 'transparent'
+                      }}
                     >
                       {/* Tasks */}
                       {tasks.length === 0 ? (
@@ -190,10 +232,15 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                         <Button
                           variant="outline"
                           onClick={() => onAddTask(column._id)}
-                          className="w-full h-12 border-2 border-dashed border-border/40 hover:border-primary/60 hover:text-primary transition-all duration-300 bg-muted/10 hover:bg-muted/30 rounded-xl flex items-center justify-center gap-2"
+                          className="w-full h-12 border-2 border-dashed hover:scale-[1.02] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 backdrop-blur-sm"
+                          style={{
+                            borderColor: column.style?.backgroundColor ? `${column.style.backgroundColor}40` : 'rgba(255, 255, 255, 0.2)',
+                            backgroundColor: column.style?.backgroundColor ? `${column.style.backgroundColor}10` : 'rgba(255, 255, 255, 0.05)',
+                            color: column.style?.backgroundColor ? '#374151' : 'inherit'
+                          }}
                         >
-                          <span className="text-xl">+</span>
-                          <Typography variant="body-medium" className="font-medium">
+                          <span className="text-xl drop-shadow-sm">+</span>
+                          <Typography variant="body-medium" className="font-medium drop-shadow-sm">
                             Add Task
                           </Typography>
                         </Button>

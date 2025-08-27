@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Button, Typography } from '@taskflow/ui';
 
 interface SubNavigationProps {
@@ -9,18 +9,19 @@ interface SubNavigationProps {
 export const SubNavigation: React.FC<SubNavigationProps> = ({ className = '' }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { boardId } = useParams<{ boardId: string }>();
 
   const isActive = (path: string) => {
     if (path === '/board' || path === '/board/') {
-      return location.pathname === '/board' || location.pathname === '/board/';
+      return location.pathname === `/board/${boardId}` || location.pathname === `/board/${boardId}/`;
     }
     return location.pathname.startsWith(path);
   };
 
   const navItems = [
-    { path: '/board', label: 'Kanban', icon: '📊' },
-    { path: '/board/list', label: 'List', icon: '📋' },
-    { path: '/board/timeline', label: 'Timeline', icon: '📅' },
+    { path: `/board/${boardId}`, label: 'Kanban', icon: '📊' },
+    { path: `/board/${boardId}/list`, label: 'List', icon: '📋' },
+    { path: `/board/${boardId}/timeline`, label: 'Timeline', icon: '📅' },
   ];
 
   return (
