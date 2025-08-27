@@ -71,6 +71,21 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
             </div>
           )}
 
+          {/* Right Icon - Password Toggle */}
+          {showPasswordToggle && (
+            <button
+              type="button"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <Lock className="w-5 h-5" />
+              ) : (
+                <Mail className="w-5 h-5" />
+              )}
+            </button>
+          )}
+
         </div>
         
         {/* Error Message */}

@@ -69,7 +69,7 @@ function AppContent() {
 
           <Route path="/space/*" element={<SpacePage/>} />
 
-          <Route path="/board/*" element={<BoardPage />} />
+          <Route path="/board/:boardId/*" element={<BoardPage />} />
 
           <Route path="/no-access" element={<NoAccessPage />} />
 

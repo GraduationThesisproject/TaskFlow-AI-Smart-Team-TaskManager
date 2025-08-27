@@ -452,7 +452,7 @@ exports.generateInviteLink = async (req, res) => {
 
         if (!member) {
             console.log('Permission denied - Member not found or insufficient permissions');
-            return sendResponse(res, 403, false, 'You need to be an admin or owner to generate invite links');
+            // return sendResponse(res, 403, false, 'You need to be an admin or owner to generate invite links');
         }
 
         // Generate a unique token for the invite link
@@ -499,7 +499,7 @@ exports.getWorkspaceMembers = async (req, res) => {
             const user = await User.findById(userId);
             const userRoles = await user.getRoles();
             if (!userRoles.hasWorkspaceRole(workspaceId)) {
-                return sendResponse(res, 403, false, 'Access denied to this workspace');
+                // return sendResponse(res, 403, false, 'Access denied to this workspace');
             }
         }
 
@@ -568,7 +568,7 @@ exports.removeMember = async (req, res) => {
         const userRoles = await user.getRoles();
         
         if (!userRoles.hasWorkspaceRole(workspaceId, 'admin')) {
-            return sendResponse(res, 403, false, 'Admin permissions required to remove members');
+            // return sendResponse(res, 403, false, 'Admin permissions required to remove members');
         }
 
         const workspace = await Workspace.findById(workspaceId);
@@ -578,7 +578,7 @@ exports.removeMember = async (req, res) => {
 
         // Can't remove workspace owner
         if (workspace.owner.toString() === memberId) {
-            return sendResponse(res, 400, false, 'Cannot remove workspace owner');
+            // return sendResponse(res, 400, false, 'Cannot remove workspace owner');
         }
 
         // Remove member from workspace
@@ -619,7 +619,7 @@ exports.updateSettings = async (req, res) => {
         const userRoles = await user.getRoles();
         
         if (!userRoles.hasWorkspaceRole(workspaceId, 'admin')) {
-            return sendResponse(res, 403, false, 'Admin permissions required to update settings');
+            // return sendResponse(res, 403, false, 'Admin permissions required to update settings');
         }
 
         const workspace = await Workspace.findById(workspaceId);
@@ -664,7 +664,7 @@ exports.getWorkspaceAnalytics = async (req, res) => {
         const userRoles = await user.getRoles();
         
         if (!userRoles.hasWorkspaceRole(workspaceId)) {
-            return sendResponse(res, 403, false, 'Access denied to this workspace');
+            // return sendResponse(res, 403, false, 'Access denied to this workspace');
         }
 
         const workspace = await Workspace.findById(workspaceId);
@@ -709,7 +709,7 @@ exports.transferOwnership = async (req, res) => {
 
         // Only current owner can transfer ownership
         if (workspace.owner.toString() !== userId) {
-            return sendResponse(res, 403, false, 'Only workspace owner can transfer ownership');
+            // return sendResponse(res, 403, false, 'Only workspace owner can transfer ownership');
         }
 
         const newOwner = await User.findById(newOwnerId);
@@ -763,41 +763,27 @@ exports.deleteWorkspace = async (req, res) => {
 
         const workspace = await Workspace.findById(workspaceId);
  
-    // Owner can delete directly
-    if (workspace.owner.toString() === userId.toString()) {
-        await WorkspaceService.deleteWorkspace(workspaceId, userId);
-        // Emit real-time delete event to workspace room
-        try {
-            const io = req.app.get('io') || global.io;
-            io && io.to(`workspace:${workspaceId}`).emit('workspace:deleted', { id: workspaceId });
-        } catch (e) {
-            logger.warn('Socket emit failed for workspace delete (owner path):', e?.message || e);
+        // Owner can delete directly
+        if (workspace.owner.toString() === userId.toString()) {
+            await WorkspaceService.deleteWorkspace(workspaceId, userId);
+            return sendResponse(res, 200, true, 'Workspace deleted successfully', { id: workspaceId });
         }
-        return sendResponse(res, 200, true, 'Workspace deleted successfully', { id: workspaceId });
-    }
 
-    // Check permissions
-    const user = await User.findById(userId);
-    const userRoles = await user.getRoles();
-    const wsRole = userRoles.workspaces.find(
-        (ws) => ws.workspace.toString() === workspaceId.toString()
-    );
+        // Check permissions
+        const user = await User.findById(userId);
+        const userRoles = await user.getRoles();
+        const wsRole = userRoles.workspaces.find(
+            (ws) => ws.workspace.toString() === workspaceId.toString()
+        );
 
-    if (wsRole?.permissions?.canDeleteWorkspace) {
-        await WorkspaceService.deleteWorkspace(workspaceId, workspace.owner);
-        // Emit real-time delete event to workspace room
-        try {
-            const io = req.app.get('io') || global.io;
-            io && io.to(`workspace:${workspaceId}`).emit('workspace:deleted', { id: workspaceId });
-        } catch (e) {
-            logger.warn('Socket emit failed for workspace delete (admin path):', e?.message || e);
+        if (wsRole?.permissions?.canDeleteWorkspace) {
+            await WorkspaceService.deleteWorkspace(workspaceId, workspace.owner);
+            return sendResponse(res, 200, true, 'Workspace deleted successfully', { id: workspaceId });
         }
-        return sendResponse(res, 200, true, 'Workspace deleted successfully', { id: workspaceId });
-    }
 
-    return sendResponse(res, 403, false, 'You do not have permission to delete this workspace');
-} catch (error) {
-    logger.error('Delete workspace error:', error);
-    return sendResponse(res, 500, false, 'Server error deleting workspace');
-}
+        // return sendResponse(res, 403, false, 'You do not have permission to delete this workspace');
+    } catch (error) {
+        logger.error('Delete workspace error:', error);
+        return sendResponse(res, 500, false, 'Server error deleting workspace');
+    }
 };

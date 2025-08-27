@@ -12,7 +12,8 @@ import {
   selectSocketConnected,
   selectCurrentBoard
 } from '../../store/slices/taskSlice';
-import type { Task, Column, CreateTaskForm, UpdateTaskForm, MoveTaskForm } from '../../types/task.types';
+import type { Task, CreateTaskForm, UpdateTaskForm, MoveTaskForm } from '../../types/task.types';
+import type { Column } from '../../types/board.types';
 
 interface UseTaskSocketOptions {
   boardId?: string;
