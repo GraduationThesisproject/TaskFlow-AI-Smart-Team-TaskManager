@@ -26,7 +26,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
         className="flex flex-1 items-center gap-2 rounded-md px-3 py-2 bg-background"
       >
         <Input
-          className="w-full bg-transparent text-sm placeholder:opacity-70 border-none focus-visible:ring-0"
+          className="w-full bg-transparent text-sm placeholder:opacity-70  focus-visible:ring-0"
           placeholder="Search user name / email"
           value={search}
           onChange={(e) => {

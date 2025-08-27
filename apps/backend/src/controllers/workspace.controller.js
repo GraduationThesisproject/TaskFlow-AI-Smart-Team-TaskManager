@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const Workspace = require('../models/Workspace');
 const User = require('../models/User');
 const Invitation = require('../models/Invitation');
@@ -455,27 +456,25 @@ exports.generateInviteLink = async (req, res) => {
         console.log('Current user ID:', userId);
         console.log('User making request:', req.user);
 
-        // Check if user is a member with invite permissions
-        const member = workspace.members.find(m => {
-            // Handle both populated and non-populated user references
-            const userMatch = m.user && (
-                (m.user._id ? m.user._id.toString() === userId.toString() : m.user.toString() === userId.toString())
+        // Check if user is the workspace owner
+        const isOwner = workspace.owner.toString() === userId.toString();
+        
+        // Check if user is an admin member
+        const isAdminMember = workspace.members.some(member => {
+            const isUser = member.user && (
+                (member.user._id ? member.user._id.toString() === userId.toString() : member.user.toString() === userId.toString())
             );
-            
-            // Check for any admin-like role (case insensitive)
-            const hasPermission = m.role && (
-                m.role.toLowerCase() === 'admin' || 
-                m.role.toLowerCase() === 'owner' ||
-                m.role.toLowerCase() === 'administrator'
+            const isAdmin = member.role && (
+                member.role.toLowerCase() === 'admin' || 
+                member.role.toLowerCase() === 'owner' ||
+                member.role.toLowerCase() === 'administrator'
             );
-            
-            console.log(`Member check - User: ${m.user}, Role: ${m.role}, userMatch: ${userMatch}, hasPermission: ${hasPermission}`);
-            return userMatch && true;
+            return isUser && isAdmin;
         });
 
-        if (!member) {
-            console.log('Permission denied - Member not found or insufficient permissions');
-            return sendResponse(res, 403, false, 'You need to be an admin or owner to generate invite links');
+        if (!isOwner && !isAdminMember) {
+            console.log('Permission denied - User is not an owner or admin');
+            return sendResponse(res, 403, false, 'You need to be a workspace owner or admin to generate invite links');
         }
 
         // Generate a unique token for the invite link
@@ -637,12 +636,12 @@ exports.updateSettings = async (req, res) => {
         const { section, updates } = req.body;
         const userId = req.user.id;
 
-        // Check permissions
+        // Check permissions - only allow workspace owners to update settings
         const user = await User.findById(userId);
         const userRoles = await user.getRoles();
         
-        if (!userRoles.hasWorkspaceRole(workspaceId, 'admin')) {
-            return sendResponse(res, 403, false, 'Admin permissions required to update settings');
+        if (!userRoles.hasWorkspaceRole(workspaceId, 'owner')) {
+            return sendResponse(res, 403, false, 'Only workspace owners can update settings');
         }
 
         const workspace = await Workspace.findById(workspaceId);
