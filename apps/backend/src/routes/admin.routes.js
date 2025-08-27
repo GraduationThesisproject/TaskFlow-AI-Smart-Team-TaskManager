@@ -32,7 +32,8 @@ router.put('/auth/profile', adminController.updateProfile);
 router.post('/auth/avatar', adminController.uploadAvatar);
 
 // User management routes - specific routes first
-router.get('/users', requireUserManagementAccess('view'), adminController.getUsers);
+router.get('/users', requireUserManagementAccess('view'), adminController.getUsers); // Admin users
+router.get('/app-users', requireUserManagementAccess('view'), adminController.getAppUsers); // Regular app users
 router.post('/users', requireUserManagementAccess('limited'), adminController.createUser);
 router.post('/users/add-with-email', requireUserManagementAccess('limited'), adminController.addUserWithEmail);
 router.get('/users/available-roles', requireUserManagementAccess('view'), adminController.getAvailableRoles);

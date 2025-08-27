@@ -14,6 +14,18 @@ export interface User {
   avatar?: string;
 }
 
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  lastActivity?: string;
+  permissions?: Record<string, boolean>;
+  type: 'regular_user' | 'admin_only';
+  createdAt: string;
+}
+
 export interface AnalyticsData {
   totalUsers: number;
   activeUsers: {
@@ -207,12 +219,41 @@ class AdminService {
     if (params.role) searchParams.append('role', params.role);
     if (params.status) searchParams.append('status', params.status);
 
-    const response = await fetch(`${API_BASE}/users?${searchParams}`, {
+    // Use the new app-users endpoint for regular app users
+    const response = await fetch(`${API_BASE}/app-users?${searchParams}`, {
       headers: this.getAuthHeaders(),
     });
 
     if (!response.ok) {
       throw new Error('Failed to get users');
+    }
+
+    const data = await response.json();
+    return data.data;
+  }
+
+  // Admin User Management - Get admin panel users
+  async getAdminUsers(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: string;
+    status?: string;
+  } = {}): Promise<{ users: AdminUser[]; total: number; page: number; limit: number }> {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.append('page', params.page.toString());
+    if (params.limit) searchParams.append('limit', params.limit.toString());
+    if (params.search) searchParams.append('search', params.search);
+    if (params.role) searchParams.append('role', params.role);
+    if (params.status) searchParams.append('status', params.status);
+
+    // Use the users endpoint for admin users
+    const response = await fetch(`${API_BASE}/users?${searchParams}`, {
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get admin users');
     }
 
     const data = await response.json();
@@ -310,6 +351,8 @@ class AdminService {
   async changeUserRole(userId: string, newRole: string): Promise<void> {
     return this.updateUserRole(userId, newRole);
   }
+
+
 
 
 

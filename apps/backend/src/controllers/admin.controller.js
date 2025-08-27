@@ -528,6 +528,80 @@ const getUsers = async (req, res) => {
   }
 };
 
+// Regular App User Management - Get all regular app users (NOT admin users)
+const getAppUsers = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search, role, status } = req.query;
+    const skip = (page - 1) * limit;
+
+    let query = {};
+    
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    if (role && role !== 'all') {
+      // Map frontend role names to backend role names
+      const roleMapping = {
+        'super_admin': 'super_admin',
+        'admin': 'admin',
+        'moderator': 'moderator',
+        'user': 'user'
+      };
+      if (roleMapping[role]) {
+        query.role = roleMapping[role];
+      }
+    }
+
+    if (status && status !== 'all') {
+      if (status === 'Active') {
+        query.isActive = true;
+      } else if (status === 'Inactive') {
+        query.isActive = false;
+      }
+    }
+
+    // Get regular app users from User collection (NOT admin users)
+    const users = await User.find(query)
+      .select('name email avatar isActive createdAt lastLoginAt')
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await User.countDocuments(query);
+
+    // Get user roles for each user
+    const usersWithRoles = await Promise.all(
+      users.map(async (user) => {
+        const userRole = await UserRoles.findOne({ userId: user._id });
+        return {
+          id: user._id,
+          username: user.name, // Map 'name' to 'username' for frontend compatibility
+          email: user.email,
+          role: userRole?.systemRole || 'user',
+          status: user.isActive ? 'Active' : 'Inactive',
+          lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toISOString() : 'Never',
+          createdAt: user.createdAt.toISOString(),
+          avatar: user.avatar
+        };
+      })
+    );
+
+    sendResponse(res, 200, true, 'App users retrieved successfully', {
+      users: usersWithRoles,
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+  } catch (error) {
+    logger.error('Get app users error:', error);
+    sendResponse(res, 500, false, 'Server error retrieving app users');
+  }
+};
+
 const createUser = async (req, res) => {
   try {
     const { username, email, role } = req.body;
@@ -1067,6 +1141,7 @@ module.exports = {
   
   // User Management
   getUsers,
+  getAppUsers,
   createUser,
   getUser,
   updateUser,
