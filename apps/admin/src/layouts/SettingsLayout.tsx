@@ -25,7 +25,7 @@ import { useLanguageContext } from '../contexts/LanguageContext';
 
 import { adminService } from '../services/adminService';
 import TwoFactorAuthManager from '../components/security/TwoFactorAuthManager';
-import SecuritySettings from '../components/security/SecuritySettings';
+
 
 const SettingsLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('security');
@@ -525,7 +525,96 @@ const SettingsLayout: React.FC = () => {
 
         {/* Security Settings */}
         {activeTab === 'security' && (
-          <SecuritySettings />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <ShieldCheckIcon className="h-5 w-5 mr-2" />
+                Security & Authentication
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <Typography variant="h3">Password Policy</Typography>
+                <Grid cols={2} className="gap-6">
+                  <div className="space-y-2">
+                    <label htmlFor="passwordMinLength" className="text-sm font-medium">Minimum Password Length</label>
+                    <Input
+                      id="passwordMinLength"
+                      type="number"
+                      value={securitySettings.passwordMinLength}
+                      onChange={(e) => setSecuritySettings(prev => ({ ...prev, passwordMinLength: parseInt(e.target.value) }))}
+                      min={6}
+                      max={32}
+                    />
+                  </div>
+                </Grid>
+
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="requireSpecialChars"
+                      checked={securitySettings.requireSpecialChars}
+                      onCheckedChange={(checked) => setSecuritySettings(prev => ({ ...prev, requireSpecialChars: checked }))}
+                    />
+                    <label htmlFor="requireSpecialChars" className="text-sm font-medium">Require special characters</label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="requireNumbers"
+                      checked={securitySettings.requireNumbers}
+                      onCheckedChange={(checked) => setSecuritySettings(prev => ({ ...prev, requireNumbers: checked }))}
+                    />
+                    <label htmlFor="requireNumbers" className="text-sm font-medium">Require numbers</label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Typography variant="h3">Session Management</Typography>
+                <div className="space-y-2">
+                  <label htmlFor="sessionTimeout" className="text-sm font-medium">Session Timeout (minutes)</label>
+                  <Input
+                    id="sessionTimeout"
+                    type="number"
+                    value={securitySettings.sessionTimeout}
+                    onChange={(e) => setSecuritySettings(prev => ({ ...prev, sessionTimeout: parseInt(e.target.value) }))}
+                    min={5}
+                    max={1440}
+                  />
+                </div>
+              </div>
+
+                             <div className="space-y-4">
+                 <Typography variant="h3">Change Password</Typography>
+                 
+                 <div className="p-4 border border-border rounded-lg bg-muted/30">
+                   <Typography variant="body-medium" className="text-muted-foreground mb-4">
+                     Click the button below to change your password securely.
+                   </Typography>
+                   
+                   <Button 
+                     onClick={openPasswordChangeModal}
+                     className="flex items-center space-x-2"
+                   >
+                     <ShieldCheckIcon className="h-4 w-4" />
+                     Change Password
+                   </Button>
+                 </div>
+               </div>
+
+               <div className="space-y-4">
+                 <Typography variant="h3">Two-Factor Authentication</Typography>
+                 <TwoFactorAuthManager />
+               </div>
+
+              <div className="flex justify-end">
+                <Button onClick={() => saveSettings('security')}>
+                  Save Security Settings
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Password Change Modal */}
