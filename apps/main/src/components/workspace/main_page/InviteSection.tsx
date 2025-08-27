@@ -1,18 +1,13 @@
 import React from 'react';
-import { Button, Input } from '@taskflow/ui';
+import { Button} from '@taskflow/ui';
 import OutlineBtn from './OutlineBtn';
-import GhostIconBtn from './GhostIconBtn';
 
 interface InviteSectionProps {
-  search: string;
-  setSearch: (value: string) => void;
   onGenerateInvite: () => void;
   onDisableInvite: () => void;
 }
 
 const InviteSection: React.FC<InviteSectionProps> = ({
-  search,
-  setSearch,
   onGenerateInvite,
   onDisableInvite
 }) => {
@@ -47,12 +42,6 @@ const InviteSection: React.FC<InviteSectionProps> = ({
             Invite with link
           </Button>
           <OutlineBtn onClick={onDisableInvite}>Disable invite link</OutlineBtn>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 rounded-xl px-3 bg-background">
-            <Input className="w-56 bg-transparent text-sm outline-none border-none focus-visible:ring-0" placeholder="Filter by name" value={search} onChange={(e) => setSearch(e.target.value)} />
-            <GhostIconBtn />
-          </div>
         </div>
       </div>
     </section>

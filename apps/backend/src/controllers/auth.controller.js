@@ -84,7 +84,57 @@ exports.register = async (req, res) => {
         sendResponse(res, 500, false, 'Server error during registration');
     }
 };
+// ------------------ GOOGLE OAUTH ------------------
+exports.googleLogin = (req, res, next) => {
+    if (!passport._strategies?.google) return sendResponse(res, 503, false, 'Google OAuth is not configured');
+    const scope = req.query.scope || 'profile email';
+    passport.authenticate('google', { scope: scope.split(' '), accessType: req.query.access_type || 'offline', prompt: req.query.prompt || 'consent' })(req, res, next);
+};
 
+exports.googleCallback = async (req, res, next) => {
+    if (!passport._strategies?.google) return sendResponse(res, 503, false, 'Google OAuth is not configured');
+
+    passport.authenticate('google', { session: false }, async (err, user) => {
+        if (err || !user) return sendResponse(res, err ? 500 : 401, false, 'Authentication failed');
+
+        try {
+            user.lastLogin = new Date();
+            await user.save();
+            const token = generateToken(user._id);
+            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=google`;
+            res.redirect(redirectUrl);
+        } catch (error) {
+            logger.error('Google callback error:', error);
+            return sendResponse(res, 500, false, 'Authentication failed');
+        }
+    })(req, res, next);
+};
+
+// ------------------ GITHUB OAUTH ------------------
+exports.githubLogin = (req, res, next) => {
+    if (!passport._strategies?.github) return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
+    const scope = req.query.scope || 'user:email';
+    passport.authenticate('github', { scope: scope.split(' ') })(req, res, next);
+};
+
+exports.githubCallback = async (req, res, next) => {
+    if (!passport._strategies?.github) return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
+
+    passport.authenticate('github', { session: false }, async (err, user) => {
+        if (err || !user) return sendResponse(res, err ? 500 : 401, false, 'Authentication failed');
+
+        try {
+            user.lastLogin = new Date();
+            await user.save();
+            const token = generateToken(user._id);
+            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=github`;
+            res.redirect(redirectUrl);
+        } catch (error) {
+            logger.error('GitHub callback error:', error);
+            return sendResponse(res, 500, false, 'Authentication failed');
+        }
+    })(req, res, next);
+};
 // ------------------ LOGIN ------------------
 exports.login = async (req, res) => {
     try {

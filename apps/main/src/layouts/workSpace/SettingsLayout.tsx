@@ -13,7 +13,27 @@ import { selectUserWorkspaceRoles, selectUserBasic } from "../../store/slices/au
 function SettingsLayout() {
   const dispatch = useAppDispatch();
   const { currentWorkspace, loading } = useAppSelector(selectWorkspaceState);
-  const workspaceId = currentWorkspace?._id as string | undefined;
+  const workspaceId = currentWorkspace?._id;
+  
+  // Show loading state
+  if (loading) {
+    return <div>Loading workspace settings...</div>;
+  }
+  
+  // Check if we have a valid workspace
+  if (!currentWorkspace || !workspaceId) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-red-500">No workspace selected or workspace not found.</p>
+        <button 
+          onClick={() => window.history.back()}
+          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
   const settings = currentWorkspace?.settings as any | undefined;
   const [showVisibilityModal, setShowVisibilityModal] = React.useState(false);
   const [showMembershipModal, setShowMembershipModal] = React.useState(false);
@@ -24,23 +44,70 @@ function SettingsLayout() {
   // Get current user's role in this workspace
   const userWorkspaceRoles = useAppSelector(selectUserWorkspaceRoles);
   const currentUser = useAppSelector(selectUserBasic);
-  const userRoleInWorkspace = workspaceId ? userWorkspaceRoles[workspaceId]?.[0] : null;
-  const canManageMembership = userRoleInWorkspace === 'owner' || userRoleInWorkspace === 'admin';
-  const canManageBoardCreation = userRoleInWorkspace === 'owner' || userRoleInWorkspace === 'admin';
-  const canManageBoardDeletion = userRoleInWorkspace === 'owner' || userRoleInWorkspace === 'admin';
-  const canManageGuestSharing = userRoleInWorkspace === 'owner' || userRoleInWorkspace === 'admin';
+  
+  // Debug log to check the workspace and user data
+  console.log('Current workspace:', currentWorkspace);
+  console.log('Current user ID:', currentUser?._id);
+  console.log('Workspace roles:', userWorkspaceRoles);
+  
+  // Handle both string and object owner types
+  const getOwnerId = (owner: any) => {
+    if (!owner) return null;
+    return typeof owner === 'string' ? owner : owner._id || owner.id || owner.toString();
+  };
+
+  const workspaceOwnerId = getOwnerId(currentWorkspace?.owner);
+  const currentUserId = currentUser?._id;
+  const isOwner = workspaceOwnerId && currentUserId && workspaceOwnerId.toString() === currentUserId.toString();
+  
+  console.group('Workspace Access Debug');
+  console.log('Workspace Owner ID:', workspaceOwnerId);
+  console.log('Current User ID:', currentUserId);
+  console.log('Is Owner:', isOwner);
+  console.log('Workspace ID:', workspaceId);
+  console.log('User Roles:', userWorkspaceRoles);
+  console.log('Current User Object:', currentUser);
+  console.groupEnd();
+  
+  const userRoleInWorkspace = isOwner ? 'owner' : (workspaceId ? userWorkspaceRoles[workspaceId]?.[0] : null);
+  
+  const canManageMembership = isOwner || userRoleInWorkspace === 'admin';
+  const canManageBoardCreation = isOwner || userRoleInWorkspace === 'admin';
+  const canManageBoardDeletion = isOwner || userRoleInWorkspace === 'admin';
+  const canManageGuestSharing = isOwner || userRoleInWorkspace === 'admin';
 
   const handleUpdate = async (
     section: string,
     updates: Record<string, any>
   ) => {
-    if (!workspaceId) return console.warn("No workspaceId available for settings update");
+    // Only allow updates if user is the owner
+    if (!isOwner) {
+      console.warn('Only workspace owners can update settings');
+      // In a real app, you might want to show this to the user
+      return;
+    }
+
     try {
-      await dispatch(
-        updateWorkspaceSettings({ id: workspaceId, section, updates })
+      const resultAction = await dispatch(
+        updateWorkspaceSettings({ 
+          id: workspaceId, 
+          section, 
+          updates: {
+            [section]: updates
+          }
+        })
       );
-    } catch (e) {
-      console.error("Failed to update settings", e);
+      
+      if (updateWorkspaceSettings.rejected.match(resultAction)) {
+        throw resultAction.error;
+      }
+      
+      // Show success message
+      console.log('Settings updated successfully');
+      
+    } catch (error) {
+      console.error("Failed to update settings", error);
+      // Show error message to user
     }
   };
 
