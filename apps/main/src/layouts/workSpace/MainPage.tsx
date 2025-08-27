@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Sidebar from "./Sidebar";
 import PageHeader from '../../components/workspace/main_page/PageHeader';
 import InfoBanner from '../../components/workspace/main_page/InfoBanner';
@@ -19,7 +19,9 @@ import {
   setCurrentWorkspaceId,
   generateInviteLink,
 } from '../../store/slices/workspaceSlice';
-import { WorkspaceService} from '../../services';
+import { WorkspaceService } from '../../services';
+import { SpaceService } from '../../services/spaceService';
+import SpaceTable from '../../components/workspace/main_page/SpaceTable';
 
 interface User {
   _id?: string;
@@ -60,7 +62,9 @@ const Main = () => {
 
   const [role, setRole] = React.useState<'all' | 'owner' | 'admin' | 'member'>('all');
   const [search, setSearch] = React.useState('');
-  const [inviteSearch, setInviteSearch] = React.useState('');
+  const [spaces, setSpaces] = React.useState<any[]>([]);
+  const [isLoadingSpaces, setIsLoadingSpaces] = React.useState(false);
+  const [spaceError, setSpaceError] = React.useState<string | null>(null);
   const [showInviteLinkModal, setShowInviteLinkModal] = React.useState(false);
   const [generatedInviteLink, setGeneratedInviteLink] = React.useState('');
   const roleLabel = role === 'all' ? 'All Roles' : role.charAt(0).toUpperCase() + role.slice(1);
@@ -75,6 +79,36 @@ const Main = () => {
     dispatch(fetchWorkspace(workspaceId));
   }, [dispatch, workspaceId]);
 
+  useEffect(() => {
+    if (workspaceId) {
+      dispatch(fetchWorkspace(workspaceId));
+      
+      // Fetch spaces for the workspace 
+      const fetchSpaces = async () => {
+        try {
+          setIsLoadingSpaces(true);
+          setSpaceError(null);
+          console.log('Fetching spaces for workspace:', workspaceId);
+          const response = await SpaceService.getSpacesByWorkspace(workspaceId);
+          console.log('Spaces API response:', response);
+          setSpaces(response.data || []);
+        } catch (error: any) {
+          const errorMessage = error.response?.data?.message || error.message || 'Failed to load spaces';
+          console.error('Error fetching spaces:', {
+            message: errorMessage,
+            status: error.response?.status,
+            url: error.config?.url
+          });
+          setSpaceError(`Failed to load spaces: ${errorMessage}`);
+        } finally {
+          setIsLoadingSpaces(false);
+        }
+      };
+      
+      fetchSpaces();
+    }
+  }, [workspaceId, dispatch]);
+
   // Debug logging for members data
   React.useEffect(() => {
     console.log('Members data updated:', {
@@ -84,6 +118,36 @@ const Main = () => {
       membersData: members.map((m: Member) => ({ id: m.id, role: m.role, name: typeof m.user === 'object' && m.user?.name ? m.user.name : 'N/A' }))
     });
   }, [storeMembers, currentWorkspace?.members, members]);
+
+  const onRemove = async (memberId: string) => {
+    if (!workspaceId) {
+      console.error('Cannot remove member: No workspace ID available');
+      return;
+    }
+    
+    try {
+      await WorkspaceService.removeMember(workspaceId, memberId);
+      // Refresh workspace data after removal
+      dispatch(fetchWorkspace(workspaceId));
+    } catch (error) {
+      console.error('Error removing member:', error);
+    }
+  };
+
+  const onRemoveSpace = async (spaceId: string) => {
+    try {
+      await SpaceService.deleteSpace(spaceId);
+      // Refresh spaces after removal
+      if (workspaceId) {
+        const response = await SpaceService.getSpacesByWorkspace(workspaceId);
+        setSpaces(response.data || []);
+      } else {
+        console.error('Cannot refresh spaces: workspaceId is null');
+      }
+    } catch (error) {
+      console.error('Error removing space:', error);
+    }
+  };
 
   const filteredMembers = React.useMemo(() => {
     const normalized = (Array.isArray(members) ? members : []).map((m: Member) => {
@@ -103,20 +167,17 @@ const Main = () => {
 
     return normalized.filter((m) => {
       const byRole = role === 'all' ? true : (role === 'owner' ? m.role === 'owner' : (role === 'admin' ? m.role === 'admin' : m.role === 'member'));
-      const q = search.trim().toLowerCase();
+      const q = (search || '').trim().toLowerCase();
       const bySearch = !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q) || m.handle.includes(q);
       return byRole && bySearch;
     });
   }, [members, role, search]);
 
-  const onRemove = (memberId: string, roleKey: string) => {
-    if (!workspaceId) {
-      console.warn('[Workspace] Cannot remove member: missing/invalid workspace id.');
-      return;
-    }
-    
-  };
-  
+  const filteredSpaces = spaces.filter(space => 
+    space.name.toLowerCase().includes(search.toLowerCase()) ||
+    (space.description && space.description.toLowerCase().includes(search.toLowerCase()))
+  );
+
   // For Invite Section button - Generate shareable link and show in modal
   const onGenerateInviteLink = () => {
     if (!workspaceId) {
@@ -202,16 +263,26 @@ const Main = () => {
           setRole={setRole}
           workspaceId={workspaceId}
         />
-        <MembersTable 
-          filteredMembers={filteredMembers}
-          isLoading={isLoading}
-          error={error}
-          onRemove={onRemove}
-          onGenerateInvite={onInviteMemberByEmail}
-        />
+        <div className="flex flex-row ">
+          <div className="flex-1">
+            <MembersTable 
+              filteredMembers={filteredMembers}
+              isLoading={isLoading}
+              error={error}
+              onRemove={onRemove}
+              onGenerateInvite={onInviteMemberByEmail}
+            />
+          </div>
+          <div className="w-96">
+            <SpaceTable 
+              filteredSpaces={filteredSpaces}
+              isLoading={isLoadingSpaces}
+              error={spaceError}
+              onRemove={onRemoveSpace}
+            />         
+          </div>
+        </div>
         <InviteSection 
-          search={inviteSearch}
-          setSearch={setInviteSearch}
           onGenerateInvite={onGenerateInviteLink}
           onDisableInvite={onDisableInvite}
         />
@@ -236,7 +307,7 @@ const Main = () => {
                   type="text"
                   value={generatedInviteLink}
                   readOnly
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-background text-sm text-black"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-background text-sm"
                 />
                 <Button onClick={copyInviteLink} variant="outline" size="sm">
                   Copy
