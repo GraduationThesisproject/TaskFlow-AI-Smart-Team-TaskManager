@@ -6,37 +6,34 @@ const WorkspaceService = require('../services/workspace.service');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
-const crypto = require('crypto');
+const mongoose = require('mongoose');
 
-// Get all workspaces for the current user
+// Get all workspaces for user + public workspaces
 exports.getAllWorkspaces = async (req, res) => {
     try {
-        const userId = req.user.id;
-        
-        // Find all workspaces where the user is a member
+        const userId = req.user?.id;
+
+        // Fetch workspaces where user is a member OR public
         const workspaces = await Workspace.find({
+            isActive: true,
             $or: [
+                { 'members.user': userId },
                 { owner: userId },
-                { 'members.user': userId }
+                { isPublic: true }
             ]
         })
         .populate('owner', 'name email avatar')
         .populate('members.user', 'name email avatar')
-        .sort({ updatedAt: -1 });
+        .sort({ updatedAt: -1 })
+        .lean();
 
-        // SECURITY FIX: Use verified roles from auth middleware
-        const userRoles = req.user.roles || {};
-        const userWorkspaces = userRoles.workspaces || [];
-
+        // Attach user role info if user is a member
         const enrichedWorkspaces = workspaces.map(workspace => {
-            const userRole = userWorkspaces.find(ws => 
-                ws.workspace.toString() === workspace._id.toString()
-            );
-
+            const member = workspace.members.find(m => m.user._id.toString() === userId.toString());
             return {
-                ...workspace.toObject(),
-                userRole: userRole ? userRole.role : null,
-                userPermissions: userRole ? userRole.permissions : null
+                ...workspace,
+                userRole: member ? member.role : null,
+                userPermissions: member ? member.permissions : null
             };
         });
 
@@ -49,6 +46,33 @@ exports.getAllWorkspaces = async (req, res) => {
         sendResponse(res, 500, false, 'Server error retrieving workspaces');
     }
 };
+
+
+
+// Get all public workspaces (accessible to any authenticated user)
+exports.getPublicWorkspaces = async (req, res) => {
+    try {
+        const workspaces = await Workspace.find({
+            isActive: true,
+            $or: [
+                { 'settings.permissions.publicJoin': true },
+                { isPublic: true } // fallback if you still use isPublic toggle
+            ]
+        })
+        .populate('owner', 'name email avatar')
+        .sort({ updatedAt: -1 })
+        .lean();
+
+        return sendResponse(res, 200, true, 'Public workspaces retrieved successfully', {
+            workspaces,
+            count: workspaces.length
+        });
+    } catch (error) {
+        logger.error('Get public workspaces error:', error);
+        return sendResponse(res, 500, false, 'Server error retrieving public workspaces');
+    }
+};
+
 
 
 
@@ -94,7 +118,7 @@ exports.getWorkspace = async (req, res) => {
 // Create new workspace
 exports.createWorkspace = async (req, res) => {
     try {
-        const { name, description, plan = 'free' } = req.body;
+        const { name, description, plan = 'free', isPublic = false } = req.body;
         const userId = req.user.id;
 
         const workspace = await Workspace.create({
@@ -102,13 +126,40 @@ exports.createWorkspace = async (req, res) => {
             description,
             owner: userId,
             plan,
+            isPublic, // <-- this allows toggle
             members: [], // Owner is not included in members array
             usage: {
                 membersCount: 1 // Owner counts as 1
+            },
+            settings: {
+                features: {
+                    integrations: true,
+                    aiSuggestions: true,
+                    timeTracking: true,
+                    fileAttachments: true,
+                    customFields: true
+                },
+                notifications: {
+                    emailDigests: true,
+                    slackIntegration: false,
+                    webhooks: []
+                },
+                permissions: {
+                    defaultMemberRole: 'member',
+                    allowMemberInvites: true,
+                    requireApprovalForMembers: false,
+                    maxMembers: null,
+                    publicJoin: isPublic     // <-- public toggle
+                },
+                defaultBoardVisibility: "workspace",
+                branding: {
+                    logo: null,
+                    primaryColor: "#3B82F6"
+                }
             }
         });
 
-        // SECURITY FIX: Use verified roles from auth middleware and add owner role
+        // Add owner role
         const userRoles = req.user.roles;
         await userRoles.addWorkspaceRole(workspace._id, 'owner');
 
@@ -121,6 +172,7 @@ exports.createWorkspace = async (req, res) => {
             workspaceId: workspace._id,
             metadata: {
                 plan,
+                isPublic,
                 ipAddress: req.ip
             }
         });
@@ -136,6 +188,7 @@ exports.createWorkspace = async (req, res) => {
         sendResponse(res, 500, false, 'Server error creating workspace');
     }
 };
+
 
 // Update workspace
 exports.updateWorkspace = async (req, res) => {

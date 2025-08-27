@@ -31,6 +31,8 @@ export const SubNavigation: React.FC<SubNavigationProps> = ({ className = '' }) 
           key={item.path}
           variant="ghost"
           onClick={() => navigate(item.path)}
+          title={item.label}
+          aria-label={item.label}
           className={`rounded-xl px-5 py-3 transition-all duration-300 ${
             isActive(item.path)
               ? 'bg-background shadow-lg border border-border/30 text-foreground font-bold'
