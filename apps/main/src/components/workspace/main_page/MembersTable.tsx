@@ -1,8 +1,8 @@
-import React from 'react';
-import { Button } from '@taskflow/ui';
+import React, { useState, useCallback } from 'react';
+import { Button, Avatar, AvatarImage, AvatarFallback } from '@taskflow/ui';
 import Pill from './Pill';
-import OutlineBtn from './OutlineBtn';
 import { roleBadgeVariant, statusBadgeVariant } from './data';
+import ConfirmRemoveMemberDialog from './ConfirmRemoveMemberDialog';
 
 interface User {
   _id?: string;
@@ -23,13 +23,14 @@ interface Member {
   displayRole: string;
   displayStatus: string;
   lastActiveStr: string;
+  avatar?: string;
 }
 
 interface MembersTableProps {
   filteredMembers: Member[];
   isLoading: boolean;
   error: string | null;
-  onRemove: (memberId: string, roleKey: string) => void;
+  onRemove: (memberId: string, roleKey: string, password?: string) => Promise<void>;
   onGenerateInvite: () => void;
 }
 
@@ -38,16 +39,52 @@ const MembersTable: React.FC<MembersTableProps> = ({
   isLoading,
   error,
   onRemove,
-  onGenerateInvite
 }) => {
+  const [memberToRemove, setMemberToRemove] = useState<{
+    id: string;
+    role: string;
+    name: string;
+  } | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleRemoveClick = useCallback((member: Member) => {
+    if (member.id) {
+      setMemberToRemove({
+        id: member.id,
+        role: member.role,
+        name: member.name || 'this member'
+      });
+      setIsDialogOpen(true);
+    }
+  }, []);
+
+  const handleConfirmRemove = async (password: string) => {
+    if (memberToRemove) {
+      try {
+        await onRemove(memberToRemove.id, memberToRemove.role, password);
+        setIsDialogOpen(false);
+        setMemberToRemove(null);
+      } catch (error) {
+        throw error; // Let the dialog handle the error
+      }
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setMemberToRemove(null);
+  };
   return (
     <section
-      className="mb-5 rounded-xl p-4 ring-1 shadow-[0_0_10px_hsl(var(--accent))] 
+      className="mb-5 w-full rounded-xl p-4 ring-1 shadow-[0_0_10px_hsl(var(--accent))] 
          ring-1 ring-primary/20 
          backdrop-blur bg-background"
     >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
+          <h2 className="text-lg font-bold mb-1" style={{ color: 'hsl(var(--primary-foreground))' }}>
+        
+          </h2>
           <h3 className="text-base font-semibold" style={{ color: 'hsl(var(--primary-foreground))' }}>
             Workspace Members ({filteredMembers.length})
           </h3>
@@ -55,14 +92,6 @@ const MembersTable: React.FC<MembersTableProps> = ({
             Workspace members can view and join all Workspace visible boards and create new boards in the Workspace.
           </p>
         </div>
-        <Button
-          className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium"
-          variant="accent"
-          size="sm"
-          onClick={onGenerateInvite}
-        >
-          <span>+ Invite Workspace members</span>
-        </Button>
       </div>
 
       <div className="overflow-hidden rounded-lg">
@@ -96,8 +125,13 @@ const MembersTable: React.FC<MembersTableProps> = ({
               <tr key={m.id} className="rounded-lg">
                 <td className="px-3 py-2 border-b border-neutral-100">
                   <div className="flex items-center gap-3 ">
-                    <div className="h-8 w-8 rounded-full bg-[hsl(var(--neutral-100))]" />
-                    <div >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={m.avatar} alt={m.name || 'User'} />
+                      <AvatarFallback variant="primary" className="text-xs">
+                        {m.name && m.name.length > 0 ? m.name.charAt(0).toUpperCase() : 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
                       <div className="text-sm font-medium" style={{ color: 'hsl(var(--primary-foreground))' }}>
                         {m.name}
                       </div>
@@ -121,12 +155,12 @@ const MembersTable: React.FC<MembersTableProps> = ({
                 </td>
                 <td className="px-3 py-2 border-b border-neutral-200">
                   <div className="flex items-center gap-2 ">
-                    <OutlineBtn>View Boards (0)</OutlineBtn>
+
                     <Button
                       className="rounded-md px-3 py-1.5 text-sm font-medium bg-red-600"
                       variant="destructive"
                       size="sm"
-                      onClick={() => m.id && onRemove(m.id, m.role)}
+                      onClick={() => m.id && handleRemoveClick(m)}
                     >
                       {m.role === 'owner' ? 'Leave' : 'Remove'}
                     </Button>
@@ -137,6 +171,16 @@ const MembersTable: React.FC<MembersTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {memberToRemove && (
+        <ConfirmRemoveMemberDialog
+          isOpen={isDialogOpen}
+          onClose={handleCloseDialog}
+          onConfirm={handleConfirmRemove}
+          memberName={memberToRemove.name}
+          isOwner={memberToRemove.role === 'owner'}
+        />
+      )}
     </section>
   );
 };
