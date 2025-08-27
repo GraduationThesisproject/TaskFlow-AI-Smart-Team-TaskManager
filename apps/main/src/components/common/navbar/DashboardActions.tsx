@@ -1,8 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@taskflow/ui';
-import { Zap, Users, BarChart3 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Zap, Users, BarChart3, MessageCircle } from 'lucide-react';
 
 interface DashboardActionsProps {
   className?: string;
@@ -45,7 +44,7 @@ export const DashboardActions: React.FC<DashboardActionsProps> = ({ className = 
       <Button
         variant="ghost"
         size="sm"
-        onClick={handleChatClick}
+        // onClick={handleChatClick}
         className="flex items-center gap-2 hover:bg-secondary/60 transition-colors text-blue-500 hover:text-blue-600"
         title="Customer Support Chat"
       >

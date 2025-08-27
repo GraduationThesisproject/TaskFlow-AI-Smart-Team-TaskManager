@@ -1,7 +1,6 @@
 // src/services/workspace.service.ts
 import axiosInstance from '../config/axios';
 import type { Workspace, CreateWorkspaceData, UpdateWorkspaceData, InviteMemberData } from '../types/workspace.types';
-import type { ApiResponse } from '../types/task.types';
 
 export class WorkspaceService {
   // Fetch all workspaces for the current user

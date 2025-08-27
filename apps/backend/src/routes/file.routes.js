@@ -20,13 +20,13 @@ const {
 router.use((req, res, next) => authMiddleware(req, res, next));
 
 // Single file upload routes by category
-router.post('/upload/avatar', 
-  validateUploadPermissions(['user', 'admin'], ['avatar']),
-  setUploadContext(),
-  uploadMiddlewares.avatar,
-  processUploadedFiles,
-  uploadFile
-);
+// router.post('/upload/avatar', 
+//   validateUploadPermissions(['user', 'admin'], ['avatar']),
+//   setUploadContext(),
+//   uploadMiddlewares.avatar,
+//   processUploadedFiles,
+//   uploadFile
+// );
 
 router.post('/upload/task-attachments',
   validateUploadPermissions(['user', 'admin'], ['task_attachment']),
