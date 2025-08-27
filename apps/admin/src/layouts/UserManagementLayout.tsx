@@ -17,11 +17,14 @@ import {
   MagnifyingGlassIcon,
   EyeIcon,
   PencilIcon,
-  TrashIcon,
   UserPlusIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  XMarkIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import { adminService, User } from '../services/adminService';
+import { AddUserModal, EditUserModal, ViewUserModal } from '../components/user';
+import { ConfirmationDialog } from '../components/common';
 
 const UserManagementLayout: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -30,6 +33,7 @@ const UserManagementLayout: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [showViewUserModal, setShowViewUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +41,23 @@ const UserManagementLayout: React.FC = () => {
     page: 1,
     limit: 20,
     total: 0
+  });
+
+  // Confirmation dialog states
+  const [confirmationDialog, setConfirmationDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    type: 'danger' | 'warning' | 'info' | 'success';
+    onConfirm: () => void;
+    confirmText?: string;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    type: 'info',
+    onConfirm: () => {},
+    confirmText: 'Confirm'
   });
 
   useEffect(() => {
@@ -75,10 +96,44 @@ const UserManagementLayout: React.FC = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
+  // User management functions
+  const handleCreateUser = async (userData: AddUserFormData) => {
+    try {
+      await adminService.createUser(userData);
+      await fetchUsers(); // Refresh the user list
+      setShowCreateUserModal(false);
+    } catch (err) {
+      console.error('Failed to create user:', err);
+      throw err; // Re-throw to let the modal handle the error
+    }
+  };
+
+  const handleUpdateUser = async (userId: string, userData: EditUserFormData) => {
+    try {
+      // Update user data
+      await adminService.updateUser(userId, {
+        username: userData.username,
+        email: userData.email,
+        status: userData.isActive ? 'Active' : 'Inactive'
+      });
+
+      // Update role if changed
+      if (userData.role !== selectedUser?.role) {
+        await adminService.updateUserRole(userId, userData.role);
+      }
+
+      await fetchUsers(); // Refresh the user list
+      setShowEditUserModal(false);
+      setSelectedUser(null);
+    } catch (err) {
+      console.error('Failed to update user:', err);
+      throw err;
+    }
+  };
+
   const handleViewUser = (user: User) => {
     setSelectedUser(user);
-    // Open view modal or navigate to user details
-    console.log('View user:', user);
+    setShowViewUserModal(true);
   };
 
   const handleEditUser = (user: User) => {
@@ -86,38 +141,65 @@ const UserManagementLayout: React.FC = () => {
     setShowEditUserModal(true);
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await adminService.deleteUser(userId);
-        setUsers(users.filter(user => user.id !== userId));
-        setPagination(prev => ({ ...prev, total: prev.total - 1 }));
-      } catch (err) {
-        alert('Failed to delete user: ' + (err instanceof Error ? err.message : 'Unknown error'));
-      }
-    }
+  const showConfirmation = (
+    title: string, 
+    description: string, 
+    type: 'danger' | 'warning' | 'info' | 'success',
+    onConfirm: () => void,
+    confirmText?: string
+  ) => {
+    setConfirmationDialog({
+      isOpen: true,
+      title,
+      description,
+      type,
+      onConfirm,
+      confirmText
+    });
   };
 
-  const handleBanUser = async (userId: string) => {
-    try {
-      await adminService.banUser(userId);
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, status: 'Inactive' } : user
-      ));
-    } catch (err) {
-      alert('Failed to deactivate user: ' + (err instanceof Error ? err.message : 'Unknown error'));
-    }
+
+
+  const handleDeactivateUser = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    showConfirmation(
+      'Deactivate User',
+      `Are you sure you want to deactivate ${user?.username}? The user will not be able to access the platform until reactivated.`,
+      'warning',
+      async () => {
+        try {
+          await adminService.banUser(userId);
+          setUsers(users.map(user => 
+            user.id === userId ? { ...user, status: 'Inactive' } : user
+          ));
+          setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+        } catch (err) {
+          alert('Failed to deactivate user: ' + (err instanceof Error ? err.message : 'Unknown error'));
+        }
+      },
+      'Deactivate User'
+    );
   };
 
-  const handleActivateUser = async (userId: string) => {
-    try {
-      await adminService.activateUser(userId);
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, status: 'Active' } : user
-      ));
-    } catch (err) {
-      alert('Failed to activate user: ' + (err instanceof Error ? err.message : 'Unknown error'));
-    }
+  const handleActivateUser = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    showConfirmation(
+      'Activate User',
+      `Are you sure you want to activate ${user?.username}? The user will be able to access the platform again.`,
+      'info',
+      async () => {
+        try {
+          await adminService.activateUser(userId);
+          setUsers(users.map(user => 
+            user.id === userId ? { ...user, status: 'Active' } : user
+          ));
+          setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          alert('Failed to activate user: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        }
+      },
+      'Activate User'
+    );
   };
 
   const getStatusBadgeVariant = (status: string | undefined) => {
@@ -141,7 +223,7 @@ const UserManagementLayout: React.FC = () => {
     switch (role.toLowerCase()) {
       case 'admin':
         return 'error';
-      case 'moderator':
+      case 'super_admin':
         return 'warning';
       case 'user':
         return 'secondary';
@@ -190,7 +272,7 @@ const UserManagementLayout: React.FC = () => {
           User Management
         </Typography>
         <Typography variant="body-medium" className="text-muted-foreground">
-          Manage user accounts, roles, and permissions across the platform
+          Manage user accounts, roles, and status (active/inactive) across the platform
         </Typography>
       </div>
 
@@ -215,7 +297,7 @@ const UserManagementLayout: React.FC = () => {
               options={[
                 { value: 'all', label: 'All Roles' },
                 { value: 'admin', label: 'Admin' },
-                { value: 'moderator', label: 'Moderator' },
+                { value: 'super_admin', label: 'Super Admin' },
                 { value: 'user', label: 'User' }
               ]}
             />
@@ -262,7 +344,7 @@ const UserManagementLayout: React.FC = () => {
                     <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Last Login</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Created</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Actions</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Manage</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -329,28 +411,22 @@ const UserManagementLayout: React.FC = () => {
                               size="sm"
                               onClick={() => handleActivateUser(user.id)}
                               title="Activate user"
+                              className="text-green-600 hover:text-green-700"
                             >
-                              ✓
+                              <CheckIcon className="h-4 w-4" />
                             </Button>
                           ) : (
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleBanUser(user.id)}
+                              onClick={() => handleDeactivateUser(user.id)}
                               title="Deactivate user"
+                              className="text-orange-600 hover:text-orange-700"
                             >
-                              🚫
+                              <XMarkIcon className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.id)}
-                            title="Delete user"
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </Button>
+                          
                         </div>
                       </td>
                     </tr>
@@ -360,6 +436,11 @@ const UserManagementLayout: React.FC = () => {
             </div>
           )}
         </CardContent>
+        <div className="px-6 pb-4">
+          <Typography variant="body-small" className="text-muted-foreground">
+            💡 <strong>Status Management:</strong> Users can be activated (Active) or deactivated (Inactive). Deactivated users cannot access the platform but their data is preserved.
+          </Typography>
+        </div>
       </Card>
 
       {/* Pagination */}
@@ -388,6 +469,44 @@ const UserManagementLayout: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <AddUserModal
+        isOpen={showCreateUserModal}
+        onClose={() => setShowCreateUserModal(false)}
+        onSubmit={handleCreateUser}
+      />
+
+      <EditUserModal
+        isOpen={showEditUserModal}
+        onClose={() => {
+          setShowEditUserModal(false);
+          setSelectedUser(null);
+        }}
+        onSubmit={handleUpdateUser}
+        user={selectedUser}
+      />
+
+      <ViewUserModal
+        isOpen={showViewUserModal}
+        onClose={() => {
+          setShowViewUserModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+      />
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={confirmationDialog.isOpen}
+        onClose={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmationDialog.onConfirm}
+        title={confirmationDialog.title}
+        description={confirmationDialog.description}
+        type={confirmationDialog.type}
+        confirmText={confirmationDialog.confirmText}
+        confirmButtonVariant={confirmationDialog.type === 'danger' ? 'destructive' : 'default'}
+      />
     </Container>
   );
 };

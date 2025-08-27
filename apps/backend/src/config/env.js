@@ -11,7 +11,7 @@ module.exports = {
     // Database
     DATABASE_URL: process.env.DATABASE_URL || 'mongodb://localhost:27017/taskflow',
     /*DATABASE_URL → where MongoDB is located.
-If .env doesn’t have it, it falls back to mongodb://localhost:27017/taskflow (local MongoDB).*/
+If .env doesn't have it, it falls back to mongodb://localhost:27017/taskflow (local MongoDB).*/
 
     // JWT
     JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key-here',
@@ -120,4 +120,12 @@ GITHUB_CLIENT_ID:"Ov23liwZN5YwJ4eZvffU",
 GITHUB_CLIENT_SECRET:"5499262125f3434db57f3377432053b29a4dcb89",
 GITHUB_CALLBACK_URL:"http://localhost:3001/api/auth/github/callback",
 
+
+    // Power BI Configuration
+    POWERBI_CLIENT_ID: process.env.POWERBI_CLIENT_ID,
+    POWERBI_CLIENT_SECRET: process.env.POWERBI_CLIENT_SECRET,
+    POWERBI_TENANT_ID: process.env.POWERBI_TENANT_ID,
+    /*POWERBI_CLIENT_ID → Azure AD app registration client ID for Power BI API access.
+    POWERBI_CLIENT_SECRET → Azure AD app registration client secret.
+    POWERBI_TENANT_ID → Azure AD tenant ID for your organization.*/
 };

@@ -20,6 +20,12 @@ export interface Translations {
     profile: string;
     logout: string;
   };
+  logout: {
+    confirmTitle: string;
+    confirmMessage: string;
+    cancelButton: string;
+    confirmButton: string;
+  };
   navigation: {
     dashboard: string;
     usersAndRoles: string;
@@ -90,6 +96,12 @@ const translations: Record<Language, Translations> = {
       profile: 'Profile',
       logout: 'Logout',
     },
+    logout: {
+      confirmTitle: 'Confirm Logout',
+      confirmMessage: 'Are you sure you want to log out? You will be redirected to the login page.',
+      cancelButton: 'Cancel',
+      confirmButton: 'Logout',
+    },
     navigation: {
       dashboard: 'Dashboard',
       usersAndRoles: 'Users & Roles',
@@ -157,6 +169,12 @@ const translations: Record<Language, Translations> = {
       settings: 'Configuración',
       profile: 'Perfil',
       logout: 'Cerrar sesión',
+    },
+    logout: {
+      confirmTitle: 'Confirmar Cierre de Sesión',
+      confirmMessage: '¿Estás seguro de que quieres cerrar sesión? Serás redirigido a la página de inicio de sesión.',
+      cancelButton: 'Cancelar',
+      confirmButton: 'Cerrar Sesión',
     },
     navigation: {
       dashboard: 'Panel de control',
@@ -226,6 +244,12 @@ const translations: Record<Language, Translations> = {
       profile: 'Profil',
       logout: 'Déconnexion',
     },
+    logout: {
+      confirmTitle: 'Confirmer la Déconnexion',
+      confirmMessage: 'Êtes-vous sûr de vouloir vous déconnecter ? Vous serez redirigé vers la page de connexion.',
+      cancelButton: 'Annuler',
+      confirmButton: 'Se Déconnecter',
+    },
     navigation: {
       dashboard: 'Tableau de bord',
       usersAndRoles: 'Utilisateurs et Rôles',
@@ -293,6 +317,12 @@ const translations: Record<Language, Translations> = {
       settings: 'Einstellungen',
       profile: 'Profil',
       logout: 'Abmelden',
+    },
+    logout: {
+      confirmTitle: 'Abmeldung Bestätigen',
+      confirmMessage: 'Sind Sie sicher, dass Sie sich abmelden möchten? Sie werden zur Anmeldeseite weitergeleitet.',
+      cancelButton: 'Abbrechen',
+      confirmButton: 'Abmelden',
     },
     navigation: {
       dashboard: 'Dashboard',

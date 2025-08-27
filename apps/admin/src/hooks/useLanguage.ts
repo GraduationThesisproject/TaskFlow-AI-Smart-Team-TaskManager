@@ -43,8 +43,6 @@ export function useLanguage() {
     
     // Dispatch custom event for other components to listen to
     window.dispatchEvent(new CustomEvent('languageChanged', { detail: language }));
-    
-    console.log(`Language changed to: ${language}`);
   }, []);
 
   // Initialize language on mount

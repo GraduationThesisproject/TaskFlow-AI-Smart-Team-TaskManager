@@ -21,6 +21,8 @@ const typographyVariants = cva("", {
       small: "text-sm font-medium leading-none",
       muted: "text-sm text-muted-foreground",
       caption: "text-xs text-muted-foreground",
+      label: "text-sm font-medium leading-none",
+      body: "text-text-16 font-normal leading-normal",
     },
     textColor: {
       default: "text-foreground",
@@ -77,11 +79,13 @@ function getDefaultTag(variant: TypographyProps['variant']): keyof JSX.Intrinsic
     case 'body-large':
     case 'body-medium':
     case 'body-small':
+    case 'body':
     case 'p':
       return 'p';
     case 'small':
     case 'muted':
     case 'caption':
+    case 'label':
       return 'span';
     case 'interregular24':
       return 'p';

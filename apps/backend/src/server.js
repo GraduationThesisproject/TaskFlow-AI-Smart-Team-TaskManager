@@ -17,6 +17,7 @@ const taskSocket = require('./sockets/task.socket');
 const notificationSocket = require('./sockets/notification.socket');
 const workspaceSocket = require('./sockets/workspace.socket');
 const boardSocket = require('./sockets/board.socket');
+const chatSocket = require('./sockets/chat.socket');
 
 const PORT = process.env.PORT || 3001;
 
@@ -43,13 +44,9 @@ const socketCorsOptions = {
             allowedOrigins = config.CORS_ORIGIN;
         }
         
-        console.log('Socket.IO - Allowed CORS origins:', allowedOrigins);
-        console.log('Socket.IO - Request origin:', origin);
-        
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
-            console.log('Socket.IO - CORS blocked origin:', origin);
             callback(new Error(`Origin ${origin} not allowed by Socket.IO CORS. Allowed: ${allowedOrigins.join(', ')}`));
         }
     },
@@ -58,9 +55,7 @@ const socketCorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Socket-ID']
 };
 
-console.log('Socket.IO CORS Configuration:', socketCorsOptions);
-console.log('Config.CORS_ORIGIN:', config.CORS_ORIGIN);
-console.log('Process.env.CORS_ORIGIN:', process.env.CORS_ORIGIN);
+
 
 const io = socketIo(server, {
     cors: socketCorsOptions
@@ -75,6 +70,7 @@ taskSocket(io);
 notificationSocket(io);
 workspaceSocket(io);
 boardSocket(io);
+chatSocket(io);
 
 // Start server
 server.listen(PORT, () => {
@@ -92,9 +88,26 @@ process.on('SIGINT', () => {
     });
 });
 
+// Handle unhandled promise rejections without crashing
 process.on('unhandledRejection', (err, promise) => {
-    logger.error('Unhandled Promise Rejection:', err.message);
+    logger.error('Unhandled Promise Rejection:', {
+        error: err.message,
+        stack: err.stack,
+        promise: promise
+    });
+    // Don't crash the server, just log the error
+    // The server will continue running
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+    logger.error('Uncaught Exception:', {
+        error: err.message,
+        stack: err.stack
+    });
+    // Only exit for uncaught exceptions (not promise rejections)
     server.close(() => {
+        logger.error('Server closed due to uncaught exception');
         process.exit(1);
     });
 });
