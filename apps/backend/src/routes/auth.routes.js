@@ -102,6 +102,10 @@ router.post('/password-reset/request',
     authController.requestPasswordReset
 );
 
+router.post('/password-reset/reset',
+    validateMiddleware(passwordResetSchema),
+    authController.resetPassword
+);
 
 router.get('/verify-email/:token',
     authController.verifyEmail
@@ -123,14 +127,14 @@ router.post('/logout',
 const uploadAvatar = createMulterUpload('avatar', false);
 router.put(
     '/profile/secure',
-    uploadAvatar,       // Multer handles avatar file and populates req.body
-    (req, res, next) => {
-                       // Optional: simple validation here manually
-      const { currentPassword, name } = req.body;
-      if (!currentPassword) return res.status(400).json({ message: 'Current password required' });
-      if (name && name.length < 2) return res.status(400).json({ message: 'Name too short' });
-      next();
-    },
+    // uploadAvatar,       // Multer handles avatar file and populates req.body
+    // (req, res, next) => {
+    //                    // Optional: simple validation here manually
+    //   const { currentPassword, name } = req.body;
+    //   if (!currentPassword) return res.status(400).json({ message: 'Current password required' });
+    //   if (name && name.length < 2) return res.status(400).json({ message: 'Name too short' });
+    //   next();
+    // },
     authMiddleware,
     authController.updateProfileSecure
   );
@@ -140,6 +144,11 @@ router.put('/change-password',
     rateLimitSensitiveOps(5, 15 * 60 * 1000), // 5 requests per 15 minutes
     validateMiddleware(changePasswordSchema),
     authController.changePassword
+);
+
+router.put('/profile',
+    authMiddleware,
+    authController.updateProfile
 );
 
 router.put('/preferences',
@@ -163,11 +172,11 @@ router.get('/activity',
     authController.getActivityLog
 );
 
-// OAuth Routes
-router.get('/google', authController.googleLogin);
-router.get('/google/callback', authController.googleCallback);
+// OAuth Routes - Commented out until OAuth methods are implemented
+// router.get('/google', authController.googleLogin);
+// router.get('/google/callback', authController.googleCallback);
 
-router.get('/github', authController.githubLogin);
-router.get('/github/callback', authController.githubCallback);
+// router.get('/github', authController.githubLogin);
+// router.get('/github/callback', authController.githubCallback);
 
 module.exports = router;
