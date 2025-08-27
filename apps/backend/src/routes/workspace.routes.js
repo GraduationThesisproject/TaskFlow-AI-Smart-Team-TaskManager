@@ -33,6 +33,10 @@ const transferOwnershipSchema = {
     newOwnerId: { required: true, objectId: true }
 };
 
+const updateVisibilitySchema = {
+    visibility: { required: true, enum: ['public', 'private'] }
+};
+
 // Routes
 router.get('/', workspaceController.getAllWorkspaces);
 
