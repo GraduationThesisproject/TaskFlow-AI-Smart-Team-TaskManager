@@ -1,5 +1,7 @@
 // Updated types to match backend data model structure
 import type { UserPreferences } from "./auth.types";
+import type { Board, Column } from "./board.types";
+import type { Space } from "./space.types";
 export interface User {
   _id: string;
   name: string;
@@ -22,189 +24,9 @@ export interface User {
 //   timezone?: string;
 // }
 
-export interface Space {
-  _id: string;
-  name: string;
-  description?: string;
-  workspace: string;
-  members: SpaceMember[];
-  settings: SpaceSettings;
-  stats: SpaceStats;
-  isActive: boolean;
-  isArchived: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
 
-export interface SpaceMember {
-  user: string;
-  role: 'owner' | 'admin' | 'contributor' | 'member' | 'viewer';
-  joinedAt: string;
-  addedBy?: string;
-  permissions: SpacePermissions;
-}
 
-export interface SpacePermissions {
-  canViewBoards: boolean;
-  canCreateBoards: boolean;
-  canEditBoards: boolean;
-  canDeleteBoards: boolean;
-  canCreateTasks: boolean;
-  canEditTasks: boolean;
-  canDeleteTasks: boolean;
-  canManageMembers: boolean;
-  canEditSettings: boolean;
-}
 
-export interface SpaceSettings {
-  color: string;
-  icon: string;
-  isPrivate: boolean;
-  allowGuestAccess: boolean;
-  autoArchiveCompletedTasks: boolean;
-  archiveAfterDays: number;
-  defaultBoardTemplate?: string;
-  features: {
-    timeTracking: boolean;
-    aiSuggestions: boolean;
-    customFields: boolean;
-    fileAttachments: boolean;
-    voting: boolean;
-    dependencies: boolean;
-  };
-  notifications: {
-    newTaskNotifications: boolean;
-    taskUpdatesNotifications: boolean;
-    taskCompletedNotifications: boolean;
-    dueDateReminders: boolean;
-    memberJoinedNotifications: boolean;
-  };
-}
-
-export interface SpaceStats {
-  totalBoards: number;
-  totalTasks: number;
-  completedTasks: number;
-  overdueTasks: number;
-  activeMembersCount: number;
-  lastActivityAt: string;
-}
-
-export interface Board {
-  _id: string;
-  name: string;
-  description?: string;
-  type: 'kanban' | 'list' | 'calendar' | 'timeline';
-  visibility: 'private' | 'workspace' | 'public';
-  space: string;
-  owner: string;
-  members: BoardMember[];
-  columns: Column[];
-  settings: BoardSettings;
-  tags: BoardTag[];
-  archived: boolean;
-  isActive: boolean;
-  isTemplate: boolean;
-  templateSource?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface BoardMember {
-  user: string;
-  permissions: string[];
-  addedAt: string;
-}
-
-export interface BoardSettings {
-  allowComments: boolean;
-  allowAttachments: boolean;
-  allowTimeTracking: boolean;
-  defaultTaskPriority: 'low' | 'medium' | 'high' | 'critical';
-  autoArchive: boolean;
-  archiveAfterDays: number;
-}
-
-export interface BoardTag {
-  name: string;
-  color: string;
-}
-
-export interface Column {
-  _id: string;
-  name: string;
-  board: string;
-  position: number;
-  taskIds: ColumnTask[];
-  limit?: number;
-  settings: ColumnSettings;
-  statusMapping?: 'todo' | 'in_progress' | 'review' | 'done' | 'archived';
-  style: ColumnStyle;
-  stats: ColumnStats;
-  isDefault: boolean;
-  isArchived: boolean;
-  archivedAt?: string;
-  archivedBy?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ColumnTask {
-  task: string;
-  position: number;
-  addedAt: string;
-}
-
-export interface ColumnSettings {
-  wipLimit: {
-    enabled: boolean;
-    limit?: number;
-    strictMode: boolean;
-  };
-  sorting: {
-    method: 'manual' | 'priority' | 'due_date' | 'created_date' | 'alphabetical';
-    direction: 'asc' | 'desc';
-    autoSort: boolean;
-  };
-  automation: {
-    autoAssign: {
-      enabled: boolean;
-      assignTo?: string;
-    };
-    statusUpdate: {
-      enabled: boolean;
-      targetStatus?: 'todo' | 'in_progress' | 'review' | 'done' | 'archived';
-    };
-    notifications: {
-      onTaskAdded: boolean;
-      onTaskRemoved: boolean;
-      onLimitReached: boolean;
-    };
-  };
-  visibility: {
-    isCollapsible: boolean;
-    isCollapsed: boolean;
-    showTaskCount: boolean;
-    showProgressBar: boolean;
-  };
-}
-
-export interface ColumnStyle {
-  color: string;
-  backgroundColor: string;
-  icon?: string;
-  customCss?: string;
-}
-
-export interface ColumnStats {
-  totalTasks: number;
-  completedTasks: number;
-  overdueTasks: number;
-  highPriorityTasks: number;
-  averageTaskAge: number;
-  lastTaskAdded?: string;
-  lastTaskCompleted?: string;
-}
 
 export interface Task {
   _id: string;
@@ -360,15 +182,16 @@ export interface Notification {
   updatedAt: string;
 }
 
-// State management types
+// State management types - cleaned up to remove data duplication
 export interface TaskState {
   tasks: Task[];
-  columns: Column[];
-  boards: Board[];
-  spaces: Space[];
   currentTask: Task | null;
   currentBoard: Board | null;
   currentSpace: Space | null;
+  columns: Column[];
+  boards: Board[];
+  spaces: Space[];
+  comments: Record<string, Comment[]>; // Comments indexed by taskId
   loading: boolean;
   error: string | null;
   filters: TaskFilters;
@@ -386,6 +209,8 @@ export interface TaskState {
     targetColumn: string | null;
   };
 }
+
+
 
 export interface TaskFilters {
   status: string[];

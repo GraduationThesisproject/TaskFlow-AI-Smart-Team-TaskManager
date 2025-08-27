@@ -243,4 +243,23 @@ boardSchema.statics.findByUser = function(userId) {
   });
 };
 
+// Static method to check if user is a member of a board
+boardSchema.statics.isMember = async function(boardId, userId) {
+  const board = await this.findById(boardId);
+  if (!board) return false;
+  
+  // Owner is always a member
+  if (board.owner.toString() === userId.toString()) {
+    return true;
+  }
+  
+  // Check if user is in members array
+  return board.members.some(member => 
+    member.user.toString() === userId.toString()
+  );
+};
+
+// Database indexes for performance
+boardSchema.index({ space: 1, type: 1 });
+
 module.exports = mongoose.model('Board', boardSchema);
