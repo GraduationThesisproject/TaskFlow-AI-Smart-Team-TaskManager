@@ -90,18 +90,27 @@ export const inviteMember = createAsyncThunk<WorkspaceMember, { id: string; emai
   }
 );
 // Update workspace settings
-export const updateWorkspaceSettings = createAsyncThunk<
-  Workspace,
-  { id: string; section: string; updates: Record<string, any> }
->(
-  'workspace/updateWorkspaceSettings',
-  async ({ id, section, updates }) => {
-    const response = await WorkspaceService.updateWorkspace(id, {
-      // Backend expects { settings: { [section]: updates } }
-      settings: { [section]: updates } as any,
-    } as any);
-    // API returns data with { workspace }
-    return (response as any).workspace as Workspace;
+export const updateWorkspaceSettings = createAsyncThunk(
+  'workspace/updateSettings',
+  async ({ id, section, updates }: { 
+    id: string; 
+    section: string; 
+    updates: any 
+  }, { rejectWithValue }) => {
+    try {
+      const response = await WorkspaceService.updateWorkspace(id, {
+        settings: updates
+      });
+      
+      if (!response || !response.data) {
+        throw new Error('Invalid response from server');
+      }
+      
+      return response.data as Workspace;
+    } catch (error: any) {
+      console.error('Error updating workspace settings:', error);
+      return rejectWithValue(error.response?.data?.message || 'Failed to update workspace settings');
+    }
   }
 );
 
