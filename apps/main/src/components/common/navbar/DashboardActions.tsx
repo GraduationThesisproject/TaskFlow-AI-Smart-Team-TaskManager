@@ -1,7 +1,6 @@
 import React from 'react';
 import { Button } from '@taskflow/ui';
-import { Zap, Users, BarChart3 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Zap, Users, BarChart3, MessageCircle } from 'lucide-react';
 
 interface DashboardActionsProps {
   className?: string;
