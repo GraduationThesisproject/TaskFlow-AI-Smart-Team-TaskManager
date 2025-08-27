@@ -1,6 +1,5 @@
 const express = require('express');
 const workspaceController = require('../controllers/workspace.controller');
-const { requireAuth, requireAdmin } = require('../middlewares/auth.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const {requireWorkspacePermission, requireWorkspaceMember, requireWorkspaceAdmin } = require('../middlewares/permission.middleware');
 
@@ -36,10 +35,6 @@ const transferOwnershipSchema = {
 
 // Routes
 router.get('/', workspaceController.getAllWorkspaces);
-
-// Public workspaces: accessible to any authenticated user
-router.get('/public', workspaceController.getPublicWorkspaces);
-
 
 router.get('/:id', 
     workspaceController.getWorkspace

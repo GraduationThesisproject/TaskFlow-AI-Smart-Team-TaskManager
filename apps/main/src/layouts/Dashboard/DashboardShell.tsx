@@ -55,17 +55,11 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
             className="flex items-center gap-3 p-0 h-auto"
             aria-label="Toggle sidebar"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">T</span>
+            <div className="flex flex-col gap-1 w-8 h-8 items-center justify-center">
+              <div className="w-4 h-0.5 bg-foreground" />
+              <div className="w-4 h-0.5 bg-foreground" />
+              <div className="w-4 h-0.5 bg-foreground" />
             </div>
-            {!sidebarCollapsed && (
-              <Typography
-                variant="h3"
-                className="font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
-              >
-                TaskFlow AI
-              </Typography>
-            )}
           </Button>
         </SidebarHeader>
 
@@ -115,12 +109,11 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
               className="flex items-center gap-3 p-0 h-auto"
               aria-label="Close sidebar"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">T</span>
+              <div className="flex flex-col gap-1 w-8 h-8 items-center justify-center">
+                <div className="w-4 h-0.5 bg-foreground" />
+                <div className="w-4 h-0.5 bg-foreground" />
+                <div className="w-4 h-0.5 bg-foreground" />
               </div>
-              <Typography variant="h3" className="font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                TaskFlow AI
-              </Typography>
             </Button>
             <Button
               variant="ghost"
