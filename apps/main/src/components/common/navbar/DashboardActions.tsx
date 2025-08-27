@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@taskflow/ui';
 import { Zap, Users, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -45,11 +44,11 @@ export const DashboardActions: React.FC<DashboardActionsProps> = ({ className = 
       <Button
         variant="ghost"
         size="sm"
-        onClick={handleChatClick}
+        // onClick={handleChatClick}
         className="flex items-center gap-2 hover:bg-secondary/60 transition-colors text-blue-500 hover:text-blue-600"
         title="Customer Support Chat"
       >
-        <MessageCircle className="w-4 h-4" />
+        {/* <MessageCircle className="w-4 h-4" /> */}
         <span className="text-sm hidden sm:inline">Support</span>
       </Button>
     </div>
