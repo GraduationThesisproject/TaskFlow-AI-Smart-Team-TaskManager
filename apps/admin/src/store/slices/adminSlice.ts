@@ -22,11 +22,12 @@ const initialState: AdminState = {
 export const loginAdmin = createAsyncThunk(
   'admin/login',
   async (credentials: AdminLoginCredentials, { rejectWithValue }) => {
+    console.log('=== REDUX LOGIN ACTION CALLED ===');
+    console.log('Credentials:', credentials);
+    console.log('API URL:', `${env.API_BASE_URL}/admin/auth/login`);
+    
     try {
-      console.log('LoginAdmin thunk: starting login process...');
-      console.log('LoginAdmin thunk: credentials:', credentials);
-      console.log('LoginAdmin thunk: API URL:', `${env.API_BASE_URL}/admin/auth/login`);
-      
+      console.log('Making fetch request...');
       const response = await fetch(`${env.API_BASE_URL}/admin/auth/login`, {
         method: 'POST',
         headers: {
@@ -35,35 +36,47 @@ export const loginAdmin = createAsyncThunk(
         body: JSON.stringify(credentials),
       });
 
-      console.log('LoginAdmin thunk: response status:', response.status);
-      console.log('LoginAdmin thunk: response ok:', response.ok);
-      console.log('LoginAdmin thunk: response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('Response received:', response);
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('LoginAdmin thunk: error response:', errorData);
+        console.log('Error response:', errorData);
         return rejectWithValue(errorData.message || 'Login failed');
       }
 
       const data: AdminResponse = await response.json();
-      console.log('LoginAdmin thunk: success response raw data:', data);
-      console.log('LoginAdmin thunk: response data type:', typeof data);
-      console.log('LoginAdmin thunk: response data keys:', Object.keys(data || {}));
-      
-      // Additional debugging for the response structure
-      console.log('LoginAdmin thunk: data.success:', data.success);
-      console.log('LoginAdmin thunk: data.message:', data.message);
-      console.log('LoginAdmin thunk: data.data exists:', !!data.data);
-      if (data.data) {
-        console.log('LoginAdmin thunk: data.data keys:', Object.keys(data.data));
-        console.log('LoginAdmin thunk: data.data.admin exists:', !!data.data.admin);
-        console.log('LoginAdmin thunk: data.data.token exists:', !!data.data.token);
-        console.log('LoginAdmin thunk: data.data.token value:', data.data.token ? `${data.data.token.substring(0, 20)}...` : 'undefined');
-      }
-      
+      console.log('Success response:', data);
       return data;
     } catch (error) {
-      console.error('LoginAdmin thunk: network error:', error);
+      console.error('Network error:', error);
+      return rejectWithValue('Network error occurred');
+    }
+  }
+);
+
+// Complete login with 2FA verification
+export const complete2FALogin = createAsyncThunk(
+  'admin/complete2FA',
+  async (credentials: { userId: string; token: string; sessionId: string; rememberMe?: boolean }, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${env.API_BASE_URL}/admin/auth/login/2fa-complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || '2FA verification failed');
+      }
+
+      const data: AdminResponse = await response.json();
+      return data;
+    } catch (error) {
       return rejectWithValue('Network error occurred');
     }
   }
@@ -73,9 +86,7 @@ export const logoutAdmin = createAsyncThunk(
   'admin/logout',
   async (_, { rejectWithValue }) => {
     try {
-      console.log('Logout thunk: making API call to logout endpoint...');
       const token = localStorage.getItem('adminToken');
-      console.log('Logout thunk: token from localStorage:', !!token);
       
       const response = await fetch(`${env.API_BASE_URL}/admin/auth/logout`, {
         method: 'POST',
@@ -85,20 +96,14 @@ export const logoutAdmin = createAsyncThunk(
         },
       });
 
-      console.log('Logout thunk: response status:', response.status);
-      console.log('Logout thunk: response ok:', response.ok);
-
       if (!response.ok) {
         const errorData = await response.json();
-        console.log('Logout thunk: error response:', errorData);
         return rejectWithValue(errorData.message || 'Logout failed');
       }
 
       const data = await response.json();
-      console.log('Logout thunk: success response:', data);
       return data;
     } catch (error) {
-      console.error('Logout thunk: network error:', error);
       return rejectWithValue('Network error occurred');
     }
   }
@@ -156,13 +161,8 @@ export const uploadAdminAvatar = createAsyncThunk(
   'admin/uploadAvatar',
   async (file: File, { rejectWithValue }) => {
     try {
-      console.log('uploadAdminAvatar: starting upload for file:', file.name, file.size, file.type);
-      
       const formData = new FormData();
       formData.append('file', file);
-      
-      console.log('uploadAdminAvatar: FormData created, file appended with key "file"');
-      console.log('uploadAdminAvatar: FormData contents:', Array.from(formData.entries()));
 
       const response = await fetch(`${env.API_BASE_URL}/admin/auth/avatar`, {
         method: 'POST',
@@ -173,20 +173,14 @@ export const uploadAdminAvatar = createAsyncThunk(
         body: formData,
       });
 
-      console.log('uploadAdminAvatar: Response status:', response.status);
-      console.log('uploadAdminAvatar: Response headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('uploadAdminAvatar: Error response:', errorData);
         return rejectWithValue(errorData.message || 'Failed to upload avatar');
       }
 
       const data = await response.json();
-      console.log('uploadAdminAvatar: Success response:', data);
       return data;
     } catch (error) {
-      console.error('uploadAdminAvatar: Network error:', error);
       return rejectWithValue('Network error occurred');
     }
   }
@@ -216,104 +210,136 @@ const adminSlice = createSlice({
         state.error = null;
       })
       .addCase(loginAdmin.fulfilled, (state, action) => {
-        console.log('AdminSlice: login fulfilled, payload:', action.payload);
-        console.log('AdminSlice: payload type:', typeof action.payload);
-        console.log('AdminSlice: payload keys:', Object.keys(action.payload || {}));
-        
         state.isLoading = false;
-        state.isAuthenticated = true;
         
         // Handle the response format from sendResponse utility
         const responseData = action.payload;
-        console.log('AdminSlice: responseData:', responseData);
 
+        // Check if 2FA is required
+        if (responseData.data?.requires2FA) {
+          // 2FA is required - don't authenticate yet, don't save token
+          state.isAuthenticated = false;
+          state.currentAdmin = null;
+          state.permissions = [];
+          state.error = null;
+          return; // Exit early, don't proceed with normal login flow
+        }
+
+        // Normal login flow - 2FA not required
+        state.isAuthenticated = true;
+        
         // The response is wrapped in a data property by sendResponse utility
         const adminData = responseData.data || responseData;
-        console.log('AdminSlice: adminData:', adminData);
-        console.log('AdminSlice: adminData keys:', Object.keys(adminData || {}));
-        console.log('AdminSlice: permissions data:', adminData.admin?.permissions);
         
-        state.currentAdmin = adminData.admin || adminData;
-        
-        // Safely handle permissions - ensure it's an array before mapping
-        try {
-          const permissions = adminData.admin?.permissions;
-          if (Array.isArray(permissions)) {
-            state.permissions = permissions.map((p: any) => p.name || p.id);
-          } else if (permissions && typeof permissions === 'object') {
-            // If permissions is an object, try to extract values
-            state.permissions = Object.values(permissions).map((p: any) => p.name || p.id || p);
-          } else {
-            console.warn('AdminSlice: permissions is not an array or object:', permissions);
+        // Ensure we have admin data before proceeding
+        if (adminData.admin) {
+          state.currentAdmin = adminData.admin;
+          
+          // Safely handle permissions - ensure it's an array before mapping
+          try {
+            const permissions = adminData.admin.permissions;
+            if (Array.isArray(permissions)) {
+              state.permissions = permissions.map((p: any) => p.name || p.id);
+            } else if (permissions && typeof permissions === 'object') {
+              // If permissions is an object, try to extract values
+              state.permissions = Object.values(permissions).map((p: any) => p.name || p.id || p);
+            } else {
+              state.permissions = [];
+            }
+          } catch (error) {
             state.permissions = [];
           }
-        } catch (error) {
-          console.error('AdminSlice: error processing permissions:', error);
+        } else {
+          // No admin data - this shouldn't happen in normal login
+          state.currentAdmin = null;
           state.permissions = [];
         }
         
         state.error = null;
         
         // Store token in localStorage - token is in data.token
-        console.log('AdminSlice: checking for token...');
-        console.log('AdminSlice: adminData.token:', adminData.token);
-        console.log('AdminSlice: responseData.data?.token:', responseData.data?.token);
         
         // The token should be in responseData.data.token based on the backend response structure
         // Backend sends: { success: true, message: "...", data: { admin: {...}, token: "..." } }
         const token = responseData.data?.token;
-        console.log('AdminSlice: extracted token:', token);
         
         if (token && token !== 'null' && token !== 'undefined') {
-          console.log('AdminSlice: storing token in localStorage:', token);
           localStorage.setItem('adminToken', token);
-          console.log('AdminSlice: token stored, verifying...');
           const storedToken = localStorage.getItem('adminToken');
-          console.log('AdminSlice: localStorage.getItem("adminToken"):', storedToken);
           
           if (storedToken === token) {
-            console.log('AdminSlice: ✅ Token successfully stored in localStorage');
+            // Token successfully stored
           } else {
-            console.error('AdminSlice: ❌ Token storage verification failed!');
-            console.error('AdminSlice: Expected:', token);
-            console.error('AdminSlice: Got:', storedToken);
+            // Token storage verification failed
           }
         } else {
-          console.error('AdminSlice: ❌ Invalid token detected:', token);
-          console.error('AdminSlice: Token type:', typeof token);
-          console.error('AdminSlice: Token value:', token);
-          console.error('AdminSlice: responseData structure:', {
-            success: responseData.success,
-            message: responseData.message,
-            hasData: !!responseData.data,
-            dataKeys: responseData.data ? Object.keys(responseData.data) : 'no data',
-            adminDataKeys: adminData ? Object.keys(adminData) : 'no adminData'
-          });
+          // Invalid token detected
           
           // Don't store invalid tokens
           localStorage.removeItem('adminToken');
         }
-        
-        console.log('AdminSlice: final state:', { 
-          isAuthenticated: state.isAuthenticated, 
-          hasAdmin: !!state.currentAdmin,
-          hasToken: !!localStorage.getItem('adminToken'),
-          permissions: state.permissions
-        });
       })
       .addCase(loginAdmin.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
       
+      // Complete 2FA Login
+      .addCase(complete2FALogin.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(complete2FALogin.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isAuthenticated = true;
+        
+        // Handle the response format from sendResponse utility
+        const responseData = action.payload;
+        const adminData = responseData.data || responseData;
+        
+        // For 2FA completion, the admin data should be in adminData.admin
+        if (adminData && adminData.admin) {
+          state.currentAdmin = adminData.admin as Admin;
+          
+          // Safely handle permissions
+          try {
+            const permissions = adminData.admin.permissions;
+            if (Array.isArray(permissions)) {
+              state.permissions = permissions.map((p: any) => p.name || p.id);
+            } else if (permissions && typeof permissions === 'object') {
+              state.permissions = Object.values(permissions).map((p: any) => p.name || p.id || p);
+            } else {
+              state.permissions = [];
+            }
+          } catch (error) {
+            state.permissions = [];
+          }
+        } else {
+          state.currentAdmin = null;
+          state.permissions = [];
+        }
+        
+        state.error = null;
+        
+        // Store token in localStorage
+        const token = responseData.data?.token;
+        if (token && token !== 'null' && token !== 'undefined') {
+          localStorage.setItem('adminToken', token);
+        } else {
+          localStorage.removeItem('adminToken');
+        }
+      })
+      .addCase(complete2FALogin.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      
       // Logout
       .addCase(logoutAdmin.fulfilled, (state) => {
-        console.log('Logout reducer: clearing state...');
         state.isAuthenticated = false;
         state.currentAdmin = null;
         state.permissions = [];
         localStorage.removeItem('adminToken');
-        console.log('Logout reducer: state cleared, isAuthenticated:', state.isAuthenticated);
       })
       
       // Get Current Admin
@@ -340,19 +366,16 @@ const adminSlice = createSlice({
           } else if (permissions && typeof permissions === 'object') {
             // If permissions is an object, try to extract values
             state.permissions = Object.values(permissions).map((p: any) => p.name || p.id || p);
-          } else {
-            console.warn('AdminSlice: permissions is not an array or object:', permissions);
-            state.permissions = [];
-          }
-        } catch (error) {
-          console.error('AdminSlice: error processing permissions:', error);
+                  } else {
           state.permissions = [];
         }
+      } catch (error) {
+        state.permissions = [];
+      }
         
         state.error = null;
       })
       .addCase(getCurrentAdmin.rejected, (state, action) => {
-        console.log('AdminSlice: getCurrentAdmin rejected:', action.payload);
         state.isLoading = false;
         state.isAuthenticated = false;
         state.currentAdmin = null;
@@ -393,15 +416,10 @@ const adminSlice = createSlice({
         if (state.currentAdmin) {
           const responseData = action.payload;
           const adminData = responseData.data || responseData;
-          console.log('uploadAdminAvatar fulfilled: responseData:', responseData);
-          console.log('uploadAdminAvatar fulfilled: adminData:', adminData);
           
           // Update the avatar field
           if (adminData.admin && adminData.admin.avatar) {
             state.currentAdmin.avatar = adminData.admin.avatar;
-            console.log('uploadAdminAvatar fulfilled: Avatar updated to:', adminData.admin.avatar);
-          } else {
-            console.warn('uploadAdminAvatar fulfilled: No avatar data found in response');
           }
         }
         state.error = null;

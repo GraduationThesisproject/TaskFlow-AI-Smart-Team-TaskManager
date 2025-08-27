@@ -14,6 +14,7 @@ const router = express.Router();
 
 // Admin authentication routes (public)
 router.post('/auth/login', adminController.login);
+router.post('/auth/login/2fa-complete', adminController.completeLoginWith2FA);
 router.get('/auth/test-jwt', adminController.testJWT);
 
 // Apply admin authentication middleware to protected routes

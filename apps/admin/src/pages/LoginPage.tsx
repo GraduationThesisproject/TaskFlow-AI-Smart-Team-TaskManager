@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store';
-import { loginAdmin, clearError } from '../store/slices/adminSlice';
+import { loginAdmin, clearError, complete2FALogin } from '../store/slices/adminSlice';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Typography } from '@taskflow/ui';
 import { ThemeToggle } from '@taskflow/theme';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import TwoFactorAuthVerification from '../components/auth/TwoFactorAuthVerification';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -17,30 +18,28 @@ const LoginPage: React.FC = () => {
     password: ''
   });
 
+  // 2FA state
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [twoFAData, setTwoFAData] = useState<{
+    userId: string;
+    sessionId: string;
+    message: string;
+  } | null>(null);
+
   // Test localStorage functionality
   useEffect(() => {
-    console.log('LoginPage: Testing localStorage...');
     try {
       localStorage.setItem('test', 'test-value');
       const testValue = localStorage.getItem('test');
-      console.log('LoginPage: localStorage test - stored:', 'test-value', 'retrieved:', testValue);
       localStorage.removeItem('test');
-      
-      if (testValue !== 'test-value') {
-        console.error('LoginPage: localStorage is not working properly!');
-      } else {
-        console.log('LoginPage: localStorage is working properly');
-      }
     } catch (error) {
-      console.error('LoginPage: localStorage error:', error);
+      // localStorage error handling
     }
   }, []);
 
   // Redirect if already authenticated
   useEffect(() => {
-    console.log('LoginPage: auth state changed:', { isAuthenticated, isLoading, error });
     if (isAuthenticated) {
-      console.log('LoginPage: authenticated, navigating to dashboard');
       navigate('/dashboard');
     }
   }, [isAuthenticated, isLoading, navigate]);
@@ -60,18 +59,114 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('LoginPage: submitting login form...');
+    
+    console.log('=== LOGIN FORM SUBMITTED ===');
+    console.log('Form data:', formData);
+    console.log('Form event:', e);
     
     try {
-      console.log('LoginPage: dispatching loginAdmin...');
+      console.log('Dispatching loginAdmin action...');
       const result = await dispatch(loginAdmin(formData)).unwrap();
-      console.log('LoginPage: login successful:', result);
-      // Navigation will be handled by useEffect when isAuthenticated changes
+      console.log('Login result:', result);
+      console.log('Result data:', result.data);
+      console.log('requires2FA:', result.data?.requires2FA);
+      console.log('userId:', result.data?.userId);
+      console.log('sessionId:', result.data?.sessionId);
+      
+      // Check if 2FA is required
+      if (result.data?.requires2FA && result.data.userId && result.data.sessionId) {
+        console.log('2FA required, setting state...');
+        setRequires2FA(true);
+        setTwoFAData({
+          userId: result.data.userId,
+          sessionId: result.data.sessionId,
+          message: result.data.message || 'Two-factor authentication is required. Please enter your 6-digit code.'
+        });
+      } else {
+        console.log('No 2FA required, result:', result);
+      }
+      // If no 2FA required, navigation will be handled by useEffect
     } catch (error) {
-      console.error('LoginPage: login failed:', error);
+      console.error('Login error:', error);
       // Error is already handled by the Redux slice
     }
   };
+
+  const handle2FAVerification = async (token: string, rememberDevice: boolean = false) => {
+    if (!twoFAData) return;
+    
+    console.log('=== 2FA VERIFICATION STARTED ===');
+    console.log('Token:', token);
+    console.log('Remember device:', rememberDevice);
+    console.log('TwoFA data:', twoFAData);
+    
+    try {
+      console.log('Dispatching complete2FALogin...');
+      const result = await dispatch(complete2FALogin({
+        userId: twoFAData.userId,
+        token,
+        sessionId: twoFAData.sessionId,
+        rememberMe: false // You can add a remember me option if needed
+      })).unwrap();
+      
+      console.log('2FA completion result:', result);
+      
+      // 2FA completed successfully, navigation will be handled by useEffect
+      setRequires2FA(false);
+      setTwoFAData(null);
+      console.log('2FA state cleared, should redirect to dashboard');
+    } catch (error: any) {
+      console.error('2FA verification failed:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        data: error.data
+      });
+    }
+  };
+
+  const handle2FACancel = () => {
+    setRequires2FA(false);
+    setTwoFAData(null);
+    dispatch(clearError());
+  };
+
+  // Show 2FA verification screen if required
+  if (requires2FA && twoFAData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-6">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <div className="flex justify-center">
+              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-xl">TF</span>
+              </div>
+            </div>
+            <Typography variant="heading-xl" className="text-foreground">
+              Two-Factor Authentication
+            </Typography>
+            <Typography variant="body-medium" className="text-muted-foreground">
+              {twoFAData.message}
+            </Typography>
+          </div>
+
+          {/* 2FA Verification Component */}
+          <TwoFactorAuthVerification
+            userId={twoFAData.userId}
+            onVerificationSuccess={() => {}} // Empty function since we don't use it
+            onCancel={handle2FACancel}
+            onVerify={handle2FAVerification}
+          />
+
+          {/* Theme Toggle */}
+          <div className="flex justify-center">
+            <ThemeToggle />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -179,104 +274,7 @@ const LoginPage: React.FC = () => {
           <ThemeToggle />
         </div>
 
-        {/* Debug Section */}
-        <div className="text-center space-y-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              console.log('=== LOCALSTORAGE DEBUG ===');
-              console.log('adminToken:', localStorage.getItem('adminToken'));
-              console.log('All localStorage keys:', Object.keys(localStorage));
-              console.log('localStorage length:', localStorage.length);
-              console.log('All localStorage entries:', Object.entries(localStorage));
-              console.log('=======================');
-            }}
-          >
-            Debug localStorage
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              console.log('=== AUTH STATE DEBUG ===');
-              console.log('Redux auth state:', { isAuthenticated, isLoading, error });
-              console.log('localStorage adminToken exists:', !!localStorage.getItem('adminToken'));
-              console.log('localStorage adminToken value:', localStorage.getItem('adminToken'));
-              console.log('=======================');
-            }}
-          >
-            Debug Auth State
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              console.log('=== TOKEN VALIDATION TEST ===');
-              const token = localStorage.getItem('adminToken');
-              if (token) {
-                console.log('Testing token format...');
-                console.log('Token length:', token.length);
-                console.log('Token starts with:', token.substring(0, 20));
-                console.log('Token ends with:', token.substring(token.length - 20));
-                console.log('Token contains "Bearer":', token.includes('Bearer'));
-                console.log('Token looks like JWT:', /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/.test(token));
-              } else {
-                console.log('No token found in localStorage');
-              }
-              console.log('=======================');
-            }}
-          >
-            Test Token Format
-          </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              console.log('=== TEST LOGIN FLOW ===');
-              console.log('Testing with sample credentials...');
-              
-              const testCredentials = {
-                email: 'admin@example.com',
-                password: 'admin123'
-              };
-              
-              console.log('Test credentials:', testCredentials);
-              console.log('localStorage before login:', localStorage.getItem('adminToken'));
-              
-              try {
-                console.log('Dispatching loginAdmin...');
-                const result = await dispatch(loginAdmin(testCredentials)).unwrap();
-                console.log('Test login result:', result);
-                console.log('localStorage after test login:', localStorage.getItem('adminToken'));
-                
-                // Test the token format
-                const token = localStorage.getItem('adminToken');
-                if (token) {
-                  console.log('Token analysis:');
-                  console.log('- Length:', token.length);
-                  console.log('- Type:', typeof token);
-                  console.log('- Starts with:', token.substring(0, 20));
-                  console.log('- Ends with:', token.substring(token.length - 20));
-                  console.log('- Contains "null":', token.includes('null'));
-                  console.log('- Contains "undefined":', token.includes('undefined'));
-                  console.log('- Looks like JWT:', /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/.test(token));
-                } else {
-                  console.log('No token found in localStorage after login');
-                }
-              } catch (error) {
-                console.error('Test login failed:', error);
-              }
-              
-              console.log('=======================');
-            }}
-          >
-            Test Login Flow
-          </Button>
-        </div>
 
         {/* Footer */}
         <div className="text-center">

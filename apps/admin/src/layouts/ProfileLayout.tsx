@@ -102,15 +102,9 @@ const ProfileLayout: React.FC = () => {
         mode: 'cors',
         credentials: 'omit'
       });
-      console.log('Avatar URL test result:', {
-        url,
-        status: response.status,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      });
+
       return response.ok;
     } catch (error) {
-      console.error('Avatar URL test failed:', { url, error });
       return false;
     }
   };
@@ -118,7 +112,6 @@ const ProfileLayout: React.FC = () => {
   // Test avatar URLs when component mounts
   React.useEffect(() => {
     if (currentAdmin?.avatar) {
-      console.log('Testing avatar URLs...');
       testAvatarUrl(currentAdmin.avatar);
       testAvatarUrl(getAvatarUrl(currentAdmin.avatar));
     }
@@ -126,14 +119,7 @@ const ProfileLayout: React.FC = () => {
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    console.log('handleAvatarChange: file selected:', file);
     if (file) {
-      console.log('handleAvatarChange: file details:', {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        lastModified: file.lastModified
-      });
       setAvatarFile(file);
       // Create preview URL
       const reader = new FileReader();
@@ -141,29 +127,23 @@ const ProfileLayout: React.FC = () => {
         setAvatarPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
-    } else {
-      console.log('handleAvatarChange: no file selected');
     }
   };
 
   const handleAvatarUpload = async () => {
-    console.log('handleAvatarUpload: called with avatarFile:', avatarFile);
     if (!avatarFile) {
-      console.log('handleAvatarUpload: no avatar file, returning early');
       return;
     }
     
     try {
-      console.log('handleAvatarUpload: dispatching uploadAdminAvatar with file:', avatarFile.name);
       await dispatch(uploadAdminAvatar(avatarFile)).unwrap();
-      console.log('handleAvatarUpload: upload successful');
       setAvatarFile(null);
       setAvatarPreview(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     } catch (error) {
-      console.error('Failed to upload avatar:', error);
+      // Avatar upload failed
     }
   };
 
@@ -194,7 +174,7 @@ const ProfileLayout: React.FC = () => {
       
       setIsEditing(false);
     } catch (error) {
-      console.error('Failed to save profile:', error);
+      // Profile save failed
     }
   };
 

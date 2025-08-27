@@ -106,6 +106,32 @@ const userSchema = new mongoose.Schema({
     default: false
   },
   
+  // Two-Factor Authentication fields
+  twoFactorAuth: {
+    secret: {
+      type: String,
+      select: false // Don't include in queries by default for security
+    },
+    backupCodes: [{
+      code: {
+        type: String,
+        select: false
+      },
+      used: {
+        type: Boolean,
+        default: false
+      },
+      usedAt: Date
+    }],
+    recoveryToken: {
+      type: String,
+      select: false
+    },
+    recoveryTokenExpires: Date,
+    enabledAt: Date,
+    lastUsed: Date
+  },
+  
   // References to separated models
   preferences: {
     type: mongoose.Schema.Types.ObjectId,
@@ -191,6 +217,7 @@ userSchema.index({ lockUntil: 1 });
 userSchema.index({ loginAttempts: 1 });
 userSchema.index({ hasOAuthProviders: 1 });
 userSchema.index({ hasTwoFactorAuth: 1 });
+userSchema.index({ 'twoFactorAuth.enabledAt': 1 });
 
 // Text search indexes for faster, ranked search
 userSchema.index({ name: 'text', email: 'text' });

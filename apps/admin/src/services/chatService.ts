@@ -55,8 +55,6 @@ class ChatService {
    */
   async acceptChat(chatId: string): Promise<Chat> {
     try {
-      console.log('ChatService: acceptChat called for chatId:', chatId);
-      
       const response = await fetch(`${this.baseUrl}/admin/${chatId}/accept`, {
         method: 'POST',
         headers: this.getHeaders(),
@@ -70,7 +68,6 @@ class ChatService {
       const data = await response.json();
       return data.data?.chat;
     } catch (error) {
-      console.error('ChatService: Error accepting chat:', error);
       throw error;
     }
   }
@@ -80,8 +77,6 @@ class ChatService {
    */
   async sendMessage(chatId: string, messageData: SendMessageRequest): Promise<{ chat: Chat; message: ChatMessage }> {
     try {
-      console.log('ChatService: sendMessage called for chatId:', chatId);
-      
       const response = await fetch(`${this.baseUrl}/admin/${chatId}/messages`, {
         method: 'POST',
         headers: this.getHeaders(),
@@ -96,7 +91,6 @@ class ChatService {
       const data = await response.json();
       return data.data;
     } catch (error) {
-      console.error('ChatService: Error sending message:', error);
       throw error;
     }
   }
@@ -106,8 +100,6 @@ class ChatService {
    */
   async updateChatStatus(chatId: string, statusData: UpdateChatStatusRequest): Promise<Chat> {
     try {
-      console.log('ChatService: updateChatStatus called for chatId:', chatId);
-      
       const response = await fetch(`${this.baseUrl}/admin/${chatId}/status`, {
         method: 'PATCH',
         headers: this.getHeaders(),
@@ -122,7 +114,6 @@ class ChatService {
       const data = await response.json();
       return data.data?.chat;
     } catch (error) {
-      console.error('ChatService: Error updating chat status:', error);
       throw error;
     }
   }
@@ -132,8 +123,6 @@ class ChatService {
    */
   async getChatHistory(chatId: string, limit: number = 50): Promise<ChatMessage[]> {
     try {
-      console.log('ChatService: getChatHistory called for chatId:', chatId);
-      
       const response = await fetch(`${this.baseUrl}/admin/${chatId}/history?limit=${limit}`, {
         method: 'GET',
         headers: this.getHeaders(),
@@ -147,7 +136,6 @@ class ChatService {
       const data = await response.json();
       return data.data?.messages || [];
     } catch (error) {
-      console.error('ChatService: Error fetching chat history:', error);
       throw error;
     }
   }
@@ -157,8 +145,6 @@ class ChatService {
    */
   async markMessagesAsRead(chatId: string, messageIds: string[]): Promise<void> {
     try {
-      console.log('ChatService: markMessagesAsRead called for chatId:', chatId);
-      
       const response = await fetch(`${this.baseUrl}/admin/${chatId}/read`, {
         method: 'POST',
         headers: this.getHeaders(),
@@ -170,7 +156,6 @@ class ChatService {
         throw new Error(errorData.message || 'Failed to mark messages as read');
       }
     } catch (error) {
-      console.error('ChatService: Error marking messages as read:', error);
       throw error;
     }
   }
@@ -202,7 +187,6 @@ class ChatService {
         averageResponseTime: 0
       };
     } catch (error) {
-      console.error('ChatService: Error fetching chat stats:', error);
       throw error;
     }
   }
@@ -212,8 +196,6 @@ class ChatService {
    */
   async closeChat(chatId: string, reason?: string): Promise<Chat> {
     try {
-      console.log('ChatService: closeChat called for chatId:', chatId);
-      
       const response = await fetch(`${this.baseUrl}/admin/${chatId}/close`, {
         method: 'POST',
         headers: this.getHeaders(),
@@ -228,7 +210,6 @@ class ChatService {
       const data = await response.json();
       return data.data?.chat;
     } catch (error) {
-      console.error('ChatService: Error closing chat:', error);
       throw error;
     }
   }

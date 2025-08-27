@@ -160,6 +160,17 @@ exports.login = async (req, res) => {
             // Log successful attempt
             await userSessions.logLoginAttempt(true, req.ip, deviceInfo);
 
+            // Check if 2FA is enabled
+            if (user.hasTwoFactorAuth) {
+                // Return response indicating 2FA is required
+                return sendResponse(res, 200, true, '2FA required', {
+                    requires2FA: true,
+                    userId: user._id,
+                    message: 'Two-factor authentication is required. Please enter your 6-digit code.',
+                    sessionId: session._id
+                });
+            }
+
             // Generate JWT token
             const expiresIn = rememberMe ? '30d' : '7d';
             const token = jwt.generateToken(user._id, expiresIn);
@@ -201,6 +212,111 @@ exports.login = async (req, res) => {
     } catch (error) {
         logger.error('Login error:', error);
         sendResponse(res, 500, false, 'Server error during login');
+    }
+};
+
+// Complete login with 2FA verification
+exports.completeLoginWith2FA = async (req, res) => {
+    try {
+        const { userId, token, sessionId, rememberMe = false, rememberDevice = false } = req.body;
+
+        if (!userId || !token || !sessionId) {
+            return sendResponse(res, 400, false, 'User ID, token, and session ID are required');
+        }
+
+        // Find user and include 2FA fields
+        const user = await User.findById(userId).select('+twoFactorAuth.secret +twoFactorAuth.backupCodes');
+        if (!user) {
+            return sendResponse(res, 404, false, 'User not found');
+        }
+
+        if (!user.hasTwoFactorAuth) {
+            return sendResponse(res, 400, false, '2FA is not enabled for this account');
+        }
+
+        // Verify 2FA token
+        const TwoFactorAuthService = require('../services/twoFactorAuth.service');
+        let isValid = false;
+
+        // Check if it's a backup code
+        const backupCode = user.twoFactorAuth.backupCodes.find(
+            bc => bc.code === token && !bc.used
+        );
+
+        if (backupCode) {
+            // Use backup code
+            backupCode.used = true;
+            backupCode.usedAt = new Date();
+            user.twoFactorAuth.lastUsed = new Date();
+            isValid = true;
+        } else {
+            // Verify TOTP token
+            isValid = TwoFactorAuthService.verifyToken(token, user.twoFactorAuth.secret);
+        }
+
+        if (!isValid) {
+            return sendResponse(res, 401, false, 'Invalid verification code');
+        }
+
+        // Update user's 2FA last used timestamp
+        if (!backupCode) {
+            user.twoFactorAuth.lastUsed = new Date();
+        }
+        await user.save();
+
+        // Get user sessions
+        const userSessions = await user.getSessions();
+        
+        // Activate the session
+        const session = await userSessions.activateSession(sessionId);
+        if (!session) {
+            return sendResponse(res, 400, false, 'Invalid session');
+        }
+
+        // Generate JWT token
+        const expiresIn = rememberMe ? '30d' : '7d';
+        const jwtToken = jwt.generateToken(user._id, expiresIn);
+
+        // Generate device token if remember device is requested
+        let deviceToken = null;
+        if (rememberDevice) {
+            const deviceId = req.headers['x-device-id'] || 'unknown';
+            const userAgent = req.headers['user-agent'] || 'unknown';
+            deviceToken = TwoFactorAuthService.generateDeviceToken(deviceId, userAgent);
+        }
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'user_login_2fa',
+            description: `User completed login with 2FA: ${user.email}`,
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: {
+                ipAddress: req.ip,
+                userAgent: req.get('User-Agent'),
+                rememberMe,
+                rememberDevice,
+                usedBackupCode: !!backupCode
+            }
+        });
+
+        logger.info(`User completed login with 2FA: ${user.email}`);
+
+        sendResponse(res, 200, true, 'Login completed successfully', {
+            token: jwtToken,
+            user: user.getPublicProfile(),
+            sessionInfo: {
+                rememberMe,
+                expiresIn,
+                deviceId: session.deviceId
+            },
+            deviceToken,
+            requiresNewBackupCodes: user.twoFactorAuth.backupCodes.filter(bc => !bc.used).length < 3
+        });
+
+    } catch (error) {
+        logger.error('Complete login with 2FA error:', error);
+        sendResponse(res, 500, false, 'Server error during 2FA verification');
     }
 };
 

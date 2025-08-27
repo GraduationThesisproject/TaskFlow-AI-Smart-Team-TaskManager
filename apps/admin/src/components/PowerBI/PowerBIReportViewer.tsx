@@ -48,14 +48,14 @@ const PowerBIReportViewer: React.FC<PowerBIReportViewerProps> = ({ config }) => 
         settings: config.settings,
         tokenType: window.powerbi.TokenType.Embed,
         onEmbedded: (event: any) => {
-          console.log('Report embedded successfully:', event);
+          // Report embedded successfully
         },
         onError: (event: any) => {
-          console.error('Error embedding report:', event);
+          // Error embedding report
         }
       });
     } catch (error) {
-      console.error('Failed to embed Power BI report:', error);
+      // Failed to embed Power BI report
     }
   };
 

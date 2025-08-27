@@ -49,14 +49,12 @@ export const useChatSocket = (props: UseChatSocketProps = {}) => {
   // Connect to socket when component mounts
   useEffect(() => {
     if (socket && !isConnected) {
-      console.log('ChatSocket: Connecting to socket...');
       socket.connect();
       setIsConnected(true);
     }
 
     return () => {
       if (socket) {
-        console.log('ChatSocket: Disconnecting socket...');
         socket.disconnect();
         setIsConnected(false);
       }
@@ -66,7 +64,6 @@ export const useChatSocket = (props: UseChatSocketProps = {}) => {
   // Join admin chat room
   const joinAdminRoom = useCallback(() => {
     if (socket && isConnected) {
-      console.log('ChatSocket: Joining admin room...');
       emit('admin:join', {});
     }
   }, [socket, isConnected, emit]);
@@ -74,7 +71,6 @@ export const useChatSocket = (props: UseChatSocketProps = {}) => {
   // Join specific chat room
   const joinChatRoom = useCallback((chatId: string) => {
     if (socket && isConnected) {
-      console.log('ChatSocket: Joining chat room:', chatId);
       emit('chat:join', { chatId });
       setActiveChats(prev => new Set(prev).add(chatId));
     }
@@ -83,7 +79,6 @@ export const useChatSocket = (props: UseChatSocketProps = {}) => {
   // Leave specific chat room
   const leaveChatRoom = useCallback((chatId: string) => {
     if (socket && isConnected) {
-      console.log('ChatSocket: Leaving chat room:', chatId);
       emit('chat:leave', { chatId });
       setActiveChats(prev => {
         const newSet = new Set(prev);
@@ -96,7 +91,6 @@ export const useChatSocket = (props: UseChatSocketProps = {}) => {
   // Send message via socket
   const sendMessage = useCallback((chatId: string, message: Omit<ChatMessage, '_id' | 'createdAt' | 'updatedAt'>) => {
     if (socket && isConnected) {
-      console.log('ChatSocket: Sending message to chat:', chatId);
       emit('chat:message', {
         chatId,
         message: {
@@ -117,7 +111,6 @@ export const useChatSocket = (props: UseChatSocketProps = {}) => {
   // Accept chat request
   const acceptChat = useCallback((chatId: string) => {
     if (socket && isConnected) {
-      console.log('ChatSocket: Accepting chat:', chatId);
       emit('admin:accept-chat', { chatId });
     }
   }, [socket, isConnected, emit]);
@@ -125,7 +118,6 @@ export const useChatSocket = (props: UseChatSocketProps = {}) => {
   // Update chat status
   const updateChatStatus = useCallback((chatId: string, status: string, reason?: string) => {
     if (socket && isConnected) {
-      console.log('ChatSocket: Updating chat status:', chatId, status);
       emit('admin:update-status', { chatId, status, reason });
     }
   }, [socket, isConnected, emit]);
@@ -133,7 +125,6 @@ export const useChatSocket = (props: UseChatSocketProps = {}) => {
   // Close chat
   const closeChat = useCallback((chatId: string, reason?: string) => {
     if (socket && isConnected) {
-      console.log('ChatSocket: Closing chat:', chatId);
       emit('admin:close-chat', { chatId, reason });
     }
   }, [socket, isConnected, emit]);
@@ -149,27 +140,21 @@ export const useChatSocket = (props: UseChatSocketProps = {}) => {
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    console.log('ChatSocket: Setting up event listeners...');
-
     // Admin-specific events
     on('admin:new-chat-request', (data: NewChatRequest) => {
-      console.log('ChatSocket: New chat request received:', data);
       onNewChatRequest?.(data);
     });
 
     on('admin:chat-accepted', (data: { chatId: string; adminId: string }) => {
-      console.log('ChatSocket: Chat accepted:', data);
       onChatAccepted?.(data.chatId, data.adminId);
     });
 
     // Chat events
     on('chat:message', (data: { chatId: string; message: ChatMessage }) => {
-      console.log('ChatSocket: New message received:', data);
       onNewMessage?.(data.message);
     });
 
     on('chat:typing', (data: TypingIndicator) => {
-      console.log('ChatSocket: Typing indicator:', data);
       setTypingUsers(prev => {
         const newMap = new Map(prev);
         if (data.isTyping) {
@@ -191,12 +176,10 @@ export const useChatSocket = (props: UseChatSocketProps = {}) => {
     });
 
     on('chat:status-updated', (data: ChatStatusUpdate) => {
-      console.log('ChatSocket: Status updated:', data);
       onStatusUpdate?.(data);
     });
 
     on('chat:closed', (data: { chatId: string; reason?: string }) => {
-      console.log('ChatSocket: Chat closed:', data);
       onChatClosed?.(data.chatId, data.reason);
       setActiveChats(prev => {
         const newSet = new Set(prev);
@@ -207,29 +190,24 @@ export const useChatSocket = (props: UseChatSocketProps = {}) => {
 
     // User presence events
     on('user:online', (data: { userId: string; isOnline: boolean }) => {
-      console.log('ChatSocket: User online status:', data);
       onUserOnline?.(data.userId, data.isOnline);
     });
 
     // Connection events
     on('connect', () => {
-      console.log('ChatSocket: Connected to server');
       setIsConnected(true);
       joinAdminRoom();
     });
 
     on('disconnect', () => {
-      console.log('ChatSocket: Disconnected from server');
       setIsConnected(false);
     });
 
     on('connect_error', (error: any) => {
-      console.error('ChatSocket: Connection error:', error);
       setIsConnected(false);
     });
 
     return () => {
-      console.log('ChatSocket: Cleaning up event listeners...');
       off('admin:new-chat-request');
       off('admin:chat-accepted');
       off('chat:message');
