@@ -25,7 +25,8 @@ import { MessageCircle, X } from 'lucide-react';
 import { SocketProvider } from './contexts/SocketContext';
 import { SocketDebugger } from './components/debug/SocketDebugger';
 import { SocketConnectionTest } from './components/debug/SocketConnectionTest';
-
+import Cancel from './layouts/workSpace/Cancel';
+import Success from './layouts/workSpace/Success';
 // Support Page Component
 const SupportPage = () => {
   const [isChatOpen, setIsChatOpen] = useState(true);
@@ -133,8 +134,11 @@ function AppContent() {
 
           <Route path="/support" element={<SupportPage />} />
 
-          <Route path="/no-access" element={<NoAccessPage />} />
+          <Route path="/cancel" element={<Cancel />} />
 
+          <Route path="/success" element={<Success />} />
+
+          <Route path="/no-access" element={<NoAccessPage />} />
           <Route path="*" element={
             <Navigate to="/" replace />
           } />

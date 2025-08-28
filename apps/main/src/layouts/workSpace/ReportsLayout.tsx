@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import CalendarIcon from "../../components/workspace/reports-page/CalendarIcon";
 import PeopleIcon from "../../components/workspace/reports-page/PeopleIcon";
@@ -16,56 +17,90 @@ import {
   AvatarFallback,
 } from "@taskflow/ui";
 
-function LineChartMock() {
+/* ---------------- Line Chart ---------------- */
+function LineChart({ data }) {
+  if (!data || data.length === 0) return null;
+
+  const maxVal = Math.max(...data.map(d => d.completed));
+  const spacing = 320 / (data.length + 1);
+  const points = data
+    .map((d, i) => `${(i + 1) * spacing},${160 - (d.completed / maxVal) * 140}`)
+    .join(" ");
+
   return (
     <svg viewBox="0 0 320 160" className="w-full h-40 text-[hsl(var(--accent))]">
-      <rect x="0" y="0" width="320" height="160" rx="8" className="fill-transparent" />
-      {[1,2,3,4].map((i) => (
+      <rect width="320" height="160" rx="8" className="fill-transparent" />
+      {[1,2,3,4].map(i => (
         <line key={i} x1={i*64} y1="16" x2={i*64} y2="144" className="stroke-white/10" strokeWidth="1" />
       ))}
-      {[1,2,3,4].map((i) => (
+      {[1,2,3,4].map(i => (
         <line key={i} x1="16" y1={i*32} x2="304" y2={i*32} className="stroke-white/10" strokeWidth="1" />
       ))}
-      <polyline
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        points="32,120 96,96 160,80 224,60 288,52"
-      />
-      {[{x:32,y:120},{x:96,y:96},{x:160,y:80},{x:224,y:60},{x:288,y:52}].map((p,i)=>(
-        <circle key={i} cx={p.x} cy={p.y} r="4" className="fill-current" />
+      <polyline fill="none" stroke="currentColor" strokeWidth="3" points={points} />
+      {data.map((d, i) => (
+        <circle
+          key={i}
+          cx={(i + 1) * spacing}
+          cy={160 - (d.completed / maxVal) * 140}
+          r="4"
+          className="fill-current"
+        />
       ))}
     </svg>
   );
 }
 
-function PieChartMock() {
-  // Simple donut via two arcs
+/* ---------------- Pie Chart ---------------- */
+function PieChart({ data }) {
+  if (!data || data.length === 0) return null;
+
+  const total = data.reduce((acc, d) => acc + d.value, 0);
+  let cumulative = 0;
+
+  const paths = data.map((d, i) => {
+    const startAngle = (cumulative / total) * 2 * Math.PI;
+    cumulative += d.value;
+    const endAngle = (cumulative / total) * 2 * Math.PI;
+
+    const x1 = 100 + 70 * Math.cos(startAngle - Math.PI/2);
+    const y1 = 100 + 70 * Math.sin(startAngle - Math.PI/2);
+    const x2 = 100 + 70 * Math.cos(endAngle - Math.PI/2);
+    const y2 = 100 + 70 * Math.sin(endAngle - Math.PI/2);
+
+    const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
+
+    return (
+      <path
+        key={i}
+        d={`M100 100 L${x1} ${y1} A70 70 0 ${largeArc} 1 ${x2} ${y2} Z`}
+        fill={d.color}
+      />
+    );
+  });
+
   return (
-    <div className="flex items-center justify-center">
-      <svg viewBox="0 0 200 200" className="h-40 w-40">
-        <circle cx="100" cy="100" r="70" className="fill-[hsl(var(--neutral-200))]" />
-        <path d="M100 30 A70 70 0 0 1 168 118 L100 100 Z" className="fill-[hsl(var(--accent))]" />
-        <path d="M168 118 A70 70 0 0 1 60 160 L100 100 Z" className="fill-[hsl(var(--primary))]" />
-        <path d="M60 160 A70 70 0 0 1 100 30 L100 100 Z" className="fill-foreground/40" />
-        <circle cx="100" cy="100" r="45" className="fill-[hsl(var(--neutral-100))]" />
-      </svg>
-    </div>
+    <svg viewBox="0 0 200 200" className="h-40 w-40">
+      <circle cx="100" cy="100" r="45" className="fill-[hsl(var(--neutral-100))]" />
+      {paths}
+    </svg>
   );
 }
 
-function BarChartMock() {
-  const bars = [46, 38, 42, 34, 40];
-  const labels = ["Alex", "Sarah", "Mike", "Emma", "John"];
+/* ---------------- Bar Chart ---------------- */
+function BarChart({ data }) {
+  if (!data || data.length === 0) return null;
+
+  const maxVal = Math.max(...data.map(d => d.tasksCompleted));
+
   return (
     <svg viewBox="0 0 640 220" className="w-full h-56">
-      <rect x="0" y="0" width="640" height="220" rx="8" className="fill-transparent" />
-      {[1,2,3,4].map((i) => (
+      <rect width="640" height="220" rx="8" className="fill-transparent" />
+      {[1,2,3,4].map(i => (
         <line key={i} x1="32" y1={i*40} x2="608" y2={i*40} className="stroke-white/10" strokeWidth="1" />
       ))}
-      {bars.map((v, i) => {
+      {data.map((d, i) => {
         const x = 64 + i * 110;
-        const h = v * 3; // scale
+        const h = (d.tasksCompleted / maxVal) * 180;
         const y = 200 - h;
         return (
           <g key={i}>
@@ -77,7 +112,7 @@ function BarChartMock() {
             </defs>
             <rect x={x} y={y} width="60" height={h} rx="8" fill={`url(#g${i})`} />
             <text x={x + 30} y="212" textAnchor="middle" className="fill-muted-foreground text-[10px]">
-              {labels[i]}
+              {d.name}
             </text>
           </g>
         );
@@ -86,7 +121,40 @@ function BarChartMock() {
   );
 }
 
+/* ---------------- Reports Layout ---------------- */
 function ReportsLayout() {
+  const [reportData, setReportData] = useState(null);
+  const [pieData, setPieData] = useState(null);
+
+  // Example: Fetch data from API or use mock
+  useEffect(() => {
+    // Mock data
+    const mockReportData = {
+      tasks: [
+        { date: "2025-08-01", completed: 5 },
+        { date: "2025-08-02", completed: 8 },
+        { date: "2025-08-03", completed: 1 },
+        { date: "2025-08-04", completed: 9 },
+        { date: "2025-08-05", completed: 7 },
+      ],
+      teamContributions: [
+        { name: "Alex", tasksCompleted: 46 },
+        { name: "Sarah", tasksCompleted:38 },
+        { name: "Mike", tasksCompleted: 42 },
+        { name: "Emma", tasksCompleted: 10 },
+        { name: "John", tasksCompleted: 25 },
+      ]
+    };
+    const mockPieData = [
+      { value: 10, color: "hsl(var(--accent))" },
+      { value: 20, color: "hsl(var(--primary))" },
+      { value: 15, color: "hsl(var(--foreground)/40)" }
+    ];
+
+    setReportData(mockReportData);
+    setPieData(mockPieData);
+  }, []);
+
   return (
     <div className="flex min-h-screen text-[hsl(var(--foreground))]">
       <Sidebar />
@@ -110,15 +178,14 @@ function ReportsLayout() {
           </header>
 
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
-            {/* Left content column */}
+            {/* Left column: Charts */}
             <div className="space-y-6">
-              {/* Row 1: two charts */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card className="bg-[hsl(var(--neutral-100))] border border-[hsl(var(--neutral-200))] rounded-xl">
                   <CardContent className="p-5">
                     <CardTitle className="mb-2">Task Completion Over Time</CardTitle>
                     <div className="rounded-md bg-[hsl(var(--neutral-100))] p-3">
-                      <LineChartMock />
+                      {reportData && <LineChart data={reportData.tasks} />}
                     </div>
                   </CardContent>
                 </Card>
@@ -127,27 +194,25 @@ function ReportsLayout() {
                   <CardContent className="p-5">
                     <CardTitle className="mb-2">Task Distribution by Status</CardTitle>
                     <div className="rounded-md bg-[hsl(var(--neutral-100))] p-3 flex items-center justify-center">
-                      <PieChartMock />
+                      {pieData && <PieChart data={pieData} />}
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Row 2: big bar chart */}
-              <Card className="overflow-hidden  border-0 rounded-xl">
+              <Card className="overflow-hidden border-0 rounded-xl">
                 <Gradient variant="primary" direction="to-r" className="p-0 rounded-xl bg-neutral-100">
                   <div className="p-5 bg-neutral-100">
                     <Typography variant="h3" className="text-white mb-3">
                       Team Member Contributions
                     </Typography>
                     <div className="rounded-sm bg-black/30 backdrop-blur-sm p-3 border border-white/10">
-                      <BarChartMock />
+                      {reportData && <BarChart data={reportData.teamContributions} />}
                     </div>
                   </div>
                 </Gradient>
               </Card>
 
-              {/* Actions */}
               <div className="flex items-center justify-end gap-3 py-2">
                 <Button variant="ghost" className="rounded-xl px-4 bg-neutral-200">Cancel</Button>
                 <Button variant="secondary" className="rounded-xl px-4">Save</Button>
@@ -160,13 +225,13 @@ function ReportsLayout() {
               </div>
             </div>
 
-            {/* Right column: analytics summary */}
-            <aside className=" border-l border-[hsl(var(--neutral-200))] border-h-full">
+            {/* Right column: Analytics summary */}
+            <aside className="border-l border-[hsl(var(--neutral-200))] border-h-full">
               <Card className="bg-neutral-0 border-0">
                 <CardContent className="p-5 space-y-4">
                   <Typography variant="h3">Analytics Summary</Typography>
 
-                  <div className=" flex flex-col justify-start rounded-xl bg-neutral-100 border border-[hsl(var(--neutral-200))] p-4">                   
+                  <div className="flex flex-col justify-start rounded-xl bg-neutral-100 border border-[hsl(var(--neutral-200))] p-4">                   
                       <div className="flex items-center">
                         <CheckSquareIcon size={50} className="text-[hsl(var(--accent))] drop-shadow-[0_0_8px_hsl(var(--accent))]" />
                         <Typography variant="small" className="text-muted-foreground">Tasks Completed</Typography>
