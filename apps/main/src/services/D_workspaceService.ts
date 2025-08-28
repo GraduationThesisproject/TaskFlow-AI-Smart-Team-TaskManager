@@ -5,9 +5,14 @@ import { env } from '../config/env';
 
 export class WorkspaceService {
   // Fetch all workspaces for the current user
-  static async getWorkspaces(): Promise<Workspace[]> {
+  static async getWorkspaces(options?: { status?: 'active' | 'archived' | 'all'; includeArchived?: boolean }): Promise<Workspace[]> {
     try {
-      const response = await axiosInstance.get('/workspaces');
+      const response = await axiosInstance.get('/workspaces', {
+        params: {
+          ...(options?.status ? { status: options.status } : {}),
+          ...(options?.includeArchived ? { includeArchived: 'true' } : {}),
+        },
+      });
       return response.data.data?.workspaces || [];
     } catch (error) {
       console.error('Error fetching workspaces:', error);
@@ -57,13 +62,27 @@ export class WorkspaceService {
   }
 
   // Delete workspace
-  static async deleteWorkspace(id: string): Promise<{ message: string }> {
+  static async deleteWorkspace(id: string): Promise<{ message: string; workspace?: Workspace }> {
     try {
       const response = await axiosInstance.delete(`/workspaces/${id}`);
-      return { message: response.data.message };
+      return { 
+        message: response.data.message,
+        workspace: response.data?.data?.workspace
+      };
     } catch (error: any) {
       console.error('Error deleting workspace:', error);
       throw new Error(error.response?.data?.message || error.message || 'Failed to delete workspace');
+    }
+  }
+
+  // Permanently delete an archived workspace
+  static async permanentDeleteWorkspace(id: string): Promise<{ message: string }> {
+    try {
+      const response = await axiosInstance.delete(`/workspaces/${id}/permanent`);
+      return { message: response.data.message };
+    } catch (error: any) {
+      console.error('Error permanently deleting workspace:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to permanently delete workspace');
     }
   }
 
