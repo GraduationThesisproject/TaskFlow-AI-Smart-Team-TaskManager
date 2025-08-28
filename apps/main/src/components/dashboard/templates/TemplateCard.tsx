@@ -17,9 +17,16 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onClick, onLike }
             <Typography variant="caption" className="text-muted-foreground mb-2">
               {(template.type ?? 'template')}{template.category ? ` • ${template.category}` : ''}
             </Typography>
-            <Typography variant="body-small" className="text-muted-foreground mb-3">
-              {template.description}
-            </Typography>
+            {/* Reserve fixed space for description to keep cards symmetric (truncate overflow to 3 lines) */}
+            <div className="mb-3 h-[60px] overflow-hidden">
+              <Typography
+                variant="body-small"
+                className="text-muted-foreground"
+                style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+              >
+                {template.description || ' '}
+              </Typography>
+            </div>
           </div>
         </div>
       </CardHeader>
