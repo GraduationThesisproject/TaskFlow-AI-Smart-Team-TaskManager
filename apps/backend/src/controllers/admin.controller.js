@@ -1,7 +1,7 @@
 const Admin = require('../models/Admin');
 const User = require('../models/User');
 const UserRoles = require('../models/UserRoles');
-const { sendResponse } = require('../utils/response');
+const { sendResponse } = require('../utils/responseHandler');
 const logger = require('../config/logger');
 const { generateToken } = require('../utils/jwt');
 const UserSessions = require('../models/UserSessions');
@@ -12,101 +12,72 @@ const login = async (req, res) => {
     const { email, password, rememberMe = false } = req.body;
     const { deviceId, deviceInfo } = req.body.device || {};
 
-    // First, try to find admin-only user (no regular User model)
-    let admin = await Admin.findOne({ userEmail: email, isActive: true }).select('+userPassword');
-    let user = null;
-    let isPasswordValid = false;
+    console.log('=== ADMIN LOGIN ATTEMPT ===');
+    console.log('Email:', email);
+    console.log('Remember me:', rememberMe);
 
-    if (admin && !admin.userId) {
-      // This is an admin-only user
-      isPasswordValid = await admin.comparePassword(password);
-      if (!isPasswordValid) {
-        return sendResponse(res, 401, false, 'Invalid credentials');
-      }
-    } else {
-      // Try to find regular user with admin privileges
-      user = await User.findOne({ email }).select('+password');
-      if (!user) {
-        return sendResponse(res, 401, false, 'Invalid credentials');
-      }
-
-      // Check if user is admin
-      admin = await Admin.findOne({ userId: user._id, isActive: true });
-      if (!admin) {
-        return sendResponse(res, 403, false, 'Access denied. Admin privileges required.');
-      }
-
-      // Verify password
-      isPasswordValid = await user.comparePassword(password);
-      if (!isPasswordValid) {
-        return sendResponse(res, 401, false, 'Invalid credentials');
-      }
-    }
-
-    // Handle session creation based on user type
-    let session = null;
+    // Find admin user
+    const admin = await Admin.findOne({ userEmail: email, isActive: true }).select('+password');
     
-    if (user) {
-      // Regular user with admin privileges
-      const userSessions = await user.getSessions();
-      
-      // Create new session
-      await userSessions.createSession({
-        deviceId: deviceId || 'web-' + Date.now(),
-        deviceInfo: deviceInfo || { type: 'web' },
-        ipAddress: req.ip,
-        rememberMe
-      });
-
-      // Get the newly created session
-      session = userSessions.sessions[userSessions.sessions.length - 1];
-
-      // Log successful attempt
-      await userSessions.logLoginAttempt(true, req.ip, deviceInfo || { type: 'web' });
-
-      // Check if 2FA is enabled
-      if (user.hasTwoFactorAuth) {
-        // Return response indicating 2FA is required
-        const responseData = {
-          requires2FA: true,
-          userId: user._id,
-          message: 'Two-factor authentication is required. Please enter your 6-digit code.',
-          sessionId: session.sessionId
-        };
-        
-        console.log('=== BACKEND 2FA RESPONSE ===');
-        console.log('Response data:', responseData);
-        console.log('User ID type:', typeof user._id);
-        console.log('Session ID type:', typeof session.sessionId);
-        
-        return sendResponse(res, 200, true, '2FA required', responseData);
-      }
-    } else {
-      // Admin-only user - create a simple session ID
-      session = { sessionId: 'admin-' + Date.now() };
+    if (!admin) {
+      console.log('Admin not found or inactive');
+      return sendResponse(res, 401, false, 'Invalid credentials');
     }
+
+    console.log('Admin found:', admin.userName, 'Role:', admin.role);
+
+    // Verify password
+    const isPasswordValid = await admin.comparePassword(password);
+    if (!isPasswordValid) {
+      console.log('Invalid password');
+      return sendResponse(res, 401, false, 'Invalid credentials');
+    }
+
+    console.log('Password verified successfully');
+
+    // Check if 2FA is enabled
+    if (admin.hasTwoFactorAuth) {
+      console.log('2FA is enabled for this admin');
+      
+      // For now, return a simple response indicating 2FA is required
+      const responseData = {
+        requires2FA: true,
+        userId: admin._id,
+        message: 'Two-factor authentication is required. Please enter your 6-digit code.',
+        sessionId: 'admin-' + Date.now()
+      };
+      
+      console.log('=== BACKEND 2FA RESPONSE ===');
+      console.log('Response data:', responseData);
+      
+      return sendResponse(res, 200, true, '2FA required', responseData);
+    }
+
+    console.log('2FA not enabled, proceeding with login');
 
     // Generate JWT token
-    const token = generateToken(user ? user._id : admin._id);
+    const token = generateToken(admin._id);
 
     // Return admin info and token
     const adminResponse = {
       admin: {
         id: admin._id,
-        userId: admin.userId,
-        name: user ? user.name : admin.userName,
-        email: user ? user.email : admin.userEmail,
+        userId: null, // Admin-only users don't have userId
+        name: admin.userName,
+        email: admin.userEmail,
         role: admin.role,
         permissions: admin.permissions,
-        avatar: user ? user.avatar : null,
+        avatar: admin.avatar || null,
         isActive: admin.isActive,
-        lastActivity: admin.lastActivity
+        lastActivity: admin.lastActivityAt
       },
       token
     };
 
+    console.log('Login successful, returning response');
     sendResponse(res, 200, true, 'Login successful', adminResponse);
   } catch (error) {
+    console.error('Admin login error:', error);
     logger.error('Admin login error:', error);
     sendResponse(res, 500, false, 'Server error during login');
   }
@@ -269,29 +240,43 @@ const logout = async (req, res) => {
 
 const getCurrentAdmin = async (req, res) => {
   try {
-    const admin = await Admin.findOne({ userId: req.user.id, isActive: true })
-      .populate('userId', 'name email avatar');
+    console.log('=== GET CURRENT ADMIN DEBUG ===');
+    console.log('req.user.id:', req.user.id);
+    console.log('req.user type:', typeof req.user.id);
+    
+    // Find admin by their own ID (not by userId reference)
+    const admin = await Admin.findById(req.user.id).select('-password -twoFactorSecret -backupCodes -recoveryToken');
 
     if (!admin) {
+      console.log('❌ Admin not found with ID:', req.user.id);
       return sendResponse(res, 404, false, 'Admin not found');
     }
+
+    if (!admin.isActive) {
+      console.log('❌ Admin is inactive:', admin.userName);
+      return sendResponse(res, 403, false, 'Admin account is inactive');
+    }
+
+    console.log('✅ Admin found:', admin.userName, 'Role:', admin.role);
 
     const adminResponse = {
       admin: {
         id: admin._id,
-        userId: admin.userId._id,
-        name: admin.userId.name,
-        email: admin.userId.email,
+        userId: null, // Admin-only users don't have userId reference
+        name: admin.userName,
+        email: admin.userEmail,
         role: admin.role,
         permissions: admin.permissions,
-        avatar: admin.userId.avatar,
+        avatar: admin.avatar || null,
         isActive: admin.isActive,
-        lastActivity: admin.lastActivity
+        lastActivity: admin.lastActivityAt
       }
     };
 
+    console.log('✅ Admin response prepared:', adminResponse);
     sendResponse(res, 200, true, 'Admin info retrieved successfully', adminResponse);
   } catch (error) {
+    console.error('❌ Get current admin error:', error);
     logger.error('Get current admin error:', error);
     sendResponse(res, 500, false, 'Server error retrieving admin info');
   }
@@ -1222,6 +1207,223 @@ const getBrandingAssets = async (req, res) => {
   }
 };
 
+// 2FA Management Functions
+const get2FAStatus = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.user.id).select('+twoFactorSecret +backupCodes +recoveryToken');
+    
+    if (!admin) {
+      return sendResponse(res, 404, false, 'Admin not found');
+    }
+
+    const status = {
+      isEnabled: admin.hasTwoFactorAuth,
+      enabledAt: admin.twoFactorAuth?.enabledAt,
+      lastUsed: admin.twoFactorAuth?.lastUsed,
+      backupCodes: {
+        total: (admin.twoFactorAuth?.backupCodes?.length || 0),
+        remaining: (admin.twoFactorAuth?.backupCodes?.filter(bc => !bc.used)?.length || 0),
+        used: (admin.twoFactorAuth?.backupCodes?.filter(bc => bc.used)?.length || 0)
+      },
+      hasRecoveryToken: !!admin.twoFactorAuth?.recoveryToken
+    };
+
+    sendResponse(res, 200, true, '2FA status retrieved successfully', status);
+  } catch (error) {
+    logger.error('Get 2FA status error:', error);
+    sendResponse(res, 500, false, 'Server error retrieving 2FA status');
+  }
+};
+
+const enable2FA = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.user.id).select('+twoFactorSecret +backupCodes');
+    
+    if (!admin) {
+      return sendResponse(res, 404, false, 'Admin not found');
+    }
+
+    if (admin.hasTwoFactorAuth) {
+      return sendResponse(res, 400, false, '2FA is already enabled');
+    }
+
+    const TwoFactorAuthService = require('../services/twoFactorAuth.service');
+    const { secret, otpauthUrl, qrCode } = await TwoFactorAuthService.generateSecret(admin.userEmail);
+    const backupCodes = TwoFactorAuthService.generateBackupCodes(10);
+
+    admin.twoFactorAuth = {
+      secret,
+      backupCodes: backupCodes.map(code => ({
+        code,
+        used: false,
+        usedAt: null
+      })),
+      enabledAt: null,
+      lastUsed: null
+    };
+
+    await admin.save();
+
+    sendResponse(res, 200, true, '2FA setup initiated', {
+      secret,
+      otpauthUrl,
+      qrCode,
+      backupCodes
+    });
+  } catch (error) {
+    logger.error('Enable 2FA error:', error);
+    sendResponse(res, 500, false, 'Server error enabling 2FA');
+  }
+};
+
+const verify2FASetup = async (req, res) => {
+  try {
+    const { token } = req.body;
+    const admin = await Admin.findById(req.user.id).select('+twoFactorSecret');
+    
+    if (!admin) {
+      return sendResponse(res, 404, false, 'Admin not found');
+    }
+
+    if (!admin.twoFactorAuth?.secret) {
+      return sendResponse(res, 400, false, '2FA setup not initiated');
+    }
+
+    if (admin.hasTwoFactorAuth) {
+      return sendResponse(res, 400, false, '2FA is already enabled');
+    }
+
+    const TwoFactorAuthService = require('../services/twoFactorAuth.service');
+    const isValid = TwoFactorAuthService.verifyToken(token, admin.twoFactorAuth.secret);
+    
+    if (!isValid) {
+      return sendResponse(res, 400, false, 'Invalid verification code');
+    }
+
+    admin.hasTwoFactorAuth = true;
+    admin.twoFactorAuth.enabledAt = new Date();
+    admin.twoFactorAuth.lastUsed = new Date();
+    await admin.save();
+
+    sendResponse(res, 200, true, '2FA enabled successfully');
+  } catch (error) {
+    logger.error('Verify 2FA setup error:', error);
+    sendResponse(res, 500, false, 'Server error verifying 2FA setup');
+  }
+};
+
+const disable2FA = async (req, res) => {
+  try {
+    const { token } = req.body;
+    const admin = await Admin.findById(req.user.id).select('+twoFactorSecret +backupCodes +recoveryToken');
+    
+    if (!admin) {
+      return sendResponse(res, 404, false, 'Admin not found');
+    }
+
+    if (!admin.hasTwoFactorAuth) {
+      return sendResponse(res, 400, false, '2FA is not enabled');
+    }
+
+    // Verify the token before disabling
+    const TwoFactorAuthService = require('../services/twoFactorAuth.service');
+    let isValid = false;
+
+    // Check if it's a backup code
+    const backupCode = admin.twoFactorAuth.backupCodes.find(
+      bc => bc.code === token && !bc.used
+    );
+
+    if (backupCode) {
+      backupCode.used = true;
+      backupCode.usedAt = new Date();
+      isValid = true;
+    } else {
+      isValid = TwoFactorAuthService.verifyToken(token, admin.twoFactorAuth.secret);
+    }
+
+    if (!isValid) {
+      return sendResponse(res, 400, false, 'Invalid verification code');
+    }
+
+    admin.hasTwoFactorAuth = false;
+    admin.twoFactorAuth = {
+      secret: null,
+      backupCodes: [],
+      recoveryToken: null,
+      recoveryTokenExpires: null,
+      enabledAt: null,
+      lastUsed: null
+    };
+    await admin.save();
+
+    sendResponse(res, 200, true, '2FA disabled successfully');
+  } catch (error) {
+    logger.error('Disable 2FA error:', error);
+    sendResponse(res, 500, false, 'Server error disabling 2FA');
+  }
+};
+
+const generateBackupCodes = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.user.id).select('+backupCodes');
+    
+    if (!admin) {
+      return sendResponse(res, 404, false, 'Admin not found');
+    }
+
+    if (!admin.hasTwoFactorAuth) {
+      return sendResponse(res, 400, false, '2FA is not enabled');
+    }
+
+    const TwoFactorAuthService = require('../services/twoFactorAuth.service');
+    const newBackupCodes = TwoFactorAuthService.generateBackupCodes(10);
+
+    admin.twoFactorAuth.backupCodes = newBackupCodes.map(code => ({
+      code,
+      used: false,
+      usedAt: null
+    }));
+    await admin.save();
+
+    sendResponse(res, 200, true, 'New backup codes generated successfully', {
+      backupCodes: newBackupCodes
+    });
+  } catch (error) {
+    logger.error('Generate backup codes error:', error);
+    sendResponse(res, 500, false, 'Server error generating backup codes');
+  }
+};
+
+const generateRecoveryToken = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.user.id).select('+recoveryToken +recoveryTokenExpires');
+    
+    if (!admin) {
+      return sendResponse(res, 404, false, 'Admin not found');
+    }
+
+    if (!admin.hasTwoFactorAuth) {
+      return sendResponse(res, 400, false, '2FA is not enabled');
+    }
+
+    const TwoFactorAuthService = require('../services/twoFactorAuth.service');
+    const { token, expiresAt } = TwoFactorAuthService.generateRecoveryToken();
+
+    admin.twoFactorAuth.recoveryToken = token;
+    admin.twoFactorAuth.recoveryTokenExpires = expiresAt;
+    await admin.save();
+
+    sendResponse(res, 200, true, 'Recovery token generated successfully', {
+      token,
+      expiresAt
+    });
+  } catch (error) {
+    logger.error('Generate recovery token error:', error);
+    sendResponse(res, 500, false, 'Server error generating recovery token');
+  }
+};
+
 // Test JWT generation
 const testJWT = async (req, res) => {
   try {
@@ -1266,6 +1468,14 @@ module.exports = {
   updateProfile,
   uploadAvatar,
   setupFirstAdmin,
+  
+  // 2FA Management
+  get2FAStatus,
+  enable2FA,
+  verify2FASetup,
+  disable2FA,
+  generateBackupCodes,
+  generateRecoveryToken,
   
   // User Management
   getUsers,

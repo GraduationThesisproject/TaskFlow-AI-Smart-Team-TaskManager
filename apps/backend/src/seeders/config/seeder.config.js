@@ -28,21 +28,21 @@ const seederConfig = {
             name: 'Regular User',
             email: 'user.test@gmail.com',
             password: '12345678A!',
-            systemRole: 'user',
+            systemRole: 'moderator',
             emailVerified: true
           },
           {
             name: 'Manager User',
             email: 'manager.test@gmail.com',
             password: '12345678A!',
-            systemRole: 'user',
+            systemRole: 'moderator',
             emailVerified: true
           },
           {
             name: 'Developer User',
             email: 'developer.test@gmail.com',
             password: '12345678A!',
-            systemRole: 'user',
+            systemRole: 'moderator',
             emailVerified: true
           }
         ]
@@ -91,7 +91,7 @@ const seederConfig = {
             name: 'Test User',
             email: 'user@test.com',
             password: '12345678A!',
-            systemRole: 'user',
+            systemRole: 'moderator',
             emailVerified: true
           }
         ]
