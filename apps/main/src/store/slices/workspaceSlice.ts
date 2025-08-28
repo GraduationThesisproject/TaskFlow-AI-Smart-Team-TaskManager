@@ -133,11 +133,13 @@ export const createWorkspace = createAsyncThunk(
     name: string;
     description?: string;
     visibility: 'private' | 'public';
+    isPublic?: boolean;
   }) => {
     const response = await WorkspaceService.createWorkspace({
       name: workspaceData.name,
       description: workspaceData.description,
       plan: 'free',
+      isPublic: workspaceData.isPublic ?? (workspaceData.visibility === 'public'),
     });
     const ws: any = (response as any)?.workspace ?? response;
     return {
@@ -154,6 +156,19 @@ export const deleteWorkspace = createAsyncThunk<{ id: string; message: string },
     const response = await WorkspaceService.deleteWorkspace(id);
     const message = (response as any)?.message || (response as any)?.data?.message || 'Workspace deleted';
     return { id, message };
+  }
+);
+
+// Restore a soft-deleted workspace
+export const restoreWorkspace = createAsyncThunk<Workspace, { id: string }>(
+  'workspace/restoreWorkspace',
+  async ({ id }, { rejectWithValue }) => {
+    try {
+      const ws = await WorkspaceService.restoreWorkspace(id);
+      return ws as Workspace;
+    } catch (error: any) {
+      return rejectWithValue(error?.message || 'Failed to restore workspace');
+    }
   }
 );
 
@@ -336,9 +351,27 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to delete workspace';
       })
-      
-      }})
-
+      // Restore workspace
+      .addCase(restoreWorkspace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(restoreWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        const restored = action.payload as Workspace;
+        if (restored) {
+          const exists = state.workspaces.findIndex((w) => w._id === restored._id) >= 0;
+          if (!exists) state.workspaces = [restored, ...(state.workspaces || [])];
+          state.currentWorkspace = state.currentWorkspace ?? restored;
+        }
+        state.error = null;
+      })
+      .addCase(restoreWorkspace.rejected, (state, action: any) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message || 'Failed to restore workspace';
+      })
+       
+       }})
     
     // You can add other thunks (spaces, members, invite links) here similarly...
   

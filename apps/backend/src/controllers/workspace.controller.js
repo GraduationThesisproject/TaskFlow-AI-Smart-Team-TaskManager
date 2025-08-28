@@ -3,6 +3,7 @@ const Workspace = require('../models/Workspace');
 const User = require('../models/User');
 const Invitation = require('../models/Invitation');
 const ActivityLog = require('../models/ActivityLog');
+const NotificationService = require('../services/notification.service');
 const WorkspaceService = require('../services/workspace.service');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
@@ -14,30 +15,40 @@ exports.getAllWorkspaces = async (req, res) => {
     try {
         const userId = req.user?.id;
 
-        const workspaces = await Workspace.find({
-            isActive: true,
-            $or: [
-                { owner: userId },
-                { 'members.user': userId }
-            ]
-        })
-        .populate('owner', 'name email avatar')
-        .populate('members.user', 'name email avatar')
-        .sort({ updatedAt: -1 })
-        .lean();
+        // If user is authenticated, fetch workspaces where they are owner or member.
+        // If not authenticated (dev/test), fall back to returning all active workspaces.
+        const filter = userId
+            ? {
+                status: 'active',
+                $or: [
+                    { owner: userId },
+                    { 'members.user': userId }
+                ]
+            }
+            : { status: 'active' };
+
+        const workspaces = await Workspace.find(filter)
+            .populate('owner', 'name email avatar')
+            .populate('members.user', 'name email avatar')
+            .sort({ updatedAt: -1 })
+            .lean();
 
         // Attach userRole and permissions
         const enrichedWorkspaces = workspaces.map(ws => {
-            const member = ws.members.find(
-                m => m.user?._id?.toString() === userId.toString()
-            );
+            const uid = userId ? String(userId) : null;
+            const member = uid
+                ? ws.members.find(m => (
+                    m?.user?._id?.toString?.() === uid ||
+                    m?.user?.toString?.() === uid
+                  ))
+                : null;
+
+            const isOwner = uid && ws?.owner?._id?.toString?.() === uid;
 
             return {
                 ...ws,
                 _id: ws._id.toString(),
-                userRole: member
-                    ? member.role
-                    : (ws.owner._id.toString() === userId ? 'owner' : null),
+                userRole: member ? member.role : (isOwner ? 'owner' : null),
                 userPermissions: member ? member.permissions : null
             };
         });
@@ -52,11 +63,6 @@ exports.getAllWorkspaces = async (req, res) => {
     }
 };
 
-
-
-
-
-
 // Get single workspace
 exports.getWorkspace = async (req, res) => {
     try {
@@ -68,6 +74,10 @@ exports.getWorkspace = async (req, res) => {
             .populate('owner', 'name email avatar')
             .populate('members.user', 'name email avatar')
             .populate('spaces');
+
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
 
         // SECURITY FIX: Use verified roles from auth middleware
         let userRole = null;
@@ -99,7 +109,7 @@ exports.getWorkspace = async (req, res) => {
 // Create new workspace
 exports.createWorkspace = async (req, res) => {
     try {
-        const { name, description, plan = 'free'} = req.body;
+        const { name, description, plan = 'free', isPublic = false } = req.body;
         const userId = req.user.id;
 
         const workspace = await Workspace.create({
@@ -107,6 +117,7 @@ exports.createWorkspace = async (req, res) => {
             description,
             owner: userId,
             plan,
+            isPublic,
             members: [], // Owner is not included in members array
             usage: {
                 membersCount: 1 // Owner counts as 1
@@ -157,6 +168,25 @@ exports.createWorkspace = async (req, res) => {
 
         logger.info(`Workspace created: ${name} by ${req.user.email}`);
 
+        // Create a system notification for the creator (non-blocking)
+        try {
+            await NotificationService.createNotification({
+                title: 'Workspace created',
+                message: `Your workspace "${name}" was created successfully`,
+                type: 'workspace_created',
+                recipient: userId,
+                sender: userId,
+                relatedEntity: {
+                    entityType: 'workspace',
+                    entityId: workspace._id
+                },
+                priority: 'medium',
+                deliveryMethods: { inApp: true }
+            });
+        } catch (notifyErr) {
+            logger.warn('Workspace create: notification not sent/saved', { error: notifyErr?.message });
+        }
+
         sendResponse(res, 201, true, 'Workspace created successfully', {
             workspace: workspace.toObject(),
             userRole: 'owner'
@@ -166,7 +196,6 @@ exports.createWorkspace = async (req, res) => {
         sendResponse(res, 500, false, 'Server error creating workspace');
     }
 };
-
 
 // Update workspace
 exports.updateWorkspace = async (req, res) => {
@@ -328,6 +357,24 @@ exports.inviteMember = async (req, res) => {
             }
         });
 
+        // Notify invited user in-app if they already have an account
+        try {
+            if (existingUser) {
+                await NotificationService.createNotification({
+                    title: 'Workspace invitation',
+                    message: `${req.user.name} invited you to join workspace "${workspace.name}" as ${role}`,
+                    type: 'invitation_received',
+                    recipient: existingUser._id,
+                    sender: userId,
+                    relatedEntity: { entityType: 'workspace', entityId: workspace._id },
+                    priority: 'medium',
+                    deliveryMethods: { inApp: true }
+                });
+            }
+        } catch (notifyErr) {
+            logger.warn('Invite member: notification not sent', { error: notifyErr?.message });
+        }
+
         // Log activity
         await ActivityLog.logActivity({
             userId,
@@ -387,6 +434,24 @@ exports.acceptInvitation = async (req, res) => {
 
         // Accept invitation
         await invitation.accept(userId);
+
+        // Notify inviter: Invitation accepted
+        try {
+            if (invitation.invitedBy) {
+                await NotificationService.createNotification({
+                    title: 'Invitation accepted',
+                    message: `${req.user.name} accepted your invitation to join "${workspace.name}"`,
+                    type: 'invitation_accepted',
+                    recipient: invitation.invitedBy,
+                    sender: userId,
+                    relatedEntity: { entityType: 'workspace', entityId: workspace._id },
+                    priority: 'medium',
+                    deliveryMethods: { inApp: true }
+                });
+            }
+        } catch (notifyErr) {
+            logger.warn('Accept invitation: notification not sent', { error: notifyErr?.message });
+        }
 
         // Log activity
         await ActivityLog.logActivity({
@@ -449,7 +514,7 @@ exports.generateInviteLink = async (req, res) => {
             return isUser && isAdmin;
         });
 
-        if (!member) {
+        if (!isAdminMember) {
             console.log('Permission denied - Member not found or insufficient permissions');
             // return sendResponse(res, 403, false, 'You need to be an admin or owner to generate invite links');
         }
@@ -749,7 +814,7 @@ exports.transferOwnership = async (req, res) => {
     }
 };
 
-
+// Delete workspace
 exports.deleteWorkspace = async (req, res) => {
     try {
         const { id: workspaceId } = req.params;
@@ -762,10 +827,18 @@ exports.deleteWorkspace = async (req, res) => {
 
         const workspace = await Workspace.findById(workspaceId);
  
-        // Owner can delete directly
+        // Owner can archive directly
         if (workspace.owner.toString() === userId.toString()) {
-            await WorkspaceService.deleteWorkspace(workspaceId, userId);
-            return sendResponse(res, 200, true, 'Workspace deleted successfully', { id: workspaceId });
+            const archived = await WorkspaceService.softDeleteWorkspace(workspaceId, userId);
+            return sendResponse(res, 200, true, 'Workspace archived successfully', {
+                workspace: {
+                    id: archived._id,
+                    status: archived.status,
+                    archivedAt: archived.archivedAt,
+                    archiveExpiresAt: archived.archiveExpiresAt,
+                    archiveCountdownSeconds: archived.archiveCountdownSeconds
+                }
+            });
         }
 
         // Check permissions
@@ -776,8 +849,17 @@ exports.deleteWorkspace = async (req, res) => {
         );
 
         if (wsRole?.permissions?.canDeleteWorkspace) {
-            await WorkspaceService.deleteWorkspace(workspaceId, workspace.owner);
-            return sendResponse(res, 200, true, 'Workspace deleted successfully', { id: workspaceId });
+            // Service enforces owner-only; pass owner id to authorize archival
+            const archived = await WorkspaceService.softDeleteWorkspace(workspaceId, workspace.owner);
+            return sendResponse(res, 200, true, 'Workspace archived successfully', {
+                workspace: {
+                    id: archived._id,
+                    status: archived.status,
+                    archivedAt: archived.archivedAt,
+                    archiveExpiresAt: archived.archiveExpiresAt,
+                    archiveCountdownSeconds: archived.archiveCountdownSeconds
+                }
+            });
         }
 
         // return sendResponse(res, 403, false, 'You do not have permission to delete this workspace');
