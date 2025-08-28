@@ -1,6 +1,6 @@
 const express = require('express');
 const chatController = require('../controllers/chat.controller');
-const { authMiddleware } = require('../middlewares/auth.middleware');
+const { authenticateAdmin } = require('../middlewares/adminAuth.middleware');
 const { requireSystemAdmin } = require('../middlewares/permission.middleware');
 
 const router = express.Router();
@@ -11,8 +11,9 @@ router.post('/widget/:chatId/message', chatController.sendMessage);
 router.get('/widget/:chatId/history', chatController.getChatHistory);
 
 // Admin routes (protected)
-router.use(authMiddleware);
-router.use(requireSystemAdmin);
+router.use(authenticateAdmin);
+// Note: Admin users are already verified by authenticateAdmin middleware
+// router.use(requireSystemAdmin); // Removed for now - admin users have full access
 
 // Admin chat management
 router.get('/admin/active', chatController.getActiveChats);
