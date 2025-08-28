@@ -1,5 +1,6 @@
 import { Admin, AdminLoginCredentials, AdminResponse } from '../types/admin.types';
 import { env } from '../config/env';
+import { getAdminToken, storeAdminToken, removeAdminToken } from '../utils/tokenUtils';
 
 const API_BASE = `${env.API_BASE_URL}/admin`;
 
@@ -151,7 +152,7 @@ export interface UsersResponse {
 
 class AdminService {
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('adminToken');
+    const token = getAdminToken();
     
     if (!token) {
       throw new Error('No admin token found. Please log in again.');
@@ -182,14 +183,7 @@ class AdminService {
   }
 
   async logout(): Promise<void> {
-    const response = await fetch(`${API_BASE}/auth/logout`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error('Logout failed');
-    }
+    removeAdminToken();
   }
 
   async getCurrentAdmin(): Promise<AdminResponse> {
@@ -404,10 +398,11 @@ class AdminService {
 
   // Analytics
   async getAnalytics(timeRange: string = '6-months'): Promise<AnalyticsData> {
-    
     const headers = this.getAuthHeaders();
     
-    const response = await fetch(`${API_BASE}/analytics?timeRange=${timeRange}`, {
+    const url = `${API_BASE}/analytics?timeRange=${timeRange}`;
+    
+    const response = await fetch(url, {
       headers,
     });
 
@@ -521,7 +516,7 @@ class AdminService {
     const response = await fetch(`${API_BASE}/auth/avatar`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+        'Authorization': `Bearer ${getAdminToken()}`,
         // Don't set Content-Type for FormData
       },
       body: formData,

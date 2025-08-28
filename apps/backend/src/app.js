@@ -22,6 +22,7 @@ const { fileServeMiddleware } = require('./middlewares/serve.middleware');
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
+const adminManagementRoutes = require('./routes/adminManagement.routes');
 const twoFactorAuthRoutes = require('./routes/twoFactorAuth.routes');
 const workspaceRoutes = require('./routes/workspace.routes');
 const spaceRoutes = require('./routes/space.routes');
@@ -211,6 +212,7 @@ app.use(passport.initialize());
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin-management', adminManagementRoutes);
 app.use('/api/2fa', twoFactorAuthRoutes);
 app.use('/api/files', authMiddleware, fileRoutes);
 app.use('/api/workspaces', authMiddleware, workspaceRoutes);
