@@ -1,4 +1,4 @@
-const { sendResponse } = require('../utils/response');
+const { sendResponse } = require('../utils/responseHandler');
 const logger = require('../config/logger');
 
 // Access Control Matrix based on the provided image
@@ -68,23 +68,24 @@ const checkAccessLevel = (userRole, feature, requiredLevel = 'view') => {
 const requireFeatureAccess = (feature, requiredLevel = 'view') => {
   return (req, res, next) => {
     try {
-      if (!req.user) {
+      // Check if admin info is available (from adminAuth middleware)
+      if (!req.admin) {
         return sendResponse(res, 401, false, 'Authentication required');
       }
 
-      const userSystemRole = req.user.systemRole;
+      const adminRole = req.admin.role;
       
-      if (!userSystemRole) {
-        return sendResponse(res, 403, false, 'User role not found');
+      if (!adminRole) {
+        return sendResponse(res, 403, false, 'Admin role not found');
       }
 
-      // Check if user has access to the feature
-      if (!checkAccessLevel(userSystemRole, feature, requiredLevel)) {
-        logger.warn(`Access denied: User ${req.user.id} (${userSystemRole}) attempted to access ${feature} (required: ${requiredLevel})`);
+      // Check if admin has access to the feature
+      if (!checkAccessLevel(adminRole, feature, requiredLevel)) {
+        logger.warn(`Access denied: Admin ${req.admin._id} (${adminRole}) attempted to access ${feature} (required: ${requiredLevel})`);
         return sendResponse(res, 403, false, `Access denied to ${feature}. Insufficient permissions.`);
       }
 
-      logger.info(`Access granted: User ${req.user.id} (${userSystemRole}) accessing ${feature}`);
+      logger.info(`Access granted: Admin ${req.admin._id} (${adminRole}) accessing ${feature}`);
       next();
     } catch (error) {
       logger.error('Feature access check error:', error);
@@ -115,28 +116,29 @@ const requireSecurityAccess = (requiredLevel = 'view') =>
 const requireDeploymentAccess = (requiredLevel = 'view') => 
   requireFeatureAccess('deployment_env', requiredLevel);
 
-// Middleware to check if user can manage other users
+// Middleware to check if admin can manage other users
 const requireUserManagementPermission = (action = 'view') => {
   return (req, res, next) => {
     try {
-      if (!req.user) {
+      // Check if admin info is available (from adminAuth middleware)
+      if (!req.admin) {
         return sendResponse(res, 401, false, 'Authentication required');
       }
 
-      const userSystemRole = req.user.systemRole;
+      const adminRole = req.admin.role;
       const targetUserId = req.params.userId || req.body.userId;
       
-      if (!userSystemRole) {
-        return sendResponse(res, 403, false, 'User role not found');
+      if (!adminRole) {
+        return sendResponse(res, 403, false, 'Admin role not found');
       }
 
       // Super Admin can manage everyone
-      if (userSystemRole === 'super_admin') {
+      if (adminRole === 'super_admin') {
         return next();
       }
 
       // Admin can manage users except Super Admins
-      if (userSystemRole === 'admin') {
+      if (adminRole === 'admin') {
         if (action === 'delete' || action === 'role_assign') {
           // Check if target user is Super Admin
           const User = require('../models/User');
@@ -160,7 +162,7 @@ const requireUserManagementPermission = (action = 'view') => {
       }
 
       // Moderator has limited access
-      if (userSystemRole === 'moderator') {
+      if (adminRole === 'moderator') {
         if (action === 'delete' || action === 'role_assign') {
           return sendResponse(res, 403, false, 'Moderators cannot delete users or assign roles');
         }

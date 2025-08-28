@@ -175,7 +175,7 @@ class UserSeeder extends BaseSeeder {
   /**
    * Create user roles
    */
-  async createUserRoles(userId, systemRole = 'user') {
+  async createUserRoles(userId, systemRole = 'moderator') {
     const roles = await UserRoles.create({
       userId: userId,
       systemRole: systemRole
@@ -225,7 +225,7 @@ class UserSeeder extends BaseSeeder {
       name: this.getRandomName(),
       email: this.getRandomEmail(),
       password: '12345678A!', // Default password for all seeded users
-      systemRole: 'user',
+              systemRole: 'moderator',
       emailVerified: this.getRandomBoolean(0.8), // 80% verified
       avatar: null // Avatar will be set to null for now, can be updated later with File references
     };

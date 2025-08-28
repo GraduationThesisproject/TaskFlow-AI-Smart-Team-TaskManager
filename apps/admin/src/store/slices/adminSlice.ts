@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { Admin, AdminLoginCredentials, AdminResponse } from '../../types/admin.types';
 import { env } from '../../config/env';
+import { Admin, AdminLoginCredentials, AdminResponse } from '../../types/admin.types';
+import { storeAdminToken, removeAdminToken } from '../../utils/tokenUtils';
 
 interface AdminState {
   currentAdmin: Admin | null;
@@ -22,12 +23,11 @@ const initialState: AdminState = {
 export const loginAdmin = createAsyncThunk(
   'admin/login',
   async (credentials: AdminLoginCredentials, { rejectWithValue }) => {
-    console.log('=== REDUX LOGIN ACTION CALLED ===');
-    console.log('Credentials:', credentials);
-    console.log('API URL:', `${env.API_BASE_URL}/admin/auth/login`);
-    
     try {
-      console.log('Making fetch request...');
+      console.log('Environment config:', env);
+      console.log('API_BASE_URL:', env.API_BASE_URL);
+      console.log('Full login URL:', `${env.API_BASE_URL}/admin/auth/login`);
+      
       const response = await fetch(`${env.API_BASE_URL}/admin/auth/login`, {
         method: 'POST',
         headers: {
@@ -36,21 +36,14 @@ export const loginAdmin = createAsyncThunk(
         body: JSON.stringify(credentials),
       });
 
-      console.log('Response received:', response);
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-
       if (!response.ok) {
         const errorData = await response.json();
-        console.log('Error response:', errorData);
         return rejectWithValue(errorData.message || 'Login failed');
       }
 
       const data: AdminResponse = await response.json();
-      console.log('Success response:', data);
       return data;
     } catch (error) {
-      console.error('Network error:', error);
       return rejectWithValue('Network error occurred');
     }
   }
@@ -263,20 +256,22 @@ const adminSlice = createSlice({
         // Backend sends: { success: true, message: "...", data: { admin: {...}, token: "..." } }
         const token = responseData.data?.token;
         
+        console.log('=== TOKEN STORAGE DEBUG ===');
+        console.log('Response data:', responseData);
+        console.log('Token extracted:', token);
+        console.log('Token type:', typeof token);
+        console.log('Token length:', token ? token.length : 0);
+        
         if (token && token !== 'null' && token !== 'undefined') {
-          localStorage.setItem('adminToken', token);
-          const storedToken = localStorage.getItem('adminToken');
+          const success = storeAdminToken(token);
           
-          if (storedToken === token) {
-            // Token successfully stored
-          } else {
-            // Token storage verification failed
+          if (!success) {
+            // Don't store invalid tokens
+            removeAdminToken();
           }
         } else {
           // Invalid token detected
-          
-          // Don't store invalid tokens
-          localStorage.removeItem('adminToken');
+          removeAdminToken();
         }
       })
       .addCase(loginAdmin.rejected, (state, action) => {
@@ -324,9 +319,12 @@ const adminSlice = createSlice({
         // Store token in localStorage
         const token = responseData.data?.token;
         if (token && token !== 'null' && token !== 'undefined') {
-          localStorage.setItem('adminToken', token);
+          const success = storeAdminToken(token);
+          if (!success) {
+            removeAdminToken();
+          }
         } else {
-          localStorage.removeItem('adminToken');
+          removeAdminToken();
         }
       })
       .addCase(complete2FALogin.rejected, (state, action) => {
@@ -339,7 +337,7 @@ const adminSlice = createSlice({
         state.isAuthenticated = false;
         state.currentAdmin = null;
         state.permissions = [];
-        localStorage.removeItem('adminToken');
+        removeAdminToken();
       })
       
       // Get Current Admin
@@ -381,8 +379,8 @@ const adminSlice = createSlice({
         state.currentAdmin = null;
         state.permissions = [];
         state.error = action.payload as string;
-        // Don't remove token on failure - let the user try again
-        // localStorage.removeItem('adminToken');
+        // Remove invalid token to prevent infinite loops
+        removeAdminToken();
       })
       
       // Update Profile

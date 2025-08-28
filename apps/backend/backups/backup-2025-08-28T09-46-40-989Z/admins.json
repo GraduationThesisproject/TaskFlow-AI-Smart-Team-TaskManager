@@ -1,0 +1,167 @@
+[
+  {
+    "_id": "68b0206991c0f1147a6b36c6",
+    "userName": "jesser_sekri",
+    "userEmail": "admin@admin.com",
+    "password": "$2b$12$H02DQrtV5yEVhRvHOWukr.kluAkoEwpb59uBQWO/PtiYKd3qCuUWu",
+    "role": "super_admin",
+    "permissions": [
+      {
+        "name": "admin_management",
+        "description": "Manage admin users and roles",
+        "allowed": true,
+        "_id": "68b0206991c0f1147a6b36c7"
+      },
+      {
+        "name": "user_management",
+        "description": "Manage regular users",
+        "allowed": true,
+        "_id": "68b0206991c0f1147a6b36c8"
+      },
+      {
+        "name": "system_settings",
+        "description": "Access system settings",
+        "allowed": true,
+        "_id": "68b0206991c0f1147a6b36c9"
+      },
+      {
+        "name": "audit_logs",
+        "description": "View audit logs",
+        "allowed": true,
+        "_id": "68b0206991c0f1147a6b36ca"
+      },
+      {
+        "name": "data_export",
+        "description": "Export system data",
+        "allowed": true,
+        "_id": "68b0206991c0f1147a6b36cb"
+      },
+      {
+        "name": "two_factor_auth",
+        "description": "Manage 2FA settings",
+        "allowed": true,
+        "_id": "68b0206991c0f1147a6b36cc"
+      }
+    ],
+    "isActive": true,
+    "isEmailVerified": false,
+    "lastLoginAt": null,
+    "hasTwoFactorAuth": false,
+    "firstName": "Jesser",
+    "lastName": "Sekri",
+    "avatar": "http://localhost:3001/uploads/avatars/avatar_68a4a907389cdc9bfd56f57d_1756141687201_09ae9611c07e.jpeg",
+    "phoneNumber": "",
+    "createdBy": null,
+    "notes": "Migrated from existing user data - created by seeder",
+    "lastActivityAt": "2025-08-28T09:41:31.168Z",
+    "backupCodes": [],
+    "createdAt": "2025-08-28T09:24:57.336Z",
+    "updatedAt": "2025-08-28T09:41:30.786Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b02098d5b3ef8edea18877",
+    "userName": "admin_user",
+    "userEmail": "admin@taskflow.com",
+    "password": "$2b$12$EdrYCKKqeCG9ry0z.g/9duA4IUDBz1IcQETB6EMiKzy6srO5tbOk6",
+    "role": "admin",
+    "permissions": [
+      {
+        "name": "admin_management",
+        "description": "Manage admin users and roles",
+        "allowed": true,
+        "_id": "68b02098d5b3ef8edea18878"
+      },
+      {
+        "name": "user_management",
+        "description": "Manage regular users",
+        "allowed": true,
+        "_id": "68b02098d5b3ef8edea18879"
+      },
+      {
+        "name": "system_settings",
+        "description": "Access system settings",
+        "allowed": true,
+        "_id": "68b02098d5b3ef8edea1887a"
+      }
+    ],
+    "isActive": true,
+    "isEmailVerified": false,
+    "lastLoginAt": null,
+    "hasTwoFactorAuth": false,
+    "firstName": "Admin",
+    "lastName": "User",
+    "avatar": null,
+    "createdBy": null,
+    "notes": "Default admin user - created by seeder",
+    "lastActivityAt": "2025-08-28T09:25:45.093Z",
+    "backupCodes": [],
+    "createdAt": "2025-08-28T09:25:44.841Z",
+    "updatedAt": "2025-08-28T09:25:44.841Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b02099d5b3ef8edea1887f",
+    "userName": "moderator_user",
+    "userEmail": "moderator@taskflow.com",
+    "password": "$2b$12$6J1y5O/WzssheBVOf6qmVOSGCS4c4JBB/Bxh0JtGNJ52/bUZZ1kV2",
+    "role": "moderator",
+    "permissions": [
+      {
+        "name": "user_management",
+        "description": "Manage regular users",
+        "allowed": true,
+        "_id": "68b02099d5b3ef8edea18880"
+      },
+      {
+        "name": "audit_logs",
+        "description": "View audit logs",
+        "allowed": true,
+        "_id": "68b02099d5b3ef8edea18881"
+      }
+    ],
+    "isActive": true,
+    "isEmailVerified": false,
+    "lastLoginAt": null,
+    "hasTwoFactorAuth": false,
+    "firstName": "Moderator",
+    "lastName": "User",
+    "avatar": null,
+    "createdBy": null,
+    "notes": "Default moderator user - created by seeder",
+    "lastActivityAt": "2025-08-28T09:25:45.632Z",
+    "backupCodes": [],
+    "createdAt": "2025-08-28T09:25:45.353Z",
+    "updatedAt": "2025-08-28T09:25:45.353Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b02099d5b3ef8edea18884",
+    "userName": "viewer_user",
+    "userEmail": "viewer@taskflow.com",
+    "password": "$2b$12$TKDep9rbP/AFX9Bd5urz3eXVb5ZL4rxRO0LhEEBXy6bIX/mEZdOO2",
+    "role": "viewer",
+    "permissions": [
+      {
+        "name": "audit_logs",
+        "description": "View audit logs",
+        "allowed": true,
+        "_id": "68b02099d5b3ef8edea18885"
+      }
+    ],
+    "isActive": true,
+    "isEmailVerified": false,
+    "lastLoginAt": null,
+    "hasTwoFactorAuth": false,
+    "firstName": "Viewer",
+    "lastName": "User",
+    "avatar": null,
+    "createdBy": null,
+    "notes": "Default viewer user - created by seeder",
+    "lastActivityAt": "2025-08-28T09:25:46.178Z",
+    "backupCodes": [],
+    "createdAt": "2025-08-28T09:25:45.912Z",
+    "updatedAt": "2025-08-28T09:25:45.912Z",
+    "__v": 0
+  }
+]
