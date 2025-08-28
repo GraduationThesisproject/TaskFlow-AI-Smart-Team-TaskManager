@@ -1,0 +1,134 @@
+[
+  {
+    "_id": "68b01e6ab31ba4056f2c7aa0",
+    "name": "Jesser Sekri",
+    "email": "admin@admin.com",
+    "password": "$2b$12$Y65BX54IyfltQjip3L9eke9dWueCLch42K9y4qt3AaLWGpRNvQx5.",
+    "avatar": "http://localhost:3001/uploads/avatars/avatar_68a4a907389cdc9bfd56f57d_1756141687201_09ae9611c07e.jpeg",
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-28T08:45:40.894Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "metadata": {
+      "globalRole": "superadmin"
+    },
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-19T16:40:39.209Z",
+    "updatedAt": "2025-08-28T08:45:40.905Z",
+    "__v": 8,
+    "preferences": "68a4a907389cdc9bfd56f57f",
+    "roles": "68a4a907389cdc9bfd56f583",
+    "sessions": "68a4a907389cdc9bfd56f589",
+    "tempTokens": {
+      "passwordResetExpires": "2025-08-25T11:16:55.220Z",
+      "passwordResetToken": "1v5tbl4e8bhbg0t63gj4l8"
+    },
+    "twoFactorAuth": {
+      "secret": null,
+      "backupCodes": [],
+      "recoveryToken": null,
+      "recoveryTokenExpires": null,
+      "enabledAt": null,
+      "lastUsed": null
+    }
+  },
+  {
+    "_id": "68b0253b7e07c811299bb73a",
+    "name": "Super Admin User",
+    "email": "superadmin.test@gmail.com",
+    "password": "$2b$12$x2lotZ7YPesrCdW9OXsW3eIQnEzJvnnM2oEQgQCfhj2V57Ve0tjSC",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-27T21:56:03.057Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T09:45:31.272Z",
+    "updatedAt": "2025-08-28T09:45:31.670Z",
+    "__v": 0,
+    "preferences": "68b0253b7e07c811299bb73c",
+    "roles": "68b0253b7e07c811299bb740",
+    "sessions": "68b0253b7e07c811299bb742"
+  },
+  {
+    "_id": "68b0253b7e07c811299bb746",
+    "name": "Admin User",
+    "email": "admin.test@gmail.com",
+    "password": "$2b$12$4w8T3j.Cx3wjiEvzFUyan.GXwbxljfzqnpSFrn/IALEjkUEtbqqG.",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-27T01:12:22.509Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T09:45:31.675Z",
+    "updatedAt": "2025-08-28T09:45:32.112Z",
+    "__v": 0,
+    "preferences": "68b0253c7e07c811299bb748",
+    "roles": "68b0253c7e07c811299bb74c",
+    "sessions": "68b0253c7e07c811299bb74e"
+  },
+  {
+    "_id": "68b0253c7e07c811299bb752",
+    "name": "Regular User",
+    "email": "user.test@gmail.com",
+    "password": "$2b$12$QTJvLk3qyYefxy7AN9EjZe9oamrlXeQbpf/zxfrd41zBZg87cTj16",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-24T21:47:46.835Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T09:45:32.116Z",
+    "updatedAt": "2025-08-28T09:45:32.116Z",
+    "__v": 0
+  }
+]

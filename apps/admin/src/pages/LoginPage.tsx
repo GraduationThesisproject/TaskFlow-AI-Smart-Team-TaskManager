@@ -262,9 +262,18 @@ const LoginPage: React.FC = () => {
             </form>
 
             <div className="mt-4 text-center">
-              <Typography variant="body-small" className="text-muted-foreground">
-                Forgot your password?{' '}
-              </Typography>
+              <button
+                type="button"
+                className="text-primary hover:text-primary/80 text-sm font-medium hover:underline cursor-pointer bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg border border-blue-300 transition-colors"
+                onClick={() => {
+                  alert('Forgot password functionality clicked!');
+                  console.log('Admin forgot password button clicked');
+                  // TODO: Navigate to forgot password page or show reset form
+                }}
+                disabled={isLoading}
+              >
+                Forgot your password?
+              </button>
             </div>
           </CardContent>
         </Card>
