@@ -24,6 +24,10 @@ export const loginAdmin = createAsyncThunk(
   'admin/login',
   async (credentials: AdminLoginCredentials, { rejectWithValue }) => {
     try {
+      console.log('Environment config:', env);
+      console.log('API_BASE_URL:', env.API_BASE_URL);
+      console.log('Full login URL:', `${env.API_BASE_URL}/admin/auth/login`);
+      
       const response = await fetch(`${env.API_BASE_URL}/admin/auth/login`, {
         method: 'POST',
         headers: {
