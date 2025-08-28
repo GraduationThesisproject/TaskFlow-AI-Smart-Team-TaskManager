@@ -98,7 +98,7 @@ exports.list = async (req, res, next) => {
     }
 
     // Populate owner info for display (name/email)
-    const items = await cursor.populate('createdBy', 'name email displayName');
+    const items = await cursor.populate('createdBy', 'name email displayName avatar');
     return ok(res, items);
   } catch (error) {
     handleError(next, error);
@@ -109,7 +109,7 @@ exports.getById = async (req, res, next) => {
   try {
     const { id } = req.params;
     console.log('[templates.getById] incoming', { id });
-    const item = await Template.findById(id).populate('createdBy', 'name email displayName');
+    const item = await Template.findById(id).populate('createdBy', 'name email displayName avatar');
     if (!item) {
       console.warn('[templates.getById] not found', { id });
       return res.status(404).json({ success: false, message: 'Template not found' });
@@ -137,7 +137,7 @@ exports.getById = async (req, res, next) => {
       );
       if (resUpdate.modifiedCount > 0) {
         console.log('[templates.getById] incremented', { id, viewerId: String(viewerIdRaw) });
-        updated = await Template.findById(id).populate('createdBy', 'name email displayName');
+        updated = await Template.findById(id).populate('createdBy', 'name email displayName avatar');
       } else {
         console.log('[templates.getById] already viewed, no increment', { id, viewerId: String(viewerIdRaw) });
       }
@@ -168,6 +168,8 @@ exports.create = async (req, res, next) => {
     const payload = sanitizeTemplatePayload(req.body);
     const doc = Template.createTemplate(payload, adminId);
     await doc.save();
+    // Ensure the client immediately receives creator info for first render
+    await doc.populate('createdBy', 'name email displayName avatar');
 
     // Log activity for real-time updates
     try {
@@ -232,7 +234,7 @@ exports.update = async (req, res, next) => {
       const uidObj = mongoose.Types.ObjectId.isValid(uidStr) ? new mongoose.Types.ObjectId(uidStr) : userId;
       const update = hasLiked ? { $pull: { likedBy: uidObj } } : { $addToSet: { likedBy: uidObj } };
       const updated = await Template.findByIdAndUpdate(id, update, { new: true, runValidators: false })
-      .populate('createdBy', 'name email displayName')
+      .populate('createdBy', 'name email displayName avatar')
       .populate('likedBy', 'name displayName')
       .populate('viewedBy', 'name displayName');
       if (!updated) return res.status(404).json({ success: false, message: 'Template not found' });
@@ -267,7 +269,7 @@ exports.incrementViews = async (req, res, next) => {
     );
     if (resUpdate.matchedCount === 0) return res.status(404).json({ success: false, message: 'Template not found' });
     const updated = await Template.findById(id)
-      .populate('createdBy', 'name email displayName');
+      .populate('createdBy', 'name email displayName avatar');
     return ok(res, updated);
   } catch (error) {
     handleError(next, error);
@@ -319,7 +321,7 @@ exports.toggleLike = async (req, res, next) => {
       : { $addToSet: { likedBy: uidObj } };
 
     const updated = await Template.findByIdAndUpdate(id, update, { new: true })
-      .populate('createdBy', 'name email displayName')
+      .populate('createdBy', 'name email displayName avatar')
       .populate('likedBy', 'name displayName')
       .populate('viewedBy', 'name displayName');
 

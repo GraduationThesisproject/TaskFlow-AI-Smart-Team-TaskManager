@@ -365,10 +365,10 @@ exports.updateProfile = async (req, res) => {
         if (req.uploadedFile) {
             const File = require('../models/File');
 
-            // Delete old avatar file if exists and different from the new one
+            // Delete old avatar file if exists (user.avatar is stored as URL string)
             if (user.avatar) {
                 try {
-                    const oldFile = await File.findById(user.avatar);
+                    const oldFile = await File.findOne({ url: user.avatar });
                     if (oldFile && oldFile._id.toString() !== req.uploadedFile._id.toString()) {
                         await oldFile.deleteFromStorage();
                     }
@@ -377,13 +377,30 @@ exports.updateProfile = async (req, res) => {
                 }
             }
 
-            // Attach the uploaded file to the user and set avatar reference
+            // Attach the uploaded file to the user and set avatar URL (string)
             const file = req.uploadedFile; // Mongoose doc created in processUploadedFiles
             await file.attachTo('User', user._id);
-            user.avatar = file._id;
+            user.avatar = file.url;
         } else if (avatar) {
-            // Allow setting avatar by existing File id (optional)
-            user.avatar = avatar;
+            // Accept either a direct URL string or a File ID; convert ID to URL
+            try {
+                const File = require('../models/File');
+                const isObjectId = typeof avatar === 'string' && /^[a-f\d]{24}$/i.test(avatar);
+                if (isObjectId) {
+                    const f = await File.findById(avatar);
+                    if (f) {
+                        user.avatar = f.url;
+                    } else {
+                        // Fallback: if not found by ID, try storing as provided (may be URL)
+                        user.avatar = avatar;
+                    }
+                } else {
+                    user.avatar = avatar; // expected to be a URL or data URI per schema validator
+                }
+            } catch (e) {
+                logger.warn('Failed to resolve provided avatar value, storing as-is:', e.message);
+                user.avatar = avatar;
+            }
         }
         
         // Update metadata if provided
