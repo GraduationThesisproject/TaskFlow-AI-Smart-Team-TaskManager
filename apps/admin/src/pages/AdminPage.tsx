@@ -141,15 +141,26 @@ const AdminPage: React.FC = () => {
 
   // Check authentication on mount
   React.useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    
+    // Only try to get current admin if we have a token and aren't already authenticated
+    if (token && !isAuthenticated && !isLoading) {
+      dispatch(getCurrentAdmin());
+    } else if (!token) {
+      // No token, redirect to login
+      navigate('/login');
+    }
+  }, []); // Empty dependency array to run only once on mount
+
+  // Handle authentication state changes
+  React.useEffect(() => {
     if (!isAuthenticated && !isLoading) {
       const token = localStorage.getItem('adminToken');
-      if (token) {
-        dispatch(getCurrentAdmin());
-      } else {
+      if (!token) {
         navigate('/login');
       }
     }
-  }, [dispatch, isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   const handleLogout = async () => {
     try {

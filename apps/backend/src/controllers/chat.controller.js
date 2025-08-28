@@ -13,8 +13,9 @@ const startChat = async (req, res) => {
 
     // Create new chat
     const chat = new Chat({
+      chatId: `chat_${Date.now()}`,
       participants: [{
-        _id: `user_${Date.now()}`,
+        id: `user_${Date.now()}`,
         name,
         email,
         model: 'User'
@@ -23,7 +24,7 @@ const startChat = async (req, res) => {
         content: message,
         messageType: 'text',
         sender: {
-          _id: `user_${Date.now()}`,
+          id: `user_${Date.now()}`,
           name,
           email,
           model: 'User'
@@ -86,7 +87,7 @@ const sendMessage = async (req, res) => {
       content,
       messageType: 'text',
       sender: {
-        _id: `user_${Date.now()}`,
+        id: `user_${Date.now()}`,
         name: name || 'Anonymous',
         email: email || 'anonymous@example.com',
         model: 'User'
