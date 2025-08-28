@@ -35,23 +35,27 @@ class NotificationService {
             const notificationType = this.mapNotificationTypeToPreference(notification.type);
             
             // In-app notification (always created)
-            if (notification.deliveryMethods.inApp !== false) {
+            if (notification.deliveryMethods?.inApp !== false) {
                 // Already created, just emit via socket if available
                 const io = global.io;
                 if (io) {
-                    io.sendNotification(recipient._id, notification);
+                    // Ensure we pass a plain object, not a Mongoose document
+                    const notifObject = typeof notification.toObject === 'function' 
+                        ? notification.toObject() 
+                        : notification;
+                    io.sendNotification(recipient._id, notifObject);
                 }
             }
             
             // Email notification
-            if (notification.deliveryMethods.email && 
+            if (notification.deliveryMethods?.email && 
                 userPrefs.shouldReceiveNotification('general', notificationType, 'email')) {
                 
                 await this.sendEmailNotification(notification);
             }
             
             // Push notification
-            if (notification.deliveryMethods.push && 
+            if (notification.deliveryMethods?.push && 
                 userPrefs.shouldReceiveNotification('general', notificationType, 'push')) {
                 
                 await this.sendPushNotification(notification);
@@ -189,7 +193,7 @@ class NotificationService {
                 recipient: recipientId,
                 sender: triggeredBy,
                 relatedEntity: {
-                    entityType: 'Space',
+                    entityType: 'space',
                     entityId: space._id
                 },
                 priority: 'medium',
@@ -362,12 +366,14 @@ class NotificationService {
         
         if (notification.relatedEntity) {
             switch (notification.relatedEntity.entityType) {
-                case 'Task':
+                case 'task':
                     return `${baseUrl}/tasks/${notification.relatedEntity.entityId}`;
-                case 'Space':
+                case 'space':
                     return `${baseUrl}/spaces/${notification.relatedEntity.entityId}`;
-                case 'Board':
+                case 'board':
                     return `${baseUrl}/boards/${notification.relatedEntity.entityId}`;
+                case 'workspace':
+                    return `${baseUrl}/workspaces/${notification.relatedEntity.entityId}`;
                 default:
                     return baseUrl;
             }

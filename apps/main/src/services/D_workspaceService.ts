@@ -1,6 +1,7 @@
 // src/services/workspace.service.ts
 import axiosInstance from '../config/axios';
 import type { Workspace, CreateWorkspaceData, UpdateWorkspaceData, InviteMemberData } from '../types/workspace.types';
+import { env } from '../config/env';
 
 export class WorkspaceService {
   // Fetch all workspaces for the current user
@@ -28,11 +29,19 @@ export class WorkspaceService {
   // Create a new workspace
   static async createWorkspace(data: CreateWorkspaceData): Promise<Workspace> {
     try {
-      const response = await axiosInstance.post('/workspaces', data);
+      if (env.ENABLE_DEBUG) {
+        console.debug('[WorkspaceService.createWorkspace] payload:', data);
+      }
+      const config = env.ENABLE_DEBUG ? { headers: { 'X-Debug': 'true' } } : undefined;
+      const response = await axiosInstance.post('/workspaces', data, config);
+      if (env.ENABLE_DEBUG) {
+        console.debug('[WorkspaceService.createWorkspace] response:', response.data);
+      }
       return response.data.data?.workspace;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating workspace:', error);
-      throw error;
+      const message = error?.response?.data?.message || error?.response?.data?.error || error?.message || 'Failed to create workspace';
+      throw new Error(message);
     }
   }
 
@@ -55,6 +64,17 @@ export class WorkspaceService {
     } catch (error: any) {
       console.error('Error deleting workspace:', error);
       throw new Error(error.response?.data?.message || error.message || 'Failed to delete workspace');
+    }
+  }
+
+  // Restore soft-deleted workspace
+  static async restoreWorkspace(id: string): Promise<Workspace> {
+    try {
+      const response = await axiosInstance.post(`/workspaces/${id}/restore`);
+      return response.data.data?.workspace;
+    } catch (error: any) {
+      console.error('Error restoring workspace:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to restore workspace');
     }
   }
 

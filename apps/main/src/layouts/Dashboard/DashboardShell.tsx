@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { Home, FileText, BarChart3, X, Settings, Users, ArrowLeft, Palette, Bell, Zap } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-
+import type { NavItem } from '../../types/dash.types';
 import {
   Sidebar,
   SidebarHeader,
@@ -14,20 +13,8 @@ import {
 
 import type { DashboardShellProps } from '../../types/dash.types';
 import { RecentActivity } from '../../components/dashboard/home/RecentActivity';
+import type { UniversalSidebarProps } from '../../types/dash.types';
 
-type NavItem = { icon: LucideIcon; label: string; href: string };
-
-type UniversalSidebarProps = {
-  locationPath: string;
-  locationHash?: string;
-  // desktop
-  sidebarCollapsed?: boolean;
-  setSidebarCollapsed?: (v: boolean) => void;
-  // mobile
-  mobile?: boolean;
-  mobileMenuOpen?: boolean;
-  setMobileMenuOpen?: (v: boolean) => void;
-};
 
 function UniversalSidebar({
   locationPath,
@@ -38,57 +25,51 @@ function UniversalSidebar({
   mobileMenuOpen,
   setMobileMenuOpen,
 }: UniversalSidebarProps) {
-  // Detect section from path
-  const getSectionFromPath = (pathname: string): 'dashboard' | 'workspace' | 'boards' | 'settings' => {
-    if (pathname.startsWith('/workspace')) return 'workspace';
-    if (pathname.startsWith('/board')) return 'boards';
-    if (pathname.startsWith('/dashboard/settings')) return 'settings';
-    return 'dashboard';
-  };
+  // Detect section from path (memoized)
+  const section = useMemo(() => {
+    if (locationPath.startsWith('/workspace')) return 'workspace' as const;
+    if (locationPath.startsWith('/board')) return 'boards' as const;
+    if (locationPath.startsWith('/dashboard/settings')) return 'settings' as const;
+    return 'dashboard' as const;
+  }, [locationPath]);
 
-  // Universal config per section
-  const getSectionConfig = (sectionName: ReturnType<typeof getSectionFromPath>): {
-    title: string;
-    items: NavItem[];
-    backLink?: { href: string; label: string };
-  } => {
-    if (sectionName === 'workspace') {
+  // Universal config per section (memoized)
+  const { title, items, backLink } = useMemo(() => {
+    if (section === 'workspace') {
       return {
         title: 'Workspace',
         items: [
           { icon: Users, label: 'Workspace Management', href: '/workspace' },
           { icon: BarChart3, label: 'Reports', href: '/workspace/reports' },
           { icon: Settings, label: 'Settings', href: '/workspace/settings' },
-        ],
+        ] as NavItem[],
         backLink: { href: '/dashboard', label: 'Dashboard' },
       };
     }
-    if (sectionName === 'settings') {
+    if (section === 'settings') {
       return {
         title: 'Settings',
         items: [
-          { icon: Settings, label: 'Profile', href: '/dashboard/settings#profile' },
-          { icon: Palette, label: 'Theme settings', href: '/dashboard/settings#theme' },
-          { icon: Bell, label: 'Notifications', href: '/dashboard/settings#notifications' },
-          { icon: Zap, label: 'Upgrade', href: '/dashboard/settings#upgrade' },
-        ],
+          { icon: Settings, label: 'Profile', href: '/dashboard/settings/profile' },
+          { icon: Palette, label: 'Theme settings', href: '/dashboard/settings/theme' },
+          { icon: Bell, label: 'Notifications settings', href: '/dashboard/settings/notifications' },
+          { icon: Zap, label: 'Upgrade', href: '/dashboard/settings/upgrade' },
+        ] as NavItem[],
         backLink: { href: '/dashboard', label: 'Dashboard' },
       };
     }
-    // dashboard default
     return {
       title: 'Dashboard',
       items: [
         { icon: Home, label: 'Home', href: '/dashboard' },
         { icon: FileText, label: 'Templates', href: '/dashboard/templates' },
         { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics' },
-      ],
+      ] as NavItem[],
     };
-  };
+  }, [section]);
 
-  const section = getSectionFromPath(locationPath);
-  const { title, items, backLink } = getSectionConfig(section);
   const isWorkspace = section === 'workspace';
+  const isWorkspaceOrSettings = section === 'workspace' || section === 'settings';
   // In workspace: hide title and show arrow + Workspace (title) as the back control label
   const hideTitle = isWorkspace;
   const effectiveBackLink = backLink
@@ -96,8 +77,8 @@ function UniversalSidebar({
     : undefined;
 
   // Suppress active highlighting for Home and Workspace Management
-  const suppressedActiveHrefs = new Set(['/dashboard', '/workspace']);
-  const isActiveRoute = (href: string) => {
+  const suppressedActiveHrefs = useMemo(() => new Set(['/dashboard', '/workspace']), []);
+  const isActiveRoute = useCallback((href: string) => {
     if (suppressedActiveHrefs.has(href)) return false;
     // handle hash targets for settings
     if (href.includes('#')) {
@@ -105,7 +86,7 @@ function UniversalSidebar({
       return locationPath.startsWith('/dashboard/settings') && locationHash === hash;
     }
     return locationPath === href || locationPath.startsWith(`${href}/`);
-  };
+  }, [locationHash, locationPath, suppressedActiveHrefs]);
 
   const showRecentAfter: string | undefined = section === 'dashboard' ? 'Analytics' : undefined;
 
@@ -119,41 +100,74 @@ function UniversalSidebar({
           />
         )}
         <Sidebar
-          className="fixed inset-y-0 left-0 z-50 lg:hidden transform transition-transform duration-300"
+          className={
+            `fixed inset-y-0 left-0 z-50 lg:hidden transform transition-transform duration-300 ` +
+            (mobileMenuOpen ? 'translate-x-0' : '-translate-x-full')
+          }
           collapsed={!!sidebarCollapsed}
           onCollapse={setSidebarCollapsed}
         >
           <SidebarHeader>
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-4">
-                {effectiveBackLink && (
-                  <div className="flex items-center gap-4">
-                    {!sidebarCollapsed && (
-                      <span className={isWorkspace ? 'text-2xl font-bold tracking-tight text-foreground' : 'text-sm'}>
-                        {effectiveBackLink.label}
-                      </span>
+                {section === 'settings' ? (
+                  <>
+                    {!sidebarCollapsed && !hideTitle && (
+                      <div className="text-2xl font-bold tracking-tight text-foreground px-1">
+                        {title}
+                      </div>
                     )}
-                    <Button
-                      variant={isWorkspace ? 'ghost' : 'secondary'}
-                      size="icon"
-                      className={
-                        (isWorkspace
-                          ? 'h-10 w-10 '
-                          : 'h-10 w-10 rounded-full ') +
-                        'group hover:scale-105 transition ring-1 ring-primary/40 hover:ring-2 hover:bg-primary'
-                      }
-                      asChild
-                    >
-                      <Link to={effectiveBackLink.href} aria-label={`Back to ${effectiveBackLink.label}`}>
-                        <ArrowLeft size={20} className="transition-colors text-primary group-hover:text-background drop-shadow-[0_0_8px_currentColor]" />
-                      </Link>
-                    </Button>
-                  </div>
-                )}
-                {!sidebarCollapsed && !hideTitle && (
-                  <div className="text-2xl font-bold tracking-tight text-foreground px-1">
-                    {title}
-                  </div>
+                    {effectiveBackLink && (
+                      <div className="flex items-center gap-4">
+                        <Button
+                          variant={isWorkspaceOrSettings ? 'ghost' : 'secondary'}
+                          size="icon"
+                          className={
+                            ((isWorkspaceOrSettings)
+                              ? 'h-10 w-10 '
+                              : 'h-10 w-10 rounded-full ') +
+                            'group hover:scale-105 transition ring-1 ring-primary/40 hover:ring-2 hover:bg-primary'
+                          }
+                          asChild
+                        >
+                          <Link to={effectiveBackLink.href} aria-label={effectiveBackLink?.label ? `Back to ${effectiveBackLink.label}` : 'Back'}
+                            onClick={() => setMobileMenuOpen && setMobileMenuOpen(false)}
+                          >
+                            <ArrowLeft size={20} className="transition-colors text-primary group-hover:text-background drop-shadow-[0_0_8px_currentColor]" />
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {effectiveBackLink && (
+                      <div className="flex items-center gap-4">
+                        <Button
+                          variant={isWorkspaceOrSettings ? 'ghost' : 'secondary'}
+                          size="icon"
+                          className={
+                            ((isWorkspaceOrSettings)
+                              ? 'h-10 w-10 '
+                              : 'h-10 w-10 rounded-full ') +
+                            'group hover:scale-105 transition ring-1 ring-primary/40 hover:ring-2 hover:bg-primary'
+                          }
+                          asChild
+                        >
+                          <Link to={effectiveBackLink.href} aria-label={effectiveBackLink?.label ? `Back to ${effectiveBackLink.label}` : 'Back'}
+                            onClick={() => setMobileMenuOpen && setMobileMenuOpen(false)}
+                          >
+                            <ArrowLeft size={20} className="transition-colors text-primary group-hover:text-background drop-shadow-[0_0_8px_currentColor]" />
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
+                    {!sidebarCollapsed && !hideTitle && (
+                      <div className="text-2xl font-bold tracking-tight text-foreground px-1">
+                        {title}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -234,34 +248,65 @@ function UniversalSidebar({
               <div className="w-4 h-0.5 bg-foreground" />
             </div>
           </Button>
-          {effectiveBackLink && (
-            <div className="flex items-center gap-4">
-              {!sidebarCollapsed && (
-                <span className={isWorkspace ? 'text-2xl font-bold tracking-tight text-foreground' : 'text-sm'}>
-                  {effectiveBackLink.label}
-                </span>
+          {section === 'settings' ? (
+            <>
+              {!sidebarCollapsed && !hideTitle && (
+                <div className="text-2xl font-bold tracking-tight text-foreground px-1">
+                  {title}
+                </div>
               )}
-              <Button
-                variant={isWorkspace ? 'ghost' : 'secondary'}
-                size="icon"
-                className={
-                  (isWorkspace
-                    ? 'h-10 w-10 '
-                    : 'h-10 w-10 rounded-full ') +
-                  'group hover:scale-105 transition ring-1 ring-primary/40 hover:ring-2 hover:bg-primary'
-                }
-                asChild
-              >
-                <Link to={effectiveBackLink.href} aria-label={`Back to ${effectiveBackLink.label}`}>
-                  <ArrowLeft size={20} className="transition-colors text-primary group-hover:text-background drop-shadow-[0_0_8px_currentColor]" />
-                </Link>
-              </Button>
-            </div>
-          )}
-          {!sidebarCollapsed && !hideTitle && (
-            <div className="text-2xl font-bold tracking-tight text-foreground px-1">
-              {title}
-            </div>
+              {effectiveBackLink && (
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant={isWorkspaceOrSettings ? 'ghost' : 'secondary'}
+                    size="icon"
+                    className={
+                      ((isWorkspaceOrSettings)
+                        ? 'h-10 w-10 '
+                        : 'h-10 w-10 rounded-full ') +
+                      'group hover:scale-105 transition ring-1 ring-primary/40 hover:ring-2 hover:bg-primary'
+                    }
+                    asChild
+                  >
+                    <Link to={effectiveBackLink.href} aria-label={effectiveBackLink?.label ? `Back to ${effectiveBackLink.label}` : 'Back'}>
+                      <ArrowLeft size={20} className="transition-colors text-primary group-hover:text-background drop-shadow-[0_0_8px_currentColor]" />
+                    </Link>
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {effectiveBackLink && (
+                <div className="flex items-center gap-4">
+                  {!sidebarCollapsed && (
+                    <span className={isWorkspace ? 'text-2xl font-bold tracking-tight text-foreground' : 'text-sm'}>
+                      {effectiveBackLink.label}
+                    </span>
+                  )}
+                  <Button
+                    variant={isWorkspaceOrSettings ? 'ghost' : 'secondary'}
+                    size="icon"
+                    className={
+                      ((isWorkspaceOrSettings)
+                        ? 'h-10 w-10 '
+                        : 'h-10 w-10 rounded-full ') +
+                      'group hover:scale-105 transition ring-1 ring-primary/40 hover:ring-2 hover:bg-primary'
+                    }
+                    asChild
+                  >
+                    <Link to={effectiveBackLink.href} aria-label={effectiveBackLink?.label ? `Back to ${effectiveBackLink.label}` : 'Back'}>
+                      <ArrowLeft size={20} className="transition-colors text-primary group-hover:text-background drop-shadow-[0_0_8px_currentColor]" />
+                    </Link>
+                  </Button>
+                </div>
+              )}
+              {!sidebarCollapsed && !hideTitle && (
+                <div className="text-2xl font-bold tracking-tight text-foreground px-1">
+                  {title}
+                </div>
+              )}
+            </>
           )}
         </div>
       </SidebarHeader>
@@ -298,31 +343,50 @@ function UniversalSidebar({
   );
 }
 
+// Memoized variant to reduce re-renders
+const MemoUniversalSidebar = React.memo(UniversalSidebar);
+
+// Responsive hook: mount only one sidebar instance depending on screen size
+function useIsLargeScreen() {
+  const [isLarge, setIsLarge] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return window.matchMedia('(min-width: 1024px)').matches;
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia('(min-width: 1024px)');
+    const handler = (e: MediaQueryListEvent) => setIsLarge(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+  return isLarge;
+}
+
 export const DashboardShell: React.FC<DashboardShellProps> = ({
   children,
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const isLarge = useIsLargeScreen();
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Desktop Sidebar */}
-      <UniversalSidebar
-        locationPath={location.pathname}
-        locationHash={location.hash}
-        sidebarCollapsed={sidebarCollapsed}
-        setSidebarCollapsed={setSidebarCollapsed}
-      />
-
-      {/* Mobile Sidebar */}
-      <UniversalSidebar
-        locationPath={location.pathname}
-        locationHash={location.hash}
-        mobile
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-      />
+      {/* Conditionally mount only one sidebar for smoother transitions */}
+      {isLarge ? (
+        <MemoUniversalSidebar
+          locationPath={location.pathname}
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
+        />
+      ) : (
+        <MemoUniversalSidebar
+          locationPath={location.pathname}
+          mobile
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+        />
+      )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -333,4 +397,3 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
     </div>
   );
 };
-

@@ -64,49 +64,23 @@ const handleNotificationSocket = (io) => {
             }
         });
 
-        // Mark notification as read
+        // Mark notification as read (DEPRECATED - use REST endpoint instead)
         socket.on('notifications:markRead', async (data) => {
             try {
-                const { notificationId } = data;
-                
-                const notification = await Notification.findOne({
-                    _id: notificationId,
-                    recipient: socket.userId
-                });
-
-                if (notification && !notification.isRead) {
-                    notification.isRead = true;
-                    notification.readAt = new Date();
-                    await notification.save();
-
-                    // Emit updated unread count
-                    const unreadCount = await Notification.countDocuments({
-                        recipient: socket.userId,
-                        isRead: false
-                    });
-
-                    socket.emit('notifications:unreadCount', { count: unreadCount });
-                    socket.emit('notifications:marked-read', { notificationId });
-                }
+                // Deprecated: do not auto-mark read via socket anymore
+                socket.emit('notifications:error', { message: 'Deprecated: use PATCH /api/notifications/:id/read' });
             } catch (error) {
-                logger.error('Mark notification as read error:', error);
-                socket.emit('error', { message: 'Failed to mark notification as read' });
+                logger.error('Mark notification as read (socket) error:', error);
             }
         });
 
-        // Mark all notifications as read
+        // Mark all notifications as read (DEPRECATED - use REST endpoint instead)
         socket.on('notifications:markAllRead', async () => {
             try {
-                await Notification.updateMany(
-                    { recipient: socket.userId, isRead: false },
-                    { isRead: true, readAt: new Date() }
-                );
-
-                socket.emit('notifications:unreadCount', { count: 0 });
-                socket.emit('notifications:all-marked-read');
+                // Deprecated: do not auto-mark read via socket anymore
+                socket.emit('notifications:error', { message: 'Deprecated: use PATCH /api/notifications/read-all' });
             } catch (error) {
-                logger.error('Mark all notifications as read error:', error);
-                socket.emit('error', { message: 'Failed to mark all notifications as read' });
+                logger.error('Mark all notifications as read (socket) error:', error);
             }
         });
 
@@ -182,43 +156,74 @@ const handleNotificationSocket = (io) => {
     // Global notification utilities for the application
     io.sendNotification = async (recipientId, notificationData) => {
         try {
-            // Create notification in database
-            const notification = await Notification.create({
-                ...notificationData,
-                recipient: recipientId
-            });
+            let notificationDoc;
+            const readOption = notificationData?.readOption; // 'mark_read' | 'delete' | undefined
+ 
+             // If notification already exists (has _id), don't recreate it
+             if (notificationData && notificationData._id) {
+                 // Ensure we have a plain object to emit
+                 const notifObj = notificationData.toObject ? notificationData.toObject() : notificationData;
+                 notificationDoc = notifObj;
+             } else {
+                 // Create notification in database
+                 const created = await Notification.create({
+                     ...notificationData,
+                     recipient: recipientId
+                 });
 
-            await notification.populate('sender', 'name avatar');
-
-            // Send real-time notification
-            io.to(`notifications:${recipientId}`).emit('notification:new', {
-                notification: notification.toObject()
-            });
-
-            // Send to specific type subscribers
-            if (notificationData.type) {
-                io.to(`notifications:${recipientId}:${notificationData.type}`).emit('notification:typed', {
-                    notification: notification.toObject(),
-                    type: notificationData.type
-                });
-            }
-
-            // Update unread count
-            const unreadCount = await Notification.countDocuments({
-                recipient: recipientId,
-                isRead: false
-            });
-
-            io.to(`notifications:${recipientId}`).emit('notifications:unreadCount', { 
-                count: unreadCount 
-            });
-
-            return notification;
-        } catch (error) {
-            logger.error('Send notification error:', error);
-            throw error;
-        }
-    };
+                 await created.populate('sender', 'name avatar');
+                 notificationDoc = created.toObject();
+             }
+ 
+             // Apply read/delete option BEFORE emitting
+             let deleted = false;
+             const notifId = notificationDoc._id || notificationData._id;
+             if (readOption === 'delete' && notifId) {
+                 await Notification.findOneAndDelete({ _id: notifId, recipient: recipientId });
+                 deleted = true;
+                 // Inform client of deletion instead of sending 'new'
+                 io.to(`notifications:${recipientId}`).emit('notifications:deleted', { id: notifId });
+             } else if (readOption === 'mark_read' && notifId) {
+                 await Notification.findOneAndUpdate(
+                     { _id: notifId, recipient: recipientId },
+                     { isRead: true, readAt: new Date() },
+                     { new: false }
+                 );
+                 // Reflect locally for emission
+                 notificationDoc.isRead = true;
+                 notificationDoc.readAt = new Date();
+             }
+ 
+             // Emit 'new' only if not deleted
+             if (!deleted) {
+                 io.to(`notifications:${recipientId}`).emit('notification:new', {
+                     notification: notificationDoc
+                 });
+                 // Send to specific type subscribers
+                 if (notificationData.type) {
+                     io.to(`notifications:${recipientId}:${notificationData.type}`).emit('notification:typed', {
+                         notification: notificationDoc,
+                         type: notificationData.type
+                     });
+                 }
+             }
+ 
+             // Update unread count
+             const unreadCount = await Notification.countDocuments({
+                 recipient: recipientId,
+                 isRead: false
+             });
+ 
+             io.to(`notifications:${recipientId}`).emit('notifications:unreadCount', { 
+                 count: unreadCount 
+             });
+ 
+             return notificationDoc;
+         } catch (error) {
+             logger.error('Send notification error:', error);
+             throw error;
+         }
+     };
 
     // Bulk notification sender
     io.sendBulkNotifications = async (notifications) => {

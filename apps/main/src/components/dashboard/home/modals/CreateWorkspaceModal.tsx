@@ -99,6 +99,20 @@ export const CreateWorkspaceModal: React.FC<CreateWorkspaceModalProps> = ({ isOp
             <Select value={formData.visibility} onChange={(e) => handleInputChange('visibility', e.target.value)} disabled={loading}>
               {VISIBILITY_OPTIONS.map(opt => <SelectOption key={opt.value} value={opt.value}>{opt.label}</SelectOption>)}
             </Select>
+            {/* Inline visibility indicator */}
+            <div className="mt-2" aria-live="polite">
+              {formData.visibility === 'public' ? (
+                <span className="inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 border border-green-200 px-3 py-1 text-xs font-medium">
+                  Public
+                  <span className="text-green-600/80">Anyone with access to the workspace URL (subject to permissions)</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2 rounded-full bg-muted text-foreground/80 border border-border px-3 py-1 text-xs font-medium">
+                  Private
+                  <span className="text-muted-foreground">Only invited members can access</span>
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="p-4 bg-muted rounded-lg">

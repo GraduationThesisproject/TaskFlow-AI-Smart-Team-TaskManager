@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Avatar, AvatarImage, AvatarFallback, Dropdown, Typography, Badge } from '@taskflow/ui';
-import { LogOut, Settings, User, Bell, Check, Trash2, AlertCircle, CheckCircle, Info, AlertTriangle, UserPlus } from 'lucide-react';
+import { LogOut, Settings, User, Bell, Trash2, AlertCircle, CheckCircle, Info, AlertTriangle, UserPlus } from 'lucide-react';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import type { User as UserType } from '../../../types/navbar';
@@ -144,10 +144,14 @@ const NotificationBell: React.FC = () => {
     }
   };
 
+  const handleBellOpen = React.useCallback(() => {
+    // intentionally left blank (no auto-read)
+  }, []);
+
   return (
     <Dropdown
       trigger={
-        <div className="relative">
+        <div className="relative" onClick={handleBellOpen}>
           <Bell size={20} className="text-primary hover:text-background transition-colors" />
           {unreadCount > 0 && (
             <Badge 
@@ -247,7 +251,7 @@ const NotificationBell: React.FC = () => {
                               variant="ghost"
                               size="sm"
                               className="text-xs h-6 px-2"
-                              onClick={() => (window.location.href = '/dashboard/settings')}
+                              onClick={() => { markAsRead(n._id); window.location.href = '/dashboard/settings'; }}
                             >
                               View invitations
                             </Button>
@@ -257,28 +261,32 @@ const NotificationBell: React.FC = () => {
                           {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
                         </Typography>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {!n.isRead && (
+                      {/* Actions: mark-as-read (if unread) and delete */}
+                      {n.deliveryMethods?.inApp !== false && (
+                        <div className="flex items-center gap-1">
+                          {!n.isRead && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => markAsRead(n._id)}
+                              disabled={loading}
+                              className="h-6 px-1 text-green-600 hover:text-green-700"
+                              title="Mark as read"
+                            >
+                              <CheckCircle size={12} />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => markAsRead(n._id)}
+                            onClick={() => deleteNotification(n._id)}
                             disabled={loading}
-                            className="h-6 w-6 p-0"
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                           >
-                            <Check size={12} />
+                            <Trash2 size={12} />
                           </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteNotification(n._id)}
-                          disabled={loading}
-                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={12} />
-                        </Button>
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

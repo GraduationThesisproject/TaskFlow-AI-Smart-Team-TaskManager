@@ -2,6 +2,7 @@ const Template = require('../models/Template');
 const ActivityLog = require('../models/ActivityLog');
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const NotificationService = require('../services/notification.service');
 
 // helper: get user's system role and id
 const getUserAndRoles = async (req) => {
@@ -187,6 +188,22 @@ exports.create = async (req, res, next) => {
       });
     } catch (e) {
       // Don't fail request if activity logging fails
+    }
+
+    // Notify creator: Template created
+    try {
+      await NotificationService.createNotification({
+        title: 'Template created',
+        message: `Your template "${doc.name}" was created successfully`,
+        type: 'template_created',
+        recipient: adminId,
+        sender: adminId,
+        relatedEntity: { entityType: 'template', entityId: doc._id },
+        priority: 'medium',
+        deliveryMethods: { inApp: true } // email optional; enable later if configured
+      });
+    } catch (notifyErr) {
+      // best-effort
     }
 
     return ok(res, doc, 201);

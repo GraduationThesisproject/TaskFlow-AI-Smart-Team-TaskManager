@@ -77,6 +77,16 @@ export const WorkspacesSection = () => {
                       {ws.name}
                     </Typography>
                     <div className="flex items-center gap-2">
+                      {/* Visibility badge */}
+                      <Badge
+                        variant="secondary"
+                        className={(ws?.isPublic === true || ws?.visibility === 'public')
+                          ? 'bg-green-50 text-green-700 border border-green-200'
+                          : 'bg-muted text-foreground/80 border border-border'}
+                        title={(ws?.isPublic === true || ws?.visibility === 'public') ? 'Public workspace' : 'Private workspace'}
+                      >
+                        {(ws?.isPublic === true || ws?.visibility === 'public') ? 'Public' : 'Private'}
+                      </Badge>
                       <Badge variant="secondary">{ws.members?.length || 0} members</Badge>
                       <Button
                         variant="ghost"

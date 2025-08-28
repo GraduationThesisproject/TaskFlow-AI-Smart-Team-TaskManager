@@ -37,23 +37,7 @@ const WorkspacesLayout: React.FC = () => {
     );
   }, [workspaces]);
 
-  useEffect(() => {
-    if (!loading && !error) {
-      try {
-        console.log("Public workspaces (raw):", workspaces);
-        console.table(
-          (sortedWorkspaces || []).map((ws: any) => ({
-            id: ws?._id,
-            name: ws?.name,
-            updatedAt: ws?.updatedAt,
-            createdAt: ws?.createdAt,
-          }))
-        );
-      } catch {
-        // no-op
-      }
-    }
-  }, [loading, error, workspaces, sortedWorkspaces]);
+
 
   const getInitials = (name: string = "") => {
     return name
@@ -143,7 +127,18 @@ const WorkspacesLayout: React.FC = () => {
                                 {ws?.name}
                               </Typography>
                             </div>
-                            <div className="w-8"></div>
+                            {/* Visibility badge */}
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant="secondary"
+                                className={(ws?.isPublic === true || ws?.visibility === 'public')
+                                  ? 'bg-green-50 text-green-700 border border-green-200'
+                                  : 'bg-muted text-foreground/80 border border-border'}
+                                title={(ws?.isPublic === true || ws?.visibility === 'public') ? 'Public workspace' : 'Private workspace'}
+                              >
+                                {(ws?.isPublic === true || ws?.visibility === 'public') ? 'Public' : 'Private'}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </div>

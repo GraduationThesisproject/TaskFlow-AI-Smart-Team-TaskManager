@@ -129,6 +129,8 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
             isRead: false,
             createdAt: now,
             updatedAt: now,
+            // Mark as client-only so markAsRead/delete skip server calls (prevents 404)
+            clientOnly: true,
           } as any));
         }
       } catch (e) {

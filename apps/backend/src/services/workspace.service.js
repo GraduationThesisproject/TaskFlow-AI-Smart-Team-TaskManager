@@ -313,6 +313,65 @@ class WorkspaceService {
 
         return { success: true, message: 'Workspace deleted successfully' };
     }
+
+    // Soft delete workspace (preferred)
+    async softDeleteWorkspace(workspaceId, userId) {
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) throw new Error('Workspace not found');
+        if (workspace.owner.toString() !== userId.toString()) {
+            throw new Error('Only workspace owner can delete the workspace');
+        }
+
+        // Mark as archived; isActive will be synced by pre-save hook
+        workspace.status = 'archived';
+        const now = new Date();
+        workspace.archivedAt = now;
+        // 24 hours timer until potential purge/restore window ends
+        const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+        workspace.archiveExpiresAt = new Date(now.getTime() + TWENTY_FOUR_HOURS_MS);
+        workspace.archivedBy = userId;
+        await workspace.save();
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId,
+            action: 'workspace_delete',
+            description: `Archived workspace: ${workspace.name}`,
+            entity: { type: 'Workspace', id: workspace._id, name: workspace.name },
+            workspaceId,
+            severity: 'warning'
+        });
+
+        return workspace.toObject();
+    }
+
+    // Restore soft-deleted workspace
+    async restoreWorkspace(workspaceId, userId) {
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) throw new Error('Workspace not found');
+
+        // Owner can restore; fallback: user who deleted or any owner
+        if (workspace.owner.toString() !== userId.toString()) {
+            throw new Error('Only workspace owner can restore the workspace');
+        }
+
+        workspace.status = 'active';
+        workspace.archivedAt = null;
+        workspace.archivedBy = null;
+        workspace.archiveExpiresAt = null;
+        await workspace.save();
+
+        await ActivityLog.logActivity({
+            userId,
+            action: 'workspace_restore',
+            description: `Restored workspace: ${workspace.name}`,
+            entity: { type: 'Workspace', id: workspace._id, name: workspace.name },
+            workspaceId,
+            severity: 'info'
+        });
+
+        return workspace.toObject();
+    }
 }
 
 module.exports = new WorkspaceService();

@@ -55,6 +55,7 @@ export interface CreateWorkspaceData {
   description?: string;
   plan?: 'free' | 'basic' | 'premium' | 'enterprise';
   isPublic?: boolean;
+  visibility?: 'private' | 'public';
 }
 
 export interface UpdateWorkspaceData {
