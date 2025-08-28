@@ -1,7 +1,9 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+
 import axiosInstance from '../../config/axios';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../index';
+
 import type { TemplateItem, TemplatesFilters, TemplatesState } from '../../types/dash.types';
 
 // Initial state
@@ -21,6 +23,9 @@ const toQuery = (params: Record<string, any>) => {
   return `?${qs}`;
 };
 
+// Global in-flight guard to prevent duplicate like POSTs per template id
+const likeInFlight = new Set<string>();
+
 // Thunks
 export const listTemplates = createAsyncThunk(
   'templates/list',
@@ -35,7 +40,6 @@ export const listTemplates = createAsyncThunk(
   }
 );
 
-// Admin-only: list all templates (backend must support scope=all)
 export const listAllTemplates = createAsyncThunk(
   'templates/listAll',
   async (params: TemplatesFilters | undefined, { rejectWithValue }) => {
@@ -100,13 +104,27 @@ export const deleteTemplate = createAsyncThunk(
 
 export const toggleTemplateLike = createAsyncThunk(
   'templates/toggleLike',
-  async (arg: { id: string; userId: string }, { rejectWithValue }) => {
+  async (arg: { id: string; userId: string }, { getState, rejectWithValue }) => {
     try {
       const { id } = arg;
+      if (!id) throw new Error('Missing template id');
+
+      // If a request is already in-flight for this id, return current state snapshot to avoid extra POSTs
+      if (likeInFlight.has(id)) {
+        const state = getState() as RootState;
+        const current = state.templates.items.find((t) => (t as any)._id === id) || state.templates.selected;
+        return current as any;
+      }
+
+      likeInFlight.add(id);
       const res = await axiosInstance.post<{ success: boolean; data: TemplateItem }>(`/templates/${id}/like`);
       return res.data.data;
     } catch (e: any) {
       return rejectWithValue(e.message || 'Failed to toggle like');
+    }
+    finally {
+      // Always clear in-flight guard
+      try { likeInFlight.delete(arg.id); } catch {}
     }
   }
 );
