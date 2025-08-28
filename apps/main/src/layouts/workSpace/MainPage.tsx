@@ -9,6 +9,7 @@ import MembersTable from '../../components/workspace/main_page/MembersTable';
 import InviteSection from '../../components/workspace/main_page/InviteSection';
 import GuestsSection from '../../components/workspace/main_page/GuestsSection';
 import JoinRequestsSection from '../../components/workspace/main_page/JoinRequestsSection';
+import CreateSpaceModal from '../../components/workspace/main_page/CreateSpaceModal';
 import { Modal, ModalBody, ModalFooter } from '@taskflow/ui';
 import { Button } from '@taskflow/ui';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -24,6 +25,7 @@ import {
 import { WorkspaceService } from '../../services';
 import { SpaceService } from '../../services/spaceService';
 import SpaceTable from '../../components/workspace/main_page/SpaceTable';
+import type { Space } from '../../types/space.types';
 
 interface User {
   _id?: string;
@@ -56,7 +58,7 @@ const Main = () => {
     if (isValidObjectId(derivedId || '')) return derivedId as string;
     return null;
   }, [rawWorkspaceId, derivedId]);
-  
+
   const storeMembers = useAppSelector(selectMembers) ?? [] as Member[];
   const members: Member[] = storeMembers.length > 0 ? storeMembers : (currentWorkspace?.members ?? []);
   const isLoading = useAppSelector(selectWorkspaceLoading);
@@ -64,11 +66,12 @@ const Main = () => {
 
   const [role, setRole] = React.useState<'all' | 'owner' | 'admin' | 'member'>('all');
   const [search, setSearch] = React.useState('');
-  const [spaces, setSpaces] = React.useState<any[]>([]);
+  const [spaces, setSpaces] = React.useState<Space[]>([]);
   const [isLoadingSpaces, setIsLoadingSpaces] = React.useState(false);
   const [spaceError, setSpaceError] = React.useState<string | null>(null);
   const [showInviteLinkModal, setShowInviteLinkModal] = React.useState(false);
   const [generatedInviteLink, setGeneratedInviteLink] = React.useState('');
+  const [showCreateSpaceModal, setShowCreateSpaceModal] = React.useState(false);
   const roleLabel = role === 'all' ? 'All Roles' : role.charAt(0).toUpperCase() + role.slice(1);
 
   React.useEffect(() => {
@@ -84,33 +87,13 @@ const Main = () => {
   useEffect(() => {
     if (workspaceId) {
       dispatch(fetchWorkspace(workspaceId));
-      
-      // Fetch spaces for the workspace 
-      const fetchSpaces = async () => {
-        try {
-          setIsLoadingSpaces(true);
-          setSpaceError(null);
-          console.log('Fetching spaces for workspace:', workspaceId);
-          const response = await SpaceService.getSpacesByWorkspace(workspaceId);
-          console.log('Spaces API response:', response);
-          setSpaces(response.data || []);
-        } catch (error: any) {
-          const errorMessage = error.response?.data?.message || error.message || 'Failed to load spaces';
-          console.error('Error fetching spaces:', {
-            message: errorMessage,
-            status: error.response?.status,
-            url: error.config?.url
-          });
-          setSpaceError(`Failed to load spaces: ${errorMessage}`);
-        } finally {
-          setIsLoadingSpaces(false);
-        }
-      };
-      
-      fetchSpaces();
     }
   }, [workspaceId, dispatch]);
-
+  useEffect(() => {
+    if (currentWorkspace) {
+      setSpaces(currentWorkspace.spaces || []);
+    }
+  }, [currentWorkspace]);
   // Debug logging for members data
   React.useEffect(() => {
     console.log('Members data updated:', {
@@ -126,7 +109,7 @@ const Main = () => {
       console.error('Cannot remove member: No workspace ID available');
       return;
     }
-    
+
     try {
       await WorkspaceService.removeMember(workspaceId, memberId);
       // Refresh workspace data after removal
@@ -136,18 +119,19 @@ const Main = () => {
     }
   };
 
-  const onRemoveSpace = async (spaceId: string) => {
+  const onArchiveSpace = async (spaceId: string) => {
     try {
-      await SpaceService.deleteSpace(spaceId);
-      // Refresh spaces after removal
+      await SpaceService.archiveSpace(spaceId);
+      // Refresh spaces after archiving
       if (workspaceId) {
         const response = await SpaceService.getSpacesByWorkspace(workspaceId);
-        setSpaces(response.data || []);
+        const spacesData = response.data || [];
+        setSpaces(Array.isArray(spacesData) ? spacesData : []);
       } else {
         console.error('Cannot refresh spaces: workspaceId is null');
       }
     } catch (error) {
-      console.error('Error removing space:', error);
+      console.error('Error archiving space:', error);
     }
   };
 
@@ -175,7 +159,7 @@ const Main = () => {
     });
   }, [members, role, search]);
 
-  // const filteredSpaces = spaces.filter(space => 
+  // const filteredSpaces = spaces.filter(space =>
   //   space.name.toLowerCase().includes(search.toLowerCase()) ||
   //   (space.description && space.description.toLowerCase().includes(search.toLowerCase()))
   // );
@@ -222,7 +206,7 @@ const Main = () => {
     navigator.clipboard.writeText(generatedInviteLink);
     alert('Invite link copied to clipboard!');
   };
-  
+
   const onDisableInvite = () => {
     if (!workspaceId) {
       console.warn('[Workspace] Cannot disable invite: missing/invalid workspace id.');
@@ -230,27 +214,48 @@ const Main = () => {
     }
   };
 
-    // Auto-fire API search when user types 2+ chars (debounced)
-    React.useEffect(() => {
-      const q = search.trim();
-      if (q.length < 2) return;
-      if (!workspaceId) {
-        // eslint-disable-next-line no-console
-        console.warn('[API members search] Skipped: invalid workspace id. Provide ?id=<ObjectId> in URL.');
-        return;
-      }
-      const t = setTimeout(async () => {
-        // try {
-        //   const apiMembers = await workspaceService.getMembers(workspaceId, { q });
-        //   // eslint-disable-next-line no-console
-        //   console.log('[API members search]', { query: q, count: apiMembers.length, members: apiMembers });
-        // } catch (err) {
-        //   // eslint-disable-next-line no-console
-        //   console.error('[API members search error]', err);
-        // }
-      }, 300);
-      return () => clearTimeout(t);
-    }, [search, workspaceId]);
+  const onAddSpace = () => {
+    setShowCreateSpaceModal(true);
+  };
+
+  const onSpaceCreated = (newSpace: Space) => {
+    console.log('New space created:', newSpace);
+    // Refresh spaces list
+    if (workspaceId) {
+      const refreshSpaces = async () => {
+        try {
+          const response = await SpaceService.getSpacesByWorkspace(workspaceId);
+          const spacesData = response.data || [];
+          setSpaces(Array.isArray(spacesData) ? spacesData : []);
+        } catch (error) {
+          console.error('Error refreshing spaces after creation:', error);
+        }
+      };
+      refreshSpaces();
+    }
+  };
+
+  // Auto-fire API search when user types 2+ chars (debounced)
+  React.useEffect(() => {
+    const q = search.trim();
+    if (q.length < 2) return;
+    if (!workspaceId) {
+      // eslint-disable-next-line no-console
+      console.warn('[API members search] Skipped: invalid workspace id. Provide ?id=<ObjectId> in URL.');
+      return;
+    }
+    const t = setTimeout(async () => {
+      // try {
+      //   const apiMembers = await workspaceService.getMembers(workspaceId, { q });
+      //   // eslint-disable-next-line no-console
+      //   console.log('[API members search]', { query: q, count: apiMembers.length, members: apiMembers });
+      // } catch (err) {
+      //   // eslint-disable-next-line no-console
+      //   console.error('[API members search error]', err);
+      // }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search, workspaceId]);
 
   return (
     <DashboardShell>
@@ -326,6 +331,14 @@ const Main = () => {
           </Button>
         </ModalFooter>
       </Modal>
+
+      {/* Create Space Modal */}
+      <CreateSpaceModal
+        isOpen={showCreateSpaceModal}
+        onClose={() => setShowCreateSpaceModal(false)}
+        workspaceId={workspaceId || ''}
+        onSpaceCreated={onSpaceCreated}
+      />
     </DashboardShell>
   );
 };
