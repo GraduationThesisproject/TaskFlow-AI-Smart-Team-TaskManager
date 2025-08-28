@@ -16,6 +16,12 @@ router.post('/auth/login', adminController.login);
 router.post('/auth/login/2fa-complete', adminController.completeLoginWith2FA);
 router.get('/auth/test-jwt', adminController.testJWT);
 
+// Public endpoint for creating the first admin user (only works when no admins exist)
+router.post('/auth/setup-first-admin', adminController.setupFirstAdmin);
+
+// Apply admin authentication middleware to protected routes
+router.use(authenticateAdmin);
+
 // 2FA management routes (protected)
 router.get('/2fa/status', adminController.get2FAStatus);
 router.post('/2fa/enable', adminController.enable2FA);
@@ -23,12 +29,6 @@ router.post('/2fa/verify-setup', adminController.verify2FASetup);
 router.post('/2fa/disable', adminController.disable2FA);
 router.post('/2fa/backup-codes', adminController.generateBackupCodes);
 router.post('/2fa/recovery-token', adminController.generateRecoveryToken);
-
-// Public endpoint for creating the first admin user (only works when no admins exist)
-router.post('/auth/setup-first-admin', adminController.setupFirstAdmin);
-
-// Apply admin authentication middleware to protected routes
-router.use(authenticateAdmin);
 
 // Protected admin routes
 router.post('/auth/logout', adminController.logout);

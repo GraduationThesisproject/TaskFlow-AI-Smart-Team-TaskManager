@@ -5,6 +5,7 @@ const { sendResponse } = require('../utils/responseHandler');
 const logger = require('../config/logger');
 const { generateToken } = require('../utils/jwt');
 const UserSessions = require('../models/UserSessions');
+const TwoFactorAuthService = require('../services/twoFactorAuth.service');
 
 // Admin Authentication
 const login = async (req, res) => {
@@ -1210,26 +1211,43 @@ const getBrandingAssets = async (req, res) => {
 // 2FA Management Functions
 const get2FAStatus = async (req, res) => {
   try {
+    console.log('=== GET 2FA STATUS DEBUG ===');
+    console.log('req.user.id:', req.user.id);
+    
     const admin = await Admin.findById(req.user.id).select('+twoFactorSecret +backupCodes +recoveryToken');
+    console.log('Admin found:', admin ? 'Yes' : 'No');
     
     if (!admin) {
+      console.log('Admin not found');
       return sendResponse(res, 404, false, 'Admin not found');
     }
 
+    console.log('Admin fields:', {
+      hasTwoFactorAuth: admin.hasTwoFactorAuth,
+      twoFactorAuthEnabledAt: admin.twoFactorAuthEnabledAt,
+      twoFactorAuthLastUsed: admin.twoFactorAuthLastUsed,
+      backupCodes: admin.backupCodes,
+      recoveryToken: admin.recoveryToken
+    });
+
     const status = {
-      isEnabled: admin.hasTwoFactorAuth,
-      enabledAt: admin.twoFactorAuth?.enabledAt,
-      lastUsed: admin.twoFactorAuth?.lastUsed,
+      isEnabled: admin.hasTwoFactorAuth || false,
+      enabledAt: admin.twoFactorAuthEnabledAt || null,
+      lastUsed: admin.twoFactorAuthLastUsed || null,
       backupCodes: {
-        total: (admin.twoFactorAuth?.backupCodes?.length || 0),
-        remaining: (admin.twoFactorAuth?.backupCodes?.filter(bc => !bc.used)?.length || 0),
-        used: (admin.twoFactorAuth?.backupCodes?.filter(bc => bc.used)?.length || 0)
+        total: (admin.backupCodes?.length || 0),
+        remaining: (admin.backupCodes?.filter(bc => !bc.used)?.length || 0),
+        used: (admin.backupCodes?.filter(bc => bc.used)?.length || 0)
       },
-      hasRecoveryToken: !!admin.twoFactorAuth?.recoveryToken
+      hasRecoveryToken: !!admin.recoveryToken
     };
 
+    console.log('Status object:', status);
     sendResponse(res, 200, true, '2FA status retrieved successfully', status);
   } catch (error) {
+    console.error('=== 2FA STATUS ERROR ===');
+    console.error('Error details:', error);
+    console.error('Error stack:', error.stack);
     logger.error('Get 2FA status error:', error);
     sendResponse(res, 500, false, 'Server error retrieving 2FA status');
   }
@@ -1237,32 +1255,73 @@ const get2FAStatus = async (req, res) => {
 
 const enable2FA = async (req, res) => {
   try {
-    const admin = await Admin.findById(req.user.id).select('+twoFactorSecret +backupCodes');
+    console.log('=== ENABLE 2FA DEBUG ===');
+    console.log('req.user:', req.user);
+    console.log('req.user.id:', req.user?.id);
     
-    if (!admin) {
+    // Validate user ID
+    if (!req.user || !req.user.id) {
+      console.log('No user found in request');
+      return sendResponse(res, 401, false, 'Authentication required');
+    }
+
+    // Check if admin exists first
+    const adminExists = await Admin.findById(req.user.id);
+    if (!adminExists) {
+      console.log('Admin not found');
       return sendResponse(res, 404, false, 'Admin not found');
     }
 
-    if (admin.hasTwoFactorAuth) {
+    if (adminExists.hasTwoFactorAuth) {
+      console.log('2FA already enabled');
       return sendResponse(res, 400, false, '2FA is already enabled');
     }
 
-    const TwoFactorAuthService = require('../services/twoFactorAuth.service');
-    const { secret, otpauthUrl, qrCode } = await TwoFactorAuthService.generateSecret(admin.userEmail);
+    console.log('Generating 2FA secret...');
+    const { secret, otpauthUrl, qrCode } = await TwoFactorAuthService.generateSecret(adminExists.userEmail);
+    console.log('Secret generated:', !!secret);
+    
+    if (!secret || !otpauthUrl || !qrCode) {
+      console.log('Failed to generate 2FA secret');
+      return sendResponse(res, 500, false, 'Failed to generate 2FA secret');
+    }
+    
+    console.log('Generating backup codes...');
     const backupCodes = TwoFactorAuthService.generateBackupCodes(10);
+    console.log('Backup codes generated:', backupCodes.length);
 
-    admin.twoFactorAuth = {
-      secret,
-      backupCodes: backupCodes.map(code => ({
-        code,
-        used: false,
-        usedAt: null
-      })),
-      enabledAt: null,
-      lastUsed: null
-    };
+    if (!backupCodes || backupCodes.length === 0) {
+      console.log('Failed to generate backup codes');
+      return sendResponse(res, 500, false, 'Failed to generate backup codes');
+    }
 
-    await admin.save();
+    // Use findByIdAndUpdate to avoid version conflicts
+    const updatedAdmin = await Admin.findByIdAndUpdate(
+      req.user.id,
+      {
+        $set: {
+          twoFactorSecret: secret,
+          backupCodes: backupCodes.map(code => ({
+            code,
+            used: false,
+            usedAt: null
+          })),
+          lastActivityAt: new Date() // Explicitly set to avoid pre-save middleware conflicts
+        }
+      },
+      {
+        new: true, // Return the updated document
+        runValidators: true, // Run schema validators
+        select: '+twoFactorSecret +backupCodes' // Include the fields we need
+      }
+    );
+
+    if (!updatedAdmin) {
+      console.log('Failed to update admin - document not found');
+      return sendResponse(res, 500, false, 'Failed to update admin during 2FA setup');
+    }
+
+    console.log('Admin updated successfully');
 
     sendResponse(res, 200, true, '2FA setup initiated', {
       secret,
@@ -1271,6 +1330,78 @@ const enable2FA = async (req, res) => {
       backupCodes
     });
   } catch (error) {
+    console.error('=== ENABLE 2FA ERROR ===');
+    console.error('Error details:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Handle specific Mongoose errors
+    if (error.name === 'VersionError') {
+      console.error('Version conflict detected - retrying...');
+      // Retry once with a fresh document fetch
+      try {
+        const retryAdmin = await Admin.findById(req.user.id);
+        if (!retryAdmin) {
+          return sendResponse(res, 404, false, 'Admin not found during retry');
+        }
+        
+        if (retryAdmin.hasTwoFactorAuth) {
+          return sendResponse(res, 400, false, '2FA is already enabled');
+        }
+
+        const { secret, otpauthUrl, qrCode } = await TwoFactorAuthService.generateSecret(retryAdmin.userEmail);
+        const backupCodes = TwoFactorAuthService.generateBackupCodes(10);
+
+        if (!secret || !otpauthUrl || !qrCode || !backupCodes || backupCodes.length === 0) {
+          console.log('Failed to generate 2FA data during retry');
+          return sendResponse(res, 500, false, 'Failed to generate 2FA data during retry');
+        }
+
+        const finalUpdate = await Admin.findByIdAndUpdate(
+          req.user.id,
+          {
+            $set: {
+              twoFactorSecret: secret,
+              backupCodes: backupCodes.map(code => ({
+                code,
+                used: false,
+                usedAt: null
+              })),
+              lastActivityAt: new Date()
+            }
+          },
+          {
+            new: true,
+            runValidators: true,
+            select: '+twoFactorSecret +backupCodes'
+          }
+        );
+
+        if (finalUpdate) {
+          console.log('Admin updated successfully on retry');
+          return sendResponse(res, 200, true, '2FA setup initiated', {
+            secret,
+            otpauthUrl,
+            qrCode,
+            backupCodes
+          });
+        }
+      } catch (retryError) {
+        console.error('Retry failed:', retryError);
+        logger.error('Enable 2FA retry error:', retryError);
+      }
+    }
+    
+    // Handle other specific errors
+    if (error.name === 'ValidationError') {
+      console.error('Validation error:', error.message);
+      return sendResponse(res, 400, false, `Validation error: ${error.message}`);
+    }
+    
+    if (error.name === 'CastError') {
+      console.error('Cast error:', error.message);
+      return sendResponse(res, 400, false, 'Invalid admin ID format');
+    }
+    
     logger.error('Enable 2FA error:', error);
     sendResponse(res, 500, false, 'Server error enabling 2FA');
   }
@@ -1285,7 +1416,7 @@ const verify2FASetup = async (req, res) => {
       return sendResponse(res, 404, false, 'Admin not found');
     }
 
-    if (!admin.twoFactorAuth?.secret) {
+    if (!admin.twoFactorSecret) {
       return sendResponse(res, 400, false, '2FA setup not initiated');
     }
 
@@ -1293,20 +1424,22 @@ const verify2FASetup = async (req, res) => {
       return sendResponse(res, 400, false, '2FA is already enabled');
     }
 
-    const TwoFactorAuthService = require('../services/twoFactorAuth.service');
-    const isValid = TwoFactorAuthService.verifyToken(token, admin.twoFactorAuth.secret);
+    const isValid = TwoFactorAuthService.verifyToken(token, admin.twoFactorSecret);
     
     if (!isValid) {
       return sendResponse(res, 400, false, 'Invalid verification code');
     }
 
     admin.hasTwoFactorAuth = true;
-    admin.twoFactorAuth.enabledAt = new Date();
-    admin.twoFactorAuth.lastUsed = new Date();
+    admin.twoFactorAuthEnabledAt = new Date();
+    admin.twoFactorAuthLastUsed = new Date();
     await admin.save();
 
     sendResponse(res, 200, true, '2FA enabled successfully');
   } catch (error) {
+    console.error('=== VERIFY 2FA SETUP ERROR ===');
+    console.error('Error details:', error);
+    console.error('Error stack:', error.stack);
     logger.error('Verify 2FA setup error:', error);
     sendResponse(res, 500, false, 'Server error verifying 2FA setup');
   }
@@ -1326,11 +1459,10 @@ const disable2FA = async (req, res) => {
     }
 
     // Verify the token before disabling
-    const TwoFactorAuthService = require('../services/twoFactorAuth.service');
     let isValid = false;
 
     // Check if it's a backup code
-    const backupCode = admin.twoFactorAuth.backupCodes.find(
+    const backupCode = admin.backupCodes.find(
       bc => bc.code === token && !bc.used
     );
 
@@ -1339,7 +1471,7 @@ const disable2FA = async (req, res) => {
       backupCode.usedAt = new Date();
       isValid = true;
     } else {
-      isValid = TwoFactorAuthService.verifyToken(token, admin.twoFactorAuth.secret);
+      isValid = TwoFactorAuthService.verifyToken(token, admin.twoFactorSecret);
     }
 
     if (!isValid) {
@@ -1347,14 +1479,11 @@ const disable2FA = async (req, res) => {
     }
 
     admin.hasTwoFactorAuth = false;
-    admin.twoFactorAuth = {
-      secret: null,
-      backupCodes: [],
-      recoveryToken: null,
-      recoveryTokenExpires: null,
-      enabledAt: null,
-      lastUsed: null
-    };
+    admin.twoFactorSecret = null;
+    admin.backupCodes = [];
+    admin.recoveryToken = null;
+    admin.twoFactorAuthEnabledAt = null;
+    admin.twoFactorAuthLastUsed = null;
     await admin.save();
 
     sendResponse(res, 200, true, '2FA disabled successfully');
@@ -1376,10 +1505,9 @@ const generateBackupCodes = async (req, res) => {
       return sendResponse(res, 400, false, '2FA is not enabled');
     }
 
-    const TwoFactorAuthService = require('../services/twoFactorAuth.service');
     const newBackupCodes = TwoFactorAuthService.generateBackupCodes(10);
 
-    admin.twoFactorAuth.backupCodes = newBackupCodes.map(code => ({
+    admin.backupCodes = newBackupCodes.map(code => ({
       code,
       used: false,
       usedAt: null
@@ -1407,11 +1535,10 @@ const generateRecoveryToken = async (req, res) => {
       return sendResponse(res, 400, false, '2FA is not enabled');
     }
 
-    const TwoFactorAuthService = require('../services/twoFactorAuth.service');
     const { token, expiresAt } = TwoFactorAuthService.generateRecoveryToken();
 
-    admin.twoFactorAuth.recoveryToken = token;
-    admin.twoFactorAuth.recoveryTokenExpires = expiresAt;
+    admin.recoveryToken = token;
+    admin.recoveryTokenExpires = expiresAt;
     await admin.save();
 
     sendResponse(res, 200, true, 'Recovery token generated successfully', {

@@ -94,6 +94,21 @@ const adminSchema = new mongoose.Schema({
     select: false
   },
   
+  recoveryTokenExpires: {
+    type: Date,
+    default: null
+  },
+  
+  twoFactorAuthEnabledAt: {
+    type: Date,
+    default: null
+  },
+  
+  twoFactorAuthLastUsed: {
+    type: Date,
+    default: null
+  },
+  
   // Profile info
   firstName: {
     type: String,
@@ -256,6 +271,12 @@ adminSchema.statics.getDefaultPermissions = function(role) {
   };
   
   return defaultPermissions[role] || defaultPermissions.viewer;
+};
+
+// Instance method to update admin activity
+adminSchema.methods.updateActivity = function() {
+  this.lastActivityAt = new Date();
+  return this.save();
 };
 
 module.exports = mongoose.model('Admin', adminSchema);
