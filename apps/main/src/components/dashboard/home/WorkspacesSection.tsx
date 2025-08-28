@@ -35,7 +35,7 @@ export const WorkspacesSection = () => {
   }, [workspaces, user]);
 
   return (
-    <div className="overflow-x-hidden">
+    <>
       <Card className="backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)]">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -131,6 +131,6 @@ export const WorkspacesSection = () => {
         workspaceId={toDelete?.id || ''}
         workspaceName={toDelete?.name}
       />
-    </div>
+    </>
   );
 };

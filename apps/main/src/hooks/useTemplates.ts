@@ -85,7 +85,9 @@ export const useTemplates = (): UseTemplatesReturn => {
   }, [dispatch]);
 
   const toggleLike = useCallback((id: string) => {
-    if (!id || id.length !== 24) return;
+    // Accept any non-empty id; backend will validate format. This avoids blocking toggles
+    // when ids are not 24-char hex.
+    if (!id) return;
     const userId: string | undefined = userBasic?._id || (userBasic as any)?.id;
     if (!userId) return;
     if (env.ENABLE_DEBUG) {

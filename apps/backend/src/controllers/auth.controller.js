@@ -436,19 +436,25 @@ exports.updateProfile = async (req, res) => {
 
 // Secure profile update with password verification and optional avatar upload
 exports.updateProfileSecure = async (req, res) => {
-    try {
+  const traceId = `UPS-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  try {
         const { currentPassword, name } = req.body;
 
+        // Incoming request metadata
+        logger.info(`[${traceId}] updateProfileSecure: start; headers.content-type=${req.headers['content-type']}; bodyKeys=${Object.keys(req.body || {}).join(',')}`);
+        if (req.file || req.files) {
+            logger.info(`[${traceId}] updateProfileSecure: multer received -> file=${!!req.file}, filesCount=${req.files?.length || 0}`);
+        }
         // Debug: log presence of uploaded file
         try {
             const f = req.uploadedFile;
             if (f) {
-                logger.info(`updateProfileSecure: received uploadedFile id=${f._id?.toString?.()} name=${f.filename}`);
+                logger.info(`[${traceId}] updateProfileSecure: uploadedFile present id=${f._id?.toString?.()} name=${f.filename} path=${f.path}`);
             } else {
-                logger.info('updateProfileSecure: no uploadedFile present');
+                logger.info(`[${traceId}] updateProfileSecure: no uploadedFile present`);
             }
         } catch (e) {
-            logger.warn('updateProfileSecure: failed to log uploadedFile info:', e.message);
+            logger.warn(`[${traceId}] updateProfileSecure: failed to log uploadedFile info: ${e.message}`);
         }
 
         // Load user with password for verification
@@ -465,7 +471,7 @@ exports.updateProfileSecure = async (req, res) => {
                     await req.uploadedFile.deleteFromStorage();
                     await req.uploadedFile.deleteOne();
                 } catch (e) {
-                    logger.warn('Cleanup failed for uploaded file on password error:', e.message);
+                    logger.warn(`[${traceId}] Cleanup failed for uploaded file on password error: ${e.message}`);
                 }
             }
             return sendResponse(res, 400, false, 'Current password is incorrect');
@@ -476,34 +482,65 @@ exports.updateProfileSecure = async (req, res) => {
             avatar: user.avatar
         };
 
-        // Update name if provided
-        if (name) user.name = name;
+        // Normalize and validate name only if provided
+        const normalizedName = typeof name === 'string' ? name.trim() : undefined;
+
+        // If neither name nor avatar is provided, return a 400
+        if (!normalizedName && !req.uploadedFile) {
+            return sendResponse(res, 400, false, 'No changes provided');
+        }
+
+        // Update name if a non-empty value is provided
+        if (normalizedName) {
+            if (normalizedName.length < 2 || normalizedName.length > 100) {
+                return sendResponse(res, 400, false, 'Name must be between 2 and 100 characters');
+            }
+            user.name = normalizedName;
+        }
 
         // Handle avatar if a new file was uploaded
         if (req.uploadedFile) {
             const File = require('../models/File');
+            // Preserve old avatar URL before overwriting
+            const oldAvatarUrl = user.avatar;
             try {
-                if (user.avatar) {
-                    const oldFile = await File.findById(user.avatar);
+                if (oldAvatarUrl) {
+                    // Find previous avatar by URL since user.avatar is a String URL
+                    const oldFile = await File.findOne({ url: oldAvatarUrl });
                     if (oldFile && oldFile._id.toString() !== req.uploadedFile._id.toString()) {
                         await oldFile.deleteFromStorage();
                     }
                 }
             } catch (e) {
-                logger.warn('Failed to delete old avatar:', e.message);
+                logger.warn(`[${traceId}] updateProfileSecure: Failed to delete old avatar: ${e.message}`);
             }
 
-            const file = req.uploadedFile;
-            await file.attachTo('User', user._id);
-            user.avatar = file._id;
-            logger.info(`updateProfileSecure: user ${user._id.toString()} avatar set to file ${file._id.toString()}`);
+            try {
+                const file = req.uploadedFile;
+                await file.attachTo('User', user._id);
+                // user.avatar must be a URL/String per schema validation
+                user.avatar = file.url;
+                logger.info(`[${traceId}] updateProfileSecure: avatar set to url ${file.url}`);
+            } catch (e) {
+                logger.error(`[${traceId}] updateProfileSecure: error attaching new avatar: ${e.message}`);
+                return sendResponse(res, 500, false, 'Failed to attach avatar');
+            }
         }
 
-        await user.save();
+        try {
+            await user.save();
+        } catch (e) {
+            logger.error(`[${traceId}] updateProfileSecure: error saving user: ${e.message}`);
+            return sendResponse(res, 500, false, 'Failed to save user profile');
+        }
 
         // Populate avatar so response contains URL
-        await user.populate({ path: 'avatar', select: 'url thumbnails' });
-        logger.info(`updateProfileSecure: response avatar url=${user.avatar?.url || user.avatar}`);
+        try {
+            await user.populate({ path: 'avatar', select: 'url thumbnails' });
+            logger.info(`[${traceId}] updateProfileSecure: response avatar url=${user.avatar?.url || user.avatar}`);
+        } catch (e) {
+            logger.warn(`[${traceId}] updateProfileSecure: populate avatar failed: ${e.message}`);
+        }
 
         // Log activity
         await ActivityLog.logActivity({
@@ -520,16 +557,20 @@ exports.updateProfileSecure = async (req, res) => {
             }
         });
 
+        logger.info(`[${traceId}] updateProfileSecure: success`);
         return sendResponse(res, 200, true, 'Profile updated successfully', {
             user: user.getPublicProfile()
         });
-    } catch (error) {
-        logger.error('Secure update profile error:', error);
+  } catch (error) {
+        logger.error(`[${traceId}] Secure update profile error: ${error.message}`);
+        if (error && error.stack) {
+            logger.error(`[${traceId}] Secure update profile error stack: ${error.stack}`);
+        }
         return sendResponse(res, 500, false, 'Server error updating profile');
-    }
+  }
 };
 
-// Logout user
+// ------------------ LOGOUT ------------------
 exports.logout = async (req, res) => {
     try {
         const { deviceId, allDevices = false } = req.body;
@@ -924,32 +965,3 @@ exports.logout = async (req, res) => {
         sendResponse(res, 500, false, 'Server error during logout');
     }
 };
-// ------------------ UPDATE PROFILE SECURE ------------------
-
-exports.updateProfileSecure = async (req, res) => {
-    try {
-      const userId = req.user._id;
-      const { name, currentPassword } = req.body;
-      const avatarFile = req.file;
-  
-      if (!currentPassword) return res.status(400).json({ message: 'Current password required' });
-      if (name && (name.length < 2 || name.length > 100)) return res.status(400).json({ message: 'Name invalid' });
-  
-      const user = await User.findById(userId);
-      if (!(await user.comparePassword(currentPassword))) {
-        return res.status(400).json({ message: 'Incorrect current password' });
-      }
-  
-      if (name) user.name = name;
-      if (avatarFile) user.avatar = {
-        url: `/uploads/avatars/${avatarFile.filename}`,
-        filename: avatarFile.filename
-      };
-  
-      await user.save();
-      res.json({ message: 'Profile updated successfully', user });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: 'Server error' });
-    }
-  };

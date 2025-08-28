@@ -9,7 +9,6 @@ import {
   SidebarNav,
   SidebarNavItem,
   Button,
-  Typography,
 } from '@taskflow/ui';
 
 import type { DashboardShellProps } from '../../types/dash.types';
@@ -40,7 +39,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar */}
       <Sidebar
         collapsed={sidebarCollapsed}
@@ -150,7 +149,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-visible p-6">
           {children}
         </main>
       </div>
