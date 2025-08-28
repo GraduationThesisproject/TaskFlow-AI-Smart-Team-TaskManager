@@ -37,19 +37,15 @@ export function SocketConnectionTest() {
     setError(null);
 
     try {
-      // Create socket with minimal options
       const newSocket = io(env.SOCKET_URL, {
-        autoConnect: false,
         transports: ['websocket', 'polling'],
-        timeout: 10000,
-        forceNew: true,
+        timeout: 5000,
       });
 
-      // Set up event listeners
       newSocket.on('connect', () => {
-        addLog('✅ Socket connected successfully');
+        addLog('✅ Socket connection successful');
         setConnectionStatus('Connected');
-        setError(null);
+        setSocket(newSocket);
       });
 
       newSocket.on('connect_error', (err) => {
@@ -58,72 +54,59 @@ export function SocketConnectionTest() {
         setError(err.message);
       });
 
-      newSocket.on('disconnect', (reason) => {
-        addLog(`🔌 Socket disconnected: ${reason}`);
+      newSocket.on('disconnect', () => {
+        addLog('🔌 Socket disconnected');
         setConnectionStatus('Disconnected');
       });
 
-      newSocket.on('error', (err) => {
-        addLog(`❌ Socket error: ${err}`);
-        setError(err.toString());
-      });
-
-      // Store socket reference
-      setSocket(newSocket);
-
-      // Attempt connection
-      addLog('Attempting to connect...');
-      newSocket.connect();
-
     } catch (err) {
-      addLog(`❌ Failed to create socket: ${err}`);
-      setConnectionStatus('Creation Failed');
+      addLog(`❌ Socket setup error: ${err}`);
+      setConnectionStatus('Setup Error');
       setError(err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
-  const testSocketWithAuth = () => {
+  const testAuthSocketConnection = () => {
+    addLog('Testing authenticated Socket.IO connection...');
+    setConnectionStatus('Connecting with auth...');
+    setError(null);
+
     if (!user?.token) {
       addLog('❌ No authentication token available');
+      setConnectionStatus('No Token');
+      setError('Authentication required');
       return;
     }
 
-    addLog('Testing Socket.IO connection with authentication...');
-    setConnectionStatus('Connecting with Auth...');
-    setError(null);
-
     try {
       const newSocket = io(env.SOCKET_URL, {
-        autoConnect: false,
-        auth: { token: user.token },
         transports: ['websocket', 'polling'],
-        timeout: 10000,
-        forceNew: true,
+        timeout: 5000,
+        auth: {
+          token: user.token
+        }
       });
 
       newSocket.on('connect', () => {
-        addLog('✅ Authenticated socket connected successfully');
-        setConnectionStatus('Authenticated Connected');
-        setError(null);
+        addLog('✅ Authenticated socket connection successful');
+        setConnectionStatus('Auth Connected');
+        setSocket(newSocket);
       });
 
       newSocket.on('connect_error', (err) => {
         addLog(`❌ Authenticated socket connection error: ${err.message}`);
-        setConnectionStatus('Auth Connection Error');
+        setConnectionStatus('Auth Error');
         setError(err.message);
       });
 
-      newSocket.on('disconnect', (reason) => {
-        addLog(`🔌 Authenticated socket disconnected: ${reason}`);
+      newSocket.on('disconnect', () => {
+        addLog('🔌 Authenticated socket disconnected');
         setConnectionStatus('Auth Disconnected');
       });
 
-      setSocket(newSocket);
-      newSocket.connect();
-
     } catch (err) {
-      addLog(`❌ Failed to create authenticated socket: ${err}`);
-      setConnectionStatus('Auth Creation Failed');
+      addLog(`❌ Authenticated socket setup error: ${err}`);
+      setConnectionStatus('Auth Setup Error');
       setError(err instanceof Error ? err.message : 'Unknown error');
     }
   };
@@ -132,8 +115,8 @@ export function SocketConnectionTest() {
     if (socket) {
       socket.disconnect();
       setSocket(null);
-      addLog('🔌 Socket disconnected manually');
-      setConnectionStatus('Manually Disconnected');
+      addLog('🔌 Manually disconnected');
+      setConnectionStatus('Disconnected');
     }
   };
 
@@ -171,36 +154,34 @@ export function SocketConnectionTest() {
       <div className="flex flex-wrap gap-2 mb-4">
         <button
           onClick={testBasicConnection}
-          className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           Test HTTP
         </button>
         <button
           onClick={testSocketConnection}
-          className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+          className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
         >
           Test Socket
         </button>
         <button
-          onClick={testSocketWithAuth}
-          disabled={!user?.token}
-          className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
+          onClick={testAuthSocketConnection}
+          className="px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
         >
           Test Auth Socket
         </button>
         <button
           onClick={disconnect}
-          disabled={!socket}
-          className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
+          className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
         >
           Disconnect
         </button>
       </div>
 
       {/* Logs */}
-      <div className="text-xs space-y-1 max-h-48 overflow-y-auto">
+      <div className="bg-black text-green-400 p-3 rounded text-xs font-mono max-h-48 overflow-y-auto">
         {logs.map((log, index) => (
-          <div key={index} className="p-1 bg-muted/50 rounded">
+          <div key={index} className="mb-1">
             {log}
           </div>
         ))}

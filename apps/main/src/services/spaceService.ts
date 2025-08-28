@@ -103,4 +103,26 @@ export class SpaceService {
       throw error;
     }
   }
+
+  // Archive space
+  static async archiveSpace(id: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.post(`/spaces/${id}/archive`, {});
+      return response.data;
+    } catch (error) {
+      console.error('Error archiving space:', error);
+      throw error;
+    }
+  }
+
+  // Unarchive space
+  static async unarchiveSpace(id: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.post(`/spaces/${id}/archive`, { unarchive: true });
+      return response.data;
+    } catch (error) {
+      console.error('Error unarchiving space:', error);
+      throw error;
+    }
+  }
 }
