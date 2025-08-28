@@ -4,3 +4,5 @@ export { PermissionGuard, withPermission, usePermissionCheck } from './Permissio
 export { PermissionDeniedPopup, usePermissionDeniedPopup } from './PermissionDeniedPopup';
 export { PermissionDemo } from './PermissionDemo';
 export { ProtectedFeature, withFeatureProtection, useFeatureAccess } from './ProtectedFeature';
+export { PermissionIntegrationExample } from './PermissionIntegrationExample';
+export { useAdminPermissions } from '../../hooks/useAdminPermissions';
