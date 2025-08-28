@@ -43,7 +43,7 @@ class SeederValidator {
     }
 
     // Validate system role
-    const validRoles = ['user', 'admin', 'super_admin'];
+    const validRoles = ['super_admin', 'admin', 'moderator'];
     if (userData.systemRole && !validRoles.includes(userData.systemRole)) {
       errors.push(`Invalid system role: ${userData.systemRole}`);
     }

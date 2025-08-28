@@ -10,7 +10,8 @@ import {
   Container,
   Grid,
   Switch,
-  Select
+  Select,
+  Badge
 } from '@taskflow/ui';
 import { 
   CogIcon,
@@ -18,7 +19,9 @@ import {
   BellIcon,
   PuzzlePieceIcon,
   UserGroupIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  UserPlusIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline';
 import { useLanguageContext } from '../contexts/LanguageContext';
 
@@ -96,6 +99,26 @@ const SettingsLayout: React.FC = () => {
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showRoleManagementModal, setShowRoleManagementModal] = useState(false);
+
+  // Admin Users Management State
+  const [adminUsers, setAdminUsers] = useState<Array<{
+    id: string;
+    email: string;
+    role: string;
+    isActive: boolean;
+  }>>([]);
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [addAdminForm, setAddAdminForm] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: 'moderator'
+  });
+  const [addAdminStatus, setAddAdminStatus] = useState({
+    isLoading: false,
+    message: '',
+    isError: false
+  });
 
   // Password strength calculation
   const getPasswordStrength = (password: string) => {
@@ -219,6 +242,79 @@ const SettingsLayout: React.FC = () => {
 
   const clearPasswordChangeStatus = () => {
     setPasswordChangeStatus({ isLoading: false, message: '', isError: false });
+  };
+
+  // Admin Users Management Functions
+  const handleAddAdmin = async () => {
+    if (!addAdminForm.email || !addAdminForm.password || !addAdminForm.confirmPassword || !addAdminForm.role) {
+      setAddAdminStatus({ isLoading: false, message: 'All fields are required', isError: true });
+      return;
+    }
+
+    if (addAdminForm.password !== addAdminForm.confirmPassword) {
+      setAddAdminStatus({ isLoading: false, message: 'Passwords do not match', isError: true });
+      return;
+    }
+
+    if (addAdminForm.password.length < 8) {
+      setAddAdminStatus({ isLoading: false, message: 'Password must be at least 8 characters long', isError: true });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(addAdminForm.email)) {
+      setAddAdminStatus({ isLoading: false, message: 'Please enter a valid email address', isError: true });
+      return;
+    }
+
+        try {
+      setAddAdminStatus({ isLoading: true, message: '', isError: false });
+      
+      // Add admin user via API
+      const response = await adminService.addAdminUser({
+        email: addAdminForm.email,
+        password: addAdminForm.password,
+        role: addAdminForm.role
+      });
+      
+      // Add to local state
+      const newAdmin = {
+        id: response.admin.id || Date.now().toString(),
+        email: addAdminForm.email,
+        role: addAdminForm.role,
+        isActive: true
+      };
+      
+      setAdminUsers(prev => [...prev, newAdmin]);
+      setAddAdminForm({ email: '', password: '', confirmPassword: '', role: 'moderator' });
+      setShowAddAdminModal(false);
+      setAddAdminStatus({ isLoading: false, message: 'Admin user added successfully!', isError: false });
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setAddAdminStatus(prev => ({ ...prev, message: '' }));
+      }, 3000);
+      
+    } catch (error: any) {
+      setAddAdminStatus({ 
+        isLoading: false, 
+        message: error.message || 'Failed to add admin user. Please try again.', 
+        isError: true 
+      });
+    }
+  };
+
+  const handleEditAdmin = (admin: any) => {
+    // TODO: Implement edit admin functionality
+    console.log('Edit admin:', admin);
+  };
+
+  const handleToggleAdminStatus = (adminId: string) => {
+    setAdminUsers(prev => prev.map(admin => 
+      admin.id === adminId 
+        ? { ...admin, isActive: !admin.isActive }
+        : admin
+    ));
   };
 
   const openPasswordChangeModal = () => {
@@ -533,6 +629,75 @@ const SettingsLayout: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Admin Users Management */}
+              <div className="space-y-4">
+                <Typography variant="h3" className="flex items-center">
+                  <UserGroupIcon className="h-5 w-5 mr-2" />
+                  Admin Panel Users Management
+                </Typography>
+
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Typography variant="h4">Add New Admin User</Typography>
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Add email addresses for admin panel access with specific roles
+                      </Typography>
+                    </div>
+                    <Button onClick={() => setShowAddAdminModal(true)} className="flex items-center space-x-2">
+                      <UserPlusIcon className="h-4 w-4" />
+                      Add Admin User
+                    </Button>
+                  </div>
+
+                  {/* Admin Users List */}
+                  <div className="space-y-3">
+                    {adminUsers.map((admin) => (
+                      <div key={admin.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div>
+                            <Typography variant="body-medium" className="font-medium">
+                              {admin.email}
+                            </Typography>
+                            <Typography variant="body-small" className="text-muted-foreground">
+                              Role: {admin.role}
+                            </Typography>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={admin.isActive ? 'success' : 'error'}>
+                            {admin.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditAdmin(admin)}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleToggleAdminStatus(admin.id)}
+                          >
+                            {admin.isActive ? 'Deactivate' : 'Activate'}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {adminUsers.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <UserGroupIcon className="h-8 w-8 mx-auto mb-2" />
+                        <Typography variant="body-medium">No admin users added yet</Typography>
+                        <Typography variant="body-small">Add the first admin user to get started</Typography>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-4">
                 <Typography variant="h3">Password Policy</Typography>
                 <Grid cols={2} className="gap-6">
@@ -1289,6 +1454,121 @@ const SettingsLayout: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Add Admin Modal */}
+        {showAddAdminModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-background border border-border rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <UserPlusIcon className="h-6 w-6 text-primary" />
+                  <Typography variant="h3">Add New Admin User</Typography>
+                </div>
+                <button
+                  onClick={() => setShowAddAdminModal(false)}
+                  className="text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Status Message */}
+              {addAdminStatus.message && (
+                <div className={`p-3 rounded-md mb-4 ${
+                  addAdminStatus.isError 
+                    ? 'bg-red-100 border border-red-300 text-red-700' 
+                    : 'bg-green-100 border border-green-300 text-green-700'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span>{addAdminStatus.message}</span>
+                    <button
+                      onClick={() => setAddAdminStatus(prev => ({ ...prev, message: '' }))}
+                      className="text-sm hover:opacity-70"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
+
+                             <div className="space-y-4">
+                 <div className="space-y-2">
+                   <label htmlFor="adminEmail" className="text-sm font-medium">Email Address</label>
+                   <Input
+                     id="adminEmail"
+                     type="email"
+                     value={addAdminForm.email}
+                     onChange={(e) => setAddAdminForm(prev => ({ ...prev, email: e.target.value }))}
+                     placeholder="Enter admin email address"
+                   />
+                 </div>
+
+                 <div className="space-y-2">
+                   <label htmlFor="adminPassword" className="text-sm font-medium">Password</label>
+                   <Input
+                     id="adminPassword"
+                     type="password"
+                     value={addAdminForm.password}
+                     onChange={(e) => setAddAdminForm(prev => ({ ...prev, password: e.target.value }))}
+                     placeholder="Enter password (min 8 characters)"
+                   />
+                   <div className="text-xs text-muted-foreground">
+                     Must be at least 8 characters long
+                   </div>
+                 </div>
+
+                 <div className="space-y-2">
+                   <label htmlFor="adminConfirmPassword" className="text-sm font-medium">Confirm Password</label>
+                   <Input
+                     id="adminConfirmPassword"
+                     type="password"
+                     value={addAdminForm.confirmPassword}
+                     onChange={(e) => setAddAdminForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                     placeholder="Confirm password"
+                   />
+                 </div>
+
+                 <div className="space-y-2">
+                   <label htmlFor="adminRole" className="text-sm font-medium">Admin Role</label>
+                   <Select
+                     value={addAdminForm.role}
+                     onChange={(e) => setAddAdminForm(prev => ({ ...prev, role: e.target.value }))}
+                   >
+                     <option value="super_admin">Super Admin - Complete system access with all permissions</option>
+                     <option value="admin">Admin - Full admin access with most permissions</option>
+                     <option value="moderator">Moderator - Content moderation and user management</option>
+                     <option value="viewer">Viewer - Read-only access to dashboard and reports</option>
+                   </Select>
+                 </div>
+
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <Typography variant="body-small" className="text-blue-700">
+                    <strong>Note:</strong> Admin users are completely separate from regular app users. 
+                    They will only have access to the admin panel with permissions based on their role.
+                  </Typography>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowAddAdminModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleAddAdmin}
+                  disabled={addAdminStatus.isLoading}
+                  className="min-w-[120px]"
+                >
+                  {addAdminStatus.isLoading ? 'Adding...' : 'Add Admin User'}
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </Container>
