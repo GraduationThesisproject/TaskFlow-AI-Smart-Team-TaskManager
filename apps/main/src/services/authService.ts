@@ -185,7 +185,6 @@ static async updateProfile({
     timeout: 30000,
     validateStatus: (status) => status < 500,
   });
-
   return response.data;
 }
 
