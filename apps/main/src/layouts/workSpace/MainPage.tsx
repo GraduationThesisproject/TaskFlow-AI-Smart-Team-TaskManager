@@ -173,10 +173,10 @@ const Main = () => {
     });
   }, [members, role, search]);
 
-  const filteredSpaces = spaces.filter(space => 
-    space.name.toLowerCase().includes(search.toLowerCase()) ||
-    (space.description && space.description.toLowerCase().includes(search.toLowerCase()))
-  );
+  // const filteredSpaces = spaces.filter(space => 
+  //   space.name.toLowerCase().includes(search.toLowerCase()) ||
+  //   (space.description && space.description.toLowerCase().includes(search.toLowerCase()))
+  // );
 
   // For Invite Section button - Generate shareable link and show in modal
   const onGenerateInviteLink = () => {
@@ -273,14 +273,14 @@ const Main = () => {
               onGenerateInvite={onInviteMemberByEmail}
             />
           </div>
-          <div className="w-96">
+          {/* <div className="w-96">
             <SpaceTable 
               filteredSpaces={filteredSpaces}
               isLoading={isLoadingSpaces}
               error={spaceError}
               onRemove={onRemoveSpace}
             />         
-          </div>
+          </div> */}
         </div>
         <InviteSection 
           onGenerateInvite={onGenerateInviteLink}
