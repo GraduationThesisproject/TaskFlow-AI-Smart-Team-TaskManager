@@ -9,12 +9,22 @@ interface AuthCardProps {
   subtitle: string;
   description: string;
   className?: string;
+  /** When true (default), container fills the viewport height. Set false to reduce fullscreen feel. */
+  fullHeight?: boolean;
+  /** Optional classes for the outer container */
+  containerClassName?: string;
 }
 
 const AuthCard = React.forwardRef<HTMLDivElement, AuthCardProps>(
-  ({ children, title, subtitle, description, className }, ref) => {
+  ({ children, title, subtitle, description, className, fullHeight = true, containerClassName }, ref) => {
     return (
-      <div className="h-screen w-full bg-background font-['Inter'] flex items-center justify-center p-6">
+      <div
+        className={cn(
+          fullHeight ? 'min-h-screen' : 'py-12',
+          "w-full bg-background font-['Inter'] flex items-center justify-center p-6",
+          containerClassName
+        )}
+      >
         <Card 
           ref={ref}
           variant="elevated"

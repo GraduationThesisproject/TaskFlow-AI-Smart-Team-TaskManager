@@ -20,6 +20,8 @@ const TemplatesList: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'name'>('newest');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  // Track which templates this user has already viewed in this session to avoid multiple increments
+  const [locallyViewed, setLocallyViewed] = useState<Record<string, boolean>>({});
 
   // Load templates on mount
   useEffect(() => {
@@ -164,8 +166,22 @@ const TemplatesList: React.FC = () => {
   }, [templates, activeCategory, searchQuery, sortBy]);
 
   const handleTemplateClick = (t: TemplateCardItem) => {
-    // Explicitly increment views (unique per user) on open
-    incrementViews(t.id);
+    const uid = String((userBasic as any)?._id || (userBasic as any)?.id || '');
+    const alreadyViewedServer = Array.isArray((t as any)?.viewedBy)
+      ? (t as any).viewedBy.some((u: any) => String(u?._id) === uid)
+      : false;
+    const alreadyViewedLocal = !!locallyViewed[t.id];
+
+    // Only count one view per user: skip if already viewed
+    if (!alreadyViewedServer && !alreadyViewedLocal) {
+      setTemplates(prev => prev.map(item => (
+        item.id === t.id ? { ...item, views: (item.views ?? 0) + 1 } : item
+      )));
+      setLocallyViewed(prev => ({ ...prev, [t.id]: true }));
+      // Sync with backend (server should also ensure uniqueness)
+      incrementViews(t.id);
+    }
+
     // Optionally fetch details if needed elsewhere
     // fetchOne(t.id);
     console.log('Template clicked:', t);
