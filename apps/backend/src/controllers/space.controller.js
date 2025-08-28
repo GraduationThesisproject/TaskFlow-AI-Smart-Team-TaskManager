@@ -170,10 +170,10 @@ exports.createSpace = async (req, res) => {
             return sendResponse(res, 404, false, 'Workspace not found');
         }
 
-        // Check space limits
-        if (workspace.usage.spacesCount >= workspace.limits.maxSpaces) {
-            return sendResponse(res, 400, false, 'Workspace space limit reached');
-        }
+        // // Check space limits
+        // if (workspace.usage.spacesCount >= workspace.limits.maxSpaces) {
+        //     return sendResponse(res, 400, false, 'Workspace space limit reached');
+        // }
 
         const space = await Space.create({
             name,
@@ -380,7 +380,7 @@ exports.addMember = async (req, res) => {
 exports.archiveSpace = async (req, res) => {
     try {
         const { id: spaceId } = req.params;
-        const { unarchive } = req.body;
+        const { unarchive } = req.body || {};
         const userId = req.user.id;
 
         const space = await Space.findById(spaceId);
