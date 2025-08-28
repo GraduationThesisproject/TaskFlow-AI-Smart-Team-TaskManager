@@ -1,20 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { SpaceService } from '../../../services/spaceService';
 import { Button } from '@taskflow/ui';
-
-export interface Space {
-  _id: string;
-  name: string;
-  description?: string;
-  workspaceId: string;
-  memberCount?: number;
-}
+import type { Space } from '../../../types/space.types';
 
 interface SpaceTableProps {
   filteredSpaces: Space[];
   isLoading: boolean;
   error: string | null;
   onRemove: (spaceId: string) => Promise<void>;
+  onAddSpace: () => void;
 }
 
 const SpaceTable: React.FC<SpaceTableProps> = ({
@@ -22,6 +16,7 @@ const SpaceTable: React.FC<SpaceTableProps> = ({
   isLoading,
   error,
   onRemove,
+  onAddSpace,
 }) => {
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
 
@@ -57,12 +52,36 @@ const SpaceTable: React.FC<SpaceTableProps> = ({
   }
 
   if (filteredSpaces.length === 0) {
-    return <div>No spaces found</div>;
+    return (
+      <div className="w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Spaces</h3>
+          <Button onClick={onAddSpace} size="sm">
+            Add Space
+          </Button>
+        </div>
+        <div className="text-center py-8 text-muted-foreground">
+          <p>No spaces found</p>
+          <p className="text-sm mt-2">Create your first space to get started</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Safety check to ensure filteredSpaces is an array
+  if (!Array.isArray(filteredSpaces)) {
+    console.error('filteredSpaces is not an array:', filteredSpaces);
+    return <div className="text-red-500">Error: Invalid spaces data</div>;
   }
 
   return (
     <div className="w-full max-w-md">
-      <h3 className="text-lg font-semibold mb-4">Spaces</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Spaces</h3>
+        <Button onClick={onAddSpace} size="sm">
+          Add Space
+        </Button>
+      </div>
       <div className="space-y-3">
         {filteredSpaces.map((space) => (
           <div 
@@ -84,10 +103,14 @@ const SpaceTable: React.FC<SpaceTableProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onRemove(space._id)}
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to archive "${space.name}"? This action can be undone later.`)) {
+                    onRemove(space._id);
+                  }
+                }}
                 className="text-destructive hover:text-destructive/90"
               >
-                Remove
+                Archive
               </Button>
             </div>
           </div>
