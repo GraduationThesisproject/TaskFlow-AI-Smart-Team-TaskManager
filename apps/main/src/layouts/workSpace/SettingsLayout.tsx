@@ -1,5 +1,6 @@
 import React from 'react';
-import Sidebar from "./Sidebar";
+// import Sidebar from "./Sidebar"; // Disabled: workspace navbar hidden
+
 import SettingsHeader from "../../components/workspace/settings-page/SettingsHeader";
 import SettingsList from "../../components/workspace/settings-page/SettingsList";
 import VisibilitySettingsModal from "../../components/workspace/settings-page/VisibilitySettingsModal";
@@ -10,6 +11,8 @@ import GuestSharingSettingsModal from "../../components/workspace/settings-page/
 import { useAppDispatch, useAppSelector } from "../../store";
 import {  selectWorkspaceState, updateWorkspaceSettings } from "../../store/slices/workspaceSlice";
 import { selectUserWorkspaceRoles, selectUserBasic } from "../../store/slices/authSlice";
+import { DashboardShell } from "../Dashboard/DashboardShell";
+
 function SettingsLayout() {
   const dispatch = useAppDispatch();
   const { currentWorkspace, loading } = useAppSelector(selectWorkspaceState);
@@ -259,22 +262,19 @@ function SettingsLayout() {
   const newGuestSharingSetting = !!settings?.permissions?.allowGuestInvites ? 'Only admins can invite guests' : 'Anyone can invite guests';
 
   return (
-    <div className="flex min-h-screen text-[hsl(var(--foreground))] ">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div>
-          <div className="bg-background shadow-[0_0_0_1px_rgba(0,232,198,0.12),_0_8px_30px_-12px_rgba(0,232,198,0.25)] ring-1 ring-accent/10 px-5 sm:px-6 lg:px-8 py-6">
-            <SettingsHeader title="Workspace Settings" status={currentVisibility} />
-            <SettingsList
-              sections={sections}
-              loading={loading}
-              settings={settings}
-              onClickByKey={onClickByKey}
-              onUpgrade={handleUpgrade}
-            />
-          </div>
+    <DashboardShell>
+      <div>
+        <div className="bg-background shadow-[0_0_0_1px_rgba(0,232,198,0.12),_0_8px_30px_-12px_rgba(0,232,198,0.25)] ring-1 ring-accent/10 px-5 sm:px-6 lg:px-8 py-6">
+          <SettingsHeader title="Workspace Settings" status={currentVisibility} />
+          <SettingsList
+            sections={sections}
+            loading={loading}
+            settings={settings}
+            onClickByKey={onClickByKey}
+            onUpgrade={handleUpgrade}
+          />
         </div>
-      </main>
+      </div>
 
       {/* Settings Modals */}
       <VisibilitySettingsModal
@@ -337,7 +337,7 @@ function SettingsLayout() {
         userName={currentUser?.name}
         loading={loading}
       />
-    </div>
+    </DashboardShell>
   );}
 
 

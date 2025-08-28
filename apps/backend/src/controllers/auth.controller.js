@@ -869,17 +869,19 @@ exports.resetPassword = async (req, res) => {
 // ------------------ GET ACTIVITY LOG ------------------
 exports.getActivityLog = async (req, res) => {
     try {
-        const { limit = 50, page = 1 } = req.query;
+        const { limit = 50, page = 1, userId } = req.query;
         const lim = parseInt(limit) || 50;
         const skip = (parseInt(page) - 1) * lim;
-        
-        // Explicit populate to guarantee avatar URLs
-        const query = ActivityLog.find({ user: req.user.id, isVisible: true })
+
+        // Global activity feed by default; optionally filter by userId if provided
+        const filter = { isVisible: true };
+        if (userId) filter.user = userId;
+
+        const query = ActivityLog.find(filter)
             .populate('entity.id')
             .populate({
                 path: 'user',
-                select: 'name email avatar',
-                populate: { path: 'avatar', select: 'url thumbnails' }
+                select: 'name email avatar'
             })
             .sort({ createdAt: -1 })
             .skip(skip)
@@ -887,12 +889,8 @@ exports.getActivityLog = async (req, res) => {
 
         const [activities, total] = await Promise.all([
             query.lean(),
-            ActivityLog.countDocuments({ user: req.user.id, isVisible: true })
+            ActivityLog.countDocuments(filter)
         ]);
-
-        // Debug logging
-        console.log('First activity user:', JSON.stringify(activities[0]?.user, null, 2));
-        console.log('User avatar type:', typeof activities[0]?.user?.avatar);
 
         sendResponse(res, 200, true, 'Activity log retrieved successfully', {
             activities,
@@ -901,7 +899,7 @@ exports.getActivityLog = async (req, res) => {
         });
     } catch (error) {
         logger.error('Get activity log error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving profile');
+        sendResponse(res, 500, false, 'Server error retrieving activity log');
     }
 };
 

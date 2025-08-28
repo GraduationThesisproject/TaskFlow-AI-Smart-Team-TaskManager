@@ -41,7 +41,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         variant="ghost"
         size="sm"
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center gap-2 hover:bg-secondary/60 transition-colors"
+        className="group flex items-center gap-2 rounded-full ring-1 ring-primary/30 hover:ring-2 hover:bg-primary transition px-2 pr-3"
       >
         <Avatar size="sm">
           {user.user.avatar && (
@@ -51,7 +51,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {user.user.name?.charAt(0) || 'U'}
           </AvatarFallback>
         </Avatar>
-        <span className="hidden sm:inline font-medium">
+        <span className="hidden sm:inline font-medium text-foreground group-hover:text-background transition-colors">
           {user.user.name || 'User'}
         </span>
       </Button>
@@ -72,6 +72,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               variant="ghost"
               size="sm"
               className="w-full justify-start gap-2"
+              onClick={() => {
+                setIsDropdownOpen(false);
+                window.location.href = '/dashboard/settings';
+              }}
             >
               <Settings className="w-4 h-4" />
               Settings
@@ -144,7 +148,7 @@ const NotificationBell: React.FC = () => {
     <Dropdown
       trigger={
         <div className="relative">
-          <Bell size={20} />
+          <Bell size={20} className="text-primary hover:text-background transition-colors" />
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 

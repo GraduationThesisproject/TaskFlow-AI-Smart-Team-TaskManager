@@ -12,6 +12,10 @@ const Dashboard: React.FC = () => {
       <Routes>
         <Route path="" element={<Home/>} />
         <Route path="/settings" element={<Settings/>} />
+        <Route path="/settings/profile" element={<Settings/>} />
+        <Route path="/settings/theme" element={<Settings/>} />
+        <Route path="/settings/notifications" element={<Settings/>} />
+        <Route path="/settings/upgrade" element={<Settings/>} />
         <Route path="/home" element={<Home/>} />
         <Route path="/workspaces" element={<WorkspacesLayout/>} />
         <Route path="/templates" element={<Templates/>} />
