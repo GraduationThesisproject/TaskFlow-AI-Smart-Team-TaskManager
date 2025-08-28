@@ -87,6 +87,16 @@ export const WorkspacesSection = () => {
                       >
                         {(ws?.isPublic === true || ws?.visibility === 'public') ? 'Public' : 'Private'}
                       </Badge>
+                      {/* Status badge */}
+                      <Badge
+                        variant="secondary"
+                        className={(ws?.status ?? (ws?.isActive === false ? 'archived' : 'active')) === 'archived'
+                          ? 'bg-red-50 text-red-700 border border-red-200'
+                          : 'bg-green-50 text-green-700 border border-green-200'}
+                        title={`Workspace status: ${ws?.status ?? (ws?.isActive === false ? 'archived' : 'active')}`}
+                      >
+                        {ws?.status ?? (ws?.isActive === false ? 'archived' : 'active')}
+                      </Badge>
                       <Badge variant="secondary">{ws.members?.length || 0} members</Badge>
                       <Button
                         variant="ghost"

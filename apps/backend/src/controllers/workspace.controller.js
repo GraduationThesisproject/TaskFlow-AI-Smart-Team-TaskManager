@@ -14,18 +14,24 @@ const mongoose = require('mongoose');
 exports.getAllWorkspaces = async (req, res) => {
     try {
         const userId = req.user?.id;
+        const { includeArchived, status } = req.query;
 
-        // If user is authenticated, fetch workspaces where they are owner or member.
-        // If not authenticated (dev/test), fall back to returning all active workspaces.
-        const filter = userId
+        // Determine status filter
+        let statusFilter = 'active';
+        if (status === 'archived') statusFilter = 'archived';
+        if (status === 'all' || includeArchived === 'true') statusFilter = null;
+
+        // Build filter
+        const baseFilter = userId
             ? {
-                status: 'active',
                 $or: [
                     { owner: userId },
                     { 'members.user': userId }
                 ]
             }
-            : { status: 'active' };
+            : {};
+
+        const filter = statusFilter ? { ...baseFilter, status: statusFilter } : baseFilter;
 
         const workspaces = await Workspace.find(filter)
             .populate('owner', 'name email avatar')
@@ -814,6 +820,58 @@ exports.transferOwnership = async (req, res) => {
     }
 };
 
+// Restore archived workspace
+exports.restoreWorkspace = async (req, res) => {
+    try {
+        const { id: workspaceId } = req.params;
+        const userId = req.user.id;
+
+        if (!mongoose.Types.ObjectId.isValid(workspaceId)) {
+            return sendResponse(res, 400, false, 'Invalid workspace ID format');
+        }
+
+        const restored = await WorkspaceService.restoreWorkspace(workspaceId, userId);
+
+        return sendResponse(res, 200, true, 'Workspace restored successfully', {
+            workspace: restored
+        });
+    } catch (error) {
+        logger.error('Restore workspace error:', error);
+        return sendResponse(res, 500, false, error?.message || 'Server error restoring workspace');
+    }
+};
+
+// Permanently delete an archived workspace
+exports.permanentDeleteWorkspace = async (req, res) => {
+    try {
+        const { id: workspaceId } = req.params;
+        const userId = req.user.id;
+
+        if (!mongoose.Types.ObjectId.isValid(workspaceId)) {
+            return sendResponse(res, 400, false, 'Invalid workspace ID format');
+        }
+
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        if (workspace.owner.toString() !== userId.toString()) {
+            return sendResponse(res, 403, false, 'Only the workspace owner can permanently delete this workspace');
+        }
+
+        if (workspace.status !== 'archived') {
+            return sendResponse(res, 400, false, 'Workspace must be archived before permanent deletion');
+        }
+
+        const result = await WorkspaceService.deleteWorkspace(workspaceId, userId);
+        return sendResponse(res, 200, true, result?.message || 'Workspace permanently deleted');
+    } catch (error) {
+        logger.error('Permanent delete workspace error:', error);
+        return sendResponse(res, 500, false, 'Server error deleting workspace permanently');
+    }
+};
+
 // Delete workspace
 exports.deleteWorkspace = async (req, res) => {
     try {
@@ -836,7 +894,7 @@ exports.deleteWorkspace = async (req, res) => {
                     status: archived.status,
                     archivedAt: archived.archivedAt,
                     archiveExpiresAt: archived.archiveExpiresAt,
-                    archiveCountdownSeconds: archived.archiveCountdownSeconds
+                    archiveCountdownSeconds: Math.max(0, Math.floor((new Date(archived.archiveExpiresAt).getTime() - Date.now()) / 1000))
                 }
             });
         }
@@ -857,7 +915,7 @@ exports.deleteWorkspace = async (req, res) => {
                     status: archived.status,
                     archivedAt: archived.archivedAt,
                     archiveExpiresAt: archived.archiveExpiresAt,
-                    archiveCountdownSeconds: archived.archiveCountdownSeconds
+                    archiveCountdownSeconds: Math.max(0, Math.floor((new Date(archived.archiveExpiresAt).getTime() - Date.now()) / 1000))
                 }
             });
         }
