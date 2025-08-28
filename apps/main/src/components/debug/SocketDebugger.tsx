@@ -16,10 +16,10 @@ export function SocketDebugger() {
     setIsTesting(true);
     setTestResult(null);
     
-          try {
-        const result = await testSocketConnection(token || undefined);
-        setTestResult(result);
-      } catch (err) {
+    try {
+      const result = await testSocketConnection(token || undefined);
+      setTestResult(result);
+    } catch (err) {
       setTestResult({
         success: false,
         error: `Test failed: ${err instanceof Error ? err.message : 'Unknown error'}`
@@ -82,96 +82,70 @@ export function SocketDebugger() {
           className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
         >
           <TestTube className="w-3 h-3" />
-          {isTesting ? 'Testing...' : 'Test Connection'}
+          {isTesting ? 'Testing...' : 'Test'}
         </button>
         
         <button
           onClick={checkHealth}
-          className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+          className="flex items-center gap-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
         >
-          Health Check
+          <CheckCircle className="w-3 h-3" />
+          Health
         </button>
         
-        {error && (
-          <button
-            onClick={reconnect}
-            className="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600"
-          >
-            Reconnect
-          </button>
-        )}
+        <button
+          onClick={reconnect}
+          className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
+        >
+          <Info className="w-3 h-3" />
+          Reconnect
+        </button>
       </div>
 
       {/* Test Results */}
       {testResult && (
-        <div className={`text-xs p-2 rounded mb-3 ${
-          testResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-        }`}>
+        <div className="mb-3 p-2 bg-muted rounded text-xs">
           <div className="flex items-center gap-1 mb-1">
             {testResult.success ? (
-              <CheckCircle className="w-3 h-3" />
+              <CheckCircle className="w-3 h-3 text-green-500" />
             ) : (
-              <XCircle className="w-3 h-3" />
+              <XCircle className="w-3 h-3 text-red-500" />
             )}
             <span className="font-medium">
               {testResult.success ? 'Test Passed' : 'Test Failed'}
             </span>
           </div>
-          {testResult.error && <div>{testResult.error}</div>}
+          {testResult.error && (
+            <div className="text-red-600">{testResult.error}</div>
+          )}
           {testResult.details && (
-            <details className="mt-1">
-              <summary className="cursor-pointer">Details</summary>
-              <pre className="mt-1 text-xs overflow-auto">
-                {JSON.stringify(testResult.details, null, 2)}
-              </pre>
-            </details>
+            <div className="mt-1 text-muted-foreground">
+              <pre className="text-xs">{JSON.stringify(testResult.details, null, 2)}</pre>
+            </div>
           )}
         </div>
       )}
 
-      {/* Detailed Information */}
+      {/* Connection Details */}
       {showDetails && (
-        <div className="space-y-2 text-xs text-muted-foreground">
-          <div>
-            <strong>Socket URL:</strong> {env.SOCKET_URL}
-          </div>
-          <div>
-            <strong>API URL:</strong> {env.API_BASE_URL}
-          </div>
-                                  <div>
-              <strong>Has Token:</strong> {token ? 'Yes' : 'No'}
-            </div>
-            <div>
-              <strong>Environment:</strong> {env.NODE_ENV}
-            </div>
-            <div>
-              <strong>Last Connection Attempt:</strong> {connectionDetails?.lastAttempt ? connectionDetails.lastAttempt.toLocaleTimeString() : 'Never'}
-            </div>
-            <div>
-              <strong>Connection Details:</strong>
-              <div className="ml-2 mt-1">
-                <div>• URL: {connectionDetails?.url || 'N/A'}</div>
-                <div>• Has Token: {connectionDetails?.hasToken ? 'Yes' : 'No'}</div>
-                <div>• Auth Status: {connectionDetails?.authStatus || 'N/A'}</div>
-                <div>• Is Ready: {connectionDetails?.isReady ? 'Yes' : 'No'}</div>
-              </div>
-            </div>
+        <div className="space-y-2 text-xs">
+          <div><strong>URL:</strong> {connectionDetails.url}</div>
+          <div><strong>Has Token:</strong> {connectionDetails.hasToken ? 'Yes' : 'No'}</div>
+          <div><strong>Auth Status:</strong> {connectionDetails.authStatus}</div>
+          <div><strong>Ready:</strong> {connectionDetails.isReady ? 'Yes' : 'No'}</div>
+          {connectionDetails.lastAttempt && (
+            <div><strong>Last Attempt:</strong> {connectionDetails.lastAttempt.toLocaleTimeString()}</div>
+          )}
         </div>
       )}
 
-      {/* Troubleshooting Tips */}
-      {showDetails && (
-        <div className="mt-3">
-          <div className="flex items-center gap-1 mb-2 text-xs font-medium">
-            <Info className="w-3 h-3" />
-            Troubleshooting Tips
-          </div>
-          <ul className="text-xs space-y-1 text-muted-foreground">
-            {tips.slice(0, 3).map((tip, index) => (
-              <li key={index} className="flex items-start gap-1">
-                <span className="text-blue-500">•</span>
-                {tip}
-              </li>
+      {/* Tips */}
+      {tips.length > 0 && (
+        <div className="mt-3 p-2 bg-blue-50 rounded text-xs">
+          <div className="font-medium text-blue-800 mb-1">Connection Tips:</div>
+          <ul className="space-y-1 text-blue-700">
+            {tips.map((tip, index) => (
+              <li key={index}>• {tip}</li>
             ))}
           </ul>
         </div>
