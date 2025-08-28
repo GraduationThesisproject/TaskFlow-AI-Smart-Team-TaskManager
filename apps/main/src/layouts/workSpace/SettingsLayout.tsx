@@ -10,10 +10,22 @@ import GuestSharingSettingsModal from "../../components/workspace/settings-page/
 import { useAppDispatch, useAppSelector } from "../../store";
 import {  selectWorkspaceState, updateWorkspaceSettings } from "../../store/slices/workspaceSlice";
 import { selectUserWorkspaceRoles, selectUserBasic } from "../../store/slices/authSlice";
+
 function SettingsLayout() {
   const dispatch = useAppDispatch();
   const { currentWorkspace, loading } = useAppSelector(selectWorkspaceState);
   const workspaceId = currentWorkspace?._id;
+  
+  // Move ALL hooks to the top before any conditional returns
+  const [showVisibilityModal, setShowVisibilityModal] = React.useState(false);
+  const [showMembershipModal, setShowMembershipModal] = React.useState(false);
+  const [showBoardCreationModal, setShowBoardCreationModal] = React.useState(false);
+  const [showBoardDeletionModal, setShowBoardDeletionModal] = React.useState(false);
+  const [showGuestSharingModal, setShowGuestSharingModal] = React.useState(false);
+  
+  // Get current user's role in this workspace
+  const userWorkspaceRoles = useAppSelector(selectUserWorkspaceRoles);
+  const currentUser = useAppSelector(selectUserBasic);
   
   // Show loading state
   if (loading) {
@@ -34,16 +46,8 @@ function SettingsLayout() {
       </div>
     );
   }
+
   const settings = currentWorkspace?.settings as any | undefined;
-  const [showVisibilityModal, setShowVisibilityModal] = React.useState(false);
-  const [showMembershipModal, setShowMembershipModal] = React.useState(false);
-  const [showBoardCreationModal, setShowBoardCreationModal] = React.useState(false);
-  const [showBoardDeletionModal, setShowBoardDeletionModal] = React.useState(false);
-  const [showGuestSharingModal, setShowGuestSharingModal] = React.useState(false);
-  
-  // Get current user's role in this workspace
-  const userWorkspaceRoles = useAppSelector(selectUserWorkspaceRoles);
-  const currentUser = useAppSelector(selectUserBasic);
   
   // Debug log to check the workspace and user data
   console.log('Current workspace:', currentWorkspace);
@@ -338,7 +342,7 @@ function SettingsLayout() {
         loading={loading}
       />
     </div>
-  );}
-
+  );
+}
 
 export default SettingsLayout;

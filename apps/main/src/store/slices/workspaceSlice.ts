@@ -114,11 +114,12 @@ export const updateWorkspaceSettings = createAsyncThunk(
         settings: updates
       });
       
-      if (!response || !response.data) {
+      // The service returns the workspace directly, not wrapped in response.data
+      if (!response) {
         throw new Error('Invalid response from server');
       }
       
-      return response.data as Workspace;
+      return response as Workspace;
     } catch (error: any) {
       console.error('Error updating workspace settings:', error);
       return rejectWithValue(error.response?.data?.message || 'Failed to update workspace settings');
