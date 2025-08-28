@@ -19,7 +19,7 @@ const workspaceSocket = require('./sockets/workspace.socket');
 const boardSocket = require('./sockets/board.socket');
 const chatSocket = require('./sockets/chat.socket');
 
-const PORT = process.env.PORT || 5000;
+const PORT = config.PORT || 3001;
 
 // Connect to database
 connectDB();
