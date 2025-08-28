@@ -226,7 +226,8 @@ exports.update = async (req, res, next) => {
       const existing = await Template.findById(id).select('_id likedBy');
       if (!existing) return res.status(404).json({ success: false, message: 'Template not found' });
       const uidStr = String(userId);
-      const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u) === uidStr);
+      // Handle both ObjectId[] and populated user[] (from pre-find populate)
+      const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u?._id ?? u) === uidStr);
       // Cast to ObjectId to ensure $pull/$addToSet match the stored type
       const uidObj = mongoose.Types.ObjectId.isValid(uidStr) ? new mongoose.Types.ObjectId(uidStr) : userId;
       const update = hasLiked ? { $pull: { likedBy: uidObj } } : { $addToSet: { likedBy: uidObj } };
@@ -307,7 +308,8 @@ exports.toggleLike = async (req, res, next) => {
     }
 
     const uid = String(userId);
-    const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u) === uid);
+    // Handle both ObjectId[] and populated user[] (from pre-find populate)
+    const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u?._id ?? u) === uid);
 
     // Use atomic update to avoid full-document validation (e.g., required content)
     // Cast to ObjectId to ensure $pull/$addToSet match the stored type

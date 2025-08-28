@@ -1,5 +1,5 @@
 
-import { useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { env } from '../config/env';
 import { useAppDispatch, useAppSelector } from '../store';
 import {
@@ -20,7 +20,7 @@ import {
   toggleLikeLocal,
   incrementTemplateViews,
 } from '../store/slices/templatesSlice';
-import { selectIsAuthenticated, selectUserBasic } from '../store/slices/authSlice';
+import { selectUserBasic } from '../store/slices/authSlice';
 import type { TemplatesFilters, TemplateItem } from '../types/dash.types';
 import type { UseTemplatesReturn } from '../types/dash.types';
 import type { UserBasic } from '../types/auth.types';
@@ -35,13 +35,10 @@ export const useTemplates = (): UseTemplatesReturn => {
   const error = useAppSelector(selectTemplatesError);
   const selected = useAppSelector(selectTemplateSelected);
   const filters = useAppSelector(selectTemplateFilters);
-  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const userBasic = useAppSelector(selectUserBasic) as UserBasic | undefined;
 
-  useEffect(() => {
-    // Log the list of templates whenever it changes
-    console.log('Templates list:', items);
-  }, [items]);
+  // Track in-flight like toggles per template to avoid duplicate POSTs
+  const likeInFlightRef = useRef<Set<string>>(new Set());
 
   const load = useCallback((f?: TemplatesFilters) => {
     const params = f ?? filters;
@@ -88,6 +85,8 @@ export const useTemplates = (): UseTemplatesReturn => {
     // Accept any non-empty id; backend will validate format. This avoids blocking toggles
     // when ids are not 24-char hex.
     if (!id) return;
+    // Prevent duplicate requests while one is in-flight for this id
+    if (likeInFlightRef.current.has(id)) return;
     const userId: string | undefined = userBasic?._id || (userBasic as any)?.id;
     if (!userId) return;
     if (env.ENABLE_DEBUG) {
@@ -110,6 +109,8 @@ export const useTemplates = (): UseTemplatesReturn => {
         hasUser: Array.isArray(afterOpt?.likedBy) ? afterOpt.likedBy.some((e: any) => String(e?._id ?? e) === String(userId)) : undefined,
       });
     }
+    // Mark as in-flight before hitting the server
+    likeInFlightRef.current.add(id);
     (dispatch(toggleTemplateLike({ id, userId }) as any).unwrap() as Promise<any>)
       .then((payload: any) => {
         if (env.ENABLE_DEBUG) {
@@ -132,6 +133,9 @@ export const useTemplates = (): UseTemplatesReturn => {
         } else if (env.ENABLE_DEBUG) {
           console.warn('toggleLike failed, reverted optimistic update', msg);
         }
+      })
+      .finally(() => {
+        likeInFlightRef.current.delete(id);
       });
    }, [dispatch, items, filters, userBasic]);
 
