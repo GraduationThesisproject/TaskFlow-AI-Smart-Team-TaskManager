@@ -1,0 +1,44 @@
+[
+  {
+    "_id": "68b01e6ab31ba4056f2c7aa0",
+    "name": "Jesser Sekri",
+    "email": "admin@admin.com",
+    "password": "$2b$12$Y65BX54IyfltQjip3L9eke9dWueCLch42K9y4qt3AaLWGpRNvQx5.",
+    "avatar": "http://localhost:3001/uploads/avatars/avatar_68a4a907389cdc9bfd56f57d_1756141687201_09ae9611c07e.jpeg",
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-28T08:45:40.894Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "metadata": {
+      "globalRole": "superadmin"
+    },
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-19T16:40:39.209Z",
+    "updatedAt": "2025-08-28T08:45:40.905Z",
+    "__v": 8,
+    "preferences": "68a4a907389cdc9bfd56f57f",
+    "roles": "68a4a907389cdc9bfd56f583",
+    "sessions": "68a4a907389cdc9bfd56f589",
+    "tempTokens": {
+      "passwordResetExpires": "2025-08-25T11:16:55.220Z",
+      "passwordResetToken": "1v5tbl4e8bhbg0t63gj4l8"
+    },
+    "twoFactorAuth": {
+      "secret": null,
+      "backupCodes": [],
+      "recoveryToken": null,
+      "recoveryTokenExpires": null,
+      "enabledAt": null,
+      "lastUsed": null
+    }
+  }
+]

@@ -1,6 +1,7 @@
 const jwt = require('../utils/jwt');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const Admin = require('../models/Admin');
 const logger = require('../config/logger');
 
 // Socket authentication middleware
@@ -12,22 +13,54 @@ const authenticateSocket = async (socket, next) => {
             return next(new Error('Authentication required'));
         }
 
+        logger.info(`Socket auth: Verifying token: ${token.substring(0, 20)}...`);
+        
         const decoded = jwt.verifyToken(token);
-        const user = await User.findById(decoded.id);
+        logger.info(`Socket auth: Token decoded:`, decoded);
+        
+        // Try to find user in User model first
+        let user = await User.findById(decoded.id);
+        let isAdmin = false;
+        
+        if (user) {
+            logger.info(`Socket auth: Found user: ${user.email}`);
+        } else {
+            logger.info(`Socket auth: User not found, trying Admin model...`);
+            logger.info(`Socket auth: Admin model type: ${typeof Admin}`);
+            logger.info(`Socket auth: Admin model: ${Admin}`);
+            
+            // If not found in User model, try Admin model
+            try {
+                const admin = await Admin.findById(decoded.id);
+                logger.info(`Socket auth: Admin query result: ${admin}`);
+                
+                if (admin) {
+                    user = admin;
+                    isAdmin = true;
+                    logger.info(`Socket auth: Found admin: ${admin.userEmail}`);
+                } else {
+                    logger.info(`Socket auth: Admin not found either`);
+                }
+            } catch (adminError) {
+                logger.error(`Socket auth: Error querying Admin model:`, adminError);
+            }
+        }
         
         if (!user) {
+            logger.error(`Socket auth: No user or admin found for ID: ${decoded.id}`);
             return next(new Error('User not found'));
         }
 
         socket.userId = user._id.toString();
         socket.user = {
             id: user._id,
-            name: user.name,
-            email: user.email,
-            avatar: user.avatar
+            name: isAdmin ? user.userName : user.name,
+            email: isAdmin ? user.userEmail : user.email,
+            avatar: user.avatar,
+            isAdmin: isAdmin
         };
 
-        logger.info(`Socket authenticated: ${user.email}`);
+        logger.info(`Socket authenticated: ${isAdmin ? user.userEmail : user.email} (${isAdmin ? 'Admin' : 'User'})`);
         next();
         
     } catch (error) {
@@ -38,10 +71,13 @@ const authenticateSocket = async (socket, next) => {
 
 // Handle notification socket events
 const handleNotificationSocket = (io) => {
-    // Apply authentication middleware
-    io.use(authenticateSocket);
+    // Create a separate namespace for notifications with authentication
+    const notificationNamespace = io.of('/notifications');
     
-    io.on('connection', (socket) => {
+    // Apply authentication middleware only to notification namespace
+    notificationNamespace.use(authenticateSocket);
+    
+    notificationNamespace.on('connection', (socket) => {
         logger.info(`User connected: ${socket.user.name} (${socket.id})`);
 
         // Join user's personal notification room
@@ -173,6 +209,53 @@ const handleNotificationSocket = (io) => {
                 });
             } catch (error) {
                 logger.error('Update delivery status error:', error);
+            }
+        });
+
+        // Test event for direct notification testing
+        socket.on('notifications:test', async (data) => {
+            try {
+                const { title, message, type, recipient } = data;
+                
+                logger.info(`Test notification requested: ${title} for recipient ${recipient}`);
+                
+                // Create test notification in database
+                const notification = await Notification.create({
+                    title,
+                    message,
+                    type: type || 'system_alert',
+                    recipient: recipient || socket.userId,
+                    sender: socket.userId,
+                    category: 'system',
+                    priority: 'medium',
+                    relatedEntity: {
+                        entityType: 'user',
+                        entityId: socket.userId
+                    }
+                });
+
+                await notification.populate('sender', 'name avatar');
+
+                // Send real-time notification
+                notificationNamespace.to(`notifications:${recipient || socket.userId}`).emit('notification:new', {
+                    notification: notification.toObject()
+                });
+
+                // Update unread count
+                const unreadCount = await Notification.countDocuments({
+                    recipient: recipient || socket.userId,
+                    isRead: false
+                });
+
+                notificationNamespace.to(`notifications:${recipient || socket.userId}`).emit('notifications:unreadCount', { 
+                    count: unreadCount 
+                });
+
+                logger.info(`Test notification sent successfully: ${notification._id}`);
+                
+            } catch (error) {
+                logger.error('Test notification error:', error);
+                socket.emit('error', { message: 'Failed to send test notification' });
             }
         });
 
