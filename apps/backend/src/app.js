@@ -39,6 +39,7 @@ const aiRoutes = require('./routes/ai.routes');
 const templateRoutes = require('./routes/template.routes');
 const powerbiRoutes = require('./routes/powerbi.routes');
 const chatRoutes = require('./routes/chat.routes');
+const testRoutes = require('./routes/test.routes');
 const app = express();
 
 
@@ -233,6 +234,7 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/templates', authMiddleware, templateRoutes);
 app.use('/api/powerbi', authMiddleware, powerbiRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/test', testRoutes);
 
 // 404 handler - using catch-all middleware instead of wildcard
 app.use((req, res) => {

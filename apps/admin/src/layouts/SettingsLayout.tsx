@@ -1537,9 +1537,10 @@ const SettingsLayout: React.FC = () => {
                      value={addAdminForm.role}
                      onChange={(e) => setAddAdminForm(prev => ({ ...prev, role: e.target.value }))}
                    >
-                     <option value="moderator">Moderator - Basic admin access with limited permissions</option>
-                     <option value="admin">Admin - Full admin access with most permissions</option>
                      <option value="super_admin">Super Admin - Complete system access with all permissions</option>
+                     <option value="admin">Admin - Full admin access with most permissions</option>
+                     <option value="moderator">Moderator - Content moderation and user management</option>
+                     <option value="viewer">Viewer - Read-only access to dashboard and reports</option>
                    </Select>
                  </div>
 

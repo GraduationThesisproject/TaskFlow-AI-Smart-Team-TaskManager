@@ -149,24 +149,35 @@ export default function SignIn() {
           autoComplete="current-password"
         />
 
+        {/* Test Button - Remove after debugging */}
+        <button
+          type="button"
+          className="w-full bg-green-500 hover:bg-green-600 text-white p-3 rounded font-medium mb-4"
+          onClick={() => alert('Test button works!')}
+        >
+          TEST BUTTON - Click me first to see if buttons work
+        </button>
+
         {/* Remember Me & Forgot Password */}
-        <Flex justify="between" align="center" className="text-sm">
+        <div className="flex justify-between items-center text-sm">
           <Checkbox
             checked={formData.rememberMe || false}
             onChange={(e) => handleInputChange('rememberMe', (e.target as HTMLInputElement).checked)}
             label="Remember me"
             disabled={isLoading}
           />
-          <Button
-            variant="link"
-            size="sm"
-            className="text-primary hover:text-primary/80 p-0 h-auto text-sm"
-            disabled={isLoading}
-            onClick={() => navigate('/forgot-password')}
+          <button
+            type="button"
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded font-medium"
+            onClick={() => {
+              alert('Forgot password button clicked!');
+              console.log('Forgot password button clicked');
+              navigate('/forgot-password');
+            }}
           >
-            Forgot password?
-          </Button>
-        </Flex>
+            FORGOT PASSWORD
+          </button>
+        </div>
 
         {/* Sign In Button */}
         <Button 

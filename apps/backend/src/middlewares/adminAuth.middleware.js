@@ -18,9 +18,11 @@ const authenticateAdmin = async (req, res, next) => {
 
     // Verify token using JWT utility
     const decoded = jwt.verifyToken(token);
+    logger.info(`Admin auth: Token decoded:`, decoded);
     
     // Check if admin exists and is active
     const admin = await Admin.findById(decoded.id).select('-password -twoFactorSecret -backupCodes -recoveryToken');
+    logger.info(`Admin auth: Admin lookup result:`, admin ? { id: admin._id, email: admin.userEmail, role: admin.role } : 'null');
     
     if (!admin) {
       return sendResponse(res, 401, false, 'Access denied. Invalid token.');
