@@ -7,6 +7,7 @@ import MembershipSettingsModal from "../../components/workspace/settings-page/Me
 import BoardCreationSettingsModal from "../../components/workspace/settings-page/BoardCreationSettingsModal";
 import BoardDeletionSettingsModal from "../../components/workspace/settings-page/BoardDeletionSettingsModal";
 import GuestSharingSettingsModal from "../../components/workspace/settings-page/GuestSharingSettingsModal";
+import SlackRestrictionsSettingsModal from "../../components/workspace/settings-page/SlackRestrictionsSettingsModal";
 import { useAppDispatch, useAppSelector } from "../../store";
 import {  selectWorkspaceState, updateWorkspaceSettings } from "../../store/slices/workspaceSlice";
 import { selectUserWorkspaceRoles, selectUserBasic } from "../../store/slices/authSlice";
@@ -22,6 +23,7 @@ function SettingsLayout() {
   const [showBoardCreationModal, setShowBoardCreationModal] = React.useState(false);
   const [showBoardDeletionModal, setShowBoardDeletionModal] = React.useState(false);
   const [showGuestSharingModal, setShowGuestSharingModal] = React.useState(false);
+  const [showSlackRestrictionsModal, setShowSlackRestrictionsModal] = React.useState(false);
   
   // Get current user's role in this workspace
   const userWorkspaceRoles = useAppSelector(selectUserWorkspaceRoles);
@@ -79,14 +81,15 @@ function SettingsLayout() {
   const canManageBoardCreation = isOwner || userRoleInWorkspace === 'admin';
   const canManageBoardDeletion = isOwner || userRoleInWorkspace === 'admin';
   const canManageGuestSharing = isOwner || userRoleInWorkspace === 'admin';
+  const canManageSlackRestrictions = isOwner || userRoleInWorkspace === 'admin';
 
   const handleUpdate = async (
     section: string,
     updates: Record<string, any>
   ) => {
-    // Only allow updates if user is the owner
-    if (!isOwner) {
-      console.warn('Only workspace owners can update settings');
+    // Allow updates for owners and admins
+    if (!(isOwner || userRoleInWorkspace === 'admin')) {
+      console.warn('Only workspace owners or admins can update settings');
       // In a real app, you might want to show this to the user
       return;
     }
@@ -111,7 +114,7 @@ function SettingsLayout() {
       
     } catch (error) {
       console.error("Failed to update settings", error);
-      // Show error message to user
+      // TODO: surface user-friendly error (toast/snackbar)
     }
   };
 
@@ -126,22 +129,40 @@ function SettingsLayout() {
     setShowVisibilityModal(false);
   };
 
-  const handleBoardCreationChange = async () => {
-    const current = !!settings?.permissions?.allowMemberBoardCreation;
-    await handleUpdate("permissions", { allowMemberBoardCreation: !current });
+  const handleBoardCreationChange = async (policy: 'everyone' | 'admins') => {
+    const allow = policy === 'everyone';
+    await handleUpdate("permissions", { 
+      boardCreationPolicy: policy,
+      allowMemberBoardCreation: allow
+    });
     setShowBoardCreationModal(false);
   };
 
-  const handleBoardDeletionChange = async () => {
-    const current = !!settings?.permissions?.allowMemberBoardDeletion;
-    await handleUpdate("permissions", { allowMemberBoardDeletion: !current });
+  const handleBoardDeletionChange = async (policy: 'everyone' | 'admins') => {
+    const allow = policy === 'everyone';
+    await handleUpdate("permissions", { 
+      boardDeletionPolicy: policy,
+      allowMemberBoardDeletion: allow
+    });
     setShowBoardDeletionModal(false);
   };
 
-  const handleGuestSharingChange = async () => {
-    const current = !!settings?.permissions?.allowGuestInvites;
-    await handleUpdate("permissions", { allowGuestInvites: !current });
+  const handleGuestSharingChange = async (policy: 'everyone' | 'admins') => {
+    const allow = policy === 'everyone';
+    await handleUpdate("permissions", { 
+      guestSharingPolicy: policy,
+      allowGuestInvites: allow 
+    });
     setShowGuestSharingModal(false);
+  };
+
+  const handleSlackRestrictionsChange = async (policy: 'everyone' | 'admins') => {
+    const allow = policy === 'everyone';
+    await handleUpdate("permissions", {
+      slackLinkingPolicy: policy,
+      allowMemberSlackLinking: allow,
+    });
+    setShowSlackRestrictionsModal(false);
   };
 
   const onClickByKey: Record<string, () => void> = {
@@ -161,20 +182,10 @@ function SettingsLayout() {
       handleUpdate("permissions", { allowMemberInvites: !current });
     },
     creation: () => {
-      if (!canManageBoardCreation) {
-        setShowBoardCreationModal(true);
-        return;
-      }
-      const current = !!settings?.permissions?.allowMemberBoardCreation;
-      handleUpdate("permissions", { allowMemberBoardCreation: !current });
+      setShowBoardCreationModal(true);
     },
     deletion: () => {
-      if (!canManageBoardDeletion) {
-        setShowBoardDeletionModal(true);
-        return;
-      }
-      const current = !!settings?.permissions?.allowMemberBoardDeletion;
-      handleUpdate("permissions", { allowMemberBoardDeletion: !current });
+      setShowBoardDeletionModal(true);
     },
     guests: () => {
       if (!canManageGuestSharing) {
@@ -184,10 +195,39 @@ function SettingsLayout() {
       setShowGuestSharingModal(true);
     },
     "slack-restrictions": () => {
-      // Placeholder for future granular Slack restrictions
-      console.warn("Slack restrictions update not implemented in backend schema");
+      setShowSlackRestrictionsModal(true);
     },
   };
+
+  // Build dynamic bullets based on saved policies
+  const creationPolicy: 'everyone' | 'admins' =
+    settings?.permissions?.boardCreationPolicy || (settings?.permissions?.allowMemberBoardCreation ? 'everyone' : 'admins');
+  const deletionPolicy: 'everyone' | 'admins' =
+    settings?.permissions?.boardDeletionPolicy || (settings?.permissions?.allowMemberBoardDeletion ? 'everyone' : 'admins');
+
+  const creationBullets = creationPolicy === 'everyone'
+    ? [
+        'Any Workspace member can create public boards.',
+        'Any Workspace member can create Workspace visible boards.',
+        'Any Workspace member can create private boards.',
+      ]
+    : [
+        'Only admins and the owner can create public boards.',
+        'Only admins and the owner can create Workspace visible boards.',
+        'Only admins and the owner can create private boards.',
+      ];
+
+  const deletionBullets = deletionPolicy === 'everyone'
+    ? [
+        'Any Workspace member can delete public boards.',
+        'Any Workspace member can delete Workspace visible boards.',
+        'Any Workspace member can delete private boards.',
+      ]
+    : [
+        'Only admins and the owner can delete public boards.',
+        'Only admins and the owner can delete Workspace visible boards.',
+        'Only admins and the owner can delete private boards.',
+      ];
 
   const sections = [
     {
@@ -214,35 +254,31 @@ function SettingsLayout() {
     {
       key: "creation",
       title: "Board Creation Restrictions",
-      bullets: [
-        "Any Workspace member can create public boards.",
-        "Any Workspace member can create Workspace visible boards.",
-        "Any Workspace member can create private boards.",
-      ],
+      bullets: creationBullets,
       cta: "Change",
     },
     {
       key: "deletion",
       title: "Board Deletion Restrictions",
-      bullets: [
-        "Any Workspace member can delete public boards.",
-        "Any Workspace member can delete Workspace visible boards.",
-        "Any Workspace member can delete private boards.",
-      ],
+      bullets: deletionBullets,
       cta: "Change",
     },
     {
       key: "guests",
       title: "Sharing Boards with Guests",
       description:
-        "Anybody can send or receive invitations to boards in this Workspace.",
+        (settings?.permissions?.guestSharingPolicy || (settings?.permissions?.allowGuestInvites ? 'everyone' : 'admins')) === 'everyone'
+          ? "Anybody can send or receive invitations to boards in this Workspace."
+          : "Only admins and the owner can send or receive invitations to boards in this Workspace.",
       cta: "Change",
     },
     {
       key: "slack-restrictions",
       title: "Slack Workspaces Restrictions",
       description:
-        "Any Workspace member can link and unlink this Trello Workspace with Slack workspaces.",
+        (settings?.permissions?.slackLinkingPolicy || (settings?.permissions?.allowMemberSlackLinking ? 'everyone' : 'admins')) === 'everyone'
+          ? "Any Workspace member can link and unlink this Trello Workspace with Slack workspaces."
+          : "Only admins and the owner can link and unlink this Trello Workspace with Slack workspaces.",
       cta: "Change",
     },
   ];
@@ -261,6 +297,15 @@ function SettingsLayout() {
 
   const currentGuestSharingSetting = !!settings?.permissions?.allowGuestInvites ? 'Anyone can invite guests' : 'Only admins can invite guests';
   const newGuestSharingSetting = !!settings?.permissions?.allowGuestInvites ? 'Only admins can invite guests' : 'Anyone can invite guests';
+
+  const slackPolicy: 'everyone' | 'admins' =
+    settings?.permissions?.slackLinkingPolicy || (settings?.permissions?.allowMemberSlackLinking ? 'everyone' : 'admins');
+  const currentSlackRestrictionsSetting = slackPolicy === 'everyone'
+    ? 'Any Workspace member can link/unlink Slack workspaces'
+    : 'Only admins can link/unlink Slack workspaces';
+  const newSlackRestrictionsSetting = slackPolicy === 'everyone'
+    ? 'Only admins can link/unlink Slack workspaces'
+    : 'Any Workspace member can link/unlink Slack workspaces';
 
   return (
     <div className="flex min-h-screen text-[hsl(var(--foreground))] ">
@@ -337,6 +382,18 @@ function SettingsLayout() {
         canManage={canManageGuestSharing}
         currentSetting={currentGuestSharingSetting}
         newSetting={newGuestSharingSetting}
+        userRole={userRoleInWorkspace}
+        userName={currentUser?.name}
+        loading={loading}
+      />
+
+      <SlackRestrictionsSettingsModal
+        isOpen={showSlackRestrictionsModal}
+        onClose={() => setShowSlackRestrictionsModal(false)}
+        onConfirm={canManageSlackRestrictions ? handleSlackRestrictionsChange : undefined}
+        canManage={canManageSlackRestrictions}
+        currentSetting={currentSlackRestrictionsSetting}
+        newSetting={newSlackRestrictionsSetting}
         userRole={userRoleInWorkspace}
         userName={currentUser?.name}
         loading={loading}
