@@ -84,7 +84,13 @@ const workspaceSchema = new mongoose.Schema({
       allowMemberInvites: { type: Boolean, default: true },
       requireApprovalForMembers: { type: Boolean, default: false },
       maxMembers: { type: Number, default: null, min: 1 },
-      publicJoin: { type: Boolean, default: false }
+      publicJoin: { type: Boolean, default: false },
+      // Board creation/deletion settings (legacy booleans kept for compatibility)
+      allowMemberBoardCreation: { type: Boolean, default: true },
+      allowMemberBoardDeletion: { type: Boolean, default: true },
+      // New granular policies
+      boardCreationPolicy: { type: String, enum: ['everyone', 'admins'], default: 'everyone' },
+      boardDeletionPolicy: { type: String, enum: ['everyone', 'admins'], default: 'everyone' }
     },
     defaultBoardVisibility: {
       type: String,

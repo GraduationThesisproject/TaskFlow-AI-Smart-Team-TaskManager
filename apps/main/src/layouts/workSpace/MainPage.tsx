@@ -278,7 +278,7 @@ const Main = () => {
               onGenerateInvite={onInviteMemberByEmail}
             />
           </div>
-          {/* <div className="w-96">
+          <div className="w-96">
             <SpaceTable 
               filteredSpaces={spaces}
               isLoading={isLoadingSpaces}

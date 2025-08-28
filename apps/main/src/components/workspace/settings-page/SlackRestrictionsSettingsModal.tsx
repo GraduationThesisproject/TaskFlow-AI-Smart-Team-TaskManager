@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, ModalBody, ModalFooter, Button } from '@taskflow/ui';
 
-interface BoardCreationSettingsModalProps {
+interface SlackRestrictionsSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm?: (policy: 'everyone' | 'admins') => void;
@@ -13,7 +13,7 @@ interface BoardCreationSettingsModalProps {
   loading: boolean;
 }
 
-const BoardCreationSettingsModal: React.FC<BoardCreationSettingsModalProps> = ({
+const SlackRestrictionsSettingsModal: React.FC<SlackRestrictionsSettingsModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
@@ -25,13 +25,12 @@ const BoardCreationSettingsModal: React.FC<BoardCreationSettingsModalProps> = ({
   loading
 }) => {
   if (!canManage) {
-    // Permission Denied Modal
     return (
       <Modal
         isOpen={isOpen}
         onClose={onClose}
         title="Permission Denied"
-        description="You don't have permission to change board creation restrictions."
+        description="You don't have permission to change Slack workspace linking restrictions."
         size="md"
       >
         <ModalBody>
@@ -44,15 +43,11 @@ const BoardCreationSettingsModal: React.FC<BoardCreationSettingsModalProps> = ({
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">
-                    Insufficient Permissions
-                  </h3>
+                  <h3 className="text-sm font-medium text-red-800">Insufficient Permissions</h3>
                   <div className="mt-2 text-sm text-red-700">
-                    <p>Only workspace <strong>owners</strong> and <strong>admins</strong> can change board creation restrictions.</p>
+                    <p>Only workspace <strong>owners</strong> and <strong>admins</strong> can change Slack linking restrictions.</p>
                     <p className="mt-1">Your current role: <strong>{userRole || 'member'}</strong></p>
-                    {userName && (
-                      <p className="mt-1">Signed in as: <strong>{userName}</strong></p>
-                    )}
+                    {userName && (<p className="mt-1">Signed in as: <strong>{userName}</strong></p>)}
                   </div>
                 </div>
               </div>
@@ -60,25 +55,23 @@ const BoardCreationSettingsModal: React.FC<BoardCreationSettingsModalProps> = ({
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button onClick={onClose}>
-            Understood
-          </Button>
+          <Button onClick={onClose}>Understood</Button>
         </ModalFooter>
       </Modal>
     );
   }
 
-  // Selection Modal
+  // Selection
   const initialPolicy: 'everyone' | 'admins' =
-    currentSetting?.toLowerCase().includes('any member') ? 'everyone' : 'admins';
+    currentSetting?.toLowerCase().includes('any workspace member') ? 'everyone' : 'admins';
   const [policy, setPolicy] = React.useState<'everyone' | 'admins'>(initialPolicy);
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Board Creation Permissions"
-      description="Choose who can create boards in this workspace. Owners always have permission."
+      title="Slack Workspace Linking Permissions"
+      description="Choose who can link and unlink Slack workspaces in this workspace. Owners always have permission."
       size="md"
     >
       <ModalBody>
@@ -87,7 +80,7 @@ const BoardCreationSettingsModal: React.FC<BoardCreationSettingsModalProps> = ({
             <label className="flex items-start gap-3 p-3 rounded-md border cursor-pointer">
               <input
                 type="radio"
-                name="board-creation-policy"
+                name="slack-linking-policy"
                 className="mt-1"
                 checked={policy === 'everyone'}
                 onChange={() => setPolicy('everyone')}
@@ -95,14 +88,15 @@ const BoardCreationSettingsModal: React.FC<BoardCreationSettingsModalProps> = ({
               <div>
                 <div className="font-medium">Everyone</div>
                 <div className="text-sm text-[hsl(var(--muted-foreground))]">
-                  Any workspace member can create public, workspace-visible, or private boards.
+                  Any Workspace member can link or unlink Slack workspaces.
                 </div>
               </div>
             </label>
+
             <label className="flex items-start gap-3 p-3 rounded-md border cursor-pointer">
               <input
                 type="radio"
-                name="board-creation-policy"
+                name="slack-linking-policy"
                 className="mt-1"
                 checked={policy === 'admins'}
                 onChange={() => setPolicy('admins')}
@@ -110,7 +104,7 @@ const BoardCreationSettingsModal: React.FC<BoardCreationSettingsModalProps> = ({
               <div>
                 <div className="font-medium">Only Admins</div>
                 <div className="text-sm text-[hsl(var(--muted-foreground))]">
-                  Only admins and the owner can create boards. Members must request creation.
+                  Only admins and the owner can link or unlink Slack workspaces.
                 </div>
               </div>
             </label>
@@ -118,18 +112,8 @@ const BoardCreationSettingsModal: React.FC<BoardCreationSettingsModalProps> = ({
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button
-          variant="outline"
-          onClick={onClose}
-          disabled={loading}
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={() => onConfirm && onConfirm(policy)}
-          disabled={loading}
-          className="ml-2"
-        >
+        <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
+        <Button onClick={() => onConfirm && onConfirm(policy)} disabled={loading} className="ml-2">
           {loading ? 'Saving...' : 'Save'}
         </Button>
       </ModalFooter>
@@ -137,4 +121,4 @@ const BoardCreationSettingsModal: React.FC<BoardCreationSettingsModalProps> = ({
   );
 };
 
-export default BoardCreationSettingsModal;
+export default SlackRestrictionsSettingsModal;
