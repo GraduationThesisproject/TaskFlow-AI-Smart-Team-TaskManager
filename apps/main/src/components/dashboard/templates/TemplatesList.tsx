@@ -156,7 +156,7 @@ const TemplatesList: React.FC = () => {
   };
 
   return (
-    <div className="overflow-x-hidden">
+    <>
       {/* Search and Filters */}
       <div className="mb-6 space-y-4 rounded-lg p-4 backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)]">
         <div className="relative">
@@ -288,7 +288,7 @@ const TemplatesList: React.FC = () => {
       )}
       {/* Modal mount (always available) */}
       <CreateTemplateModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
-    </div>
+    </>
   );
 };
 

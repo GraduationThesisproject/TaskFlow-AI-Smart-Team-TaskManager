@@ -89,7 +89,7 @@ const NotificationSettings: React.FC = () => {
             </div>
             <Switch
               checked={settings[item.key as keyof NotificationSettingsState]}
-              onChange={(e) => onToggle(item.key as keyof NotificationSettingsState, (e.target as HTMLInputElement).checked)}
+              onCheckedChange={(checked) => onToggle(item.key as keyof NotificationSettingsState, checked)}
             />
           </div>
         ))}

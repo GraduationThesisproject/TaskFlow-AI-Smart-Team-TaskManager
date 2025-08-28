@@ -626,7 +626,7 @@ const authSlice = createSlice({
       })
       .addCase(updateProfileSecure.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload;
+        state.user = serializeUser(action.payload);
         state.error = null;
       })
       .addCase(updateProfileSecure.rejected, (state, action) => {

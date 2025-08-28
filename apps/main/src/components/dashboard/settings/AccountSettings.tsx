@@ -5,17 +5,15 @@ import {
   Avatar, AvatarImage, AvatarFallback
 } from '@taskflow/ui';
 import { Shield } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '../../../store';
-import { updateProfileSecure, changePassword } from '../../../store/slices/authSlice';
+import { useAuth } from '../../../hooks/useAuth';
 
 const AccountSettings: React.FC = () => {
-  const dispatch = useAppDispatch();
-  const { user } = useAppSelector((s) => s.auth);
+  const { user, updateProfileSecure: updateProfileSecureAction, changePassword: changePasswordAction } = useAuth();
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({ name: '', email: '' });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
-
+  
   // Initialize form once user loads
   useEffect(() => {
     if (user?.user) {
@@ -25,6 +23,7 @@ const AccountSettings: React.FC = () => {
       });
     }
   }, [user]);
+
 
   // Avatar state
   const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
@@ -45,7 +44,6 @@ const AccountSettings: React.FC = () => {
 
   const onAvatarFileChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const file = e.target.files?.[0] || null;
-    console.log("file", file);
     if (!file) {
       setSelectedAvatar(null);
       setAvatarPreview(null);
@@ -60,9 +58,19 @@ const AccountSettings: React.FC = () => {
     setAvatarPreview(URL.createObjectURL(file));
   };
 
+  // Revoke previous preview URL to avoid memory leaks
+  useEffect(() => {
+    if (!avatarPreview) return;
+    return () => {
+      try { URL.revokeObjectURL(avatarPreview); } catch {}
+    };
+  }, [avatarPreview]);
+
   const onSaveProfile = () => {
     setConfirmError(null);
     setConfirmPwd('');
+    // Only open confirmation if there are changes
+    if (!hasChanges) return;
     setShowConfirm(true);
   };
 
@@ -73,17 +81,25 @@ const AccountSettings: React.FC = () => {
     }
     setIsSavingProfile(true);
     try {
-      await dispatch(updateProfileSecure({
-        name: profileForm.name,
+      console.log('[AccountSettings] confirmAndSave -> dispatch updateProfileSecure', {
+        name: profileForm.name?.trim(),
+        hasAvatar: !!selectedAvatar
+      });
+      const result = await updateProfileSecureAction({
+        name: profileForm.name.trim(),
         currentPassword: confirmPwd,
         avatar: selectedAvatar || undefined, // ✅ no email here
-      })).unwrap();
+      });
 
+      console.log('[AccountSettings] updateProfileSecure result', result);
+      console.log('[AccountSettings] updateProfileSecure success');
       setShowConfirm(false);
       setConfirmPwd('');
       setAvatarPreview(null);
+      setSelectedAvatar(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (e: any) {
-      setConfirmError(e?.message || 'Failed to update profile');
+      setConfirmError(e?.response?.data?.message || e?.message || 'Failed to update profile');
     } finally {
       setIsSavingProfile(false);
     }
@@ -92,6 +108,9 @@ const AccountSettings: React.FC = () => {
   const cancelConfirm = () => {
     if (isSavingProfile) return;
     setShowConfirm(false);
+    setShowPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
     setConfirmPwd('');
     setConfirmError(null);
   };
@@ -119,10 +138,14 @@ const AccountSettings: React.FC = () => {
 
     setIsChangingPassword(true);
     try {
-      await dispatch(changePassword({ currentPassword, newPassword })).unwrap();
+      console.log('[AccountSettings] changePassword -> dispatch', { hasCurrent: !!currentPassword, hasNew: !!newPassword });
+      const result = await changePasswordAction({ currentPassword, newPassword });
+      console.log('[AccountSettings] changePassword result', !!result ? { type: (result as any).type, meta: (result as any).meta } : result);
+      console.log('[AccountSettings] changePassword success');
       setSecuritySuccess('Password changed successfully');
       setSecurityForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (e: any) {
+      console.error('[AccountSettings] changePassword error', e);
       setSecurityError(e?.response?.data?.message || e?.message || 'Failed to change password');
     } finally {
       setIsChangingPassword(false);
@@ -135,6 +158,9 @@ const AccountSettings: React.FC = () => {
       ? user.user.avatar
       : (user?.user?.avatar as any)?.url) ||
     undefined;
+
+  const originalName = user?.user?.name || '';
+  const hasChanges = profileForm.name.trim() !== originalName || !!selectedAvatar;
 
   return (
     <Card>
@@ -174,7 +200,7 @@ const AccountSettings: React.FC = () => {
               disabled
             />
           </div>
-          <Button className="mt-4" onClick={onSaveProfile} disabled={isSavingProfile}>
+          <Button className="mt-4" onClick={onSaveProfile} disabled={isSavingProfile || !hasChanges}>
             Save Changes
           </Button>
         </section>
@@ -230,6 +256,8 @@ const AccountSettings: React.FC = () => {
               placeholder="Current password"
               value={confirmPwd}
               onChange={(e) => setConfirmPwd(e.target.value)}
+              autoComplete="current-password"
+              autoFocus
             />
             {confirmError && (
               <Typography variant="caption" className="text-red-500 mt-2">{confirmError}</Typography>

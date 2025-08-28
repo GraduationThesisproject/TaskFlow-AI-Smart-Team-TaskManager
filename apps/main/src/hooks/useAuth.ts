@@ -14,11 +14,12 @@ import {
   verifyEmail,
   resendVerificationCode,
   requestPasswordReset,
-  resetPassword
+  resetPassword,
+  updateProfileSecure,
+  changePassword,
 } from '../store/slices/authSlice';
 import type { LoginCredentials, RegisterData, OAuthCallbackData, EmailVerificationData, ResendVerificationData, PasswordResetRequestData, PasswordResetData } from '../types/auth.types';
 import { oauthService } from '../services/oauthService';
-import { AuthService } from '../services/authService';
 
 type UseOAuthReturn = {
   loginWithOAuth: (provider: 'google' | 'github') => void;
@@ -166,6 +167,20 @@ export const useAuth = () => {
     [dispatch]
   );
 
+  const updateProfileSecureHandler = useCallback(
+    async (payload: { name?: string; currentPassword: string; avatar?: File | null }) => {
+      return await dispatch(updateProfileSecure(payload)).unwrap();
+    },
+    [dispatch]
+  );
+
+  const changePasswordHandler = useCallback(
+    async (payload: { currentPassword: string; newPassword: string }) => {
+      return await dispatch(changePassword(payload)).unwrap();
+    },
+    [dispatch]
+  );
+
   return {
     user,
     token,
@@ -187,6 +202,8 @@ export const useAuth = () => {
     resetPassword: resetPasswordHandler,
     testConnection: testConnectionHandler,
     refreshToken: refreshTokenHandler,
+    updateProfileSecure: updateProfileSecureHandler,
+    changePassword: changePasswordHandler,
   };
 };
 

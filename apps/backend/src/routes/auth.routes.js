@@ -3,7 +3,7 @@ const authController = require('../controllers/auth.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const { rateLimitSensitiveOps } = require('../middlewares/permission.middleware');
-const { createMulterUpload } = require('../config/multer');
+const { createUploadMiddleware, processUploadedFiles, setUploadContext } = require('../middlewares/upload.middleware');
 
 // Robust router initialization to avoid "router.post is not a function"
 function createRouter() {
@@ -120,18 +120,15 @@ router.post('/logout',
 );
 
 
-const uploadAvatar = createMulterUpload('avatar', false);
 router.put(
     '/profile/secure',
-    // uploadAvatar,       // Multer handles avatar file and populates req.body
-    // (req, res, next) => {
-    //                    // Optional: simple validation here manually
-    //   const { currentPassword, name } = req.body;
-    //   if (!currentPassword) return res.status(400).json({ message: 'Current password required' });
-    //   if (name && name.length < 2) return res.status(400).json({ message: 'Name too short' });
-    //   next();
-    // },
     authMiddleware,
+    // Set context (workspace/project) if present
+    setUploadContext(),
+    // Handle optional single avatar upload (field name: 'avatar') and keep going if no file
+    createUploadMiddleware('avatar', false, 1, true),
+    // Convert multer output into File docs and attach as req.uploadedFile
+    processUploadedFiles,
     authController.updateProfileSecure
   );
 

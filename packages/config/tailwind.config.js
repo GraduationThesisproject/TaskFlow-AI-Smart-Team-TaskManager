@@ -2,11 +2,9 @@
 module.exports = {
   content: [],
   darkMode: ["class"],
-  safelist: [
-    {
-      pattern: /^bg-\[#([0-9A-F]{6})\]$/i,
-    },
-  ],
+  // Removed safelist regex that caused warnings. If you need safelisted classes,
+  // add explicit class strings here (e.g., 'bg-[#007ADF]') instead of a regex.
+  safelist: [],
   theme: {
     extend: {
       colors: {
