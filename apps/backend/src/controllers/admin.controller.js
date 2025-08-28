@@ -724,8 +724,8 @@ const changeUserRole = async (req, res) => {
     const { newRole } = req.body;
 
     // Validate the new role
-    if (!['user', 'admin', 'super_admin', 'moderator'].includes(newRole)) {
-      return sendResponse(res, 400, false, 'Invalid role. Must be one of: user, admin, super_admin, moderator');
+    if (!['user', 'admin', 'super_admin', 'moderator', 'viewer'].includes(newRole)) {
+      return sendResponse(res, 400, false, 'Invalid role. Must be one of: user, admin, super_admin, moderator, viewer');
     }
 
     // Check if user exists
@@ -790,12 +790,11 @@ const addUserWithEmail = async (req, res) => {
     }
 
     // Validate role
-    if (!['admin', 'super_admin', 'moderator'].includes(role)) {
-      return sendResponse(res, 400, false, 'Invalid role. Must be one of: admin, super_admin, moderator');
+    if (!['admin', 'super_admin', 'moderator', 'viewer'].includes(role)) {
+      return sendResponse(res, 400, false, 'Invalid role. Must be one of: admin, super_admin, moderator, viewer');
     }
 
     // Check if admin user already exists (only check Admin collection, not regular User collection)
-    const Admin = require('../models/Admin');
     const existingAdmin = await Admin.findOne({ 'userEmail': email });
     if (existingAdmin) {
       return sendResponse(res, 400, false, 'Admin user with this email already exists');
@@ -803,7 +802,13 @@ const addUserWithEmail = async (req, res) => {
 
     // Create Admin model entry for admin panel access ONLY
     // This user will NOT be a regular app user
-    const adminEntry = await Admin.createAdmin(null, role, { userEmail: email, userName: username });
+    const adminEntry = new Admin({
+      userEmail: email,
+      userName: username,
+      password: 'tempPassword123!', // Temporary password that should be changed
+      role: role,
+      isActive: true
+    });
     await adminEntry.save();
 
     // Log the admin user creation for audit purposes
@@ -848,12 +853,11 @@ const addAdminUser = async (req, res) => {
     }
 
     // Validate role
-    if (!['admin', 'super_admin', 'moderator'].includes(role)) {
-      return sendResponse(res, 400, false, 'Invalid role. Must be one of: admin, super_admin, moderator');
+    if (!['admin', 'super_admin', 'moderator', 'viewer'].includes(role)) {
+      return sendResponse(res, 400, false, 'Invalid role. Must be one of: admin, super_admin, moderator, viewer');
     }
 
     // Check if admin user already exists
-    const Admin = require('../models/Admin');
     const existingAdmin = await Admin.findOne({ 'userEmail': email });
     if (existingAdmin) {
       return sendResponse(res, 400, false, 'Admin user with this email already exists');
@@ -863,10 +867,9 @@ const addAdminUser = async (req, res) => {
     const adminEntry = new Admin({
       userEmail: email,
       userName: email.split('@')[0], // Use email prefix as username
-      userPassword: password, // This will be hashed by the pre-save middleware
+      password: password, // This will be hashed by the pre-save middleware
       role: role,
-      isActive: true,
-      type: 'admin_only'
+      isActive: true
     });
 
     await adminEntry.save();
@@ -912,7 +915,6 @@ const setupFirstAdmin = async (req, res) => {
     }
 
     // Check if any admin users already exist
-    const Admin = require('../models/Admin');
     const existingAdminCount = await Admin.countDocuments();
     
     if (existingAdminCount > 0) {
@@ -929,10 +931,9 @@ const setupFirstAdmin = async (req, res) => {
     const adminEntry = new Admin({
       userEmail: email,
       userName: email.split('@')[0], // Use email prefix as username
-      userPassword: password, // This will be hashed by the pre-save middleware
+      password: password, // This will be hashed by the pre-save middleware
       role: role,
-      isActive: true,
-      type: 'admin_only'
+      isActive: true
     });
 
     await adminEntry.save();
@@ -964,15 +965,15 @@ const getAvailableRoles = async (req, res) => {
 
     // Super Admin can assign all roles
     if (userSystemRole === 'super_admin') {
-      availableRoles = ['admin', 'super_admin', 'moderator'];
+      availableRoles = ['admin', 'super_admin', 'moderator', 'viewer'];
     }
-    // Admin can assign admin and moderator roles
+    // Admin can assign admin, moderator, and viewer roles
     else if (userSystemRole === 'admin') {
-      availableRoles = ['admin', 'moderator'];
+      availableRoles = ['admin', 'moderator', 'viewer'];
     }
-    // Moderator can only assign moderator role
+    // Moderator can only assign moderator and viewer roles
     else if (userSystemRole === 'moderator') {
-      availableRoles = ['moderator'];
+      availableRoles = ['moderator', 'viewer'];
     }
     // Regular users cannot assign roles
     else {

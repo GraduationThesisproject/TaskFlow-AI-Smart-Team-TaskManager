@@ -1,0 +1,24 @@
+{
+  "name": "notification-test-dependencies",
+  "version": "1.0.0",
+  "description": "Dependencies for testing the notification system",
+  "main": "test-notification-simple.js",
+  "scripts": {
+    "test": "node test-notification-simple.js",
+    "test-comprehensive": "node test-notification-trigger.js",
+    "install-deps": "npm install socket.io-client axios"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.2",
+    "axios": "^1.5.0"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "notification",
+    "socket.io",
+    "real-time",
+    "testing"
+  ],
+  "author": "TaskFlow Team",
+  "license": "MIT"
+}
