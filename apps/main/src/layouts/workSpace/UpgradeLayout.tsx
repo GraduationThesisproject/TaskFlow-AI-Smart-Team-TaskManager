@@ -9,6 +9,7 @@ import {
   Gradient,
 } from "@taskflow/ui";
 import { useState } from "react";
+import {loadStripe} from '@stripe/stripe-js';
 
 function UpgradeLayout() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annually">("monthly");
@@ -111,7 +112,40 @@ function UpgradeLayout() {
       ...group.items.map((it) => ({ type: "item" as const, label: it.label, values: it.values })),
     ]),
   ];
+ const makePayment=async (offre:object)=>{
+  const stripe = await loadStripe("pk_test_51S0u5XQnbFIuhN9UcRTwnxmcl37YLiKzz1dh5FjWjpMaU6Blw63t9wrnhtT7QFI7OkpgUIo4CgmZ0OPnDenCUZcg00ZZLPzodR"); // Use your actual publishable Stripe key
 
+  const body = offre
+  const headers = {
+    "Content-Type": "application/json"
+  };
+
+  try {
+    const response = await fetch(`${apiURL}/create-checkout-session`, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(body)
+    });
+
+    const session = await response.json();
+
+    const result = await stripe.redirectToCheckout({
+      sessionId: session.id // Corrected from session.1d
+    });
+
+    if (result.error) {
+      console.error(result.error.message);
+      // Optionally display error to the user
+    }
+
+  } catch (error) {
+    console.error("Payment failed:", error);
+    // Optionally display error to the user
+  }
+};
+
+    
+ 
   return (
     <div className="flex min-h-screen text-[hsl(var(--foreground))]">
       <Sidebar />
@@ -192,7 +226,7 @@ function UpgradeLayout() {
                             {p.desc}
                           </Typography>
                           {p.key !== "free" && (
-                            <Button size="sm" className="mt-4 rounded-md bg-[hsl(var(--primary))] text-white">
+                            <Button size="sm" className="mt-4 rounded-md bg-[hsl(var(--primary))] text-white" >
                               {p.cta}
                             </Button>
                           )}
