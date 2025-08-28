@@ -11,7 +11,8 @@ import {
   Stack
 } from '@taskflow/ui';
 import { DraggableTask } from './DraggableTask';
-import type { Task, Column } from '../../store/slices/taskSlice';
+import type { Task } from '../../types/task.types';
+import type { Column } from '../../types/board.types';
 
 interface DraggableColumnProps {
   column: Column;
