@@ -20,6 +20,8 @@ const TemplatesList: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'name'>('newest');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  // Track which templates this user has already viewed in this session to avoid multiple increments
+  const [locallyViewed, setLocallyViewed] = useState<Record<string, boolean>>({});
 
   // Load templates on mount
   useEffect(() => {
@@ -45,9 +47,29 @@ const TemplatesList: React.FC = () => {
                 || (t as any).createdBy.name
                 || (t as any).createdBy.email
               )
-            : undefined)
-          // If not populated, avoid attributing to the current user; use a neutral placeholder
+            : (
+                // Fallback: if createdBy is an id matching the current user, use current user's basic info
+                (() => {
+                  const uid = String((userBasic as any)?._id || (userBasic as any)?.id || '');
+                  const createdById = String((t as any)?.createdBy || '');
+                  if (uid && createdById && uid === createdById) {
+                    return (userBasic as any)?.displayName || (userBasic as any)?.name || (userBasic as any)?.email;
+                  }
+                  return undefined;
+                })()
+              ))
           || 'Unknown',
+        // Pass creator avatar if available when createdBy is populated; else fallback to current user's avatar when createdBy equals current user id
+        avatar: (typeof (t as any)?.createdBy === 'object' && (t as any).createdBy?.avatar)
+          ? (t as any).createdBy.avatar
+          : (() => {
+              const uid = String((userBasic as any)?._id || (userBasic as any)?.id || '');
+              const createdById = String((t as any)?.createdBy || '');
+              if (uid && createdById && uid === createdById) {
+                return (userBasic as any)?.avatar;
+              }
+              return undefined;
+            })(),
       },
       views: (t as any)?.views ?? 0,
       // Prefer server numeric likes; fallback to likedBy length
@@ -144,8 +166,22 @@ const TemplatesList: React.FC = () => {
   }, [templates, activeCategory, searchQuery, sortBy]);
 
   const handleTemplateClick = (t: TemplateCardItem) => {
-    // Explicitly increment views (unique per user) on open
-    incrementViews(t.id);
+    const uid = String((userBasic as any)?._id || (userBasic as any)?.id || '');
+    const alreadyViewedServer = Array.isArray((t as any)?.viewedBy)
+      ? (t as any).viewedBy.some((u: any) => String(u?._id) === uid)
+      : false;
+    const alreadyViewedLocal = !!locallyViewed[t.id];
+
+    // Only count one view per user: skip if already viewed
+    if (!alreadyViewedServer && !alreadyViewedLocal) {
+      setTemplates(prev => prev.map(item => (
+        item.id === t.id ? { ...item, views: (item.views ?? 0) + 1 } : item
+      )));
+      setLocallyViewed(prev => ({ ...prev, [t.id]: true }));
+      // Sync with backend (server should also ensure uniqueness)
+      incrementViews(t.id);
+    }
+
     // Optionally fetch details if needed elsewhere
     // fetchOne(t.id);
     console.log('Template clicked:', t);

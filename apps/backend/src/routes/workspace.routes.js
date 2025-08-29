@@ -92,9 +92,22 @@ router.post('/:id/transfer-ownership',
     workspaceController.transferOwnership
 );
 
+// Restore archived workspace
+router.post('/:id/restore',
+    requireWorkspaceMember,
+    workspaceController.restoreWorkspace
+);
+
+// Permanently delete an archived workspace
+router.delete('/:id/permanent',
+    requireWorkspaceMember,
+    workspaceController.permanentDeleteWorkspace
+);
+
 // Delete workspace - rely on controller for final permission (owner or privileged admin)
 router.delete('/:id',
     workspaceController.deleteWorkspace
 );
+
 
 module.exports = router;

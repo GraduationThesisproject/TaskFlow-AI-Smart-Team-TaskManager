@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Button, Typography } from '@taskflow/ui';
+import React, { useEffect, useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, Button, Typography, ColorPicker } from '@taskflow/ui';
 import { Palette } from 'lucide-react';
 import { useTheme, applyTheme } from '@taskflow/theme';
 
@@ -30,20 +30,10 @@ const AppearanceSettings: React.FC = () => {
     localStorage.removeItem(storageKey);
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const resolved = prefersDark ? 'dark' : 'light';
-    applyTheme(resolved, userPrimaryColor);
+    applyTheme(resolved, userPrimaryColor ?? undefined);
     setTheme(resolved);
     setIsSystem(true);
   };
-
-  const colorOptions = useMemo(
-    () => [
-      { label: 'Blue', value: '#007ADF' },
-      { label: 'Green', value: '#10B981' },
-      { label: 'Purple', value: '#8B5CF6' },
-      { label: 'Orange', value: '#F59E0B' },
-    ],
-    []
-  );
 
   return (
     <Card className="backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)] hover:shadow-[0_0_28px_hsl(var(--accent)/0.18)] transition-shadow">
@@ -83,20 +73,10 @@ const AppearanceSettings: React.FC = () => {
         </div>
         <div>
           <Typography variant="body-medium" className="font-medium mb-2">Accent Color</Typography>
-          <div className="flex gap-3">
-            {colorOptions.map((c) => (
-              <button
-                key={c.value}
-                aria-label={`Set accent ${c.label}`}
-                onClick={() => setUserPrimaryColor(c.value)}
-                className={`w-8 h-8 rounded-full border-2 transition-colors hover:border-border`}
-                style={{
-                  backgroundColor: c.value,
-                  borderColor: userPrimaryColor === c.value ? 'hsl(var(--ring))' : 'transparent',
-                }}
-              />
-            ))}
-          </div>
+          <ColorPicker
+            onChange={(color) => setUserPrimaryColor(color)}
+            // presetColors is optional; leaving it undefined uses the component's defaults
+          />
         </div>
       </CardContent>
     </Card>

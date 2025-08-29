@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { Socket, io } from 'socket.io-client';
-import type { SocketMessage, SocketEvent } from '../../types';
 
 interface UseSocketOptions {
   url: string;
@@ -45,27 +44,29 @@ export function useSocket(options: UseSocketOptions) {
         socketRef.current = null;
       }
 
-      console.log('🔌 Creating socket connection to:', options.url);
-      console.log('🔑 Authentication token:', options.auth?.token ? 'Present' : 'Missing');
+      // console.log('🔌 Creating socket connection to:', options.url);
+      // console.log('🔑 Authentication token:', options.auth?.token ? 'Present' : 'Missing');
 
       socketRef.current = io(options.url, {
         autoConnect: false, // We'll manually connect
         auth: options.auth,
-        transports: ['websocket', 'polling'],
+        // Prefer polling first; upgrade to websocket when possible
+        transports: ['polling', 'websocket'],
+        path: '/socket.io',
         timeout: 30000, // Increased timeout
         reconnection: false, // We'll handle reconnection manually
         forceNew: true,
         upgrade: true,
         rememberUpgrade: false,
         // Add additional options for better connection handling
-        maxReconnectionAttempts: 0, // Disable built-in reconnection
+        reconnectionAttempts: 0, // Disable built-in reconnection (use with reconnection: false)
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
       });
 
       // Set up event listeners
       socketRef.current.on('connect', () => {
-        console.log('🔌 Socket connected successfully');
+        // console.log('🔌 Socket connected successfully');
         setIsConnected(true);
         setIsConnecting(false);
         setError(null);
@@ -78,11 +79,11 @@ export function useSocket(options: UseSocketOptions) {
         }
       });
 
-      socketRef.current.on('disconnect', (reason) => {
+      socketRef.current.on('disconnect', (reason: string) => {
         console.log('🔌 Socket disconnected:', reason);
         setIsConnected(false);
         setIsConnecting(false);
-        
+
         if (reason === 'io server disconnect') {
           setError('Server disconnected');
         } else if (reason === 'io client disconnect') {
@@ -91,22 +92,26 @@ export function useSocket(options: UseSocketOptions) {
           setError('Transport closed');
         } else if (reason === 'ping timeout') {
           setError('Connection timeout');
-        } else if (reason === 'io client error') {
-          setError('Client error');
+        } else if (reason === 'transport error') {
+          setError('Transport error');
+        } else if (reason === 'parse error') {
+          setError('Parse error');
+        } else {
+          setError(`Disconnected: ${reason}`);
         }
       });
 
       socketRef.current.on('connect_error', (err) => {
-        console.error('❌ Socket connection error:', err);
+        //console.error('❌ Socket connection error:', err);
         setIsConnecting(false);
         
         let errorMessage = err.message || 'Connection failed';
         
         // Handle specific error types
         if (err.message?.includes('Authentication')) {
-          errorMessage = 'Authentication failed - please log in again';
+          // errorMessage = 'Authentication failed - please log in again';
         } else if (err.message?.includes('CORS')) {
-          errorMessage = 'CORS error - check server configuration';
+          // errorMessage = 'CORS error - check server configuration';
         } else if (err.message?.includes('timeout')) {
           errorMessage = 'Connection timeout - server may be unavailable';
         }
@@ -116,26 +121,26 @@ export function useSocket(options: UseSocketOptions) {
         // Attempt reconnection if we haven't exceeded max attempts
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
-          console.log(`🔄 Attempting reconnection in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
+          //console.log(`🔄 Attempting reconnection in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttemptsRef.current++;
             connect();
           }, delay);
         } else {
-          setError(`Failed to connect after ${maxReconnectAttempts} attempts. Please check your connection and try again.`);
+          // setError(`Failed to connect after ${maxReconnectAttempts} attempts. Please check your connection and try again.`);
         }
       });
 
       socketRef.current.on('error', (err) => {
-        console.error('❌ Socket error:', err);
+        // console.error('❌ Socket error:', err);
         setError(err.message || 'Socket error');
       });
 
       // Set connection timeout
       connectionTimeoutRef.current = setTimeout(() => {
         if (socketRef.current && !socketRef.current.connected) {
-          console.log('⏰ Connection timeout - closing socket');
+          // console.log('⏰ Connection timeout - closing socket');
           socketRef.current.close();
           setIsConnecting(false);
           setError('Connection timeout - please try again');
@@ -143,11 +148,11 @@ export function useSocket(options: UseSocketOptions) {
       }, 30000); // 30 second timeout
 
       // Now manually connect
-      console.log('🚀 Attempting to connect...');
+      // console.log('🚀 Attempting to connect...');
       socketRef.current.connect();
 
     } catch (err) {
-      console.error('❌ Failed to create socket connection:', err);
+      // console.error('❌ Failed to create socket connection:', err);
       setIsConnecting(false);
       setError('Failed to create socket connection');
     }
@@ -182,7 +187,7 @@ export function useSocket(options: UseSocketOptions) {
       socketRef.current.emit(event, data);
     } else {
       setError('Socket not connected');
-      console.warn('Attempted to emit event on disconnected socket:', event);
+      // console.warn('Attempted to emit event on disconnected socket:', event);
     }
   }, []);
 
@@ -214,7 +219,7 @@ export function useSocket(options: UseSocketOptions) {
     if (options.autoConnect && options.auth?.token) {
       // Add a longer delay to ensure the backend is ready and auth is stable
       const connectTimeout = setTimeout(() => {
-        console.log('🔄 Auto-connecting socket with token...');
+        // console.log('🔄 Auto-connecting socket with token...');
         connect();
       }, 500); // Increased delay to 500ms
 
