@@ -102,6 +102,10 @@ router.post('/password-reset/request',
     authController.requestPasswordReset
 );
 
+router.post('/password-reset/reset',
+    validateMiddleware(passwordResetSchema),
+    authController.resetPassword
+);
 
 router.get('/verify-email/:token',
     authController.verifyEmail
@@ -139,6 +143,11 @@ router.put('/change-password',
     authController.changePassword
 );
 
+router.put('/profile',
+    authMiddleware,
+    authController.updateProfile
+);
+
 router.put('/preferences',
     authMiddleware,
     validateMiddleware(updatePreferencesSchema),
@@ -160,11 +169,11 @@ router.get('/activity',
     authController.getActivityLog
 );
 
-// OAuth Routes
-router.get('/google', authController.googleLogin);
-router.get('/google/callback', authController.googleCallback);
+// OAuth Routes - Commented out until OAuth methods are implemented
+// router.get('/google', authController.googleLogin);
+// router.get('/google/callback', authController.googleCallback);
 
-router.get('/github', authController.githubLogin);
-router.get('/github/callback', authController.githubCallback);
+// router.get('/github', authController.githubLogin);
+// router.get('/github/callback', authController.githubCallback);
 
 module.exports = router;

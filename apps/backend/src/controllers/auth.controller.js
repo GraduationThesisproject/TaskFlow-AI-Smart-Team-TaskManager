@@ -652,10 +652,9 @@ exports.changePassword = async (req, res) => {
             action: 'profile_update',
             description: 'User changed password',
             entity: { type: 'User', id: user._id, name: user.name },
-            metadata: {
+            metadata: { 
                 ipAddress: req.ip,
-                userAgent: req.get('User-Agent'),
-                endedAllSessions: true
+                endedAllSessions: true 
             },
             severity: 'warning'
         });
@@ -900,83 +899,5 @@ exports.getActivityLog = async (req, res) => {
     } catch (error) {
         logger.error('Get activity log error:', error);
         sendResponse(res, 500, false, 'Server error retrieving activity log');
-    }
-};
-
-// ------------------ GET ME ------------------
-exports.getMe = async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return sendResponse(res, 404, false, 'User not found');
-        }
-
-        // Get related data sequentially to avoid parallel save conflicts
-        const preferences = await user.getPreferences();
-        const sessions = await user.getSessions();
-        const roles = await user.getRoles();
-
-        // Ensure avatar is populated so client gets URL
-        await user.populate({ path: 'avatar', select: 'url thumbnails' });
-
-        // Get active sessions count
-        const activeSessions = sessions.sessions.filter(s => s.isActive).length;
-
-        sendResponse(res, 200, true, 'User profile retrieved', {
-            user: user.getPublicProfile(),
-            preferences,
-            security: {
-                activeSessions,
-                emailVerified: user.emailVerified,
-                twoFactorEnabled: user.hasTwoFactorAuth,
-                lastLogin: user.lastLogin,
-                hasOAuthProviders: user.hasOAuthProviders
-            },
-            roles: {
-                workspaces: roles.workspaces.length,
-                spaces: roles.spaces.length
-            }
-        });
-    } catch (error) {
-        logger.error('Get profile error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving profile');
-    }
-};
-
-// ------------------ LOGOUT ------------------
-exports.logout = async (req, res) => {
-    try {
-        const { deviceId, allDevices = false } = req.body;
-        
-        const user = await User.findById(req.user.id);
-        const userSessions = await user.getSessions();
-
-        if (allDevices) {
-            await userSessions.endAllSessions();
-        } else if (deviceId) {
-            const session = userSessions.getSessionByDevice(deviceId);
-            if (session) {
-                await userSessions.endSession(session.sessionId);
-            }
-        }
-
-        // Log activity
-        await ActivityLog.logActivity({
-            userId: user._id,
-            action: 'user_logout',
-            description: allDevices ? 'User logged out from all devices' : 'User logged out',
-            entity: { type: 'User', id: user._id, name: user.name },
-            metadata: {
-                deviceId,
-                allDevices,
-                ipAddress: req.ip
-            }
-        });
-
-        logger.info(`User logged out: ${req.user.id}`);
-        sendResponse(res, 200, true, 'Logout successful');
-    } catch (error) {
-        logger.error('Logout error:', error);
-        sendResponse(res, 500, false, 'Server error during logout');
     }
 };

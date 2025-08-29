@@ -56,10 +56,4 @@ router.put('/preferences',
     notificationController.updatePreferences
 );
 
-// Test endpoint for real-time notifications (development only)
-router.post('/test',
-    requireSystemAdmin,
-    notificationController.sendTestNotification
-);
-
 module.exports = router;

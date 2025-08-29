@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, TextArea, Select, SelectOption, Typography, Stack } from '@taskflow/ui';
 import { useAppSelector } from '../../../../store';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
@@ -19,6 +19,18 @@ export const CreateWorkspaceModal: React.FC<CreateWorkspaceModalProps> = ({ isOp
   const [formData, setFormData] = useState({ name: '', description: '', visibility: 'private' as 'private' | 'public' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+
+  // Notifications
+  const notifyPush = (title: string, body?: string) => {
+    try {
+      if (typeof window === 'undefined' || !('Notification' in window)) return;
+      if (Notification.permission === 'granted') new Notification(title, { body });
+    } catch {}
+  };
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -47,6 +59,7 @@ export const CreateWorkspaceModal: React.FC<CreateWorkspaceModalProps> = ({ isOp
       };
   
       await createNewWorkspace(payload);
+      notifyPush('Workspace created', formData.name);
       
       // Reset form and close modal
 

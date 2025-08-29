@@ -1,0 +1,12 @@
+{
+  "id": "backup-2025-08-28T09-45-31-075Z",
+  "timestamp": "2025-08-28T09:45:31.241Z",
+  "description": "Pre-seeding backup",
+  "collections": [
+    "admins",
+    "users"
+  ],
+  "totalDocuments": 5,
+  "database": "taskflow",
+  "version": "1.0"
+}

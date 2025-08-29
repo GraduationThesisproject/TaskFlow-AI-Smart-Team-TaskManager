@@ -29,9 +29,10 @@ export interface EditUserModalProps {
 }
 
 const ROLE_OPTIONS = [
-  { value: 'user', label: 'User' },
-  { value: 'super_admin', label: 'Super Admin' },
-  { value: 'admin', label: 'Admin' }
+  { value: 'super_admin', label: 'Super Admin - Complete system access with all permissions' },
+  { value: 'admin', label: 'Admin - Full admin access with most permissions' },
+  { value: 'moderator', label: 'Moderator - Content moderation and user management' },
+  { value: 'viewer', label: 'Viewer - Read-only access to dashboard and reports' }
 ];
 
 export const EditUserModal: React.FC<EditUserModalProps> = ({

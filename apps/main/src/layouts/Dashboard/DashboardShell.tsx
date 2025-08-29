@@ -48,7 +48,7 @@ function UniversalSidebar({
     }
     if (section === 'settings') {
       return {
-        title: 'Settings',
+        title: 'Profile & Settings',
         items: [
           { icon: Settings, label: 'Profile', href: '/dashboard/settings/profile' },
           { icon: Palette, label: 'Theme settings', href: '/dashboard/settings/theme' },

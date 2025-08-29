@@ -1,0 +1,78 @@
+[
+  {
+    "_id": "68b0253b7e07c811299bb742",
+    "userId": "68b0253b7e07c811299bb73a",
+    "sessions": [
+      {
+        "sessionId": "vapulus-1756374331661-9651",
+        "deviceId": "acquiro-1756374331661-1075",
+        "deviceInfo": {
+          "type": "web",
+          "os": "Windows",
+          "browser": "Firefox",
+          "version": "3.8.6",
+          "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        },
+        "ipAddress": "217.232.223.142",
+        "location": {
+          "country": "India",
+          "city": "Tokyo",
+          "timezone": "Australia/Sydney"
+        },
+        "isActive": true,
+        "loginAt": "2025-08-21T18:14:26.778Z",
+        "lastActivityAt": "2025-08-28T01:10:41.530Z",
+        "logoutAt": null,
+        "tokenVersion": 1,
+        "rememberMe": false,
+        "_id": "68b0253b7e07c811299bb743"
+      }
+    ],
+    "security": {
+      "suspiciousActivities": [],
+      "trustedDevices": [],
+      "loginHistory": []
+    },
+    "createdAt": "2025-08-28T09:45:31.666Z",
+    "updatedAt": "2025-08-28T09:45:31.666Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0253c7e07c811299bb74e",
+    "userId": "68b0253b7e07c811299bb746",
+    "sessions": [
+      {
+        "sessionId": "thesaurus-1756374332106-7286",
+        "deviceId": "venio-1756374332106-8396",
+        "deviceInfo": {
+          "type": "web",
+          "os": "Android",
+          "browser": "Firefox",
+          "version": "8.5.9",
+          "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        },
+        "ipAddress": "223.13.167.228",
+        "location": {
+          "country": "Japan",
+          "city": "Sydney",
+          "timezone": "America/New_York"
+        },
+        "isActive": true,
+        "loginAt": "2025-08-27T03:14:30.196Z",
+        "lastActivityAt": "2025-08-27T15:27:34.564Z",
+        "logoutAt": null,
+        "tokenVersion": 1,
+        "rememberMe": false,
+        "_id": "68b0253c7e07c811299bb74f"
+      }
+    ],
+    "security": {
+      "suspiciousActivities": [],
+      "trustedDevices": [],
+      "loginHistory": []
+    },
+    "createdAt": "2025-08-28T09:45:32.109Z",
+    "updatedAt": "2025-08-28T09:45:32.109Z",
+    "__v": 0
+  }
+]

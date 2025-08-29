@@ -23,6 +23,11 @@ export const DeleteWorkspaceModal: React.FC<DeleteWorkspaceModalProps> = ({ isOp
     setLocalError(null);
     try {
       await deleteWorkspaceById(workspaceId);
+      try {
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('Workspace archived', { body: workspaceName });
+        }
+      } catch {}
       onClose();
     } catch (e: any) {
       setLocalError(e?.message || 'Failed to archive workspace');
@@ -33,6 +38,11 @@ export const DeleteWorkspaceModal: React.FC<DeleteWorkspaceModalProps> = ({ isOp
     setLocalError(null);
     try {
       await dispatch(restoreWorkspace({ id: workspaceId }) as any).unwrap();
+      try {
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('Workspace restored', { body: workspaceName });
+        }
+      } catch {}
       onClose();
     } catch (e: any) {
       setLocalError(e?.message || 'Failed to restore workspace');
@@ -43,6 +53,11 @@ export const DeleteWorkspaceModal: React.FC<DeleteWorkspaceModalProps> = ({ isOp
     setLocalError(null);
     try {
       await dispatch(permanentDeleteWorkspace({ id: workspaceId }) as any).unwrap();
+      try {
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('Workspace permanently deleted', { body: workspaceName });
+        }
+      } catch {}
       onClose();
     } catch (e: any) {
       setLocalError(e?.message || 'Failed to permanently delete workspace');

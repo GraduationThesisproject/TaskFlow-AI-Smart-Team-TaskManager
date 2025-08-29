@@ -59,6 +59,7 @@ class ChatService {
   private reconnectDelay = 1000;
   private messageHandlers: Map<string, (data: any) => void> = new Map();
   private isConnecting = false;
+  // private intentionallyClosed = false; // reverted: not used
 
   // Event handlers
   private onMessageHandler?: (message: ChatMessage) => void;
@@ -72,27 +73,29 @@ class ChatService {
    */
   connect(token: string, chatId: string): Promise<void> {
     return new Promise((resolve, reject) => {
+      // reverted: allow original single in-progress guard
       if (this.isConnecting) {
         reject(new Error('Connection already in progress'));
         return;
       }
 
       this.isConnecting = true;
-      
+      // this.intentionallyClosed = false; // reverted
+
       try {
         this.ws = new WebSocket(`${this.wsUrl}?token=${token}`);
-        
+
         this.ws.onopen = () => {
           console.log('Chat WebSocket connected');
           this.isConnecting = false;
           this.reconnectAttempts = 0;
-          
+
           // Join chat room
           this.send({
             event: 'chat:join',
             data: { chatId }
           });
-          
+
           this.onConnectHandler?.();
           resolve();
         };
@@ -116,8 +119,8 @@ class ChatService {
           console.log('Chat WebSocket disconnected');
           this.isConnecting = false;
           this.onDisconnectHandler?.();
-          
-          // Attempt to reconnect
+
+          // reverted: always attempt reconnect
           this.attemptReconnect(token, chatId);
         };
 
@@ -125,6 +128,7 @@ class ChatService {
         setTimeout(() => {
           if (this.isConnecting) {
             this.isConnecting = false;
+            // reverted: direct close
             this.ws?.close();
             reject(new Error('Connection timeout'));
           }
@@ -148,7 +152,7 @@ class ChatService {
 
     this.reconnectAttempts++;
     console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-    
+
     setTimeout(() => {
       this.connect(token, chatId).catch(error => {
         console.error('Reconnection failed:', error);
@@ -203,19 +207,19 @@ class ChatService {
           this.onMessageHandler(data.message);
         }
         break;
-      
+
       case 'chat:typing':
         if (this.onTypingHandler && data.sender) {
           this.onTypingHandler(data.sender.name, data.isTyping);
         }
         break;
-      
+
       case 'chat:status_update':
         if (this.onStatusUpdateHandler) {
           this.onStatusUpdateHandler(data.status);
         }
         break;
-      
+
       default:
         console.log('Unknown WebSocket event:', data);
     }
@@ -276,7 +280,7 @@ class ChatService {
   async getChatHistory(chatId: string): Promise<ChatMessage[]> {
     try {
       const response = await fetch(`${this.baseUrl}/widget/${chatId}/history`);
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to get chat history');
@@ -305,6 +309,7 @@ class ChatService {
    * Check if WebSocket is connected
    */
   isConnected(): boolean {
+    // reverted: original check
     return this.ws?.readyState === WebSocket.OPEN;
   }
 

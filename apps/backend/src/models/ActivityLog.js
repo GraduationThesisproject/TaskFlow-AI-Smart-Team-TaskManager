@@ -12,20 +12,20 @@ const activityLogSchema = new mongoose.Schema({
       // User actions
       'user_login', 'user_logout', 'user_register', 'profile_update',
       // Project actions
-      'project_create', 'project_update', 'project_delete', 'project_archive',
+      'project_create', 'project_update', 'project_delete', 'project_archive', 'project_restore',
       'project_member_add', 'project_member_remove', 'project_member_role_change',
       // Workspace actions
-      'workspace_create', 'workspace_update', 'workspace_delete',
+      'workspace_create', 'workspace_update', 'workspace_delete', 'workspace_restore',
       'workspace_member_add', 'workspace_member_remove',
       // Space actions
-      'space_create', 'space_update', 'space_delete', 'space_archive',
+      'space_create', 'space_update', 'space_delete', 'space_archive', 'space_restore',
       'space_member_add', 'space_member_remove',
       // Board actions
-      'board_create', 'board_update', 'board_delete', 'board_archive',
+      'board_create', 'board_update', 'board_delete', 'board_archive', 'board_restore',
       'column_create', 'column_update', 'column_delete', 'column_reorder',
       // Task actions
       'task_create', 'task_update', 'task_delete', 'task_assign', 'task_unassign',
-      'task_move', 'task_complete', 'task_reopen', 'task_archive', 'task_duplicate',
+      'task_move', 'task_complete', 'task_reopen', 'task_archive', 'task_restore', 'task_duplicate',
       'time_tracking_start', 'time_tracking_stop', 'task_dependency_add', 'task_dependency_remove',
       // Comment actions
       'comment_create', 'comment_update', 'comment_delete', 'comment_resolve',
