@@ -57,6 +57,9 @@ const seederConfig = {
       boards: {
         perSpace: { min: 1, max: 4 }
       },
+      boardTemplates: {
+        count: 10
+      },
       tags: {
         count: 20
       },
@@ -106,6 +109,9 @@ const seederConfig = {
       boards: {
         perSpace: { min: 1, max: 2 }
       },
+      boardTemplates: {
+        count: 5
+      },
       tags: {
         count: 10
       },
@@ -138,6 +144,9 @@ const seederConfig = {
       },
       boards: {
         perSpace: { min: 0, max: 0 }
+      },
+      boardTemplates: {
+        count: 0
       },
       tasks: {
         perBoard: { min: 0, max: 0 }

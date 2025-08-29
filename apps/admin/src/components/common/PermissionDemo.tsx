@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAdminPermissions } from '../../hooks/useAdminPermissions';
-import { PermissionGuard, usePermissionDeniedPopup } from './index';
+import { PermissionGuard, PermissionDeniedPopup, usePermissionDeniedPopup } from './index';
 import { Button, Card, CardContent, CardHeader, CardTitle, Typography } from '@taskflow/ui';
 import { 
   UserGroupIcon, 

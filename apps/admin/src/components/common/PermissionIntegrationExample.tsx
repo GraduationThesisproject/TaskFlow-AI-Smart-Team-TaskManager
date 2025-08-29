@@ -5,6 +5,7 @@ import {
   useFeatureAccess,
   useAdminPermissions 
 } from './index';
+import type { AdminPermissions } from '../../hooks/useAdminPermissions';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@taskflow/ui';
 import { 
   UserGroupIcon, 
@@ -289,7 +290,7 @@ export const PermissionIntegrationExample: React.FC = () => {
 function withPermission<P extends object>(
   WrappedComponent: React.ComponentType<P>,
   options: {
-    requiredPermission: string;
+    requiredPermission: keyof AdminPermissions;
     featureName: string;
     actionName?: string;
   }

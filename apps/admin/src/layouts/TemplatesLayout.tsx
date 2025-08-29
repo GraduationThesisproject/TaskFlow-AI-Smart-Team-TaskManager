@@ -317,160 +317,223 @@ const TemplatesLayout: React.FC = () => {
 
       {/* Project Templates */}
       {activeTab === 'projects' && (
-        <Grid cols={3} className="gap-6">
-          {getFilteredProjectTemplates().map((template: ProjectTemplate) => {
-            if (!template || !template.id || !template.name) return null;
-            return (
-              <Card key={template.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
-                    {getStatusBadge(template.isActive)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Typography variant="body-medium" className="text-muted-foreground mb-3">
-                    {template.description}
-                  </Typography>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Category
+        <>
+          {console.log('🎯 Rendering project templates:', getFilteredProjectTemplates().length)}
+          {getFilteredProjectTemplates().length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <FolderIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <Typography variant="heading-large" className="mb-2">
+                  No Project Templates Found
+                </Typography>
+                <Typography variant="body-medium" className="text-muted-foreground mb-4">
+                  Create your first project template to get started
+                </Typography>
+                <Button onClick={handleCreateTemplate}>
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Create Template
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Grid cols={3} className="gap-6">
+              {getFilteredProjectTemplates().map((template: ProjectTemplate) => {
+                if (!template || !template.id || !template.name) return null;
+                return (
+                  <Card key={template.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                        {getStatusBadge(template.isActive)}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Typography variant="body-medium" className="text-muted-foreground mb-3">
+                        {template.description}
                       </Typography>
-                      <Badge variant="secondary">{template.category}</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Usage Count
-                      </Typography>
-                      <Typography variant="body-medium">{template.usageCount || 0}</Typography>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Created
-                      </Typography>
-                      <Typography variant="body-small">
-                        {template.createdAt ? new Date(template.createdAt).toLocaleDateString() : 'N/A'}
-                      </Typography>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <PencilIcon className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <TrashIcon className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </Grid>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Typography variant="body-small" className="text-muted-foreground">
+                            Category
+                          </Typography>
+                          <Badge variant="secondary">{template.category}</Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Typography variant="body-small" className="text-muted-foreground">
+                            Usage Count
+                          </Typography>
+                          <Typography variant="body-medium">{template.usageCount || 0}</Typography>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Typography variant="body-small" className="text-muted-foreground">
+                            Created
+                          </Typography>
+                          <Typography variant="body-small">
+                            {template.createdAt ? new Date(template.createdAt).toLocaleDateString() : 'N/A'}
+                          </Typography>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2 mt-4">
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <PencilIcon className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <TrashIcon className="h-4 w-4 mr-2" />
+                          Delete
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </Grid>
+          )}
+        </>
       )}
 
       {/* Task Templates */}
       {activeTab === 'tasks' && (
-        <Grid cols={3} className="gap-6">
-          {getFilteredTaskTemplates().map((template: TaskTemplate) => {
-            if (!template || !template.id || !template.name) return null;
-            return (
-              <Card key={template.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
-                    {getStatusBadge(template.isActive)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Typography variant="body-medium" className="text-muted-foreground mb-3">
-                    {template.description}
-                  </Typography>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Category
+        <>
+          {console.log('🎯 Rendering task templates:', getFilteredTaskTemplates().length)}
+          {getFilteredTaskTemplates().length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <DocumentTextIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <Typography variant="heading-large" className="mb-2">
+                  No Task Templates Found
+                </Typography>
+                <Typography variant="body-medium" className="text-muted-foreground mb-4">
+                  Create your first task template to standardize workflows
+                </Typography>
+                <Button onClick={handleCreateTemplate}>
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Create Template
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Grid cols={3} className="gap-6">
+              {getFilteredTaskTemplates().map((template: TaskTemplate) => {
+                if (!template || !template.id || !template.name) return null;
+                return (
+                  <Card key={template.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                        {getStatusBadge(template.isActive)}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Typography variant="body-medium" className="text-muted-foreground mb-3">
+                        {template.description}
                       </Typography>
-                      <Badge variant="secondary">{template.category}</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Estimated Hours
-                      </Typography>
-                      <Typography variant="body-medium">{template.estimatedHours || 0}h</Typography>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Usage Count
-                      </Typography>
-                      <Typography variant="body-medium">{template.usageCount || 0}</Typography>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <PencilIcon className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <TrashIcon className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </Grid>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Typography variant="body-small" className="text-muted-foreground">
+                            Category
+                          </Typography>
+                          <Badge variant="secondary">{template.category}</Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Typography variant="body-small" className="text-muted-foreground">
+                            Estimated Hours
+                          </Typography>
+                          <Typography variant="body-medium">{template.estimatedHours || 0}h</Typography>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Typography variant="body-small" className="text-muted-foreground">
+                            Usage Count
+                          </Typography>
+                          <Typography variant="body-medium">{template.usageCount || 0}</Typography>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2 mt-4">
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <PencilIcon className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <TrashIcon className="h-4 w-4 mr-2" />
+                          Delete
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </Grid>
+          )}
+        </>
       )}
 
       {/* AI Prompts */}
       {activeTab === 'ai-prompts' && (
-        <Grid cols={2} className="gap-6">
-          {getFilteredAIPrompts().map((prompt: AIPrompt) => {
-            if (!prompt || !prompt.id || !prompt.name) return null;
-            return (
-              <Card key={prompt.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{prompt.name}</CardTitle>
-                    {getStatusBadge(prompt.isActive)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Typography variant="body-medium" className="text-muted-foreground mb-3">
-                    {prompt.prompt}
-                  </Typography>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Category
+        <>
+          {console.log('🎯 Rendering AI prompts:', getFilteredAIPrompts().length)}
+          {getFilteredAIPrompts().length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <SparklesIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <Typography variant="heading-large" className="mb-2">
+                  No AI Prompts Found
+                </Typography>
+                <Typography variant="body-medium" className="text-muted-foreground mb-4">
+                  Create your first AI prompt to help users with common tasks
+                </Typography>
+                <Button onClick={handleCreateTemplate}>
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Create Prompt
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Grid cols={2} className="gap-6">
+              {getFilteredAIPrompts().map((prompt: AIPrompt) => {
+                if (!prompt || !prompt.id || !prompt.name) return null;
+                return (
+                  <Card key={prompt.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">{prompt.name}</CardTitle>
+                        {getStatusBadge(prompt.isActive)}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Typography variant="body-medium" className="text-muted-foreground mb-3">
+                        {prompt.prompt}
                       </Typography>
-                      <Badge variant="secondary">{prompt.category}</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Usage Count
-                      </Typography>
-                      <Typography variant="body-medium">{prompt.usageCount || 0}</Typography>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <PencilIcon className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <TrashIcon className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </Grid>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Typography variant="body-small" className="text-muted-foreground">
+                            Category
+                          </Typography>
+                          <Badge variant="secondary">{prompt.category}</Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Typography variant="body-small" className="text-muted-foreground">
+                            Usage Count
+                          </Typography>
+                          <Typography variant="body-medium">{prompt.usageCount || 0}</Typography>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2 mt-4">
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <PencilIcon className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <TrashIcon className="h-4 w-4 mr-2" />
+                          Delete
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </Grid>
+          )}
+        </>
       )}
 
       {/* Board Templates */}
@@ -480,57 +543,78 @@ const TemplatesLayout: React.FC = () => {
 
       {/* Branding Assets */}
       {activeTab === 'branding' && (
-        <Grid cols={4} className="gap-6">
-          {getFilteredBrandingAssets().map((asset: BrandingAsset) => {
-            if (!asset || !asset.id || !asset.name) return null;
-            return (
-              <Card key={asset.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{asset.name}</CardTitle>
-                    {getStatusBadge(asset.isActive)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Type
-                      </Typography>
-                      <Badge variant="secondary">{asset.type}</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Value
-                      </Typography>
-                      <Typography variant="body-small" className="truncate max-w-24">
-                        {asset.value || 'N/A'}
-                      </Typography>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Created
-                      </Typography>
-                      <Typography variant="body-small">
-                        {asset.createdAt ? new Date(asset.createdAt).toLocaleDateString() : 'N/A'}
-                      </Typography>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <PencilIcon className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <TrashIcon className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </Grid>
+        <>
+          {console.log('🎯 Rendering branding assets:', getFilteredBrandingAssets().length)}
+          {getFilteredBrandingAssets().length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <PaintBrushIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <Typography variant="heading-large" className="mb-2">
+                  No Branding Assets Found
+                </Typography>
+                <Typography variant="body-medium" className="text-muted-foreground mb-4">
+                  Create your first branding asset to customize the platform appearance
+                </Typography>
+                <Button onClick={handleCreateTemplate}>
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Create Asset
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Grid cols={4} className="gap-6">
+              {getFilteredBrandingAssets().map((asset: BrandingAsset) => {
+                if (!asset || !asset.id || !asset.name) return null;
+                return (
+                  <Card key={asset.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">{asset.name}</CardTitle>
+                        {getStatusBadge(asset.isActive)}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Typography variant="body-small" className="text-muted-foreground">
+                            Type
+                          </Typography>
+                          <Badge variant="secondary">{asset.type}</Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Typography variant="body-small" className="text-muted-foreground">
+                            Value
+                          </Typography>
+                          <Typography variant="body-small" className="truncate max-w-24">
+                            {asset.value || 'N/A'}
+                          </Typography>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Typography variant="body-small" className="text-muted-foreground">
+                            Created
+                          </Typography>
+                          <Typography variant="body-small">
+                            {asset.createdAt ? new Date(asset.createdAt).toLocaleDateString() : 'N/A'}
+                          </Typography>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2 mt-4">
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <PencilIcon className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <TrashIcon className="h-4 w-4 mr-2" />
+                          Delete
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </Grid>
+          )}
+        </>
       )}
 
       {/* Create Template Modal */}

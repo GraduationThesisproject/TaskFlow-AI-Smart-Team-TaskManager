@@ -24,7 +24,7 @@ import {
   PencilIcon
 } from '@heroicons/react/24/outline';
 import { useLanguageContext } from '../contexts/LanguageContext';
-import { useToast } from '../contexts/ToastContext';
+import { PermissionGuard } from '../components/common/PermissionGuard';
 
 import { adminService } from '../services/adminService';
 import TwoFactorAuthManager from '../components/security/TwoFactorAuthManager';
@@ -33,7 +33,6 @@ import TwoFactorAuthManager from '../components/security/TwoFactorAuthManager';
 const SettingsLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('security');
   const { currentLanguage, changeLanguage } = useLanguageContext();
-  const { showPermissionDenied } = useToast();
 
 
   // System Settings
@@ -450,21 +449,11 @@ const SettingsLayout: React.FC = () => {
         setCurrentUserRole(rolesData.userRole);
       } catch (error) {
         console.error('Failed to load available roles:', error);
-        
-        // Check if it's a permission error and show appropriate toast
-        if (error instanceof Error) {
-          if (error.message.includes('Access denied') || error.message.includes('Insufficient permissions')) {
-            showPermissionDenied('User Role Management', 'You need elevated permissions to manage user roles.');
-          } else {
-            // Show generic error toast for other errors
-            showPermissionDenied('User Role Management', error.message);
-          }
-        }
       }
     };
 
     loadAvailableRoles();
-  }, [showPermissionDenied]);
+  }, []);
 
   return (
     <Container size="7xl">
@@ -479,9 +468,15 @@ const SettingsLayout: React.FC = () => {
               Configure system preferences, security policies, and integrations
             </Typography>
           </div>
-          <Button variant="outline">
-            Export Settings
-          </Button>
+                     <PermissionGuard
+             requiredPermission="data_export"
+             featureName="Export Settings"
+             actionName="access"
+           >
+             <Button variant="outline">
+               Export Settings
+             </Button>
+           </PermissionGuard>
         </div>
       </div>
 
@@ -561,64 +556,93 @@ const SettingsLayout: React.FC = () => {
       <div className="space-y-6">
         {/* General Settings */}
         {activeTab === 'general' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <CogIcon className="h-5 w-5 mr-2" />
-                General System Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <PermissionGuard
+            requiredPermission="system_settings"
+            featureName="General System Settings"
+            actionName="access"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <CogIcon className="h-5 w-5 mr-2" />
+                  General System Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
               <Grid cols={2} className="gap-6">
-                <div className="space-y-2">
-                  <label htmlFor="companyName" className="text-sm font-medium">Company Name</label>
-                  <Input
-                    id="companyName"
-                    value={systemSettings.companyName}
-                    onChange={(e) => setSystemSettings(prev => ({ ...prev, companyName: e.target.value }))}
-                    placeholder="Enter company name"
-                  />
-                </div>
+                                 <PermissionGuard
+                   requiredPermission="system_settings"
+                   featureName="Company Name Settings"
+                   actionName="access"
+                 >
+                   <div className="space-y-2">
+                     <label htmlFor="companyName" className="text-sm font-medium">Company Name</label>
+                     <Input
+                       id="companyName"
+                       value={systemSettings.companyName}
+                       onChange={(e) => setSystemSettings(prev => ({ ...prev, companyName: e.target.value }))}
+                       placeholder="Enter company name"
+                     />
+                   </div>
+                 </PermissionGuard>
                 
-                <div className="space-y-2">
-                  <label htmlFor="timezone" className="text-sm font-medium">Timezone</label>
-                  <Select
-                    value={systemSettings.timezone}
-                    onValueChange={(value) => setSystemSettings(prev => ({ ...prev, timezone: value }))}
-                  >
-                    <option value="UTC">UTC</option>
-                    <option value="America/New_York">Eastern Time</option>
-                    <option value="America/Chicago">Central Time</option>
-                    <option value="America/Los_Angeles">Pacific Time</option>
-                    <option value="Europe/London">London</option>
-                    <option value="Asia/Tokyo">Tokyo</option>
-                  </Select>
-                </div>
+                                 <PermissionGuard
+                   requiredPermission="system_settings"
+                   featureName="Timezone Settings"
+                   actionName="access"
+                 >
+                   <div className="space-y-2">
+                     <label htmlFor="timezone" className="text-sm font-medium">Timezone</label>
+                     <Select
+                       value={systemSettings.timezone}
+                       onValueChange={(value) => setSystemSettings(prev => ({ ...prev, timezone: value }))}
+                     >
+                       <option value="UTC">UTC</option>
+                       <option value="America/New_York">Eastern Time</option>
+                       <option value="America/Chicago">Central Time</option>
+                       <option value="America/Los_Angeles">Pacific Time</option>
+                       <option value="Europe/London">London</option>
+                       <option value="Asia/Tokyo">Tokyo</option>
+                     </Select>
+                   </div>
+                 </PermissionGuard>
 
-                <div className="space-y-2">
-                  <label htmlFor="theme" className="text-sm font-medium">Theme</label>
-                  <Select
-                    value={systemSettings.theme}
-                    onValueChange={(value) => setSystemSettings(prev => ({ ...prev, theme: value }))}
-                  >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                    <option value="auto">Auto (System)</option>
-                  </Select>
-                </div>
+                                 <PermissionGuard
+                   requiredPermission="system_settings"
+                   featureName="Theme Settings"
+                   actionName="access"
+                 >
+                   <div className="space-y-2">
+                     <label htmlFor="theme" className="text-sm font-medium">Theme</label>
+                     <Select
+                       value={systemSettings.theme}
+                       onValueChange={(value) => setSystemSettings(prev => ({ ...prev, theme: value }))}
+                     >
+                       <option value="light">Light</option>
+                       <option value="dark">Dark</option>
+                       <option value="auto">Auto (System)</option>
+                     </Select>
+                   </div>
+                 </PermissionGuard>
 
-                <div className="space-y-2">
-                  <label htmlFor="language" className="text-sm font-medium">Language</label>
-                  <Select
-                    value={systemSettings.language}
-                    onValueChange={handleLanguageChange}
-                  >
-                    <option value="en">🇺🇸 English</option>
-                    <option value="es">🇪🇸 Español</option>
-                    <option value="fr">🇫🇷 Français</option>
-                    <option value="de">🇩🇪 Deutsch</option>
-                  </Select>
-                </div>
+                 <PermissionGuard
+                   requiredPermission="system_settings"
+                   featureName="Language Settings"
+                   actionName="access"
+                 >
+                   <div className="space-y-2">
+                     <label htmlFor="language" className="text-sm font-medium">Language</label>
+                     <Select
+                       value={systemSettings.language}
+                       onValueChange={handleLanguageChange}
+                     >
+                       <option value="en">🇺🇸 English</option>
+                       <option value="es">🇪🇸 Español</option>
+                       <option value="fr">🇫🇷 Français</option>
+                       <option value="de">🇩🇪 Deutsch</option>
+                     </Select>
+                   </div>
+                 </PermissionGuard>
               </Grid>
 
               <div className="flex justify-end">
@@ -628,24 +652,35 @@ const SettingsLayout: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+          </PermissionGuard>
         )}
 
         {/* Security Settings */}
         {activeTab === 'security' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <ShieldCheckIcon className="h-5 w-5 mr-2" />
-                Security & Authentication
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Admin Users Management */}
-              <div className="space-y-4">
-                <Typography variant="h3" className="flex items-center">
-                  <UserGroupIcon className="h-5 w-5 mr-2" />
-                  Admin Panel Users Management
-                </Typography>
+          <PermissionGuard
+            requiredPermission="security_compliance"
+            featureName="Security & Authentication"
+            actionName="access"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <ShieldCheckIcon className="h-5 w-5 mr-2" />
+                  Security & Authentication
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                              {/* Admin Users Management */}
+              <PermissionGuard
+                requiredPermission="admin_management"
+                featureName="Admin Panel Users Management"
+                actionName="access"
+              >
+                <div className="space-y-4">
+                  <Typography variant="h3" className="flex items-center">
+                    <UserGroupIcon className="h-5 w-5 mr-2" />
+                    Admin Panel Users Management
+                  </Typography>
 
                 
                 <div className="space-y-4">
@@ -656,10 +691,16 @@ const SettingsLayout: React.FC = () => {
                         Add email addresses for admin panel access with specific roles
                       </Typography>
                     </div>
-                    <Button onClick={() => setShowAddAdminModal(true)} className="flex items-center space-x-2">
-                      <UserPlusIcon className="h-4 w-4" />
-                      Add Admin User
-                    </Button>
+                    <PermissionGuard
+                      requiredPermission="admin_management"
+                      featureName="Add Admin User"
+                      actionName="access"
+                    >
+                      <Button onClick={() => setShowAddAdminModal(true)} className="flex items-center space-x-2">
+                        <UserPlusIcon className="h-4 w-4" />
+                        Add Admin User
+                      </Button>
+                    </PermissionGuard>
                   </div>
 
                   {/* Admin Users List */}
@@ -680,20 +721,32 @@ const SettingsLayout: React.FC = () => {
                           <Badge variant={admin.isActive ? 'success' : 'error'}>
                             {admin.isActive ? 'Active' : 'Inactive'}
                           </Badge>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditAdmin(admin)}
+                          <PermissionGuard
+                            requiredPermission="admin_management"
+                            featureName="Edit Admin User"
+                            actionName="access"
                           >
-                            <PencilIcon className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleToggleAdminStatus(admin.id)}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditAdmin(admin)}
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </Button>
+                          </PermissionGuard>
+                          <PermissionGuard
+                            requiredPermission="admin_management"
+                            featureName="Toggle Admin Status"
+                            actionName="access"
                           >
-                            {admin.isActive ? 'Deactivate' : 'Activate'}
-                          </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleToggleAdminStatus(admin.id)}
+                            >
+                              {admin.isActive ? 'Deactivate' : 'Activate'}
+                            </Button>
+                          </PermissionGuard>
                         </div>
                       </div>
                     ))}
@@ -708,80 +761,105 @@ const SettingsLayout: React.FC = () => {
                   </div>
                 </div>
               </div>
+              </PermissionGuard>
 
-              <div className="space-y-4">
-                <Typography variant="h3">Password Policy</Typography>
-                <Grid cols={2} className="gap-6">
+              <PermissionGuard
+                requiredPermission="security_compliance"
+                featureName="Password Policy"
+                actionName="access"
+              >
+                <div className="space-y-4">
+                  <Typography variant="h3">Password Policy</Typography>
+                  <Grid cols={2} className="gap-6">
+                    <div className="space-y-2">
+                      <label htmlFor="passwordMinLength" className="text-sm font-medium">Minimum Password Length</label>
+                      <Input
+                        id="passwordMinLength"
+                        type="number"
+                        value={securitySettings.passwordMinLength}
+                        onChange={(e) => setSecuritySettings(prev => ({ ...prev, passwordMinLength: parseInt(e.target.value) }))}
+                        min={6}
+                        max={32}
+                      />
+                    </div>
+                  </Grid>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="requireSpecialChars"
+                        checked={securitySettings.requireSpecialChars}
+                        onCheckedChange={(checked) => setSecuritySettings(prev => ({ ...prev, requireSpecialChars: checked }))}
+                      />
+                      <label htmlFor="requireSpecialChars" className="text-sm font-medium">Require special characters</label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="requireNumbers"
+                        checked={securitySettings.requireNumbers}
+                        onCheckedChange={(checked) => setSecuritySettings(prev => ({ ...prev, requireNumbers: checked }))}
+                      />
+                      <label htmlFor="requireSpecialChars" className="text-sm font-medium">Require numbers</label>
+                    </div>
+                  </div>
+                </div>
+              </PermissionGuard>
+
+              <PermissionGuard
+                requiredPermission="security_compliance"
+                featureName="Session Management"
+                actionName="access"
+              >
+                <div className="space-y-4">
+                  <Typography variant="h3">Session Management</Typography>
                   <div className="space-y-2">
-                    <label htmlFor="passwordMinLength" className="text-sm font-medium">Minimum Password Length</label>
+                    <label htmlFor="sessionTimeout" className="text-sm font-medium">Session Timeout (minutes)</label>
                     <Input
-                      id="passwordMinLength"
+                      id="sessionTimeout"
                       type="number"
-                      value={securitySettings.passwordMinLength}
-                      onChange={(e) => setSecuritySettings(prev => ({ ...prev, passwordMinLength: parseInt(e.target.value) }))}
-                      min={6}
-                      max={32}
+                      value={securitySettings.sessionTimeout}
+                      onChange={(e) => setSecuritySettings(prev => ({ ...prev, sessionTimeout: parseInt(e.target.value) }))}
+                      min={5}
+                      max={1440}
                     />
-                  </div>
-                </Grid>
-
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="requireSpecialChars"
-                      checked={securitySettings.requireSpecialChars}
-                      onCheckedChange={(checked) => setSecuritySettings(prev => ({ ...prev, requireSpecialChars: checked }))}
-                    />
-                    <label htmlFor="requireSpecialChars" className="text-sm font-medium">Require special characters</label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="requireNumbers"
-                      checked={securitySettings.requireNumbers}
-                      onCheckedChange={(checked) => setSecuritySettings(prev => ({ ...prev, requireNumbers: checked }))}
-                    />
-                    <label htmlFor="requireNumbers" className="text-sm font-medium">Require numbers</label>
                   </div>
                 </div>
-              </div>
-
-              <div className="space-y-4">
-                <Typography variant="h3">Session Management</Typography>
-                <div className="space-y-2">
-                  <label htmlFor="sessionTimeout" className="text-sm font-medium">Session Timeout (minutes)</label>
-                  <Input
-                    id="sessionTimeout"
-                    type="number"
-                    value={securitySettings.sessionTimeout}
-                    onChange={(e) => setSecuritySettings(prev => ({ ...prev, sessionTimeout: parseInt(e.target.value) }))}
-                    min={5}
-                    max={1440}
-                  />
-                </div>
-              </div>
+              </PermissionGuard>
 
                              <div className="space-y-4">
                  <Typography variant="h3">Change Password</Typography>
                  
-                 <div className="p-4 border border-border rounded-lg bg-muted/30">
-                   <Typography variant="body-medium" className="text-muted-foreground mb-4">
-                     Click the button below to change your password securely.
-                   </Typography>
-                   
-                   <Button 
-                     onClick={openPasswordChangeModal}
-                     className="flex items-center space-x-2"
-                   >
-                     <ShieldCheckIcon className="h-4 w-4" />
-                     Change Password
-                   </Button>
-                 </div>
+                 <PermissionGuard
+                   requiredPermission="profile_settings"
+                   featureName="Change Password"
+                   actionName="access"
+                 >
+                   <div className="p-4 border border-border rounded-lg bg-muted/30">
+                     <Typography variant="body-medium" className="text-muted-foreground mb-4">
+                       Click the button below to change your password securely.
+                     </Typography>
+                     
+                     <Button 
+                       onClick={openPasswordChangeModal}
+                       className="flex items-center space-x-2"
+                     >
+                       <ShieldCheckIcon className="h-4 w-4" />
+                       Change Password
+                     </Button>
+                   </div>
+                 </PermissionGuard>
                </div>
 
                <div className="space-y-4">
                  <Typography variant="h3">Two-Factor Authentication</Typography>
-                 <TwoFactorAuthManager />
+                 <PermissionGuard
+                   requiredPermission="security_compliance"
+                   featureName="Two-Factor Authentication"
+                   actionName="access"
+                 >
+                   <TwoFactorAuthManager />
+                 </PermissionGuard>
                </div>
 
               <div className="flex justify-end">
@@ -791,6 +869,7 @@ const SettingsLayout: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+          </PermissionGuard>
         )}
 
         {/* Password Change Modal */}
@@ -1151,71 +1230,88 @@ const SettingsLayout: React.FC = () => {
 
         {/* Notification Settings */}
         {activeTab === 'notifications' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <BellIcon className="h-5 w-5 mr-2" />
-                Notification Preferences
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <Typography variant="h3">Notification Channels</Typography>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="emailNotifications"
-                      checked={notificationSettings.emailNotifications}
-                      onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, emailNotifications: checked }))}
-                    />
-                    <label htmlFor="emailNotifications" className="text-sm font-medium">Email Notifications</label>
-                  </div>
+          <PermissionGuard
+            requiredPermission="notifications_comms"
+            featureName="Notification Preferences"
+            actionName="access"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BellIcon className="h-5 w-5 mr-2" />
+                  Notification Preferences
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                             <PermissionGuard
+                 requiredPermission="system_settings"
+                 featureName="Notification Channel Settings"
+                 actionName="access"
+               >
+                 <div className="space-y-4">
+                   <Typography variant="h3">Notification Channels</Typography>
+                   <div className="space-y-3">
+                     <div className="flex items-center space-x-2">
+                       <Switch
+                         id="emailNotifications"
+                         checked={notificationSettings.emailNotifications}
+                         onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, emailNotifications: checked }))}
+                       />
+                       <label htmlFor="emailNotifications" className="text-sm font-medium">Email Notifications</label>
+                     </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="pushNotifications"
-                      checked={notificationSettings.pushNotifications}
-                      onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, pushNotifications: checked }))}
-                    />
-                    <label htmlFor="pushNotifications" className="text-sm font-medium">Push Notifications</label>
-                  </div>
+                     <div className="flex items-center space-x-2">
+                       <Switch
+                         id="pushNotifications"
+                         checked={notificationSettings.pushNotifications}
+                         onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, pushNotifications: checked }))}
+                       />
+                       <label htmlFor="pushNotifications" className="text-sm font-medium">Push Notifications</label>
+                     </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="slackNotifications"
-                      checked={notificationSettings.slackNotifications}
-                      onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, slackNotifications: checked }))}
-                    />
-                    <label htmlFor="slackNotifications" className="text-sm font-medium">Slack Notifications</label>
-                  </div>
-                </div>
-              </div>
+                     <div className="flex items-center space-x-2">
+                       <Switch
+                         id="slackNotifications"
+                         checked={notificationSettings.slackNotifications}
+                         onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, slackNotifications: checked }))}
+                       />
+                       <label htmlFor="slackNotifications" className="text-sm font-medium">Slack Notifications</label>
+                     </div>
+                   </div>
+                 </div>
+               </PermissionGuard>
 
-              <div className="space-y-4">
-                <Typography variant="h3">Email Configuration</Typography>
-                <Grid cols={2} className="gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="smtpServer" className="text-sm font-medium">SMTP Server</label>
-                    <Input
-                      id="smtpServer"
-                      value={notificationSettings.smtpServer}
-                      onChange={(e) => setNotificationSettings(prev => ({ ...prev, smtpServer: e.target.value }))}
-                      placeholder="smtp.gmail.com"
-                    />
-                  </div>
+                             <PermissionGuard
+                 requiredPermission="system_settings"
+                 featureName="Email Configuration"
+                 actionName="access"
+               >
+                 <div className="space-y-4">
+                   <Typography variant="h3">Email Configuration</Typography>
+                   <Grid cols={2} className="gap-6">
+                     <div className="space-y-2">
+                       <label htmlFor="smtpServer" className="text-sm font-medium">SMTP Server</label>
+                       <Input
+                         id="smtpServer"
+                         value={notificationSettings.smtpServer}
+                         onChange={(e) => setNotificationSettings(prev => ({ ...prev, smtpServer: e.target.value }))}
+                         placeholder="smtp.gmail.com"
+                       />
+                     </div>
 
-                  <div className="space-y-2">
-                    <label htmlFor="smtpPort" className="text-sm font-medium">SMTP Port</label>
-                    <Input
-                      id="smtpPort"
-                      type="number"
-                      value={notificationSettings.smtpPort}
-                      onChange={(e) => setNotificationSettings(prev => ({ ...prev, smtpPort: parseInt(e.target.value) }))}
-                      placeholder="587"
-                    />
-                  </div>
-                </Grid>
-              </div>
+                     <div className="space-y-2">
+                       <label htmlFor="smtpPort" className="text-sm font-medium">SMTP Port</label>
+                       <Input
+                         id="smtpPort"
+                         type="number"
+                         value={notificationSettings.smtpPort}
+                         onChange={(e) => setNotificationSettings(prev => ({ ...prev, smtpPort: parseInt(e.target.value) }))}
+                         placeholder="587"
+                       />
+                     </div>
+                   </Grid>
+                 </div>
+               </PermissionGuard>
 
               <div className="flex justify-end">
                 <Button onClick={() => saveSettings('notifications')}>
@@ -1224,40 +1320,58 @@ const SettingsLayout: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+          </PermissionGuard>
         )}
 
         {/* Integration Settings */}
         {activeTab === 'integrations' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <PuzzlePieceIcon className="h-5 w-5 mr-2" />
-                Third-Party Integrations
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <Typography variant="h3">Slack Integration</Typography>
+          <PermissionGuard
+            requiredPermission="integration_mgmt"
+            featureName="Third-Party Integrations"
+            actionName="access"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <PuzzlePieceIcon className="h-5 w-5 mr-2" />
+                  Third-Party Integrations
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+              <PermissionGuard
+                requiredPermission="system_settings"
+                featureName="Slack Integration Configuration"
+                actionName="access"
+              >
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="slackWebhook" className="text-sm font-medium">Webhook URL</label>
-                    <Input
-                      id="slackWebhook"
-                      placeholder="https://hooks.slack.com/services/..."
-                    />
+                  <Typography variant="h3">Slack Integration</Typography>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="slackWebhook" className="text-sm font-medium">Webhook URL</label>
+                      <Input
+                        id="slackWebhook"
+                        placeholder="https://hooks.slack.com/services/..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="slackChannel" className="text-sm font-medium">Default Channel</label>
+                      <Input
+                        id="slackChannel"
+                        placeholder="#general"
+                      />
+                    </div>
+                                      <PermissionGuard
+                      requiredPermission="integration_mgmt"
+                      featureName="Test Slack Connection"
+                      actionName="access"
+                    >
+                      <Button variant="outline">
+                        Test Slack Connection
+                      </Button>
+                    </PermissionGuard>
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="slackChannel" className="text-sm font-medium">Default Channel</label>
-                    <Input
-                      id="slackChannel"
-                      placeholder="#general"
-                    />
-                  </div>
-                  <Button variant="outline">
-                    Test Slack Connection
-                  </Button>
                 </div>
-              </div>
+              </PermissionGuard>
 
                              <div className="space-y-4">
                  <Typography variant="h3">Service Integrations</Typography>
@@ -1269,9 +1383,15 @@ const SettingsLayout: React.FC = () => {
                         File storage and document collaboration
                       </Typography>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Configure
-                    </Button>
+                    <PermissionGuard
+                      requiredPermission="integration_mgmt"
+                      featureName="Configure Google Drive"
+                      actionName="access"
+                    >
+                      <Button variant="outline" size="sm">
+                        Configure
+                      </Button>
+                    </PermissionGuard>
                   </div>
 
                   <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -1281,9 +1401,15 @@ const SettingsLayout: React.FC = () => {
                         Code repository and version control
                       </Typography>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Configure
-                    </Button>
+                    <PermissionGuard
+                      requiredPermission="integration_mgmt"
+                      featureName="Configure GitHub"
+                      actionName="access"
+                    >
+                      <Button variant="outline" size="sm">
+                        Configure
+                      </Button>
+                    </PermissionGuard>
                   </div>
 
                   <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -1293,9 +1419,15 @@ const SettingsLayout: React.FC = () => {
                         Payment processing and billing
                       </Typography>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Configure
-                    </Button>
+                    <PermissionGuard
+                      requiredPermission="integration_mgmt"
+                      featureName="Configure Stripe"
+                      actionName="access"
+                    >
+                      <Button variant="outline" size="sm">
+                        Configure
+                      </Button>
+                    </PermissionGuard>
                   </div>
                 </div>
               </div>
@@ -1307,164 +1439,213 @@ const SettingsLayout: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+          </PermissionGuard>
         )}
 
         {/* User Management Settings */}
         {activeTab === 'users' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <UserGroupIcon className="h-5 w-5 mr-2" />
-                User Management & Permissions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                             <div className="space-y-4">
-                 <Typography variant="h3">Default User Settings</Typography>
-                 <Grid cols={2} className="gap-6">
-                   <div className="space-y-2">
-                     <label htmlFor="defaultRole" className="text-sm font-medium">Default User Role</label>
-                     <Select defaultValue="moderator">
-                       <option value="admin">Administrator</option>
-                       <option value="moderator">Moderator</option>
-                       <option value="super_admin">Super Admin</option>
-                     </Select>
-                   </div>
+          <PermissionGuard
+            requiredPermission="user_management"
+            featureName="User Management & Permissions"
+            actionName="access"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <UserGroupIcon className="h-5 w-5 mr-2" />
+                  User Management & Permissions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                             <PermissionGuard
+                               requiredPermission="system_settings"
+                               featureName="Default User Settings"
+                               actionName="access"
+                             >
+                               <div className="space-y-4">
+                                 <Typography variant="h3">Default User Settings</Typography>
+                                 <Grid cols={2} className="gap-6">
+                                   <div className="space-y-2">
+                                     <label htmlFor="defaultRole" className="text-sm font-medium">Default User Role</label>
+                                     <Select defaultValue="moderator">
+                                       <option value="admin">Administrator</option>
+                                       <option value="moderator">Moderator</option>
+                                       <option value="super_admin">Super Admin</option>
+                                     </Select>
+                                   </div>
 
-                   <div className="space-y-2">
-                     <label htmlFor="autoApprove" className="text-sm font-medium">Auto-approve New Users</label>
-                     <Select defaultValue="false">
-                       <option value="true">Yes</option>
-                       <option value="false">No</option>
-                     </Select>
-                   </div>
-                 </Grid>
-               </div>
+                                   <div className="space-y-2">
+                                     <label htmlFor="autoApprove" className="text-sm font-medium">Auto-approve New Users</label>
+                                     <Select defaultValue="false">
+                                       <option value="true">Yes</option>
+                                       <option value="false">No</option>
+                                     </Select>
+                                   </div>
+                                 </Grid>
+                               </div>
+                             </PermissionGuard>
 
-               <div className="space-y-4">
-                 <Typography variant="h3">Permission Matrix</Typography>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="px-4 py-2 text-left">Permission</th>
-                        <th className="px-4 py-2 text-center">Super Admin</th>
-                        <th className="px-4 py-2 text-center">Admin</th>
-                        <th className="px-4 py-2 text-center">Moderator</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-t">
-                        <td className="px-4 py-2">View Dashboard</td>
-                        <td className="px-4 py-2 text-center">✓</td>
-                        <td className="px-4 py-2 text-center">✓</td>
-                        <td className="px-4 py-2 text-center">✓</td>
-                      </tr>
-                      <tr className="border-t">
-                        <td className="px-4 py-2">Create Tasks</td>
-                        <td className="px-4 py-2 text-center">✓</td>
-                        <td className="px-4 py-2 text-center">✓</td>
-                        <td className="px-4 py-2 text-center">✓</td>
-                      </tr>
-                      <tr className="border-t">
-                        <td className="px-4 py-2">Manage Users</td>
-                        <td className="px-4 py-2 text-center">✓</td>
-                        <td className="px-4 py-2 text-center">✓</td>
-                        <td className="px-4 py-2 text-center">✗</td>
-                      </tr>
-                      <tr className="border-t">
-                        <td className="px-4 py-2">System Settings</td>
-                        <td className="px-4 py-2 text-center">✓</td>
-                        <td className="px-4 py-2 text-center">✗</td>
-                        <td className="px-4 py-2 text-center">✗</td>
-                      </tr>
-                    </tbody>
-                  </table>
+               <PermissionGuard
+                 requiredPermission="system_settings"
+                 featureName="Permission Matrix"
+                 actionName="access"
+               >
+                 <div className="space-y-4">
+                   <Typography variant="h3">Permission Matrix</Typography>
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="px-4 py-2 text-left">Permission</th>
+                          <th className="px-4 py-2 text-center">Super Admin</th>
+                          <th className="px-4 py-2 text-center">Admin</th>
+                          <th className="px-4 py-2 text-center">Moderator</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-t">
+                          <td className="px-4 py-2">View Dashboard</td>
+                          <td className="px-4 py-2 text-center">✓</td>
+                          <td className="px-4 py-2 text-center">✓</td>
+                          <td className="px-4 py-2 text-center">✓</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="px-4 py-2">Create Tasks</td>
+                          <td className="px-4 py-2 text-center">✓</td>
+                          <td className="px-4 py-2 text-center">✓</td>
+                          <td className="px-4 py-2 text-center">✓</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="px-4 py-2">Manage Users</td>
+                          <td className="px-4 py-2 text-center">✓</td>
+                          <td className="px-4 py-2 text-center">✓</td>
+                          <td className="px-4 py-2 text-center">✗</td>
+                        </tr>
+                        <tr className="border-t">
+                          <td className="px-4 py-2">System Settings</td>
+                          <td className="px-4 py-2 text-center">✓</td>
+                          <td className="px-4 py-2 text-center">✗</td>
+                          <td className="px-4 py-2 text-center">✗</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+               </PermissionGuard>
 
               <div className="flex justify-end space-x-2">
-                <Button variant="outline">
-                  Export Permissions
-                </Button>
+                <PermissionGuard
+                  requiredPermission="data_export"
+                  featureName="Export Permissions"
+                  actionName="access"
+                >
+                  <Button variant="outline">
+                    Export Permissions
+                  </Button>
+                </PermissionGuard>
                 <Button onClick={() => saveSettings('users')}>
                   Save User Settings
                 </Button>
               </div>
             </CardContent>
           </Card>
+          </PermissionGuard>
         )}
 
         {/* Analytics Settings */}
         {activeTab === 'analytics' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <ChartBarIcon className="h-5 w-5 mr-2" />
-                Analytics & Reporting
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                             <div className="space-y-4">
-                 <Typography variant="h3">Data Collection</Typography>
-                 <div className="space-y-3">
-                   <div className="flex items-center space-x-2">
-                     <Switch defaultChecked />
-                     <label className="text-sm font-medium">Enable usage analytics</label>
-                   </div>
+          <PermissionGuard
+            requiredPermission="analytics_insights"
+            featureName="Analytics & Reporting"
+            actionName="access"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <ChartBarIcon className="h-5 w-5 mr-2" />
+                  Analytics & Reporting
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                             <PermissionGuard
+                               requiredPermission="system_settings"
+                               featureName="Data Collection Settings"
+                               actionName="access"
+                             >
+                               <div className="space-y-4">
+                                 <Typography variant="h3">Data Collection</Typography>
+                                 <div className="space-y-3">
+                                   <div className="flex items-center space-x-2">
+                                     <Switch defaultChecked />
+                                     <label className="text-sm font-medium">Enable usage analytics</label>
+                                   </div>
 
-                   <div className="flex items-center space-x-2">
-                     <Switch defaultChecked />
-                     <label className="text-sm font-medium">Track user behavior</label>
-                   </div>
+                                   <div className="flex items-center space-x-2">
+                                     <Switch defaultChecked />
+                                     <label className="text-sm font-medium">Track user behavior</label>
+                                   </div>
 
-                   <div className="flex items-center space-x-2">
-                     <Switch defaultChecked />
-                     <label className="text-sm font-medium">Performance monitoring</label>
-                   </div>
+                                   <div className="flex items-center space-x-2">
+                                     <Switch defaultChecked />
+                                     <label className="text-sm font-medium">Performance monitoring</label>
+                                   </div>
 
-                   <div className="flex items-center space-x-2">
-                     <Switch />
-                     <label className="text-sm font-medium">Error tracking and reporting</label>
-                   </div>
+                                   <div className="flex items-center space-x-2">
+                                     <Switch />
+                                     <label className="text-sm font-medium">Error tracking and reporting</label>
+                                   </div>
+                                 </div>
+                               </div>
+                             </PermissionGuard>
+
+               <PermissionGuard
+                 requiredPermission="system_settings"
+                 featureName="Report Generation Settings"
+                 actionName="access"
+               >
+                 <div className="space-y-4">
+                   <Typography variant="h3">Report Generation</Typography>
+                   <Grid cols={2} className="gap-6">
+                     <div className="space-y-2">
+                       <label htmlFor="reportFrequency" className="text-sm font-medium">Default Report Frequency</label>
+                       <Select defaultValue="weekly">
+                         <option value="daily">Daily</option>
+                         <option value="weekly">Weekly</option>
+                         <option value="monthly">Monthly</option>
+                         <option value="quarterly">Quarterly</option>
+                       </Select>
+                     </div>
+
+                     <div className="space-y-2">
+                       <label htmlFor="reportFormat" className="text-sm font-medium">Default Report Format</label>
+                       <Select defaultValue="pdf">
+                         <option value="pdf">PDF</option>
+                         <option value="excel">Excel</option>
+                         <option value="csv">CSV</option>
+                         <option value="json">JSON</option>
+                       </Select>
+                     </div>
+                   </Grid>
                  </div>
-               </div>
-
-               <div className="space-y-4">
-                 <Typography variant="h3">Report Generation</Typography>
-                 <Grid cols={2} className="gap-6">
-                   <div className="space-y-2">
-                     <label htmlFor="reportFrequency" className="text-sm font-medium">Default Report Frequency</label>
-                     <Select defaultValue="weekly">
-                       <option value="daily">Daily</option>
-                       <option value="weekly">Weekly</option>
-                       <option value="monthly">Monthly</option>
-                       <option value="quarterly">Quarterly</option>
-                     </Select>
-                   </div>
-
-                   <div className="space-y-2">
-                     <label htmlFor="reportFormat" className="text-sm font-medium">Default Report Format</label>
-                     <Select defaultValue="pdf">
-                       <option value="pdf">PDF</option>
-                       <option value="excel">Excel</option>
-                       <option value="csv">CSV</option>
-                       <option value="json">JSON</option>
-                     </Select>
-                   </div>
-                 </Grid>
-               </div>
+               </PermissionGuard>
 
               <div className="flex justify-end space-x-2">
-                <Button variant="outline">
-                  Generate Sample Report
-                </Button>
+                <PermissionGuard
+                  requiredPermission="data_export"
+                  featureName="Generate Sample Report"
+                  actionName="access"
+                >
+                  <Button variant="outline">
+                    Generate Sample Report
+                  </Button>
+                </PermissionGuard>
                 <Button onClick={() => saveSettings('analytics')}>
                   Save Analytics Settings
                 </Button>
               </div>
             </CardContent>
           </Card>
+          </PermissionGuard>
         )}
 
         {/* Add Admin Modal */}
