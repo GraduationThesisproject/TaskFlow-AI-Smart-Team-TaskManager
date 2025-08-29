@@ -52,11 +52,6 @@ exports.getAllWorkspaces = async (req, res) => {
     }
 };
 
-
-
-
-
-
 // Get single workspace
 exports.getWorkspace = async (req, res) => {
     try {
@@ -67,7 +62,11 @@ exports.getWorkspace = async (req, res) => {
         const workspace = await Workspace.findById(workspaceId)
             .populate('owner', 'name email avatar')
             .populate('members.user', 'name email avatar')
-            .populate('spaces');
+            .populate({
+                path: 'spaces',
+                match: { isArchived: false }
+              })
+              
 
         // SECURITY FIX: Use verified roles from auth middleware
         let userRole = null;
@@ -171,6 +170,7 @@ exports.createWorkspace = async (req, res) => {
 // Update workspace
 exports.updateWorkspace = async (req, res) => {
     try {
+        
         const { id: workspaceId } = req.params;
         const { name, description, settings } = req.body;
         const userId = req.user.id;
@@ -182,13 +182,18 @@ exports.updateWorkspace = async (req, res) => {
             ws.workspace.toString() === workspaceId
         );
 
-        if (!workspaceRole || !workspaceRole.permissions.canEditSettings) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to edit workspace');
-        }
-
+        // Fetch workspace to reliably determine ownership
         const workspace = await Workspace.findById(workspaceId);
         if (!workspace) {
             return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // Allow owners to edit settings regardless of cached roles on the token
+        const isOwner = workspace.owner && workspace.owner.toString() === userId.toString();
+        if (!isOwner) {
+            if (!workspaceRole || !workspaceRole.permissions?.canEditSettings) {
+                return sendResponse(res, 403, false, 'Insufficient permissions to edit workspace');
+            }
         }
 
         // Store old values
@@ -449,9 +454,9 @@ exports.generateInviteLink = async (req, res) => {
             return isUser && isAdmin;
         });
 
-        if (!member) {
+        if (!isOwner && !isAdminMember) {
             console.log('Permission denied - Member not found or insufficient permissions');
-            // return sendResponse(res, 403, false, 'You need to be an admin or owner to generate invite links');
+            return sendResponse(res, 403, false, 'You need to be an admin or owner to generate invite links');
         }
 
         // Generate a unique token for the invite link
