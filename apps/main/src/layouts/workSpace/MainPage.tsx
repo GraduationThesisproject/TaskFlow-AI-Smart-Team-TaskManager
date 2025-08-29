@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
-import Sidebar from "./Sidebar";
+// import Sidebar from "./Sidebar"; // Disabled: workspace navbar hidden
+import { DashboardShell } from '../Dashboard/DashboardShell';
+
 import PageHeader from '../../components/workspace/main_page/PageHeader';
 import InfoBanner from '../../components/workspace/main_page/InfoBanner';
 import SearchAndFilter from '../../components/workspace/main_page/SearchAndFilter';
@@ -244,45 +246,41 @@ const Main = () => {
   }, [search, workspaceId]);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 p-6">
-        <PageHeader />
-        <InfoBanner workspaceId={workspaceId} />
-        <SearchAndFilter
-          search={search}
-          setSearch={setSearch}
-          role={role}
-          setRole={setRole}
-          workspaceId={workspaceId}
-        />
-        <div className="flex flex-row ">
-          <div className="flex-1">
-            <MembersTable
-              filteredMembers={filteredMembers}
-              isLoading={isLoading}
-              error={error}
-              onRemove={onRemove}
-              onGenerateInvite={onInviteMemberByEmail}
-            />
-          </div>
-          <div className="w-96">
-            <SpaceTable 
-              filteredSpaces={spaces}
-              isLoading={isLoadingSpaces}
-              error={spaceError}
-              onRemove={onArchiveSpace}
-              onAddSpace={onAddSpace}
-            />          
-          </div>
+    <DashboardShell>
+      <PageHeader />
+      <InfoBanner workspaceId={workspaceId} />
+      <SearchAndFilter 
+        search={search}
+        setSearch={setSearch}
+        role={role}
+        setRole={setRole}
+        workspaceId={workspaceId}
+      />
+      <div className="flex flex-row ">
+        <div className="flex-1">
+          <MembersTable 
+            filteredMembers={filteredMembers}
+            isLoading={isLoading}
+            error={error}
+            onRemove={onRemove}
+            onGenerateInvite={onInviteMemberByEmail}
+          />
         </div>
-        <InviteSection
-          onGenerateInvite={onGenerateInviteLink}
-          onDisableInvite={onDisableInvite}
-        />
-        <GuestsSection />
-        <JoinRequestsSection />
+        {/* <div className="w-96">
+          <SpaceTable 
+            filteredSpaces={filteredSpaces}
+            isLoading={isLoadingSpaces}
+            error={spaceError}
+            onRemove={onRemoveSpace}
+          />         
+        </div> */}
       </div>
+      <InviteSection 
+        onGenerateInvite={onGenerateInviteLink}
+        onDisableInvite={onDisableInvite}
+      />
+      <GuestsSection />
+      <JoinRequestsSection />
 
       {/* Invite Link Modal */}
       <Modal
@@ -329,7 +327,7 @@ const Main = () => {
         workspaceId={workspaceId || ''}
         onSpaceCreated={onSpaceCreated}
       />
-    </div>
+    </DashboardShell>
   );
 };
 

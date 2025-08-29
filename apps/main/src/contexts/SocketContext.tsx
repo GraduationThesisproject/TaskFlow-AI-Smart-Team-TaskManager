@@ -60,15 +60,15 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
   // Update socket options when authentication state changes
   useEffect(() => {
-    console.log('🔐 Auth state changed:', { 
-      isAuthenticated, 
-      hasToken: !!token, 
-      authLoading,
-      isReadyToConnect 
-    });
+    // console.log('🔐 Auth state changed:', { 
+    //   isAuthenticated, 
+    //   hasToken: !!token, 
+    //   authLoading,
+    //   isReadyToConnect 
+    // });
     
     if (isReadyToConnect) {
-      console.log('✅ Setting up authenticated socket connection');
+      // console.log('✅ Setting up authenticated socket connection');
       setSocketOptions({
         url: env.SOCKET_URL,
         autoConnect: true,
@@ -77,7 +77,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
       setLastAttempt(new Date());
       setIsReady(true);
     } else if (!authLoading && (!isAuthenticated || !token)) {
-      console.log('❌ Clearing socket connection - no authentication');
+      // console.log('❌ Clearing socket connection - no authentication');
       setSocketOptions({
         url: env.SOCKET_URL,
         autoConnect: false,
@@ -91,7 +91,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
   // Manual reconnect function
   const reconnect = () => {
     if (isReadyToConnect) {
-      console.log('🔄 Manual reconnection requested');
+      // console.log('🔄 Manual reconnection requested');
       setSocketOptions(prev => ({
         ...prev,
         autoConnect: true,
@@ -99,35 +99,35 @@ export function SocketProvider({ children }: SocketProviderProps) {
       }));
       setLastAttempt(new Date());
     } else {
-      console.log('❌ Cannot reconnect - not ready to connect');
+      // console.log('❌ Cannot reconnect - not ready to connect');
     }
   };
 
   // Log connection status changes
   useEffect(() => {
     if (isConnected) {
-      console.log('🔌 Socket connected successfully');
+      // console.log('🔌 Socket connected successfully');
     } else if (isConnecting) {
-      console.log('🔄 Socket connecting...');
+      // console.log('🔄 Socket connecting...');
     } else if (error) {
-      console.error('❌ Socket error:', error);
+      // console.error('❌ Socket error:', error);
     }
   }, [isConnected, isConnecting, error]);
 
   // Debug authentication state changes
-  useEffect(() => {
-    console.log('🔍 Socket context debug info:', {
-      isAuthenticated,
-      hasToken: !!token,
-      authLoading,
-      isReadyToConnect,
-      socketOptions,
-      isConnected,
-      isConnecting,
-      error,
-      isReady
-    });
-  }, [isAuthenticated, token, authLoading, isReadyToConnect, socketOptions, isConnected, isConnecting, error, isReady]);
+  // useEffect(() => {
+  //   console.log('🔍 Socket context debug info:', {
+  //     isAuthenticated,
+  //     hasToken: !!token,
+  //     authLoading,
+  //     isReadyToConnect,
+  //     socketOptions,
+  //     isConnected,
+  //     isConnecting,
+  //     error,
+  //     isReady
+  //   });
+  // }, [isAuthenticated, token, authLoading, isReadyToConnect, socketOptions, isConnected, isConnecting, error, isReady]);
 
   const value: SocketContextType = {
     isConnected,

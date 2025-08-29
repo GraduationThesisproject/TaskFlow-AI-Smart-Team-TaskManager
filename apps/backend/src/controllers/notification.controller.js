@@ -11,6 +11,8 @@ exports.getNotifications = async (req, res) => {
         const { limit = 50, page = 1, isRead, type, priority } = req.query;
         const userId = req.user.id;
 
+        console.log(' [getNotifications] userId:', userId, 'query:', { limit, page, isRead, type, priority });
+
         let query = { recipient: userId };
         
         // Filter by read status
@@ -38,6 +40,8 @@ exports.getNotifications = async (req, res) => {
         const total = await Notification.countDocuments(query);
         const unreadCount = await Notification.countDocuments({ recipient: userId, isRead: false });
 
+        console.log(' [getNotifications] found:', notifications.length, 'total:', total, 'unread:', unreadCount);
+
         sendResponse(res, 200, true, 'Notifications retrieved successfully', {
             notifications,
             pagination: {
@@ -62,14 +66,18 @@ exports.markAsRead = async (req, res) => {
         const { id: notificationId } = req.params;
         const userId = req.user.id;
 
+        console.log(' [markAsRead] notificationId:', notificationId, 'userId:', userId);
+
         const notification = await Notification.findById(notificationId);
 
         if (!notification) {
+            console.log(' [markAsRead] notification not found:', notificationId);
             return sendResponse(res, 404, false, 'Notification not found');
         }
 
         // Check if user owns the notification
         if (notification.recipient.toString() !== userId.toString()) {
+            console.log(' [markAsRead] access denied - wrong owner:', notification.recipient.toString(), 'vs', userId.toString());
             return sendResponse(res, 403, false, 'Access denied - not notification owner');
         }
 
@@ -77,6 +85,18 @@ exports.markAsRead = async (req, res) => {
             notification.isRead = true;
             notification.readAt = new Date();
             await notification.save();
+            console.log(' [markAsRead] marked as read:', notificationId);
+        }
+
+        // Emit unread count update so clients refresh state
+        try {
+            const io = req.app.get('io') || global.io;
+            if (io) {
+                io.notifyUser(userId, 'notifications:unreadCount', {});
+                console.log(' [markAsRead] emitted unreadCount to:', userId);
+            }
+        } catch (e) {
+            logger.warn('Socket emit failed (markAsRead unreadCount):', e);
         }
 
         sendResponse(res, 200, true, 'Notification marked as read', {
@@ -98,6 +118,16 @@ exports.markAllAsRead = async (req, res) => {
             { isRead: true, readAt: new Date() }
         );
 
+        // Emit unread count update so clients refresh state
+        try {
+            const io = req.app.get('io') || global.io;
+            if (io) {
+                io.notifyUser(userId, 'notifications:unreadCount', {});
+            }
+        } catch (e) {
+            logger.warn('Socket emit failed (markAllAsRead unreadCount):', e);
+        }
+
         sendResponse(res, 200, true, 'All notifications marked as read', {
             modifiedCount: result.modifiedCount
         });
@@ -113,18 +143,35 @@ exports.deleteNotification = async (req, res) => {
         const { id: notificationId } = req.params;
         const userId = req.user.id;
 
+        console.log(' [deleteNotification] notificationId:', notificationId, 'userId:', userId);
+
         const notification = await Notification.findById(notificationId);
 
         if (!notification) {
+            console.log(' [deleteNotification] notification not found:', notificationId);
             return sendResponse(res, 404, false, 'Notification not found');
         }
 
         // Check if user owns the notification
         if (notification.recipient.toString() !== userId.toString()) {
+            console.log(' [deleteNotification] access denied - wrong owner:', notification.recipient.toString(), 'vs', userId.toString());
             return sendResponse(res, 403, false, 'Access denied - not notification owner');
         }
 
         await Notification.findByIdAndDelete(notificationId);
+        console.log(' [deleteNotification] deleted:', notificationId);
+
+        // Emit deletion and unread count update so clients refresh state
+        try {
+            const io = req.app.get('io') || global.io;
+            if (io) {
+                io.notifyUser(userId, 'notifications:deleted', { notificationId });
+                io.notifyUser(userId, 'notifications:unreadCount', {});
+                console.log(' [deleteNotification] emitted deleted + unreadCount to:', userId);
+            }
+        } catch (e) {
+            logger.warn('Socket emit failed (deleteNotification):', e);
+        }
 
         sendResponse(res, 200, true, 'Notification deleted successfully');
     } catch (error) {
@@ -354,36 +401,5 @@ exports.deleteReadNotifications = async (req, res) => {
     } catch (error) {
         logger.error('Delete read notifications error:', error);
         sendResponse(res, 500, false, 'Server error deleting read notifications');
-    }
-};
-
-// Test endpoint to send real-time notification (for development)
-exports.sendTestNotification = async (req, res) => {
-    try {
-        const { recipientId, title, message, type = 'info', priority = 'medium', category = 'system' } = req.body;
-        
-        // Create notification data
-        const notificationData = {
-            title: title || 'Test Notification',
-            message: message || 'This is a test notification sent via Socket.IO',
-            type: type,
-            category: category,
-            priority: priority,
-            sender: req.user.id,
-            relatedEntity: null
-        };
-
-        // Send real-time notification using Socket.IO
-        if (global.io) {
-            const notification = await global.io.sendNotification(recipientId, notificationData);
-            sendResponse(res, 200, true, 'Test notification sent successfully', {
-                notification
-            });
-        } else {
-            sendResponse(res, 500, false, 'Socket.IO not available');
-        }
-    } catch (error) {
-        logger.error('Send test notification error:', error);
-        sendResponse(res, 500, false, 'Server error sending test notification');
     }
 };

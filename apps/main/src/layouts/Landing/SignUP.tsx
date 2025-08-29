@@ -126,6 +126,8 @@ export default function SignUp() {
       title="TaskFlow"
       subtitle="Create Account"
       description="Join thousands of users managing their tasks efficiently"
+      // fullHeight={false}
+      // containerClassName="py-12 md:py-20"
     >
       {/* General Error Display */}
       {error && (

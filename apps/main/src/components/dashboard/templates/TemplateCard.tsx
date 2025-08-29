@@ -1,4 +1,5 @@
-import React from 'react';import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback, Badge } from '@taskflow/ui';
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback, Badge } from '@taskflow/ui';
 import { Heart } from 'lucide-react';
 ;
 import type { TemplateCardProps } from '../../../types/dash.types';
@@ -16,9 +17,16 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onClick, onLike }
             <Typography variant="caption" className="text-muted-foreground mb-2">
               {(template.type ?? 'template')}{template.category ? ` • ${template.category}` : ''}
             </Typography>
-            <Typography variant="body-small" className="text-muted-foreground mb-3">
-              {template.description}
-            </Typography>
+            {/* Reserve fixed space for description to keep cards symmetric (truncate overflow to 3 lines) */}
+            <div className="mb-3 h-[60px] overflow-hidden">
+              <Typography
+                variant="body-small"
+                className="text-muted-foreground"
+                style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+              >
+                {template.description || ' '}
+              </Typography>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -54,12 +62,16 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onClick, onLike }
             <button
               type="button"
               className={`inline-flex items-center gap-1 rounded px-2 py-1 hover:text-foreground ${template.userLiked ? 'text-red-600' : ''}`}
-              onClick={(e) => { e.stopPropagation(); onLike?.(template); }}
+              onPointerDown={(e) => { e.stopPropagation(); }}
+              onMouseDown={(e) => { e.stopPropagation(); }}
+              onMouseUp={(e) => { e.stopPropagation(); }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onLike?.(template); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); } }}
               aria-pressed={template.userLiked ? 'true' : 'false'}
               aria-label="Like template"
             >
-              <Heart className="h-4 w-4" fill={template.userLiked ? 'currentColor' : 'none'} />
-              <span>{template.likes}</span>
+              <Heart className="h-4 w-4 pointer-events-none" fill={template.userLiked ? 'currentColor' : 'none'} />
+              <span className="pointer-events-none">{template.likes}</span>
             </button>
           </div>
           <Typography variant="caption" className="ml-auto whitespace-nowrap">
