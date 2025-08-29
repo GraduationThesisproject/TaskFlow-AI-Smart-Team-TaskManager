@@ -275,3 +275,6 @@ const validateParams = (schema) => {
 module.exports = validateMiddleware;
 module.exports.validateQuery = validateQuery;
 module.exports.validateParams = validateParams;
+module.exports.isValidObjectId = isValidObjectId;
+module.exports.isValidEmail = isValidEmail;
+module.exports.isValidDate = isValidDate;
