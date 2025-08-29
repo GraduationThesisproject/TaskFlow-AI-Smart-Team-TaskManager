@@ -22,6 +22,7 @@ const { fileServeMiddleware } = require('./middlewares/serve.middleware');
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
+const adminManagementRoutes = require('./routes/adminManagement.routes');
 const twoFactorAuthRoutes = require('./routes/twoFactorAuth.routes');
 const workspaceRoutes = require('./routes/workspace.routes');
 const spaceRoutes = require('./routes/space.routes');
@@ -38,6 +39,7 @@ const aiRoutes = require('./routes/ai.routes');
 const templateRoutes = require('./routes/template.routes');
 const powerbiRoutes = require('./routes/powerbi.routes');
 const chatRoutes = require('./routes/chat.routes');
+const testRoutes = require('./routes/test.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
 const app = express();
 
@@ -220,6 +222,7 @@ app.use(passport.initialize());
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin-management', adminManagementRoutes);
 app.use('/api/2fa', twoFactorAuthRoutes);
 app.use('/api/files', authMiddleware, fileRoutes);
 app.use('/api/workspaces', authMiddleware, workspaceRoutes);
@@ -240,6 +243,7 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/templates', authMiddleware, templateRoutes);
 app.use('/api/powerbi', authMiddleware, powerbiRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/test', testRoutes);
 
 // 404 handler - using catch-all middleware instead of wildcard
 app.use((req, res) => {

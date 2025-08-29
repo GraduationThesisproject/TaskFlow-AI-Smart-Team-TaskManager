@@ -7,7 +7,7 @@ interface Notification {
   _id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: string;
   recipientId: string;
   relatedEntity?: {
     type: string;
@@ -24,12 +24,7 @@ interface Notification {
 interface NotificationStats {
   total: number;
   unread: number;
-  byType: {
-    info: number;
-    success: number;
-    warning: number;
-    error: number;
-  };
+  byType: Record<string, number>;
 }
 
 interface NotificationState {

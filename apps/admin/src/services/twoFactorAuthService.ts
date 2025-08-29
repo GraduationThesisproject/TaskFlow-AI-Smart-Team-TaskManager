@@ -41,7 +41,7 @@ class TwoFactorAuthService {
    * Enable 2FA for the current user
    */
   async enable2FA(): Promise<TwoFactorAuthSetup> {
-    const response = await fetch(`${env.API_BASE_URL}/2fa/enable`, {
+    const response = await fetch(`${env.API_BASE_URL}/admin/2fa/enable`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
     });
@@ -59,7 +59,7 @@ class TwoFactorAuthService {
    * Verify 2FA setup with a token
    */
   async verify2FASetup(token: string): Promise<{ message: string }> {
-    const response = await fetch(`${env.API_BASE_URL}/2fa/verify-setup`, {
+    const response = await fetch(`${env.API_BASE_URL}/admin/2fa/verify-setup`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify({ token }),
@@ -83,7 +83,7 @@ class TwoFactorAuthService {
       body.recoveryToken = recoveryToken;
     }
 
-    const response = await fetch(`${env.API_BASE_URL}/2fa/disable`, {
+    const response = await fetch(`${env.API_BASE_URL}/admin/2fa/disable`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(body),
@@ -102,9 +102,10 @@ class TwoFactorAuthService {
    * Generate new backup codes
    */
   async generateBackupCodes(): Promise<BackupCodesResponse> {
-    const response = await fetch(`${env.API_BASE_URL}/2fa/backup-codes`, {
+    const response = await fetch(`${env.API_BASE_URL}/admin/2fa/backup-codes`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
+      body: JSON.stringify({}),
     });
 
     if (!response.ok) {
@@ -120,7 +121,7 @@ class TwoFactorAuthService {
    * Get 2FA status for the current user
    */
   async get2FAStatus(): Promise<TwoFactorAuthStatus> {
-    const response = await fetch(`${env.API_BASE_URL}/2fa/status`, {
+    const response = await fetch(`${env.API_BASE_URL}/admin/2fa/status`, {
       headers: this.getAuthHeaders(),
     });
 
@@ -137,9 +138,10 @@ class TwoFactorAuthService {
    * Generate a recovery token
    */
   async generateRecoveryToken(): Promise<RecoveryTokenResponse> {
-    const response = await fetch(`${env.API_BASE_URL}/2fa/recovery-token`, {
+    const response = await fetch(`${env.API_BASE_URL}/admin/2fa/recovery-token`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
+      body: JSON.stringify({}),
     });
 
     if (!response.ok) {

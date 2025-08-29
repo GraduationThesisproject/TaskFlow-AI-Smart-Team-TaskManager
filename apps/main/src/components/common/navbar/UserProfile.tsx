@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Avatar, AvatarImage, AvatarFallback, Dropdown, Typography, Badge } from '@taskflow/ui';
-import { LogOut, Settings, User, Bell, Trash2, AlertCircle, CheckCircle, Info, AlertTriangle, UserPlus } from 'lucide-react';
+import { LogOut, UserCog, Bell, Trash2, AlertCircle, CheckCircle, Info, AlertTriangle, UserPlus } from 'lucide-react';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import type { User as UserType } from '../../../types/navbar';
@@ -59,14 +59,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       {isDropdownOpen && (
         <div className="absolute top-full right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50">
           <div className="p-2 space-y-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start gap-2"
-            >
-              <User className="w-4 h-4" />
-              Profile
-            </Button>
             
             <Button
               variant="ghost"
@@ -77,8 +69,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 window.location.href = '/dashboard/settings';
               }}
             >
-              <Settings className="w-4 h-4" />
-              Settings
+              <UserCog className="w-4 h-4" />
+              Profile & Settings
             </Button>
             
             <div className="border-t border-border my-1" />
@@ -110,7 +102,8 @@ const NotificationBell: React.FC = () => {
     markAllAsRead,
     deleteNotification,
     clearReadNotifications,
-    clearError
+    clearError,
+    fetchNotifications,
   } = useNotifications();
 
   const unreadCount = stats?.unread || 0;
@@ -145,8 +138,9 @@ const NotificationBell: React.FC = () => {
   };
 
   const handleBellOpen = React.useCallback(() => {
-    // intentionally left blank (no auto-read)
-  }, []);
+    // Refresh notifications on open to ensure latest data
+    fetchNotifications?.();
+  }, [fetchNotifications]);
 
   return (
     <Dropdown

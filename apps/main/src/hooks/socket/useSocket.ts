@@ -50,7 +50,9 @@ export function useSocket(options: UseSocketOptions) {
       socketRef.current = io(options.url, {
         autoConnect: false, // We'll manually connect
         auth: options.auth,
-        transports: ['websocket', 'polling'],
+        // Prefer polling first; upgrade to websocket when possible
+        transports: ['polling', 'websocket'],
+        path: '/socket.io',
         timeout: 30000, // Increased timeout
         reconnection: false, // We'll handle reconnection manually
         forceNew: true,

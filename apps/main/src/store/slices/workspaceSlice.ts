@@ -254,6 +254,28 @@ const workspaceSlice = createSlice({
         state.currentWorkspaceId = null;
       }
     },
+    upsertWorkspaceStatus(state, action: PayloadAction<{ id: string; status: 'active' | 'archived'; archivedAt?: string | null; archiveExpiresAt?: string | null }>) {
+      const { id, status, archivedAt = null, archiveExpiresAt = null } = action.payload;
+      const idx = (state.workspaces || []).findIndex((w: any) => (w?._id === id || w?.id === id));
+      if (idx >= 0) {
+        const prev = state.workspaces[idx] as any;
+        state.workspaces[idx] = {
+          ...prev,
+          status,
+          archivedAt,
+          archiveExpiresAt,
+        } as any;
+      }
+      // If currentWorkspace matches, keep it in sync too
+      if (state.currentWorkspace && (((state.currentWorkspace as any)._id === id) || ((state.currentWorkspace as any).id === id))) {
+        state.currentWorkspace = {
+          ...(state.currentWorkspace as any),
+          status,
+          archivedAt,
+          archiveExpiresAt,
+        } as any;
+      }
+    },
     resetWorkspaceState: () => initialState,
   },
   extraReducers: (builder) => {
@@ -414,9 +436,15 @@ const workspaceSlice = createSlice({
         state.loading = false;
         const restored = action.payload as Workspace;
         if (restored) {
-          const exists = state.workspaces.findIndex((w) => w._id === restored._id) >= 0;
-          if (!exists) state.workspaces = [restored, ...(state.workspaces || [])];
-          state.currentWorkspace = state.currentWorkspace ?? restored;
+          const idx = state.workspaces.findIndex((w) => (w._id === restored._id || (w as any).id === (restored as any)._id));
+          if (idx >= 0) {
+            state.workspaces[idx] = { ...(state.workspaces[idx] as any), ...restored } as any;
+          } else {
+            state.workspaces = [restored, ...(state.workspaces || [])];
+          }
+          if (state.currentWorkspace && (((state.currentWorkspace as any)._id === (restored as any)._id) || ((state.currentWorkspace as any).id === (restored as any)._id))) {
+            state.currentWorkspace = { ...(state.currentWorkspace as any), ...restored } as any;
+          }
         }
         state.error = null;
       })
@@ -439,6 +467,7 @@ export const {
   clearError,
   setCurrentWorkspaceId,
   removeWorkspaceById,
+  upsertWorkspaceStatus,
   resetWorkspaceState,
 } = workspaceSlice.actions;
 

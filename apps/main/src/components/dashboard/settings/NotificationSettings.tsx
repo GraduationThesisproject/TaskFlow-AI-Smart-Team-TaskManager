@@ -2,25 +2,75 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Typography, Switch, Button } from '@taskflow/ui';
 import { Save } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../../store';
-import { updatePreferences } from '../../../store/slices/authSlice';
+import { updatePreferences, updateUser } from '../../../store/slices/authSlice';
+import {NotificationSettingsState} from "../../../types/dash.types"
 
-export interface NotificationSettingsState {
-  emailNotifications: boolean;
-  pushNotifications: boolean;
-  weeklySummary: boolean;
-  marketingEmails: boolean;
-}
 
 const NotificationSettings: React.FC = () => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((s) => s.auth);
   const [isLoading, setIsLoading] = useState(false);
   const [settings, setSettings] = useState<NotificationSettingsState>({
-    emailNotifications: user?.preferences?.notifications?.email ?? true,
-    pushNotifications: user?.preferences?.notifications?.push ?? true,
-    weeklySummary: true,
+    emailNotifications: (() => {
+      const pref: any = user?.preferences?.notifications?.email;
+      if (pref && typeof pref === 'object') {
+        // If backend returns object, toggle is on if any sub-flag is true
+        return Object.values(pref).some(Boolean);
+      }
+      return pref ?? true;
+    })(),
+    pushNotifications: (() => {
+      const pref: any = user?.preferences?.notifications?.push;
+      if (pref && typeof pref === 'object') {
+        return Object.values(pref).some(Boolean);
+      }
+      return pref ?? true;
+    })(),
+    realTimeNotifications: (() => {
+      const pref: any = user?.preferences?.notifications?.realTime;
+      if (pref && typeof pref === 'object') {
+        return Object.values(pref).some(Boolean);
+      }
+      return pref ?? true;
+    })(),
+    weeklySummary: (() => {
+      const emailPref: any = user?.preferences?.notifications?.email;
+      if (emailPref && typeof emailPref === 'object' && 'weeklyDigest' in emailPref) {
+        return !!emailPref.weeklyDigest;
+      }
+      return true;
+    })(),
     marketingEmails: user?.preferences?.notifications?.marketing ?? false,
   });
+
+  // Keep local UI settings in sync when Redux user.preferences change (e.g., after saves or external updates)
+  React.useEffect(() => {
+    setSettings({
+      emailNotifications: (() => {
+        const pref: any = user?.preferences?.notifications?.email;
+        if (pref && typeof pref === 'object') return Object.values(pref).some(Boolean);
+        return pref ?? true;
+      })(),
+      pushNotifications: (() => {
+        const pref: any = user?.preferences?.notifications?.push;
+        if (pref && typeof pref === 'object') return Object.values(pref).some(Boolean);
+        return pref ?? true;
+      })(),
+      realTimeNotifications: (() => {
+        const pref: any = user?.preferences?.notifications?.realTime;
+        if (pref && typeof pref === 'object') return Object.values(pref).some(Boolean);
+        return pref ?? true;
+      })(),
+      weeklySummary: (() => {
+        const emailPref: any = user?.preferences?.notifications?.email;
+        if (emailPref && typeof emailPref === 'object' && 'weeklyDigest' in emailPref) {
+          return !!emailPref.weeklyDigest;
+        }
+        return true;
+      })(),
+      marketingEmails: user?.preferences?.notifications?.marketing ?? false,
+    });
+  }, [user?.preferences]);
 
   const onToggle = (key: keyof NotificationSettingsState, value: boolean) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -49,6 +99,36 @@ const NotificationSettings: React.FC = () => {
           spaceUpdates: settings.pushNotifications,
         };
 
+        const realTimeUpdates = {
+          taskAssigned: settings.realTimeNotifications,
+          taskCompleted: settings.realTimeNotifications,
+          taskOverdue: settings.realTimeNotifications,
+          commentAdded: settings.realTimeNotifications,
+          mentionReceived: settings.realTimeNotifications,
+          spaceUpdates: settings.realTimeNotifications,
+          workspaceCreated: settings.realTimeNotifications,
+          workspaceArchived: settings.realTimeNotifications,
+          workspaceRestored: settings.realTimeNotifications,
+          workspaceDeleted: settings.realTimeNotifications,
+          templateCreated: settings.realTimeNotifications,
+        };
+
+        // Optimistic update so middleware reacts instantly (connect/disconnect without refresh)
+        const currentPrefs: any = user.preferences || {};
+        const currentNotif: any = currentPrefs.notifications || {};
+        dispatch(updateUser({
+          preferences: {
+            ...currentPrefs,
+            notifications: {
+              ...currentNotif,
+              email: emailUpdates,
+              push: pushUpdates,
+              realTime: realTimeUpdates,
+              marketing: settings.marketingEmails,
+            },
+          },
+        } as any));
+
         // Persist to backend preferences (authService -> /auth/preferences)
         await dispatch(
           updatePreferences({
@@ -56,6 +136,8 @@ const NotificationSettings: React.FC = () => {
             updates: {
               email: emailUpdates,
               push: pushUpdates,
+              realTime: realTimeUpdates,
+              marketing: settings.marketingEmails,
             },
           }) as any
         );
@@ -79,6 +161,7 @@ const NotificationSettings: React.FC = () => {
         {[
           { key: 'emailNotifications', title: 'Email Notifications', desc: 'Receive notifications via email' },
           { key: 'pushNotifications', title: 'Push Notifications', desc: 'Get instant updates on your device' },
+          { key: 'realTimeNotifications', title: 'Real Time Notifications', desc: 'Get instant updates on your device' },
           { key: 'weeklySummary', title: 'Weekly Summary', desc: 'Weekly progress reports' },
           { key: 'marketingEmails', title: 'Marketing Emails', desc: 'Receive updates about new features' },
         ].map((item) => (

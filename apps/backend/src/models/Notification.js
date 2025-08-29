@@ -30,7 +30,12 @@ const notificationSchema = new mongoose.Schema({
       'space_invitation',
       'invitation_accepted',
       'due_date_reminder',
-      'mention'
+      'mention',
+      'template_created',
+      'workspace_created',
+      'workspace_archived',
+      'workspace_restored',
+      'workspace_deleted'
     ],
     required: [true, 'Notification type is required']
   },
@@ -49,7 +54,7 @@ const notificationSchema = new mongoose.Schema({
   relatedEntity: {
     entityType: {
       type: String,
-      enum: ['task', 'board', 'space', 'comment', 'user', 'workspace'],
+      enum: ['task', 'board', 'space', 'comment', 'user', 'workspace', 'template'],
       required: true
     },
     entityId: {

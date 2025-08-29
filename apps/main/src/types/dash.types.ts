@@ -386,3 +386,12 @@ export type UniversalSidebarProps = {
   mobileMenuOpen?: boolean;
   setMobileMenuOpen?: (v: boolean) => void;
 };
+
+export interface NotificationSettingsState {
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  realTimeNotifications: boolean;
+  weeklySummary: boolean;
+  marketingEmails: boolean;
+}
+export interface ActivityPoint { date: string; value: number }

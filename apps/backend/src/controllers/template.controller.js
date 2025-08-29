@@ -255,6 +255,28 @@ exports.update = async (req, res, next) => {
       .populate('likedBy', 'name displayName')
       .populate('viewedBy', 'name displayName');
       if (!updated) return res.status(404).json({ success: false, message: 'Template not found' });
+      // Notify template owner on like/unlike (skip self-actions)
+      try {
+        const ownerId = String(updated.createdBy?._id ?? updated.createdBy);
+        const actorId = String(userId);
+        if (ownerId && actorId && ownerId !== actorId) {
+          const isUnlike = hasLiked; // if previously liked, current action is unlike
+          await NotificationService.createNotification({
+            title: isUnlike ? 'Like removed on your template' : 'New like on your template',
+            message: isUnlike
+              ? `${req.user?.name || 'Someone'} removed their like from "${updated.name || 'your template'}"`
+              : `${req.user?.name || 'Someone'} liked "${updated.name || 'your template'}"`,
+            type: isUnlike ? 'template_unliked' : 'template_liked',
+            recipient: ownerId,
+            sender: actorId,
+            relatedEntity: { entityType: 'template', entityId: updated._id },
+            priority: 'low',
+            deliveryMethods: { inApp: true }
+          });
+        }
+      } catch (e) {
+        // best-effort notification; do not block response
+      }
       return ok(res, updated);
     }
 
@@ -345,6 +367,29 @@ exports.toggleLike = async (req, res, next) => {
     if (!updated) {
       console.warn('[templates.toggleLike] not found after update', { id });
       return res.status(404).json({ success: false, message: 'Template not found' });
+    }
+
+    // Notify template owner on like/unlike (skip notifying the actor themselves)
+    try {
+      const ownerId = String(updated.createdBy?._id ?? updated.createdBy);
+      const actorId = String(userId);
+      if (ownerId && actorId && ownerId !== actorId) {
+        const isUnlike = hasLiked; // previously liked => now unliked
+        await NotificationService.createNotification({
+          title: isUnlike ? 'Like removed on your template' : 'New like on your template',
+          message: isUnlike
+            ? `${req.user?.name || 'Someone'} removed their like from "${updated.name || 'your template'}"`
+            : `${req.user?.name || 'Someone'} liked "${updated.name || 'your template'}"`,
+          type: isUnlike ? 'template_unliked' : 'template_liked',
+          recipient: ownerId,
+          sender: actorId,
+          relatedEntity: { entityType: 'template', entityId: updated._id },
+          priority: 'low',
+          deliveryMethods: { inApp: true }
+        });
+      }
+    } catch (e) {
+      // best-effort
     }
 
     console.log('[templates.toggleLike] saved', { id, likes: Array.isArray(updated.likedBy) ? updated.likedBy.length : 0 });
