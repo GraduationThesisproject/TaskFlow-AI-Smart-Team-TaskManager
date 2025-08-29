@@ -185,10 +185,10 @@ function AppContent() {
       />
       
       {/* Socket Debugger - Commented out for production */}
-      {process.env.NODE_ENV === 'development' && <SocketDebugger />}
+      {/* {process.env.NODE_ENV === 'development' && <SocketDebugger />} */}
       
       {/* Socket Connection Test - Commented out for production */}
-      {process.env.NODE_ENV === 'development' && <SocketConnectionTest />}
+      {/* {process.env.NODE_ENV === 'development' && <SocketConnectionTest />} */}
     </AppLayout>
   );
 }

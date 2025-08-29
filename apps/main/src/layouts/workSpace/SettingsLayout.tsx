@@ -305,7 +305,6 @@ function SettingsLayout() {
     : 'Any Workspace member can link/unlink Slack workspaces';
 
   return (
-<<<<<<< HEAD
     <DashboardShell>
       <div>
         <div className="bg-background shadow-[0_0_0_1px_rgba(0,232,198,0.12),_0_8px_30px_-12px_rgba(0,232,198,0.25)] ring-1 ring-accent/10 px-5 sm:px-6 lg:px-8 py-6">
@@ -315,23 +314,7 @@ function SettingsLayout() {
             loading={loading}
             settings={settings}
             onClickByKey={onClickByKey}
-            onUpgrade={handleUpgrade}
           />
-=======
-    <div className="flex min-h-screen text-[hsl(var(--foreground))] ">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div>
-          <div className="bg-background shadow-[0_0_0_1px_rgba(0,232,198,0.12),_0_8px_30px_-12px_rgba(0,232,198,0.25)] ring-1 ring-accent/10 px-5 sm:px-6 lg:px-8 py-6">
-            <SettingsHeader title="Workspace Settings" status={currentVisibility} />
-            <SettingsList
-              sections={sections}
-              loading={loading}
-              settings={settings}
-              onClickByKey={onClickByKey}
-            />
-          </div>
->>>>>>> b5a725a5df5133aa58eab27101cbb46f572e188e
         </div>
       </div>
 
@@ -396,26 +379,8 @@ function SettingsLayout() {
         userName={currentUser?.name}
         loading={loading}
       />
-<<<<<<< HEAD
     </DashboardShell>
   );}
 
-=======
-
-      <SlackRestrictionsSettingsModal
-        isOpen={showSlackRestrictionsModal}
-        onClose={() => setShowSlackRestrictionsModal(false)}
-        onConfirm={canManageSlackRestrictions ? handleSlackRestrictionsChange : undefined}
-        canManage={canManageSlackRestrictions}
-        currentSetting={currentSlackRestrictionsSetting}
-        newSetting={newSlackRestrictionsSetting}
-        userRole={userRoleInWorkspace}
-        userName={currentUser?.name}
-        loading={loading}
-      />
-    </div>
-  );
-}
->>>>>>> b5a725a5df5133aa58eab27101cbb46f572e188e
 
 export default SettingsLayout;
