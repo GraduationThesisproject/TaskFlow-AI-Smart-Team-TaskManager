@@ -19,7 +19,8 @@ import {
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
-  ChatBubbleLeftIcon
+  ChatBubbleLeftIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 
 // Import NotificationBell component
@@ -37,6 +38,7 @@ import SettingsLayout from '../layouts/SettingsLayout';
 import ProfileLayout from '../layouts/ProfileLayout';
 import PowerBILayout from '../layouts/PowerBILayout';
 import ChatLayout from '../layouts/ChatLayout';
+import PermissionTestPage from './PermissionTestPage';
 
 // Import language context and translation hook
 import { useLanguageContext } from '../contexts/LanguageContext';
@@ -136,6 +138,13 @@ const AdminPage: React.FC = () => {
       icon: UserIcon,
       description: 'Manage your personal profile and account',
       layout: ProfileLayout
+    },
+    {
+      name: '🔒 Permission Test',
+      path: '/permission-test',
+      icon: ShieldCheckIcon,
+      description: 'Test the permission system and verify access controls',
+      layout: PermissionTestPage
     }
   ];
 
@@ -145,9 +154,11 @@ const AdminPage: React.FC = () => {
     
     // Only try to get current admin if we have a token and aren't already authenticated
     if (token && !isAuthenticated && !isLoading) {
+      console.log('🔐 Token found, fetching admin info...');
       dispatch(getCurrentAdmin());
     } else if (!token) {
       // No token, redirect to login
+      console.log('❌ No token found, redirecting to login...');
       navigate('/login');
     }
   }, []); // Empty dependency array to run only once on mount
@@ -157,10 +168,18 @@ const AdminPage: React.FC = () => {
     if (!isAuthenticated && !isLoading) {
       const token = localStorage.getItem('adminToken');
       if (!token) {
+        console.log('❌ No token and not authenticated, redirecting to login...');
         navigate('/login');
       }
     }
   }, [isAuthenticated, isLoading, navigate]);
+
+  // Add a delay to ensure authentication is properly established
+  React.useEffect(() => {
+    if (isAuthenticated && currentAdmin) {
+      console.log('✅ Authentication established, admin data loaded');
+    }
+  }, [isAuthenticated, currentAdmin]);
 
   const handleLogout = async () => {
     try {

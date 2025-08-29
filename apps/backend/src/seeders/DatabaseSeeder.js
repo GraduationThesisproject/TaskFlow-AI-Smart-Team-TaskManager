@@ -12,6 +12,7 @@ const seederConfig = require('./config/seeder.config');
 const UserSeeder = require('./modules/UserSeeder');
 const WorkspaceSeeder = require('./modules/WorkspaceSeeder');
 const BoardSeeder = require('./modules/BoardSeeder');
+const BoardTemplateSeeder = require('./modules/BoardTemplateSeeder');
 const TagSeeder = require('./modules/TagSeeder');
 const TaskSeeder = require('./modules/TaskSeeder');
 const CommentSeeder = require('./modules/CommentSeeder');
@@ -32,6 +33,7 @@ class DatabaseSeeder {
     this.userSeeder = new UserSeeder();
     this.workspaceSeeder = new WorkspaceSeeder(this.userSeeder);
     this.boardSeeder = new BoardSeeder(this.workspaceSeeder);
+    this.boardTemplateSeeder = new BoardTemplateSeeder(this.userSeeder);
     this.tagSeeder = new TagSeeder(this.userSeeder);
     this.taskSeeder = new TaskSeeder(this.boardSeeder, this.tagSeeder);
     this.commentSeeder = new CommentSeeder(this.taskSeeder);
@@ -47,6 +49,7 @@ class DatabaseSeeder {
       workspaces: [],
       spaces: [],
       boards: [],
+      boardTemplates: [],
       tasks: [],
       tags: [],
       comments: [],
@@ -110,6 +113,7 @@ class DatabaseSeeder {
       'Create Workspaces',
       'Create Spaces',
       'Create Boards',
+      'Create Board Templates',
       'Create Tags',
       'Create Tasks',
       'Create Comments',
@@ -136,6 +140,7 @@ class DatabaseSeeder {
     if (this.config.workspaces.count > 0) enabledSteps.push('Create Workspaces');
     if (this.config.spaces.perWorkspace.min > 0) enabledSteps.push('Create Spaces');
     if (this.config.boards.perSpace.min > 0) enabledSteps.push('Create Boards');
+    if (this.config.boardTemplates && this.config.boardTemplates.count > 0) enabledSteps.push('Create Board Templates');
     if (this.config.tasks.perBoard.min > 0) enabledSteps.push('Create Tags', 'Create Tasks');
     if (this.config.comments.perTask.min > 0) enabledSteps.push('Create Comments');
     if (this.config.notifications.perUser.min > 0) enabledSteps.push('Create Notifications');
@@ -176,6 +181,10 @@ class DatabaseSeeder {
             
           case 'Create Boards':
             await this.seedBoards();
+            break;
+            
+          case 'Create Board Templates':
+            await this.seedBoardTemplates();
             break;
             
           case 'Create Tags':
@@ -294,6 +303,18 @@ class DatabaseSeeder {
     this.createdData.boards = boards;
     
     console.log(`✅ Created ${boards.length} boards`);
+  }
+
+  /**
+   * Seed board templates
+   */
+  async seedBoardTemplates() {
+    console.log('📋 Seeding board templates...');
+    
+    const boardTemplates = await this.boardTemplateSeeder.seed();
+    this.createdData.boardTemplates = boardTemplates;
+    
+    console.log(`✅ Created ${boardTemplates.length} board templates`);
   }
 
   /**

@@ -13,6 +13,7 @@ module.exports.DatabaseSeeder = DatabaseSeeder;
 module.exports.UserSeeder = require('./modules/UserSeeder');
 module.exports.WorkspaceSeeder = require('./modules/WorkspaceSeeder');
 module.exports.BoardSeeder = require('./modules/BoardSeeder');
+module.exports.BoardTemplateSeeder = require('./modules/BoardTemplateSeeder');
 module.exports.TagSeeder = require('./modules/TagSeeder');
 module.exports.TaskSeeder = require('./modules/TaskSeeder');
 module.exports.CommentSeeder = require('./modules/CommentSeeder');

@@ -441,55 +441,79 @@ class AdminService {
 
   // Templates
   async getProjectTemplates(): Promise<ProjectTemplate[]> {
-    const response = await fetch(`${API_BASE}/templates/projects`, {
-      headers: this.getAuthHeaders(),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/templates/projects`, {
+        headers: this.getAuthHeaders(),
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to get project templates');
+      if (!response.ok) {
+        throw new Error(`Failed to get project templates: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Project templates response:', data); // Debug log
+      return data.data || data || [];
+    } catch (error) {
+      console.error('Error fetching project templates:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.data || [];
   }
 
   async getTaskTemplates(): Promise<TaskTemplate[]> {
-    const response = await fetch(`${API_BASE}/templates/tasks`, {
-      headers: this.getAuthHeaders(),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/templates/tasks`, {
+        headers: this.getAuthHeaders(),
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to get task templates');
+      if (!response.ok) {
+        throw new Error(`Failed to get task templates: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Task templates response:', data); // Debug log
+      return data.data || data || [];
+    } catch (error) {
+      console.error('Error fetching task templates:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.data || [];
   }
 
   async getAIPrompts(): Promise<AIPrompt[]> {
-    const response = await fetch(`${API_BASE}/templates/ai-prompts`, {
-      headers: this.getAuthHeaders(),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/templates/ai-prompts`, {
+        headers: this.getAuthHeaders(),
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to get AI prompts');
+      if (!response.ok) {
+        throw new Error(`Failed to get AI prompts: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('AI prompts response:', data); // Debug log
+      return data.data || data || [];
+    } catch (error) {
+      console.error('Error fetching AI prompts:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.data || [];
   }
 
   async getBrandingAssets(): Promise<BrandingAsset[]> {
-    const response = await fetch(`${API_BASE}/templates/branding`, {
-      headers: this.getAuthHeaders(),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/templates/branding`, {
+        headers: this.getAuthHeaders(),
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to get branding assets');
+      if (!response.ok) {
+        throw new Error(`Failed to get branding assets: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Branding assets response:', data); // Debug log
+      return data.data || data || [];
+    } catch (error) {
+      console.error('Error fetching branding assets:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.data || [];
   }
 
   // Profile Management
