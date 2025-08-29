@@ -52,11 +52,6 @@ exports.getAllWorkspaces = async (req, res) => {
     }
 };
 
-
-
-
-
-
 // Get single workspace
 exports.getWorkspace = async (req, res) => {
     try {
@@ -67,7 +62,11 @@ exports.getWorkspace = async (req, res) => {
         const workspace = await Workspace.findById(workspaceId)
             .populate('owner', 'name email avatar')
             .populate('members.user', 'name email avatar')
-            .populate('spaces');
+            .populate({
+                path: 'spaces',
+                match: { isArchived: false }
+              })
+              
 
         // SECURITY FIX: Use verified roles from auth middleware
         let userRole = null;
@@ -171,6 +170,7 @@ exports.createWorkspace = async (req, res) => {
 // Update workspace
 exports.updateWorkspace = async (req, res) => {
     try {
+        
         const { id: workspaceId } = req.params;
         const { name, description, settings } = req.body;
         const userId = req.user.id;
