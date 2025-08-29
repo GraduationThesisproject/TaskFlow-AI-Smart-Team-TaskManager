@@ -118,11 +118,6 @@ function SettingsLayout() {
     }
   };
 
-  const handleUpgrade = () => {
-    console.log("Upgrade to premium clicked");
-    // TODO: Implement upgrade functionality
-  };
-
   const handleVisibilityChange = async () => {
     const current = !!settings?.permissions?.publicJoin;
     await handleUpdate("permissions", { publicJoin: !current });
@@ -319,7 +314,6 @@ function SettingsLayout() {
               loading={loading}
               settings={settings}
               onClickByKey={onClickByKey}
-              onUpgrade={handleUpgrade}
             />
           </div>
         </div>

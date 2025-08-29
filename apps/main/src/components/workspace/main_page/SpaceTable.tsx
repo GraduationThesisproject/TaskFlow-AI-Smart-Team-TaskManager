@@ -18,31 +18,6 @@ const SpaceTable: React.FC<SpaceTableProps> = ({
   onRemove,
   onAddSpace,
 }) => {
-  const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
-
-  // Fetch member count for each space
-  useEffect(() => {
-    const fetchMemberCounts = async () => {
-      const counts: Record<string, number> = {};
-      
-      for (const space of filteredSpaces) {
-        try {
-          const response = await SpaceService.getSpaceMembers(space._id);
-          counts[space._id] = response.data?.length || 0;
-        } catch (error) {
-          console.error(`Error fetching members for space ${space._id}:`, error);
-          counts[space._id] = 0;
-        }
-      }
-      
-      setMemberCounts(counts);
-    };
-
-    if (filteredSpaces.length > 0) {
-      fetchMemberCounts();
-    }
-  }, [filteredSpaces]);
-
   if (isLoading) {
     return <div>Loading spaces...</div>;
   }
@@ -97,7 +72,7 @@ const SpaceTable: React.FC<SpaceTableProps> = ({
                   </p>
                 )}
                 <div className="mt-2 text-sm text-muted-foreground">
-                  {memberCounts[space._id] ?? 0} members
+                  {space.members.length} members
                 </div>
               </div>
               <Button
