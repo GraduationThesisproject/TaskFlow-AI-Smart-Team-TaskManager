@@ -47,7 +47,10 @@ const app = express();
 
 
 // Security
-app.use(helmet());
+// Allow cross-origin embedding of static resources like avatars
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 
 // CORS configuration for HTTP requests (Socket.IO handles WebSocket CORS)
 const corsOptions = {
@@ -111,6 +114,8 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
+    // Allow cross-origin resource usage (prevents NotSameOrigin blocks for <img>)
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     
     // Set proper headers for different file types
     if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png') || path.endsWith('.gif') || path.endsWith('.webp')) {
@@ -138,6 +143,7 @@ app.get('/uploads/avatars/:filename', (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   
   // Set proper headers for images
   res.setHeader('Content-Type', 'image/*');
@@ -165,6 +171,8 @@ app.get('/api/avatars/:filename', (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // Allow cross-origin resource usage for embedded images
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   
   // Set proper headers for images
   res.setHeader('Content-Type', 'image/*');

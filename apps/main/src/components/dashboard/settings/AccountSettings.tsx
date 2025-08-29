@@ -2,20 +2,19 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Card, CardHeader, CardTitle, CardContent,
   Button, Typography, Input,
-  Avatar, AvatarImage, AvatarFallback
+  Avatar, AvatarImage, AvatarFallback,
+  Modal, ModalHeader, ModalBody, ModalFooter
 } from '@taskflow/ui';
-import { Shield } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '../../../store';
-import { updateProfileSecure, changePassword } from '../../../store/slices/authSlice';
+import { Shield, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../../../hooks/useAuth';
 
 const AccountSettings: React.FC = () => {
-  const dispatch = useAppDispatch();
-  const { user } = useAppSelector((s) => s.auth);
+  const { user, updateProfileSecure: updateProfileSecureAction, changePassword: changePasswordAction } = useAuth();
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({ name: '', email: '' });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
-
+  
   // Initialize form once user loads
   useEffect(() => {
     if (user?.user) {
@@ -25,6 +24,7 @@ const AccountSettings: React.FC = () => {
       });
     }
   }, [user]);
+
 
   // Avatar state
   const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
@@ -45,7 +45,6 @@ const AccountSettings: React.FC = () => {
 
   const onAvatarFileChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const file = e.target.files?.[0] || null;
-    console.log("file", file);
     if (!file) {
       setSelectedAvatar(null);
       setAvatarPreview(null);
@@ -60,9 +59,19 @@ const AccountSettings: React.FC = () => {
     setAvatarPreview(URL.createObjectURL(file));
   };
 
+  // Revoke previous preview URL to avoid memory leaks
+  useEffect(() => {
+    if (!avatarPreview) return;
+    return () => {
+      try { URL.revokeObjectURL(avatarPreview); } catch {}
+    };
+  }, [avatarPreview]);
+
   const onSaveProfile = () => {
     setConfirmError(null);
     setConfirmPwd('');
+    // Only open confirmation if there are changes
+    if (!hasChanges) return;
     setShowConfirm(true);
   };
 
@@ -73,17 +82,25 @@ const AccountSettings: React.FC = () => {
     }
     setIsSavingProfile(true);
     try {
-      await dispatch(updateProfileSecure({
-        name: profileForm.name,
+      console.log('[AccountSettings] confirmAndSave -> dispatch updateProfileSecure', {
+        name: profileForm.name?.trim(),
+        hasAvatar: !!selectedAvatar
+      });
+      const result = await updateProfileSecureAction({
+        name: profileForm.name.trim(),
         currentPassword: confirmPwd,
-        avatar: selectedAvatar || undefined, // ✅ no email here
-      })).unwrap();
+        avatar: selectedAvatar || undefined, // 
+      });
 
+      console.log('[AccountSettings] updateProfileSecure result', result);
+      console.log('[AccountSettings] updateProfileSecure success');
       setShowConfirm(false);
       setConfirmPwd('');
       setAvatarPreview(null);
+      setSelectedAvatar(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (e: any) {
-      setConfirmError(e?.message || 'Failed to update profile');
+      setConfirmError(e?.response?.data?.message || e?.message || 'Failed to update profile');
     } finally {
       setIsSavingProfile(false);
     }
@@ -92,6 +109,9 @@ const AccountSettings: React.FC = () => {
   const cancelConfirm = () => {
     if (isSavingProfile) return;
     setShowConfirm(false);
+    setShowPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
     setConfirmPwd('');
     setConfirmError(null);
   };
@@ -119,10 +139,14 @@ const AccountSettings: React.FC = () => {
 
     setIsChangingPassword(true);
     try {
-      await dispatch(changePassword({ currentPassword, newPassword })).unwrap();
+      console.log('[AccountSettings] changePassword -> dispatch', { hasCurrent: !!currentPassword, hasNew: !!newPassword });
+      const result = await changePasswordAction({ currentPassword, newPassword });
+      console.log('[AccountSettings] changePassword result', !!result ? { type: (result as any).type, meta: (result as any).meta } : result);
+      console.log('[AccountSettings] changePassword success');
       setSecuritySuccess('Password changed successfully');
       setSecurityForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (e: any) {
+      console.error('[AccountSettings] changePassword error', e);
       setSecurityError(e?.response?.data?.message || e?.message || 'Failed to change password');
     } finally {
       setIsChangingPassword(false);
@@ -135,6 +159,9 @@ const AccountSettings: React.FC = () => {
       ? user.user.avatar
       : (user?.user?.avatar as any)?.url) ||
     undefined;
+
+  const originalName = user?.user?.name || '';
+  const hasChanges = profileForm.name.trim() !== originalName || !!selectedAvatar;
 
   return (
     <Card>
@@ -174,7 +201,7 @@ const AccountSettings: React.FC = () => {
               disabled
             />
           </div>
-          <Button className="mt-4" onClick={onSaveProfile} disabled={isSavingProfile}>
+          <Button className="mt-4" onClick={onSaveProfile} disabled={isSavingProfile || !hasChanges}>
             Save Changes
           </Button>
         </section>
@@ -185,26 +212,63 @@ const AccountSettings: React.FC = () => {
             <Shield className="h-5 w-5" /><Typography variant="body-medium">Security</Typography>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              type={showPassword ? 'text' : 'password'}
-              value={securityForm.currentPassword}
-              onChange={(e) => onSecurityChange('currentPassword', e.target.value)}
-              placeholder="Current password"
-            />
-            <Input
-              type={showNewPassword ? 'text' : 'password'}
-              value={securityForm.newPassword}
-              onChange={(e) => onSecurityChange('newPassword', e.target.value)}
-              placeholder="New password"
-            />
+            {/* Current password with toggle */}
+            <div className="relative">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                value={securityForm.currentPassword}
+                onChange={(e) => onSecurityChange('currentPassword', e.target.value)}
+                placeholder="Current password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+                aria-label={showPassword ? 'Hide current password' : 'Show current password'}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+
+            {/* New password with toggle */}
+            <div className="relative">
+              <Input
+                type={showNewPassword ? 'text' : 'password'}
+                value={securityForm.newPassword}
+                onChange={(e) => onSecurityChange('newPassword', e.target.value)}
+                placeholder="New password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword((v) => !v)}
+                className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+                aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+              >
+                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
-          <Input
-            type={showConfirmPassword ? 'text' : 'password'}
-            value={securityForm.confirmPassword}
-            onChange={(e) => onSecurityChange('confirmPassword', e.target.value)}
-            placeholder="Confirm new password"
-            className="mt-2"
-          />
+
+          {/* Confirm new password with toggle */}
+          <div className="relative mt-2">
+            <Input
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={securityForm.confirmPassword}
+              onChange={(e) => onSecurityChange('confirmPassword', e.target.value)}
+              placeholder="Confirm new password"
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((v) => !v)}
+              className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+              aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+            >
+              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
           {securityError && <Typography variant="caption" className="text-red-500">{securityError}</Typography>}
           {securitySuccess && <Typography variant="caption" className="text-green-600">{securitySuccess}</Typography>}
           <Button
@@ -218,31 +282,39 @@ const AccountSettings: React.FC = () => {
         </section>
       </CardContent>
 
-      {/* Password confirmation popup */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background border border-border rounded-lg shadow-lg w-full max-w-md p-6">
-            <Typography variant="body-medium" className="font-medium mb-2">
-              Confirm your password
-            </Typography>
+      {/* Password confirmation popup (themed) */}
+      <Modal isOpen={showConfirm} onClose={cancelConfirm} size="md" title="Confirm your password">
+        <ModalBody>
+          <div className="relative">
             <Input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Current password"
               value={confirmPwd}
               onChange={(e) => setConfirmPwd(e.target.value)}
+              autoComplete="current-password"
+              autoFocus
+              className="pr-10"
             />
-            {confirmError && (
-              <Typography variant="caption" className="text-red-500 mt-2">{confirmError}</Typography>
-            )}
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="outline" onClick={cancelConfirm} disabled={isSavingProfile}>Cancel</Button>
-              <Button onClick={confirmAndSave} disabled={isSavingProfile}>
-                {isSavingProfile ? 'Saving...' : 'Confirm'}
-              </Button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+              aria-label={showPassword ? 'Hide current password' : 'Show current password'}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
-        </div>
-      )}
+          {confirmError && (
+            <Typography variant="caption" className="text-red-500 mt-2">{confirmError}</Typography>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="outline" onClick={cancelConfirm} disabled={isSavingProfile}>Cancel</Button>
+          <Button onClick={confirmAndSave} disabled={isSavingProfile}>
+            {isSavingProfile ? 'Saving...' : 'Confirm'}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </Card>
   );
 };

@@ -5,7 +5,7 @@ import { Provider } from 'react-redux';
 import { store } from './store';
 import { useAppDispatch } from './store';
 import { checkAuthStatus } from './store/slices/authSlice';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import WorkSpace from './pages/workSpace';
 import { SpacePage } from './pages/space.page';
 import { BoardPage } from './pages/board.page';
@@ -82,6 +82,8 @@ function AppContent() {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const location = useLocation();
+  const hideNavbar = location.pathname === '/signin' || location.pathname === '/signup';
 
   useEffect(() => {
     dispatch(checkAuthStatus());
@@ -110,14 +112,16 @@ function AppContent() {
 
   return (
     <AppLayout>
-      {/* Universal Navbar - Always displayed */}
-      <UniversalNavbar 
-        user={user || undefined}
-        onLogout={handleLogout}
-        isAuthenticated={isAuthenticated}
-        className="sticky top-0 z-50"
-        onChatClick={toggleChat}
-      />
+      {/* Universal Navbar - hidden on auth pages (signin/signup) */}
+      {!hideNavbar && (
+        <UniversalNavbar 
+          user={user || undefined}
+          onLogout={handleLogout}
+          isAuthenticated={isAuthenticated}
+          className="sticky top-0 z-50"
+          onChatClick={toggleChat}
+        />
+      )}
 
       {/* Main Content */}
       <main className="flex-1 bg-gradient-to-br from-background via-muted/50 to-background">
@@ -188,10 +192,10 @@ function AppContent() {
       />
       
       {/* Socket Debugger - Commented out for production */}
-      {process.env.NODE_ENV === 'development' && <SocketDebugger />}
+      {/* {process.env.NODE_ENV === 'development' && <SocketDebugger />} */}
       
       {/* Socket Connection Test - Commented out for production */}
-      {process.env.NODE_ENV === 'development' && <SocketConnectionTest />}
+      {/* {process.env.NODE_ENV === 'development' && <SocketConnectionTest />} */}
     </AppLayout>
   );
 }

@@ -490,9 +490,9 @@ templateSchema.pre('save', function(next) {
   next();
 });
 
-// Auto-populate creator on all find queries
+// Auto-populate creator on all find queries (include avatar for UI)
 templateSchema.pre(/^find/, function(next) {
-  this.populate('createdBy', 'name email displayName')
+  this.populate('createdBy', 'name email displayName avatar')
       .populate('likedBy', 'name displayName')
       .populate('viewedBy', 'name displayName');
   next();

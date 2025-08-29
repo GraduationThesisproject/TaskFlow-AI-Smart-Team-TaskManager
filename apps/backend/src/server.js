@@ -58,7 +58,8 @@ const socketCorsOptions = {
 
 
 const io = socketIo(server, {
-    cors: socketCorsOptions
+    path: '/socket.io',
+    cors: socketCorsOptions,
 });
 
 // Make io available globally for notifications

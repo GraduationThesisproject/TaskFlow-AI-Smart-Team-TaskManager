@@ -10,6 +10,10 @@ export interface Workspace {
   settings: WorkspaceSettings;
   plan: 'free' | 'basic' | 'premium' | 'enterprise';
   isActive: boolean;
+  // Soft-delete status
+  status?: 'active' | 'archived';
+  archivedAt?: string;
+  archiveExpiresAt?: string;
   isPublic?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -55,6 +59,7 @@ export interface CreateWorkspaceData {
   description?: string;
   plan?: 'free' | 'basic' | 'premium' | 'enterprise';
   isPublic?: boolean;
+  visibility?: 'private' | 'public';
 }
 
 export interface UpdateWorkspaceData {

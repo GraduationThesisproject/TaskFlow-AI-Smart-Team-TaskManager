@@ -2,6 +2,7 @@ const Template = require('../models/Template');
 const ActivityLog = require('../models/ActivityLog');
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const NotificationService = require('../services/notification.service');
 
 // helper: get user's system role and id
 const getUserAndRoles = async (req) => {
@@ -98,7 +99,7 @@ exports.list = async (req, res, next) => {
     }
 
     // Populate owner info for display (name/email)
-    const items = await cursor.populate('createdBy', 'name email displayName');
+    const items = await cursor.populate('createdBy', 'name email displayName avatar');
     return ok(res, items);
   } catch (error) {
     handleError(next, error);
@@ -109,7 +110,7 @@ exports.getById = async (req, res, next) => {
   try {
     const { id } = req.params;
     console.log('[templates.getById] incoming', { id });
-    const item = await Template.findById(id).populate('createdBy', 'name email displayName');
+    const item = await Template.findById(id).populate('createdBy', 'name email displayName avatar');
     if (!item) {
       console.warn('[templates.getById] not found', { id });
       return res.status(404).json({ success: false, message: 'Template not found' });
@@ -137,7 +138,7 @@ exports.getById = async (req, res, next) => {
       );
       if (resUpdate.modifiedCount > 0) {
         console.log('[templates.getById] incremented', { id, viewerId: String(viewerIdRaw) });
-        updated = await Template.findById(id).populate('createdBy', 'name email displayName');
+        updated = await Template.findById(id).populate('createdBy', 'name email displayName avatar');
       } else {
         console.log('[templates.getById] already viewed, no increment', { id, viewerId: String(viewerIdRaw) });
       }
@@ -168,6 +169,8 @@ exports.create = async (req, res, next) => {
     const payload = sanitizeTemplatePayload(req.body);
     const doc = Template.createTemplate(payload, adminId);
     await doc.save();
+    // Ensure the client immediately receives creator info for first render
+    await doc.populate('createdBy', 'name email displayName avatar');
 
     // Log activity for real-time updates
     try {
@@ -185,6 +188,22 @@ exports.create = async (req, res, next) => {
       });
     } catch (e) {
       // Don't fail request if activity logging fails
+    }
+
+    // Notify creator: Template created
+    try {
+      await NotificationService.createNotification({
+        title: 'Template created',
+        message: `Your template "${doc.name}" was created successfully`,
+        type: 'template_created',
+        recipient: adminId,
+        sender: adminId,
+        relatedEntity: { entityType: 'template', entityId: doc._id },
+        priority: 'medium',
+        deliveryMethods: { inApp: true } // email optional; enable later if configured
+      });
+    } catch (notifyErr) {
+      // best-effort
     }
 
     return ok(res, doc, 201);
@@ -226,15 +245,38 @@ exports.update = async (req, res, next) => {
       const existing = await Template.findById(id).select('_id likedBy');
       if (!existing) return res.status(404).json({ success: false, message: 'Template not found' });
       const uidStr = String(userId);
-      const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u) === uidStr);
+      // Handle both ObjectId[] and populated user[] (from pre-find populate)
+      const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u?._id ?? u) === uidStr);
       // Cast to ObjectId to ensure $pull/$addToSet match the stored type
       const uidObj = mongoose.Types.ObjectId.isValid(uidStr) ? new mongoose.Types.ObjectId(uidStr) : userId;
       const update = hasLiked ? { $pull: { likedBy: uidObj } } : { $addToSet: { likedBy: uidObj } };
       const updated = await Template.findByIdAndUpdate(id, update, { new: true, runValidators: false })
-      .populate('createdBy', 'name email displayName')
+      .populate('createdBy', 'name email displayName avatar')
       .populate('likedBy', 'name displayName')
       .populate('viewedBy', 'name displayName');
       if (!updated) return res.status(404).json({ success: false, message: 'Template not found' });
+      // Notify template owner on like/unlike (skip self-actions)
+      try {
+        const ownerId = String(updated.createdBy?._id ?? updated.createdBy);
+        const actorId = String(userId);
+        if (ownerId && actorId && ownerId !== actorId) {
+          const isUnlike = hasLiked; // if previously liked, current action is unlike
+          await NotificationService.createNotification({
+            title: isUnlike ? 'Like removed on your template' : 'New like on your template',
+            message: isUnlike
+              ? `${req.user?.name || 'Someone'} removed their like from "${updated.name || 'your template'}"`
+              : `${req.user?.name || 'Someone'} liked "${updated.name || 'your template'}"`,
+            type: isUnlike ? 'template_unliked' : 'template_liked',
+            recipient: ownerId,
+            sender: actorId,
+            relatedEntity: { entityType: 'template', entityId: updated._id },
+            priority: 'low',
+            deliveryMethods: { inApp: true }
+          });
+        }
+      } catch (e) {
+        // best-effort notification; do not block response
+      }
       return ok(res, updated);
     }
 
@@ -266,7 +308,7 @@ exports.incrementViews = async (req, res, next) => {
     );
     if (resUpdate.matchedCount === 0) return res.status(404).json({ success: false, message: 'Template not found' });
     const updated = await Template.findById(id)
-      .populate('createdBy', 'name email displayName');
+      .populate('createdBy', 'name email displayName avatar');
     return ok(res, updated);
   } catch (error) {
     handleError(next, error);
@@ -307,7 +349,8 @@ exports.toggleLike = async (req, res, next) => {
     }
 
     const uid = String(userId);
-    const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u) === uid);
+    // Handle both ObjectId[] and populated user[] (from pre-find populate)
+    const hasLiked = Array.isArray(existing.likedBy) && existing.likedBy.some((u) => String(u?._id ?? u) === uid);
 
     // Use atomic update to avoid full-document validation (e.g., required content)
     // Cast to ObjectId to ensure $pull/$addToSet match the stored type
@@ -317,13 +360,36 @@ exports.toggleLike = async (req, res, next) => {
       : { $addToSet: { likedBy: uidObj } };
 
     const updated = await Template.findByIdAndUpdate(id, update, { new: true })
-      .populate('createdBy', 'name email displayName')
+      .populate('createdBy', 'name email displayName avatar')
       .populate('likedBy', 'name displayName')
       .populate('viewedBy', 'name displayName');
 
     if (!updated) {
       console.warn('[templates.toggleLike] not found after update', { id });
       return res.status(404).json({ success: false, message: 'Template not found' });
+    }
+
+    // Notify template owner on like/unlike (skip notifying the actor themselves)
+    try {
+      const ownerId = String(updated.createdBy?._id ?? updated.createdBy);
+      const actorId = String(userId);
+      if (ownerId && actorId && ownerId !== actorId) {
+        const isUnlike = hasLiked; // previously liked => now unliked
+        await NotificationService.createNotification({
+          title: isUnlike ? 'Like removed on your template' : 'New like on your template',
+          message: isUnlike
+            ? `${req.user?.name || 'Someone'} removed their like from "${updated.name || 'your template'}"`
+            : `${req.user?.name || 'Someone'} liked "${updated.name || 'your template'}"`,
+          type: isUnlike ? 'template_unliked' : 'template_liked',
+          recipient: ownerId,
+          sender: actorId,
+          relatedEntity: { entityType: 'template', entityId: updated._id },
+          priority: 'low',
+          deliveryMethods: { inApp: true }
+        });
+      }
+    } catch (e) {
+      // best-effort
     }
 
     console.log('[templates.toggleLike] saved', { id, likes: Array.isArray(updated.likedBy) ? updated.likedBy.length : 0 });

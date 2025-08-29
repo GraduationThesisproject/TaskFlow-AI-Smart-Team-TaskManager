@@ -1,4 +1,6 @@
-import Sidebar from "./Sidebar";
+// import Sidebar from "./Sidebar"; // Disabled: workspace navbar hidden
+import { DashboardShell } from "../Dashboard/DashboardShell";
+
 import {
   Card,
 
@@ -231,10 +233,8 @@ function UpgradeLayout() {
   };
 
   return (
-    <div className="flex min-h-screen text-[hsl(var(--foreground))]">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="bg-neutral-0 ring-1 ring-accent/10 px-5 sm:px-6 lg:px-8 py-6">
+    <DashboardShell>
+      <div className="bg-neutral-0 ring-1 ring-accent/10 px-5 sm:px-6 lg:px-8 py-6">
           {/* Header */}
           <header className="mb-6 flex items-center justify-between pb-4">
             <div className="flex items-center gap-3">
@@ -423,8 +423,8 @@ function UpgradeLayout() {
             </div>
           </Card>
         </div>
-      </main>
-    </div>
+    </DashboardShell>
+
   );
 }
 
