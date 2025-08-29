@@ -62,19 +62,27 @@ export const useAdminPermissions = () => {
       };
     }
 
-    // Convert admin permissions array to object
-    const permissionMap = currentAdmin.permissions.reduce((acc, perm) => {
-      acc[perm.name as keyof AdminPermissions] = perm.allowed;
-      return acc;
-    }, {} as Partial<AdminPermissions>);
-
-    // Set default permissions based on role if not explicitly set
+    // Set default permissions based on role
     const defaultPermissions = getDefaultPermissionsForRole(currentAdmin.role);
     
-    return {
-      ...defaultPermissions,
-      ...permissionMap,
-    };
+    // If admin has explicit permissions, merge them with defaults
+    if (currentAdmin.permissions && currentAdmin.permissions.length > 0) {
+      const permissionMap = currentAdmin.permissions.reduce((acc, perm) => {
+        // Check if the permission name matches our permission system
+        const permissionKey = perm.name as keyof AdminPermissions;
+        if (permissionKey in defaultPermissions) {
+          acc[permissionKey] = perm.allowed !== false; // Default to true unless explicitly denied
+        }
+        return acc;
+      }, {} as Partial<AdminPermissions>);
+      
+      return {
+        ...defaultPermissions,
+        ...permissionMap,
+      };
+    }
+    
+    return defaultPermissions;
   }, [currentAdmin]);
 
   const hasPermission = (permissionName: keyof AdminPermissions): boolean => {
@@ -98,12 +106,25 @@ export const useAdminPermissions = () => {
     
     const roleNames = {
       'super_admin': 'Super Administrator',
-      'admin': 'System Administrator',
-      'moderator': 'Content Moderator',
-      'viewer': 'Read-Only Viewer'
+      'admin': 'Administrator',
+      'moderator': 'Moderator',
+      'viewer': 'Viewer',
     };
     
-    return roleNames[currentAdmin.role] || currentAdmin.role;
+    return roleNames[currentAdmin.role] || 'Unknown Role';
+  };
+
+  const getRoleLevel = (): number => {
+    if (!currentAdmin) return 0;
+    
+    const roleLevels = {
+      'super_admin': 4,
+      'admin': 3,
+      'moderator': 2,
+      'viewer': 1,
+    };
+    
+    return roleLevels[currentAdmin.role] || 0;
   };
 
   return {
@@ -113,11 +134,12 @@ export const useAdminPermissions = () => {
     hasAllPermissions,
     canAccessFeature,
     getRoleDisplayName,
+    getRoleLevel,
     currentAdmin,
-    isViewer: currentAdmin?.role === 'viewer',
-    isModerator: currentAdmin?.role === 'moderator',
-    isAdmin: currentAdmin?.role === 'admin',
     isSuperAdmin: currentAdmin?.role === 'super_admin',
+    isAdmin: currentAdmin?.role === 'admin' || currentAdmin?.role === 'super_admin',
+    isModerator: currentAdmin?.role === 'moderator' || currentAdmin?.role === 'admin' || currentAdmin?.role === 'super_admin',
+    isViewer: currentAdmin?.role === 'viewer',
   };
 };
 
@@ -178,6 +200,7 @@ function getDefaultPermissionsForRole(role: string): AdminPermissions {
         system_settings: true,
         data_export: true,
         audit_logs: true,
+        backup_restore: false, // Admins cannot backup/restore
         dashboard_overview: true,
         templates_configs: true,
         analytics_insights: true,
@@ -188,6 +211,7 @@ function getDefaultPermissionsForRole(role: string): AdminPermissions {
         customer_support: true,
         profile_settings: true,
         security_compliance: true,
+        deployment_env: false, // Admins cannot access deployment
         content_moderation: true,
         reports: true,
       };
@@ -196,26 +220,48 @@ function getDefaultPermissionsForRole(role: string): AdminPermissions {
       return {
         ...basePermissions,
         user_management: true,
-        content_moderation: true,
-        reports: true,
+        admin_management: false,
+        system_settings: false,
+        data_export: false,
+        audit_logs: false,
+        backup_restore: false,
         dashboard_overview: true,
         templates_configs: true,
         analytics_insights: true,
         system_health: true,
+        integration_mgmt: false,
         notifications_comms: true,
         powerbi_integration: true,
         customer_support: true,
         profile_settings: true,
+        security_compliance: false,
+        deployment_env: false,
+        content_moderation: true,
+        reports: true,
       };
 
     case 'viewer':
       return {
         ...basePermissions,
+        user_management: false,
+        admin_management: false,
+        system_settings: false,
+        data_export: false,
+        audit_logs: false,
+        backup_restore: false,
         dashboard_overview: true,
-        reports: true,
+        templates_configs: false,
         analytics_insights: true,
         system_health: true,
+        integration_mgmt: false,
+        notifications_comms: false,
+        powerbi_integration: true,
+        customer_support: false,
         profile_settings: true,
+        security_compliance: false,
+        deployment_env: false,
+        content_moderation: false,
+        reports: true,
       };
 
     default:

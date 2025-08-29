@@ -20,6 +20,7 @@ require('./ActivityLog');
 require('./Admin');
 require('./AIJob');
 require('./Template');
+require('./BoardTemplate');
 require('./Quota');
 
 module.exports = {
@@ -44,5 +45,6 @@ module.exports = {
   Admin: require('./Admin'),
   AIJob: require('./AIJob'),
   Template: require('./Template'),
+  BoardTemplate: require('./BoardTemplate'),
   Quota: require('./Quota')
 };
