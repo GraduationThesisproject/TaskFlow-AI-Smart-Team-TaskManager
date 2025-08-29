@@ -18,6 +18,7 @@ import { LogoutConfirmDialog, AppLayout } from './components';
 import { AccessibilityProvider } from './components/common/AccessibilityProvider';
 import UniversalNavbar from './components/common/navbar/UniversalNavbar';
 import Dashboard from './pages/Dashboard';
+import InviteLanding from './pages/InviteLanding';
 import { NoAccessPage } from './pages/NoAccessPage';
 import ChatPage from './pages/ChatPage';
 import ChatWidget from './components/chat/ChatWidget';
@@ -124,6 +125,8 @@ function AppContent() {
           <Route path="/*" element={<LandingPage />} />
 
           <Route path="/auth/callback" element={<OAuthCallback />} />
+
+          <Route path="/invite/:token" element={<InviteLanding />} />
 
           <Route path="/dashboard/*" element={<Dashboard />} />
 

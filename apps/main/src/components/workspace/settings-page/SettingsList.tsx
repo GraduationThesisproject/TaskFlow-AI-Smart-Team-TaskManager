@@ -1,6 +1,5 @@
 import React from 'react';
 import SettingsCard from './SettingsCard';
-import UpgradeBanner from './UpgradeBanner';
 
 interface SettingsSection {
   key: string;
@@ -16,7 +15,6 @@ interface SettingsListProps {
   loading: boolean;
   settings?: any;
   onClickByKey: Record<string, () => void>;
-  onUpgrade?: () => void;
 }
 
 const SettingsList: React.FC<SettingsListProps> = ({ 
@@ -24,7 +22,6 @@ const SettingsList: React.FC<SettingsListProps> = ({
   loading, 
   settings, 
   onClickByKey, 
-  onUpgrade 
 }) => {
   return (
     <div className="space-y-4">
@@ -38,14 +35,6 @@ const SettingsList: React.FC<SettingsListProps> = ({
           onClick={onClickByKey[section.key]}
         />
       ))}
-
-      {/* Upgrade banner */}
-      <UpgradeBanner
-        title="Upgrade to Premium for more settings"
-        description="Unlock advanced workspace management features"
-        buttonText="Upgrade"
-        onUpgrade={onUpgrade}
-      />
 
       {/* Remaining settings sections */}
       {sections.slice(2).map((section) => (
