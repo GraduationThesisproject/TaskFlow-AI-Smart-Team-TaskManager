@@ -1,4 +1,6 @@
-import Sidebar from "./Sidebar";
+// import Sidebar from "./Sidebar"; // Disabled: workspace navbar hidden
+import { DashboardShell } from "../Dashboard/DashboardShell";
+
 import CalendarIcon from "../../components/workspace/reports-page/CalendarIcon";
 import PeopleIcon from "../../components/workspace/reports-page/PeopleIcon";
 import CheckSquareIcon from "../../components/workspace/reports-page/CheckSquareIcon";
@@ -88,9 +90,8 @@ function BarChartMock() {
 
 function ReportsLayout() {
   return (
-    <div className="flex min-h-screen text-[hsl(var(--foreground))]">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-neutral-0">
+    <DashboardShell>
+      <div className="bg-neutral-0">
         <div className="px-5 sm:px-6 lg:px-8 py-6">
           {/* Header */}
           <header className="mb-6 flex items-center justify-between border-b border-neutral-200">
@@ -199,8 +200,8 @@ function ReportsLayout() {
             </aside>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </DashboardShell>
   );
 }
 

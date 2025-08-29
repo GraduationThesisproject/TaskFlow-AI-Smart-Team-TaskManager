@@ -39,6 +39,7 @@ export interface NotificationSocketEvents {
   'notifications:list': { notifications: Notification[]; unreadCount: number };
   'notifications:markRead': { notificationId: string };
   'notifications:delete': { notificationId: string };
+  'notifications:deleted': { id: string };
   'error': { message: string };
 }
 

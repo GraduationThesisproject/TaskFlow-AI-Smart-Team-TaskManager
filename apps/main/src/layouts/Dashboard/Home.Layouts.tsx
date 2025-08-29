@@ -6,7 +6,6 @@ import { useAppSelector } from "../../store";
 import { WelcomeHeader } from "../../components/dashboard/home/WelcomeHeader";
 import { StatsCards } from "../../components/dashboard/home/StatsCards";
 import { WorkspacesSection } from "../../components/dashboard/home/WorkspacesSection";
-import { RecentActivity } from "../../components/dashboard/home/RecentActivity";
 import { UpcomingDeadlines } from "../../components/dashboard/home/UpcomingDeadlines";
 
 const HomeLayout: React.FC = () => {
@@ -28,7 +27,6 @@ const HomeLayout: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 space-y-6">
           <WorkspacesSection />
-          <RecentActivity />
         </div>
 
         <div className="lg:col-span-4 space-y-6">

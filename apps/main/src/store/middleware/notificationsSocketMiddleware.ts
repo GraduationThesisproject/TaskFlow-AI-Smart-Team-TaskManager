@@ -2,7 +2,7 @@ import type { Middleware } from '@reduxjs/toolkit';
 import { io, Socket } from 'socket.io-client';
 import { env } from '../../config/env';
 import { addNotification, fetchNotifications } from '../slices/notificationSlice';
-import { removeWorkspaceById } from '../slices/workspaceSlice';
+import { removeWorkspaceById, upsertWorkspaceStatus } from '../slices/workspaceSlice';
 import { logoutUser } from '../slices/authSlice';
 import { addActivity } from '../slices/activitySlice';
 
@@ -11,9 +11,69 @@ import type { RootState } from "../../store"
 export const notificationsSocketMiddleware: Middleware = (store) => {
   let socket: Socket | null = null;
   let prevToken: string | null | undefined;
+  let prevRealTimeEnabled: boolean | undefined;
   let isConnecting = false;
   let reconnectAttempts = 0;
   const MAX_RECONNECT_ATTEMPTS = 5;
+
+  // Desktop notification controls
+  const NOTIFY_MIN_INTERVAL_MS = 5000; 
+  let lastNotifyAt = 0;
+  const toBool = (v: any): boolean => {
+    if (typeof v === 'boolean') return v;
+    if (typeof v === 'number') return v !== 0;
+    if (typeof v === 'string') {
+      const s = v.trim().toLowerCase();
+      if (s === 'false' || s === '0' || s === 'no' || s === 'off') return false;
+      if (s === 'true' || s === '1' || s === 'yes' || s === 'on') return true;
+      return Boolean(s);
+    }
+    return Boolean(v);
+  };
+  const isRealTimeEnabled = (state: RootState): boolean => {
+    const pref = state.auth.user?.preferences?.notifications?.realTime as any;
+    if (pref && typeof pref === 'object') {
+      try {
+        return Object.values(pref).some((v) => toBool(v));
+      } catch {
+        return true;
+      }
+    }
+    // default true if undefined to preserve existing behavior until user saves
+    return pref === undefined ? true : toBool(pref);
+  };
+  const isMuted = () => {
+    try {
+      if (typeof window === 'undefined') return false;
+      return localStorage.getItem('muteNotifications') === 'true';
+    } catch { return false; }
+  };
+
+  // Safe browser notification helper
+  const notifyBrowser = (title: string, body?: string) => {
+    try {
+      // Respect RT preference at display time, too
+      const state = (store.getState?.() as RootState);
+      if (state && !isRealTimeEnabled(state)) return;
+      // Respect user mute and throttle bursts
+      if (isMuted()) return;
+      const now = Date.now();
+      if (now - lastNotifyAt < NOTIFY_MIN_INTERVAL_MS) return;
+
+      if (typeof window === 'undefined' || !('Notification' in window)) return;
+      if (Notification.permission === 'granted') {
+        new Notification(title, { body });
+        lastNotifyAt = now;
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then((perm) => {
+          if (perm === 'granted') {
+            new Notification(title, { body });
+            lastNotifyAt = Date.now();
+          }
+        }).catch(() => {});
+      }
+    } catch {}
+  };
 
   const connect = (token: string) => {
     // Don't reconnect if already connected or connecting
@@ -32,9 +92,14 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       socket = null;
     }
 
-    socket = io(env.SOCKET_URL, {
+    // Connect to notifications namespace to match backend
+    socket = io(`${env.SOCKET_URL}/notifications`, {
       auth: { token },
       autoConnect: true,
+      transports: ['websocket', 'polling'],
+      upgrade: true,
+      rememberUpgrade: false,
+      forceNew: true,
       reconnection: true,
       reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
       reconnectionDelay: 1000,
@@ -46,7 +111,11 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       isConnecting = false;
       reconnectAttempts = 0; // Reset counter on successful connection
       console.log('🔌 [notificationsSocketMiddleware] socket connected', { id: socket?.id });
-      store.dispatch(fetchNotifications() as any);
+      // Only auto-fetch on connect if real-time is enabled
+      const stateNow = store.getState() as RootState;
+      if (isRealTimeEnabled(stateNow)) {
+        store.dispatch(fetchNotifications() as any);
+      }
     });
 
     socket.on('connect_error', (err) => {
@@ -58,19 +127,86 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     });
 
     socket.on('notification:new', ({ notification }) => {
+      // Gate by preference
+      const stateNow = store.getState() as RootState;
+      if (!isRealTimeEnabled(stateNow)) return;
       console.log('📩 [notificationsSocketMiddleware] notification:new', {
         id: notification?._id,
         type: notification?.type,
         title: notification?.title,
       });
-      store.dispatch(addNotification(notification));
+
+      // Normalize payload to our slice shape
+      const nowIso = new Date().toISOString();
+      const normalized = {
+        _id: notification?._id || notification?.id || `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+        title: notification?.title || 'Notification',
+        message: notification?.message || '',
+        type: typeof notification?.type === 'string' ? notification.type : 'info',
+        recipientId: notification?.recipientId || (notification?.recipient && (typeof notification.recipient === 'object' ? (notification.recipient._id || notification.recipient.id) : notification.recipient)) || '',
+        relatedEntity: notification?.relatedEntity
+          ? {
+              type: notification.relatedEntity.type || notification.relatedEntity.entityType,
+              id: notification.relatedEntity.id || notification.relatedEntity.entityId,
+              name: notification.relatedEntity.name,
+            }
+          : undefined,
+        priority: notification?.priority || 'low',
+        isRead: notification?.isRead === true ? true : false,
+        createdAt: notification?.createdAt || nowIso,
+        updatedAt: notification?.updatedAt || nowIso,
+      };
+
+      store.dispatch(addNotification(normalized as any));
+    });
+
+    // Workspace lifecycle: archive/restore (emitted by backend as workspace:status-changed)
+    socket.on('workspace:status-changed', (data: {
+      workspaceId: string;
+      status: 'active' | 'archived';
+      archivedAt?: string | null;
+      archiveExpiresAt?: string | null;
+      archivedBy?: string | null;
+      restoredBy?: string | null;
+      timestamp?: string;
+      scope?: 'user' | 'room';
+    }) => {
+      try {
+        // Gate by preference
+        const stateNow = store.getState() as RootState;
+        if (!isRealTimeEnabled(stateNow)) return;
+        const { workspaceId, status, archivedAt = null, archiveExpiresAt = null } = data || {} as any;
+        if (!workspaceId || !status) return;
+
+        // Sync Redux state for lists and current workspace
+        store.dispatch(upsertWorkspaceStatus({
+          id: workspaceId,
+          status,
+          archivedAt: archivedAt || null,
+          archiveExpiresAt: archiveExpiresAt || null,
+        }));
+
+        // User-facing desktop notification
+        const title = status === 'archived' ? 'Workspace archived' : 'Workspace restored';
+        const body = status === 'archived'
+          ? (archiveExpiresAt ? `Will be permanently deleted at ${new Date(archiveExpiresAt).toLocaleString()}` : undefined)
+          : undefined;
+        notifyBrowser(title, body);
+
+        console.log('🔔 [notificationsSocketMiddleware] workspace:status-changed', data);
+      } catch (e) {
+        console.warn('⚠️ [notificationsSocketMiddleware] failed to process workspace:status-changed', e);
+      }
     });
 
     // Real-time workspace delete
     socket.on('workspace:deleted', ({ id }) => {
       try {
+        const stateNow = store.getState() as RootState;
+        if (!isRealTimeEnabled(stateNow)) return;
         console.log('🗑️ [notificationsSocketMiddleware] workspace:deleted', { id });
         store.dispatch(removeWorkspaceById(id));
+        notifyBrowser('Workspace deleted', 'It was permanently removed');
       } catch (e) {
         console.warn('⚠️ Failed to process workspace:deleted', e);
       }
@@ -79,6 +215,8 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     // Real-time activities
     socket.on('activity:new', ({ activity }) => {
       try {
+        const stateNow = store.getState() as RootState;
+        if (!isRealTimeEnabled(stateNow)) return;
         console.log('📝 [notificationsSocketMiddleware] activity:new', {
           id: activity?._id,
           action: activity?.action,
@@ -129,6 +267,8 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
             isRead: false,
             createdAt: now,
             updatedAt: now,
+            // Mark as client-only so markAsRead/delete skip server calls (prevents 404)
+            clientOnly: true,
           } as any));
         }
       } catch (e) {
@@ -137,6 +277,8 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     });
 
     socket.on('notifications:unreadCount', () => {
+      const stateNow = store.getState() as RootState;
+      if (!isRealTimeEnabled(stateNow)) return;
       console.log('🔄 [notificationsSocketMiddleware] notifications:unreadCount received -> refetch');
       store.dispatch(fetchNotifications() as any);
     });
@@ -173,7 +315,12 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     if (socket) {
       console.log('🧹 [notificationsSocketMiddleware] disconnecting socket');
       socket.off(); // Remove all listeners
-      socket.disconnect();
+      // Safe disconnect depending on state
+      if (socket.connected) {
+        socket.disconnect();
+      } else {
+        socket.close();
+      }
       socket = null;
       isConnecting = false;
       reconnectAttempts = 0;
@@ -186,6 +333,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
 
     const state = store.getState() as RootState;
     const currentToken = state.auth.token;
+    const realTimeEnabled = isRealTimeEnabled(state);
 
     // Handle logout action
     if (action.type === logoutUser.fulfilled.type) {
@@ -193,14 +341,18 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       return result;
     }
 
-    // Handle token changes
-    if (prevToken !== currentToken) {
-      if (currentToken) {
+    // Handle token or preference changes
+    const tokenChanged = prevToken !== currentToken;
+    const prefChanged = prevRealTimeEnabled !== realTimeEnabled;
+    if (tokenChanged || prefChanged) {
+      if (currentToken && realTimeEnabled) {
         connect(currentToken);
       } else {
+        // Either token missing or RT disabled -> disconnect
         disconnect();
       }
       prevToken = currentToken;
+      prevRealTimeEnabled = realTimeEnabled;
     }
 
     return result;

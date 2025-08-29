@@ -62,7 +62,7 @@ const serializeUser = (userData: any): User => {
       user: serializedBasicUser,
       preferences: {
         theme: { mode: 'system' },
-        notifications: { email: true, push: true,/* sms: false,*/ marketing: false },
+        notifications: { email: true, push: true, realTime: true, marketing: false },
         language: 'en',
         timezone: 'UTC',
         dateFormat: 'MM/DD/YYYY',
@@ -437,9 +437,8 @@ export const updatePreferences = createAsyncThunk(
   ) => {
     try {
       await AuthService.updatePreferences(payload.section, payload.updates);
-      // Re-fetch profile to ensure local state is in sync
-      const profileResponse = await AuthService.getProfile();
-      return serializeUser(profileResponse.data);
+      // Return the updates we just saved to avoid stale profile overwriting optimistic state
+      return payload;
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to update preferences';
       return rejectWithValue(errorMessage);
@@ -626,7 +625,7 @@ const authSlice = createSlice({
       })
       .addCase(updateProfileSecure.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload;
+        state.user = serializeUser(action.payload);
         state.error = null;
       })
       .addCase(updateProfileSecure.rejected, (state, action) => {
@@ -650,7 +649,19 @@ const authSlice = createSlice({
       })
       .addCase(updatePreferences.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload;
+        // Merge updates into current user preferences to keep optimistic change
+        const { section, updates } = action.payload as { section: string; updates: any };
+        if (state.user) {
+          const prefs: any = state.user.preferences || {};
+          const sectionData: any = (prefs as any)[section] || {};
+          state.user.preferences = {
+            ...prefs,
+            [section]: {
+              ...sectionData,
+              ...updates,
+            },
+          } as any;
+        }
         state.error = null;
       })
       .addCase(updatePreferences.rejected, (state, action) => {

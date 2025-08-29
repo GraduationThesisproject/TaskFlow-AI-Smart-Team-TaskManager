@@ -6,10 +6,9 @@ import { CalendarClock, CheckCircle2, Folder, ListChecks, Users } from 'lucide-r
 import { Card, CardContent, CardHeader, CardTitle } from '@taskflow/ui';
 import { Typography } from '@taskflow/ui';
 import { useAuth } from '../../hooks/useAuth';
-
+import { ActivityPoint } from '../../types/dash.types'
 // Response shape is made flexible to avoid tight coupling with backend
 // Only rely on fields we render and guard with optional chaining
-interface ActivityPoint { date: string; value: number }
 
 const fallbackArray = <T,>(v?: T[]) => Array.isArray(v) ? v : [];
 
@@ -20,6 +19,12 @@ const pct = (num?: number, denom?: number) => {
 };
 
 const Donut: React.FC<{ completed: number; inProgress: number; pending: number; overdue: number }> = ({ completed, inProgress, pending, overdue }) => {
+  console.log("completed",completed)
+  console.log("inProgress",inProgress)
+  console.log("pending",pending)
+  console.log("overdue",overdue)
+
+
   const total = Math.max(1, completed + inProgress + pending + overdue);
   const p1 = (completed / total) * 100;
   const p2 = ((completed + inProgress) / total) * 100;
@@ -36,6 +41,11 @@ const Donut: React.FC<{ completed: number; inProgress: number; pending: number; 
 };
 
 const Sparkline: React.FC<{ points: number[]; width?: number; height?: number; color?: string }> = ({ points, width = 220, height = 60, color = 'hsl(var(--primary))' }) => {
+  console.log("points",points)
+  console.log("width",width)
+  console.log("height",height)
+  console.log("color",color)
+
   if (!points.length) return null;
   const max = Math.max(...points, 1);
   const step = width / Math.max(points.length - 1, 1);
@@ -48,6 +58,7 @@ const Sparkline: React.FC<{ points: number[]; width?: number; height?: number; c
 };
 
 const Heatmap: React.FC<{ data: ActivityPoint[] }> = ({ data }) => {
+  console.log("data",data)
   // Render as 7xN weeks grid (group by weekday)
   if (!data?.length) return <Typography variant="caption" className="text-muted-foreground">No activity yet</Typography>;
   const values = data.map(d => d.value || 0);
@@ -264,7 +275,9 @@ const UserAnalyticsLayout: React.FC = () => {
               <CardContent>
                 {contributionsSeries.length ? (
                   <Sparkline points={contributionsSeries} />
+                  
                 ) : (
+                  
                   <Typography variant="caption" className="text-muted-foreground">No contributions yet</Typography>
                 )}
               </CardContent>
@@ -272,6 +285,7 @@ const UserAnalyticsLayout: React.FC = () => {
           </div>
 
           {/* Tables / Lists */}
+          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20">
               <CardHeader>
