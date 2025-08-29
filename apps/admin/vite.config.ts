@@ -13,6 +13,7 @@ export default defineConfig({
   },
   server: {
     port: 5175,
+    strictPort: false, // Allow Vite to find an available port
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

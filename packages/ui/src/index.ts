@@ -39,6 +39,7 @@ export * from './Skeleton';
 export * from './ColorPicker';
 export * from './IconPicker';
 export * from './Popover';
+export * from './Pagination';
 export * from './utils';
 
 // Re-export GridLayout as Grid for backward compatibility
