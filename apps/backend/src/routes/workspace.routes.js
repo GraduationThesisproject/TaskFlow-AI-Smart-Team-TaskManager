@@ -56,13 +56,11 @@ router.post('/',
 );
 
 router.put('/:id', 
-    requireWorkspacePermission('canEditSettings'),
     validateMiddleware(updateWorkspaceSchema),
     workspaceController.updateWorkspace
 );
 
 router.post('/:id/invite',
-    requireWorkspacePermission('canManageMembers'),
     validateMiddleware(inviteMemberSchema),
     workspaceController.inviteMember
 );
@@ -76,12 +74,10 @@ router.get('/:id/members',
 );
 
 router.delete('/:id/members/:memberId',
-    requireWorkspacePermission('canManageMembers'),
     workspaceController.removeMember
 );
 
 router.put('/:id/settings',
-    requireWorkspacePermission('canEditSettings'),
     validateMiddleware(updateSettingsSchema),
     workspaceController.updateSettings
 );
@@ -92,7 +88,6 @@ router.get('/:id/analytics',
 );
 
 router.post('/:id/transfer-ownership',
-    requireWorkspacePermission('canDeleteWorkspace'), // Only owner has this permission
     validateMiddleware(transferOwnershipSchema),
     workspaceController.transferOwnership
 );
@@ -111,7 +106,6 @@ router.delete('/:id/permanent',
 
 // Delete workspace - rely on controller for final permission (owner or privileged admin)
 router.delete('/:id',
-    requireWorkspaceMember,
     workspaceController.deleteWorkspace
 );
 

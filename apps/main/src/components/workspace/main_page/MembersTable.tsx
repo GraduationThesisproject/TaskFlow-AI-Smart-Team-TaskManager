@@ -121,6 +121,15 @@ const MembersTable: React.FC<MembersTableProps> = ({
                 </td>
               </tr>
             )}
+            {!isLoading && !error && filteredMembers.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-3 py-6 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                  <div className="text-base" style={{ color: 'hsl(var(--primary-foreground))' }}>
+                    This workspace doesn't have members yet — add people to get started.
+                  </div>
+                </td>
+              </tr>
+            )}
             {!isLoading && !error && filteredMembers.map((m) => (
               <tr key={m.id} className="rounded-lg">
                 <td className="px-3 py-2 border-b border-neutral-100">
