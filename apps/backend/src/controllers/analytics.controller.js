@@ -5,7 +5,8 @@ const User = require('../models/User');
 const ActivityLog = require('../models/ActivityLog');
 const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
-
+const AnalyticsService = require('../services/analytics.service');
+const analyticsService = new AnalyticsService();
 // Get space analytics
 exports.getSpaceAnalytics = async (req, res) => {
     try {
@@ -21,7 +22,6 @@ exports.getSpaceAnalytics = async (req, res) => {
             return sendResponse(res, 403, false, 'Access denied to this space');
         }
 
-        const analyticsService = require('../services/analytics.service');
         
         let analytics;
         
@@ -91,7 +91,6 @@ exports.generateSpaceAnalytics = async (req, res) => {
         const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const end = endDate ? new Date(endDate) : new Date();
 
-        const analyticsService = require('../services/analytics.service');
         const calculationStart = Date.now();
 
         // Generate comprehensive analytics
@@ -157,6 +156,7 @@ exports.generateSpaceAnalytics = async (req, res) => {
 exports.getWorkspaceAnalytics = async (req, res) => {
     try {
         const { workspaceId } = req.params;
+        console.log("workspaceId", workspaceId)
         const { period = 'monthly', startDate, endDate } = req.query;
         const userId = req.user.id;
 
@@ -167,8 +167,6 @@ exports.getWorkspaceAnalytics = async (req, res) => {
         if (!userRoles.hasWorkspaceRole(workspaceId)) {
             return sendResponse(res, 403, false, 'Access denied to this workspace');
         }
-
-        const analyticsService = require('../services/analytics.service');
         
         let analytics;
         
@@ -212,12 +210,11 @@ exports.getTeamPerformance = async (req, res) => {
             return sendResponse(res, 403, false, 'Access denied to this space');
         }
 
-        const analyticsService = require('../services/analytics.service');
         
         const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const end = endDate ? new Date(endDate) : new Date();
 
-        const teamAnalytics = await analyticsService.generateTeamPerformanceAnalytics(spaceId, {
+        const teamAnalytics = await analyticsService.getTeamPerformance(spaceId, {
             startDate: start,
             endDate: end,
             periodType: period
@@ -248,8 +245,6 @@ exports.exportAnalytics = async (req, res) => {
         if (!userRoles.hasSpaceRole(spaceId)) {
             return sendResponse(res, 403, false, 'Access denied to this space');
         }
-
-        const analyticsService = require('../services/analytics.service');
         
         const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const end = endDate ? new Date(endDate) : new Date();
@@ -313,7 +308,6 @@ exports.getUserAnalytics = async (req, res) => {
             default: periodType = 'monthly';
         }
 
-        const analyticsService = require('../services/analytics.service');
         const analytics = await analyticsService.generateUserAnalytics(userId, { periodType, includeAI: false });
 
         // Shape response for frontend expectations (safe fallbacks)

@@ -1,272 +1,611 @@
-import { useEffect, useState } from "react";
-import Sidebar from "./Sidebar";
-import CalendarIcon from "../../components/workspace/reports-page/CalendarIcon";
-import PeopleIcon from "../../components/workspace/reports-page/PeopleIcon";
-import CheckSquareIcon from "../../components/workspace/reports-page/CheckSquareIcon";
-import ClockIcon from "../../components/workspace/reports-page/ClockIcon";
-import BellIcon from "../../components/workspace/reports-page/BellIcon";
-import ExportIcon from "../../components/workspace/reports-page/ExportIcon";
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useAppSelector } from '../../store;
 import {
-  Card,
-  CardTitle,
-  CardContent,
-  Button,
-  Typography,
-  Gradient,
-  Avatar,
-  AvatarFallback,
-} from "@taskflow/ui";
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import {
+  Calendar,
+  Download,
+  Filter,
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Target,
+  Activity,
+  BarChart3,
+  PieChart,
+  LineChart,
+  RefreshCw,
+} from 'lucide-react';
+import { Button } from '@taskflow/ui';
+import { AnalyticsService, TimePeriod } from '../../services/analyticsService';
 
-/* ---------------- Line Chart ---------------- */
-function LineChart({ data }) {
-  if (!data || data.length === 0) return null;
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
-  const maxVal = Math.max(...data.map(d => d.completed));
-  const spacing = 320 / (data.length + 1);
-  const points = data
-    .map((d, i) => `${(i + 1) * spacing},${160 - (d.completed / maxVal) * 140}`)
-    .join(" ");
-
-  return (
-    <svg viewBox="0 0 320 160" className="w-full h-40 text-[hsl(var(--accent))]">
-      <rect width="320" height="160" rx="8" className="fill-transparent" />
-      {[1,2,3,4].map(i => (
-        <line key={i} x1={i*64} y1="16" x2={i*64} y2="144" className="stroke-white/10" strokeWidth="1" />
-      ))}
-      {[1,2,3,4].map(i => (
-        <line key={i} x1="16" y1={i*32} x2="304" y2={i*32} className="stroke-white/10" strokeWidth="1" />
-      ))}
-      <polyline fill="none" stroke="currentColor" strokeWidth="3" points={points} />
-      {data.map((d, i) => (
-        <circle
-          key={i}
-          cx={(i + 1) * spacing}
-          cy={160 - (d.completed / maxVal) * 140}
-          r="4"
-          className="fill-current"
-        />
-      ))}
-    </svg>
-  );
+interface AnalyticsData {
+  coreMetrics: {
+    totalTasks: number;
+    completionRate: number;
+    velocity: number;
+    avgTaskDuration: number;
+    overdueTasks: number;
+  };
+  teamMetrics: {
+    totalMembers: number;
+    activeMembers: number;
+    topPerformers: Array<{ name: string; tasksCompleted: number; }>;
+    workloadDistribution: Array<{ member: string; tasks: number; }>;
+  };
+  timeInsights: {
+    peakHours: Array<{ hour: number; activity: number; }>;
+    dailyActivity: Array<{ date: string; tasks: number; }>;
+    weeklyTrends: Array<{ week: string; completed: number; created: number; }>;
+  };
+  projectHealth: {
+    bugRate: number;
+    reworkRate: number;
+    blockedTasks: number;
+    cycleTime: number;
+  };
 }
 
-/* ---------------- Pie Chart ---------------- */
-function PieChart({ data }) {
-  if (!data || data.length === 0) return null;
+type ChartType = 'line' | 'bar' | 'pie' | 'doughnut';
 
-  const total = data.reduce((acc, d) => acc + d.value, 0);
-  let cumulative = 0;
+const ReportsLayout: React.FC = () => {
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+  const id = '68b0fe70cda1977ca4c9a092'; // Force correct analytics space ID
+  
+  // Get workspaceId from Redux store like other components
+  const currentWorkspace = useAppSelector((s: any) => s.workspace.currentWorkspace);
+  const workspaces = useAppSelector((s: any) => s.workspace.workspaces) as Array<{ _id: string }> | undefined;
+  const persistedWorkspaceId = useAppSelector((s: any) => s.workspace.currentWorkspaceId);
+  const derivedId = currentWorkspace?._id || workspaces?.[0]?._id || persistedWorkspaceId || null;
+  const workspaceId = derivedId || '';
 
-  const paths = data.map((d, i) => {
-    const startAngle = (cumulative / total) * 2 * Math.PI;
-    cumulative += d.value;
-    const endAngle = (cumulative / total) * 2 * Math.PI;
+  // Debug logging
+  console.log('🔍 URL Debug Info:');
+  console.log('Current URL:', window.location.href);
+  console.log('Location search:', location.search);
+  console.log('All query params:', Object.fromEntries(query.entries()));
+  console.log('Extracted id:', id);
+  console.log('Extracted workspaceId:', workspaceId);
+  console.log('Current workspace:', currentWorkspace);
+  console.log('Derived ID:', derivedId);
 
-    const x1 = 100 + 70 * Math.cos(startAngle - Math.PI/2);
-    const y1 = 100 + 70 * Math.sin(startAngle - Math.PI/2);
-    const x2 = 100 + 70 * Math.cos(endAngle - Math.PI/2);
-    const y2 = 100 + 70 * Math.sin(endAngle - Math.PI/2);
-
-    const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
-
-    return (
-      <path
-        key={i}
-        d={`M100 100 L${x1} ${y1} A70 70 0 ${largeArc} 1 ${x2} ${y2} Z`}
-        fill={d.color}
-      />
-    );
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('month');
+  const [selectedChart, setSelectedChart] = useState<ChartType>('line');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState({
+    start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
+    end: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
   });
 
-  return (
-    <svg viewBox="0 0 200 200" className="h-40 w-40">
-      <circle cx="100" cy="100" r="45" className="fill-[hsl(var(--neutral-100))]" />
-      {paths}
-    </svg>
-  );
-}
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
+    coreMetrics: {
+      totalTasks: 0,
+      completionRate: 0,
+      velocity: 0,
+      avgTaskDuration: 0,
+      overdueTasks: 0,
+    },
+    teamMetrics: {
+      totalMembers: 0,
+      activeMembers: 0,
+      topPerformers: [],
+      workloadDistribution: [],
+    },
+    timeInsights: {
+      peakHours: [],
+      dailyActivity: [],
+      weeklyTrends: [],
+    },
+    projectHealth: {
+      bugRate: 0,
+      reworkRate: 0,
+      blockedTasks: 0,
+      cycleTime: 0,
+    },
+  });
 
-/* ---------------- Bar Chart ---------------- */
-function BarChart({ data }) {
-  if (!data || data.length === 0) return null;
+  const fetchAnalyticsData = async () => {
+    if (!id && !workspaceId) {
+      console.log('No id or workspace ID provided');
+      setError('No id or workspace ID provided');
+      return;
+    }
 
-  const maxVal = Math.max(...data.map(d => d.tasksCompleted));
+    setIsLoading(true);
+    setError(null);
+    console.log("id",id)
+    console.log("workspaceId",workspaceId)
+    try {
+      const params = {
+        period: selectedPeriod,
+        startDate: dateRange.start,
+        endDate: dateRange.end,
+      };
 
-  return (
-    <svg viewBox="0 0 640 220" className="w-full h-56">
-      <rect width="640" height="220" rx="8" className="fill-transparent" />
-      {[1,2,3,4].map(i => (
-        <line key={i} x1="32" y1={i*40} x2="608" y2={i*40} className="stroke-white/10" strokeWidth="1" />
-      ))}
-      {data.map((d, i) => {
-        const x = 64 + i * 110;
-        const h = (d.tasksCompleted / maxVal) * 180;
-        const y = 200 - h;
-        return (
-          <g key={i}>
-            <defs>
-              <linearGradient id={`g${i}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(var(--primary))" />
-                <stop offset="100%" stopColor="hsl(var(--accent))" />
-              </linearGradient>
-            </defs>
-            <rect x={x} y={y} width="60" height={h} rx="8" fill={`url(#g${i})`} />
-            <text x={x + 30} y="212" textAnchor="middle" className="fill-muted-foreground text-[10px]">
-              {d.name}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
+      // Fetch main analytics data
+      const analyticsResponse = id 
+        ? await AnalyticsService.getSpaceAnalytics(id, params)
+        : await AnalyticsService.getWorkspaceAnalytics(workspaceId, params);
 
-/* ---------------- Reports Layout ---------------- */
-function ReportsLayout() {
-  const [reportData, setReportData] = useState(null);
-  const [pieData, setPieData] = useState(null);
+      // Fetch team performance data
+      let teamResponse = null;
+      if (id) {
+        try {
+          teamResponse = await AnalyticsService.getTeamPerformance(id, params);
+        } catch (teamError) {
+          console.warn('Team performance data not available:', teamError);
+        }
+      }
 
-  // Example: Fetch data from API or use mock
+      // Transform API response to match component interface
+      const { analytics } = analyticsResponse;
+      
+      // Generate mock time-based data (replace with actual API data when available)
+      const mockDailyActivity = Array.from({ length: 30 }, (_, i) => ({
+        date: format(subDays(new Date(), 29 - i), 'MMM dd'),
+        tasks: Math.floor(Math.random() * 20) + 5,
+      }));
+
+      const mockWeeklyTrends = Array.from({ length: 12 }, (_, i) => ({
+        week: `Week ${i + 1}`,
+        completed: Math.floor(Math.random() * 30) + 20,
+        created: Math.floor(Math.random() * 35) + 25,
+      }));
+
+      const mockPeakHours = Array.from({ length: 24 }, (_, i) => ({
+        hour: i,
+        activity: Math.floor(Math.random() * 50) + 10,
+      }));
+
+      setAnalyticsData({
+        coreMetrics: {
+          totalTasks: analytics.totalTasks || 0,
+          completionRate: analytics.completionRate || 0,
+          velocity: teamResponse?.analytics?.teamVelocity || 0,
+          avgTaskDuration: analytics.averageCompletionTime || 0,
+          overdueTasks: analytics.overdueTasks || 0,
+        },
+        teamMetrics: {
+          totalMembers: analytics.totalMembers || 0,
+          activeMembers: analytics.activeMembers || 0,
+          topPerformers: teamResponse?.analytics?.topPerformers || analytics.teamMetrics?.topPerformers || [],
+          workloadDistribution: teamResponse?.analytics?.workloadDistribution || analytics.teamMetrics?.workloadDistribution || [],
+        },
+        timeInsights: {
+          peakHours: mockPeakHours,
+          dailyActivity: mockDailyActivity,
+          weeklyTrends: mockWeeklyTrends,
+        },
+        projectHealth: {
+          bugRate: analytics.qualityMetrics?.bugRate || 0,
+          reworkRate: analytics.qualityMetrics?.reworkRate || 0,
+          blockedTasks: analytics.qualityMetrics?.blockedTasks || 0,
+          cycleTime: analytics.qualityMetrics?.cycleTime || 0,
+        },
+      });
+
+    } catch (error) {
+      console.error('Failed to fetch analytics data:', error);
+      setError('Failed to load analytics data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Mock data
-    const mockReportData = {
-      tasks: [
-        { date: "2025-08-01", completed: 5 },
-        { date: "2025-08-02", completed: 8 },
-        { date: "2025-08-03", completed: 1 },
-        { date: "2025-08-04", completed: 9 },
-        { date: "2025-08-05", completed: 7 },
-      ],
-      teamContributions: [
-        { name: "Alex", tasksCompleted: 46 },
-        { name: "Sarah", tasksCompleted:38 },
-        { name: "Mike", tasksCompleted: 42 },
-        { name: "Emma", tasksCompleted: 10 },
-        { name: "John", tasksCompleted: 25 },
-      ]
-    };
-    const mockPieData = [
-      { value: 10, color: "hsl(var(--accent))" },
-      { value: 20, color: "hsl(var(--primary))" },
-      { value: 15, color: "hsl(var(--foreground)/40)" }
-    ];
+    fetchAnalyticsData();
+  }, [selectedPeriod, dateRange, id, workspaceId]);
 
-    setReportData(mockReportData);
-    setPieData(mockPieData);
-  }, []);
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+        },
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: '#374151',
+        borderWidth: 1,
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          color: 'rgba(156, 163, 175, 0.1)',
+        },
+        ticks: {
+          color: '#6B7280',
+        },
+      },
+      y: {
+        grid: {
+          color: 'rgba(156, 163, 175, 0.1)',
+        },
+        ticks: {
+          color: '#6B7280',
+        },
+      },
+    },
+  };
 
-  return (
-    <div className="flex min-h-screen text-[hsl(var(--foreground))]">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-neutral-0">
-        <div className="px-5 sm:px-6 lg:px-8 py-6">
-          {/* Header */}
-          <header className="mb-6 flex items-center justify-between border-b border-neutral-200">
-            <Typography variant="h1" className="text-3xl font-bold mb-4">
-              Reports
-            </Typography>
-            <div className="flex gap-2">
-              <Button className="rounded-xl" variant="outline" size="sm">
-                <span className="mr-2 inline-flex items-center"><CalendarIcon size={15} className="text-[hsl(var(--accent))]" /></span>
-                Date Range
-              </Button>
-              <Button className="rounded-xl" variant="outline" size="sm">
-                <span className="mr-2 inline-flex items-center"><PeopleIcon size={15} className="text-[hsl(var(--accent))]" /></span>
-                Project
-              </Button>
+  const taskCompletionData = {
+    labels: analyticsData.timeInsights.dailyActivity.map(d => d.date),
+    datasets: [
+      {
+        label: 'Tasks Completed',
+        data: analyticsData.timeInsights.dailyActivity.map(d => d.tasks),
+        borderColor: '#3B82F6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        fill: true,
+        tension: 0.4,
+      },
+    ],
+  };
+
+  const workloadDistributionData = {
+    labels: analyticsData.teamMetrics.workloadDistribution.map(w => w.member),
+    datasets: [
+      {
+        label: 'Tasks Assigned',
+        data: analyticsData.teamMetrics.workloadDistribution.map(w => w.tasks),
+        backgroundColor: [
+          '#3B82F6',
+          '#10B981',
+          '#F59E0B',
+          '#EF4444',
+          '#8B5CF6',
+        ],
+        borderWidth: 2,
+        borderColor: '#fff',
+      },
+    ],
+  };
+
+  const weeklyTrendsData = {
+    labels: analyticsData.timeInsights.weeklyTrends.map(w => w.week),
+    datasets: [
+      {
+        label: 'Tasks Created',
+        data: analyticsData.timeInsights.weeklyTrends.map(w => w.created),
+        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+      },
+      {
+        label: 'Tasks Completed',
+        data: analyticsData.timeInsights.weeklyTrends.map(w => w.completed),
+        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+      },
+    ],
+  };
+
+  const peakHoursData = {
+    labels: analyticsData.timeInsights.peakHours.map(h => `${h.hour}:00`),
+    datasets: [
+      {
+        label: 'Activity Level',
+        data: analyticsData.timeInsights.peakHours.map(h => h.activity),
+        borderColor: '#8B5CF6',
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+        fill: true,
+        tension: 0.4,
+      },
+    ],
+  };
+
+  const exportData = async (format: 'csv' | 'json' | 'pdf') => {
+    if (!id) {
+      console.warn('Export only available for spaces');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await AnalyticsService.exportAnalytics(id, format, {
+        period: selectedPeriod,
+        startDate: dateRange.start,
+        endDate: dateRange.end,
+      });
+    } catch (error) {
+      console.error(`Failed to export data as ${format}:`, error);
+      setError(`Failed to export data as ${format}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const MetricCard: React.FC<{
+    title: string;
+    value: string | number;
+    change?: number;
+    icon: React.ReactNode;
+    color?: string;
+  }> = ({ title, value, change, icon, color = 'blue' }) => (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+          {change !== undefined && (
+            <div className="flex items-center mt-2">
+              {change >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-red-500 mr-1" />
+              )}
+              <span className={`text-sm font-medium ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {Math.abs(change)}%
+              </span>
             </div>
-          </header>
-
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
-            {/* Left column: Charts */}
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="bg-[hsl(var(--neutral-100))] border border-[hsl(var(--neutral-200))] rounded-xl">
-                  <CardContent className="p-5">
-                    <CardTitle className="mb-2">Task Completion Over Time</CardTitle>
-                    <div className="rounded-md bg-[hsl(var(--neutral-100))] p-3">
-                      {reportData && <LineChart data={reportData.tasks} />}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-[hsl(var(--neutral-100))] border border-[hsl(var(--neutral-200))] rounded-xl">
-                  <CardContent className="p-5">
-                    <CardTitle className="mb-2">Task Distribution by Status</CardTitle>
-                    <div className="rounded-md bg-[hsl(var(--neutral-100))] p-3 flex items-center justify-center">
-                      {pieData && <PieChart data={pieData} />}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card className="overflow-hidden border-0 rounded-xl">
-                <Gradient variant="primary" direction="to-r" className="p-0 rounded-xl bg-neutral-100">
-                  <div className="p-5 bg-neutral-100">
-                    <Typography variant="h3" className="text-white mb-3">
-                      Team Member Contributions
-                    </Typography>
-                    <div className="rounded-sm bg-black/30 backdrop-blur-sm p-3 border border-white/10">
-                      {reportData && <BarChart data={reportData.teamContributions} />}
-                    </div>
-                  </div>
-                </Gradient>
-              </Card>
-
-              <div className="flex items-center justify-end gap-3 py-2">
-                <Button variant="ghost" className="rounded-xl px-4 bg-neutral-200">Cancel</Button>
-                <Button variant="secondary" className="rounded-xl px-4">Save</Button>
-                <Button variant="gradient" className="rounded-xl px-5">
-                  <span className="mr-2 inline-flex items-center" aria-hidden>
-                    <ExportIcon size={14} className="text-current" />
-                  </span>
-                  Export Report
-                </Button>
-              </div>
-            </div>
-
-            {/* Right column: Analytics summary */}
-            <aside className="border-l border-[hsl(var(--neutral-200))] border-h-full">
-              <Card className="bg-neutral-0 border-0">
-                <CardContent className="p-5 space-y-4">
-                  <Typography variant="h3">Analytics Summary</Typography>
-
-                  <div className="flex flex-col justify-start rounded-xl bg-neutral-100 border border-[hsl(var(--neutral-200))] p-4">                   
-                      <div className="flex items-center">
-                        <CheckSquareIcon size={50} className="text-[hsl(var(--accent))] drop-shadow-[0_0_8px_hsl(var(--accent))]" />
-                        <Typography variant="small" className="text-muted-foreground">Tasks Completed</Typography>
-                      </div>
-                      <Typography variant="large">87%</Typography>       
-                  </div>
-
-                  <div className="rounded-xl bg-neutral-100 border border-[hsl(var(--neutral-200))] p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <ClockIcon size={22} className="text-[hsl(var(--accent))] drop-shadow-[0_0_8px_hsl(var(--accent))]" />
-                      <Typography variant="small" className="justify-self-start text-muted-foreground">Avg Completion Time</Typography>
-                    </div>
-                    <Typography variant="large" className="justify-self-start">2.4 days</Typography>
-                  </div>
-
-                  <div className="rounded-xl bg-neutral-100 border border-[hsl(var(--neutral-200))] p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <BellIcon size={22} className="text-[hsl(var(--accent))] drop-shadow-[0_0_8px_hsl(var(--accent))]" />
-                      <Typography variant="small" className="justify-self-start text-muted-foreground">Top Contributor</Typography>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Avatar size="sm">
-                        <AvatarFallback variant="accent">AC</AvatarFallback>
-                      </Avatar>
-                      <Typography variant="p">Alex Chen</Typography>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </aside>
-          </div>
+          )}
         </div>
-      </main>
+        <div className={`p-3 rounded-lg bg-${color}-100`}>
+          {icon}
+        </div>
+      </div>
     </div>
   );
-}
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Workspace Analytics</h1>
+              <p className="text-gray-600 mt-1">Comprehensive insights into your team's performance</p>
+              {error && (
+                <p className="text-red-600 mt-2 text-sm">{error}</p>
+              )}
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchAnalyticsData()}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => exportData('csv')} disabled={!id}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-gray-500" />
+                <select
+                  value={selectedPeriod}
+                  onChange={(e) => setSelectedPeriod(e.target.value as TimePeriod)}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                  <option value="quarter">This Quarter</option>
+                  <option value="year">This Year</option>
+                </select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="date"
+                  value={dateRange.start}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-gray-500">to</span>
+                <input
+                  type="date"
+                  value={dateRange.end}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <select
+                value={selectedChart}
+                onChange={(e) => setSelectedChart(e.target.value as ChartType)}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="line">Line Chart</option>
+                <option value="bar">Bar Chart</option>
+                <option value="pie">Pie Chart</option>
+                <option value="doughnut">Doughnut Chart</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Core Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <MetricCard
+            title="Total Tasks"
+            value={analyticsData.coreMetrics.totalTasks}
+            change={12.5}
+            icon={<Target className="h-6 w-6 text-blue-600" />}
+            color="blue"
+          />
+          <MetricCard
+            title="Completion Rate"
+            value={`${analyticsData.coreMetrics.completionRate}%`}
+            change={5.2}
+            icon={<CheckCircle className="h-6 w-6 text-green-600" />}
+            color="green"
+          />
+          <MetricCard
+            title="Velocity"
+            value={analyticsData.coreMetrics.velocity}
+            change={-2.1}
+            icon={<Activity className="h-6 w-6 text-purple-600" />}
+            color="purple"
+          />
+          <MetricCard
+            title="Avg Duration"
+            value={`${analyticsData.coreMetrics.avgTaskDuration}d`}
+            change={-8.3}
+            icon={<Clock className="h-6 w-6 text-orange-600" />}
+            color="orange"
+          />
+          <MetricCard
+            title="Overdue Tasks"
+            value={analyticsData.coreMetrics.overdueTasks}
+            change={-15.7}
+            icon={<AlertCircle className="h-6 w-6 text-red-600" />}
+            color="red"
+          />
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Task Completion Trend */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Task Completion Trend</h3>
+              <LineChart className="h-5 w-5 text-gray-500" />
+            </div>
+            <div className="h-80">
+              <Line data={taskCompletionData} options={chartOptions} />
+            </div>
+          </div>
+
+          {/* Workload Distribution */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Team Workload Distribution</h3>
+              <PieChart className="h-5 w-5 text-gray-500" />
+            </div>
+            <div className="h-80">
+              <Doughnut data={workloadDistributionData} options={chartOptions} />
+            </div>
+          </div>
+
+          {/* Weekly Trends */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Weekly Task Trends</h3>
+              <BarChart3 className="h-5 w-5 text-gray-500" />
+            </div>
+            <div className="h-80">
+              <Bar data={weeklyTrendsData} options={chartOptions} />
+            </div>
+          </div>
+
+          {/* Peak Activity Hours */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Peak Activity Hours</h3>
+              <Activity className="h-5 w-5 text-gray-500" />
+            </div>
+            <div className="h-80">
+              <Line data={peakHoursData} options={chartOptions} />
+            </div>
+          </div>
+        </div>
+
+        {/* Team Analytics & Project Health */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Top Performers */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Top Performers</h3>
+              <Users className="h-5 w-5 text-gray-500" />
+            </div>
+            <div className="space-y-4">
+              {analyticsData.teamMetrics.topPerformers.map((performer, index) => (
+                <div key={performer.name} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${
+                      index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-orange-500'
+                    }`}>
+                      {index + 1}
+                    </div>
+                    <span className="font-medium text-gray-900">{performer.name}</span>
+                  </div>
+                  <span className="text-sm text-gray-600">{performer.tasksCompleted} tasks</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Project Health Metrics */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Project Health</h3>
+              <Target className="h-5 w-5 text-gray-500" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-red-600">{analyticsData.projectHealth.bugRate}%</p>
+                <p className="text-sm text-gray-600">Bug Rate</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-orange-600">{analyticsData.projectHealth.reworkRate}%</p>
+                <p className="text-sm text-gray-600">Rework Rate</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-yellow-600">{analyticsData.projectHealth.blockedTasks}</p>
+                <p className="text-sm text-gray-600">Blocked Tasks</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-600">{analyticsData.projectHealth.cycleTime}d</p>
+                <p className="text-sm text-gray-600">Avg Cycle Time</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default ReportsLayout;

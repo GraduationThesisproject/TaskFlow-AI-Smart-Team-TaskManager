@@ -387,3 +387,43 @@ exports.sendTestNotification = async (req, res) => {
         sendResponse(res, 500, false, 'Server error sending test notification');
     }
 };
+
+// Create payment success notification (for authenticated users)
+exports.createPaymentNotification = async (req, res) => {
+    try {
+        const { title, message, type, category, metadata } = req.body;
+        const userId = req.user.id;
+
+        const notification = new Notification({
+            title,
+            message,
+            type,
+            category,
+            recipient: userId,
+            metadata: metadata || {},
+            priority: 'medium',
+            deliveryMethods: {
+                inApp: true,
+                email: false,
+                push: false
+            }
+        });
+
+        await notification.save();
+
+        // Emit real-time notification if socket is available
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`user_${userId}`).emit('notification', {
+                type: 'new_notification',
+                notification: notification
+            });
+        }
+
+        logger.info(`Payment notification created for user ${userId}: ${title}`);
+        sendResponse(res, 201, true, 'Payment notification created successfully', notification);
+    } catch (error) {
+        logger.error('Create payment notification error:', error);
+        sendResponse(res, 500, false, 'Server error creating payment notification');
+    }
+};
