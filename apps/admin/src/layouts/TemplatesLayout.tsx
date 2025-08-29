@@ -36,6 +36,8 @@ import {
   AIPrompt, 
   BrandingAsset 
 } from '../services/adminService';
+import AdminTemplateManager from '../components/templates/AdminTemplateManager';
+import TemplateForm from '../components/templates/TemplateForm';
 import { useTranslation } from '../hooks/useTranslation';
 
 const TemplatesLayout: React.FC = () => {
@@ -43,6 +45,7 @@ const TemplatesLayout: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   
   // Template data
   const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>([]);
@@ -53,6 +56,15 @@ const TemplatesLayout: React.FC = () => {
   useEffect(() => {
     fetchTemplates();
   }, []);
+
+  const handleCreateTemplate = () => {
+    console.log('🚀 Create Template button clicked');
+    setShowCreateModal(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+  };
 
   const fetchTemplates = async () => {
     try {
@@ -235,7 +247,7 @@ const TemplatesLayout: React.FC = () => {
               Manage project templates, task templates, AI prompts, and branding assets
             </Typography>
           </div>
-          <Button>
+          <Button onClick={handleCreateTemplate}>
             <PlusIcon className="h-4 w-4 mr-2" />
             Create Template
           </Button>
@@ -260,7 +272,7 @@ const TemplatesLayout: React.FC = () => {
       </Card>
 
       {/* Tabs */}
-      <Grid cols={4} className="gap-6 mb-6">
+      <Grid cols={5} className="gap-6 mb-6">
         <Button
           variant="outline"
           onClick={() => setActiveTab('projects')}
@@ -276,6 +288,14 @@ const TemplatesLayout: React.FC = () => {
         >
           <DocumentTextIcon className="h-4 w-4 mr-2" />
           Task Templates ({(taskTemplates || []).length})
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => setActiveTab('board-templates')}
+          className={`flex-1 ${activeTab === 'board-templates' ? 'bg-primary text-white' : ''}`}
+        >
+          <DocumentTextIcon className="h-4 w-4 mr-2" />
+          Board Templates
         </Button>
         <Button
           variant="outline"
@@ -453,6 +473,11 @@ const TemplatesLayout: React.FC = () => {
         </Grid>
       )}
 
+      {/* Board Templates */}
+      {activeTab === 'board-templates' && (
+        <AdminTemplateManager />
+      )}
+
       {/* Branding Assets */}
       {activeTab === 'branding' && (
         <Grid cols={4} className="gap-6">
@@ -506,6 +531,14 @@ const TemplatesLayout: React.FC = () => {
             );
           })}
         </Grid>
+      )}
+
+      {/* Create Template Modal */}
+      {showCreateModal && (
+        <TemplateForm
+          mode="create"
+          onClose={handleCloseCreateModal}
+        />
       )}
     </Container>
   );

@@ -24,7 +24,7 @@ import {
   PencilIcon
 } from '@heroicons/react/24/outline';
 import { useLanguageContext } from '../contexts/LanguageContext';
-
+import { useToast } from '../contexts/ToastContext';
 
 import { adminService } from '../services/adminService';
 import TwoFactorAuthManager from '../components/security/TwoFactorAuthManager';
@@ -33,6 +33,7 @@ import TwoFactorAuthManager from '../components/security/TwoFactorAuthManager';
 const SettingsLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('security');
   const { currentLanguage, changeLanguage } = useLanguageContext();
+  const { showPermissionDenied } = useToast();
 
 
   // System Settings
@@ -449,11 +450,21 @@ const SettingsLayout: React.FC = () => {
         setCurrentUserRole(rolesData.userRole);
       } catch (error) {
         console.error('Failed to load available roles:', error);
+        
+        // Check if it's a permission error and show appropriate toast
+        if (error instanceof Error) {
+          if (error.message.includes('Access denied') || error.message.includes('Insufficient permissions')) {
+            showPermissionDenied('User Role Management', 'You need elevated permissions to manage user roles.');
+          } else {
+            // Show generic error toast for other errors
+            showPermissionDenied('User Role Management', error.message);
+          }
+        }
       }
     };
 
     loadAvailableRoles();
-  }, []);
+  }, [showPermissionDenied]);
 
   return (
     <Container size="7xl">
