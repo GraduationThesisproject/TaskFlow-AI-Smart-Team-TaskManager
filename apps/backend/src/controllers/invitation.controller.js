@@ -248,7 +248,21 @@ exports.acceptInvitation = async (req, res) => {
 
         // Accept invitation
         await invitation.accept(userId);
-
+// create a new notification for the user
+const notification_receiver = new Notification({
+    userId: userId,
+    message: `You have been invited to ${invitation.targetEntity.name} by ${invitation.invitedBy.name}`,
+    type: 'invitation',
+    data: invitation
+});
+await notification_receiver.save();
+const notification_sender = new Notification({
+    userId: invitation.invitedBy,
+    message: `You have invited ${invitation.invitedUser.name} to ${invitation.targetEntity.name}`,
+    type: 'invitation',
+    data: invitation
+});
+await notification_sender.save();
         sendResponse(res, 200, true, 'Invitation accepted successfully', {
             invitation: invitation
         });
