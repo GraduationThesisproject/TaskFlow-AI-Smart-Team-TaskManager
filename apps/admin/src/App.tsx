@@ -14,7 +14,6 @@ import LoginPage from './pages/LoginPage';
 // Contexts
 import { NotificationProvider } from './contexts/NotificationContext';
 import { LanguageProvider } from './contexts/LanguageContext';
-import { ToastProvider } from './contexts/ToastContext';
 import { env } from './config/env';
 
 // Temporary debug logging
@@ -65,9 +64,7 @@ function App() {
                 <ProtectedRouteWithRedux>
                   <LanguageProvider>
                     <NotificationProvider authToken={localStorage.getItem('adminToken') || ''}>
-                      <ToastProvider>
-                        <AdminPage />
-                      </ToastProvider>
+                      <AdminPage />
                     </NotificationProvider>
                   </LanguageProvider>
                 </ProtectedRouteWithRedux>

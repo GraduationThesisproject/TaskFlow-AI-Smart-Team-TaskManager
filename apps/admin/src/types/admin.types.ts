@@ -20,6 +20,7 @@ export enum AdminRole {
   SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
   MODERATOR = 'moderator',
+  VIEWER = 'viewer',
 }
 
 export interface Permission {
@@ -28,6 +29,7 @@ export interface Permission {
   description: string;
   resource: string;
   action: string;
+  allowed?: boolean; // Add allowed field for permission checking
 }
 
 export interface AdminState {
