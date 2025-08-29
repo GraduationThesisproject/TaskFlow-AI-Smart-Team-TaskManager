@@ -171,6 +171,24 @@ export const ModalHeader: React.FC<{ children: React.ReactNode; className?: stri
   </div>
 );
 
+export const ModalTitle: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
+  children, 
+  className 
+}) => (
+  <h2 className={cn("text-xl font-semibold text-foreground", className)}>
+    {children}
+  </h2>
+);
+
+export const ModalContent: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
+  children, 
+  className 
+}) => (
+  <div className={cn("py-4", className)}>
+    {children}
+  </div>
+);
+
 export const ModalBody: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
   children, 
   className 

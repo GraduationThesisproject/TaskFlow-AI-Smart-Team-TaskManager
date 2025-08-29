@@ -72,6 +72,29 @@ workspaceSocket(io);
 boardSocket(io);
 chatSocket(io);
 
+// Add test socket namespace for debugging (no authentication required)
+const testNamespace = io.of('/test');
+testNamespace.on('connection', (socket) => {
+    logger.info(`Test socket connected: ${socket.id}`);
+    
+    socket.emit('connected', {
+        message: 'Test socket connected successfully',
+        socketId: socket.id,
+        timestamp: new Date().toISOString()
+    });
+    
+    socket.on('ping', () => {
+        socket.emit('pong', {
+            message: 'Pong!',
+            timestamp: new Date().toISOString()
+        });
+    });
+    
+    socket.on('disconnect', () => {
+        logger.info(`Test socket disconnected: ${socket.id}`);
+    });
+});
+
 // Start server
 server.listen(PORT, () => {
     logger.info(`🚀 TaskFlow API server running on port ${PORT}`);

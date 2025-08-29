@@ -10,10 +10,11 @@ interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   icon?: 'email' | 'password' | 'user';
   showPasswordToggle?: boolean;
+  children?: React.ReactNode; // Add support for children
 }
 
 const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
-  ({ label, error, icon, showPasswordToggle = false, type, className, ...props }, ref) => {
+  ({ label, error, icon, showPasswordToggle = false, type, className, children, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
 
@@ -32,6 +33,32 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
       }
     };
 
+    // If children are provided, render them instead of the default Input
+    if (children) {
+      return (
+        <div className="space-y-2">
+          <Typography 
+            variant="body-small" 
+            className="text-muted-foreground text-sm font-normal leading-[21px]"
+          >
+            {label}
+          </Typography>
+          
+          <div className="relative">
+            {children}
+          </div>
+          
+          {/* Error Message */}
+          {error && (
+            <Typography variant="body-small" className="text-destructive text-xs">
+              {error}
+            </Typography>
+          )}
+        </div>
+      );
+    }
+
+    // Default behavior - render Input component
     return (
       <div className="space-y-2">
         <Typography 

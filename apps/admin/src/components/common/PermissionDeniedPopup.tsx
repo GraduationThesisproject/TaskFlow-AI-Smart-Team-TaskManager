@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button, Card, CardContent, CardHeader, CardTitle, Typography } from '@taskflow/ui';
-import { ShieldExclamationIcon, LockClosedIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { Card, CardContent, CardHeader, CardTitle, Typography, Button } from '@taskflow/ui';
+import { ShieldExclamationIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 
 interface PermissionDeniedPopupProps {
   isOpen: boolean;
@@ -69,7 +69,7 @@ export const PermissionDeniedPopup: React.FC<PermissionDeniedPopupProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-lg">
+      <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center pb-4">
           <div className="mx-auto mb-4 w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
             <ShieldExclamationIcon className="w-8 h-8 text-red-600" />
@@ -80,16 +80,10 @@ export const PermissionDeniedPopup: React.FC<PermissionDeniedPopupProps> = ({
         </CardHeader>
         
         <CardContent className="text-center space-y-4">
-          <div className="space-y-3">
-            {customMessage ? (
-              <Typography variant="body" className="text-gray-600">
-                {customMessage}
-              </Typography>
-            ) : (
-              <Typography variant="body" className="text-gray-600">
-                You don't have permission to {getActionText()} <strong>{featureName}</strong>.
-              </Typography>
-            )}
+          <div className="space-y-2">
+            <Typography variant="body" className="text-gray-600">
+              {customMessage || `You don't have permission to ${getActionText()} ${featureName}.`}
+            </Typography>
             
             {userRole && (
               <div className="bg-gray-50 rounded-lg p-3">
@@ -101,49 +95,32 @@ export const PermissionDeniedPopup: React.FC<PermissionDeniedPopupProps> = ({
             )}
             
             {roleComparison && (
-              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                <div className="flex items-center justify-center space-x-2 text-sm text-blue-600">
-                  <InformationCircleIcon className="w-4 h-4" />
-                  <span>{roleComparison.message}</span>
-                </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <Typography variant="body-small" className="text-blue-700">
+                  {roleComparison.message}
+                </Typography>
               </div>
             )}
           </div>
           
-          <div className="text-sm text-gray-500 space-y-2">
-            <p>This feature requires additional permissions for security reasons.</p>
-            
-            {showContactInfo && (
-              <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
-                <p className="text-yellow-700 text-sm">
-                  <strong>Need access?</strong> Contact your system administrator to request permission.
-                </p>
-              </div>
-            )}
+          <div className="text-sm text-gray-500 space-y-1">
+            <p>Contact your system administrator if you need access to this feature.</p>
+            <p>Your current role has limited permissions for security reasons.</p>
           </div>
           
-          <div className="flex space-x-3 pt-2">
-            <Button 
-              onClick={onClose}
-              className="flex-1"
-              variant="outline"
-            >
-              Got it
-            </Button>
-            
-            {showContactInfo && (
-              <Button 
-                onClick={() => {
-                  // You can implement contact admin functionality here
-                  onClose();
-                }}
-                className="flex-1"
-                variant="default"
-              >
-                Contact Admin
-              </Button>
-            )}
-          </div>
+          {showContactInfo && (
+            <div className="text-xs text-gray-400">
+              <p>Need help? Contact: admin@taskflow.ai</p>
+            </div>
+          )}
+          
+          <Button 
+            onClick={onClose}
+            className="w-full"
+            variant="outline"
+          >
+            Got it
+          </Button>
         </CardContent>
       </Card>
     </div>

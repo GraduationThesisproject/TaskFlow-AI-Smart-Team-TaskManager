@@ -123,7 +123,8 @@ const Main = () => {
       // Refresh spaces after archiving
       if (workspaceId) {
         const response = await SpaceService.getSpacesByWorkspace(workspaceId);
-        const spacesData = response.data || [];
+        console.log(response.data);
+        const spacesData = response.data|| [];
         setSpaces(Array.isArray(spacesData) ? spacesData : []);
       } else {
         console.error('Cannot refresh spaces: workspaceId is null');
@@ -156,11 +157,6 @@ const Main = () => {
       return byRole && bySearch;
     });
   }, [members, role, search]);
-
-  // const filteredSpaces = spaces.filter(space =>
-  //   space.name.toLowerCase().includes(search.toLowerCase()) ||
-  //   (space.description && space.description.toLowerCase().includes(search.toLowerCase()))
-  // );
 
   // For Invite Section button - Generate shareable link and show in modal
   const onGenerateInviteLink = () => {
@@ -243,14 +239,6 @@ const Main = () => {
       return;
     }
     const t = setTimeout(async () => {
-      // try {
-      //   const apiMembers = await workspaceService.getMembers(workspaceId, { q });
-      //   // eslint-disable-next-line no-console
-      //   console.log('[API members search]', { query: q, count: apiMembers.length, members: apiMembers });
-      // } catch (err) {
-      //   // eslint-disable-next-line no-console
-      //   console.error('[API members search error]', err);
-      // }
     }, 300);
     return () => clearTimeout(t);
   }, [search, workspaceId]);

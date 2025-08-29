@@ -1098,20 +1098,29 @@ const getSystemHealth = async (req, res) => {
 // Templates (placeholder implementations)
 const getProjectTemplates = async (req, res) => {
   try {
-    // Mock data for now
-    const templates = [
-      {
-        id: '1',
-        name: 'Kanban Board',
-        description: 'Visual project management with drag-and-drop cards',
-        type: 'Kanban',
-        stages: ['To Do', 'In Progress', 'Review', 'Done'],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
+    const Template = require('../models/Template');
+    
+    // Get project templates (board type templates)
+    const templates = await Template.find({ 
+      type: 'board',
+      status: 'active'
+    })
+    .select('name description category content status usage createdAt updatedAt')
+    .sort({ createdAt: -1 });
 
-    sendResponse(res, 200, true, 'Project templates retrieved successfully', templates);
+    // Transform data to match frontend expectations
+    const transformedTemplates = templates.map(template => ({
+      id: template._id,
+      name: template.name,
+      description: template.description,
+      category: template.category,
+      isActive: template.status === 'active',
+      usageCount: template.usage?.totalUses || 0,
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt
+    }));
+
+    sendResponse(res, 200, true, 'Project templates retrieved successfully', transformedTemplates);
   } catch (error) {
     logger.error('Get project templates error:', error);
     sendResponse(res, 500, false, 'Server error retrieving project templates');
@@ -1120,8 +1129,47 @@ const getProjectTemplates = async (req, res) => {
 
 const createProjectTemplate = async (req, res) => {
   try {
-    // TODO: Implement template creation
-    sendResponse(res, 200, true, 'Template creation functionality coming soon');
+    const Template = require('../models/Template');
+    const { name, description, category, content, structure } = req.body;
+
+    // Validate required fields
+    if (!name || !description || !category || !content) {
+      return sendResponse(res, 400, false, 'Missing required fields');
+    }
+
+    // Create new template
+    const newTemplate = new Template({
+      name,
+      description,
+      type: 'board',
+      category,
+      content,
+      structure: structure || {
+        version: '1.0',
+        schema: {},
+        required: ['name', 'description', 'category'],
+        optional: []
+      },
+      createdBy: req.user.id,
+      isPublic: true,
+      status: 'active'
+    });
+
+    await newTemplate.save();
+
+    // Transform response to match frontend expectations
+    const responseTemplate = {
+      id: newTemplate._id,
+      name: newTemplate.name,
+      description: newTemplate.description,
+      category: newTemplate.category,
+      isActive: newTemplate.status === 'active',
+      usageCount: 0,
+      createdAt: newTemplate.createdAt,
+      updatedAt: newTemplate.updatedAt
+    };
+
+    sendResponse(res, 201, true, 'Project template created successfully', responseTemplate);
   } catch (error) {
     logger.error('Create project template error:', error);
     sendResponse(res, 500, false, 'Server error creating project template');
@@ -1130,8 +1178,34 @@ const createProjectTemplate = async (req, res) => {
 
 const updateProjectTemplate = async (req, res) => {
   try {
-    // TODO: Implement template update
-    sendResponse(res, 200, true, 'Template update functionality coming soon');
+    const Template = require('../models/Template');
+    const { templateId } = req.params;
+    const updateData = req.body;
+
+    // Find and update template
+    const updatedTemplate = await Template.findByIdAndUpdate(
+      templateId,
+      { ...updateData, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedTemplate) {
+      return sendResponse(res, 404, false, 'Template not found');
+    }
+
+    // Transform response to match frontend expectations
+    const responseTemplate = {
+      id: updatedTemplate._id,
+      name: updatedTemplate.name,
+      description: updatedTemplate.description,
+      category: updatedTemplate.category,
+      isActive: updatedTemplate.status === 'active',
+      usageCount: updatedTemplate.usage?.totalUses || 0,
+      createdAt: updatedTemplate.createdAt,
+      updatedAt: updatedTemplate.updatedAt
+    };
+
+    sendResponse(res, 200, true, 'Project template updated successfully', responseTemplate);
   } catch (error) {
     logger.error('Update project template error:', error);
     sendResponse(res, 500, false, 'Server error updating project template');
@@ -1140,8 +1214,21 @@ const updateProjectTemplate = async (req, res) => {
 
 const deleteProjectTemplate = async (req, res) => {
   try {
-    // TODO: Implement template deletion
-    sendResponse(res, 200, true, 'Template deletion functionality coming soon');
+    const Template = require('../models/Template');
+    const { templateId } = req.params;
+
+    // Soft delete by setting status to archived
+    const deletedTemplate = await Template.findByIdAndUpdate(
+      templateId,
+      { status: 'archived', updatedAt: new Date() },
+      { new: true }
+    );
+
+    if (!deletedTemplate) {
+      return sendResponse(res, 404, false, 'Template not found');
+    }
+
+    sendResponse(res, 200, true, 'Project template deleted successfully', { id: templateId });
   } catch (error) {
     logger.error('Delete project template error:', error);
     sendResponse(res, 500, false, 'Server error deleting project template');
@@ -1150,18 +1237,30 @@ const deleteProjectTemplate = async (req, res) => {
 
 const getTaskTemplates = async (req, res) => {
   try {
-    // Mock data for now
-    const templates = [
-      {
-        id: '1',
-        name: 'Basic Workflow',
-        stages: ['To Do', 'In Progress', 'Review', 'Done'],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
+    const Template = require('../models/Template');
+    
+    // Get task templates
+    const templates = await Template.find({ 
+      type: 'task',
+      status: 'active'
+    })
+    .select('name description category content status usage createdAt updatedAt')
+    .sort({ createdAt: -1 });
 
-    sendResponse(res, 200, true, 'Task templates retrieved successfully', templates);
+    // Transform data to match frontend expectations
+    const transformedTemplates = templates.map(template => ({
+      id: template._id,
+      name: template.name,
+      description: template.description,
+      category: template.category,
+      estimatedHours: template.content?.estimatedHours || 0,
+      isActive: template.status === 'active',
+      usageCount: template.usage?.totalUses || 0,
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt
+    }));
+
+    sendResponse(res, 200, true, 'Task templates retrieved successfully', transformedTemplates);
   } catch (error) {
     logger.error('Get task templates error:', error);
     sendResponse(res, 500, false, 'Server error retrieving task templates');
@@ -1170,19 +1269,31 @@ const getTaskTemplates = async (req, res) => {
 
 const getAIPrompts = async (req, res) => {
   try {
-    // Mock data for now
-    const prompts = [
-      {
-        id: '1',
-        name: 'Sprint Backlog Generator',
-        promptText: 'Generate a comprehensive sprint backlog...',
-        category: 'Project Management',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
+    const Template = require('../models/Template');
+    
+    // Get AI prompt templates (stored as workflow type)
+    const prompts = await Template.find({ 
+      type: 'workflow',
+      category: 'Development',
+      'content.prompt': { $exists: true },
+      status: 'active'
+    })
+    .select('name description category content status usage createdAt updatedAt')
+    .sort({ createdAt: -1 });
 
-    sendResponse(res, 200, true, 'AI prompts retrieved successfully', prompts);
+    // Transform data to match frontend expectations
+    const transformedPrompts = prompts.map(prompt => ({
+      id: prompt._id,
+      name: prompt.name,
+      prompt: prompt.content?.prompt || prompt.description,
+      category: prompt.category,
+      isActive: prompt.status === 'active',
+      usageCount: prompt.usage?.totalUses || 0,
+      createdAt: prompt.createdAt,
+      updatedAt: prompt.updatedAt
+    }));
+
+    sendResponse(res, 200, true, 'AI prompts retrieved successfully', transformedPrompts);
   } catch (error) {
     logger.error('Get AI prompts error:', error);
     sendResponse(res, 500, false, 'Server error retrieving AI prompts');
@@ -1191,18 +1302,29 @@ const getAIPrompts = async (req, res) => {
 
 const getBrandingAssets = async (req, res) => {
   try {
-    // Mock data for now
-    const assets = [
-      {
-        id: '1',
-        customerName: 'TechCorp Solutions',
-        primaryColor: '#3B82F6',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
+    const Template = require('../models/Template');
+    
+    // Get branding asset templates (stored as workflow type with Design category)
+    const assets = await Template.find({ 
+      type: 'workflow',
+      category: 'Design',
+      status: 'active'
+    })
+    .select('name description type category content status usage createdAt updatedAt')
+    .sort({ createdAt: -1 });
 
-    sendResponse(res, 200, true, 'Branding assets retrieved successfully', assets);
+    // Transform data to match frontend expectations
+    const transformedAssets = assets.map(asset => ({
+      id: asset._id,
+      name: asset.name,
+      type: 'design-asset', // Map workflow type to a more descriptive type
+      value: JSON.stringify(asset.content).substring(0, 100) + '...',
+      isActive: asset.status === 'active',
+      createdAt: asset.createdAt,
+      updatedAt: asset.updatedAt
+    }));
+
+    sendResponse(res, 200, true, 'Branding assets retrieved successfully', transformedAssets);
   } catch (error) {
     logger.error('Get branding assets error:', error);
     sendResponse(res, 500, false, 'Server error retrieving branding assets');
