@@ -37,6 +37,7 @@ const tagRoutes = require('./routes/tag.routes');
 const invitationRoutes = require('./routes/invitation.routes');
 const aiRoutes = require('./routes/ai.routes');
 const templateRoutes = require('./routes/template.routes');
+const boardTemplateRoutes = require('./routes/boardTemplate.routes');
 const powerbiRoutes = require('./routes/powerbi.routes');
 const chatRoutes = require('./routes/chat.routes');
 const testRoutes = require('./routes/test.routes');
@@ -233,6 +234,10 @@ app.use('/api/analytics', authMiddleware, analyticsRoutes);
 // Controller methods still enforce auth for mutations (create/update/delete/like).
 app.use('/api/templates', templateRoutes);
 app.use('/api/templates', authMiddleware, templateRoutes);
+
+// Board template routes
+app.use('/api/board-templates', boardTemplateRoutes);
+
 app.use('/api/powerbi', authMiddleware, powerbiRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/test', testRoutes);

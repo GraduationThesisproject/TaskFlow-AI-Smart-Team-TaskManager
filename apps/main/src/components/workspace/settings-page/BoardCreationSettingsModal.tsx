@@ -4,7 +4,7 @@ import { Modal, ModalBody, ModalFooter, Button } from '@taskflow/ui';
 interface BoardCreationSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm?: () => void;
+  onConfirm?: (policy: 'everyone' | 'admins') => void;
   canManage: boolean;
   currentSetting: string;
   newSetting: string;
@@ -68,44 +68,52 @@ const BoardCreationSettingsModal: React.FC<BoardCreationSettingsModalProps> = ({
     );
   }
 
-  // Confirmation Modal
+  // Selection Modal
+  const initialPolicy: 'everyone' | 'admins' =
+    currentSetting?.toLowerCase().includes('any member') ? 'everyone' : 'admins';
+  const [policy, setPolicy] = React.useState<'everyone' | 'admins'>(initialPolicy);
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Change Board Creation Restrictions"
-      description={`Are you sure you want to change board creation from "${currentSetting}" to "${newSetting}"?`}
+      title="Board Creation Permissions"
+      description="Choose who can create boards in this workspace. Owners always have permission."
       size="md"
     >
       <ModalBody>
         <div className="space-y-3">
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">
-                  {newSetting === 'Any member can create boards' ? 'Allowing member board creation' : 'Restricting board creation'}
-                </h3>
-                <div className="mt-2 text-sm text-blue-700">
-                  {newSetting === 'Any member can create boards' ? (
-                    <div>
-                      <p>Any workspace member will be able to create:</p>
-                      <ul className="mt-1 ml-4 list-disc">
-                        <li>Public boards (visible to everyone)</li>
-                        <li>Workspace visible boards (visible to workspace members)</li>
-                        <li>Private boards (visible only to board members)</li>
-                      </ul>
-                    </div>
-                  ) : (
-                    <p>Only workspace admins and owners will be able to create new boards. Regular members will need to request board creation from an admin.</p>
-                  )}
+          <div className="space-y-4">
+            <label className="flex items-start gap-3 p-3 rounded-md border cursor-pointer">
+              <input
+                type="radio"
+                name="board-creation-policy"
+                className="mt-1"
+                checked={policy === 'everyone'}
+                onChange={() => setPolicy('everyone')}
+              />
+              <div>
+                <div className="font-medium">Everyone</div>
+                <div className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Any workspace member can create public, workspace-visible, or private boards.
                 </div>
               </div>
-            </div>
+            </label>
+            <label className="flex items-start gap-3 p-3 rounded-md border cursor-pointer">
+              <input
+                type="radio"
+                name="board-creation-policy"
+                className="mt-1"
+                checked={policy === 'admins'}
+                onChange={() => setPolicy('admins')}
+              />
+              <div>
+                <div className="font-medium">Only Admins</div>
+                <div className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Only admins and the owner can create boards. Members must request creation.
+                </div>
+              </div>
+            </label>
           </div>
         </div>
       </ModalBody>
@@ -118,11 +126,11 @@ const BoardCreationSettingsModal: React.FC<BoardCreationSettingsModalProps> = ({
           Cancel
         </Button>
         <Button
-          onClick={onConfirm}
+          onClick={() => onConfirm && onConfirm(policy)}
           disabled={loading}
           className="ml-2"
         >
-          {loading ? 'Changing...' : `Change to "${newSetting}"`}
+          {loading ? 'Saving...' : 'Save'}
         </Button>
       </ModalFooter>
     </Modal>

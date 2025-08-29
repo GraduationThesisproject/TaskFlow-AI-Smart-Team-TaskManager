@@ -18,6 +18,7 @@ import { LogoutConfirmDialog, AppLayout } from './components';
 import { AccessibilityProvider } from './components/common/AccessibilityProvider';
 import UniversalNavbar from './components/common/navbar/UniversalNavbar';
 import Dashboard from './pages/Dashboard';
+import InviteLanding from './pages/InviteLanding';
 import { NoAccessPage } from './pages/NoAccessPage';
 import ChatPage from './pages/ChatPage';
 import ChatWidget from './components/chat/ChatWidget';
@@ -27,6 +28,9 @@ import { SocketProvider } from './contexts/SocketContext';
 // import { SocketConnectionTest } from './components/debug/SocketConnectionTest';
 import  Cancel  from './layouts/workSpace/Cancel';
 import  Success  from './layouts/workSpace/Success';
+import { SocketDebugger } from './components/debug/SocketDebugger';
+import { SocketConnectionTest } from './components/debug/SocketConnectionTest';
+
 // Support Page Component
 const SupportPage = () => {
   const [isChatOpen, setIsChatOpen] = useState(true);
@@ -122,6 +126,8 @@ function AppContent() {
 
           <Route path="/auth/callback" element={<OAuthCallback />} />
 
+          <Route path="/invite/:token" element={<InviteLanding />} />
+
           <Route path="/dashboard/*" element={<Dashboard />} />
 
           <Route path="/workspace/*" element={<WorkSpace />} />
@@ -182,10 +188,10 @@ function AppContent() {
       />
       
       {/* Socket Debugger - Commented out for production */}
-      {/* {process.env.NODE_ENV === 'development' && <SocketDebugger />} */}
+      {process.env.NODE_ENV === 'development' && <SocketDebugger />}
       
       {/* Socket Connection Test - Commented out for production */}
-      {/* {process.env.NODE_ENV === 'development' && <SocketConnectionTest />} */}
+      {process.env.NODE_ENV === 'development' && <SocketConnectionTest />}
     </AppLayout>
   );
 }

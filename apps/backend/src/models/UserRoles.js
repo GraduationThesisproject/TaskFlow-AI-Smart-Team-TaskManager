@@ -9,7 +9,7 @@ const userRolesSchema = new mongoose.Schema({
   },
   systemRole: {
     type: String,
-    enum: ['super_admin', 'admin', 'moderator', 'viewer'],
+    enum: ['super_admin', 'admin', 'moderator'],
     default: 'moderator'
   },
   workspaces: [{
