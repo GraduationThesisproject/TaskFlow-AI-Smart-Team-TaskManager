@@ -8,7 +8,7 @@ const logger = require('../config/logger');
 class AnalyticsService {
 
     // Generate comprehensive space analytics
-    static async generateSpaceAnalytics(spaceId, options = {}) {
+     async generateSpaceAnalytics(spaceId, options = {}) {
         try {
             const { startDate, endDate, periodType = 'monthly', includeAI = true } = options;
             
@@ -17,8 +17,7 @@ class AnalyticsService {
 
             // Get space data
             const space = await Space.findById(spaceId)
-                .populate('members.user', 'name email')
-                .populate('owner', 'name email');
+                .populate('members.user', 'name email');
 
             if (!space) {
                 throw new Error('Space not found');
@@ -97,7 +96,7 @@ class AnalyticsService {
     }
 
     // Calculate task-related metrics
-    static async calculateTaskMetrics(tasks, startDate, endDate) {
+  async calculateTaskMetrics(tasks, startDate, endDate) {
         const metrics = {
             totalTasks: tasks.length,
             completedTasks: tasks.filter(t => t.status === 'done').length,
@@ -135,7 +134,7 @@ class AnalyticsService {
     }
 
     // Calculate time-related metrics
-    static async calculateTimeMetrics(tasks, startDate, endDate) {
+ async calculateTimeMetrics(tasks, startDate, endDate) {
         const metrics = {
             averageCompletionTime: 0,
             totalTimeSpent: 0,
@@ -170,7 +169,7 @@ class AnalyticsService {
     }
 
     // Calculate team performance metrics
-    static async calculateTeamMetrics(spaceId, startDate, endDate) {
+     async calculateTeamMetrics(spaceId, startDate, endDate) {
         const space = await Space.findById(spaceId).populate('members.user', 'name email');
         const tasks = await Task.find({ 
             space: spaceId,
@@ -233,7 +232,7 @@ class AnalyticsService {
     }
 
     // Calculate quality metrics
-    static async calculateQualityMetrics(tasks) {
+    async calculateQualityMetrics(tasks) {
         const metrics = {
             averageTaskComplexity: 0,
             reworkRate: 0,
@@ -283,7 +282,7 @@ class AnalyticsService {
     }
 
     // Calculate custom space-specific metrics
-    static async calculateCustomMetrics(spaceId, startDate, endDate) {
+    async calculateCustomMetrics(spaceId, startDate, endDate) {
         const metrics = {
             velocityTrend: await this.calculateVelocity(spaceId, startDate, endDate),
             riskIndicators: await this.calculateRiskIndicators(spaceId),
@@ -295,7 +294,7 @@ class AnalyticsService {
     }
 
     // Generate AI-powered insights
-    static async generateAIInsights(spaceId, analytics) {
+   async generateAIInsights(spaceId, analytics) {
         try {
             const aiService = require('./ai.service');
             
@@ -615,8 +614,7 @@ class AnalyticsService {
             const end = endDate || new Date();
 
             const space = await Space.findById(spaceId)
-                .populate('members.user', 'name email')
-                .populate('owner', 'name email');
+                .populate('members.user', 'name email');
 
             if (!space) {
                 throw new Error('Space not found');
@@ -627,7 +625,7 @@ class AnalyticsService {
                 createdAt: { $gte: start, $lte: end }
             }).populate('assignees', 'name').populate('reporter', 'name');
 
-            // Create team members list, ensuring owner is included with correct role
+            // Create team members list
             const teamMembers = [...space.members];
             
             // Helper to normalize user id from either populated doc or ObjectId
@@ -640,20 +638,7 @@ class AnalyticsService {
                 return index === firstIndex;
             });
             
-            // Check if owner is already in the team
-            const ownerInTeam = uniqueMembers.find(member => 
-                getIdString(member.user) === getIdString(space.owner)
-            );
-            
-            let finalTeamMembers;
-            if (ownerInTeam) {
-                // Update owner's role to 'owner' if they're already in the team
-                ownerInTeam.role = 'owner';
-                finalTeamMembers = uniqueMembers;
-            } else {
-                // Add owner if they're not in the team
-                finalTeamMembers = [...uniqueMembers, { user: space.owner, role: 'owner' }];
-            }
+            const finalTeamMembers = uniqueMembers;
             const memberPerformance = [];
 
             for (const member of finalTeamMembers) {

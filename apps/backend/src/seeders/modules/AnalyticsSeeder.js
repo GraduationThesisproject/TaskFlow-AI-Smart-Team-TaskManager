@@ -5,6 +5,7 @@
 
 const BaseSeeder = require('../base/BaseSeeder');
 const { faker } = require('@faker-js/faker');
+const mongoose = require('mongoose');
 const Analytics = require('../../models/Analytics');
 const User = require('../../models/User');
 const Workspace = require('../../models/Workspace');
@@ -43,23 +44,32 @@ class AnalyticsSeeder extends BaseSeeder {
       // Create workspace analytics
       for (const workspace of workspaces) {
         const workspaceAnalytics = await this.generateWorkspaceAnalytics(workspace);
-        createdAnalytics.push(workspaceAnalytics);
-        this.addCreatedData('analytics', workspaceAnalytics);
+        
+        // Save to database
+        const savedWorkspaceAnalytics = await this.analyticsModel.create(workspaceAnalytics);
+        createdAnalytics.push(savedWorkspaceAnalytics);
+        this.addCreatedData('analytics', savedWorkspaceAnalytics);
         this.updateProgress(1, `Created analytics for workspace: ${workspace.name}`);
       }
 
       // Create user analytics
       for (const user of users) {
         const userAnalytics = await this.generateUserAnalytics(user);
-        createdAnalytics.push(userAnalytics);
-        this.addCreatedData('analytics', userAnalytics);
+        
+        // Save to database
+        const savedUserAnalytics = await this.analyticsModel.create(userAnalytics);
+        createdAnalytics.push(savedUserAnalytics);
+        this.addCreatedData('analytics', savedUserAnalytics);
         this.updateProgress(1, `Created analytics for user: ${user.name}`);
       }
 
       // Create system-wide analytics
       const systemAnalytics = await this.generateSystemAnalytics();
-      createdAnalytics.push(systemAnalytics);
-      this.addCreatedData('analytics', systemAnalytics);
+      
+      // Save to database
+      const savedSystemAnalytics = await this.analyticsModel.create(systemAnalytics);
+      createdAnalytics.push(savedSystemAnalytics);
+      this.addCreatedData('analytics', savedSystemAnalytics);
       this.updateProgress(1, 'Created system-wide analytics');
 
       this.completeProgress('Analytics seeding completed');
@@ -94,13 +104,21 @@ class AnalyticsSeeder extends BaseSeeder {
       task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed'
     ).length;
 
+    // Calculate period dates (last 30 days)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 30);
+
     return {
-      type: 'workspace',
-      entityId: workspace._id,
-      entityName: workspace.name,
-      period: 'monthly',
-      date: new Date(),
-      metrics: {
+      scopeType: 'workspace',
+      scopeId: workspace._id,
+      kind: 'velocity',
+      period: {
+        startDate: startDate,
+        endDate: endDate,
+        type: 'monthly'
+      },
+      data: {
         totalTasks: totalTasks,
         completedTasks: completedTasks,
         inProgressTasks: inProgressTasks,
@@ -124,19 +142,21 @@ class AnalyticsSeeder extends BaseSeeder {
           urgent: workspaceTasks.filter(t => t.priority === 'urgent').length
         }
       },
-      trends: {
-        taskCompletionTrend: this.generateTrendData(30),
-        productivityTrend: this.generateTrendData(30),
-        teamActivityTrend: this.generateTrendData(30),
-        overdueTasksTrend: this.generateTrendData(30)
+      // Legacy fields for backward compatibility
+      taskMetrics: {
+        total: totalTasks,
+        completed: completedTasks,
+        inProgress: inProgressTasks,
+        overdue: overdueTasks,
+        completionRate: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0,
+        averageCompletionTime: this.calculateAverageTaskDuration(workspaceTasks),
+        velocity: this.calculateTeamVelocity(workspaceTasks)
       },
-      insights: this.generateWorkspaceInsights(workspaceTasks),
-      recommendations: this.generateWorkspaceRecommendations(workspaceTasks),
-      metadata: {
-        lastUpdated: new Date(),
-        dataSource: 'taskflow_system',
-        confidence: faker.number.float({ min: 0.8, max: 1.0, precision: 0.01 }),
-        sampleSize: totalTasks
+      timeMetrics: {
+        totalEstimated: this.calculateTotalHoursEstimated(workspaceTasks),
+        totalActual: this.calculateTotalHoursSpent(workspaceTasks),
+        averageAccuracy: 85 + Math.random() * 15, // Mock data
+        totalOvertime: Math.max(0, this.calculateTotalHoursSpent(workspaceTasks) - this.calculateTotalHoursEstimated(workspaceTasks))
       }
     };
   }
@@ -544,23 +564,6 @@ class AnalyticsSeeder extends BaseSeeder {
     }
 
     return recommendations;
-  }
-
-  /**
-   * Create analytics in database
-   */
-  async createAnalytics(data) {
-    try {
-      const analytics = new this.analyticsModel(data);
-      const savedAnalytics = await analytics.save();
-      
-      this.success(`Created ${savedAnalytics.type} analytics for ${savedAnalytics.entityName}`);
-      return savedAnalytics;
-      
-    } catch (error) {
-      this.error(`Failed to create analytics: ${error.message}`);
-      throw error;
-    }
   }
 
   /**

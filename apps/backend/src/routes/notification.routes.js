@@ -19,6 +19,14 @@ const createNotificationSchema = {
     deliveryMethods: { object: true }
 };
 
+const paymentNotificationSchema = {
+    title: { required: true, minLength: 1, maxLength: 200 },
+    message: { required: true, minLength: 1, maxLength: 500 },
+    type: { required: true, enum: ['success', 'info', 'warning', 'error'] },
+    category: { required: true, enum: ['billing', 'payment', 'subscription'] },
+    metadata: { object: true }
+};
+
 const updatePreferencesSchema = {
     preferences: { 
         required: true,
@@ -38,6 +46,12 @@ router.post('/',
     requireSystemAdmin,
     validateMiddleware(createNotificationSchema),
     notificationController.createNotification
+);
+
+// Payment success notification endpoint (no admin required)
+router.post('/payment-success',
+    validateMiddleware(paymentNotificationSchema),
+    notificationController.createPaymentNotification
 );
 
 router.patch('/:id/read', notificationController.markAsRead);

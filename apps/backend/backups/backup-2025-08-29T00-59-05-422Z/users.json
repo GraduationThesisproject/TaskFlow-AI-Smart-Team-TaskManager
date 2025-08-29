@@ -1,0 +1,622 @@
+[
+  {
+    "_id": "68b0e4f6316ef920158ec53d",
+    "name": "Super Admin User",
+    "email": "superadmin.test@gmail.com",
+    "password": "$2b$12$Oj5/Zcz3bCp0QD9zTIYqt.fEX.Uxj6Z5oGADSZj/LrIEwT2Tu5R7y",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-28T11:34:06.425Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:34.631Z",
+    "updatedAt": "2025-08-28T23:23:35.033Z",
+    "__v": 0,
+    "preferences": "68b0e4f6316ef920158ec545",
+    "roles": "68b0e4f7316ef920158ec553",
+    "sessions": "68b0e4f7316ef920158ec557"
+  },
+  {
+    "_id": "68b0e4f7316ef920158ec55d",
+    "name": "Admin User",
+    "email": "admin.test@gmail.com",
+    "password": "$2b$12$UzT/VPZH0WRUXUy.l6CbeOg37e7LSyzXq6xiGwWBMJf/9EbNfVJyO",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-27T14:50:25.874Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:35.040Z",
+    "updatedAt": "2025-08-28T23:23:35.428Z",
+    "__v": 0,
+    "preferences": "68b0e4f7316ef920158ec58a",
+    "roles": "68b0e4f7316ef920158ec58e",
+    "sessions": "68b0e4f7316ef920158ec594"
+  },
+  {
+    "_id": "68b0e4f7316ef920158ec5a0",
+    "name": "Regular User",
+    "email": "user.test@gmail.com",
+    "password": "$2b$12$yZxwCPCeP2pBjpIrANcoz.mZJyHsNpDFZ4a4suoQlxAH0ZX2RzpLC",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-25T11:25:50.179Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:35.460Z",
+    "updatedAt": "2025-08-28T23:23:35.748Z",
+    "__v": 0,
+    "preferences": "68b0e4f7316ef920158ec5bf",
+    "roles": "68b0e4f7316ef920158ec5c4",
+    "sessions": "68b0e4f7316ef920158ec5c6"
+  },
+  {
+    "_id": "68b0e4f7316ef920158ec5cb",
+    "name": "Manager User",
+    "email": "manager.test@gmail.com",
+    "password": "$2b$12$iK3e5U8Muh/uN4zyls3aSOSfwf8JTBZJMThIRMARh/0qdtcfrxJNK",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-29T00:50:43.062Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:35.758Z",
+    "updatedAt": "2025-08-29T00:50:43.075Z",
+    "__v": 0,
+    "preferences": "68b0e4f8316ef920158ec5dd",
+    "roles": "68b0e4f8316ef920158ec5e1",
+    "sessions": "68b0e4f8316ef920158ec5e4"
+  },
+  {
+    "_id": "68b0e4f8316ef920158ec5e8",
+    "name": "Developer User",
+    "email": "developer.test@gmail.com",
+    "password": "$2b$12$4aMo2h6hKGExdedfR4PoSus6iFRieQ/NoCWCu6c5Vnz/scjbH1yFG",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-23T17:48:43.582Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:36.060Z",
+    "updatedAt": "2025-08-28T23:23:36.304Z",
+    "__v": 0,
+    "preferences": "68b0e4f8316ef920158ec5ee",
+    "roles": "68b0e4f8316ef920158ec5f2",
+    "sessions": "68b0e4f8316ef920158ec5f4"
+  },
+  {
+    "_id": "68b0e4f8316ef920158ec5f8",
+    "name": "Miss Marie Conroy",
+    "email": "marvin_stiedemann32@yahoo.com",
+    "password": "$2b$12$W14GtqdIyHAHxTzdzvisLuMVT0RsAlLGQk9LllKAPMMUQocK5foWy",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-23T07:40:01.478Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:36.308Z",
+    "updatedAt": "2025-08-28T23:23:36.544Z",
+    "__v": 0,
+    "preferences": "68b0e4f8316ef920158ec5fa",
+    "roles": "68b0e4f8316ef920158ec5fe",
+    "sessions": "68b0e4f8316ef920158ec600"
+  },
+  {
+    "_id": "68b0e4f8316ef920158ec604",
+    "name": "Karla Volkman",
+    "email": "mikayla.renner12@yahoo.com",
+    "password": "$2b$12$djLioRXczoz76DM2vaCnDOm1uNEosarmBjTRmqFndsd71e9lmlloK",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-26T11:32:04.289Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:36.547Z",
+    "updatedAt": "2025-08-28T23:23:36.784Z",
+    "__v": 0,
+    "preferences": "68b0e4f8316ef920158ec606",
+    "roles": "68b0e4f8316ef920158ec60a",
+    "sessions": "68b0e4f8316ef920158ec60c"
+  },
+  {
+    "_id": "68b0e4f8316ef920158ec610",
+    "name": "Noah Parker",
+    "email": "jayda77@yahoo.com",
+    "password": "$2b$12$Hx9.HbKxhvHHUkmVKB/lX.1Gp/UBMxNe0tQAe1JxbDJxNP606MgNO",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-27T03:16:03.348Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:36.786Z",
+    "updatedAt": "2025-08-28T23:23:37.025Z",
+    "__v": 0,
+    "preferences": "68b0e4f9316ef920158ec612",
+    "roles": "68b0e4f9316ef920158ec616",
+    "sessions": "68b0e4f9316ef920158ec618"
+  },
+  {
+    "_id": "68b0e4f9316ef920158ec61c",
+    "name": "Sherri Hammes",
+    "email": "meda.koss22@hotmail.com",
+    "password": "$2b$12$3DQWrnTexzPO8fSuCjBsaOS0LAZKmzEUqB1PP/f4vTEtAndQM5nuW",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-25T07:02:28.637Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:37.027Z",
+    "updatedAt": "2025-08-28T23:23:37.265Z",
+    "__v": 0,
+    "preferences": "68b0e4f9316ef920158ec61e",
+    "roles": "68b0e4f9316ef920158ec622",
+    "sessions": "68b0e4f9316ef920158ec624"
+  },
+  {
+    "_id": "68b0e4f9316ef920158ec628",
+    "name": "Cecelia Rau",
+    "email": "jaleel20@gmail.com",
+    "password": "$2b$12$hKYNuw7RcU1q3sFWUm1SveGPhj/0UP0244YE5Yox8JITLF0c2qz7C",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-25T05:39:42.426Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:37.267Z",
+    "updatedAt": "2025-08-28T23:23:37.499Z",
+    "__v": 0,
+    "preferences": "68b0e4f9316ef920158ec62a",
+    "roles": "68b0e4f9316ef920158ec62e",
+    "sessions": "68b0e4f9316ef920158ec630"
+  },
+  {
+    "_id": "68b0e4f9316ef920158ec634",
+    "name": "Dr. Ignacio Jerde",
+    "email": "brisa.gibson@hotmail.com",
+    "password": "$2b$12$eh6WPivlSJcHFmmlKnlM2up72UBr0MN5W7JfI9LpCBoMH63ma5uGS",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-25T16:50:44.472Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:37.501Z",
+    "updatedAt": "2025-08-28T23:23:37.770Z",
+    "__v": 0,
+    "preferences": "68b0e4f9316ef920158ec636",
+    "roles": "68b0e4f9316ef920158ec63a",
+    "sessions": "68b0e4f9316ef920158ec63c"
+  },
+  {
+    "_id": "68b0e4f9316ef920158ec640",
+    "name": "Karen Reynolds",
+    "email": "houston82@gmail.com",
+    "password": "$2b$12$zgipN2WO2DuyR5ehvmts5.FP/9F/AdOcJxIIwGIDIvlTV56NZ4pqW",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-27T12:16:58.010Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:37.774Z",
+    "updatedAt": "2025-08-28T23:23:38.011Z",
+    "__v": 0,
+    "preferences": "68b0e4fa316ef920158ec642",
+    "roles": "68b0e4fa316ef920158ec646",
+    "sessions": "68b0e4fa316ef920158ec648"
+  },
+  {
+    "_id": "68b0e4fa316ef920158ec64c",
+    "name": "Bernadette Kunde",
+    "email": "brigitte31@gmail.com",
+    "password": "$2b$12$EEqfhL2y3VdmafBm24z9K.1u06gmMlefgjBJn4CRUEeLjum2/3tIu",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-27T19:56:19.470Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:38.012Z",
+    "updatedAt": "2025-08-28T23:23:38.265Z",
+    "__v": 0,
+    "preferences": "68b0e4fa316ef920158ec64e",
+    "roles": "68b0e4fa316ef920158ec652",
+    "sessions": "68b0e4fa316ef920158ec654"
+  },
+  {
+    "_id": "68b0e4fa316ef920158ec658",
+    "name": "Allen Sawayn",
+    "email": "leonel_douglas50@yahoo.com",
+    "password": "$2b$12$RP4zsHeD4y7tw9.uAX8RxOMUUqTzxlgsYPK7L/0nJBOg5amuvM1yq",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-23T22:35:42.733Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:38.267Z",
+    "updatedAt": "2025-08-28T23:23:38.503Z",
+    "__v": 0,
+    "preferences": "68b0e4fa316ef920158ec65a",
+    "roles": "68b0e4fa316ef920158ec65e",
+    "sessions": "68b0e4fa316ef920158ec660"
+  },
+  {
+    "_id": "68b0e4fa316ef920158ec664",
+    "name": "Caroline Ferry",
+    "email": "josue61@hotmail.com",
+    "password": "$2b$12$/ubC16oTBIKsRLJEw0g5LORITQ0T6HqlpzBhw5Rjd5ZH4GwJMpvyy",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-26T22:11:09.895Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:38.505Z",
+    "updatedAt": "2025-08-28T23:23:38.740Z",
+    "__v": 0,
+    "preferences": "68b0e4fa316ef920158ec666",
+    "roles": "68b0e4fa316ef920158ec66a",
+    "sessions": "68b0e4fa316ef920158ec66c"
+  },
+  {
+    "_id": "68b0e4fa316ef920158ec670",
+    "name": "Rachel Kris IV",
+    "email": "vance.paucek16@yahoo.com",
+    "password": "$2b$12$F3qYHnSM1u4Jk/OqSclwF.SjXOCFV/v3v8zFMIkg/NLVcBhODWT1W",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-26T21:31:25.089Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:38.742Z",
+    "updatedAt": "2025-08-28T23:23:38.978Z",
+    "__v": 0,
+    "preferences": "68b0e4fa316ef920158ec672",
+    "roles": "68b0e4fa316ef920158ec676",
+    "sessions": "68b0e4fa316ef920158ec678"
+  },
+  {
+    "_id": "68b0e4fa316ef920158ec67c",
+    "name": "Henry Bernier",
+    "email": "roslyn_schneider@yahoo.com",
+    "password": "$2b$12$Rb18dXeVbAW2abd4lpjDKucZhZnmPut5FXHB1HBsLRCpmz5t.7RJ6",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-22T17:14:33.150Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:38.979Z",
+    "updatedAt": "2025-08-28T23:23:39.213Z",
+    "__v": 0,
+    "preferences": "68b0e4fb316ef920158ec67e",
+    "roles": "68b0e4fb316ef920158ec682",
+    "sessions": "68b0e4fb316ef920158ec684"
+  },
+  {
+    "_id": "68b0e4fb316ef920158ec688",
+    "name": "Ruth Schaden",
+    "email": "manley_schamberger@yahoo.com",
+    "password": "$2b$12$niqEz7dwjYtzq7EqTBVTLuKEz6xLSQYIsdcBm7j99MnFsWpfZ46W.",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-26T22:55:41.929Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:39.215Z",
+    "updatedAt": "2025-08-28T23:23:39.452Z",
+    "__v": 0,
+    "preferences": "68b0e4fb316ef920158ec68a",
+    "roles": "68b0e4fb316ef920158ec68e",
+    "sessions": "68b0e4fb316ef920158ec690"
+  },
+  {
+    "_id": "68b0e4fb316ef920158ec694",
+    "name": "Neil Jones",
+    "email": "jaime_hintz62@yahoo.com",
+    "password": "$2b$12$We6RmqtcpPMYvqDLeVRT..i9qv/uiGQUKHoL0sAwNVxCqPFNHHkBW",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": true,
+    "lastLogin": "2025-08-26T07:43:56.740Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:39.454Z",
+    "updatedAt": "2025-08-28T23:23:39.688Z",
+    "__v": 0,
+    "preferences": "68b0e4fb316ef920158ec696",
+    "roles": "68b0e4fb316ef920158ec69a",
+    "sessions": "68b0e4fb316ef920158ec69c"
+  },
+  {
+    "_id": "68b0e4fb316ef920158ec6a0",
+    "name": "Laurie Ondricka",
+    "email": "cicero.hoppe@gmail.com",
+    "password": "$2b$12$sUa6GmxWMc5d4uI2TJ96.uipQsucW8Lz4Vb2RAGF2Ad3l.lbIqm8C",
+    "avatar": null,
+    "isActive": true,
+    "emailVerified": false,
+    "lastLogin": "2025-08-26T17:20:47.031Z",
+    "loginAttempts": 0,
+    "accountLockout": {
+      "maxAttempts": 5,
+      "lockTime": 7200000,
+      "enabled": true
+    },
+    "hasOAuthProviders": false,
+    "hasTwoFactorAuth": false,
+    "twoFactorAuth": {
+      "backupCodes": []
+    },
+    "metadata": {},
+    "auditLogs": [],
+    "workspaceId": [],
+    "notifications": [],
+    "createdAt": "2025-08-28T23:23:39.690Z",
+    "updatedAt": "2025-08-28T23:23:39.925Z",
+    "__v": 0,
+    "preferences": "68b0e4fb316ef920158ec6a2",
+    "roles": "68b0e4fb316ef920158ec6a6",
+    "sessions": "68b0e4fb316ef920158ec6a8"
+  }
+]

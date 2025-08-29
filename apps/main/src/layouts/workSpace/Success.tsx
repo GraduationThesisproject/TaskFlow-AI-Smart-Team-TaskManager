@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Home, Download, ArrowRight, CreditCard } from 'lucide-react';
 import {
@@ -12,6 +12,8 @@ import {
   Alert,
   Badge
 } from '@taskflow/ui';
+import { useAuth } from '../../hooks/useAuth';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface PaymentDetails {
   sessionId: string | null;
@@ -24,6 +26,9 @@ interface PaymentDetails {
 const Success: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user, updateUser } = useAuth();
+  const { fetchNotifications } = useNotifications();
+  const [isProcessingUpgrade, setIsProcessingUpgrade] = useState(false);
   
   // Extract payment details from URL params
   const paymentDetails: PaymentDetails = {
@@ -35,12 +40,87 @@ const Success: React.FC = () => {
   };
 
   useEffect(() => {
-    // Log successful payment for analytics
-    console.log('Payment successful:', paymentDetails);
-    
-    // You could also trigger any post-payment actions here
-    // like updating user subscription status, sending confirmation emails, etc.
-  }, [paymentDetails]);
+    console.log("paymentDetails::::::::::::::::::::::::::::::::",paymentDetails)
+    const processPaymentSuccess = async () => {
+      if (!paymentDetails.sessionId || isProcessingUpgrade) return;
+      
+      setIsProcessingUpgrade(true);
+      
+      try {
+        // Update user plan status
+        if (paymentDetails.planName && user) {
+          await updateUserPlan(paymentDetails.planName, paymentDetails.sessionId);
+        }
+        
+        // Create success notification
+        await createSuccessNotification();
+        
+        // Refresh notifications to show the new one
+        fetchNotifications();
+        
+      } catch (error) {
+        console.error('Error processing payment success:', error);
+      } finally {
+        setIsProcessingUpgrade(false);
+      }
+    };
+
+    processPaymentSuccess();
+  }, [paymentDetails.sessionId]);
+
+  const updateUserPlan = async (planName: string, sessionId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/users/update-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          planName: planName.toLowerCase(),
+          sessionId,
+          upgradeDate: new Date().toISOString()
+        })
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        // Update local user state
+        if (updateUser) {
+          updateUser(updatedUser);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating user plan:', error);
+    }
+  };
+
+  const createSuccessNotification = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('/api/notifications/payment-success', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: '🎉 Plan Upgrade Successful!',
+          message: `Congratulations! You've successfully upgraded to the ${paymentDetails.planName} plan. All premium features are now available.`,
+          type: 'success',
+          category: 'billing',
+          metadata: {
+            planName: paymentDetails.planName,
+            amount: paymentDetails.amount,
+            sessionId: paymentDetails.sessionId
+          }
+        })
+      });
+    } catch (error) {
+      console.error('Error creating notification:', error);
+    }
+  };
 
   const handleGoToDashboard = (): void => {
     navigate('/workspace');
@@ -100,9 +180,26 @@ const Success: React.FC = () => {
               <Alert
                 variant="success"
                 title="Payment Confirmed"
-                description="Your subscription has been activated and you now have access to all premium features."
+                description={`Your subscription has been activated and you now have access to all ${paymentDetails.planName || 'premium'} features.`}
                 showCloseButton={false}
               />
+
+              {/* Plan Upgrade Confirmation */}
+              {paymentDetails.planName && (
+                <div className="bg-success/5 border border-success/20 rounded-lg p-4">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Typography variant="body-medium" className="font-semibold">
+                      Plan Upgraded:
+                    </Typography>
+                    <Badge variant={getPlanBadgeVariant(paymentDetails.planName)}>
+                      {paymentDetails.planName}
+                    </Badge>
+                  </div>
+                  <Typography variant="body-small" textColor="muted">
+                    Your account has been upgraded from <strong>Free</strong> to <strong>{paymentDetails.planName}</strong> plan.
+                  </Typography>
+                </div>
+              )}
 
               {/* Payment Details */}
               {(paymentDetails.amount || paymentDetails.planName) && (

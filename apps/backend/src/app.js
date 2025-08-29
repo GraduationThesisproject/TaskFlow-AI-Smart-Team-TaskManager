@@ -32,7 +32,7 @@ const fileRoutes = require('./routes/file.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const checklistRoutes = require('./routes/checklist.routes');
 const reminderRoutes = require('./routes/reminder.routes');
-
+const checkoutRoutes = require('./routes/Checkout.routes');
 const tagRoutes = require('./routes/tag.routes');
 const invitationRoutes = require('./routes/invitation.routes');
 const aiRoutes = require('./routes/ai.routes');
@@ -40,6 +40,7 @@ const templateRoutes = require('./routes/template.routes');
 const powerbiRoutes = require('./routes/powerbi.routes');
 const chatRoutes = require('./routes/chat.routes');
 const testRoutes = require('./routes/test.routes');
+const analyticsRoutes = require('./routes/analytics.routes');
 const app = express();
 
 
@@ -223,11 +224,11 @@ app.use('/api/tasks', authMiddleware, taskRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/checklists', authMiddleware, checklistRoutes);
 app.use('/api/reminders', authMiddleware, reminderRoutes);
-
+app.use('/api/checkout', authMiddleware, checkoutRoutes);
 app.use('/api/tags', authMiddleware, tagRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
-// app.use('/api/analytics', authMiddleware, analyticsRoutes);
+app.use('/api/analytics', authMiddleware, analyticsRoutes);
 // Make templates routes publicly accessible for GET requests.
 // Controller methods still enforce auth for mutations (create/update/delete/like).
 app.use('/api/templates', templateRoutes);
