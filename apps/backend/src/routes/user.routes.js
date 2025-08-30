@@ -12,6 +12,9 @@ router.get('/', userController.getAllUsers);
 // Search users - MUST come before /:id to avoid route shadowing
 router.get('/search', userController.searchUsers);
 
+// Update user plan after successful payment
+router.post('/update-plan', userController.updateUserPlan);
+
 // Get user by ID
 router.get('/:id', userController.getUserById);
 
