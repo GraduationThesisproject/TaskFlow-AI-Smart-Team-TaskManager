@@ -113,8 +113,8 @@ MAX_FILE_SIZE:10485760,
 FRONTEND_URL:"http://localhost:5173",
 
 // OAuth Configuration
-GOOGLE_CLIENT_ID:"625288272720-qem1ue46j75pt272mab8f35baimqgeag.apps.googleusercontent.com",
-GOOGLE_CLIENT_SECRET:"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",
+GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "your-google-client-id",
+GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "your-google-client-secret",
 GOOGLE_CALLBACK_URL:"http://localhost:3001/api/auth/google/callback",
 GITHUB_CLIENT_ID:"Ov23liwZN5YwJ4eZvffU",
 GITHUB_CLIENT_SECRET:"5499262125f3434db57f3377432053b29a4dcb89",
