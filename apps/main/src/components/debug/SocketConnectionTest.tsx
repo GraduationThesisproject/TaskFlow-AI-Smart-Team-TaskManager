@@ -132,23 +132,23 @@ export function SocketConnectionTest() {
     addLog(`Has token: ${user?.token ? 'Yes' : 'No'}`);
   }, [isAuthenticated, user]);
 
-  return (
-    <div className="fixed top-4 right-4 z-50 bg-card border rounded-lg shadow-lg p-4 max-w-lg max-h-96 overflow-y-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-sm">Socket Connection Test</h3>
-        <button
-          onClick={clearLogs}
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
-          Clear Logs
-        </button>
-      </div>
+  // return (
+  //   <div className="fixed top-4 right-4 z-50 bg-card border rounded-lg shadow-lg p-4 max-w-lg max-h-96 overflow-y-auto">
+  //     <div className="flex items-center justify-between mb-4">
+  //       <h3 className="font-semibold text-sm">Socket Connection Test</h3>
+  //       <button
+  //         onClick={clearLogs}
+  //         className="text-xs text-muted-foreground hover:text-foreground"
+  //       >
+  //         Clear Logs
+  //       </button>
+  //     </div>
 
-      {/* Status Display */}
-      <div className="mb-4 p-2 bg-muted rounded text-xs">
-        <div><strong>Status:</strong> {connectionStatus}</div>
-        <div><strong>Error:</strong> {error || 'None'}</div>
-      </div>
+  //     {/* Status Display */}
+  //     <div className="mb-4 p-2 bg-muted rounded text-xs">
+  //       <div><strong>Status:</strong> {connectionStatus}</div>
+  //       <div><strong>Error:</strong> {error || 'None'}</div>
+  //     </div>
 
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-2 mb-4">

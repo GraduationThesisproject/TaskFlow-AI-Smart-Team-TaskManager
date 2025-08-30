@@ -22,12 +22,19 @@ export const env = {
   // Build Info
   BUILD_TIME: import.meta.env.VITE_BUILD_TIME,
   COMMIT_HASH: import.meta.env.VITE_COMMIT_HASH,
-  VITE_GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-  VITE_GOOGLE_CLIENT_SECRET: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
-  VITE_GITHUB_CLIENT_ID: import.meta.env.VITE_GITHUB_CLIENT_ID,
-  VITE_GITHUB_CLIENT_SECRET: import.meta.env.VITE_GITHUB_CLIENT_SECRET,
+  VITE_GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || "your-google-client-id",
+  VITE_GOOGLE_CLIENT_SECRET: import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "your-google-client-secret",
+  VITE_GITHUB_CLIENT_ID: import.meta.env.VITE_GITHUB_CLIENT_ID||"Ov23liwZN5YwJ4eZvffU",
+  VITE_GITHUB_CLIENT_SECRET: import.meta.env.VITE_GITHUB_CLIENT_SECRET||"5499262125f3434db57f3377432053b29a4dcb89",
   NODE_ENV: import.meta.env.NODE_ENV,
-  MODE: import.meta.env.MODE
+  MODE: import.meta.env.MODE,
+
+// // Feature Flags
+// VITE_ENABLE_ANALYTICS:false,
+// VITE_ENABLE_DEBUG:true,
+
+
+
 } as const;
 
 // Development helpers (remove in production)
