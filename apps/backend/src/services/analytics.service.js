@@ -8,7 +8,7 @@ const logger = require('../config/logger');
 class AnalyticsService {
 
     // Generate comprehensive space analytics
-     async generateSpaceAnalytics(spaceId, options = {}) {
+     static async generateSpaceAnalytics(spaceId, options = {}) {
         try {
             const { startDate, endDate, periodType = 'monthly', includeAI = true } = options;
             
@@ -30,11 +30,11 @@ class AnalyticsService {
             }).populate('assignees', 'name').populate('reporter', 'name');
 
             // Generate analytics
-            const taskMetrics = await this.calculateTaskMetrics(tasks, start, end);
-            const timeMetrics = await this.calculateTimeMetrics(tasks, start, end);
-            const teamMetrics = await this.calculateTeamMetrics(spaceId, start, end);
-            const qualityMetrics = await this.calculateQualityMetrics(tasks);
-            const customMetrics = await this.calculateCustomMetrics(spaceId, start, end);
+            const taskMetrics = await AnalyticsService.calculateTaskMetrics(tasks, start, end);
+            const timeMetrics = await AnalyticsService.calculateTimeMetrics(tasks, start, end);
+            const teamMetrics = await AnalyticsService.calculateTeamMetrics(spaceId, start, end);
+            const qualityMetrics = await AnalyticsService.calculateQualityMetrics(tasks);
+            const customMetrics = await AnalyticsService.calculateCustomMetrics(spaceId, start, end);
 
             // Flatten analytics structure to match test expectations
             const analytics = {
@@ -75,7 +75,7 @@ class AnalyticsService {
             // Add AI insights if requested
             if (includeAI) {
                 try {
-                    analytics.aiInsights = await this.generateAIInsights(spaceId, analytics);
+                    analytics.aiInsights = await AnalyticsService.generateAIInsights(spaceId, analytics);
                 } catch (error) {
                     logger.warn('AI insights generation failed, continuing without AI insights:', error.message);
                     analytics.aiInsights = {
@@ -96,7 +96,7 @@ class AnalyticsService {
     }
 
     // Calculate task-related metrics
-  async calculateTaskMetrics(tasks, startDate, endDate) {
+  static async calculateTaskMetrics(tasks, startDate, endDate) {
         const metrics = {
             totalTasks: tasks.length,
             completedTasks: tasks.filter(t => t.status === 'done').length,
@@ -128,18 +128,18 @@ class AnalyticsService {
         metrics.priorityDistribution = priorityCount;
 
         // Status changes over time
-        metrics.statusChanges = await this.getTaskStatusChanges(tasks.map(t => t._id), startDate, endDate);
+        metrics.statusChanges = await AnalyticsService.getTaskStatusChanges(tasks.map(t => t._id), startDate, endDate);
 
         return metrics;
     }
 
     // Calculate time-related metrics
- async calculateTimeMetrics(tasks, startDate, endDate) {
+ static async calculateTimeMetrics(tasks, startDate, endDate) {
         const metrics = {
             averageCompletionTime: 0,
             totalTimeSpent: 0,
             estimatedVsActual: [],
-            burndownData: await this.calculateBurndown(tasks, startDate, endDate)
+            burndownData: await AnalyticsService.calculateBurndown(tasks, startDate, endDate)
         };
 
         // Calculate completion times
@@ -169,7 +169,7 @@ class AnalyticsService {
     }
 
     // Calculate team performance metrics
-     async calculateTeamMetrics(spaceId, startDate, endDate) {
+     static async calculateTeamMetrics(spaceId, startDate, endDate) {
         const space = await Space.findById(spaceId).populate('members.user', 'name email');
         const tasks = await Task.find({ 
             space: spaceId,
@@ -232,7 +232,7 @@ class AnalyticsService {
     }
 
     // Calculate quality metrics
-    async calculateQualityMetrics(tasks) {
+    static async calculateQualityMetrics(tasks) {
         const metrics = {
             averageTaskComplexity: 0,
             reworkRate: 0,
@@ -282,19 +282,19 @@ class AnalyticsService {
     }
 
     // Calculate custom space-specific metrics
-    async calculateCustomMetrics(spaceId, startDate, endDate) {
+    static async calculateCustomMetrics(spaceId, startDate, endDate) {
         const metrics = {
-            velocityTrend: await this.calculateVelocity(spaceId, startDate, endDate),
-            riskIndicators: await this.calculateRiskIndicators(spaceId),
-            milestoneProgress: await this.calculateMilestoneProgress(spaceId),
-            resourceUtilization: await this.calculateResourceUtilization(spaceId, startDate, endDate)
+            velocityTrend: await AnalyticsService.calculateVelocity(spaceId, startDate, endDate),
+            riskIndicators: await AnalyticsService.calculateRiskIndicators(spaceId),
+            milestoneProgress: await AnalyticsService.calculateMilestoneProgress(spaceId),
+            resourceUtilization: await AnalyticsService.calculateResourceUtilization(spaceId, startDate, endDate)
         };
 
         return metrics;
     }
 
     // Generate AI-powered insights
-   async generateAIInsights(spaceId, analytics) {
+   static async generateAIInsights(spaceId, analytics) {
         try {
             const aiService = require('./ai.service');
             
@@ -456,7 +456,7 @@ class AnalyticsService {
     }
 
     static async calculateMilestoneProgress(spaceId) {
-        // This would integrate with milestone tracking if implemented
+        // AnalyticsService would integrate with milestone tracking if implemented
         return [];
     }
 
@@ -511,7 +511,7 @@ class AnalyticsService {
                     t.status === 'completed' && t.assignees.includes(userId)
                 ).length,
                 productivityScore: 0,
-                activityTrend: await this.getUserActivityTrend(userId, startDate)
+                activityTrend: await AnalyticsService.getUserActivityTrend(userId, startDate)
             };
 
             // Calculate productivity score
@@ -566,7 +566,7 @@ class AnalyticsService {
                     status: 'done' 
                 }),
                 activeMembers: workspace.members.length, // Add activeMembers field
-                memberActivity: await this.getWorkspaceMemberActivity(workspaceId, startDate),
+                memberActivity: await AnalyticsService.getWorkspaceMemberActivity(workspaceId, startDate),
                 storageUsage: workspace.usage
             };
 
@@ -694,7 +694,7 @@ class AnalyticsService {
                     startDate: start,
                     endDate: end
                 },
-                productivityTrends: await this.calculateProductivityTrends(spaceId, start, end)
+                productivityTrends: await AnalyticsService.calculateProductivityTrends(spaceId, start, end)
             };
 
         } catch (error) {
@@ -739,15 +739,15 @@ class AnalyticsService {
             const { format = 'json', includeCharts = false } = options;
             
             // Generate fresh analytics instead of using stored data
-            const analytics = await this.generateSpaceAnalytics(spaceId, {
+            const analytics = await new AnalyticsService().generateSpaceAnalytics(spaceId, {
                 includeAI: false
             });
             
             switch (format) {
                 case 'csv':
-                    return this.exportToCSV(analytics);
+                    return AnalyticsService.exportToCSV(analytics);
                 case 'pdf':
-                    return this.exportToPDF(analytics, includeCharts);
+                    return AnalyticsService.exportToPDF(analytics, includeCharts);
                 default:
                     return { analytics };
             }
@@ -845,12 +845,12 @@ class AnalyticsService {
                 tasksCompletedThisPeriod: periodTasks.filter(t => 
                     t.status === 'done' && t.assignees.some(a => a._id.toString() === userId)
                 ).length,
-                averageCompletionTime: await this.calculateUserAverageCompletionTime(userId, startDate, endDate),
+                averageCompletionTime: await AnalyticsService.calculateUserAverageCompletionTime(userId, startDate, endDate),
                 productivityScore: taskMetrics.completionRate
             };
 
             // Get activity trend
-            const activityTrend = await this.getUserActivityTrend(userId, startDate);
+            const activityTrend = await AnalyticsService.getUserActivityTrend(userId, startDate);
 
             const analytics = {
                 taskMetrics,
@@ -866,7 +866,7 @@ class AnalyticsService {
             // Add AI insights if requested
             if (includeAI) {
                 try {
-                    analytics.aiInsights = await this.generateUserAIInsights(userId, analytics);
+                    analytics.aiInsights = await AnalyticsService.generateUserAIInsights(userId, analytics);
                 } catch (error) {
                     logger.warn('User AI insights generation failed:', error.message);
                     analytics.aiInsights = {
@@ -889,51 +889,44 @@ class AnalyticsService {
         const completedTasks = await Task.find({
             assignees: userId,
             status: 'done',
-            completedAt: { $gte: startDate, $lte: endDate },
-            createdAt: { $exists: true }
+            completedAt: { $gte: startDate, $lte: endDate }
         });
 
         if (completedTasks.length === 0) return 0;
 
         const totalTime = completedTasks.reduce((sum, task) => {
-            if (task.completedAt && task.createdAt) {
-                return sum + (task.completedAt - task.createdAt);
-            }
-            return sum;
+            return sum + (task.completedAt - task.createdAt);
         }, 0);
 
         return Math.round(totalTime / completedTasks.length / (1000 * 60 * 60)); // hours
     }
 
     static async generateUserAIInsights(userId, analytics) {
-        // Simple rule-based insights for now
         const insights = {
             recommendations: [],
-            patterns: [],
+            riskAssessment: [],
             suggestions: []
         };
 
-        // Completion rate insights
+        // Simple rule-based insights
         if (analytics.taskMetrics.completionRate < 50) {
             insights.recommendations.push({
                 type: 'productivity',
                 title: 'Improve Task Completion',
                 description: 'Your completion rate is below 50%. Consider breaking down large tasks into smaller ones.',
-                priority: 'medium'
-            });
-        }
-
-        // Overdue tasks insights
-        if (analytics.taskMetrics.overdue > 0) {
-            insights.recommendations.push({
-                type: 'time_management',
-                title: 'Address Overdue Tasks',
-                description: `You have ${analytics.taskMetrics.overdue} overdue tasks. Prioritize these to improve your workflow.`,
                 priority: 'high'
             });
         }
 
-        // High priority tasks insights
+        if (analytics.taskMetrics.overdue > 3) {
+            insights.riskAssessment.push({
+                type: 'deadline_risk',
+                title: 'Multiple Overdue Tasks',
+                description: 'You have several overdue tasks that need immediate attention.',
+                severity: 'high'
+            });
+        }
+
         if (analytics.taskMetrics.highPriority > 5) {
             insights.suggestions.push({
                 type: 'workload',

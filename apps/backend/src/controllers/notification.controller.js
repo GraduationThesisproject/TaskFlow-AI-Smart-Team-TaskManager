@@ -403,3 +403,62 @@ exports.deleteReadNotifications = async (req, res) => {
         sendResponse(res, 500, false, 'Server error deleting read notifications');
     }
 };
+
+// Create payment notification (for payment success/failure)
+exports.createPaymentNotification = async (req, res) => {
+    try {
+        const { title, message, type, category, metadata } = req.body;
+        const userId = req.user.id;
+
+        console.log(' [createPaymentNotification] userId:', userId, 'type:', type, 'category:', category);
+
+        const notification = await Notification.create({
+            title,
+            message,
+            type: 'payment_update',
+            recipient: userId,
+            priority: type === 'error' ? 'high' : 'medium',
+            deliveryMethods: { inApp: true },
+            metadata: {
+                category,
+                paymentType: type,
+                ...metadata
+            }
+        });
+
+        await notification.populate('recipient', 'name email');
+
+        // Send real-time notification via socket
+        try {
+            const io = req.app.get('io') || global.io;
+            if (io) {
+                io.notifyUser(userId, 'notification:new', {
+                    notification: notification.toObject()
+                });
+                console.log(' [createPaymentNotification] emitted notification to:', userId);
+            }
+        } catch (e) {
+            logger.warn('Socket emit failed (createPaymentNotification):', e);
+        }
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId,
+            action: 'payment_notification_create',
+            description: `Payment notification: ${title}`,
+            entity: { type: 'Notification', id: notification._id, name: title },
+            metadata: {
+                category,
+                paymentType: type,
+                ipAddress: req.ip
+            }
+        });
+
+        sendResponse(res, 201, true, 'Payment notification created successfully', {
+            notification
+        });
+    } catch (error) {
+        logger.error('Create payment notification error:', error);
+        sendResponse(res, 500, false, 'Server error creating payment notification');
+    }
+};

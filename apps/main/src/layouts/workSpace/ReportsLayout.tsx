@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAppSelector } from '../../store;
+import { useAppSelector, useAppDispatch } from '../../store';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,8 +14,8 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
-import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
-import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import {
   Calendar,
   Download,
@@ -34,7 +34,15 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { Button } from '@taskflow/ui';
-import { AnalyticsService, TimePeriod } from '../../services/analyticsService';
+import { 
+  fetchAnalytics, 
+  exportAnalytics, 
+  setPeriod, 
+  setDateRange, 
+  setChartType, 
+  clearError 
+} from '../../store/slices/analyticsSlice';
+import type { RootState } from '../../store';
 
 // Register Chart.js components
 ChartJS.register(
@@ -50,46 +58,25 @@ ChartJS.register(
   Filler
 );
 
-interface AnalyticsData {
-  coreMetrics: {
-    totalTasks: number;
-    completionRate: number;
-    velocity: number;
-    avgTaskDuration: number;
-    overdueTasks: number;
-  };
-  teamMetrics: {
-    totalMembers: number;
-    activeMembers: number;
-    topPerformers: Array<{ name: string; tasksCompleted: number; }>;
-    workloadDistribution: Array<{ member: string; tasks: number; }>;
-  };
-  timeInsights: {
-    peakHours: Array<{ hour: number; activity: number; }>;
-    dailyActivity: Array<{ date: string; tasks: number; }>;
-    weeklyTrends: Array<{ week: string; completed: number; created: number; }>;
-  };
-  projectHealth: {
-    bugRate: number;
-    reworkRate: number;
-    blockedTasks: number;
-    cycleTime: number;
-  };
-}
-
 type ChartType = 'line' | 'bar' | 'pie' | 'doughnut';
+type TimePeriod = 'week' | 'month' | 'quarter' | 'year';
 
 const ReportsLayout: React.FC = () => {
   const location = useLocation();
+  const dispatch = useAppDispatch();
   const query = new URLSearchParams(location.search);
   const id = '68b0fe70cda1977ca4c9a092'; // Force correct analytics space ID
   
   // Get workspaceId from Redux store like other components
-  const currentWorkspace = useAppSelector((s: any) => s.workspace.currentWorkspace);
-  const workspaces = useAppSelector((s: any) => s.workspace.workspaces) as Array<{ _id: string }> | undefined;
-  const persistedWorkspaceId = useAppSelector((s: any) => s.workspace.currentWorkspaceId);
+  const currentWorkspace = useAppSelector((state: RootState) => state.workspace.currentWorkspace);
+  const workspaces = useAppSelector((state: RootState) => state.workspace.workspaces) as Array<{ _id: string }> | undefined;
+  const persistedWorkspaceId = useAppSelector((state: RootState) => state.workspace.currentWorkspaceId);
   const derivedId = currentWorkspace?._id || workspaces?.[0]?._id || persistedWorkspaceId || null;
   const workspaceId = derivedId || '';
+
+  // Get analytics state from Redux
+  const { data: analyticsData, filters, loading: isLoading, error } = useAppSelector((state: RootState) => state.analytics);
+  const { period: selectedPeriod, dateRange, chartType: selectedChart } = filters;
 
   // Debug logging
   console.log('🔍 URL Debug Info:');
@@ -101,133 +88,27 @@ const ReportsLayout: React.FC = () => {
   console.log('Current workspace:', currentWorkspace);
   console.log('Derived ID:', derivedId);
 
-  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('month');
-  const [selectedChart, setSelectedChart] = useState<ChartType>('line');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState({
-    start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
-    end: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
-  });
-
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
-    coreMetrics: {
-      totalTasks: 0,
-      completionRate: 0,
-      velocity: 0,
-      avgTaskDuration: 0,
-      overdueTasks: 0,
-    },
-    teamMetrics: {
-      totalMembers: 0,
-      activeMembers: 0,
-      topPerformers: [],
-      workloadDistribution: [],
-    },
-    timeInsights: {
-      peakHours: [],
-      dailyActivity: [],
-      weeklyTrends: [],
-    },
-    projectHealth: {
-      bugRate: 0,
-      reworkRate: 0,
-      blockedTasks: 0,
-      cycleTime: 0,
-    },
-  });
-
-  const fetchAnalyticsData = async () => {
+  const fetchAnalyticsData = () => {
     if (!id && !workspaceId) {
       console.log('No id or workspace ID provided');
-      setError('No id or workspace ID provided');
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-    console.log("id",id)
-    console.log("workspaceId",workspaceId)
-    try {
-      const params = {
-        period: selectedPeriod,
-        startDate: dateRange.start,
-        endDate: dateRange.end,
-      };
-
-      // Fetch main analytics data
-      const analyticsResponse = id 
-        ? await AnalyticsService.getSpaceAnalytics(id, params)
-        : await AnalyticsService.getWorkspaceAnalytics(workspaceId, params);
-
-      // Fetch team performance data
-      let teamResponse = null;
-      if (id) {
-        try {
-          teamResponse = await AnalyticsService.getTeamPerformance(id, params);
-        } catch (teamError) {
-          console.warn('Team performance data not available:', teamError);
-        }
-      }
-
-      // Transform API response to match component interface
-      const { analytics } = analyticsResponse;
-      
-      // Generate mock time-based data (replace with actual API data when available)
-      const mockDailyActivity = Array.from({ length: 30 }, (_, i) => ({
-        date: format(subDays(new Date(), 29 - i), 'MMM dd'),
-        tasks: Math.floor(Math.random() * 20) + 5,
-      }));
-
-      const mockWeeklyTrends = Array.from({ length: 12 }, (_, i) => ({
-        week: `Week ${i + 1}`,
-        completed: Math.floor(Math.random() * 30) + 20,
-        created: Math.floor(Math.random() * 35) + 25,
-      }));
-
-      const mockPeakHours = Array.from({ length: 24 }, (_, i) => ({
-        hour: i,
-        activity: Math.floor(Math.random() * 50) + 10,
-      }));
-
-      setAnalyticsData({
-        coreMetrics: {
-          totalTasks: analytics.totalTasks || 0,
-          completionRate: analytics.completionRate || 0,
-          velocity: teamResponse?.analytics?.teamVelocity || 0,
-          avgTaskDuration: analytics.averageCompletionTime || 0,
-          overdueTasks: analytics.overdueTasks || 0,
-        },
-        teamMetrics: {
-          totalMembers: analytics.totalMembers || 0,
-          activeMembers: analytics.activeMembers || 0,
-          topPerformers: teamResponse?.analytics?.topPerformers || analytics.teamMetrics?.topPerformers || [],
-          workloadDistribution: teamResponse?.analytics?.workloadDistribution || analytics.teamMetrics?.workloadDistribution || [],
-        },
-        timeInsights: {
-          peakHours: mockPeakHours,
-          dailyActivity: mockDailyActivity,
-          weeklyTrends: mockWeeklyTrends,
-        },
-        projectHealth: {
-          bugRate: analytics.qualityMetrics?.bugRate || 0,
-          reworkRate: analytics.qualityMetrics?.reworkRate || 0,
-          blockedTasks: analytics.qualityMetrics?.blockedTasks || 0,
-          cycleTime: analytics.qualityMetrics?.cycleTime || 0,
-        },
-      });
-
-    } catch (error) {
-      console.error('Failed to fetch analytics data:', error);
-      setError('Failed to load analytics data. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    console.log("id", id);
+    console.log("workspaceId", workspaceId);
+    
+    dispatch(fetchAnalytics({
+      id: id || undefined,
+      workspaceId: workspaceId || undefined,
+      period: selectedPeriod,
+      startDate: dateRange.start,
+      endDate: dateRange.end,
+    }));
   };
 
   useEffect(() => {
     fetchAnalyticsData();
-  }, [selectedPeriod, dateRange, id, workspaceId]);
+  }, [selectedPeriod, dateRange, id, workspaceId, dispatch]);
 
   const chartOptions = {
     responsive: true,
@@ -331,25 +212,19 @@ const ReportsLayout: React.FC = () => {
     ],
   };
 
-  const exportData = async (format: 'csv' | 'json' | 'pdf') => {
+  const exportData = (format: 'csv' | 'json' | 'pdf') => {
     if (!id) {
       console.warn('Export only available for spaces');
       return;
     }
 
-    try {
-      setIsLoading(true);
-      await AnalyticsService.exportAnalytics(id, format, {
-        period: selectedPeriod,
-        startDate: dateRange.start,
-        endDate: dateRange.end,
-      });
-    } catch (error) {
-      console.error(`Failed to export data as ${format}:`, error);
-      setError(`Failed to export data as ${format}`);
-    } finally {
-      setIsLoading(false);
-    }
+    dispatch(exportAnalytics({
+      id,
+      format,
+      period: selectedPeriod,
+      startDate: dateRange.start,
+      endDate: dateRange.end,
+    }));
   };
 
   const MetricCard: React.FC<{
@@ -425,7 +300,7 @@ const ReportsLayout: React.FC = () => {
                 <Calendar className="h-4 w-4 text-gray-500" />
                 <select
                   value={selectedPeriod}
-                  onChange={(e) => setSelectedPeriod(e.target.value as TimePeriod)}
+                  onChange={(e) => dispatch(setPeriod(e.target.value as TimePeriod))}
                   className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="week">This Week</option>
@@ -438,14 +313,14 @@ const ReportsLayout: React.FC = () => {
                 <input
                   type="date"
                   value={dateRange.start}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                  onChange={(e) => dispatch(setDateRange({ ...dateRange, start: e.target.value }))}
                   className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <span className="text-gray-500">to</span>
                 <input
                   type="date"
                   value={dateRange.end}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                  onChange={(e) => dispatch(setDateRange({ ...dateRange, end: e.target.value }))}
                   className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -454,7 +329,7 @@ const ReportsLayout: React.FC = () => {
               <Filter className="h-4 w-4 text-gray-500" />
               <select
                 value={selectedChart}
-                onChange={(e) => setSelectedChart(e.target.value as ChartType)}
+                onChange={(e) => dispatch(setChartType(e.target.value as ChartType))}
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="line">Line Chart</option>

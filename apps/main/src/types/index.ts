@@ -8,3 +8,4 @@ export * from './common.types';
 export * from "./api.types";
 export * from "./dash.types";
 export * from './boardTemplate.types';
+export * from './analytics.types';
