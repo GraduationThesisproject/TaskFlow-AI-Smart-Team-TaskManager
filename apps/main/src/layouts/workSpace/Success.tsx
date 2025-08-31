@@ -26,7 +26,7 @@ interface PaymentDetails {
 const Success: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const { fetchNotifications } = useNotifications();
   const [isProcessingUpgrade, setIsProcessingUpgrade] = useState(false);
   
@@ -40,22 +40,18 @@ const Success: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log("paymentDetails::::::::::::::::::::::::::::::::",paymentDetails)
     const processPaymentSuccess = async () => {
       if (!paymentDetails.sessionId || isProcessingUpgrade) return;
       
       setIsProcessingUpgrade(true);
       
       try {
-        // Update user plan status
+        // Send payment notification email
         if (paymentDetails.planName && user) {
-          await updateUserPlan(paymentDetails.planName, paymentDetails.sessionId);
+          await sendPaymentNotification();
         }
         
-        // Create success notification
-        await createSuccessNotification();
-        
-        // Refresh notifications to show the new one
+        // Refresh notifications
         fetchNotifications();
         
       } catch (error) {
@@ -68,59 +64,33 @@ const Success: React.FC = () => {
     processPaymentSuccess();
   }, [paymentDetails.sessionId]);
 
-  const updateUserPlan = async (planName: string, sessionId: string) => {
+  const sendPaymentNotification = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/users/update-plan', {
+      const response = await fetch('/api/checkout/send-payment-notification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          planName: planName.toLowerCase(),
-          sessionId,
-          upgradeDate: new Date().toISOString()
+          sessionId: paymentDetails.sessionId,
+          planName: paymentDetails.planName,
+          amount: paymentDetails.amount,
+          billingCycle: searchParams.get('billing_cycle') || 'monthly'
         })
       });
 
       if (response.ok) {
-        const updatedUser = await response.json();
-        // Update local user state
-        if (updateUser) {
-          updateUser(updatedUser);
-        }
+        console.log('✅ Payment notification email sent successfully');
+      } else {
+        console.error('❌ Failed to send payment notification email');
       }
     } catch (error) {
-      console.error('Error updating user plan:', error);
+      console.error('Error sending payment notification:', error);
     }
   };
 
-  const createSuccessNotification = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      await fetch('/api/notifications/payment-success', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          title: '🎉 Plan Upgrade Successful!',
-          message: `Congratulations! You've successfully upgraded to the ${paymentDetails.planName} plan. All premium features are now available.`,
-          type: 'success',
-          category: 'billing',
-          metadata: {
-            planName: paymentDetails.planName,
-            amount: paymentDetails.amount,
-            sessionId: paymentDetails.sessionId
-          }
-        })
-      });
-    } catch (error) {
-      console.error('Error creating notification:', error);
-    }
-  };
 
   const handleGoToDashboard = (): void => {
     navigate('/workspace');
