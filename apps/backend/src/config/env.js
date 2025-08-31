@@ -128,4 +128,5 @@ GITHUB_CALLBACK_URL:"http://localhost:3001/api/auth/github/callback",
     /*POWERBI_CLIENT_ID → Azure AD app registration client ID for Power BI API access.
     POWERBI_CLIENT_SECRET → Azure AD app registration client secret.
     POWERBI_TENANT_ID → Azure AD tenant ID for your organization.*/
+
 };

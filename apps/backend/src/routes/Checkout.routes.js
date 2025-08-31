@@ -9,7 +9,6 @@ router.post("/create-checkout-session", async (req, res) => {
   const mergedMetadata = { ...(metadata || {}), ...(userId ? { userId } : {}) };
   
   try {
-    const stripe = getStripe();
     if (!stripe) {
       return res.status(503).json({
         error: "Stripe is not configured on the server",
@@ -40,8 +39,8 @@ router.post("/create-checkout-session", async (req, res) => {
       payment_method_types: ["card"],
       line_items: products,
       mode: "payment",
-      success_url: `${config.FRONTEND_URL || 'http://localhost:5173'}/success?${successParams.toString()}`,
-      cancel_url: `${config.FRONTEND_URL || 'http://localhost:5173'}/cancel?${cancelParams.toString()}`,
+      success_url: `http://localhost:5173/success?${successParams.toString()}`,
+      cancel_url: `http://localhost:5173/cancel?${cancelParams.toString()}`,
       metadata: mergedMetadata,
     });
     
