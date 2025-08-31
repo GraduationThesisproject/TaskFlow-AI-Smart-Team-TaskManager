@@ -98,8 +98,8 @@ CORS_ORIGIN:"http://localhost:5173,http://localhost:5174,http://localhost:5175,h
 //Email Configuration (Optional)
 SMTP_HOST:"smtp.gmail.com",
 SMTP_PORT:587,
-SMTP_USER:"your-email@gmail.com",
-SMTP_PASS:"your-app-password",
+SMTP_USER:"taskflow.service.team@gmail.com",
+SMTP_PASS:"moui lqyz mqag kslm",
 
 //AI Configuration (Optional)
  OPENAI_API_KEY:"your-openai-api-key",
@@ -128,6 +128,7 @@ GITHUB_CALLBACK_URL:"http://localhost:3001/api/auth/github/callback",
     /*POWERBI_CLIENT_ID → Azure AD app registration client ID for Power BI API access.
     POWERBI_CLIENT_SECRET → Azure AD app registration client secret.
     POWERBI_TENANT_ID → Azure AD tenant ID for your organization.*/
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY||"sk_test_51S0u5XQnbFIuhN9UKC4JnYCbkNV8z7e98bBeI6GekB7zynMKHCriJDHLO8x3bjpefaIhG2QMV1VpyLwAXu4FhQKu00xqTpMdX4"
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY||"sk_test_51S0u5XQnbFIuhN9UKC4JnYCbkNV8z7e98bBeI6GekB7zynMKHCriJDHLO8x3bjpefaIhG2QMV1VpyLwAXu4FhQKu00xqTpMdX4",
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET||"whsec_1a0bc2cc583042182266c1adb264164b0928717f151bee02a0fdb5f470e33fd9"
 
 };
