@@ -36,7 +36,6 @@ export default function SignIn() {
     // Mark field as touched
     setTouched(prev => ({ ...prev, [field]: true }));
   };
-
   // Validation function
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};

@@ -177,11 +177,7 @@ function AppContent() {
         userName={user?.user?.name || 'User'}
       />
       
-      {/* Socket Debugger - Commented out for production */}
-      {/* {process.env.NODE_ENV === 'development' && <SocketDebugger />} */}
-      
-      {/* Socket Connection Test - Commented out for production */}
-      {/* {process.env.NODE_ENV === 'development' && <SocketConnectionTest />} */}
+
     </AppLayout>
   );
 }
