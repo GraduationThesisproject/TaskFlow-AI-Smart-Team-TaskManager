@@ -30,14 +30,14 @@ router.post('/create-notification', authMiddleware, async (req, res) => {
     const notification = await io.sendNotification(recipientId, {
       title,
       message,
-      type: type || 'test_notification',
+      type: type || 'system_alert',
       relatedEntity: relatedEntity || {
-        entityType: 'test',
-        entityId: 'test-entity'
+        entityType: 'user',
+        entityId: recipientId
       },
       sender: req.user._id,
-      category: 'test',
-      priority: 'normal'
+      category: 'system',
+      priority: 'medium'
     });
 
     logger.info(`Test notification created: ${notification._id} for user ${recipientId}`);

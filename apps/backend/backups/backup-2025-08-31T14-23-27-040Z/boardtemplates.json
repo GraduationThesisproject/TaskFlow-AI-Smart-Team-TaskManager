@@ -1,0 +1,248 @@
+[
+  {
+    "_id": "68b1d3b3a7dda0d577a06894",
+    "name": "Kanban Project Management",
+    "description": "A comprehensive Kanban board template for project management with predefined lists and workflow stages",
+    "categories": [
+      "Development"
+    ],
+    "defaultLists": [
+      {
+        "title": "Backlog",
+        "order": 0,
+        "color": "#6B7280",
+        "_id": "68b1d3b3a7dda0d577a06895"
+      },
+      {
+        "title": "To Do",
+        "order": 1,
+        "color": "#3B82F6",
+        "_id": "68b1d3b3a7dda0d577a06896"
+      },
+      {
+        "title": "In Progress",
+        "order": 2,
+        "color": "#F59E0B",
+        "_id": "68b1d3b3a7dda0d577a06897"
+      },
+      {
+        "title": "Review",
+        "order": 3,
+        "color": "#8B5CF6",
+        "_id": "68b1d3b3a7dda0d577a06898"
+      },
+      {
+        "title": "Done",
+        "order": 4,
+        "color": "#10B981",
+        "_id": "68b1d3b3a7dda0d577a06899"
+      }
+    ],
+    "defaultCards": [
+      {
+        "title": "Project Setup",
+        "description": "Initialize project repository and basic structure",
+        "listId": "To Do",
+        "order": 0,
+        "priority": "high",
+        "estimatedHours": 2,
+        "tags": [
+          "setup",
+          "initialization"
+        ],
+        "_id": "68b1d3b3a7dda0d577a0689a"
+      },
+      {
+        "title": "Requirements Gathering",
+        "description": "Collect and document project requirements",
+        "listId": "To Do",
+        "order": 1,
+        "priority": "high",
+        "estimatedHours": 4,
+        "tags": [
+          "requirements",
+          "planning"
+        ],
+        "_id": "68b1d3b3a7dda0d577a0689b"
+      }
+    ],
+    "thumbnail": null,
+    "isActive": true,
+    "isPublic": true,
+    "usageCount": 45,
+    "rating": {
+      "average": 0,
+      "count": 0
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "tags": [],
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.070Z",
+    "updatedAt": "2025-08-29T16:22:11.070Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a0689d",
+    "name": "Scrum Sprint Board",
+    "description": "Scrum methodology template with sprint planning, daily standups, and sprint review phases",
+    "categories": [
+      "Development"
+    ],
+    "defaultLists": [
+      {
+        "title": "Product Backlog",
+        "order": 0,
+        "color": "#6B7280",
+        "_id": "68b1d3b3a7dda0d577a0689e"
+      },
+      {
+        "title": "Sprint Backlog",
+        "order": 1,
+        "color": "#3B82F6",
+        "_id": "68b1d3b3a7dda0d577a0689f"
+      },
+      {
+        "title": "In Progress",
+        "order": 2,
+        "color": "#F59E0B",
+        "_id": "68b1d3b3a7dda0d577a068a0"
+      },
+      {
+        "title": "Testing",
+        "order": 3,
+        "color": "#8B5CF6",
+        "_id": "68b1d3b3a7dda0d577a068a1"
+      },
+      {
+        "title": "Done",
+        "order": 4,
+        "color": "#10B981",
+        "_id": "68b1d3b3a7dda0d577a068a2"
+      }
+    ],
+    "defaultCards": [
+      {
+        "title": "Sprint Planning",
+        "description": "Plan sprint goals and select user stories",
+        "listId": "Sprint Backlog",
+        "order": 0,
+        "priority": "high",
+        "estimatedHours": 3,
+        "tags": [
+          "planning",
+          "sprint"
+        ],
+        "_id": "68b1d3b3a7dda0d577a068a3"
+      },
+      {
+        "title": "Daily Standup",
+        "description": "Daily team synchronization meeting",
+        "listId": "In Progress",
+        "order": 0,
+        "priority": "medium",
+        "estimatedHours": 0.5,
+        "tags": [
+          "meeting",
+          "sync"
+        ],
+        "_id": "68b1d3b3a7dda0d577a068a4"
+      }
+    ],
+    "thumbnail": null,
+    "isActive": true,
+    "isPublic": true,
+    "usageCount": 32,
+    "rating": {
+      "average": 0,
+      "count": 0
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "tags": [],
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.074Z",
+    "updatedAt": "2025-08-29T16:22:11.074Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a068a6",
+    "name": "Bug Tracking System",
+    "description": "Specialized template for tracking and resolving software bugs with priority levels and resolution tracking",
+    "categories": [
+      "Support"
+    ],
+    "defaultLists": [
+      {
+        "title": "New Bugs",
+        "order": 0,
+        "color": "#EF4444",
+        "_id": "68b1d3b3a7dda0d577a068a7"
+      },
+      {
+        "title": "Investigating",
+        "order": 1,
+        "color": "#F59E0B",
+        "_id": "68b1d3b3a7dda0d577a068a8"
+      },
+      {
+        "title": "In Progress",
+        "order": 2,
+        "color": "#3B82F6",
+        "_id": "68b1d3b3a7dda0d577a068a9"
+      },
+      {
+        "title": "Testing Fix",
+        "order": 3,
+        "color": "#8B5CF6",
+        "_id": "68b1d3b3a7dda0d577a068aa"
+      },
+      {
+        "title": "Resolved",
+        "order": 4,
+        "color": "#10B981",
+        "_id": "68b1d3b3a7dda0d577a068ab"
+      }
+    ],
+    "defaultCards": [
+      {
+        "title": "Bug Report Template",
+        "description": "Standard template for reporting new bugs",
+        "listId": "New Bugs",
+        "order": 0,
+        "priority": "high",
+        "estimatedHours": 0.5,
+        "tags": [
+          "template",
+          "bug-report"
+        ],
+        "_id": "68b1d3b3a7dda0d577a068ac"
+      },
+      {
+        "title": "Bug Investigation",
+        "description": "Investigate root cause of reported bug",
+        "listId": "Investigating",
+        "order": 0,
+        "priority": "medium",
+        "estimatedHours": 2,
+        "tags": [
+          "investigation",
+          "debugging"
+        ],
+        "_id": "68b1d3b3a7dda0d577a068ad"
+      }
+    ],
+    "thumbnail": null,
+    "isActive": true,
+    "isPublic": true,
+    "usageCount": 28,
+    "rating": {
+      "average": 0,
+      "count": 0
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "tags": [],
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.078Z",
+    "updatedAt": "2025-08-29T16:22:11.078Z",
+    "__v": 0
+  }
+]

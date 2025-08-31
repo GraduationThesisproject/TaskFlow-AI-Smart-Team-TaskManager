@@ -69,7 +69,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
     tags: [],
     isPublic: true,
     isActive: true
-  });
+  } as CreateBoardTemplateRequest);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [tagInput, setTagInput] = useState(''); // Add state for tag input
@@ -79,10 +79,10 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
       setFormData({
         name: template.name,
         description: template.description,
-        categories: template.categories,
+        categories: template.categories || ['General'],
         defaultLists: template.defaultLists,
-        defaultCards: template.defaultCards,
-        tags: template.tags,
+        defaultCards: template.defaultCards || [],
+        tags: template.tags || [],
         isPublic: template.isPublic,
         isActive: template.isActive
       });
