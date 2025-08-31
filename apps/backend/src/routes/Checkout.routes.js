@@ -17,6 +17,9 @@ function getStripe() {
 
 router.post("/create-checkout-session", async (req, res) => {
   const { products, metadata } = req.body;
+  // Merge client-provided metadata with the authenticated user id so webhook can notify the right user
+  const userId = req.user?._id ? String(req.user._id) : undefined;
+  const mergedMetadata = { ...(metadata || {}), ...(userId ? { userId } : {}) };
   
   try {
     const stripe = getStripe();
@@ -27,9 +30,9 @@ router.post("/create-checkout-session", async (req, res) => {
       });
     }
     // Extract plan details from metadata for URL parameters
-    const planName = metadata?.plan || 'premium';
+    const planName = mergedMetadata?.plan || 'premium';
     const amount = products[0]?.price_data?.unit_amount ? (products[0].price_data.unit_amount / 100).toFixed(2) : '0';
-    const billingCycle = metadata?.billing_cycle || 'monthly';
+    const billingCycle = mergedMetadata?.billing_cycle || 'monthly';
     
     // Build success URL with plan details
     const successParams = new URLSearchParams({
@@ -52,7 +55,7 @@ router.post("/create-checkout-session", async (req, res) => {
       mode: "payment",
       success_url: `${config.FRONTEND_URL || 'http://localhost:5173'}/success?${successParams.toString()}`,
       cancel_url: `${config.FRONTEND_URL || 'http://localhost:5173'}/cancel?${cancelParams.toString()}`,
-      metadata: metadata || {},
+      metadata: mergedMetadata,
     });
     
     // Return session ID for redirectToCheckout
