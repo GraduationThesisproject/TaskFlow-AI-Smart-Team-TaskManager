@@ -117,7 +117,7 @@ function UniversalSidebar({
                         {title}
                       </div>
                     )}
-                    {effectiveBackLink && (
+                    {effectiveBackLink && !sidebarCollapsed && (
                       <div className="flex items-center gap-4">
                         <Button
                           variant={isWorkspaceOrSettings ? 'ghost' : 'secondary'}
@@ -141,7 +141,7 @@ function UniversalSidebar({
                   </>
                 ) : (
                   <>
-                    {effectiveBackLink && (
+                    {effectiveBackLink && !sidebarCollapsed && (
                       <div className="flex items-center gap-4">
                         <Button
                           variant={isWorkspaceOrSettings ? 'ghost' : 'secondary'}
@@ -255,7 +255,7 @@ function UniversalSidebar({
                   {title}
                 </div>
               )}
-              {effectiveBackLink && (
+              {effectiveBackLink && !sidebarCollapsed && (
                 <div className="flex items-center gap-4">
                   <Button
                     variant={isWorkspaceOrSettings ? 'ghost' : 'secondary'}
@@ -277,7 +277,7 @@ function UniversalSidebar({
             </>
           ) : (
             <>
-              {effectiveBackLink && (
+              {effectiveBackLink && !sidebarCollapsed && (
                 <div className="flex items-center gap-4">
                   {!sidebarCollapsed && (
                     <span className={isWorkspace ? 'text-2xl font-bold tracking-tight text-foreground' : 'text-sm'}>
