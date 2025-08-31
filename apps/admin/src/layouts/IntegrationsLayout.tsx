@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   CardHeader, 
@@ -9,7 +9,9 @@ import {
   Button,
   Input,
   Container,
-  Switch
+  Switch,
+  Alert,
+  Spinner
 } from '@taskflow/ui';
 import { 
   PuzzlePieceIcon, 
@@ -23,77 +25,18 @@ import {
   TrashIcon,
   PresentationChartBarIcon
 } from '@heroicons/react/24/outline';
-
-interface Integration {
-  id: string;
-  name: string;
-  description: string;
-  category: 'communication' | 'storage' | 'analytics' | 'development' | 'marketing';
-  status: 'active' | 'inactive' | 'error' | 'pending';
-  apiKey?: string;
-  lastSync?: string;
-  syncStatus: 'success' | 'warning' | 'error';
-  isEnabled: boolean;
-}
+import integrationService, { Integration } from '../services/integrationService';
 
 const IntegrationsLayout: React.FC = () => {
-  const [integrations, setIntegrations] = useState<Integration[]>([
-    {
-      id: '1',
-      name: 'Slack',
-      description: 'Team communication and notifications',
-      category: 'communication',
-      status: 'active',
-      lastSync: '2 minutes ago',
-      syncStatus: 'success',
-      isEnabled: true
-    },
-    {
-      id: '2',
-      name: 'Google Drive',
-      description: 'File storage and document collaboration',
-      category: 'storage',
-      status: 'active',
-      lastSync: '5 minutes ago',
-      syncStatus: 'success',
-      isEnabled: true
-    },
-    {
-      id: '3',
-      name: 'GitHub',
-      description: 'Code repository and version control',
-      category: 'development',
-      status: 'active',
-      lastSync: '1 hour ago',
-      syncStatus: 'warning',
-      isEnabled: true
-    },
-    {
-      id: '4',
-      name: 'Stripe',
-      description: 'Payment processing and billing',
-      category: 'analytics',
-      status: 'inactive',
-      lastSync: 'Never',
-      syncStatus: 'error',
-      isEnabled: false
-    },
-    {
-      id: '5',
-      name: 'Mailchimp',
-      description: 'Email marketing and automation',
-      category: 'marketing',
-      status: 'pending',
-      lastSync: 'Never',
-      syncStatus: 'error',
-      isEnabled: false
-    }
-  ]);
-
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [syncing, setSyncing] = useState<string | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
 
-  const filteredIntegrations = integrations.filter(integration => {
+  const filteredIntegrations = (integrations || []).filter(integration => {
     const matchesSearch = 
       integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       integration.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -103,50 +46,113 @@ const IntegrationsLayout: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const handleToggleIntegration = (integrationId: string) => {
-    setIntegrations(integrations.map(integration => 
-      integration.id === integrationId 
-        ? { ...integration, isEnabled: !integration.isEnabled }
-        : integration
-    ));
+  // Load integrations on component mount
+  useEffect(() => {
+    loadIntegrations();
+  }, []);
+
+  const loadIntegrations = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await integrationService.getIntegrations({
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
+        search: searchTerm || undefined
+      });
+      setIntegrations(response.integrations || []);
+    } catch (err) {
+      setError('Failed to load integrations');
+      console.error('Error loading integrations:', err);
+      setIntegrations([]); // Ensure it's always an array
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteIntegration = (integrationId: string) => {
+  const handleToggleIntegration = async (integrationId: string) => {
+    try {
+      const response = await integrationService.toggleIntegration(integrationId);
+      setIntegrations((integrations || []).map(integration => 
+        integration.id === integrationId 
+          ? response.integration
+          : integration
+      ));
+    } catch (err) {
+      setError('Failed to toggle integration');
+      console.error('Error toggling integration:', err);
+    }
+  };
+
+  const handleDeleteIntegration = async (integrationId: string) => {
     if (window.confirm('Are you sure you want to remove this integration?')) {
-      setIntegrations(integrations.filter(integration => integration.id !== integrationId));
+      try {
+        await integrationService.deleteIntegration(integrationId);
+        setIntegrations((integrations || []).filter(integration => integration.id !== integrationId));
+      } catch (err) {
+        setError('Failed to delete integration');
+        console.error('Error deleting integration:', err);
+      }
+    }
+  };
+
+  const handleSyncIntegration = async (integrationId: string) => {
+    try {
+      setSyncing(integrationId);
+      const result = await integrationService.syncIntegration(integrationId);
+      
+      // Update the integration with new sync status
+      setIntegrations((integrations || []).map(integration => 
+        integration.id === integrationId 
+          ? { ...integration, lastSync: result.lastSync || integration.lastSync }
+          : integration
+      ));
+
+      if (!result.success) {
+        setError(`Sync failed: ${result.message}`);
+      }
+    } catch (err) {
+      setError('Failed to sync integration');
+      console.error('Error syncing integration:', err);
+    } finally {
+      setSyncing(null);
+    }
+  };
+
+  const handleTestConnection = async (integrationId: string) => {
+    try {
+      setTesting(integrationId);
+      const result = await integrationService.testConnection(integrationId);
+      
+      // Update the integration with new status
+      setIntegrations((integrations || []).map(integration => 
+        integration.id === integrationId 
+          ? { 
+              ...integration, 
+              status: result.status || integration.status,
+              syncStatus: result.syncStatus || integration.syncStatus
+            }
+          : integration
+      ));
+
+      if (!result.success) {
+        setError(`Connection test failed: ${result.message}`);
+      }
+    } catch (err) {
+      setError('Failed to test connection');
+      console.error('Error testing connection:', err);
+    } finally {
+      setTesting(null);
     }
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge variant="success">Active</Badge>;
-      case 'inactive':
-        return <Badge variant="secondary">Inactive</Badge>;
-      case 'error':
-        return <Badge variant="error">Error</Badge>;
-      case 'pending':
-        return <Badge variant="warning">Pending</Badge>;
-      default:
-        return <Badge variant="secondary">Unknown</Badge>;
-    }
+    const variant = integrationService.getStatusBadgeVariant(status);
+    return <Badge variant={variant}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
   };
 
   const getCategoryBadge = (category: string) => {
-    switch (category) {
-      case 'communication':
-        return <Badge variant="default">Communication</Badge>;
-      case 'storage':
-        return <Badge variant="secondary">Storage</Badge>;
-      case 'analytics':
-        return <Badge variant="success">Analytics</Badge>;
-      case 'development':
-        return <Badge variant="warning">Development</Badge>;
-      case 'marketing':
-        return <Badge variant="error">Marketing</Badge>;
-      default:
-        return <Badge variant="secondary">{category}</Badge>;
-    }
+    const variant = integrationService.getCategoryBadgeVariant(category);
+    return <Badge variant={variant}>{category.charAt(0).toUpperCase() + category.slice(1)}</Badge>;
   };
 
   const getSyncStatusIcon = (status: string) => {
@@ -199,6 +205,13 @@ const IntegrationsLayout: React.FC = () => {
         </div>
       </div>
 
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="error" className="mb-6">
+          {error}
+        </Alert>
+      )}
+
       {/* Search and Filters */}
       <Card className="mb-6">
         <CardContent className="pt-6">
@@ -228,9 +241,20 @@ const IntegrationsLayout: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Spinner size="lg" />
+          <Typography variant="body-medium" className="ml-3 text-muted-foreground">
+            Loading integrations...
+          </Typography>
+        </div>
+      )}
+
       {/* Integrations Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        {filteredIntegrations.map((integration) => (
+      {!loading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+          {filteredIntegrations.map((integration) => (
           <Card key={integration.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -285,8 +309,32 @@ const IntegrationsLayout: React.FC = () => {
                   <PencilIcon className="h-4 w-4 mr-2 flex-shrink-0" />
                   <span className="truncate">Configure</span>
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1 min-w-0">
-                  <ClockIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 min-w-0"
+                  onClick={() => handleTestConnection(integration.id)}
+                  disabled={testing === integration.id}
+                >
+                  {testing === integration.id ? (
+                    <Spinner size="sm" className="mr-2" />
+                  ) : (
+                    <CheckCircleIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                  )}
+                  <span className="truncate">Test</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 min-w-0"
+                  onClick={() => handleSyncIntegration(integration.id)}
+                  disabled={syncing === integration.id}
+                >
+                  {syncing === integration.id ? (
+                    <Spinner size="sm" className="mr-2" />
+                  ) : (
+                    <ClockIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                  )}
                   <span className="truncate">Sync Now</span>
                 </Button>
                 <Button 
@@ -301,10 +349,11 @@ const IntegrationsLayout: React.FC = () => {
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* No Results */}
-      {filteredIntegrations.length === 0 && (
+      {!loading && filteredIntegrations.length === 0 && (
         <Card className="mt-6">
           <CardContent className="text-center py-12">
             <PuzzlePieceIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

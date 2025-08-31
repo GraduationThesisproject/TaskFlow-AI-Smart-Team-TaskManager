@@ -360,6 +360,7 @@ const AdminTemplateManager: React.FC = () => {
                       <EllipsisVerticalIcon className="w-4 h-4" />
                     </Button>
                   }
+                  triggerIsButton={true}
                 >
                   <DropdownItem onClick={() => handlePreviewTemplate(template)}>
                     <EyeIcon className="w-4 h-4 mr-2" />

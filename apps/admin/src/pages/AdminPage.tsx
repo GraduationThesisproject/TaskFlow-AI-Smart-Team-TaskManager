@@ -399,16 +399,15 @@ const AdminPage: React.FC = () => {
               {userMenuItems.map((item, index) => {
                 const Icon = item.icon;
                 return (
-                  <button
+                  <DropdownItem
                     key={index}
                     onClick={item.action}
-                    className={`w-full text-left p-2 rounded-lg transition-colors hover:bg-muted flex items-center space-x-2 ${
-                      item.variant === 'destructive' ? 'text-red-600 hover:text-red-700' : 'text-foreground'
-                    }`}
+                    variant={item.variant === 'destructive' ? 'destructive' : 'default'}
+                    className="flex items-center space-x-2"
                   >
                     <Icon className="w-4 h-4" />
                     <span>{item.label}</span>
-                  </button>
+                  </DropdownItem>
                 );
               })}
             </Dropdown>
