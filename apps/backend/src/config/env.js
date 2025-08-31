@@ -1,97 +1,55 @@
 require('dotenv').config();
-//Loads values from .env file into process.env.
+
 module.exports = {
-    //👉 Exports all the settings as an object so you can use them anywhere in your app.
-    NODE_ENV: process.env.NODE_ENV || 'development',
-    PORT: process.env.PORT || 3001,
-    //NODE_ENV → tells if your app is in "development", "production", or "test".
-    //Default is development.
-    //PORT → which port the server runs on. If not set, defaults to 3001.
+  // Server Configuration
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  PORT: parseInt(process.env.PORT || '3001', 10),
 
-    // Database
-    DATABASE_URL: process.env.DATABASE_URL || 'mongodb://localhost:27017/taskflow',
-    /*DATABASE_URL → where MongoDB is located.
-If .env doesn't have it, it falls back to mongodb://localhost:27017/taskflow (local MongoDB).*/
+  // Database Configuration
+  DATABASE_URL: process.env.DATABASE_URL || 'mongodb://localhost:27017/taskflow',
 
-    // JWT
-    JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key-here',
-    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
-    /*JWT_SECRET → the "secret key" used to sign authentication tokens.
-(Like a lock 🔐 – never share it).
-JWT_EXPIRES_IN → how long a token lasts (e.g., 7d = 7 days).*/
+  // JWT Configuration
+  JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key-here',
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
 
+  // CORS Configuration
+  CORS_ORIGIN: process.env.CORS_ORIGIN?.split(',') || [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+    'http://localhost:5176'
+  ],
 
-    // CORS
-    CORS_ORIGIN: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
-    
-/*CORS_ORIGIN → list of allowed frontend URLs that can talk to your backend.
-If .env has:
+  // Email Configuration
+  SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
+  SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),
+  SMTP_USER: process.env.SMTP_USER || 'taskflow.service.team@gmail.com',
+  SMTP_PASS: process.env.SMTP_PASS || 'moui lqyz mqag kslm',
 
-CORS_ORIGIN=http://myapp.com,http://admin.myapp.com
+  // AI Configuration
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'your-openai-api-key',
 
+  // File Upload Configuration
+  BASE_URL: process.env.BASE_URL || 'http://localhost:3001',
+  UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
+  MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10),
 
-It will split that into an array:
+  // Frontend URL
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
 
-['http://myapp.com', 'http://admin.myapp.com']
+  // OAuth Configuration
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '625288272720-qem1ue46j75pt272mab8f35baimqgeag.apps.googleusercontent.com',
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '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',
+  GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/api/auth/google/callback',
+  GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID || 'Ov23liwZN5YwJ4eZvffU',
+  GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || '1b3a20e1252907cce61a9e382c33f90142a8e73b',
+  GITHUB_CALLBACK_URL: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/auth/github/callback',
 
+  // Power BI Configuration
+  POWERBI_CLIENT_ID: process.env.POWERBI_CLIENT_ID || '',
+  POWERBI_CLIENT_SECRET: process.env.POWERBI_CLIENT_SECRET || '',
+  POWERBI_TENANT_ID: process.env.POWERBI_TENANT_ID || '',
 
-Default is localhost (your React apps).*/
-
-
-
-    // Email
-    SMTP_HOST: process.env.SMTP_HOST,
-    SMTP_PORT: process.env.SMTP_PORT || 587,
-    SMTP_USER: process.env.SMTP_USER,
-    SMTP_PASS: process.env.SMTP_PASS,
-    /*SMTP_HOST → your email server (e.g., Gmail, Outlook, SendGrid).
-
-SMTP_PORT → port for sending email (default 587).
-
-SMTP_USER → your email username.
-
-SMTP_PASS → your email password or API key.
-
-👉 Used for sending signup confirmation / password reset emails.*/
-
-
-
-
-
-
-
-    // AI
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-    //OPENAI_API_KEY → your API key for using AI (e.g., ChatGPT in your app)
-
-
-
-
-    // File Upload (Local Storage)
-    BASE_URL: process.env.BASE_URL || 'http://localhost:3001',
-    UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
-    MAX_FILE_SIZE: process.env.MAX_FILE_SIZE || '10485760', // 10MB in bytes
-    
-    // Frontend URL
-    FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
-    /*BASE_URL → the base URL of your backend (for file links).
-
-UPLOAD_DIR → the folder where uploaded files are stored.
-
-MAX_FILE_SIZE → maximum allowed file size (here 10 MB). */
-
-
-// OAuth
-GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
-GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL,
-
-
-    // Power BI Configuration
-    POWERBI_CLIENT_ID: process.env.POWERBI_CLIENT_ID,
-    POWERBI_CLIENT_SECRET: process.env.POWERBI_CLIENT_SECRET,
-    POWERBI_TENANT_ID: process.env.POWERBI_TENANT_ID,
-    /*POWERBI_CLIENT_ID → Azure AD app registration client ID for Power BI API access.
-    POWERBI_CLIENT_SECRET → Azure AD app registration client secret.
-    POWERBI_TENANT_ID → Azure AD tenant ID for your organization.*/
+  // Stripe Configuration
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || 'sk_test_51S0u5XQnbFIuhN9UKC4JnYCbkNV8z7e98bBeI6GekB7zynMKHCriJDHLO8x3bjpefaIhG2QMV1VpyLwAXu4FhQKu00xqTpMdX4'
 };

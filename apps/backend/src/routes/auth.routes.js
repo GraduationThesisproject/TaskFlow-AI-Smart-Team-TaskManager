@@ -5,147 +5,97 @@ const validateMiddleware = require('../middlewares/validate.middleware');
 const { rateLimitSensitiveOps } = require('../middlewares/permission.middleware');
 const { createMulterUpload } = require('../config/multer');
 
-// Robust router initialization to avoid "router.post is not a function"
-function createRouter() {
-  try {
-    const r = express.Router();
-    if (r && typeof r.post === 'function' && typeof r.get === 'function') return r;
-  } catch (_) {}
-  try {
-    // Fallback to the underlying router package used by Express v5
-    const fallback = require('router')();
-    if (fallback && typeof fallback.post === 'function' && typeof fallback.get === 'function') return fallback;
-  } catch (_) {}
-  throw new Error('Failed to initialize Router');
-}
-const router = createRouter();
+// Import validation schemas
+const authSchemas = require('./validator').auth;
 
-// Validation schemas
-const registerSchema = {
-    name: { required: true, minLength: 2, maxLength: 100 },
-    email: { required: true, email: true },
-    password: { required: true, minLength: 8 },
-    inviteToken: { string: true }, // optional
-    device: {
-        deviceId: { string: true },
-        deviceInfo: {
-            type: { enum: ['web', 'mobile', 'desktop'] },
-            os: { string: true },
-            browser: { string: true }
-        }
-    }
-};
+// Initialize router
+const router = express.Router();
 
-const loginSchema = {
-    email: { required: true, email: true },
-    password: { required: true },
-    rememberMe: { boolean: true },
-    device: {
-        deviceId: { string: true },
-        deviceInfo: {
-            type: { enum: ['web', 'mobile', 'desktop'] },
-            os: { string: true },
-            browser: { string: true }
-        }
-    }
-};
+// ============================================================================
+// PUBLIC ROUTES (No Authentication Required)
+// ============================================================================
 
-const changePasswordSchema = {
-    currentPassword: { required: true },
-    newPassword: { required: true, minLength: 8 }
-};
-
-
-const secureProfileUpdateSchema = {
-    name: { minLength: 2, maxLength: 100 },
-    currentPassword: { required: true },
-    newPassword: { required: true, minLength: 8 }
-};
-
-const updatePreferencesSchema = {
-    section: { string: true },
-    updates: { object: true }
-};
-
-const logoutSchema = {
-    deviceId: { string: true, required: false },
-    allDevices: { boolean: true, required: false }
-};
-
-const passwordResetRequestSchema = {
-    email: { required: true, email: true }
-    
-};
-
-const passwordResetSchema = {
-    token: { required: true, string: true },
-    newPassword: { required: true, minLength: 8 }
-};
-
-// Public routes
+// User Registration & Invitation
 router.post('/register', 
-    validateMiddleware(registerSchema), 
+    validateMiddleware(authSchemas.registerSchema), 
     authController.register
 );
 
+// User Authentication
 router.post('/login', 
-    validateMiddleware(loginSchema), 
+    validateMiddleware(authSchemas.loginSchema), 
     authController.login
 );
 
 router.post('/login/2fa-complete', 
+    validateMiddleware(authSchemas.completeLogin2FASchema),
     authController.completeLoginWith2FA
 );
 
+// Password Reset
 router.post('/password-reset/request',
-    validateMiddleware(passwordResetRequestSchema),
+    validateMiddleware(authSchemas.passwordResetRequestSchema),
     authController.requestPasswordReset
 );
 
+router.put('/password-reset/confirm',
+    validateMiddleware(authSchemas.passwordResetSchema),
+    authController.resetPassword
+);
 
+// Email Verification
 router.get('/verify-email/:token',
     authController.verifyEmail
 );
 
-// Protected routes
+// OAuth Authentication
+router.get('/google', authController.googleLogin);
+router.get('/google/callback', authController.googleCallback);
+router.get('/github', authController.githubLogin);
+router.get('/github/callback', authController.githubCallback);
+
+// ============================================================================
+// PROTECTED ROUTES (Authentication Required)
+// ============================================================================
+
+// User Profile Management
 router.get('/me', 
     authMiddleware, 
     authController.getMe
 );
 
-router.post('/logout', 
+router.put('/profile', 
     authMiddleware,
-    validateMiddleware(logoutSchema),
-    authController.logout
+    validateMiddleware(authSchemas.updateProfileSchema),
+    authController.updateProfile
 );
 
-
-const uploadAvatar = createMulterUpload('avatar', false);
-router.put(
-    '/profile/secure',
-    // uploadAvatar,       // Multer handles avatar file and populates req.body
-    // (req, res, next) => {
-    //                    // Optional: simple validation here manually
-    //   const { currentPassword, name } = req.body;
-    //   if (!currentPassword) return res.status(400).json({ message: 'Current password required' });
-    //   if (name && name.length < 2) return res.status(400).json({ message: 'Name too short' });
-    //   next();
-    // },
+router.put('/profile/secure',
     authMiddleware,
+    validateMiddleware(authSchemas.secureProfileUpdateSchema),
     authController.updateProfileSecure
-  );
+);
 
+// Password & Security
 router.put('/change-password',
     authMiddleware,
-    rateLimitSensitiveOps(5, 15 * 60 * 1000), // 5 requests per 15 minutes
-    validateMiddleware(changePasswordSchema),
+    rateLimitSensitiveOps(5, 15 * 60 * 1000), 
+    validateMiddleware(authSchemas.changePasswordSchema),
     authController.changePassword
 );
 
+// User Preferences & Settings
 router.put('/preferences',
     authMiddleware,
-    validateMiddleware(updatePreferencesSchema),
+    validateMiddleware(authSchemas.updatePreferencesSchema),
     authController.updatePreferences
+);
+
+// Session Management
+router.post('/logout',
+    authMiddleware,
+    validateMiddleware(authSchemas.logoutSchema),
+    authController.logout
 );
 
 router.get('/sessions',
@@ -155,19 +105,15 @@ router.get('/sessions',
 
 router.delete('/sessions/:sessionId',
     authMiddleware,
+    validateMiddleware(authSchemas.sessionIdSchema),
     authController.endSession
 );
 
+// Activity Logging
 router.get('/activity',
     authMiddleware,
+    validateMiddleware(authSchemas.activityLogSchema),
     authController.getActivityLog
 );
-
-// OAuth Routes
-router.get('/google', authController.googleLogin);
-router.get('/google/callback', authController.googleCallback);
-
-router.get('/github', authController.githubLogin);
-router.get('/github/callback', authController.githubCallback);
 
 module.exports = router;

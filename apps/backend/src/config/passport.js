@@ -119,7 +119,22 @@ if (GoogleStrategy && googleConfig.available) {
 // GitHub OAuth Strategy - only initialize if credentials are provided and package is available
 const githubConfig = checkOAuthConfig('github', process.env.GITHUB_CLIENT_ID, process.env.GITHUB_CLIENT_SECRET);
 
+console.log('🔍 GitHub OAuth Configuration Check:', {
+    hasStrategy: !!GitHubStrategy,
+    clientId: process.env.GITHUB_CLIENT_ID ? `${process.env.GITHUB_CLIENT_ID.substring(0, 10)}...` : 'NOT SET',
+    clientSecret: process.env.GITHUB_CLIENT_SECRET ? `${process.env.GITHUB_CLIENT_SECRET.substring(0, 10)}...` : 'NOT SET',
+    callbackURL: process.env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
+    configAvailable: githubConfig.available,
+    reason: githubConfig.reason
+});
+
 if (GitHubStrategy && githubConfig.available) {
+    console.log('🔵 Initializing GitHub OAuth Strategy with config:', {
+        clientID: process.env.GITHUB_CLIENT_ID,
+        callbackURL: process.env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
+        scope: ['user:email']
+    });
+    
     passport.use(new GitHubStrategy({
         clientID: process.env.GITHUB_CLIENT_ID,
         clientSecret: process.env.GITHUB_CLIENT_SECRET,
@@ -134,15 +149,18 @@ if (GitHubStrategy && githubConfig.available) {
         
         try {
             // Get user email from GitHub
-            console.log('🔵 Fetching GitHub emails...');
-            const emails = await profile.emails;
-            console.log('🔵 GitHub emails received:', emails);
+            console.log('🔵 Checking GitHub emails...');
+            if (!profile.emails || !profile.emails.length) {
+                console.log('❌ No emails found in GitHub profile');
+                return done(new Error('No email found from GitHub profile'), null);
+            }
             
-            const primaryEmail = emails.find(email => email.primary) || emails[0];
+            console.log('🔵 GitHub emails:', profile.emails);
+            const primaryEmail = profile.emails.find(email => email.primary) || profile.emails[0];
             
             if (!primaryEmail) {
-                console.log('❌ No email found from GitHub profile');
-                return done(new Error('No email found from GitHub'), null);
+                console.log('❌ No usable email found from GitHub profile');
+                return done(new Error('No usable email found from GitHub profile'), null);
             }
             
             console.log('🔵 Using email:', primaryEmail.value);

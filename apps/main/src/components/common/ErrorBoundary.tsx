@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import type { ReactNode } from 'react';
 import { Typography, Button, Card, CardContent } from '@taskflow/ui';
-
+import {env} from '../../config/env';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
@@ -66,7 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </Typography>
               
               {/* Error details in development */}
-              {process.env.NODE_ENV === 'development' && this.state.error && (
+              {env.NODE_ENV === 'development' && this.state.error && (
                 <div className="mb-6 p-4 bg-muted rounded-lg text-left">
                   <Typography variant="body-small" className="font-mono text-destructive">
                     {this.state.error.message}
