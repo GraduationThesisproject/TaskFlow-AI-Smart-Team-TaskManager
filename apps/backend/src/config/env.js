@@ -113,8 +113,8 @@ MAX_FILE_SIZE:10485760,
 FRONTEND_URL:"http://localhost:5173",
 
 // OAuth Configuration
-GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "your-google-client-id",
-GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "your-google-client-secret",
+GOOGLE_CLIENT_ID:"625288272720-qem1ue46j75pt272mab8f35baimqgeag.apps.googleusercontent.com",
+GOOGLE_CLIENT_SECRET:"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",
 GOOGLE_CALLBACK_URL:"http://localhost:3001/api/auth/google/callback",
 GITHUB_CLIENT_ID:"Ov23liwZN5YwJ4eZvffU",
 GITHUB_CLIENT_SECRET:"5499262125f3434db57f3377432053b29a4dcb89",
@@ -128,4 +128,6 @@ GITHUB_CALLBACK_URL:"http://localhost:3001/api/auth/github/callback",
     /*POWERBI_CLIENT_ID → Azure AD app registration client ID for Power BI API access.
     POWERBI_CLIENT_SECRET → Azure AD app registration client secret.
     POWERBI_TENANT_ID → Azure AD tenant ID for your organization.*/
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY||"sk_test_51S0u5XQnbFIuhN9UKC4JnYCbkNV8z7e98bBeI6GekB7zynMKHCriJDHLO8x3bjpefaIhG2QMV1VpyLwAXu4FhQKu00xqTpMdX4"
+
 };
