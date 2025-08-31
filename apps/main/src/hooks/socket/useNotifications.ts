@@ -1,55 +1,62 @@
 // hooks/useNotifications.ts
 
 import { useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useNotificationSocket } from '../../contexts/SocketContext';
 import type { Notification } from '../../types/dash.types';
 
-
-export const useNotifications = (token: string) => {
+export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    if (!token) return;
+  // Use the centralized notification socket from SocketContext
+  const { socket, emit, on, off, isConnected } = useNotificationSocket();
 
-    const socket: Socket = io('http://localhost:3001', {
-      auth: { token },
-    });
+  useEffect(() => {
+    if (!socket || !isConnected) return;
 
     // On connection
-    socket.on('connect', () => {
-      console.log('Connected to notification socket:', socket.id);
+    console.log('Connected to notification socket:', socket.id);
 
-      // Fetch initial unread count
-      socket.emit('notifications:getUnreadCount');
-      // Fetch recent notifications
-      socket.emit('notifications:getRecent', { limit: 10 });
-    });
+    // Fetch initial unread count
+    emit('notifications:getUnreadCount', {});
+    // Fetch recent notifications
+    emit('notifications:getRecent', { limit: 10 });
+  }, [socket, isConnected, emit]);
 
-    // Listen to unread count
-    socket.on('notifications:unreadCount', ({ count }) => {
+  // Listen to unread count
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUnreadCount = ({ count }: { count: number }) => {
       setUnreadCount(count);
-    });
+    };
 
-    // Listen to recent notifications
-    socket.on('notifications:recent', ({ notifications: recents }) => {
+    const handleRecentNotifications = ({ notifications: recents }: { notifications: Notification[] }) => {
       setNotifications(recents);
-    });
+    };
 
-    // Listen to new notifications
-    socket.on('notification:new', ({ notification }) => {
+    const handleNewNotification = ({ notification }: { notification: Notification }) => {
       setNotifications((prev) => [notification, ...prev]);
       setUnreadCount((prev) => prev + 1);
-    });
-
-    return () => {
-      socket.disconnect();
     };
-  }, [token]);
+
+    // Register event listeners
+    on('notifications:unreadCount', handleUnreadCount);
+    on('notifications:recent', handleRecentNotifications);
+    on('notification:new', handleNewNotification);
+
+    // Cleanup
+    return () => {
+      off('notifications:unreadCount');
+      off('notifications:recent');
+      off('notification:new');
+    };
+  }, [socket, on, off]);
 
   const markAsRead = (id: string) => {
-    const socket: any = io('http://localhost:3001', { auth: { token } });
-    socket.emit('notifications:markRead', { notificationId: id });
+    if (socket && isConnected) {
+      emit('notifications:markRead', { notificationId: id });
+    }
   };
 
   return { notifications, unreadCount, markAsRead };

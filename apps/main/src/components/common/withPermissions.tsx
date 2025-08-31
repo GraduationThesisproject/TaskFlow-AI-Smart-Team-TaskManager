@@ -1,12 +1,7 @@
 import React from 'react';
 import { usePermissions } from '../../hooks/usePermissions';
 import type { WorkspaceRole } from '../../types/workspace.types';
-
-interface WithPermissionsProps {
-  requiredRole?: WorkspaceRole;
-  requiredPermission?: string;
-  fallback?: React.ReactNode;
-}
+import type { WithPermissionsProps } from '../../types/interfaces/ui';
 
 export const withPermissions = <P extends object>(
   WrappedComponent: React.ComponentType<P>,

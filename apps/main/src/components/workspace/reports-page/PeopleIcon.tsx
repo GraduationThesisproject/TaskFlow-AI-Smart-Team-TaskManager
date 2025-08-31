@@ -1,8 +1,5 @@
 import React from "react";
-
-interface PeopleIconProps extends React.SVGProps<SVGSVGElement> {
-  size?: number;
-}
+import type { PeopleIconProps } from '../../../types/interfaces/ui';
 
 const PeopleIcon: React.FC<PeopleIconProps> = ({ size = 20, className, ...props }) => (
   <svg

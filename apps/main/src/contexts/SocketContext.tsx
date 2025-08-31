@@ -2,63 +2,59 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { useSocket } from '../hooks/socket/useSocket';
 import { useAuth } from '../hooks/useAuth';
 import { env } from '../config/env';
-
-interface SocketContextType {
-  isConnected: boolean;
-  isConnecting: boolean;
-  error: string | null;
-  socket: any;
-  emit: (event: string, data: any) => void;
-  on: (event: string, callback: (data: any) => void) => void;
-  off: (event: string) => void;
-  reconnect: () => void;
-  reconnectAttempts: number;
-  maxReconnectAttempts: number;
-  connectionDetails: {
-    url: string;
-    hasToken: boolean;
-    authStatus: string;
-    lastAttempt: Date | null;
-    isReady: boolean;
-  };
-}
+import type { 
+  SocketNamespace, 
+  SocketContextType, 
+  SocketProviderProps 
+} from '../types/interfaces/socket';
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
 
-interface SocketProviderProps {
-  children: ReactNode;
-}
-
 export function SocketProvider({ children }: SocketProviderProps) {
   const { isAuthenticated, user, token, isLoading: authLoading } = useAuth();
-  const [socketOptions, setSocketOptions] = useState<{
-    url: string;
-    autoConnect: boolean;
-    auth?: { token: string };
-  }>({
-    url: env.SOCKET_URL,
-    autoConnect: false,
-  });
   const [lastAttempt, setLastAttempt] = useState<Date | null>(null);
   const [isReady, setIsReady] = useState(false);
 
-  const {
-    socket,
-    isConnected,
-    isConnecting,
-    error,
-    emit,
-    on,
-    off,
-    connect,
-    reconnectAttempts,
-    maxReconnectAttempts,
-  } = useSocket(socketOptions);
+  // Create socket connections for each namespace
+  const boardSocket = useSocket({
+    url: env.SOCKET_URL,
+    autoConnect: false,
+    namespace: '/',
+    auth: token ? { token } : undefined,
+  });
 
-  // Determine if we're ready to attempt socket connection
+  const notificationSocket = useSocket({
+    url: env.SOCKET_URL,
+    autoConnect: false,
+    namespace: '/notifications',
+    auth: token ? { token } : undefined,
+  });
+
+  const systemSocket = useSocket({
+    url: env.SOCKET_URL,
+    autoConnect: false,
+    namespace: '/system',
+    auth: token ? { token } : undefined,
+  });
+
+  const chatSocket = useSocket({
+    url: env.SOCKET_URL,
+    autoConnect: false,
+    namespace: '/chat',
+    auth: token ? { token } : undefined,
+  });
+
+  const workspaceSocket = useSocket({
+    url: env.SOCKET_URL,
+    autoConnect: false,
+    namespace: '/workspace',
+    auth: token ? { token } : undefined,
+  });
+
+  // Determine if we're ready to attempt socket connections
   const isReadyToConnect = !authLoading && isAuthenticated && !!token;
 
-  // Update socket options when authentication state changes
+  // Update socket connections when authentication state changes
   useEffect(() => {
     console.log('🔐 Auth state changed:', { 
       isAuthenticated, 
@@ -68,51 +64,95 @@ export function SocketProvider({ children }: SocketProviderProps) {
     });
     
     if (isReadyToConnect) {
-      console.log('✅ Setting up authenticated socket connection');
-      setSocketOptions({
-        url: env.SOCKET_URL,
-        autoConnect: true,
-        auth: { token },
-      });
+      console.log('✅ Setting up authenticated socket connections for all namespaces');
       setLastAttempt(new Date());
       setIsReady(true);
+      
+      // Connect to all namespaces
+      boardSocket.connect();
+      notificationSocket.connect();
+      chatSocket.connect();
+      workspaceSocket.connect();
+      
+      // Only connect to system socket if user has admin privileges
+      if (user?.roles?.global?.includes('admin') || user?.roles?.permissions?.includes('system:monitor')) {
+        systemSocket.connect();
+      }
     } else if (!authLoading && (!isAuthenticated || !token)) {
-      console.log('❌ Clearing socket connection - no authentication');
-      setSocketOptions({
-        url: env.SOCKET_URL,
-        autoConnect: false,
-      });
+      console.log('❌ Disconnecting all socket connections - no authentication');
       setLastAttempt(null);
       setIsReady(false);
+      
+      // Disconnect all namespaces
+      boardSocket.disconnect();
+      notificationSocket.disconnect();
+      systemSocket.disconnect();
+      chatSocket.disconnect();
+      workspaceSocket.disconnect();
     }
-    // If authLoading is true, we don't change anything - wait for it to complete
-  }, [isAuthenticated, token, authLoading, isReadyToConnect]);
+  }, [isAuthenticated, token, authLoading, isReadyToConnect, user?.roles?.global, user?.roles?.permissions]);
 
   // Manual reconnect function
   const reconnect = () => {
     if (isReadyToConnect) {
-      console.log('🔄 Manual reconnection requested');
-      setSocketOptions(prev => ({
-        ...prev,
-        autoConnect: true,
-        auth: { token },
-      }));
+      console.log('🔄 Manual reconnection requested for all namespaces');
       setLastAttempt(new Date());
+      
+      boardSocket.connect();
+      notificationSocket.connect();
+      chatSocket.connect();
+      workspaceSocket.connect();
+      
+      if (user?.roles?.global?.includes('admin') || user?.roles?.permissions?.includes('system:monitor')) {
+        systemSocket.connect();
+      }
     } else {
       console.log('❌ Cannot reconnect - not ready to connect');
     }
   };
 
+  // Disconnect all namespaces
+  const disconnect = () => {
+    console.log('🔌 Disconnecting all socket namespaces');
+    boardSocket.disconnect();
+    notificationSocket.disconnect();
+    systemSocket.disconnect();
+    chatSocket.disconnect();
+    workspaceSocket.disconnect();
+  };
+
+  // Get namespace by name
+  const getNamespace = (name: 'board' | 'notifications' | 'system' | 'chat' | 'workspace'): SocketNamespace => {
+    const namespaces = {
+      board: boardSocket,
+      notifications: notificationSocket,
+      system: systemSocket,
+      chat: chatSocket,
+      workspace: workspaceSocket,
+    };
+    return namespaces[name];
+  };
+
+  // Global connection status
+  const isAnyConnected = boardSocket.isConnected || notificationSocket.isConnected || 
+                        systemSocket.isConnected || chatSocket.isConnected || workspaceSocket.isConnected;
+  
+  const isAnyConnecting = boardSocket.isConnecting || notificationSocket.isConnecting || 
+                         systemSocket.isConnecting || chatSocket.isConnecting || workspaceSocket.isConnecting;
+  
+  const hasErrors = !!(boardSocket.error || notificationSocket.error || 
+                      systemSocket.error || chatSocket.error || workspaceSocket.error);
+
   // Log connection status changes
   useEffect(() => {
-    if (isConnected) {
-      console.log('🔌 Socket connected successfully');
-    } else if (isConnecting) {
-      console.log('🔄 Socket connecting...');
-    } else if (error) {
-      console.error('❌ Socket error:', error);
+    if (isAnyConnected) {
+      console.log('🔌 At least one socket namespace connected');
+    } else if (isAnyConnecting) {
+      console.log('🔄 Socket namespaces connecting...');
+    } else if (hasErrors) {
+      console.error('❌ Socket errors detected in one or more namespaces');
     }
-  }, [isConnected, isConnecting, error]);
+  }, [isAnyConnected, isAnyConnecting, hasErrors]);
 
   // Debug authentication state changes
   useEffect(() => {
@@ -121,31 +161,37 @@ export function SocketProvider({ children }: SocketProviderProps) {
       hasToken: !!token,
       authLoading,
       isReadyToConnect,
-      socketOptions,
-      isConnected,
-      isConnecting,
-      error,
-      isReady
+      isAnyConnected,
+      isAnyConnecting,
+      hasErrors,
+      isReady,
+      userRoles: user?.roles?.global,
+      userPermissions: user?.roles?.permissions
     });
-  }, [isAuthenticated, token, authLoading, isReadyToConnect, socketOptions, isConnected, isConnecting, error, isReady]);
+      }, [isAuthenticated, token, authLoading, isReadyToConnect, isAnyConnected, isAnyConnecting, hasErrors, isReady, user?.roles?.global, user?.roles?.permissions]);
 
   const value: SocketContextType = {
-    isConnected,
-    isConnecting,
-    error,
-    socket,
-    emit,
-    on,
-    off,
+    board: boardSocket,
+    notifications: notificationSocket,
+    system: systemSocket,
+    chat: chatSocket,
+    workspace: workspaceSocket,
+    
+    isAnyConnected,
+    isAnyConnecting,
+    hasErrors,
+    
     reconnect,
-    reconnectAttempts,
-    maxReconnectAttempts,
+    disconnect,
+    getNamespace,
+    
     connectionDetails: {
-      url: env.SOCKET_URL,
+      baseUrl: env.SOCKET_URL,
       hasToken: !!token,
       authStatus: authLoading ? 'loading' : isAuthenticated ? 'authenticated' : 'not_authenticated',
       lastAttempt,
       isReady,
+      namespaces: ['board', 'notifications', 'chat', 'workspace', 'system'],
     },
   };
 
@@ -164,20 +210,46 @@ export function useSocketContext(): SocketContextType {
   return context;
 }
 
-// Hook for components that need socket functionality
+// Hook for components that need board socket functionality
+export function useBoardSocket() {
+  const context = useSocketContext();
+  return context.board;
+}
+
+// Hook for components that need notification socket functionality
+export function useNotificationSocket() {
+  const context = useSocketContext();
+  return context.notifications;
+}
+
+// Hook for components that need system socket functionality (admin only)
+export function useSystemSocket() {
+  const context = useSocketContext();
+  return context.system;
+}
+
+// Hook for components that need chat socket functionality
+export function useChatSocket() {
+  const context = useSocketContext();
+  return context.chat;
+}
+
+// Hook for components that need workspace socket functionality
+export function useWorkspaceSocket() {
+  const context = useSocketContext();
+  return context.workspace;
+}
+
+// Hook for components that need any socket connection
 export function useSocketConnection() {
   const context = useSocketContext();
   
-  // Return a simplified interface for basic socket operations
   return {
-    isConnected: context.isConnected,
-    isConnecting: context.isConnecting,
-    error: context.error,
-    emit: context.emit,
-    on: context.on,
-    off: context.off,
+    isAnyConnected: context.isAnyConnected,
+    isAnyConnecting: context.isAnyConnecting,
+    hasErrors: context.hasErrors,
     reconnect: context.reconnect,
-    connectionStatus: context.isConnected ? 'connected' : context.isConnecting ? 'connecting' : 'disconnected',
+    disconnect: context.disconnect,
     connectionDetails: context.connectionDetails,
   };
 }

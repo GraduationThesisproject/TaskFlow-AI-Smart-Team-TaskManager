@@ -3,14 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../../hooks/usePermissions';
 import type { WorkspaceRole } from '../../types/workspace.types';
-
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requiredRole?: WorkspaceRole;
-  requiredPermission?: string;
-  redirectTo?: string;
-  fallback?: React.ReactNode;
-}
+import type { ProtectedRouteProps } from '../../types/interfaces/ui';
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,

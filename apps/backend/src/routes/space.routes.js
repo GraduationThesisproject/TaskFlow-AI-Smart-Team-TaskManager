@@ -3,8 +3,12 @@ const spaceController = require('../controllers/space.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const { requireSpacePermission } = require('../middlewares/permission.middleware');
 const { space: spaceSchemas } = require('./validator');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
+
+// Apply authentication to all routes
+router.use(authMiddleware);
 
 // Routes - Support both URL patterns for backward compatibility
 router.get('/workspace/:workspaceId',

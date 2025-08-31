@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Typography, Stack, Alert } from '@taskflow/ui';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
-
-interface DeleteWorkspaceModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  workspaceId: string;
-  workspaceName?: string;
-}
+import type { DeleteWorkspaceModalProps } from '../../../../types/interfaces/ui';
 
 export const DeleteWorkspaceModal: React.FC<DeleteWorkspaceModalProps> = ({ isOpen, onClose, workspaceId, workspaceName }) => {
   const { deleteWorkspaceById, loading, error: globalError } = useWorkspaces();

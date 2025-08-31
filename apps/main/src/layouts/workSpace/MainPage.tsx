@@ -25,20 +25,7 @@ import { SpaceService } from '../../services/spaceService';
 import SpaceTable from '../../components/workspace/main_page/SpaceTable';
 import type { Space } from '../../types/space.types';
 
-interface User {
-  _id?: string;
-  name?: string;
-  email?: string;
-}
-
-interface Member {
-  id?: string;
-  userId?: string;
-  user?: User | string;
-  role: 'owner' | 'admin' | 'member';
-  status?: 'active' | 'pending' | 'disabled';
-  lastActive?: string | Date;
-}
+import type { User, Member } from '../../types/interfaces/ui';
 
 const Main = () => {
   const dispatch = useAppDispatch();
@@ -238,7 +225,7 @@ const Main = () => {
     const q = search.trim();
     if (q.length < 2) return;
     if (!workspaceId) {
-      // eslint-disable-next-line no-console
+       
       console.warn('[API members search] Skipped: invalid workspace id. Provide ?id=<ObjectId> in URL.');
       return;
     }
@@ -323,7 +310,7 @@ const Main = () => {
             <div className="text-sm ">
               <p>• This link will expire in 7 days</p>
               <p>• Anyone with this link can join your workspace</p>
-              <p>• You can disable this link anytime using "Disable invite link"</p>
+              <p>• You can disable this link anytime using &quot;Disable invite link&quot;</p>
             </div>
           </div>
         </ModalBody>

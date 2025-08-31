@@ -3,8 +3,12 @@ const boardController = require('../controllers/board.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const { requireBoardPermission } = require('../middlewares/permission.middleware');
 const { board: boardSchemas } = require('./validator');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
+
+// Apply authentication to all routes
+router.use(authMiddleware);
 
 // Routes
 router.get('/space/:spaceId', boardController.getBoards);

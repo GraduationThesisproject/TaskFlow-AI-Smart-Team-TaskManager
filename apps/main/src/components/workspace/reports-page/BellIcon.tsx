@@ -1,8 +1,5 @@
 import React from "react";
-
-interface BellIconProps extends React.SVGProps<SVGSVGElement> {
-  size?: number;
-}
+import type { BellIconProps } from '../../../types/interfaces/ui';
 
 const BellIcon: React.FC<BellIconProps> = ({ size = 21, className, ...props }) => {
   // Original aspect ratio width:height = 23:21

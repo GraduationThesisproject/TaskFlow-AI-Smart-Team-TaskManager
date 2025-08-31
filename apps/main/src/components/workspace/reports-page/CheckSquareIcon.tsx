@@ -1,8 +1,5 @@
 import React from "react";
-
-interface CheckSquareIconProps extends React.SVGProps<SVGSVGElement> {
-  size?: number;
-}
+import type { CheckSquareIconProps } from '../../../types/interfaces/ui';
 
 const CheckSquareIcon: React.FC<CheckSquareIconProps> = ({ size = 24, className, ...props }) => {
   // Maintain original aspect ratio width:height = 60:61

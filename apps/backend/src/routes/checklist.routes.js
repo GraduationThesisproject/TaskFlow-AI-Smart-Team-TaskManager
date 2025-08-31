@@ -2,8 +2,12 @@ const express = require('express');
 const checklistController = require('../controllers/checklist.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const { checklist: checklistSchemas } = require('./validator');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
+
+// Apply authentication to all routes
+router.use(authMiddleware);
 
 
 
@@ -23,19 +27,19 @@ router.put('/:id',
 router.delete('/:id', checklistController.deleteChecklist);
 
 router.post('/:id/items',
-    validateMiddleware(addItemSchema),
+    validateMiddleware(checklistSchemas.addItemSchema),
     checklistController.addItem
 );
 
 router.put('/:id/items/:itemId',
-    validateMiddleware(updateItemSchema),
+    validateMiddleware(checklistSchemas.updateItemSchema),
     checklistController.updateItem
 );
 
 router.delete('/:id/items/:itemId', checklistController.deleteItem);
 
 router.patch('/:id/reorder',
-    validateMiddleware(reorderItemsSchema),
+    validateMiddleware(checklistSchemas.reorderItemsSchema),
     checklistController.reorderItems
 );
 

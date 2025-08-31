@@ -2,19 +2,7 @@ import React from 'react';
 import { Button, Input } from '@taskflow/ui';
 import { Grid, List, Search } from 'lucide-react';
 import type { CategoryKey, Category } from '../../../types/dash.types';
-
-interface TemplatesFiltersProps {
-  activeCategory: 'all' | CategoryKey;
-  setActiveCategory: (c: 'all' | CategoryKey) => void;
-  searchQuery: string;
-  setSearchQuery: (v: string) => void;
-  viewMode: 'grid' | 'list';
-  setViewMode: (m: 'grid' | 'list') => void;
-  sortBy: 'newest' | 'popular' | 'name';
-  setSortBy: (s: 'newest' | 'popular' | 'name') => void;
-  templatesCount: number;
-  categories: Category[];
-}
+import type { TemplatesFiltersProps } from '../../../types/interfaces/ui';
 
 const TemplatesFilters: React.FC<TemplatesFiltersProps> = ({
   activeCategory,

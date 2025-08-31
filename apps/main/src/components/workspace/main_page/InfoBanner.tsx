@@ -1,8 +1,5 @@
 import React from 'react';
-
-interface InfoBannerProps {
-  workspaceId: string | null;
-}
+import type { InfoBannerProps } from '../../../../types/interfaces/ui';
 
 const InfoBanner: React.FC<InfoBannerProps> = ({ workspaceId }) => {
   return (

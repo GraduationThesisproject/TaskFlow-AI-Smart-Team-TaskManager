@@ -1,17 +1,6 @@
 import React from 'react';
 import { Modal, ModalBody, ModalFooter, Button } from '@taskflow/ui';
-
-interface GuestSharingSettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm?: () => void;
-  canManage: boolean;
-  currentSetting: string;
-  newSetting: string;
-  userRole: string | null;
-  userName?: string;
-  loading: boolean;
-}
+import type { GuestSharingSettingsModalProps } from '../../../types/interfaces/ui';
 
 const GuestSharingSettingsModal: React.FC<GuestSharingSettingsModalProps> = ({
   isOpen,

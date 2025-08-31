@@ -1,11 +1,7 @@
 import React from 'react';
 import { useSocketConnection } from '../../contexts/SocketContext';
 import { Wifi, WifiOff, RefreshCw, AlertCircle } from 'lucide-react';
-
-interface SocketStatusIndicatorProps {
-  showDetails?: boolean;
-  className?: string;
-}
+import type { SocketStatusIndicatorProps } from '../../types/interfaces/ui';
 
 export function SocketStatusIndicator({ showDetails = false, className = '' }: SocketStatusIndicatorProps) {
   const { isConnected, isConnecting, error, reconnect, connectionStatus } = useSocketConnection();

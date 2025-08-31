@@ -3,8 +3,12 @@ const workspaceController = require('../controllers/workspace.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const { requireWorkspacePermission } = require('../middlewares/permission.middleware');
 const { workspace: workspaceSchemas } = require('./validator');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
+
+// Apply authentication to all routes
+router.use(authMiddleware);
 
 // Routes
 router.get('/', workspaceController.getAllWorkspaces);

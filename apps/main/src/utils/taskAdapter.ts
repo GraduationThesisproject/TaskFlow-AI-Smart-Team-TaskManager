@@ -1,5 +1,6 @@
 import type { Task as BackendTask, TaskPriority as BackendPriority, TaskStatus as BackendStatus } from '../types/task.types';
 import type { Task } from '../types/task.types';
+import type { Subtask } from '../types/interfaces/ui';
 
 const statusMapBackendToUI: Record<BackendStatus, Task['status']> = {
   'todo': 'To Do',

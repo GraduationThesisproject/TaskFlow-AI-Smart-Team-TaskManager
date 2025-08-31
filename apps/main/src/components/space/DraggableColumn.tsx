@@ -13,16 +13,7 @@ import {
 import { DraggableTask } from './DraggableTask';
 import type { Task } from '../../types/task.types';
 import type { Column } from '../../types/board.types';
-
-interface DraggableColumnProps {
-  column: Column;
-  tasks: Task[];
-  index: number;
-  onTaskClick: (task: Task) => void;
-  onAddTask: (columnId: string) => void;
-  onEditColumn: (columnId: string) => void;
-  onDeleteColumn: (columnId: string) => void;
-}
+import type { DraggableColumnProps } from '../../types/interfaces/ui';
 
 export const DraggableColumn: React.FC<DraggableColumnProps> = ({
   column,

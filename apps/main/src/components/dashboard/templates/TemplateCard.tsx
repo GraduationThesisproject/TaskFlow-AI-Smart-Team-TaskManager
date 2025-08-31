@@ -1,6 +1,6 @@
-import React from 'react';import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback, Badge } from '@taskflow/ui';
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback, Badge } from '@taskflow/ui';
 import { Heart } from 'lucide-react';
-;
 import type { TemplateCardProps } from '../../../types/dash.types';
 
 const TemplateCard: React.FC<TemplateCardProps> = ({ template, onClick, onLike }) => {

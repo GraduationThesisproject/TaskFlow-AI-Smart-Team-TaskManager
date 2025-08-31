@@ -1,36 +1,17 @@
 const express = require('express');
 const aiController = require('../controllers/ai.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
+const { ai: aiSchemas } = require('./validator');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
-// Validation schemas
-const taskSuggestionsSchema = {
-    spaceGoal: { required: true, minLength: 10, maxLength: 1000 },
-    spaceContext: { maxLength: 2000 },
-    boardType: { enum: ['kanban', 'list', 'calendar', 'timeline'], default: 'kanban' }
-};
-
-const naturalLanguageSchema = {
-    input: { required: true, minLength: 3, maxLength: 500 },
-    boardId: { required: true, objectId: true }
-};
-
-const timelineSchema = {
-    startDate: { date: true },
-    targetEndDate: { date: true },
-    priorities: { array: true }
-};
-
-const taskDescriptionSchema = {
-    title: { required: true, minLength: 2, maxLength: 200 },
-    spaceContext: { maxLength: 500 },
-    taskType: { maxLength: 100 }
-};
+// Apply authentication to all routes
+router.use(authMiddleware);
 
 // Routes
 router.post('/suggestions',
-    validateMiddleware(taskSuggestionsSchema),
+    validateMiddleware(aiSchemas.taskSuggestionsSchema),
     aiController.generateTaskSuggestions
 );
 
@@ -38,12 +19,12 @@ router.get('/risks/space/:spaceId', aiController.analyzeTaskRisks);
 router.get('/risks/board/:boardId', aiController.analyzeTaskRisks);
 
 router.post('/parse',
-    validateMiddleware(naturalLanguageSchema),
+    validateMiddleware(aiSchemas.naturalLanguageSchema),
     aiController.parseNaturalLanguage
 );
 
 router.post('/timeline/:spaceId',
-    validateMiddleware(timelineSchema),
+    validateMiddleware(aiSchemas.timelineSchema),
     aiController.generateSpaceTimeline
 );
 
@@ -52,7 +33,7 @@ router.get('/recommendations/:spaceId', aiController.getSmartRecommendations);
 router.get('/performance/:spaceId', aiController.analyzeTeamPerformance);
 
 router.post('/description',
-    validateMiddleware(taskDescriptionSchema),
+    validateMiddleware(aiSchemas.taskDescriptionSchema),
     aiController.generateTaskDescription
 );
 

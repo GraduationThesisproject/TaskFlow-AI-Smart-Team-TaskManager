@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthCard, FormField, Button, SocialButton, Typography, Flex, Checkbox } from "@taskflow/ui";
@@ -5,10 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import type { LoginCredentials } from "../../types/auth.types";
 
 // Form validation errors interface
-interface FormErrors {
-  email?: string;
-  password?: string;
-}
+import type { FormErrors } from '../../types/interfaces/ui';
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -218,7 +216,7 @@ export default function SignIn() {
         {/* Sign Up Link */}
         <div className="text-center">
           <Typography variant="body-small" className="text-muted-foreground">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               to="/signup"
               className="text-primary hover:text-primary/80 font-medium hover:underline"

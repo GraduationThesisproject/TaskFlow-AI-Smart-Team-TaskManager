@@ -1,14 +1,7 @@
 import React from 'react';
 import { Input, Dropdown, DropdownItem } from '@taskflow/ui';
 import { useAppDispatch } from '../../../store';
-
-interface SearchAndFilterProps {
-  search: string;
-  setSearch: (value: string) => void;
-  role: 'all' | 'owner' | 'admin' | 'member';
-  setRole: (role: 'all' | 'owner' | 'admin' | 'member') => void;
-  workspaceId: string | null;
-}
+import type { SearchAndFilterProps } from '../../../types/interfaces/ui';
 
 const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   search,

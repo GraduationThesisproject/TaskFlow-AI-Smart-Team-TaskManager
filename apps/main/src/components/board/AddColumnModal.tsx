@@ -12,12 +12,7 @@ import {
   IconPicker
 } from '@taskflow/ui';
 import type { Column } from '../../store/slices/taskSlice';
-
-interface AddColumnModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (columnData: Partial<Column> & { backgroundColor?: string; icon?: string | null }) => Promise<void>;
-}
+import type { AddColumnModalProps } from '../../types/interfaces/ui';
 
 // Custom preset colors for columns
 const columnPresetColors = [
