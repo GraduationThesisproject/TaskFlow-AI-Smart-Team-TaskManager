@@ -894,7 +894,10 @@ exports.deleteWorkspace = async (req, res) => {
         }
 
         const workspace = await Workspace.findById(workspaceId);
- 
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
         // Owner can archive directly
         if (workspace.owner.toString() === userId.toString()) {
             const archived = await WorkspaceService.softDeleteWorkspace(workspaceId, userId);
@@ -930,7 +933,7 @@ exports.deleteWorkspace = async (req, res) => {
             });
         }
 
-        // return sendResponse(res, 403, false, 'You do not have permission to delete this workspace');
+        return sendResponse(res, 403, false, 'You do not have permission to delete this workspace');
     } catch (error) {
         logger.error('Delete workspace error:', error);
         return sendResponse(res, 500, false, 'Server error deleting workspace');

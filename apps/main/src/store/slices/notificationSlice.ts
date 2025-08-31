@@ -7,7 +7,7 @@ interface Notification {
   _id: string;
   title: string;
   message: string;
-  type: string;
+  type: 'info' | 'success' | 'warning' | 'error' | 'workspace_invitation' | 'space_invitation' | 'invitation_accepted';
   recipientId: string;
   relatedEntity?: {
     type: string;
@@ -24,7 +24,15 @@ interface Notification {
 interface NotificationStats {
   total: number;
   unread: number;
-  byType: Record<string, number>;
+  byType: {
+    info: number;
+    success: number;
+    warning: number;
+    error: number;
+    workspace_invitation: number;
+    space_invitation: number;
+    invitation_accepted: number;
+  };
 }
 
 interface NotificationState {
@@ -167,11 +175,11 @@ const notificationSlice = createSlice({
         state.stats = {
           total: 0,
           unread: 0,
-          byType: { info: 0, success: 0, warning: 0, error: 0 },
+          byType: { info: 0, success: 0, warning: 0, error: 0, workspace_invitation: 0, space_invitation: 0, invitation_accepted: 0 },
         };
       }
       if (!state.stats.byType) {
-        state.stats.byType = { info: 0, success: 0, warning: 0, error: 0 } as any;
+        state.stats.byType = { info: 0, success: 0, warning: 0, error: 0, workspace_invitation: 0, space_invitation: 0, invitation_accepted: 0 } as any;
       }
       state.stats.total += 1;
       if (!action.payload.isRead) {
@@ -209,7 +217,7 @@ const notificationSlice = createSlice({
           ? action.payload.notifications
           : [];
         const s = action.payload.stats || {} as any;
-        const baseByType = { info: 0, success: 0, warning: 0, error: 0 };
+        const baseByType = { info: 0, success: 0, warning: 0, error: 0, workspace_invitation: 0, space_invitation: 0, invitation_accepted: 0 };
         const computed = {
           total: typeof s.total === 'number' ? s.total : state.notifications.length,
           unread: typeof s.unread === 'number' ? s.unread : state.notifications.filter(n => !n.isRead).length,
@@ -218,6 +226,9 @@ const notificationSlice = createSlice({
             success: s.byType?.success ?? 0,
             warning: s.byType?.warning ?? 0,
             error: s.byType?.error ?? 0,
+            workspace_invitation: s.byType?.workspace_invitation ?? 0,
+            space_invitation: s.byType?.space_invitation ?? 0,
+            invitation_accepted: s.byType?.invitation_accepted ?? 0,
           },
         } as any;
         // Ensure keys exist even if backend omitted byType
