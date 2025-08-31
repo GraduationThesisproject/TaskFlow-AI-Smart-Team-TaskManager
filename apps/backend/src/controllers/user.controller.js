@@ -61,3 +61,42 @@ exports.searchUsers = async (req, res) => {
         sendResponse(res, 500, false, 'Server error searching users');
     }
 };
+
+// Update user plan after successful payment
+exports.updateUserPlan = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { planName, sessionId, upgradeDate } = req.body;
+
+        if (!planName || !sessionId) {
+            return sendResponse(res, 400, false, 'Plan name and session ID are required');
+        }
+
+        // Find and update user
+        const user = await User.findById(userId);
+        if (!user) {
+            return sendResponse(res, 404, false, 'User not found');
+        }
+
+        // Update user's subscription plan
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            {
+                $set: {
+                    'subscription.plan': planName,
+                    'subscription.status': 'active',
+                    'subscription.startDate': upgradeDate || new Date(),
+                    'subscription.paymentSessionId': sessionId,
+                    'subscription.lastUpdated': new Date()
+                }
+            },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        logger.info(`User ${userId} upgraded to ${planName} plan`);
+        sendResponse(res, 200, true, 'Plan updated successfully', updatedUser);
+    } catch (error) {
+        logger.error('Update user plan error:', error);
+        sendResponse(res, 500, false, 'Server error updating user plan');
+    }
+};

@@ -420,7 +420,7 @@ exports.updateProfile = async (req, res) => {
 
             if (user.avatar) {
                 try {
-                    const oldFile = await File.findById(user.avatar);
+                    const oldFile = await File.findOne({ url: user.avatar });
                     if (oldFile && oldFile._id.toString() !== req.uploadedFile._id.toString()) {
                         await oldFile.deleteFromStorage();
                     }
@@ -431,9 +431,27 @@ exports.updateProfile = async (req, res) => {
 
             const file = req.uploadedFile;
             await file.attachTo('User', user._id);
-            user.avatar = file._id;
+            user.avatar = file.url;
         } else if (avatar) {
-            user.avatar = avatar;
+            // Accept either a direct URL string or a File ID; convert ID to URL
+            try {
+                const File = require('../models/File');
+                const isObjectId = typeof avatar === 'string' && /^[a-f\d]{24}$/i.test(avatar);
+                if (isObjectId) {
+                    const f = await File.findById(avatar);
+                    if (f) {
+                        user.avatar = f.url;
+                    } else {
+                        // Fallback: if not found by ID, try storing as provided (may be URL)
+                        user.avatar = avatar;
+                    }
+                } else {
+                    user.avatar = avatar; // expected to be a URL or data URI per schema validator
+                }
+            } catch (e) {
+                logger.warn('Failed to resolve provided avatar value, storing as-is:', e.message);
+                user.avatar = avatar;
+            }
         }
         
         if (metadata) {
@@ -481,9 +499,28 @@ exports.updateProfile = async (req, res) => {
 };
 
 exports.updateProfileSecure = async (req, res) => {
-    try {
+  const traceId = `UPS-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  try {
         const { currentPassword, name } = req.body;
 
+        // Incoming request metadata
+        logger.info(`[${traceId}] updateProfileSecure: start; headers.content-type=${req.headers['content-type']}; bodyKeys=${Object.keys(req.body || {}).join(',')}`);
+        if (req.file || req.files) {
+            logger.info(`[${traceId}] updateProfileSecure: multer received -> file=${!!req.file}, filesCount=${req.files?.length || 0}`);
+        }
+        // Debug: log presence of uploaded file
+        try {
+            const f = req.uploadedFile;
+            if (f) {
+                logger.info(`[${traceId}] updateProfileSecure: uploadedFile present id=${f._id?.toString?.()} name=${f.filename} path=${f.path}`);
+            } else {
+                logger.info(`[${traceId}] updateProfileSecure: no uploadedFile present`);
+            }
+        } catch (e) {
+            logger.warn(`[${traceId}] updateProfileSecure: failed to log uploadedFile info: ${e.message}`);
+        }
+
+        // Load user with password for verification
         const user = await User.findById(req.user.id).select('+password');
         if (!user) {
             return sendResponse(res, 404, false, 'User not found');
@@ -496,7 +533,7 @@ exports.updateProfileSecure = async (req, res) => {
                     await req.uploadedFile.deleteFromStorage();
                     await req.uploadedFile.deleteOne();
                 } catch (e) {
-                    logger.warn('Cleanup failed for uploaded file on password error:', e.message);
+                    logger.warn(`[${traceId}] Cleanup failed for uploaded file on password error: ${e.message}`);
                 }
             }
             return sendResponse(res, 400, false, 'Current password is incorrect');
@@ -507,31 +544,64 @@ exports.updateProfileSecure = async (req, res) => {
             avatar: user.avatar
         };
 
-        if (name) user.name = name;
+        // Normalize and validate name only if provided
+        const normalizedName = typeof name === 'string' ? name.trim() : undefined;
+
+        // If neither name nor avatar is provided, return a 400
+        if (!normalizedName && !req.uploadedFile) {
+            return sendResponse(res, 400, false, 'No changes provided');
+        }
+
+        // Update name if a non-empty value is provided
+        if (normalizedName) {
+            if (normalizedName.length < 2 || normalizedName.length > 100) {
+                return sendResponse(res, 400, false, 'Name must be between 2 and 100 characters');
+            }
+            user.name = normalizedName;
+        }
 
         if (req.uploadedFile) {
             const File = require('../models/File');
+            // Preserve old avatar URL before overwriting
+            const oldAvatarUrl = user.avatar;
             try {
-                if (user.avatar) {
-                    const oldFile = await File.findById(user.avatar);
+                if (oldAvatarUrl) {
+                    // Find previous avatar by URL since user.avatar is a String URL
+                    const oldFile = await File.findOne({ url: oldAvatarUrl });
                     if (oldFile && oldFile._id.toString() !== req.uploadedFile._id.toString()) {
                         await oldFile.deleteFromStorage();
                     }
                 }
             } catch (e) {
-                logger.warn('Failed to delete old avatar:', e.message);
+                logger.warn(`[${traceId}] updateProfileSecure: Failed to delete old avatar: ${e.message}`);
             }
 
-            const file = req.uploadedFile;
-            await file.attachTo('User', user._id);
-            user.avatar = file._id;
-            logger.info(`updateProfileSecure: user ${user._id.toString()} avatar set to file ${file._id.toString()}`);
+            try {
+                const file = req.uploadedFile;
+                await file.attachTo('User', user._id);
+                // user.avatar must be a URL/String per schema validation
+                user.avatar = file.url;
+                logger.info(`[${traceId}] updateProfileSecure: avatar set to url ${file.url}`);
+            } catch (e) {
+                logger.error(`[${traceId}] updateProfileSecure: error attaching new avatar: ${e.message}`);
+                return sendResponse(res, 500, false, 'Failed to attach avatar');
+            }
         }
 
-        await user.save();
+        try {
+            await user.save();
+        } catch (e) {
+            logger.error(`[${traceId}] updateProfileSecure: error saving user: ${e.message}`);
+            return sendResponse(res, 500, false, 'Failed to save user profile');
+        }
 
-        await user.populate({ path: 'avatar', select: 'url thumbnails' });
-        logger.info(`updateProfileSecure: response avatar url=${user.avatar?.url || user.avatar}`);
+        // Populate avatar so response contains URL
+        try {
+            await user.populate({ path: 'avatar', select: 'url thumbnails' });
+            logger.info(`[${traceId}] updateProfileSecure: response avatar url=${user.avatar?.url || user.avatar}`);
+        } catch (e) {
+            logger.warn(`[${traceId}] updateProfileSecure: populate avatar failed: ${e.message}`);
+        }
 
         await ActivityLog.logActivity({
             userId: user._id,
@@ -547,13 +617,17 @@ exports.updateProfileSecure = async (req, res) => {
             }
         });
 
+        logger.info(`[${traceId}] updateProfileSecure: success`);
         return sendResponse(res, 200, true, 'Profile updated successfully', {
             user: user.getPublicProfile()
         });
-    } catch (error) {
-        logger.error('Secure update profile error:', error);
+  } catch (error) {
+        logger.error(`[${traceId}] Secure update profile error: ${error.message}`);
+        if (error && error.stack) {
+            logger.error(`[${traceId}] Secure update profile error stack: ${error.stack}`);
+        }
         return sendResponse(res, 500, false, 'Server error updating profile');
-    }
+  }
 };
 
 // ============================================================================
@@ -581,10 +655,9 @@ exports.changePassword = async (req, res) => {
             action: 'profile_update',
             description: 'User changed password',
             entity: { type: 'User', id: user._id, name: user.name },
-            metadata: {
+            metadata: { 
                 ipAddress: req.ip,
-                userAgent: req.get('User-Agent'),
-                endedAllSessions: true
+                endedAllSessions: true 
             },
             severity: 'warning'
         });

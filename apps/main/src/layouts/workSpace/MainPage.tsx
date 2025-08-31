@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
-import Sidebar from "./Sidebar";
+// import Sidebar from "./Sidebar"; // Disabled: workspace navbar hidden
+import { DashboardShell } from '../Dashboard/DashboardShell';
+
 import PageHeader from '../../components/workspace/main_page/PageHeader';
 import InfoBanner from '../../components/workspace/main_page/InfoBanner';
 import SearchAndFilter from '../../components/workspace/main_page/SearchAndFilter';
@@ -110,7 +112,8 @@ const Main = () => {
       // Refresh spaces after archiving
       if (workspaceId) {
         const response = await SpaceService.getSpacesByWorkspace(workspaceId);
-        const spacesData = response.data || [];
+        console.log(response.data);
+        const spacesData = response.data|| [];
         setSpaces(Array.isArray(spacesData) ? spacesData : []);
       } else {
         console.error('Cannot refresh spaces: workspaceId is null');
@@ -143,11 +146,6 @@ const Main = () => {
       return byRole && bySearch;
     });
   }, [members, role, search]);
-
-  // const filteredSpaces = spaces.filter(space =>
-  //   space.name.toLowerCase().includes(search.toLowerCase()) ||
-  //   (space.description && space.description.toLowerCase().includes(search.toLowerCase()))
-  // );
 
   // For Invite Section button - Generate shareable link and show in modal
   const onGenerateInviteLink = () => {
@@ -230,58 +228,46 @@ const Main = () => {
       return;
     }
     const t = setTimeout(async () => {
-      // try {
-      //   const apiMembers = await workspaceService.getMembers(workspaceId, { q });
-      //   // eslint-disable-next-line no-console
-      //   console.log('[API members search]', { query: q, count: apiMembers.length, members: apiMembers });
-      // } catch (err) {
-      //   // eslint-disable-next-line no-console
-      //   console.error('[API members search error]', err);
-      // }
     }, 300);
     return () => clearTimeout(t);
   }, [search, workspaceId]);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 p-6">
-        <PageHeader />
-        <InfoBanner workspaceId={workspaceId} />
-        <SearchAndFilter
-          search={search}
-          setSearch={setSearch}
-          role={role}
-          setRole={setRole}
-          workspaceId={workspaceId}
-        />
-        <div className="flex flex-row ">
-          <div className="flex-1">
-            <MembersTable
-              filteredMembers={filteredMembers}
-              isLoading={isLoading}
-              error={error}
-              onRemove={onRemove}
-              onGenerateInvite={onInviteMemberByEmail}
-            />
-          </div>
-          <div className="w-96">
-            <SpaceTable 
-              filteredSpaces={spaces}
-              isLoading={isLoadingSpaces}
-              error={spaceError}
-              onRemove={onArchiveSpace}
-              onAddSpace={onAddSpace}
-            />          
-          </div>
+    <DashboardShell>
+      <PageHeader />
+      <InfoBanner workspaceId={workspaceId} />
+      <SearchAndFilter 
+        search={search}
+        setSearch={setSearch}
+        role={role}
+        setRole={setRole}
+        workspaceId={workspaceId}
+      />
+      <div className="flex flex-row ">
+        <div className="flex-1">
+          <MembersTable 
+            filteredMembers={filteredMembers}
+            isLoading={isLoading}
+            error={error}
+            onRemove={onRemove}
+            onGenerateInvite={onInviteMemberByEmail}
+          />
         </div>
-        <InviteSection
-          onGenerateInvite={onGenerateInviteLink}
-          onDisableInvite={onDisableInvite}
-        />
-        <GuestsSection />
-        <JoinRequestsSection />
+        {/* <div className="w-96">
+          <SpaceTable 
+            filteredSpaces={filteredSpaces}
+            isLoading={isLoadingSpaces}
+            error={spaceError}
+            onRemove={onRemoveSpace}
+          />         
+        </div> */}
       </div>
+      <InviteSection 
+        onGenerateInvite={onGenerateInviteLink}
+        onDisableInvite={onDisableInvite}
+      />
+      <GuestsSection />
+      <JoinRequestsSection />
 
       {/* Invite Link Modal */}
       <Modal
@@ -328,7 +314,7 @@ const Main = () => {
         workspaceId={workspaceId || ''}
         onSpaceCreated={onSpaceCreated}
       />
-    </div>
+    </DashboardShell>
   );
 };
 

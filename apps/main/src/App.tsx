@@ -5,7 +5,7 @@ import { Provider } from 'react-redux';
 import { store } from './store';
 import { useAppDispatch } from './store';
 import { checkAuthStatus } from './store/slices/authSlice';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import WorkSpace from './pages/workSpace';
 import { SpacePage } from './pages/space.page';
 import { BoardPage } from './pages/board.page';
@@ -16,6 +16,7 @@ import { LogoutConfirmDialog, AppLayout } from './components';
 import { AccessibilityProvider } from './components/common/AccessibilityProvider';
 import UniversalNavbar from './components/common/navbar/UniversalNavbar';
 import Dashboard from './pages/Dashboard';
+import InviteLanding from './pages/InviteLanding';
 import { NoAccessPage } from './pages/NoAccessPage';
 import ChatPage from './pages/ChatPage';
 import ChatWidget from './components/chat/ChatWidget';
@@ -23,6 +24,10 @@ import { MessageCircle, X } from 'lucide-react';
 import { SocketProvider } from './contexts/SocketContext';
 // import { SocketDebugger } from './components/debug/SocketDebugger';
 // import { SocketConnectionTest } from './components/debug/SocketConnectionTest';
+import  Cancel  from './layouts/workSpace/Cancel';
+import  Success  from './layouts/workSpace/Success';
+import { SocketDebugger } from './components/debug/SocketDebugger';
+import { SocketConnectionTest } from './components/debug/SocketConnectionTest';
 
 // Support Page Component
 const SupportPage = () => {
@@ -75,6 +80,8 @@ function AppContent() {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const location = useLocation();
+  const hideNavbar = location.pathname === '/signin' || location.pathname === '/signup';
 
   useEffect(() => {
     dispatch(checkAuthStatus());
@@ -103,14 +110,16 @@ function AppContent() {
 
   return (
     <AppLayout>
-      {/* Universal Navbar - Always displayed */}
-      <UniversalNavbar 
-        user={user || undefined}
-        onLogout={handleLogout}
-        isAuthenticated={isAuthenticated}
-        className="sticky top-0 z-50"
-        onChatClick={toggleChat}
-      />
+      {/* Universal Navbar - hidden on auth pages (signin/signup) */}
+      {!hideNavbar && (
+        <UniversalNavbar 
+          user={user || undefined}
+          onLogout={handleLogout}
+          isAuthenticated={isAuthenticated}
+          className="sticky top-0 z-50"
+          onChatClick={toggleChat}
+        />
+      )}
 
       {/* Main Content */}
       <main className="flex-1 bg-gradient-to-br from-background via-muted/50 to-background">
@@ -118,6 +127,8 @@ function AppContent() {
           <Route path="/*" element={<LandingPage />} />
 
           <Route path="/auth/callback" element={<OAuthCallback />} />
+
+          <Route path="/invite/:token" element={<InviteLanding />} />
 
           <Route path="/dashboard/*" element={<Dashboard />} />
 
@@ -131,8 +142,11 @@ function AppContent() {
 
           <Route path="/support" element={<SupportPage />} />
 
-          <Route path="/no-access" element={<NoAccessPage />} />
+          <Route path="/cancel" element={<Cancel />} />
 
+          <Route path="/success" element={<Success />} />
+
+          <Route path="/no-access" element={<NoAccessPage />} />
           <Route path="*" element={
             <Navigate to="/" replace />
           } />

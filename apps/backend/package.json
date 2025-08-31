@@ -28,6 +28,9 @@
     "seed:partial": "node src/scripts/seed-partial.js",
     "seed:clear": "node src/scripts/seed-partial.js clear",
     "seed:users": "node src/scripts/show-test-users.js",
+    "seed:analytics": "node run-analytics-fixed.js",
+    "export:analytics": "node export-analytics.js",
+    "import:analytics": "node import-analytics.js",
     "seed:backup": "node -e \"const seeder = require('./src/seeders'); const s = new seeder(); s.listBackups().then(console.log)\"",
     "seed:rollback": "node -e \"const seeder = require('./src/seeders'); const s = new seeder(); s.rollback().then(() => console.log('Rollback completed'))\"",
     "seed:validate": "node -e \"const seeder = require('./src/seeders'); const s = new seeder(); console.log(s.validateConfiguration())\""
@@ -49,6 +52,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "express-validator": "^7.2.1",
     "file-type": "^19.0.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
@@ -64,6 +68,7 @@
     "sharp": "^0.33.0",
     "socket.io": "^4.8.1",
     "speakeasy": "^2.0.0",
+    "stripe": "^18.5.0",
     "validator": "^13.11.0",
     "winston": "^3.11.0"
   },

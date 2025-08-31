@@ -1,6 +1,7 @@
 const jwt = require('../utils/jwt');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const Admin = require('../models/Admin');
 const logger = require('../config/logger');
 
 // Socket authentication middleware
@@ -12,19 +13,51 @@ const authenticateSocket = async (socket, next) => {
             return next(new Error('Authentication required'));
         }
 
+        logger.info(`Socket auth: Verifying token: ${token.substring(0, 20)}...`);
+        
         const decoded = jwt.verifyToken(token);
-        const user = await User.findById(decoded.id);
+        logger.info(`Socket auth: Token decoded:`, decoded);
+        
+        // Try to find user in User model first
+        let user = await User.findById(decoded.id);
+        let isAdmin = false;
+        
+        if (user) {
+            logger.info(`Socket auth: Found user: ${user.email}`);
+        } else {
+            logger.info(`Socket auth: User not found, trying Admin model...`);
+            logger.info(`Socket auth: Admin model type: ${typeof Admin}`);
+            logger.info(`Socket auth: Admin model: ${Admin}`);
+            
+            // If not found in User model, try Admin model
+            try {
+                const admin = await Admin.findById(decoded.id);
+                logger.info(`Socket auth: Admin query result: ${admin}`);
+                
+                if (admin) {
+                    user = admin;
+                    isAdmin = true;
+                    logger.info(`Socket auth: Found admin: ${admin.userEmail}`);
+                } else {
+                    logger.info(`Socket auth: Admin not found either`);
+                }
+            } catch (adminError) {
+                logger.error(`Socket auth: Error querying Admin model:`, adminError);
+            }
+        }
         
         if (!user) {
+            logger.error(`Socket auth: No user or admin found for ID: ${decoded.id}`);
             return next(new Error('User not found'));
         }
 
         socket.userId = user._id.toString();
         socket.user = {
             id: user._id,
-            name: user.name,
-            email: user.email,
-            avatar: user.avatar
+            name: isAdmin ? user.userName : user.name,
+            email: isAdmin ? user.userEmail : user.email,
+            avatar: user.avatar,
+            isAdmin: isAdmin
         };
 
         logger.info(`Notification socket authenticated: ${user.email}`);
@@ -52,6 +85,17 @@ const handleNotificationSocket = (io) => {
         // Also join user's activity room for real-time activity stream
         socket.join(`activities:${socket.userId}`);
         
+        // Basic connection diagnostics for stability and troubleshooting
+        socket.on('connect_error', (err) => {
+            logger.error(`Notification socket connect_error for ${socket.user.email}: ${err.message}`, err);
+        });
+        socket.on('error', (err) => {
+            logger.error(`Notification socket error for ${socket.user.email}: ${err.message}`, err);
+        });
+        socket.on('disconnect', (reason) => {
+            logger.info(`Notification socket disconnected for ${socket.user.email}: ${reason}`);
+        });
+        
         // Send unread notification count on connection
         socket.on('notifications:getUnreadCount', async () => {
             try {
@@ -67,49 +111,23 @@ const handleNotificationSocket = (io) => {
             }
         });
 
-        // Mark notification as read
+        // Mark notification as read (DEPRECATED - use REST endpoint instead)
         socket.on('notifications:markRead', async (data) => {
             try {
-                const { notificationId } = data;
-                
-                const notification = await Notification.findOne({
-                    _id: notificationId,
-                    recipient: socket.userId
-                });
-
-                if (notification && !notification.isRead) {
-                    notification.isRead = true;
-                    notification.readAt = new Date();
-                    await notification.save();
-
-                    // Emit updated unread count
-                    const unreadCount = await Notification.countDocuments({
-                        recipient: socket.userId,
-                        isRead: false
-                    });
-
-                    socket.emit('notifications:unreadCount', { count: unreadCount });
-                    socket.emit('notifications:marked-read', { notificationId });
-                }
+                // Deprecated: do not auto-mark read via socket anymore
+                socket.emit('notifications:error', { message: 'Deprecated: use PATCH /api/notifications/:id/read' });
             } catch (error) {
-                logger.error('Mark notification as read error:', error);
-                socket.emit('error', { message: 'Failed to mark notification as read' });
+                logger.error('Mark notification as read (socket) error:', error);
             }
         });
 
-        // Mark all notifications as read
+        // Mark all notifications as read (DEPRECATED - use REST endpoint instead)
         socket.on('notifications:markAllRead', async () => {
             try {
-                await Notification.updateMany(
-                    { recipient: socket.userId, isRead: false },
-                    { isRead: true, readAt: new Date() }
-                );
-
-                socket.emit('notifications:unreadCount', { count: 0 });
-                socket.emit('notifications:all-marked-read');
+                // Deprecated: do not auto-mark read via socket anymore
+                socket.emit('notifications:error', { message: 'Deprecated: use PATCH /api/notifications/read-all' });
             } catch (error) {
-                logger.error('Mark all notifications as read error:', error);
-                socket.emit('error', { message: 'Failed to mark all notifications as read' });
+                logger.error('Mark all notifications as read (socket) error:', error);
             }
         });
 
@@ -192,11 +210,20 @@ const handleNotificationSocket = (io) => {
     // Global notification utilities for the application
     notificationNamespace.sendNotification = async (recipientId, notificationData) => {
         try {
-            // Create notification in database
-            const notification = await Notification.create({
-                ...notificationData,
-                recipient: recipientId
-            });
+            let notificationDoc;
+            const readOption = notificationData?.readOption; // 'mark_read' | 'delete' | undefined
+ 
+             // If notification already exists (has _id), don't recreate it
+             if (notificationData && notificationData._id) {
+                 // Ensure we have a plain object to emit
+                 const notifObj = notificationData.toObject ? notificationData.toObject() : notificationData;
+                 notificationDoc = notifObj;
+             } else {
+                 // Create notification in database
+                 const created = await Notification.create({
+                     ...notificationData,
+                     recipient: recipientId
+                 });
 
             await notification.populate('sender', 'name avatar');
 
@@ -223,12 +250,12 @@ const handleNotificationSocket = (io) => {
                 count: unreadCount 
             });
 
-            return notification;
-        } catch (error) {
-            logger.error('Send notification error:', error);
-            throw error;
-        }
-    };
+             return notificationDoc;
+         } catch (error) {
+             logger.error('Send notification error:', error);
+             throw error;
+         }
+     };
 
     // Bulk notification sender
     notificationNamespace.sendBulkNotifications = async (notifications) => {

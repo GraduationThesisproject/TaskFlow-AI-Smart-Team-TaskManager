@@ -124,6 +124,22 @@ userRolesSchema.methods.hasSpacePermission = function(spaceId, permission) {
   return spaceRole.permissions[permission] || false;
 };
 
+// Method to check space role
+userRolesSchema.methods.hasSpaceRole = function(spaceId, requiredRole = null) {
+  const spaceRole = this.spaces.find(space => 
+    space.space.toString() === spaceId.toString()
+  );
+  
+  if (!spaceRole) return false;
+  if (!requiredRole) return true;
+  
+  const roleHierarchy = ['viewer', 'member', 'contributor', 'admin', 'owner'];
+  const userRoleIndex = roleHierarchy.indexOf(spaceRole.role);
+  const requiredRoleIndex = roleHierarchy.indexOf(requiredRole);
+  
+  return userRoleIndex >= requiredRoleIndex;
+};
+
 // Method to check board permission
 userRolesSchema.methods.hasBoardPermission = function(boardId, permission) {
   const boardRole = this.boards.find(board => 

@@ -1,3 +1,4 @@
+import { LucideIcon } from 'lucide-react';
 import type { Task } from './task.types';
 import type { ReactNode } from 'react';
 
@@ -145,6 +146,14 @@ export interface Notification {
   createdAt: string;
   updatedAt: string;
   sender?: { name: string; avatar?: string };
+  // Optional delivery channels as sent by backend
+  deliveryMethods?: {
+    inApp?: boolean;
+    email?: boolean;
+    push?: boolean;
+  };
+  // Client-only notifications (not persisted in backend)
+  clientOnly?: boolean;
 
 }
 
@@ -328,3 +337,27 @@ export const CATEGORY_OPTIONS = [
   { value: 'General', label: 'General' },
   { value: 'Custom', label: 'Custom' },
 ]
+
+
+export type NavItem = { icon: LucideIcon; label: string; href: string };
+
+export type UniversalSidebarProps = {
+  locationPath: string;
+  locationHash?: string;
+  // desktop
+  sidebarCollapsed?: boolean;
+  setSidebarCollapsed?: (v: boolean) => void;
+  // mobile
+  mobile?: boolean;
+  mobileMenuOpen?: boolean;
+  setMobileMenuOpen?: (v: boolean) => void;
+};
+
+export interface NotificationSettingsState {
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  realTimeNotifications: boolean;
+  weeklySummary: boolean;
+  marketingEmails: boolean;
+}
+export interface ActivityPoint { date: string; value: number }

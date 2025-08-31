@@ -22,6 +22,7 @@ const { fileServeMiddleware } = require('./middlewares/serve.middleware');
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
+const adminManagementRoutes = require('./routes/adminManagement.routes');
 const twoFactorAuthRoutes = require('./routes/twoFactorAuth.routes');
 const workspaceRoutes = require('./routes/workspace.routes');
 const spaceRoutes = require('./routes/space.routes');
@@ -31,19 +32,25 @@ const fileRoutes = require('./routes/file.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const checklistRoutes = require('./routes/checklist.routes');
 const reminderRoutes = require('./routes/reminder.routes');
-
+const checkoutRoutes = require('./routes/Checkout.routes');
 const tagRoutes = require('./routes/tag.routes');
 const invitationRoutes = require('./routes/invitation.routes');
 const aiRoutes = require('./routes/ai.routes');
 const templateRoutes = require('./routes/template.routes');
+const boardTemplateRoutes = require('./routes/boardTemplate.routes');
 const powerbiRoutes = require('./routes/powerbi.routes');
 const chatRoutes = require('./routes/chat.routes');
+const testRoutes = require('./routes/test.routes');
+const analyticsRoutes = require('./routes/analytics.routes');
 const app = express();
 
 
 
 // Security
-app.use(helmet());
+// Allow cross-origin embedding of static resources like avatars
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 
 // CORS configuration for HTTP requests (Socket.IO handles WebSocket CORS)
 const corsOptions = {
@@ -107,6 +114,8 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
+    // Allow cross-origin resource usage (prevents NotSameOrigin blocks for <img>)
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     
     // Set proper headers for different file types
     if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png') || path.endsWith('.gif') || path.endsWith('.webp')) {
@@ -134,6 +143,7 @@ app.get('/uploads/avatars/:filename', (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   
   // Set proper headers for images
   res.setHeader('Content-Type', 'image/*');
@@ -161,6 +171,8 @@ app.get('/api/avatars/:filename', (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // Allow cross-origin resource usage for embedded images
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   
   // Set proper headers for images
   res.setHeader('Content-Type', 'image/*');
@@ -201,7 +213,8 @@ app.options('/api/avatars/:filename', (req, res) => {
   res.status(200).end();
 });
 
-// Body parsing middleware for all routes
+
+// Body parsing middleware for all other routes
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -211,6 +224,7 @@ app.use(passport.initialize());
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin-management', adminManagementRoutes);
 app.use('/api/2fa', twoFactorAuthRoutes);
 app.use('/api/files', authMiddleware, fileRoutes);
 app.use('/api/workspaces', authMiddleware, workspaceRoutes);
@@ -220,17 +234,22 @@ app.use('/api/tasks', authMiddleware, taskRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
 app.use('/api/checklists', authMiddleware, checklistRoutes);
 app.use('/api/reminders', authMiddleware, reminderRoutes);
-
+app.use('/api/checkout', authMiddleware, checkoutRoutes);
 app.use('/api/tags', authMiddleware, tagRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
-// app.use('/api/analytics', authMiddleware, analyticsRoutes);
+app.use('/api/analytics', authMiddleware, analyticsRoutes);
 // Make templates routes publicly accessible for GET requests.
 // Controller methods still enforce auth for mutations (create/update/delete/like).
 app.use('/api/templates', templateRoutes);
 app.use('/api/templates', authMiddleware, templateRoutes);
+
+// Board template routes
+app.use('/api/board-templates', boardTemplateRoutes);
+
 app.use('/api/powerbi', authMiddleware, powerbiRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/test', testRoutes);
 
 // 404 handler - using catch-all middleware instead of wildcard
 app.use((req, res) => {

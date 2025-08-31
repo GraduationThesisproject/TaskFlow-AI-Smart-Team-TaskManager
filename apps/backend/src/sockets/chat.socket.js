@@ -25,8 +25,8 @@ const authenticateChatSocket = async (socket, next) => {
                 socket.userId = admin._id.toString();
                 socket.user = {
                     id: admin._id,
-                    name: admin.name,
-                    email: admin.email,
+                    name: admin.userName,
+                    email: admin.userEmail,
                     avatar: admin.avatar
                 };
             }
@@ -67,10 +67,13 @@ const authenticateChatSocket = async (socket, next) => {
 
 // Handle chat socket events
 const handleChatSocket = (io) => {
-    // Apply authentication middleware
-    io.use(authenticateChatSocket);
+    // Create a separate namespace for chat with authentication
+    const chatNamespace = io.of('/chat');
     
-    io.on('connection', (socket) => {
+    // Apply authentication middleware only to chat namespace
+    chatNamespace.use(authenticateChatSocket);
+    
+    chatNamespace.on('connection', (socket) => {
         logger.info(`${socket.userType} connected to chat: ${socket.user.name} (${socket.id})`);
 
         // Join user's personal chat room

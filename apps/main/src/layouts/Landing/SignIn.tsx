@@ -105,6 +105,8 @@ export default function SignIn() {
         title="TaskFlow"
         subtitle="Welcome Back"
         description="Sign in to continue managing your tasks efficiently"
+        // fullHeight={false}
+        // containerClassName="py-12 md:py-20"
       >
       {/* General Error Display */}
       {error && (

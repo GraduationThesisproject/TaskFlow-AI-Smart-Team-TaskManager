@@ -28,21 +28,21 @@ const seederConfig = {
             name: 'Regular User',
             email: 'user.test@gmail.com',
             password: '12345678A!',
-            systemRole: 'user',
+            systemRole: 'moderator',
             emailVerified: true
           },
           {
             name: 'Manager User',
             email: 'manager.test@gmail.com',
             password: '12345678A!',
-            systemRole: 'user',
+            systemRole: 'moderator',
             emailVerified: true
           },
           {
             name: 'Developer User',
             email: 'developer.test@gmail.com',
             password: '12345678A!',
-            systemRole: 'user',
+            systemRole: 'moderator',
             emailVerified: true
           }
         ]
@@ -56,6 +56,9 @@ const seederConfig = {
       },
       boards: {
         perSpace: { min: 1, max: 4 }
+      },
+      boardTemplates: {
+        count: 10
       },
       tags: {
         count: 20
@@ -91,7 +94,7 @@ const seederConfig = {
             name: 'Test User',
             email: 'user@test.com',
             password: '12345678A!',
-            systemRole: 'user',
+            systemRole: 'moderator',
             emailVerified: true
           }
         ]
@@ -105,6 +108,9 @@ const seederConfig = {
       },
       boards: {
         perSpace: { min: 1, max: 2 }
+      },
+      boardTemplates: {
+        count: 5
       },
       tags: {
         count: 10
@@ -138,6 +144,9 @@ const seederConfig = {
       },
       boards: {
         perSpace: { min: 0, max: 0 }
+      },
+      boardTemplates: {
+        count: 0
       },
       tasks: {
         perBoard: { min: 0, max: 0 }

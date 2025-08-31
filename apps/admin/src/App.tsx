@@ -11,9 +11,16 @@ import AdminPage from './pages/AdminPage';
 // Login Page
 import LoginPage from './pages/LoginPage';
 
-// Notification Context
+// Contexts
 import { NotificationProvider } from './contexts/NotificationContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { env } from './config/env';
+
+// Temporary debug logging
+console.log('🔍 Admin App Environment Debug:');
+console.log('API_BASE_URL:', env.API_BASE_URL);
+console.log('SOCKET_URL:', env.SOCKET_URL);
+console.log('Full login endpoint:', `${env.API_BASE_URL}/admin/auth/login`);
 
 // Protected Route Component that can access Redux state
 const ProtectedRouteWithRedux = ({ children }: { children: React.ReactNode }) => {

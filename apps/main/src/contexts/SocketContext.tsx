@@ -56,12 +56,12 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
   // Update socket connections when authentication state changes
   useEffect(() => {
-    console.log('🔐 Auth state changed:', { 
-      isAuthenticated, 
-      hasToken: !!token, 
-      authLoading,
-      isReadyToConnect 
-    });
+    // console.log('🔐 Auth state changed:', { 
+    //   isAuthenticated, 
+    //   hasToken: !!token, 
+    //   authLoading,
+    //   isReadyToConnect 
+    // });
     
     if (isReadyToConnect) {
       console.log('✅ Setting up authenticated socket connections for all namespaces');
@@ -107,9 +107,41 @@ export function SocketProvider({ children }: SocketProviderProps) {
         systemSocket.connect();
       }
     } else {
-      console.log('❌ Cannot reconnect - not ready to connect');
+      // console.log('❌ Cannot reconnect - not ready to connect');
     }
   };
+
+  // Disconnect all namespaces
+  const disconnect = () => {
+    console.log('🔌 Disconnecting all socket namespaces');
+    boardSocket.disconnect();
+    notificationSocket.disconnect();
+    systemSocket.disconnect();
+    chatSocket.disconnect();
+    workspaceSocket.disconnect();
+  };
+
+  // Get namespace by name
+  const getNamespace = (name: 'board' | 'notifications' | 'system' | 'chat' | 'workspace'): SocketNamespace => {
+    const namespaces = {
+      board: boardSocket,
+      notifications: notificationSocket,
+      system: systemSocket,
+      chat: chatSocket,
+      workspace: workspaceSocket,
+    };
+    return namespaces[name];
+  };
+
+  // Global connection status
+  const isAnyConnected = boardSocket.isConnected || notificationSocket.isConnected || 
+                        systemSocket.isConnected || chatSocket.isConnected || workspaceSocket.isConnected;
+  
+  const isAnyConnecting = boardSocket.isConnecting || notificationSocket.isConnecting || 
+                         systemSocket.isConnecting || chatSocket.isConnecting || workspaceSocket.isConnecting;
+  
+  const hasErrors = !!(boardSocket.error || notificationSocket.error || 
+                      systemSocket.error || chatSocket.error || workspaceSocket.error);
 
   // Disconnect all namespaces
   const disconnect = () => {

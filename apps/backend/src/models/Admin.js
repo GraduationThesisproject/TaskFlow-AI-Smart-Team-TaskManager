@@ -1,100 +1,147 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const adminSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: false, // Can be null for admin-only users
-    unique: true,
-    sparse: true // Allow multiple null values
-  },
-  // Admin-only user fields (when userId is null)
-  userEmail: {
-    type: String,
-    required: function() {
-      return !this.userId; // Required only when userId is null
-    },
-    unique: true,
-    sparse: true,
-    lowercase: true,
-    trim: true
-  },
+  // Basic admin info
   userName: {
     type: String,
-    required: function() {
-      return !this.userId; // Required only when userId is null
-    },
+    required: [true, 'Admin username is required'],
+    unique: true,
     trim: true,
-    maxlength: [100, 'Username cannot exceed 100 characters']
+    minlength: [3, 'Username must be at least 3 characters long'],
+    maxlength: [50, 'Username cannot exceed 50 characters']
   },
-  userPassword: {
+  
+  userEmail: {
     type: String,
-    required: function() {
-      return !this.userId; // Required only when userId is null
-    },
-    select: false, // Don't include password in queries by default
-    minlength: [8, 'Password must be at least 8 characters long']
+    required: [true, 'Admin email is required'],
+    unique: true,
+    lowercase: true,
+    trim: true,
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email address']
   },
+  
+  password: {
+    type: String,
+    required: [true, 'Admin password is required'],
+    minlength: [8, 'Password must be at least 8 characters long'],
+    select: false // Don't include password in queries by default
+  },
+  
+  // Role and permissions
   role: {
     type: String,
-    enum: ['admin', 'super_admin', 'moderator'],
+    enum: ['super_admin', 'admin', 'moderator', 'viewer'],
     default: 'admin',
     required: true
   },
-  permissions: {
-    manageUsers: {
-      type: Boolean,
-      default: false
+  
+  permissions: [{
+    name: {
+      type: String,
+      required: true
     },
-    manageWorkspaces: {
+    description: String,
+    allowed: {
       type: Boolean,
-      default: false
-    },
-    manageTemplates: {
-      type: Boolean,
-      default: false
-    },
-    viewAnalytics: {
-      type: Boolean,
-      default: false
-    },
-    systemSettings: {
-      type: Boolean,
-      default: false
-    },
-    manageAdmins: {
-      type: Boolean,
-      default: false
-    },
-    viewSystemLogs: {
-      type: Boolean,
-      default: false
-    },
-    manageQuotas: {
-      type: Boolean,
-      default: false
-    },
-    manageAIJobs: {
-      type: Boolean,
-      default: false
+      default: true
     }
-  },
-  assignedSpaces: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Space'
   }],
-  lastActivity: {
-    type: Date,
-    default: Date.now
-  },
+  
+  // Status and activity
   isActive: {
     type: Boolean,
     default: true
   },
-  metadata: {
-    type: Map,
-    of: mongoose.Schema.Types.Mixed,
-    default: {}
+  
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  
+  lastLoginAt: {
+    type: Date,
+    default: null
+  },
+  
+  lastActivityAt: {
+    type: Date,
+    default: Date.now
+  },
+  
+  // 2FA settings
+  hasTwoFactorAuth: {
+    type: Boolean,
+    default: false
+  },
+  
+  twoFactorSecret: {
+    type: String,
+    select: false
+  },
+  
+  backupCodes: [{
+    code: String,
+    used: {
+      type: Boolean,
+      default: false
+    },
+    usedAt: Date
+  }],
+  
+  recoveryToken: {
+    type: String,
+    select: false
+  },
+  
+  recoveryTokenExpires: {
+    type: Date,
+    default: null
+  },
+  
+  twoFactorAuthEnabledAt: {
+    type: Date,
+    default: null
+  },
+  
+  twoFactorAuthLastUsed: {
+    type: Date,
+    default: null
+  },
+  
+  // Profile info
+  firstName: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'First name cannot exceed 50 characters']
+  },
+  
+  lastName: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'Last name cannot exceed 50 characters']
+  },
+  
+  avatar: {
+    type: String,
+    default: null
+  },
+  
+  phoneNumber: {
+    type: String,
+    trim: true
+  },
+  
+  // Metadata
+  createdBy: {
+    type: mongoose.Schema.Types.Mixed, // Allow both ObjectId and String
+    ref: 'Admin',
+    default: null
+  },
+  
+  notes: {
+    type: String,
+    maxlength: [500, 'Notes cannot exceed 500 characters']
   }
 }, {
   timestamps: true,
@@ -102,257 +149,134 @@ const adminSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Virtual for admin level
-adminSchema.virtual('isSuperAdmin').get(function() {
-  return this.role === 'super_admin';
-});
-
-// Virtual for effective permissions (super_admin gets all permissions)
-adminSchema.virtual('effectivePermissions').get(function() {
-  if (this.role === 'super_admin') {
-    return {
-      manageUsers: true,
-      manageWorkspaces: true,
-      manageTemplates: true,
-      viewAnalytics: true,
-      systemSettings: true,
-      manageAdmins: true,
-      viewSystemLogs: true,
-      manageQuotas: true,
-      manageAIJobs: true
-    };
+// Virtual for full name
+adminSchema.virtual('fullName').get(function() {
+  if (this.firstName && this.lastName) {
+    return `${this.firstName} ${this.lastName}`;
   }
-  return this.permissions;
+  return this.userName;
 });
 
-// Indexes for better query performance
-adminSchema.index({ userId: 1 });
+// Virtual for display name
+adminSchema.virtual('displayName').get(function() {
+  return this.fullName || this.userName;
+});
+
+// Indexes
+adminSchema.index({ userEmail: 1 });
+adminSchema.index({ userName: 1 });
 adminSchema.index({ role: 1 });
 adminSchema.index({ isActive: 1 });
-adminSchema.index({ lastActivity: -1 });
+adminSchema.index({ lastActivityAt: 1 });
 
-// Method to check if admin has specific permission
-adminSchema.methods.hasPermission = function(permission) {
-  if (this.role === 'superadmin') {
-    return true;
-  }
-  return this.permissions[permission] === true;
-};
-
-// Method to check if admin has any of the given permissions
-adminSchema.methods.hasAnyPermission = function(permissions) {
-  if (this.role === 'superadmin') {
-    return true;
-  }
-  return permissions.some(permission => this.permissions[permission] === true);
-};
-
-// Method to check if admin has all of the given permissions
-adminSchema.methods.hasAllPermissions = function(permissions) {
-  if (this.role === 'superadmin') {
-    return true;
-  }
-  return permissions.every(permission => this.permissions[permission] === true);
-};
-
-// Method to grant permission
-adminSchema.methods.grantPermission = function(permission) {
-  if (this.role !== 'superadmin') {
-    this.permissions[permission] = true;
-  }
-  return this.save();
-};
-
-// Method to revoke permission
-adminSchema.methods.revokePermission = function(permission) {
-  if (this.role !== 'superadmin') {
-    this.permissions[permission] = false;
-  }
-  return this.save();
-};
-
-// Method to update last activity
-adminSchema.methods.updateActivity = function() {
-  this.lastActivity = new Date();
-  return this.save();
-};
-
-// Method to assign space
-adminSchema.methods.assignSpace = function(spaceId) {
-  if (!this.assignedSpaces.includes(spaceId)) {
-    this.assignedSpaces.push(spaceId);
-  }
-  return this.save();
-};
-
-// Method to unassign space
-adminSchema.methods.unassignSpace = function(spaceId) {
-  this.assignedSpaces = this.assignedSpaces.filter(
-    id => id.toString() !== spaceId.toString()
-  );
-  return this.save();
-};
-
-// Method to get public profile
-adminSchema.methods.getPublicProfile = function() {
-  return {
-    _id: this._id,
-    userId: this.userId,
-    userEmail: this.userEmail,
-    userName: this.userName,
-    role: this.role,
-    isActive: this.isActive,
-    lastActivity: this.lastActivity,
-    createdAt: this.createdAt,
-    updatedAt: this.updatedAt
-  };
-};
-
-// Method to compare password for admin-only users
-adminSchema.methods.comparePassword = async function(candidatePassword) {
-  if (!this.userPassword) {
-    return false;
-  }
+// Pre-save middleware to hash password
+adminSchema.pre('save', async function(next) {
+  // Only hash the password if it has been modified (or is new)
+  if (!this.isModified('password')) return next();
   
   try {
-    const bcrypt = require('bcryptjs');
-    return await bcrypt.compare(candidatePassword, this.userPassword);
+    // Hash password with cost of 12
+    const hashedPassword = await bcrypt.hash(this.password, 12);
+    this.password = hashedPassword;
+    next();
   } catch (error) {
-    return false;
+    next(error);
   }
-};
+});
 
-// Static method to find active admins
-adminSchema.statics.findActive = function() {
-  return this.find({ isActive: true }).populate('userId', 'name email avatar');
-};
-
-// Static method to find superadmins
-adminSchema.statics.findSuperAdmins = function() {
-  return this.find({ role: 'superadmin', isActive: true }).populate('userId', 'name email avatar');
-};
-
-// Static method to find admins by permission
-adminSchema.statics.findByPermission = function(permission) {
-  return this.find({
-    $or: [
-      { role: 'superadmin' },
-      { [`permissions.${permission}`]: true }
-    ],
-    isActive: true
-  }).populate('userId', 'name email avatar');
-};
-
-// Static method to find inactive admins
-adminSchema.statics.findInactive = function(daysThreshold = 30) {
-  const thresholdDate = new Date(Date.now() - daysThreshold * 24 * 60 * 60 * 1000);
-  return this.find({
-    lastActivity: { $lt: thresholdDate },
-    isActive: true
-  }).populate('userId', 'name email avatar');
-};
-
-// Static method to create admin with default permissions
-adminSchema.statics.createAdmin = function(userId, role = 'admin', customData = {}) {
-  const defaultPermissions = {
-    manageUsers: false,
-    manageWorkspaces: false,
-    manageTemplates: false,
-    viewAnalytics: false,
-    systemSettings: false,
-    manageAdmins: false,
-    viewSystemLogs: false,
-    manageQuotas: false,
-    manageAIJobs: false
-  };
-
-  // Superadmin gets all permissions
-  if (role === 'superadmin' || role === 'super_admin') {
-    Object.keys(defaultPermissions).forEach(key => {
-      defaultPermissions[key] = true;
-    });
-  }
-
-  // Admin gets most permissions except managing other admins
-  if (role === 'admin') {
-    defaultPermissions.manageUsers = true;
-    defaultPermissions.manageWorkspaces = true;
-    defaultPermissions.manageTemplates = true;
-    defaultPermissions.viewAnalytics = true;
-    defaultPermissions.systemSettings = true;
-    defaultPermissions.viewSystemLogs = true;
-    defaultPermissions.manageQuotas = true;
-    defaultPermissions.manageAIJobs = true;
-  }
-
-  // Moderator gets limited permissions
-  if (role === 'moderator') {
-    defaultPermissions.manageUsers = true;
-    defaultPermissions.viewAnalytics = true;
-    defaultPermissions.viewSystemLogs = true;
-  }
-
-  // Create admin object
-  const adminData = {
-    userId,
-    role,
-    permissions: { ...defaultPermissions, ...customData.permissions }
-  };
-
-  // If userId is null, this is an admin-only user
-  if (!userId && customData.userEmail && customData.userName) {
-    adminData.userEmail = customData.userEmail;
-    adminData.userName = customData.userName;
-    adminData.userPassword = customData.userPassword;
-  }
-
-  return new this(adminData);
-};
-
-// Pre-save middleware to ensure superadmin has all permissions
-adminSchema.pre('save', async function(next) {
-  // Ensure superadmin has all permissions
-  if (this.role === 'superadmin') {
-    Object.keys(this.permissions).forEach(key => {
-      this.permissions[key] = true;
-    });
-  }
-
-  // Hash password for admin-only users if it's modified
-  if (this.isModified('userPassword') && this.userPassword) {
-    try {
-      const bcrypt = require('bcryptjs');
-      this.userPassword = await bcrypt.hash(this.userPassword, 12);
-    } catch (error) {
-      return next(error);
-    }
-  }
-
+// Pre-save middleware to update lastActivityAt
+adminSchema.pre('save', function(next) {
+  this.lastActivityAt = new Date();
   next();
 });
 
-// Post-save middleware to update user roles if needed
-adminSchema.post('save', async function(doc) {
+// Instance method to compare password
+adminSchema.methods.comparePassword = async function(candidatePassword) {
   try {
-    const User = mongoose.model('User');
-    const UserRoles = mongoose.model('UserRoles');
-    
-    // Update user's global role
-    await User.findByIdAndUpdate(doc.userId, {
-      $set: { 'metadata.globalRole': doc.role }
-    });
-    
-    // Ensure user has admin role in UserRoles
-    const userRoles = await UserRoles.findOne({ userId: doc.userId });
-    if (userRoles) {
-      if (!userRoles.globalRoles.includes(doc.role)) {
-        userRoles.globalRoles.push(doc.role);
-        await userRoles.save();
-      }
-    }
+    return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
-    console.error('Error updating user roles after admin save:', error);
+    throw new Error('Password comparison failed');
   }
-});
+};
+
+// Instance method to check if admin has specific permission
+adminSchema.methods.hasPermission = function(permissionName) {
+  if (this.role === 'super_admin') return true;
+  
+  const permission = this.permissions.find(p => p.name === permissionName);
+  return permission ? permission.allowed : false;
+};
+
+// Instance method to check if admin has any of the given permissions
+adminSchema.methods.hasAnyPermission = function(permissionNames) {
+  if (this.role === 'super_admin') return true;
+  
+  return permissionNames.some(permissionName => this.hasPermission(permissionName));
+};
+
+// Instance method to check if admin has all of the given permissions
+adminSchema.methods.hasAllPermissions = function(permissionNames) {
+  if (this.role === 'super_admin') return true;
+  
+  return permissionNames.every(permissionName => this.hasPermission(permissionName));
+};
+
+// Static method to get admin by email
+adminSchema.statics.findByEmail = function(email) {
+  return this.findOne({ userEmail: email, isActive: true });
+};
+
+// Static method to get admin by username
+adminSchema.statics.findByUsername = function(username) {
+  return this.findOne({ userName: username, isActive: true });
+};
+
+// Static method to get all active admins
+adminSchema.statics.findActive = function() {
+  return this.find({ isActive: true }).sort({ createdAt: -1 });
+};
+
+// Static method to get admins by role
+adminSchema.statics.findByRole = function(role) {
+  return this.find({ role, isActive: true }).sort({ createdAt: -1 });
+};
+
+// Static method to create default permissions for a role
+adminSchema.statics.getDefaultPermissions = function(role) {
+  const defaultPermissions = {
+    super_admin: [
+      { name: 'user_management', description: 'Manage all users', allowed: true },
+      { name: 'admin_management', description: 'Manage admin users', allowed: true },
+      { name: 'system_settings', description: 'Access system settings', allowed: true },
+      { name: 'data_export', description: 'Export data', allowed: true },
+      { name: 'audit_logs', description: 'View audit logs', allowed: true },
+      { name: 'backup_restore', description: 'Backup and restore data', allowed: true }
+    ],
+    admin: [
+      { name: 'user_management', description: 'Manage users', allowed: true },
+      { name: 'admin_management', description: 'View admin users', allowed: true },
+      { name: 'system_settings', description: 'Access system settings', allowed: true },
+      { name: 'data_export', description: 'Export data', allowed: true },
+      { name: 'audit_logs', description: 'View audit logs', allowed: true }
+    ],
+    moderator: [
+      { name: 'user_management', description: 'Moderate users', allowed: true },
+      { name: 'content_moderation', description: 'Moderate content', allowed: true },
+      { name: 'reports', description: 'Handle reports', allowed: true }
+    ],
+    viewer: [
+      { name: 'dashboard_view', description: 'View dashboard', allowed: true },
+      { name: 'reports_view', description: 'View reports', allowed: true }
+    ]
+  };
+  
+  return defaultPermissions[role] || defaultPermissions.viewer;
+};
+
+// Instance method to update admin activity
+adminSchema.methods.updateActivity = function() {
+  this.lastActivityAt = new Date();
+  return this.save();
+};
 
 module.exports = mongoose.model('Admin', adminSchema);

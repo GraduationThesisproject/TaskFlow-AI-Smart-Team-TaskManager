@@ -1,12 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import axiosInstance from '../../config/axios';
+import type { RootState } from '../../store';
 
 interface Notification {
   _id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: 'info' | 'success' | 'warning' | 'error' | 'workspace_invitation' | 'space_invitation' | 'invitation_accepted';
   recipientId: string;
   relatedEntity?: {
     type: string;
@@ -17,6 +18,7 @@ interface Notification {
   isRead: boolean;
   createdAt: string;
   updatedAt: string;
+  clientOnly?: boolean;
 }
 
 interface NotificationStats {
@@ -27,6 +29,9 @@ interface NotificationStats {
     success: number;
     warning: number;
     error: number;
+    workspace_invitation: number;
+    space_invitation: number;
+    invitation_accepted: number;
   };
 }
 
@@ -53,19 +58,39 @@ export const fetchNotifications = createAsyncThunk(
       axiosInstance.get('/notifications/stats')
     ]);
 
+    // Backend sendResponse shape: { success, message, data: { ... } }
+    const nData = notificationsResponse.data?.data || {};
+    const sData = statsResponse.data?.data || {};
+
     return {
-      notifications: notificationsResponse.data.data || [],
-      stats: statsResponse.data.data,
-      pagination: notificationsResponse.data.pagination,
-      unreadCount: notificationsResponse.data.unreadCount
+      notifications: nData.notifications || [],
+      stats: sData.stats || null,
+      pagination: nData.pagination || null,
+      unreadCount: nData.unreadCount || 0,
     };
   }
 );
 
 export const markNotificationAsRead = createAsyncThunk(
   'notifications/markAsRead',
-  async (notificationId: string) => {
-    await axiosInstance.patch(`/notifications/${notificationId}/read`);
+  async (notificationId: string, { getState }) => {
+    const state = getState() as RootState;
+    const n = state.notifications.notifications.find(n => n._id === notificationId) as any;
+    if (n?.clientOnly) {
+      // Locally generated notification: update state only
+      return notificationId;
+    }
+    // If not client-only, ensure it's a Mongo ObjectId before making API request
+    const isMongoId = /^[a-f0-9]{24}$/i.test(notificationId);
+    if (!isMongoId) {
+      return notificationId;
+    }
+    try {
+      await axiosInstance.patch(`/notifications/${notificationId}/read`);
+    } catch (err: any) {
+      // Treat 404 as non-fatal (notification may have been client-only or already deleted)
+      if (err?.response?.status !== 404) throw err;
+    }
     return notificationId;
   }
 );
@@ -78,10 +103,48 @@ export const markAllNotificationsAsRead = createAsyncThunk(
   }
 );
 
+export const markNotificationsAsReadBulk = createAsyncThunk(
+  'notifications/markBulkAsRead',
+  async (ids: string[], { getState }) => {
+    const state = getState() as RootState;
+    // Only include server-backed Mongo ObjectIds that aren't clientOnly
+    const serverIds = ids.filter(id => {
+      const n = state.notifications.notifications.find(n => n._id === id) as any;
+      const isMongoId = /^[a-f0-9]{24}$/i.test(id);
+      return isMongoId && !n?.clientOnly;
+    });
+    if (serverIds.length > 0) {
+      try {
+        await axiosInstance.patch('/notifications/bulk-read', { notificationIds: serverIds });
+      } catch (err: any) {
+        // Some ids may not exist anymore; ignore 404 to keep UX smooth
+        if (err?.response?.status !== 404) throw err;
+      }
+    }
+    // Always return the original ids to update state locally
+    return ids;
+  }
+);
+
 export const deleteNotification = createAsyncThunk(
   'notifications/deleteNotification',
-  async (notificationId: string) => {
-    await axiosInstance.delete(`/notifications/${notificationId}`);
+  async (notificationId: string, { getState }) => {
+    const state = getState() as RootState;
+    const n = state.notifications.notifications.find(n => n._id === notificationId) as any;
+    if (n?.clientOnly) {
+      // Locally generated notification: update state only
+      return notificationId;
+    }
+    const isMongoId = /^[a-f0-9]{24}$/i.test(notificationId);
+    if (!isMongoId) {
+      return notificationId;
+    }
+    try {
+      await axiosInstance.delete(`/notifications/${notificationId}`);
+    } catch (err: any) {
+      // Treat 404 as non-fatal (already deleted or non-existent)
+      if (err?.response?.status !== 404) throw err;
+    }
     return notificationId;
   }
 );
@@ -112,11 +175,11 @@ const notificationSlice = createSlice({
         state.stats = {
           total: 0,
           unread: 0,
-          byType: { info: 0, success: 0, warning: 0, error: 0 },
+          byType: { info: 0, success: 0, warning: 0, error: 0, workspace_invitation: 0, space_invitation: 0, invitation_accepted: 0 },
         };
       }
       if (!state.stats.byType) {
-        state.stats.byType = { info: 0, success: 0, warning: 0, error: 0 } as any;
+        state.stats.byType = { info: 0, success: 0, warning: 0, error: 0, workspace_invitation: 0, space_invitation: 0, invitation_accepted: 0 } as any;
       }
       state.stats.total += 1;
       if (!action.payload.isRead) {
@@ -154,7 +217,7 @@ const notificationSlice = createSlice({
           ? action.payload.notifications
           : [];
         const s = action.payload.stats || {} as any;
-        const baseByType = { info: 0, success: 0, warning: 0, error: 0 };
+        const baseByType = { info: 0, success: 0, warning: 0, error: 0, workspace_invitation: 0, space_invitation: 0, invitation_accepted: 0 };
         const computed = {
           total: typeof s.total === 'number' ? s.total : state.notifications.length,
           unread: typeof s.unread === 'number' ? s.unread : state.notifications.filter(n => !n.isRead).length,
@@ -163,6 +226,9 @@ const notificationSlice = createSlice({
             success: s.byType?.success ?? 0,
             warning: s.byType?.warning ?? 0,
             error: s.byType?.error ?? 0,
+            workspace_invitation: s.byType?.workspace_invitation ?? 0,
+            space_invitation: s.byType?.space_invitation ?? 0,
+            invitation_accepted: s.byType?.invitation_accepted ?? 0,
           },
         } as any;
         // Ensure keys exist even if backend omitted byType
@@ -188,6 +254,23 @@ const notificationSlice = createSlice({
       })
       .addCase(markNotificationAsRead.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to mark notification as read';
+      })
+      
+      // Bulk mark as read
+      .addCase(markNotificationsAsReadBulk.fulfilled, (state, action) => {
+        const ids: string[] = action.payload as any;
+        ids.forEach(id => {
+          const n = state.notifications.find(nn => nn._id === id);
+          if (n && !n.isRead) {
+            n.isRead = true;
+            if (state.stats) {
+              state.stats.unread = Math.max(0, state.stats.unread - 1);
+            }
+          }
+        });
+      })
+      .addCase(markNotificationsAsReadBulk.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to bulk mark notifications as read';
       })
       
       // Mark all as read

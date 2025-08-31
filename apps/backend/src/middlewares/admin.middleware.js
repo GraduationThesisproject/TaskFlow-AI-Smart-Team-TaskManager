@@ -19,7 +19,8 @@ const adminMiddleware = async (req, res, next) => {
     const decoded = jwt.verifyToken(token);
     
     // Check if admin exists and is active
-    const admin = await Admin.findOne({ userId: decoded.id, isActive: true }).select('-password');
+    // The decoded.id contains the admin's ID from the Admin collection
+    const admin = await Admin.findById(decoded.id).select('-password');
     
     if (!admin) {
       return sendResponse(res, 401, false, 'Access denied. Invalid token.');

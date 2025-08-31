@@ -13,19 +13,20 @@ export const ThemeToggleButton: React.FC<ThemeToggleButtonProps> = ({
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size="icon"
       onClick={toggleTheme}
-      className={`flex items-center gap-2 hover:bg-muted/50 transition-all duration-200 rounded-full px-3 py-2 ${className}`}
+      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      className={`rounded-full h-9 w-9 group ring-1 ring-primary/30 hover:ring-2 hover:bg-primary transition ${className}`}
     >
       {theme === 'dark' ? (
         <>
-          <Sun className="h-4 w-4" />
-          {showLabel && <span className="hidden sm:inline">Light</span>}
+          <Sun className="h-4 w-4 text-primary group-hover:text-background transition-colors" />
+          {showLabel && <span className="sr-only">Light</span>}
         </>
       ) : (
         <>
-          <Moon className="h-4 w-4" />
-          {showLabel && <span className="hidden sm:inline">Dark</span>}
+          <Moon className="h-4 w-4 text-primary group-hover:text-background transition-colors" />
+          {showLabel && <span className="sr-only">Dark</span>}
         </>
       )}
     </Button>

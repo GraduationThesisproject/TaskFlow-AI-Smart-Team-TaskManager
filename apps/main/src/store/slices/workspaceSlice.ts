@@ -25,7 +25,7 @@ export const fetchWorkspace = createAsyncThunk(
 export const fetchWorkspaces = createAsyncThunk<Workspace[]>(
   'workspace/fetchWorkspaces',
   async () => {
-    const response = await WorkspaceService.getWorkspaces();
+    const response = await WorkspaceService.getWorkspaces({ status: 'all' });
     // The response is an object with a workspaces array
     const list = Array.isArray((response as any)?.workspaces)
       ? (response as any).workspaces
@@ -54,7 +54,7 @@ export const generateInviteLink = createAsyncThunk<InviteLinkInfo, { id: string 
 export const fetchWorkspacesGlobal = createAsyncThunk<Workspace[]>(
   'workspace/fetchWorkspacesGlobal',
   async () => {
-    const response = await WorkspaceService.getWorkspaces();
+    const response = await WorkspaceService.getWorkspaces({ status: 'all' });
     console.log('[fetchWorkspacesGlobal] raw response:', response);
     const raw: any = response as any;
     const list = Array.isArray(raw)
@@ -133,11 +133,13 @@ export const createWorkspace = createAsyncThunk(
     name: string;
     description?: string;
     visibility: 'private' | 'public';
+    isPublic?: boolean;
   }) => {
     const response = await WorkspaceService.createWorkspace({
       name: workspaceData.name,
       description: workspaceData.description,
       plan: 'free',
+      isPublic: workspaceData.isPublic ?? (workspaceData.visibility === 'public'),
     });
     const ws: any = (response as any)?.workspace ?? response;
     return {
@@ -148,12 +150,36 @@ export const createWorkspace = createAsyncThunk(
   }
 );
 
-export const deleteWorkspace = createAsyncThunk<{ id: string; message: string }, { id: string }>(
+export const deleteWorkspace = createAsyncThunk<{ id: string; message: string; workspace?: Workspace }, { id: string }>(
   'workspace/deleteWorkspace',
   async ({ id }) => {
     const response = await WorkspaceService.deleteWorkspace(id);
-    const message = (response as any)?.message || (response as any)?.data?.message || 'Workspace deleted';
+    const message = (response as any)?.message || (response as any)?.data?.message || 'Workspace archived';
+    const ws = (response as any)?.workspace;
+    return { id, message, workspace: ws };
+  }
+);
+
+// Permanently delete an archived workspace
+export const permanentDeleteWorkspace = createAsyncThunk<{ id: string; message: string }, { id: string }>(
+  'workspace/permanentDeleteWorkspace',
+  async ({ id }) => {
+    const response = await WorkspaceService.permanentDeleteWorkspace(id);
+    const message = (response as any)?.message || (response as any)?.data?.message || 'Workspace permanently deleted';
     return { id, message };
+  }
+);
+
+// Restore a soft-deleted workspace
+export const restoreWorkspace = createAsyncThunk<Workspace, { id: string }>(
+  'workspace/restoreWorkspace',
+  async ({ id }, { rejectWithValue }) => {
+    try {
+      const ws = await WorkspaceService.restoreWorkspace(id);
+      return ws as Workspace;
+    } catch (error: any) {
+      return rejectWithValue(error?.message || 'Failed to restore workspace');
+    }
   }
 );
 
@@ -226,6 +252,28 @@ const workspaceSlice = createSlice({
       }
       if (state.currentWorkspaceId === id) {
         state.currentWorkspaceId = null;
+      }
+    },
+    upsertWorkspaceStatus(state, action: PayloadAction<{ id: string; status: 'active' | 'archived'; archivedAt?: string | null; archiveExpiresAt?: string | null }>) {
+      const { id, status, archivedAt = null, archiveExpiresAt = null } = action.payload;
+      const idx = (state.workspaces || []).findIndex((w: any) => (w?._id === id || w?.id === id));
+      if (idx >= 0) {
+        const prev = state.workspaces[idx] as any;
+        state.workspaces[idx] = {
+          ...prev,
+          status,
+          archivedAt,
+          archiveExpiresAt,
+        } as any;
+      }
+      // If currentWorkspace matches, keep it in sync too
+      if (state.currentWorkspace && (((state.currentWorkspace as any)._id === id) || ((state.currentWorkspace as any).id === id))) {
+        state.currentWorkspace = {
+          ...(state.currentWorkspace as any),
+          status,
+          archivedAt,
+          archiveExpiresAt,
+        } as any;
       }
     },
     resetWorkspaceState: () => initialState,
@@ -321,13 +369,33 @@ const workspaceSlice = createSlice({
       .addCase(deleteWorkspace.fulfilled, (state, action) => {
         state.loading = false;
         const id = action.payload?.id;
+        const archived = action.payload?.workspace as any;
         if (id) {
-          state.workspaces = (state.workspaces || []).filter((w) => (w as any)._id !== id && (w as any).id !== id);
-          if (state.currentWorkspace && ((state.currentWorkspace as any)._id === id || (state.currentWorkspace as any).id === id)) {
-            state.currentWorkspace = null;
+          const idx = (state.workspaces || []).findIndex((w: any) => (w?._id === id || w?.id === id));
+          if (idx >= 0) {
+            // Update existing workspace to archived state if backend sent it
+            if (archived) {
+              state.workspaces[idx] = {
+                ...state.workspaces[idx],
+                ...archived,
+              } as any;
+            } else {
+              // Fallback: mark status archived locally
+              const prev = state.workspaces[idx] as any;
+              state.workspaces[idx] = {
+                ...prev,
+                status: 'archived',
+                archivedAt: (prev as any)?.archivedAt ?? new Date().toISOString(),
+              } as any;
+            }
           }
-          if (state.currentWorkspaceId === id) {
-            state.currentWorkspaceId = null;
+          // If current workspace is the one archived, keep it but update status
+          if (state.currentWorkspace && ((state.currentWorkspace as any)._id === id || (state.currentWorkspace as any).id === id)) {
+            state.currentWorkspace = {
+              ...(state.currentWorkspace as any),
+              ...(archived || {}),
+              status: archived?.status || 'archived',
+            } as any;
           }
         }
         state.error = null;
@@ -336,9 +404,56 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to delete workspace';
       })
-      
-      }})
-
+      // Permanent delete workspace
+      .addCase(permanentDeleteWorkspace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(permanentDeleteWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        const id = action.payload?.id;
+        if (id) {
+          state.workspaces = (state.workspaces || []).filter((w: any) => (w?._id !== id && w?.id !== id));
+          if (state.currentWorkspace && ((state.currentWorkspace as any)._id === id || (state.currentWorkspace as any).id === id)) {
+            state.currentWorkspace = null as any;
+          }
+          if (state.currentWorkspaceId === id) {
+            state.currentWorkspaceId = null;
+          }
+        }
+        state.error = null;
+      })
+      .addCase(permanentDeleteWorkspace.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to permanently delete workspace';
+      })
+      // Restore workspace
+      .addCase(restoreWorkspace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(restoreWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        const restored = action.payload as Workspace;
+        if (restored) {
+          const idx = state.workspaces.findIndex((w) => (w._id === restored._id || (w as any).id === (restored as any)._id));
+          if (idx >= 0) {
+            state.workspaces[idx] = { ...(state.workspaces[idx] as any), ...restored } as any;
+          } else {
+            state.workspaces = [restored, ...(state.workspaces || [])];
+          }
+          if (state.currentWorkspace && (((state.currentWorkspace as any)._id === (restored as any)._id) || ((state.currentWorkspace as any).id === (restored as any)._id))) {
+            state.currentWorkspace = { ...(state.currentWorkspace as any), ...restored } as any;
+          }
+        }
+        state.error = null;
+      })
+      .addCase(restoreWorkspace.rejected, (state, action: any) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message || 'Failed to restore workspace';
+      })
+       
+       }})
     
     // You can add other thunks (spaces, members, invite links) here similarly...
   
@@ -352,6 +467,7 @@ export const {
   clearError,
   setCurrentWorkspaceId,
   removeWorkspaceById,
+  upsertWorkspaceStatus,
   resetWorkspaceState,
 } = workspaceSlice.actions;
 
