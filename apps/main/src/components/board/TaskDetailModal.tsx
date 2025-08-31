@@ -10,7 +10,6 @@ import {
   Badge,
   Typography,
   Stack,
-  Flex,
   Avatar,
   AvatarImage,
   AvatarFallback,
@@ -21,26 +20,10 @@ import {
   getInitials,
   getAvatarColor
 } from '@taskflow/ui';
-import type { Task, User, File, Comment } from '../../types/task.types';
+import type { Task,  File, Comment } from '../../types/task.types';
 import { CommentItem } from './CommentItem';
 import { CommentService } from '../../services/commentService';
-
-interface Subtask {
-  id: string;
-  title: string;
-  completed: boolean;
-  dueDate?: Date;
-  assignee?: User;
-}
-
-interface TaskDetailModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  task: Task | null;
-  onSave: (taskData: Partial<Task>) => Promise<void>;
-  onDelete: () => Promise<void>;
-  users?: User[];
-}
+import type { TaskDetailModalProps, Subtask } from '../../types/interfaces/ui';
 
 const STATUS_OPTIONS = [
   { value: 'todo', label: 'To Do' },
@@ -49,12 +32,7 @@ const STATUS_OPTIONS = [
   { value: 'done', label: 'Done' },
 ];
 
-const PRIORITY_OPTIONS = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-  { value: 'urgent', label: 'Urgent' },
-];
+
 
 const LABEL_COLORS = {
   'Design': 'bg-blue-500',
@@ -296,18 +274,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     return '📎';
   };
 
-  const formatTimeAgo = (date: Date): string => {
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours === 1) return '1 hour ago';
-    if (diffInHours < 24) return `${diffInHours} hours ago`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays === 1) return '1 day ago';
-    return `${diffInDays} days ago`;
-  };
 
   if (!task) return null;
 
@@ -365,7 +331,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground text-sm">Assigned to:</span>
-                  {users.slice(0, 3).map((user, index) => (
+                  {users.slice(0, 3).map((user) => (
                     <Avatar key={user._id} size="sm" className="-ml-2 first:ml-0 ring-2 ring-background">
                       <AvatarImage src={user.avatar} alt={user.name} />
                       <AvatarFallback variant={getAvatarColor(user.name)}>

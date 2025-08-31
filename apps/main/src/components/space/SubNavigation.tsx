@@ -1,10 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Typography } from '@taskflow/ui';
-
-interface SubNavigationProps {
-  className?: string;
-}
+import type { SubNavigationProps } from '../../types/interfaces/ui';
 
 export const SubNavigation: React.FC<SubNavigationProps> = ({ className = '' }) => {
   const navigate = useNavigate();

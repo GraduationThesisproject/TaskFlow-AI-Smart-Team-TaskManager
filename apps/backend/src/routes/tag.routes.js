@@ -2,8 +2,12 @@ const express = require('express');
 const tagController = require('../controllers/tag.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const { tag: tagSchemas } = require('./validator');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
+
+// Apply authentication to all routes
+router.use(authMiddleware);
 // List/search all accessible tags
 router.get('/', async (req, res) => {
     try {

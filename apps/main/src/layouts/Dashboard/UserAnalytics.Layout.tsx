@@ -9,7 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 // Response shape is made flexible to avoid tight coupling with backend
 // Only rely on fields we render and guard with optional chaining
-interface ActivityPoint { date: string; value: number }
+import type { ActivityPoint } from '../../types/interfaces/ui';
 
 const fallbackArray = <T,>(v?: T[]) => Array.isArray(v) ? v : [];
 

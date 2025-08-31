@@ -1,17 +1,6 @@
 import React from 'react';
 import { Modal, ModalBody, ModalFooter, Button } from '@taskflow/ui';
-
-interface BoardCreationSettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm?: () => void;
-  canManage: boolean;
-  currentSetting: string;
-  newSetting: string;
-  userRole: string | null;
-  userName?: string;
-  loading: boolean;
-}
+import type { BoardCreationSettingsModalProps } from '../../../types/interfaces/ui';
 
 const BoardCreationSettingsModal: React.FC<BoardCreationSettingsModalProps> = ({
   isOpen,

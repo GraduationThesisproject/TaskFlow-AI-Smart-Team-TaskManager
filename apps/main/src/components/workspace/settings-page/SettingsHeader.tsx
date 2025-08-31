@@ -1,10 +1,6 @@
 import React from 'react';
 import { Typography } from '@taskflow/ui';
-
-interface SettingsHeaderProps {
-  title: string;
-  status: string;
-}
+import type { SettingsHeaderProps } from '../../../types/interfaces/ui';
 
 const SettingsHeader: React.FC<SettingsHeaderProps> = ({ title, status }) => {
   return (

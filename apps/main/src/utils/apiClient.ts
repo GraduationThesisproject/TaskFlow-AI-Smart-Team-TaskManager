@@ -2,6 +2,22 @@
 import { env } from '../config/env';
 import tokenManager from './tokenManager';
 
+// Type definition for RequestInit
+interface RequestInit {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string | FormData | URLSearchParams | ReadableStream;
+  mode?: 'cors' | 'no-cors' | 'same-origin';
+  credentials?: 'omit' | 'same-origin' | 'include';
+  cache?: 'default' | 'no-store' | 'reload' | 'no-cache' | 'force-cache' | 'only-if-cached';
+  redirect?: 'follow' | 'error' | 'manual';
+  referrer?: string;
+  referrerPolicy?: 'no-referrer' | 'no-referrer-when-downgrade' | 'origin' | 'origin-when-cross-origin' | 'same-origin' | 'strict-origin' | 'strict-origin-when-cross-origin' | 'unsafe-url';
+  integrity?: string;
+  keepalive?: boolean;
+  signal?: AbortSignal;
+}
+
 class ApiClient {
     private baseURL: string;
     private defaultHeaders: Record<string, string>;

@@ -1,12 +1,6 @@
 import React from 'react';
 import { Card, Button, Typography, Gradient } from '@taskflow/ui';
-
-interface UpgradeBannerProps {
-  title: string;
-  description: string;
-  buttonText: string;
-  onUpgrade?: () => void;
-}
+import type { UpgradeBannerProps } from '../../../types/interfaces/ui';
 
 const UpgradeBanner: React.FC<UpgradeBannerProps> = ({ 
   title, 

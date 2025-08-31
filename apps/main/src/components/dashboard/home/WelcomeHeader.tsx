@@ -1,16 +1,14 @@
+import React from 'react';
 import { Typography } from "@taskflow/ui";
-
-interface WelcomeHeaderProps {
-  displayName: string;
-}
+import type { WelcomeHeaderProps } from "../../../types/interfaces/ui";
 
 export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ displayName }) => (
   <div className="mb-8">
-    <Typography variant="h1" className="text-3xl font-bold text-foreground">
-      Welcome back, {displayName}!
+    <Typography variant="h1" className="text-4xl md:text-5xl font-bold text-center mb-6">
+      Welcome to TaskFlow AI
     </Typography>
-    <Typography variant="body-medium" className="text-muted-foreground mt-2">
-      Here's what's happening with your projects today.
+    <Typography variant="body1" className="text-lg md:text-xl text-center mb-8 max-w-3xl">
+      Your smart team task manager that helps you stay organized and productive
     </Typography>
   </div>
 );

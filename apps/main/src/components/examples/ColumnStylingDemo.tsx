@@ -114,7 +114,7 @@ export const ColumnStylingDemo: React.FC = () => {
         <CardContent>
           <Stack spacing="md">
             <Typography variant="body-medium">
-              Here's how to integrate these components in your column modals:
+              Here&apos;s how to integrate these components in your column modals:
             </Typography>
             <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
 {`// In your column modal or form

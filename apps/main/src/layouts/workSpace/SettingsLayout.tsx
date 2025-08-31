@@ -257,10 +257,10 @@ function SettingsLayout() {
   const newBoardCreationSetting = settings?.permissions?.allowMemberBoardCreation ? 'Only admins can create boards' : 'Any member can create boards';
   
   const currentBoardDeletionSetting = settings?.permissions?.allowMemberBoardDeletion ? 'Any member can delete boards' : 'Only admins can delete boards';
-  const newBoardDeletionSetting = !!settings?.permissions?.allowMemberBoardDeletion ? 'Only admins can delete boards' : 'Any member can delete boards';
+  const newBoardDeletionSetting = settings?.permissions?.allowMemberBoardDeletion ? 'Only admins can delete boards' : 'Any member can delete boards';
 
-  const currentGuestSharingSetting = !!settings?.permissions?.allowGuestInvites ? 'Anyone can invite guests' : 'Only admins can invite guests';
-  const newGuestSharingSetting = !!settings?.permissions?.allowGuestInvites ? 'Only admins can invite guests' : 'Anyone can invite guests';
+  const currentGuestSharingSetting = settings?.permissions?.allowGuestInvites ? 'Anyone can invite guests' : 'Only admins can invite guests';
+  const newGuestSharingSetting = settings?.permissions?.allowGuestInvites ? 'Only admins can invite guests' : 'Anyone can invite guests';
 
   return (
     <div className="flex min-h-screen text-[hsl(var(--foreground))] ">

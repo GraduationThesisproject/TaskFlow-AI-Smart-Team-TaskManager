@@ -3,36 +3,7 @@ import { Button, Avatar, AvatarImage, AvatarFallback } from '@taskflow/ui';
 import Pill from './Pill';
 import { roleBadgeVariant, statusBadgeVariant } from './data';
 import ConfirmRemoveMemberDialog from './ConfirmRemoveMemberDialog';
-
-interface User {
-  _id?: string;
-  name?: string;
-  email?: string;
-}
-
-interface Member {
-  id?: string;
-  userId?: string;
-  user?: User | string;
-  role: 'owner' | 'admin' | 'member';
-  status?: 'active' | 'pending' | 'disabled';
-  lastActive?: string | Date;
-  name: string;
-  email: string;
-  handle: string;
-  displayRole: string;
-  displayStatus: string;
-  lastActiveStr: string;
-  avatar?: string;
-}
-
-interface MembersTableProps {
-  filteredMembers: Member[];
-  isLoading: boolean;
-  error: string | null;
-  onRemove: (memberId: string, roleKey: string, password?: string) => Promise<void>;
-  onGenerateInvite: () => void;
-}
+import type { User, Member, MembersTableProps } from '../../../../types/interfaces/ui';
 
 const MembersTable: React.FC<MembersTableProps> = ({
   filteredMembers,

@@ -1,15 +1,12 @@
 const express = require('express');
 const analyticsController = require('../controllers/analytics.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
+const { analytics: analyticsSchemas } = require('./validator');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const router = express.Router();
 
-// Validation schemas
-const generateAnalyticsSchema = {
-    periodType: { enum: ['daily', 'weekly', 'monthly', 'quarterly', 'yearly', 'custom'] },
-    startDate: { date: true },
-    endDate: { date: true },
-    includeAI: { boolean: true }
-};
+// Apply authentication to all routes
+router.use(authMiddleware);
 
 // Space analytics routes
 router.get('/space/:spaceId',
@@ -17,7 +14,7 @@ router.get('/space/:spaceId',
 );
 
 router.post('/space/:spaceId/generate',
-    validateMiddleware(generateAnalyticsSchema),
+    validateMiddleware(analyticsSchemas.generateAnalyticsSchema),
     analyticsController.generateSpaceAnalytics
 );
 

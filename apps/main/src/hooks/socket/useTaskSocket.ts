@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSocket } from './useSocket';
+import { useBoardSocket } from '../../contexts/SocketContext';
 import {
   setSocketConnected,
   updateTaskRealTime,
@@ -26,13 +26,8 @@ export const useTaskSocket = (options: UseTaskSocketOptions = {}) => {
   const isConnected = useSelector(selectSocketConnected);
   const currentBoard = useSelector(selectCurrentBoard);
 
-  const { socket, isConnected: socketConnected, emit, on, off } = useSocket({
-    url: 'http://localhost:3001',
-    autoConnect: true,
-    auth: {
-      token: 'dummy-token' // This would be the actual JWT token
-    }
-  });
+  // Use the centralized board socket from SocketContext
+  const { socket, isConnected: socketConnected, emit, on, off } = useBoardSocket();
 
   // Update Redux state when socket connection changes
   useEffect(() => {

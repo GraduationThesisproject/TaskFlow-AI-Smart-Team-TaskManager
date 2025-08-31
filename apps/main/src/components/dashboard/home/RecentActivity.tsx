@@ -1,3 +1,4 @@
+import React from 'react';
 import { useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback, EmptyState, Skeleton } from "@taskflow/ui";
 import { Clock, AlertCircle } from "lucide-react";

@@ -4,8 +4,12 @@ const validateMiddleware = require('../middlewares/validate.middleware');
 const { requireBoardPermission } = require('../middlewares/permission.middleware');
 const { uploadMiddlewares } = require('../middlewares/upload.middleware');
 const { task: taskSchemas } = require('./validator');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
+
+// Apply authentication to all routes
+router.use(authMiddleware);
 
 // Routes
 router.get('/', taskController.getTasks);

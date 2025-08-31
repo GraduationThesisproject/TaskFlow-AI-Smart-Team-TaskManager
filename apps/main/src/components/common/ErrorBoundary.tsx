@@ -1,26 +1,15 @@
 import React, { Component } from 'react';
-import type { ReactNode } from 'react';
 import { Typography, Button, Card, CardContent } from '@taskflow/ui';
 import {env} from '../../config/env';
-interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
-}
+import type { ErrorBoundaryProps, ErrorBoundaryState, ErrorBoundaryWrapperProps } from '../../types/interfaces/ui';
 
-interface State {
-  hasError: boolean;
-  error: Error | null;
-  errorInfo: React.ErrorInfo | null;
-}
-
-export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     // Update state so the next render will show the fallback UI
     return { hasError: true, error, errorInfo: null };
   }
@@ -104,11 +93,6 @@ export class ErrorBoundary extends Component<Props, State> {
 }
 
 // Functional component wrapper for easier usage
-interface ErrorBoundaryWrapperProps {
-  children: ReactNode;
-  fallback?: ReactNode;
-  name?: string;
-}
 
 export const ErrorBoundaryWrapper: React.FC<ErrorBoundaryWrapperProps> = ({ 
   children, 

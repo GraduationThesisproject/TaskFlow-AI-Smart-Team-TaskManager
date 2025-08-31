@@ -4,12 +4,7 @@ import { LogOut, Settings, User, Bell, Check, Trash2, AlertCircle, CheckCircle, 
 import { useNotifications } from '../../../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import type { User as UserType } from '../../../types/navbar';
-
-interface UserProfileProps {
-  user?: UserType;
-  onLogout?: () => void;
-  className?: string;
-}
+import type { UserProfileProps } from '../../../types/interfaces/ui';
 
 export const UserProfile: React.FC<UserProfileProps> = ({ 
   user, 

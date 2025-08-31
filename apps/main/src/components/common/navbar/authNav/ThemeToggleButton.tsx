@@ -1,8 +1,5 @@
 import { useTheme } from '@taskflow/theme';
-
-interface ThemeToggleButtonProps {
-  className?: string;
-}
+import type { ThemeToggleButtonProps } from '../../../../types/interfaces/ui';
 
 export function ThemeToggleButton({ className = '' }: ThemeToggleButtonProps) {
   const { theme, toggleTheme } = useTheme();

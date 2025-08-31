@@ -24,9 +24,7 @@ import {
   getAvatarColor
 } from '@taskflow/ui';
 
-interface TaskDetailsLayoutProps {
-  taskId?: string;
-}
+import type { TaskDetailsLayoutProps } from '../../types/interfaces/ui';
 
 export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: propTaskId }) => {
   const { taskId: paramTaskId, boardId } = useParams<{ taskId: string; boardId: string }>();

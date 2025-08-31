@@ -7,7 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 export default function RecoverPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { error, clearError, resetPassword } = useAuth();
+  const { error, resetPassword } = useAuth();
   
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

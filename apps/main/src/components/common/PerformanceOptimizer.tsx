@@ -1,10 +1,5 @@
 import React, { Suspense, lazy, memo, useMemo, useCallback, useEffect, useState } from 'react';
-
-// Lazy loading wrapper with error boundary
-interface LazyComponentProps {
-  fallback?: React.ReactNode;
-  errorFallback?: React.ReactNode;
-}
+import type { LazyComponentProps, ErrorBoundaryProps, ErrorBoundaryState } from '../../types/interfaces/ui';
 
 export function createLazyComponent<T extends React.ComponentType<any>>(
   importFunc: () => Promise<{ default: T }>,
@@ -12,7 +7,7 @@ export function createLazyComponent<T extends React.ComponentType<any>>(
 ) {
   const LazyComponent = lazy(importFunc);
   
-  return React.forwardRef<React.ComponentRef<T>, React.ComponentProps<T> & LazyComponentProps>(
+  const WrappedComponent = React.forwardRef<React.ComponentRef<T>, React.ComponentProps<T> & LazyComponentProps>(
     ({ fallback: customFallback, errorFallback, ...props }, ref) => {
       const [hasError, setHasError] = useState(false);
       
@@ -29,18 +24,10 @@ export function createLazyComponent<T extends React.ComponentType<any>>(
       );
     }
   );
+  
+  WrappedComponent.displayName = 'LazyComponent';
+  return WrappedComponent;
 }
-
-// Error boundary component
-interface ErrorBoundaryProps {
-  children: React.ReactNode;
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
-  fallback?: React.ReactNode;
-}
-
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error?: Error;
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -117,7 +104,7 @@ export function useVirtualScroll<T>(
 
 // Intersection Observer hook for lazy loading
 export function useIntersectionObserver(
-  options: IntersectionObserverInit = {}
+  options: globalThis.IntersectionObserverInit = {}
 ) {
   const [isIntersecting, setIsIntersecting] = useState(false);
   const [ref, setRef] = useState<HTMLElement | null>(null);
@@ -180,7 +167,7 @@ export function useThrottle<T>(value: T, delay: number): T {
 // Memoized component wrapper
 export function withMemo<T extends React.ComponentType<any>>(
   Component: T,
-  propsAreEqual?: (prevProps: React.ComponentProps<T>, nextProps: React.ComponentProps<T>) => boolean
+  propsAreEqual?: (_prevProps: React.ComponentProps<T>, _nextProps: React.ComponentProps<T>) => boolean
 ) {
   return memo(Component, propsAreEqual);
 }
@@ -202,14 +189,7 @@ export function usePerformanceMonitor(componentName: string) {
 }
 
 // Image lazy loading component
-interface LazyImageProps {
-  src: string;
-  alt: string;
-  className?: string;
-  placeholder?: string;
-  onLoad?: () => void;
-  onError?: () => void;
-}
+import type { LazyImageProps } from '../../types/interfaces/ui';
 
 export const LazyImage = memo<LazyImageProps>(({
   src,
@@ -286,13 +266,7 @@ export function useInfiniteScroll(
 }
 
 // Optimized list component
-interface OptimizedListProps<T> {
-  items: T[];
-  renderItem: (item: T, index: number) => React.ReactNode;
-  itemHeight: number;
-  containerHeight: number;
-  className?: string;
-}
+import type { OptimizedListProps } from '../../types/interfaces/ui';
 
 export function OptimizedList<T>({
   items,
