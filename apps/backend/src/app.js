@@ -213,7 +213,8 @@ app.options('/api/avatars/:filename', (req, res) => {
   res.status(200).end();
 });
 
-// Body parsing middleware for all routes
+
+// Body parsing middleware for all other routes
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 

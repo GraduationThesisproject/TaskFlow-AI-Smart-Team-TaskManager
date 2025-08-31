@@ -342,6 +342,121 @@ const templates = {
             </body>
             </html>
         `
+    },
+    'payment-confirmation': {
+        subject: '💳 Payment Confirmed - Welcome to {{planName}}!',
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Payment Confirmation</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 600;">🎉 Payment Successful!</h1>
+                        <p style="color: #bbf7d0; margin: 10px 0 0 0; font-size: 16px;">Welcome to {{planName}} plan</p>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div style="padding: 40px 30px;">
+                        <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hello {{customerName}},</h2>
+                        
+                        <p style="color: #475569; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                            Thank you for your payment! Your subscription to the <strong>{{planName}}</strong> plan has been successfully activated. 
+                            You now have access to all premium features.
+                        </p>
+                        
+                        <!-- Payment Summary Card -->
+                        <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 16px; padding: 24px; margin: 30px 0;">
+                            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                    <span style="color: #ffffff; font-size: 18px;">💳</span>
+                                </div>
+                                <div>
+                                    <h3 style="color: #166534; margin: 0; font-size: 20px; font-weight: 600;">Payment Summary</h3>
+                                    <p style="color: #16a34a; margin: 5px 0 0 0; font-size: 14px;">Transaction completed successfully</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Payment Details Grid -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
+                                <div style="background-color: #ffffff; border-radius: 8px; padding: 16px; border: 1px solid #d1fae5;">
+                                    <p style="color: #64748b; margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; font-weight: 600;">Plan</p>
+                                    <p style="color: #166534; margin: 0; font-weight: 600; font-size: 16px;">{{planName}}</p>
+                                </div>
+                                <div style="background-color: #ffffff; border-radius: 8px; padding: 16px; border: 1px solid #d1fae5;">
+                                    <p style="color: #64748b; margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; font-weight: 600;">Amount</p>
+                                    <p style="color: #166534; margin: 0; font-weight: 600; font-size: 16px;">{{amount}}</p>
+                                </div>
+                                <div style="background-color: #ffffff; border-radius: 8px; padding: 16px; border: 1px solid #d1fae5;">
+                                    <p style="color: #64748b; margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; font-weight: 600;">Billing Cycle</p>
+                                    <p style="color: #166534; margin: 0; font-weight: 600; font-size: 16px;">{{billingCycle}}</p>
+                                </div>
+                                <div style="background-color: #ffffff; border-radius: 8px; padding: 16px; border: 1px solid #d1fae5;">
+                                    <p style="color: #64748b; margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; font-weight: 600;">Transaction ID</p>
+                                    <p style="color: #166534; margin: 0; font-weight: 600; font-size: 14px;">{{transactionId}}</p>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #d1fae5;">
+                                <p style="color: #64748b; margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; font-weight: 600;">Payment Date</p>
+                                <p style="color: #166534; margin: 0; font-weight: 600; font-size: 14px;">{{paymentDate}}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Features Unlocked -->
+                        <div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; margin: 30px 0;">
+                            <h3 style="color: #1e293b; margin: 0 0 16px 0; font-size: 18px;">🚀 Features Now Available</h3>
+                            <ul style="color: #475569; line-height: 1.8; margin: 0; padding-left: 20px;">
+                                {{#if isPremium}}
+                                <li>Unlimited projects and workspaces</li>
+                                <li>Advanced analytics and reporting</li>
+                                <li>Priority customer support</li>
+                                <li>Custom integrations</li>
+                                {{/if}}
+                                {{#if isEnterprise}}
+                                <li>Everything in Premium</li>
+                                <li>Advanced security features</li>
+                                <li>Dedicated account manager</li>
+                                <li>Custom branding options</li>
+                                <li>SSO integration</li>
+                                {{/if}}
+                            </ul>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 40px 0;">
+                            <a href="{{dashboardUrl}}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); margin-right: 16px;">
+                                🎯 Go to Dashboard
+                            </a>
+                            <a href="{{billingUrl}}" style="display: inline-block; background: #ffffff; color: #10b981; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; border: 2px solid #10b981;">
+                                📄 View Receipt
+                            </a>
+                        </div>
+                        
+                        <p style="color: #64748b; line-height: 1.6; margin: 0; font-size: 14px;">
+                            Your subscription is now active and will automatically renew on {{nextBillingDate}}. 
+                            You can manage your subscription and billing details from your account settings.
+                        </p>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                        <p style="color: #64748b; margin: 0 0 10px 0; font-size: 14px;">Best regards,</p>
+                        <p style="color: #1e293b; margin: 0; font-weight: 600; font-size: 16px;">The TaskFlow Team</p>
+                        <div style="margin-top: 20px;">
+                            <a href="{{supportUrl}}" style="color: #667eea; text-decoration: none; font-size: 14px;">📧 Support</a>
+                            <span style="color: #cbd5e1; margin: 0 10px;">•</span>
+                            <a href="{{billingUrl}}" style="color: #667eea; text-decoration: none; font-size: 14px;">💳 Billing</a>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
     }
 };
 
