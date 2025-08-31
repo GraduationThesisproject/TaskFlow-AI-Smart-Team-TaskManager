@@ -1,19 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const config = require('../config/env');
-
-// Lazily initialize Stripe only when needed to avoid crashing when key is missing
-let stripeInstance = null;
-function getStripe() {
-  if (stripeInstance) return stripeInstance;
-  const key = process.env.STRIPE_SECRET_KEY || config.STRIPE_SECRET_KEY;
-  if (!key) {
-    return null;
-  }
-  // eslint-disable-next-line global-require
-  stripeInstance = require('stripe')(key);
-  return stripeInstance;
-}
+const env=require('../config/env');
+const stripe = require("stripe")(env.STRIPE_SECRET_KEY);
 
 router.post("/create-checkout-session", async (req, res) => {
   const { products, metadata } = req.body;
@@ -22,7 +10,6 @@ router.post("/create-checkout-session", async (req, res) => {
   const mergedMetadata = { ...(metadata || {}), ...(userId ? { userId } : {}) };
   
   try {
-    const stripe = getStripe();
     if (!stripe) {
       return res.status(503).json({
         error: "Stripe is not configured on the server",
@@ -53,8 +40,8 @@ router.post("/create-checkout-session", async (req, res) => {
       payment_method_types: ["card"],
       line_items: products,
       mode: "payment",
-      success_url: `${config.FRONTEND_URL || 'http://localhost:5173'}/success?${successParams.toString()}`,
-      cancel_url: `${config.FRONTEND_URL || 'http://localhost:5173'}/cancel?${cancelParams.toString()}`,
+      success_url: `http://localhost:5173/success?${successParams.toString()}`,
+      cancel_url: `http://localhost:5173/cancel?${cancelParams.toString()}`,
       metadata: mergedMetadata,
     });
     
