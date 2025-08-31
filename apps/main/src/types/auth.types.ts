@@ -46,12 +46,25 @@ export interface UserRoles {
   permissions: string[];
 }
 
+// Subscription types
+export type SubscriptionPlan = 'free' | 'standard' | 'premium' | 'enterprise';
+export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete' | 'unpaid';
+
+export interface Subscription {
+  plan: SubscriptionPlan | string; // allow unknown plans from backend gracefully
+  status: SubscriptionStatus | string;
+  currentPeriodStart?: string; // ISO format
+  currentPeriodEnd?: string;   // ISO format
+  cancelAtPeriodEnd?: boolean;
+}
+
 // Complete user object with all nested data
 export interface User {
   user: UserBasic;
   preferences: UserPreferences;
   security: UserSecurity;
   roles: UserRoles;
+  subscription?: Subscription; // optional: present when user has a subscription
 }
 
 // Backend response structure for /auth/me endpoint

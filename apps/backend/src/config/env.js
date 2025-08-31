@@ -64,8 +64,8 @@ SMTP_PASS → your email password or API key.
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     //OPENAI_API_KEY → your API key for using AI (e.g., ChatGPT in your app)
 
-
-
+    // Payments (Stripe)
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
 
     // File Upload (Local Storage)
     BASE_URL: process.env.BASE_URL || 'http://localhost:3001',
