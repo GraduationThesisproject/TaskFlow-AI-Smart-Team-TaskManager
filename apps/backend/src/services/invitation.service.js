@@ -79,7 +79,7 @@ class InvitationService {
                     recipient: existingUser._id,
                     sender: inviterId,
                     relatedEntity: {
-                        entityType: 'Workspace',
+                        entityType: 'workspace',
                         entityId: workspaceId
                     },
                     deliveryMethods: { inApp: true }
@@ -153,7 +153,7 @@ class InvitationService {
                     recipient: existingUser._id,
                     sender: inviterId,
                     relatedEntity: {
-                        entityType: 'Space',
+                        entityType: 'space',
                         entityId: spaceId
                     },
                     deliveryMethods: { inApp: true }
@@ -229,7 +229,7 @@ class InvitationService {
                 recipient: invitation.invitedBy,
                 sender: userId,
                 relatedEntity: {
-                    entityType: invitation.targetEntity.type,
+                    entityType: (invitation.targetEntity.type || '').toLowerCase(),
                     entityId: invitation.targetEntity.id
                 },
                 deliveryMethods: { inApp: true, email: true }

@@ -287,6 +287,29 @@ class WorkspaceService {
             throw new Error('Only workspace owner can delete the workspace');
         }
 
+        // Store workspace name before deletion
+        const workspaceName = workspace.name;
+
+        // Create warning notification before permanent deletion
+        try {
+            const NotificationService = require('./notification.service');
+            await NotificationService.createNotification({
+                title: 'Workspace permanently deleted',
+                message: `Your workspace "${workspaceName}" has been permanently deleted. All data has been removed and cannot be recovered.`,
+                type: 'workspace_deleted',
+                recipient: userId,
+                sender: userId,
+                relatedEntity: {
+                    entityType: 'workspace',
+                    entityId: workspace._id
+                },
+                priority: 'high',
+                deliveryMethods: { inApp: true }
+            });
+        } catch (notifyErr) {
+            logger.warn('Workspace permanent delete: notification not sent/saved', { error: notifyErr?.message });
+        }
+
         // Require models locally to avoid duplicate top-level declarations
         const Task = require('../models/Task');
         const Board = require('../models/Board');
@@ -312,6 +335,185 @@ class WorkspaceService {
         await Workspace.findByIdAndDelete(workspaceId);
 
         return { success: true, message: 'Workspace deleted successfully' };
+    }
+
+    // Soft delete workspace (preferred)
+    async softDeleteWorkspace(workspaceId, userId) {
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) throw new Error('Workspace not found');
+        if (workspace.owner.toString() !== userId.toString()) {
+            throw new Error('Only workspace owner can delete the workspace');
+        }
+
+        // Mark as archived; isActive will be synced by pre-save hook
+        workspace.status = 'archived';
+        const now = new Date();
+        workspace.archivedAt = now;
+        // 24 hours timer until potential purge/restore window ends
+        const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+        workspace.archiveExpiresAt = new Date(now.getTime() + TWENTY_FOUR_HOURS_MS);
+        workspace.archivedBy = userId;
+        await workspace.save();
+
+        // Create notification for workspace archival
+        try {
+            const NotificationService = require('./notification.service');
+            await NotificationService.createNotification({
+                title: 'Workspace archived',
+                message: `Your workspace "${workspace.name}" has been archived and will be permanently deleted in 24 hours`,
+                type: 'workspace_archived',
+                recipient: userId,
+                sender: userId,
+                relatedEntity: {
+                    entityType: 'workspace',
+                    entityId: workspace._id
+                },
+                priority: 'high',
+                deliveryMethods: { inApp: true }
+            });
+        } catch (notifyErr) {
+            logger.warn('Workspace archive: notification not sent/saved', { error: notifyErr?.message });
+        }
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId,
+            action: 'workspace_delete',
+            description: `Archived workspace: ${workspace.name}`,
+            entity: { type: 'Workspace', id: workspace._id, name: workspace.name },
+            workspaceId,
+            severity: 'warning'
+        });
+
+        // Realtime: notify workspace room about status change
+        if (global.io && typeof global.io.notifyWorkspace === 'function') {
+            global.io.notifyWorkspace(workspace._id.toString(), 'workspace:status-changed', {
+                workspaceId: workspace._id.toString(),
+                status: workspace.status,
+                archivedAt: workspace.archivedAt,
+                archiveExpiresAt: workspace.archiveExpiresAt,
+                archivedBy: userId,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        // Realtime: also notify all workspace members via their personal user rooms
+        if (global.io) {
+            try {
+                const populated = await Workspace.findById(workspace._id)
+                    .populate('owner', '_id')
+                    .populate('members.user', '_id');
+                const recipientIds = new Set();
+                if (populated?.owner?._id) recipientIds.add(populated.owner._id.toString());
+                (populated?.members || []).forEach(m => {
+                    if (m?.user?._id) recipientIds.add(m.user._id.toString());
+                });
+                const payload = {
+                    workspaceId: workspace._id.toString(),
+                    status: workspace.status,
+                    archivedAt: workspace.archivedAt,
+                    archiveExpiresAt: workspace.archiveExpiresAt,
+                    archivedBy: userId,
+                    timestamp: new Date().toISOString(),
+                    scope: 'user'
+                };
+                recipientIds.forEach(uid => {
+                    global.io.to(`user:${uid}`).emit('workspace:status-changed', payload);
+                });
+            } catch (e) {
+                // swallow to avoid failing the request due to notification issues
+            }
+        }
+
+        return workspace.toObject();
+    }
+
+    // Restore soft-deleted workspace
+    async restoreWorkspace(workspaceId, userId) {
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) throw new Error('Workspace not found');
+
+        // Owner can restore; fallback: user who deleted or any owner
+        if (workspace.owner.toString() !== userId.toString()) {
+            throw new Error('Only workspace owner can restore the workspace');
+        }
+
+        workspace.status = 'active';
+        workspace.archivedAt = null;
+        workspace.archivedBy = null;
+        workspace.archiveExpiresAt = null;
+        await workspace.save();
+
+        // Create notification for workspace restoration
+        try {
+            const NotificationService = require('./notification.service');
+            await NotificationService.createNotification({
+                title: 'Workspace restored',
+                message: `Your workspace "${workspace.name}" has been restored and is now active`,
+                type: 'workspace_restored',
+                recipient: userId,
+                sender: userId,
+                relatedEntity: {
+                    entityType: 'workspace',
+                    entityId: workspace._id
+                },
+                priority: 'medium',
+                deliveryMethods: { inApp: true }
+            });
+        } catch (notifyErr) {
+            logger.warn('Workspace restore: notification not sent/saved', { error: notifyErr?.message });
+        }
+
+        await ActivityLog.logActivity({
+            userId,
+            action: 'workspace_restore',
+            description: `Restored workspace: ${workspace.name}`,
+            entity: { type: 'Workspace', id: workspace._id, name: workspace.name },
+            workspaceId,
+            severity: 'info'
+        });
+
+        // Realtime: notify workspace room about status change
+        if (global.io && typeof global.io.notifyWorkspace === 'function') {
+            global.io.notifyWorkspace(workspace._id.toString(), 'workspace:status-changed', {
+                workspaceId: workspace._id.toString(),
+                status: workspace.status,
+                archivedAt: workspace.archivedAt,
+                archiveExpiresAt: workspace.archiveExpiresAt,
+                restoredBy: userId,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        // Realtime: also notify all workspace members via their personal user rooms
+        if (global.io) {
+            try {
+                const populated = await Workspace.findById(workspace._id)
+                    .populate('owner', '_id')
+                    .populate('members.user', '_id');
+                const recipientIds = new Set();
+                if (populated?.owner?._id) recipientIds.add(populated.owner._id.toString());
+                (populated?.members || []).forEach(m => {
+                    if (m?.user?._id) recipientIds.add(m.user._id.toString());
+                });
+                const payload = {
+                    workspaceId: workspace._id.toString(),
+                    status: workspace.status,
+                    archivedAt: workspace.archivedAt,
+                    archiveExpiresAt: workspace.archiveExpiresAt,
+                    restoredBy: userId,
+                    timestamp: new Date().toISOString(),
+                    scope: 'user'
+                };
+                recipientIds.forEach(uid => {
+                    global.io.to(`user:${uid}`).emit('workspace:status-changed', payload);
+                });
+            } catch (e) {
+                // swallow to avoid failing the request due to notification issues
+            }
+        }
+
+        return workspace.toObject();
     }
 }
 

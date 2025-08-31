@@ -1,7 +1,6 @@
 const express = require('express');
 const adminController = require('../controllers/admin.controller');
-const { authMiddleware } = require('../middlewares/auth.middleware');
-const { requireSystemAdmin } = require('../middlewares/permission.middleware');
+const { authenticateAdmin } = require('../middlewares/adminAuth.middleware');
 const { 
   requireUserManagementAccess, 
   requireUserManagementPermission 
@@ -17,9 +16,19 @@ router.post('/auth/login', adminController.login);
 router.post('/auth/login/2fa-complete', adminController.completeLoginWith2FA);
 router.get('/auth/test-jwt', adminController.testJWT);
 
+// Public endpoint for creating the first admin user (only works when no admins exist)
+router.post('/auth/setup-first-admin', adminController.setupFirstAdmin);
+
 // Apply admin authentication middleware to protected routes
-router.use(authMiddleware);
-router.use(requireSystemAdmin);
+router.use(authenticateAdmin);
+
+// 2FA management routes (protected)
+router.get('/2fa/status', adminController.get2FAStatus);
+router.post('/2fa/enable', adminController.enable2FA);
+router.post('/2fa/verify-setup', adminController.verify2FASetup);
+router.post('/2fa/disable', adminController.disable2FA);
+router.post('/2fa/backup-codes', adminController.generateBackupCodes);
+router.post('/2fa/recovery-token', adminController.generateRecoveryToken);
 
 // Protected admin routes
 router.post('/auth/logout', adminController.logout);
@@ -36,6 +45,7 @@ router.get('/users', requireUserManagementAccess('view'), adminController.getUse
 router.get('/app-users', requireUserManagementAccess('view'), adminController.getAppUsers); // Regular app users
 router.post('/users', requireUserManagementAccess('limited'), adminController.createUser);
 router.post('/users/add-with-email', requireUserManagementAccess('limited'), adminController.addUserWithEmail);
+router.post('/users/add-admin', requireUserManagementAccess('limited'), adminController.addAdminUser);
 router.get('/users/available-roles', requireUserManagementAccess('view'), adminController.getAvailableRoles);
 router.post('/users/reset-password', requireUserManagementAccess('limited'), adminController.resetUserPassword);
 

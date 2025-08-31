@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Avatar, AvatarImage, AvatarFallback, Dropdown, Typography, Badge } from '@taskflow/ui';
-import { LogOut, Settings, User, Bell, Check, Trash2, AlertCircle, CheckCircle, Info, AlertTriangle, UserPlus } from 'lucide-react';
+import { LogOut, UserCog, Bell, Trash2, AlertCircle, CheckCircle, Info, AlertTriangle, UserPlus } from 'lucide-react';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import type { User as UserType } from '../../../types/navbar';
@@ -36,7 +36,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         variant="ghost"
         size="sm"
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center gap-2 hover:bg-secondary/60 transition-colors"
+        className="group flex items-center gap-2 rounded-full ring-1 ring-primary/30 hover:ring-2 hover:bg-primary transition px-2 pr-3"
       >
         <Avatar size="sm">
           {user.user.avatar && (
@@ -46,7 +46,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {user.user.name?.charAt(0) || 'U'}
           </AvatarFallback>
         </Avatar>
-        <span className="hidden sm:inline font-medium">
+        <span className="hidden sm:inline font-medium text-foreground group-hover:text-background transition-colors">
           {user.user.name || 'User'}
         </span>
       </Button>
@@ -54,22 +54,18 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       {isDropdownOpen && (
         <div className="absolute top-full right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50">
           <div className="p-2 space-y-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start gap-2"
-            >
-              <User className="w-4 h-4" />
-              Profile
-            </Button>
             
             <Button
               variant="ghost"
               size="sm"
               className="w-full justify-start gap-2"
+              onClick={() => {
+                setIsDropdownOpen(false);
+                window.location.href = '/dashboard/settings';
+              }}
             >
-              <Settings className="w-4 h-4" />
-              Settings
+              <UserCog className="w-4 h-4" />
+              Profile & Settings
             </Button>
             
             <div className="border-t border-border my-1" />
@@ -101,7 +97,8 @@ const NotificationBell: React.FC = () => {
     markAllAsRead,
     deleteNotification,
     clearReadNotifications,
-    clearError
+    clearError,
+    fetchNotifications,
   } = useNotifications();
 
   const unreadCount = stats?.unread || 0;
@@ -135,11 +132,16 @@ const NotificationBell: React.FC = () => {
     }
   };
 
+  const handleBellOpen = React.useCallback(() => {
+    // Refresh notifications on open to ensure latest data
+    fetchNotifications?.();
+  }, [fetchNotifications]);
+
   return (
     <Dropdown
       trigger={
-        <div className="relative">
-          <Bell size={20} />
+        <div className="relative" onClick={handleBellOpen}>
+          <Bell size={20} className="text-primary hover:text-background transition-colors" />
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
@@ -238,7 +240,7 @@ const NotificationBell: React.FC = () => {
                               variant="ghost"
                               size="sm"
                               className="text-xs h-6 px-2"
-                              onClick={() => (window.location.href = '/dashboard/settings')}
+                              onClick={() => { markAsRead(n._id); window.location.href = '/dashboard/settings'; }}
                             >
                               View invitations
                             </Button>
@@ -248,28 +250,32 @@ const NotificationBell: React.FC = () => {
                           {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
                         </Typography>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {!n.isRead && (
+                      {/* Actions: mark-as-read (if unread) and delete */}
+                      {n.deliveryMethods?.inApp !== false && (
+                        <div className="flex items-center gap-1">
+                          {!n.isRead && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => markAsRead(n._id)}
+                              disabled={loading}
+                              className="h-6 px-1 text-green-600 hover:text-green-700"
+                              title="Mark as read"
+                            >
+                              <CheckCircle size={12} />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => markAsRead(n._id)}
+                            onClick={() => deleteNotification(n._id)}
                             disabled={loading}
-                            className="h-6 w-6 p-0"
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                           >
-                            <Check size={12} />
+                            <Trash2 size={12} />
                           </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteNotification(n._id)}
-                          disabled={loading}
-                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={12} />
-                        </Button>
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

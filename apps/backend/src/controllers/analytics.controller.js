@@ -5,39 +5,49 @@ const User = require('../models/User');
 const ActivityLog = require('../models/ActivityLog');
 const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
-
+const AnalyticsService = require('../services/analytics.service');
+const analyticsService = new AnalyticsService();
 // Get space analytics
 exports.getSpaceAnalytics = async (req, res) => {
     try {
         const { spaceId } = req.params;
         const { period = 'monthly', startDate, endDate } = req.query;
         const userId = req.user.id;
+        console.log("-------------------------------------------------------")
+        console.log('🔍 [getSpaceAnalytics] Request params:', { spaceId, period, startDate, endDate, userId });
 
         // Check space access
         const user = await User.findById(userId);
+        console.log('👤 [getSpaceAnalytics] User found:', { userId: user._id, name: user.name });
+        
         const userRoles = await user.getRoles();
+        console.log('🔐 [getSpaceAnalytics] User roles:', userRoles);
         
         if (!userRoles.hasSpaceRole(spaceId)) {
+            console.log('❌ [getSpaceAnalytics] Access denied for user:', userId, 'to space:', spaceId);
             return sendResponse(res, 403, false, 'Access denied to this space');
         }
 
-        const analyticsService = require('../services/analytics.service');
-        
+        console.log('✅ [getSpaceAnalytics] Access granted for space:', spaceId);
         let analytics;
         
         if (startDate && endDate) {
-            analytics = await analyticsService.generateSpaceAnalytics(spaceId, {
+            console.log('📅 [getSpaceAnalytics] Using custom date range:', { startDate, endDate });
+            analytics = await AnalyticsService.generateSpaceAnalytics(spaceId, {
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
                 periodType: period,
                 includeAI: false
             });
         } else {
-            analytics = await analyticsService.generateSpaceAnalytics(spaceId, {
+            console.log('📅 [getSpaceAnalytics] Using default date range for period:', period);
+            analytics = await AnalyticsService.generateSpaceAnalytics(spaceId, {
                 periodType: period,
                 includeAI: false
             });
         }
+
+        console.log('📊 [getSpaceAnalytics] Raw analytics data:', JSON.stringify(analytics, null, 2));
 
         const normalizedAnalytics = {
             ...analytics,
@@ -50,6 +60,9 @@ exports.getSpaceAnalytics = async (req, res) => {
                 completionRate: analytics.taskMetrics?.completionRate ? parseFloat(analytics.taskMetrics.completionRate) : 0
             }
         };
+
+        console.log('🔄 [getSpaceAnalytics] Normalized analytics:', JSON.stringify(normalizedAnalytics, null, 2));
+        console.log('✅ [getSpaceAnalytics] Sending response with count:', 1);
 
         sendResponse(res, 200, true, 'Space analytics retrieved successfully', {
             analytics: normalizedAnalytics,
@@ -91,7 +104,6 @@ exports.generateSpaceAnalytics = async (req, res) => {
         const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const end = endDate ? new Date(endDate) : new Date();
 
-        const analyticsService = require('../services/analytics.service');
         const calculationStart = Date.now();
 
         // Generate comprehensive analytics
@@ -160,31 +172,41 @@ exports.getWorkspaceAnalytics = async (req, res) => {
         const { period = 'monthly', startDate, endDate } = req.query;
         const userId = req.user.id;
 
+        console.log('🏢 [getWorkspaceAnalytics] Request params:', { workspaceId, period, startDate, endDate, userId });
+
         // Check workspace access
         const user = await User.findById(userId);
+        console.log('👤 [getWorkspaceAnalytics] User found:', { userId: user._id, name: user.name });
+        
         const userRoles = await user.getRoles();
+        console.log('🔐 [getWorkspaceAnalytics] User roles:', userRoles);
         
         if (!userRoles.hasWorkspaceRole(workspaceId)) {
+            console.log('❌ [getWorkspaceAnalytics] Access denied for user:', userId, 'to workspace:', workspaceId);
             return sendResponse(res, 403, false, 'Access denied to this workspace');
         }
-
-        const analyticsService = require('../services/analytics.service');
         
+        console.log('✅ [getWorkspaceAnalytics] Access granted for workspace:', workspaceId);
         let analytics;
         
         if (startDate && endDate) {
-            analytics = await analyticsService.generateWorkspaceAnalytics(workspaceId, {
+            console.log('📅 [getWorkspaceAnalytics] Using custom date range:', { startDate, endDate });
+            analytics = await AnalyticsService.generateWorkspaceAnalytics(workspaceId, {
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
                 periodType: period,
                 includeAI: false
             });
         } else {
-            analytics = await analyticsService.generateWorkspaceAnalytics(workspaceId, {
+            console.log('📅 [getWorkspaceAnalytics] Using default date range for period:', period);
+            analytics = await AnalyticsService.generateWorkspaceAnalytics(workspaceId, {
                 periodType: period,
                 includeAI: false
             });
         }
+
+        console.log('📊 [getWorkspaceAnalytics] Analytics data:', JSON.stringify(analytics, null, 2));
+        console.log('✅ [getWorkspaceAnalytics] Sending response with count:', 1);
 
         sendResponse(res, 200, true, 'Workspace analytics retrieved successfully', {
             analytics,
@@ -204,24 +226,34 @@ exports.getTeamPerformance = async (req, res) => {
         const { period = 'monthly', startDate, endDate } = req.query;
         const userId = req.user.id;
 
+        console.log('👥 [getTeamPerformance] Request params:', { spaceId, period, startDate, endDate, userId });
+
         // Check space access
         const user = await User.findById(userId);
+        console.log('👤 [getTeamPerformance] User found:', { userId: user._id, name: user.name });
+        
         const userRoles = await user.getRoles();
+        console.log('🔐 [getTeamPerformance] User roles:', userRoles);
         
         if (!userRoles.hasSpaceRole(spaceId)) {
+            console.log('❌ [getTeamPerformance] Access denied for user:', userId, 'to space:', spaceId);
             return sendResponse(res, 403, false, 'Access denied to this space');
         }
 
-        const analyticsService = require('../services/analytics.service');
-        
+        console.log('✅ [getTeamPerformance] Access granted for space:', spaceId);
         const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const end = endDate ? new Date(endDate) : new Date();
 
-        const teamAnalytics = await analyticsService.generateTeamPerformanceAnalytics(spaceId, {
+        console.log('📅 [getTeamPerformance] Date range:', { start, end });
+
+        const teamAnalytics = await AnalyticsService.getTeamPerformance(spaceId, {
             startDate: start,
             endDate: end,
             periodType: period
         });
+
+        console.log('📊 [getTeamPerformance] Team analytics data:', JSON.stringify(teamAnalytics, null, 2));
+        console.log('✅ [getTeamPerformance] Sending response');
 
         sendResponse(res, 200, true, 'Team performance analytics retrieved successfully', {
             analytics: teamAnalytics,
@@ -248,8 +280,6 @@ exports.exportAnalytics = async (req, res) => {
         if (!userRoles.hasSpaceRole(spaceId)) {
             return sendResponse(res, 403, false, 'Access denied to this space');
         }
-
-        const analyticsService = require('../services/analytics.service');
         
         const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const end = endDate ? new Date(endDate) : new Date();
@@ -302,6 +332,8 @@ exports.getUserAnalytics = async (req, res) => {
         // Frontend passes range like '1m' | '3m' | '6m' | '12m'. Map to periodType.
         const { range = '3m' } = req.query;
 
+        console.log('👤 [getUserAnalytics] Request params:', { userId, range });
+
         // Map range to period type understood by service
         // daily (1d) | weekly (7d) | monthly (30d) | quarterly (90d) | yearly (365d)
         let periodType = 'monthly';
@@ -313,8 +345,10 @@ exports.getUserAnalytics = async (req, res) => {
             default: periodType = 'monthly';
         }
 
-        const analyticsService = require('../services/analytics.service');
-        const analytics = await analyticsService.generateUserAnalytics(userId, { periodType, includeAI: false });
+        console.log('📅 [getUserAnalytics] Mapped period type:', periodType);
+
+        const analytics = await AnalyticsService.generateUserAnalytics(userId, { periodType, includeAI: false });
+        console.log('📊 [getUserAnalytics] Raw analytics data:', JSON.stringify(analytics, null, 2));
 
         // Shape response for frontend expectations (safe fallbacks)
         // Basic metrics
@@ -324,6 +358,7 @@ exports.getUserAnalytics = async (req, res) => {
 
         // Last active
         const lastActivity = await ActivityLog.findOne({ userId }).sort({ createdAt: -1 }).select('createdAt');
+        console.log('⏰ [getUserAnalytics] Last activity:', lastActivity);
 
         // Task status breakdown
         const taskStatusBreakdown = {
@@ -332,14 +367,17 @@ exports.getUserAnalytics = async (req, res) => {
             pending: analytics?.taskMetrics?.todo || 0,
             overdue: analytics?.taskMetrics?.overdue || 0
         };
+        console.log('📋 [getUserAnalytics] Task status breakdown:', taskStatusBreakdown);
 
         // Activity heatmap: transform activityTrend -> [{ date, value }]
         const activityHeatmap = (analytics?.activityTrend || []).map(p => ({ date: p.date, value: p.activityCount }));
+        console.log('🔥 [getUserAnalytics] Activity heatmap:', activityHeatmap);
 
         // Recent tasks (last 5 involving the user)
         const recentTasksDocs = await Task.find({
             $or: [{ assignees: userId }, { reporter: userId }]
         }).sort({ updatedAt: -1 }).limit(5).select('title status updatedAt');
+        console.log('📝 [getUserAnalytics] Recent tasks docs:', recentTasksDocs);
 
         const recentTasks = recentTasksDocs.map(t => ({
             id: t._id.toString(),
@@ -347,11 +385,12 @@ exports.getUserAnalytics = async (req, res) => {
             status: t.status,
             updatedAt: t.updatedAt
         }));
+        console.log('📝 [getUserAnalytics] Formatted recent tasks:', recentTasks);
 
         // Optional fields not strictly needed by UI but included when available
         // Projects concept maps closest to Spaces in this app; keep undefined to let UI fallback safely
 
-        return sendResponse(res, 200, true, 'User analytics retrieved successfully', {
+        const responseData = {
             tasksAssigned,
             tasksCompleted,
             completionRate,
@@ -359,7 +398,11 @@ exports.getUserAnalytics = async (req, res) => {
             taskStatusBreakdown,
             activityHeatmap,
             recentTasks
-        });
+        };
+
+        console.log('✅ [getUserAnalytics] Final response data:', JSON.stringify(responseData, null, 2));
+
+        return sendResponse(res, 200, true, 'User analytics retrieved successfully', responseData);
     } catch (error) {
         logger.error('Get user analytics error:', error);
         return sendResponse(res, 500, false, 'Server error retrieving user analytics');

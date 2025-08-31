@@ -84,7 +84,13 @@ const workspaceSchema = new mongoose.Schema({
       allowMemberInvites: { type: Boolean, default: true },
       requireApprovalForMembers: { type: Boolean, default: false },
       maxMembers: { type: Number, default: null, min: 1 },
-      publicJoin: { type: Boolean, default: false }
+      publicJoin: { type: Boolean, default: false },
+      // Board creation/deletion settings (legacy booleans kept for compatibility)
+      allowMemberBoardCreation: { type: Boolean, default: true },
+      allowMemberBoardDeletion: { type: Boolean, default: true },
+      // New granular policies
+      boardCreationPolicy: { type: String, enum: ['everyone', 'admins'], default: 'everyone' },
+      boardDeletionPolicy: { type: String, enum: ['everyone', 'admins'], default: 'everyone' }
     },
     defaultBoardVisibility: {
       type: String,
@@ -135,10 +141,21 @@ const workspaceSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // Backward-compat: keep isActive but derive from status
   isActive: {
     type: Boolean,
     default: true
   },
+  // New unified status for soft-delete and lifecycle
+  status: {
+    type: String,
+    enum: ['active', 'archived'],
+    default: 'active'
+  },
+  archivedAt: { type: Date, default: null },
+  archivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  // When archived, the time after which the workspace may be auto-purged
+  archiveExpiresAt: { type: Date, default: null },
   plan: {
     type: String,
     enum: ['free', 'basic', 'premium', 'enterprise'],
@@ -209,10 +226,18 @@ workspaceSchema.virtual('availableFeatures').get(function() {
   return planFeatures[this.plan] || planFeatures.free;
 });
 
+// Virtual: seconds remaining until archive expiration (null if not archived or no expiry)
+workspaceSchema.virtual('archiveCountdownSeconds').get(function () {
+  if (!this.archiveExpiresAt) return null;
+  const remainingMs = this.archiveExpiresAt.getTime() - Date.now();
+  return remainingMs > 0 ? Math.floor(remainingMs / 1000) : 0;
+});
+
 // Indexes for better query performance
 workspaceSchema.index({ owner: 1 });
 workspaceSchema.index({ 'members.user': 1 });
 workspaceSchema.index({ isActive: 1 });
+workspaceSchema.index({ status: 1 });
 workspaceSchema.index({ isPublic: 1 });
 workspaceSchema.index({ plan: 1 });
 workspaceSchema.index({ 'billing.status': 1 });
@@ -443,6 +468,12 @@ workspaceSchema.statics.findByBillingStatus = function(status) {
 
 // Pre-save middleware to update member count
 workspaceSchema.pre('save', function(next) {
+  // Sync isActive with status for backward compatibility
+  if (this.status === 'archived') {
+    this.isActive = false;
+  } else if (this.status === 'active') {
+    this.isActive = true;
+  }
   this.usage.membersCount = this.members.length + 1; // +1 for owner
   next();
 });
@@ -469,5 +500,9 @@ workspaceSchema.post('save', async function(doc) {
     // console.error('Workspace post-save role sync error', e);
   }
 });
+
+// Ensure virtuals are serialized
+workspaceSchema.set('toJSON', { virtuals: true });
+workspaceSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('Workspace', workspaceSchema);

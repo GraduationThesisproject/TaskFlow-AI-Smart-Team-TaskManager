@@ -14,6 +14,7 @@ import authReducer from './slices/authSlice.ts';
 import activityReducer from './slices/activitySlice';
 import notificationReducer from './slices/notificationSlice';
 import templatesReducer from './slices/templatesSlice.ts';
+import analyticsReducer from './slices/analyticsSlice.ts';
 
 export const store = configureStore({
   reducer: {
@@ -27,6 +28,7 @@ export const store = configureStore({
     activity: activityReducer,
     notifications: notificationReducer,
     templates: templatesReducer,
+    analytics: analyticsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

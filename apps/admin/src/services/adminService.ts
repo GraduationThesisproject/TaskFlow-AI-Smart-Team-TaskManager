@@ -1,5 +1,6 @@
 import { Admin, AdminLoginCredentials, AdminResponse } from '../types/admin.types';
 import { env } from '../config/env';
+import { getAdminToken, storeAdminToken, removeAdminToken } from '../utils/tokenUtils';
 
 const API_BASE = `${env.API_BASE_URL}/admin`;
 
@@ -151,7 +152,7 @@ export interface UsersResponse {
 
 class AdminService {
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('adminToken');
+    const token = getAdminToken();
     
     if (!token) {
       throw new Error('No admin token found. Please log in again.');
@@ -182,14 +183,7 @@ class AdminService {
   }
 
   async logout(): Promise<void> {
-    const response = await fetch(`${API_BASE}/auth/logout`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error('Logout failed');
-    }
+    removeAdminToken();
   }
 
   async getCurrentAdmin(): Promise<AdminResponse> {
@@ -292,6 +286,23 @@ class AdminService {
     return data.data;
   }
 
+  // Add Admin User - Creates admin panel user with password
+  async addAdminUser(adminData: { email: string; password: string; role: string }): Promise<{ admin: { id: string; email: string; role: string } }> {
+    const response = await fetch(`${API_BASE}/users/add-admin`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(adminData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to add admin user');
+    }
+
+    const data = await response.json();
+    return data.data;
+  }
+
   async getAvailableRoles(): Promise<{ availableRoles: string[]; userRole: string }> {
     const response = await fetch(`${API_BASE}/users/available-roles`, {
       headers: this.getAuthHeaders(),
@@ -387,10 +398,11 @@ class AdminService {
 
   // Analytics
   async getAnalytics(timeRange: string = '6-months'): Promise<AnalyticsData> {
-    
     const headers = this.getAuthHeaders();
     
-    const response = await fetch(`${API_BASE}/analytics?timeRange=${timeRange}`, {
+    const url = `${API_BASE}/analytics?timeRange=${timeRange}`;
+    
+    const response = await fetch(url, {
       headers,
     });
 
@@ -429,55 +441,79 @@ class AdminService {
 
   // Templates
   async getProjectTemplates(): Promise<ProjectTemplate[]> {
-    const response = await fetch(`${API_BASE}/templates/projects`, {
-      headers: this.getAuthHeaders(),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/templates/projects`, {
+        headers: this.getAuthHeaders(),
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to get project templates');
+      if (!response.ok) {
+        throw new Error(`Failed to get project templates: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Project templates response:', data); // Debug log
+      return data.data || data || [];
+    } catch (error) {
+      console.error('Error fetching project templates:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.data || [];
   }
 
   async getTaskTemplates(): Promise<TaskTemplate[]> {
-    const response = await fetch(`${API_BASE}/templates/tasks`, {
-      headers: this.getAuthHeaders(),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/templates/tasks`, {
+        headers: this.getAuthHeaders(),
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to get task templates');
+      if (!response.ok) {
+        throw new Error(`Failed to get task templates: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Task templates response:', data); // Debug log
+      return data.data || data || [];
+    } catch (error) {
+      console.error('Error fetching task templates:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.data || [];
   }
 
   async getAIPrompts(): Promise<AIPrompt[]> {
-    const response = await fetch(`${API_BASE}/templates/ai-prompts`, {
-      headers: this.getAuthHeaders(),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/templates/ai-prompts`, {
+        headers: this.getAuthHeaders(),
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to get AI prompts');
+      if (!response.ok) {
+        throw new Error(`Failed to get AI prompts: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('AI prompts response:', data); // Debug log
+      return data.data || data || [];
+    } catch (error) {
+      console.error('Error fetching AI prompts:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.data || [];
   }
 
   async getBrandingAssets(): Promise<BrandingAsset[]> {
-    const response = await fetch(`${API_BASE}/templates/branding`, {
-      headers: this.getAuthHeaders(),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/templates/branding`, {
+        headers: this.getAuthHeaders(),
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to get branding assets');
+      if (!response.ok) {
+        throw new Error(`Failed to get branding assets: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Branding assets response:', data); // Debug log
+      return data.data || data || [];
+    } catch (error) {
+      console.error('Error fetching branding assets:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.data || [];
   }
 
   // Profile Management
@@ -504,7 +540,7 @@ class AdminService {
     const response = await fetch(`${API_BASE}/auth/avatar`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+        'Authorization': `Bearer ${getAdminToken()}`,
         // Don't set Content-Type for FormData
       },
       body: formData,

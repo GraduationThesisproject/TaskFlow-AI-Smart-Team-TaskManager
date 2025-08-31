@@ -7,6 +7,8 @@ const socketIo = require('socket.io');
 const app = require('./app');
 const connectDB = require('./config/db');
 const config = require('./config/env');
+const Workspace = require('./models/Workspace');
+const WorkspaceService = require('./services/workspace.service');
 //for authentication i use (mongoose ) from connectDB/db.js
 
 
@@ -15,7 +17,7 @@ const logger = require('./config/logger');
 const { ensureDirectoriesExist } = require('./config/multer');
 const { initializeSockets } = require('./sockets');
 
-const PORT = process.env.PORT || 3001;
+const PORT = config.PORT || 3001;
 
 // Connect to database
 connectDB();
@@ -54,7 +56,8 @@ const socketCorsOptions = {
 
 
 const io = socketIo(server, {
-    cors: socketCorsOptions
+    path: '/socket.io',
+    cors: socketCorsOptions,
 });
 
 // Make io available globally for notifications
@@ -64,12 +67,70 @@ app.set('io', io);
 // Setup socket handlers
 const socketNamespaces = initializeSockets(io);
 
+// Add test socket namespace for debugging (no authentication required)
+const testNamespace = io.of('/test');
+testNamespace.on('connection', (socket) => {
+    logger.info(`Test socket connected: ${socket.id}`);
+    
+    socket.emit('connected', {
+        message: 'Test socket connected successfully',
+        socketId: socket.id,
+        timestamp: new Date().toISOString()
+    });
+    
+    socket.on('ping', () => {
+        socket.emit('pong', {
+            message: 'Pong!',
+            timestamp: new Date().toISOString()
+        });
+    });
+    
+    socket.on('disconnect', () => {
+        logger.info(`Test socket disconnected: ${socket.id}`);
+    });
+});
+
 // Start server
 server.listen(PORT, () => {
     logger.info(`🚀 TaskFlow API server running on port ${PORT}`);
     logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
     logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
 });
+
+// Periodic cleanup: permanently delete archived workspaces whose countdown reached 0
+const CLEANUP_INTERVAL_MS = 5 * 1000; // every 5 seconds
+async function cleanupArchivedWorkspaces() {
+    try {
+        const now = new Date();
+        const expired = await Workspace.find({
+            status: 'archived',
+            archiveExpiresAt: { $lte: now }
+        }).select('_id owner name');
+
+        if (expired.length > 0) {
+            logger.info(`Auto-cleanup: deleting ${expired.length} archived workspace(s)`);
+        }
+
+        for (const ws of expired) {
+            try {
+                await WorkspaceService.deleteWorkspace(ws._id, ws.owner);
+                logger.info(`Auto-deleted workspace ${ws._id} (${ws.name})`);
+            } catch (e) {
+                logger.warn('Auto-delete workspace failed', {
+                    workspaceId: ws?._id?.toString?.(),
+                    error: e?.message
+                });
+            }
+        }
+    } catch (e) {
+        logger.error('Cleanup archived workspaces error', { error: e?.message, stack: e?.stack });
+    }
+}
+
+// Kick off periodic cleanup
+setInterval(cleanupArchivedWorkspaces, CLEANUP_INTERVAL_MS);
+// Also run once on startup
+cleanupArchivedWorkspaces();
 
 // Graceful shutdown
 process.on('SIGINT', () => {

@@ -36,11 +36,23 @@ const DashboardLayout: React.FC = () => {
 
     const fetchDashboardData = async () => {
       try {
+        // Add a small delay to ensure token is available
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Check if token is available
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+          console.log('❌ No token available, waiting...');
+          return;
+        }
+        
+        console.log('✅ Token available, fetching analytics...');
         setIsLoading(true);
         setError(null);
         const data = await adminService.getAnalytics('6-months');
         setAnalyticsData(data);
       } catch (err) {
+        console.error('❌ Dashboard data fetch error:', err);
         setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
       } finally {
         setIsLoading(false);

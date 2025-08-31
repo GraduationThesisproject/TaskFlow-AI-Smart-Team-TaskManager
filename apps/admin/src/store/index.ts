@@ -6,6 +6,7 @@ import adminReducer from './slices/adminSlice';
 import userManagementReducer from './slices/userManagementSlice';
 import analyticsReducer from './slices/analyticsSlice';
 import templatesReducer from './slices/templatesSlice';
+import boardTemplateReducer from './slices/boardTemplateSlice';
 import notificationReducer from './slices/notificationSlice';
 
 export const store = configureStore({
@@ -14,6 +15,7 @@ export const store = configureStore({
     userManagement: userManagementReducer,
     analytics: analyticsReducer,
     templates: templatesReducer,
+    boardTemplates: boardTemplateReducer,
     notifications: notificationReducer,
   },
   middleware: (getDefaultMiddleware) =>

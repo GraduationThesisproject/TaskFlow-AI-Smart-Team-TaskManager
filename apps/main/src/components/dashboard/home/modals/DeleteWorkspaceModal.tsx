@@ -5,15 +5,54 @@ import type { DeleteWorkspaceModalProps } from '../../../../types/interfaces/ui'
 
 export const DeleteWorkspaceModal: React.FC<DeleteWorkspaceModalProps> = ({ isOpen, onClose, workspaceId, workspaceName }) => {
   const { deleteWorkspaceById, loading, error: globalError } = useWorkspaces();
+  const dispatch = useAppDispatch();
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleConfirm = async () => {
+  const workspace = useAppSelector(state => (state.workspace.workspaces || []).find((w: any) => w?._id === workspaceId || w?.id === workspaceId));
+  const isArchived = (workspace?.status === 'archived');
+
+  const handleArchive = async () => {
     setLocalError(null);
     try {
       await deleteWorkspaceById(workspaceId);
+      try {
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('Workspace archived', { body: workspaceName });
+        }
+      } catch {}
       onClose();
     } catch (e: any) {
-      setLocalError(e?.message || 'Failed to delete workspace');
+      setLocalError(e?.message || 'Failed to archive workspace');
+    }
+  };
+
+  const handleRestore = async () => {
+    setLocalError(null);
+    try {
+      await dispatch(restoreWorkspace({ id: workspaceId }) as any).unwrap();
+      try {
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('Workspace restored', { body: workspaceName });
+        }
+      } catch {}
+      onClose();
+    } catch (e: any) {
+      setLocalError(e?.message || 'Failed to restore workspace');
+    }
+  };
+
+  const handlePermanentDelete = async () => {
+    setLocalError(null);
+    try {
+      await dispatch(permanentDeleteWorkspace({ id: workspaceId }) as any).unwrap();
+      try {
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('Workspace permanently deleted', { body: workspaceName });
+        }
+      } catch {}
+      onClose();
+    } catch (e: any) {
+      setLocalError(e?.message || 'Failed to permanently delete workspace');
     }
   };
 
@@ -23,17 +62,21 @@ export const DeleteWorkspaceModal: React.FC<DeleteWorkspaceModalProps> = ({ isOp
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md">
       <ModalHeader>
-        <Typography variant="h3">Delete Workspace</Typography>
+        <Typography variant="h3">{isArchived ? 'Archived Workspace' : 'Delete Workspace'}</Typography>
         <Typography variant="body-small" className="text-muted-foreground mt-1">
-          This action cannot be undone.
+          {isArchived
+            ? 'This workspace is archived. You can restore it (stop the timer) or permanently delete it.'
+            : 'This will archive the workspace first. Archived workspaces can be restored within the grace period.'}
         </Typography>
       </ModalHeader>
       <ModalBody>
         <Stack spacing="md">
           <Alert
-            variant="error"
-            title={`Delete ${workspaceName || 'this workspace'}?`}
-            description="All spaces, boards and tasks inside this workspace will be permanently deleted. This cannot be undone."
+            variant={isArchived ? 'warning' : 'error'}
+            title={isArchived ? `Workspace "${workspaceName || ''}" is archived` : `Delete ${workspaceName || 'this workspace'}?`}
+            description={isArchived
+              ? 'Choose Restore to stop the archive timer and re-activate it, or Permanently Delete to remove all data.'
+              : 'All spaces, boards and tasks inside this workspace will be archived first. You can still restore within the grace period or permanently delete later.'}
             showCloseButton={false}
           >
             {(localError || globalError) && (
@@ -46,9 +89,20 @@ export const DeleteWorkspaceModal: React.FC<DeleteWorkspaceModalProps> = ({ isOp
       </ModalBody>
       <ModalFooter>
         <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
-        <Button variant="destructive" onClick={handleConfirm} disabled={disabled}>
-          {loading ? 'Deleting…' : 'Delete Workspace'}
-        </Button>
+        {isArchived ? (
+          <>
+            <Button variant="default" onClick={handleRestore} disabled={disabled}>
+              {loading ? 'Restoring…' : 'Restore'}
+            </Button>
+            <Button variant="destructive" onClick={handlePermanentDelete} disabled={disabled}>
+              {loading ? 'Deleting…' : 'Permanently Delete'}
+            </Button>
+          </>
+        ) : (
+          <Button variant="destructive" onClick={handleArchive} disabled={disabled}>
+            {loading ? 'Archiving…' : 'Delete Workspace'}
+          </Button>
+        )}
       </ModalFooter>
     </Modal>
   );

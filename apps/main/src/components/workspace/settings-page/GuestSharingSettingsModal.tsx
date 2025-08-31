@@ -57,53 +57,53 @@ const GuestSharingSettingsModal: React.FC<GuestSharingSettingsModalProps> = ({
     );
   }
 
-  // Confirmation Modal
+  // Selection Modal (policy: everyone | admins)
+  const initialPolicy: 'everyone' | 'admins' =
+    currentSetting?.toLowerCase().includes('any') ? 'everyone' : 'admins';
+  const [policy, setPolicy] = React.useState<'everyone' | 'admins'>(initialPolicy);
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Change Guest Sharing Settings"
-      description={`Are you sure you want to change guest sharing from "${currentSetting}" to "${newSetting}"?`}
+      title="Guest Sharing Permissions"
+      description="Choose who can send or receive guest invitations for boards in this workspace. Owners always have permission."
       size="md"
     >
       <ModalBody>
         <div className="space-y-3">
-          <div className="p-3 bg-purple-50 border border-purple-200 rounded-md">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-purple-800">
-                  {newSetting === 'Anyone can invite guests' ? 'Allowing guest invitations' : 'Restricting guest invitations'}
-                </h3>
-                <div className="mt-2 text-sm text-purple-700">
-                  {newSetting === 'Anyone can invite guests' ? (
-                    <div>
-                      <p>Any workspace member will be able to:</p>
-                      <ul className="mt-1 ml-4 list-disc">
-                        <li>Send board invitations to external guests</li>
-                        <li>Receive and accept board invitations from guests</li>
-                        <li>Share boards with people outside the workspace</li>
-                      </ul>
-                      <p className="mt-2">Guests will have limited access based on board permissions.</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p>Only workspace admins and owners will be able to:</p>
-                      <ul className="mt-1 ml-4 list-disc">
-                        <li>Send board invitations to external guests</li>
-                        <li>Accept board invitations from guests</li>
-                        <li>Manage guest access to workspace boards</li>
-                      </ul>
-                      <p className="mt-2">This provides better control over external access to your workspace.</p>
-                    </div>
-                  )}
+          <div className="space-y-4">
+            <label className="flex items-start gap-3 p-3 rounded-md border cursor-pointer">
+              <input
+                type="radio"
+                name="guest-sharing-policy"
+                className="mt-1"
+                checked={policy === 'everyone'}
+                onChange={() => setPolicy('everyone')}
+              />
+              <div>
+                <div className="font-medium">Everyone</div>
+                <div className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Any Workspace member can send or receive invitations to boards in this Workspace.
                 </div>
               </div>
-            </div>
+            </label>
+
+            <label className="flex items-start gap-3 p-3 rounded-md border cursor-pointer">
+              <input
+                type="radio"
+                name="guest-sharing-policy"
+                className="mt-1"
+                checked={policy === 'admins'}
+                onChange={() => setPolicy('admins')}
+              />
+              <div>
+                <div className="font-medium">Only Admins</div>
+                <div className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Only admins and the owner can send or receive invitations to boards in this Workspace.
+                </div>
+              </div>
+            </label>
           </div>
         </div>
       </ModalBody>
@@ -116,11 +116,11 @@ const GuestSharingSettingsModal: React.FC<GuestSharingSettingsModalProps> = ({
           Cancel
         </Button>
         <Button
-          onClick={onConfirm}
+          onClick={() => onConfirm && onConfirm(policy)}
           disabled={loading}
           className="ml-2"
         >
-          {loading ? 'Changing...' : `Change to "${newSetting}"`}
+          {loading ? 'Saving...' : 'Save'}
         </Button>
       </ModalFooter>
     </Modal>

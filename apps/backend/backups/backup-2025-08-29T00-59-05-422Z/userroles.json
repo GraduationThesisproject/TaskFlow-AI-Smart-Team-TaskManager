@@ -1,0 +1,292 @@
+[
+  {
+    "_id": "68b0e4f7316ef920158ec553",
+    "userId": "68b0e4f6316ef920158ec53d",
+    "systemRole": "super_admin",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:35.013Z",
+    "updatedAt": "2025-08-28T23:23:35.013Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4f7316ef920158ec58e",
+    "userId": "68b0e4f7316ef920158ec55d",
+    "systemRole": "admin",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:35.339Z",
+    "updatedAt": "2025-08-28T23:23:35.339Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4f7316ef920158ec5c4",
+    "userId": "68b0e4f7316ef920158ec5a0",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:35.745Z",
+    "updatedAt": "2025-08-28T23:23:35.745Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4f8316ef920158ec5e1",
+    "userId": "68b0e4f7316ef920158ec5cb",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:36.051Z",
+    "updatedAt": "2025-08-28T23:23:36.051Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4f8316ef920158ec5f2",
+    "userId": "68b0e4f8316ef920158ec5e8",
+    "systemRole": "moderator",
+    "workspaces": [
+      {
+        "workspace": "68b0e4fc316ef920158ec70f",
+        "role": "owner",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": false,
+          "canManageBilling": false,
+          "canDeleteWorkspace": false,
+          "canEditSettings": false
+        },
+        "_id": "68b0e4fc316ef920158ec71a",
+        "joinedAt": "2025-08-28T23:23:40.046Z"
+      }
+    ],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:36.302Z",
+    "updatedAt": "2025-08-28T23:23:40.045Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4f8316ef920158ec5fe",
+    "userId": "68b0e4f8316ef920158ec5f8",
+    "systemRole": "moderator",
+    "workspaces": [
+      {
+        "workspace": "68b0e4fb316ef920158ec6ac",
+        "role": "owner",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": false,
+          "canManageBilling": false,
+          "canDeleteWorkspace": false,
+          "canEditSettings": false
+        },
+        "_id": "68b0e4fb316ef920158ec6b2",
+        "joinedAt": "2025-08-28T23:23:39.940Z"
+      }
+    ],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:36.542Z",
+    "updatedAt": "2025-08-28T23:23:39.939Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4f8316ef920158ec60a",
+    "userId": "68b0e4f8316ef920158ec604",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:36.782Z",
+    "updatedAt": "2025-08-28T23:23:36.782Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4f9316ef920158ec616",
+    "userId": "68b0e4f8316ef920158ec610",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:37.023Z",
+    "updatedAt": "2025-08-28T23:23:37.023Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4f9316ef920158ec622",
+    "userId": "68b0e4f9316ef920158ec61c",
+    "systemRole": "moderator",
+    "workspaces": [
+      {
+        "workspace": "68b0e4fc316ef920158ec728",
+        "role": "owner",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": false,
+          "canManageBilling": false,
+          "canDeleteWorkspace": false,
+          "canEditSettings": false
+        },
+        "_id": "68b0e4fc316ef920158ec72e",
+        "joinedAt": "2025-08-28T23:23:40.065Z"
+      }
+    ],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:37.262Z",
+    "updatedAt": "2025-08-28T23:23:40.064Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4f9316ef920158ec62e",
+    "userId": "68b0e4f9316ef920158ec628",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:37.496Z",
+    "updatedAt": "2025-08-28T23:23:37.496Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4f9316ef920158ec63a",
+    "userId": "68b0e4f9316ef920158ec634",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:37.764Z",
+    "updatedAt": "2025-08-28T23:23:37.764Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4fa316ef920158ec646",
+    "userId": "68b0e4f9316ef920158ec640",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:38.008Z",
+    "updatedAt": "2025-08-28T23:23:38.008Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4fa316ef920158ec652",
+    "userId": "68b0e4fa316ef920158ec64c",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:38.262Z",
+    "updatedAt": "2025-08-28T23:23:38.262Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4fa316ef920158ec65e",
+    "userId": "68b0e4fa316ef920158ec658",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:38.502Z",
+    "updatedAt": "2025-08-28T23:23:38.502Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4fa316ef920158ec66a",
+    "userId": "68b0e4fa316ef920158ec664",
+    "systemRole": "moderator",
+    "workspaces": [
+      {
+        "workspace": "68b0e4fb316ef920158ec6c8",
+        "role": "owner",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": false,
+          "canManageBilling": false,
+          "canDeleteWorkspace": false,
+          "canEditSettings": false
+        },
+        "_id": "68b0e4fb316ef920158ec6ce",
+        "joinedAt": "2025-08-28T23:23:39.962Z"
+      }
+    ],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:38.738Z",
+    "updatedAt": "2025-08-28T23:23:39.961Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4fa316ef920158ec676",
+    "userId": "68b0e4fa316ef920158ec670",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:38.975Z",
+    "updatedAt": "2025-08-28T23:23:38.975Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4fb316ef920158ec682",
+    "userId": "68b0e4fa316ef920158ec67c",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:39.211Z",
+    "updatedAt": "2025-08-28T23:23:39.211Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4fb316ef920158ec68e",
+    "userId": "68b0e4fb316ef920158ec688",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:39.450Z",
+    "updatedAt": "2025-08-28T23:23:39.450Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4fb316ef920158ec69a",
+    "userId": "68b0e4fb316ef920158ec694",
+    "systemRole": "moderator",
+    "workspaces": [
+      {
+        "workspace": "68b0e4fb316ef920158ec6e7",
+        "role": "owner",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": false,
+          "canManageBilling": false,
+          "canDeleteWorkspace": false,
+          "canEditSettings": false
+        },
+        "_id": "68b0e4fc316ef920158ec6f3",
+        "joinedAt": "2025-08-28T23:23:40.009Z"
+      }
+    ],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:39.686Z",
+    "updatedAt": "2025-08-28T23:23:40.008Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0e4fb316ef920158ec6a6",
+    "userId": "68b0e4fb316ef920158ec6a0",
+    "systemRole": "moderator",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T23:23:39.923Z",
+    "updatedAt": "2025-08-28T23:23:39.923Z",
+    "__v": 0
+  }
+]

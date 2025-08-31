@@ -41,6 +41,19 @@ const userPreferencesSchema = new mongoose.Schema({
       mentionReceived: { type: Boolean, default: true },
                   spaceUpdates: { type: Boolean, default: false }
     },
+    realTime: {
+      taskAssigned: { type: Boolean, default: true },
+      taskCompleted: { type: Boolean, default: true },
+      taskOverdue: { type: Boolean, default: true },
+      commentAdded: { type: Boolean, default: true },
+      mentionReceived: { type: Boolean, default: true },
+      spaceUpdates: { type: Boolean, default: true },
+      workspaceCreated: { type: Boolean, default: true },
+      workspaceArchived: { type: Boolean, default: true },
+      workspaceRestored: { type: Boolean, default: true },
+      workspaceDeleted: { type: Boolean, default: true },
+      templateCreated: { type: Boolean, default: true }
+    },
     inApp: {
       taskAssigned: { type: Boolean, default: true },
       taskCompleted: { type: Boolean, default: true },
@@ -141,7 +154,7 @@ userPreferencesSchema.methods.updateNestedSection = function(section, subsection
 
 // Method to toggle notification category
 userPreferencesSchema.methods.toggleNotificationCategory = function(category, enabled) {
-  ['email', 'push', 'inApp'].forEach(method => {
+  ['email', 'push', 'inApp', 'realTime'].forEach(method => {
     if (this.notifications[method][category] !== undefined) {
       this.notifications[method][category] = enabled;
     }

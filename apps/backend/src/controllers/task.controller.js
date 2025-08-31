@@ -6,6 +6,7 @@ const Space = require('../models/Space');
 const User = require('../models/User');
 const ActivityLog = require('../models/ActivityLog');
 const Notification = require('../models/Notification');
+const NotificationService = require('../services/notification.service'); // Import NotificationService
 const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
 
@@ -227,7 +228,7 @@ exports.createTask = async (req, res) => {
         // Create notifications for assignees
         for (const assigneeId of assignees || []) {
             if (assigneeId !== userId) {
-                await Notification.create({
+                await NotificationService.createNotification({ // Replaced Notification.create() with NotificationService.createNotification()
                     title: 'Task Assigned',
                     message: `You have been assigned to task: ${title}`,
                     type: 'task_assigned',
@@ -942,6 +943,23 @@ exports.deleteTask = async (req, res) => {
         
         // Delete task
         await Task.findByIdAndDelete(taskId);
+
+        // Create notifications for assignees about task deletion
+        for (const assigneeId of task.assignees) {
+            if (assigneeId.toString() !== userId.toString()) {
+                await NotificationService.createNotification({
+                    title: 'Task Deleted',
+                    message: `Task "${task.title}" has been deleted`,
+                    type: 'task_deleted',
+                    recipient: assigneeId,
+                    sender: userId,
+                    relatedEntity: {
+                        entityType: 'task',
+                        entityId: taskId
+                    }
+                });
+            }
+        }
 
         // Log activity
         await ActivityLog.logActivity({

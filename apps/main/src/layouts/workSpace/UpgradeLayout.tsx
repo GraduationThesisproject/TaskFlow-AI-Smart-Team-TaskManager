@@ -1,4 +1,6 @@
-import Sidebar from "./Sidebar";
+// import Sidebar from "./Sidebar"; // Disabled: workspace navbar hidden
+import { DashboardShell } from "../Dashboard/DashboardShell";
+
 import {
   Card,
 
@@ -9,21 +11,34 @@ import {
   Gradient,
 } from "@taskflow/ui";
 import { useState } from "react";
+import {loadStripe} from '@stripe/stripe-js';
+import { useAuth } from '../../hooks/useAuth';
 
 function UpgradeLayout() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annually">("monthly");
+  const { user, token } = useAuth();
+
+  // Get user's current plan from subscription data
+  const getCurrentUserPlan = (): string => {
+    if (user?.subscription?.plan && user.subscription.status === 'active') {
+      return user.subscription.plan.toLowerCase();
+    }
+    return 'free'; // Default to free if no active subscription
+  };
+
+  const currentUserPlan = getCurrentUserPlan();
 
   const billingOptions = [
     { key: "monthly", label: "Monthly", active: true },
     { key: "annually", label: "Annually" },
   ];
 
-  const plans = [
+  // Base monthly prices
+  const basePlans = [
     {
       key: "free",
       name: "Free",
-      price: "$0 USD",
-      period: "",
+      monthlyPrice: 0,
       desc: "For individuals or small teams looking to keep work organized.",
       cta: "Current",
       ctaVariant: "secondary" as const,
@@ -32,8 +47,7 @@ function UpgradeLayout() {
     {
       key: "standard",
       name: "Standard",
-      price: "$5 USD",
-      period: "per user/month (billed annually)",
+      monthlyPrice: 5,
       desc: "Get more done with unlimited boards, card mirroring, and more automation.",
       cta: "Upgrade",
       ctaVariant: "default" as const,
@@ -42,8 +56,7 @@ function UpgradeLayout() {
     {
       key: "premium",
       name: "Premium",
-      price: "$10 USD",
-      period: "per user/month (billed annually)",
+      monthlyPrice: 10,
       desc: "Add AI to your boards and admin controls to your toolkit. Plus, get more perspective with views.",
       cta: "Upgrade",
       ctaVariant: "default" as const,
@@ -52,14 +65,47 @@ function UpgradeLayout() {
     {
       key: "enterprise",
       name: "Enterprise",
-      price: "$17.50 USD",
-      period: "per user (billed annually)",
+      monthlyPrice: 17.5,
       desc: "Add enterprise‑grade security and controls to your toolkit.",
       cta: "Contact Sales",
       ctaVariant: "accent" as const,
       highlighted: false,
     },
   ];
+
+  // Calculate dynamic pricing based on billing cycle
+  const calculatePrice = (monthlyPrice: number) => {
+    if (billingCycle === "annually") {
+      const annualPrice = monthlyPrice * 12 * 0.83; // 17% discount
+      return annualPrice;
+    }
+    return monthlyPrice;
+  };
+
+  const formatPrice = (price: number) => {
+    if (price === 0) return "$0 USD";
+    return `$${price.toFixed(2)} USD`;
+  };
+
+  const getPeriodText = (planKey: string) => {
+    if (planKey === "free") return "";
+    if (billingCycle === "monthly") {
+      return "per user/month";
+    } else {
+      return "per user/year (billed annually)";
+    }
+  };
+
+  // Generate plans with dynamic pricing
+  const plans = basePlans.map(plan => ({
+    ...plan,
+    price: formatPrice(calculatePrice(plan.monthlyPrice)),
+    period: getPeriodText(plan.key),
+    annualSavings: billingCycle === "annually" && plan.monthlyPrice > 0 
+      ? `Save $${(plan.monthlyPrice * 12 * 0.17).toFixed(2)}/year`
+      : null,
+    isCurrent: plan.key === currentUserPlan // Add current plan indicator
+  }));
 
   const tableRows = [
     {
@@ -112,11 +158,83 @@ function UpgradeLayout() {
     ]),
   ];
 
+  const makePayment = async (plan: any) => {
+    const stripe = await loadStripe("pk_test_51S0u5XQnbFIuhN9UcRTwnxmcl37YLiKzz1dh5FjWjpMaU6Blw63t9wrnhtT7QFI7OkpgUIo4CgmZ0OPnDenCUZcg00ZZLPzodR");
+
+    const price = calculatePrice(plan.monthlyPrice);
+    const priceInCents = Math.round(price * 100); // Convert to cents for Stripe
+
+    const body = {
+      products: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `${plan.name} Plan`,
+            description: plan.desc,
+          },
+          unit_amount: priceInCents,
+        },
+        quantity: 1,
+      }],
+      metadata: {
+        plan: plan.name,
+        billing_cycle: billingCycle,
+        original_price: plan.monthlyPrice,
+        final_price: price,
+      }
+    };
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+
+    // Add authorization header if token exists
+    console.log("token",token)
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await fetch(`/api/checkout/create-checkout-session`, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const session = await response.json();
+
+      const result = await stripe?.redirectToCheckout({
+        sessionId: session.id
+      });
+
+      if (result?.error) {
+        console.error(result.error.message);
+      }
+
+    } catch (error) {
+      console.error("Payment failed:", error);
+    }
+  };
+
+  const handlePlanAction = (plan: any) => {
+    if (plan.key === "free") return;
+    
+    if (plan.cta === "Contact Sales") {
+      // For enterprise plan, you could open a contact form or redirect to sales page
+      window.open("mailto:sales@taskflow.com?subject=Enterprise Plan Inquiry", "_blank");
+    } else {
+      // For upgrade plans, trigger payment
+      makePayment(plan);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen text-[hsl(var(--foreground))]">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="bg-neutral-0 ring-1 ring-accent/10 px-5 sm:px-6 lg:px-8 py-6">
+    <DashboardShell>
+      <div className="bg-neutral-0 ring-1 ring-accent/10 px-5 sm:px-6 lg:px-8 py-6">
           {/* Header */}
           <header className="mb-6 flex items-center justify-between pb-4">
             <div className="flex items-center gap-3">
@@ -187,12 +305,21 @@ function UpgradeLayout() {
                             <Typography variant="caption" textColor="white" className="opacity-90">
                               {p.period}
                             </Typography>
+                            {p.annualSavings && (
+                              <Typography variant="caption" textColor="white" className="block mt-1 text-green-300">
+                                {p.annualSavings}
+                              </Typography>
+                            )}
                           </div>
                           <Typography variant="caption" textColor="white" className="mt-3 block">
                             {p.desc}
                           </Typography>
                           {p.key !== "free" && (
-                            <Button size="sm" className="mt-4 rounded-md bg-[hsl(var(--primary))] text-white">
+                            <Button 
+                              size="sm" 
+                              className="mt-4 rounded-md bg-[hsl(var(--primary))] text-white"
+                              onClick={() => handlePlanAction(p)}
+                            >
                               {p.cta}
                             </Button>
                           )}
@@ -206,7 +333,7 @@ function UpgradeLayout() {
                           <Typography variant="h3" className="text-white font-bold">
                             {p.name}
                           </Typography>
-                          {p.key === "free" && (
+                          {p.isCurrent && (
                             <Badge className="rounded-md bg-accent text-neutral-0" variant="info">Current</Badge>
                           )}
                         </div>
@@ -219,6 +346,11 @@ function UpgradeLayout() {
                               {p.period}
                             </Typography>
                           )}
+                          {p.annualSavings && (
+                            <Typography variant="caption" className="block mt-1 text-green-400">
+                              {p.annualSavings}
+                            </Typography>
+                          )}
                         </div>
                         <Typography variant="caption" className="mt-3 block text-white/85">
                           {p.desc}
@@ -228,6 +360,7 @@ function UpgradeLayout() {
                             size="sm"
                             variant={p.key === "enterprise" ? "accent" : undefined}
                             className={p.key === "enterprise" ? "mt-4 rounded-md" : "mt-4 rounded-md bg-[hsl(var(--primary))] text-white"}
+                            onClick={() => handlePlanAction(p)}
                           >
                             {p.cta}
                           </Button>
@@ -290,8 +423,8 @@ function UpgradeLayout() {
             </div>
           </Card>
         </div>
-      </main>
-    </div>
+    </DashboardShell>
+
   );
 }
 

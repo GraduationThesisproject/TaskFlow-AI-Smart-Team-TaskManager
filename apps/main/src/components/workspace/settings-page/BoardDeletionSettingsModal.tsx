@@ -57,17 +57,21 @@ const BoardDeletionSettingsModal: React.FC<BoardDeletionSettingsModalProps> = ({
     );
   }
 
-  // Confirmation Modal
+  // Selection Modal with policy radios
+  const initialPolicy: 'everyone' | 'admins' =
+    currentSetting?.toLowerCase().includes('any member') ? 'everyone' : 'admins';
+  const [policy, setPolicy] = React.useState<'everyone' | 'admins'>(initialPolicy);
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Change Board Deletion Restrictions"
-      description={`Are you sure you want to change board deletion from "${currentSetting}" to "${newSetting}"?`}
+      title="Board Deletion Permissions"
+      description="Choose who can delete boards in this workspace. Owners always have permission."
       size="md"
     >
       <ModalBody>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="p-3 bg-orange-50 border border-orange-200 rounded-md">
             <div className="flex items-start">
               <div className="flex-shrink-0">
@@ -75,49 +79,56 @@ const BoardDeletionSettingsModal: React.FC<BoardDeletionSettingsModalProps> = ({
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-orange-800">
-                  {newSetting === 'Any member can delete boards' ? 'Allowing member board deletion' : 'Restricting board deletion'}
-                </h3>
-                <div className="mt-2 text-sm text-orange-700">
-                  {newSetting === 'Any member can delete boards' ? (
-                    <div>
-                      <p><strong>⚠️ Warning:</strong> Any workspace member will be able to permanently delete:</p>
-                      <ul className="mt-1 ml-4 list-disc">
-                        <li>Public boards (visible to everyone)</li>
-                        <li>Workspace visible boards (visible to workspace members)</li>
-                        <li>Private boards (visible only to board members)</li>
-                      </ul>
-                      <p className="mt-2 font-medium">Deleted boards cannot be recovered!</p>
-                    </div>
-                  ) : (
-                    <p>Only workspace admins and owners will be able to delete boards. This provides better protection against accidental deletions and ensures important boards are preserved.</p>
-                  )}
-                </div>
+              <div className="ml-3 text-sm text-orange-700">
+                Changes here affect who can permanently delete boards. Deleted boards cannot be recovered.
               </div>
             </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="flex items-start gap-3 p-3 border rounded-md cursor-pointer">
+              <input
+                type="radio"
+                name="boardDeletionPolicy"
+                checked={policy === 'everyone'}
+                onChange={() => setPolicy('everyone')}
+              />
+              <div>
+                <div className="font-medium">Everyone</div>
+                <div className="text-sm text-muted-foreground">Any workspace member can delete boards.</div>
+              </div>
+            </label>
+            <label className="flex items-start gap-3 p-3 border rounded-md cursor-pointer">
+              <input
+                type="radio"
+                name="boardDeletionPolicy"
+                checked={policy === 'admins'}
+                onChange={() => setPolicy('admins')}
+              />
+              <div>
+                <div className="font-medium">Only Admins</div>
+                <div className="text-sm text-muted-foreground">Only admins can delete boards. Owners always can.</div>
+              </div>
+            </label>
           </div>
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button
-          variant="outline"
-          onClick={onClose}
-          disabled={loading}
-        >
+        <Button variant="outline" onClick={onClose} disabled={loading}>
           Cancel
         </Button>
         <Button
-          onClick={onConfirm}
+          onClick={() => onConfirm && onConfirm(policy)}
           disabled={loading}
           className="ml-2"
-          variant={newSetting === 'Any member can delete boards' ? 'destructive' : 'default'}
+          variant={policy === 'everyone' ? 'destructive' : 'default'}
         >
-          {loading ? 'Changing...' : `Change to "${newSetting}"`}
+          {loading ? 'Saving...' : 'Save'}
         </Button>
       </ModalFooter>
     </Modal>
   );
-};
+}
+;
 
 export default BoardDeletionSettingsModal;
