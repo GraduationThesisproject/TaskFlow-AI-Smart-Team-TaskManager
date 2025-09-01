@@ -271,7 +271,7 @@ exports.update = async (req, res, next) => {
             sender: actorId,
             relatedEntity: { entityType: 'template', entityId: updated._id },
             priority: 'low',
-            deliveryMethods: { inApp: true }
+            deliveryMethods: { inApp: true}
           });
         }
       } catch (e) {
@@ -385,7 +385,7 @@ exports.toggleLike = async (req, res, next) => {
           sender: actorId,
           relatedEntity: { entityType: 'template', entityId: updated._id },
           priority: 'low',
-          deliveryMethods: { inApp: true }
+          deliveryMethods: { inApp: true, push: true }
         });
       }
     } catch (e) {
