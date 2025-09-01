@@ -1,9 +1,7 @@
 // Environment configuration
 export const env = {
-  DATABASE_URL: import.meta.env.VITE_DATABASE_URL || 'mongodb://localhost:27017/taskflow',
-
   // API Configuration
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || '/api',
   SOCKET_URL: import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001',
   
   // App Configuration
