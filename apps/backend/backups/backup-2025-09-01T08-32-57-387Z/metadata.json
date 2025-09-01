@@ -1,0 +1,24 @@
+{
+  "id": "backup-2025-09-01T08-32-57-387Z",
+  "timestamp": "2025-09-01T08:32:57.932Z",
+  "description": "Pre-seeding backup",
+  "collections": [
+    "admins",
+    "activitylogs",
+    "spaces",
+    "tasks",
+    "boards",
+    "userroles",
+    "tags",
+    "users",
+    "usersessions",
+    "userpreferences",
+    "columns",
+    "analytics",
+    "workspaces",
+    "boardtemplates"
+  ],
+  "totalDocuments": 617,
+  "database": "taskflow",
+  "version": "1.0"
+}

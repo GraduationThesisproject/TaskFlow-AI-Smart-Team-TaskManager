@@ -1,6 +1,7 @@
 const Chat = require('../models/Chat');
 const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
+const mongoose = require('mongoose');
 
 // Start a new chat (public - for user chat widget)
 const startChat = async (req, res) => {
@@ -11,11 +12,14 @@ const startChat = async (req, res) => {
       return sendResponse(res, 400, false, 'Name, email, and message are required');
     }
 
+    // Create temporary ObjectId for anonymous user
+    const tempUserId = new mongoose.Types.ObjectId();
+    
     // Create new chat
     const chat = new Chat({
       chatId: `chat_${Date.now()}`,
       participants: [{
-        id: `user_${Date.now()}`,
+        id: tempUserId,
         name,
         email,
         model: 'User'
@@ -24,9 +28,8 @@ const startChat = async (req, res) => {
         content: message,
         messageType: 'text',
         sender: {
-          id: `user_${Date.now()}`,
+          id: tempUserId,
           name,
-          email,
           model: 'User'
         },
         isRead: false
@@ -38,7 +41,7 @@ const startChat = async (req, res) => {
         content: message,
         timestamp: new Date(),
         sender: {
-          id: `user_${Date.now()}`,
+          id: tempUserId.toString(),
           name
         }
       }
@@ -47,19 +50,49 @@ const startChat = async (req, res) => {
     await chat.save();
 
     // Emit socket event for admin notification
-    req.app.get('io').emit('admin:new-chat-request', {
-      chatId: chat._id,
-      user: {
-        _id: `user_${Date.now()}`,
-        name,
-        email,
-        model: 'User'
-      },
-      message,
-      category,
-      priority,
-      timestamp: new Date()
-    });
+    const io = req.app.get('io');
+    if (io) {
+      const chatNamespace = io.of('/chat');
+      const adminRoom = chatNamespace.adapter.rooms.get('admins');
+      
+      logger.info(`Socket.IO debug: Chat namespace exists: ${!!chatNamespace}`);
+      logger.info(`Socket.IO debug: Admin room size: ${adminRoom ? adminRoom.size : 0}`);
+      logger.info(`Socket.IO debug: Total connected sockets in chat namespace: ${chatNamespace.sockets.size}`);
+      
+      // Emit to chat namespace admin room
+      chatNamespace.to('admins').emit('admin:new-chat-request', {
+        chatId: chat._id,
+        user: {
+          _id: tempUserId,
+          name,
+          email,
+          model: 'User'
+        },
+        message,
+        category,
+        priority,
+        timestamp: new Date()
+      });
+      
+      // Also emit to all connected sockets in chat namespace for testing
+      chatNamespace.emit('admin:new-chat-request', {
+        chatId: chat._id,
+        user: {
+          _id: tempUserId,
+          name,
+          email,
+          model: 'User'
+        },
+        message,
+        category,
+        priority,
+        timestamp: new Date()
+      });
+      
+      logger.info(`Emitted new chat request to admins for chat: ${chat._id}`);
+    } else {
+      logger.error('Socket.IO instance not found!');
+    }
 
     sendResponse(res, 201, true, 'Chat started successfully', { chat });
   } catch (error) {
@@ -83,13 +116,15 @@ const sendMessage = async (req, res) => {
       return sendResponse(res, 404, false, 'Chat not found');
     }
 
+    // Create temporary ObjectId for message sender
+    const tempUserId = new mongoose.Types.ObjectId();
+    
     const message = {
       content,
       messageType: 'text',
       sender: {
-        id: `user_${Date.now()}`,
+        id: tempUserId,
         name: name || 'Anonymous',
-        email: email || 'anonymous@example.com',
         model: 'User'
       },
       isRead: false,
@@ -101,7 +136,7 @@ const sendMessage = async (req, res) => {
       content,
       timestamp: new Date(),
       sender: {
-        id: `user_${Date.now()}`,
+        id: tempUserId.toString(),
         name: name || 'Anonymous'
       }
     };
@@ -231,9 +266,8 @@ const acceptChat = async (req, res) => {
 
     // Add admin to participants
     chat.participants.push({
-      _id: adminId,
+      id: adminId,
       name: req.user.name || 'Admin',
-      email: req.user.email,
       model: 'Admin'
     });
 
@@ -252,6 +286,12 @@ const acceptChat = async (req, res) => {
     sendResponse(res, 200, true, 'Chat accepted successfully', { chat });
   } catch (error) {
     logger.error('Accept chat error:', error);
+    logger.error('Accept chat error details:', {
+      chatId,
+      adminId,
+      error: error.message,
+      stack: error.stack
+    });
     sendResponse(res, 500, false, 'Server error accepting chat');
   }
 };
@@ -280,9 +320,8 @@ const sendAdminMessage = async (req, res) => {
       content,
       messageType,
       sender: {
-        _id: adminId,
+        id: adminId,
         name: req.user.name || 'Admin',
-        email: req.user.email,
         model: 'Admin'
       },
       isRead: false,

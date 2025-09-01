@@ -535,7 +535,7 @@ class AdminService {
 
   async uploadAvatar(file: File): Promise<{ avatar: string }> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('avatar', file);
 
     const response = await fetch(`${API_BASE}/auth/avatar`, {
       method: 'POST',

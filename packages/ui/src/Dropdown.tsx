@@ -70,6 +70,7 @@ interface DropdownProps extends VariantProps<typeof dropdownTriggerVariants> {
   align?: VariantProps<typeof dropdownContentVariants>['align'];
   className?: string;
   contentClassName?: string;
+  triggerIsButton?: boolean; // New prop to explicitly indicate if trigger is already a button
 }
 
 export const Dropdown: React.FC<DropdownProps> = ({
@@ -81,6 +82,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   align,
   className,
   contentClassName,
+  triggerIsButton = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -107,17 +109,39 @@ export const Dropdown: React.FC<DropdownProps> = ({
     }
   };
 
+  // Check if the trigger is a Button component to avoid nested buttons
+  const isButtonTrigger = triggerIsButton || (React.isValidElement(trigger) && (
+    trigger.type === 'button' || 
+    (typeof trigger.type === 'function' && (trigger.type as any).displayName === 'Button')
+  ));
+
   return (
     <div className="relative inline-block" ref={dropdownRef}>
-      <button
-        className={cn(dropdownTriggerVariants({ variant, size }), className)}
-        onClick={() => setIsOpen(!isOpen)}
-        onKeyDown={handleKeyDown}
-        aria-haspopup="true"
-        aria-expanded={isOpen}
-      >
-        {trigger}
-      </button>
+      {isButtonTrigger ? (
+        // If trigger is already a button, wrap it in a div and add click handler
+        <div 
+          className="inline-block"
+          onClick={() => setIsOpen(!isOpen)}
+          onKeyDown={handleKeyDown}
+          role="button"
+          tabIndex={0}
+          aria-haspopup="true"
+          aria-expanded={isOpen}
+        >
+          {trigger}
+        </div>
+      ) : (
+        // Otherwise, render as a button with trigger inside
+        <button
+          className={cn(dropdownTriggerVariants({ variant, size }), className)}
+          onClick={() => setIsOpen(!isOpen)}
+          onKeyDown={handleKeyDown}
+          aria-haspopup="true"
+          aria-expanded={isOpen}
+        >
+          {trigger}
+        </button>
+      )}
 
       {isOpen && (
         <div className={cn(dropdownContentVariants({ side, align }), contentClassName)}>
