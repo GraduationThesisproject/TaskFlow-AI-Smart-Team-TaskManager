@@ -11,7 +11,7 @@ export * from './entities';
 // Legacy type exports (for backward compatibility)
 export * from './api.types';
 export * from './common.types';
-export * from './navbar.types';
+export * from './navbar';
 
 // Re-export specific types that might be used directly
 export type { 

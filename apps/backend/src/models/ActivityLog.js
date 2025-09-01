@@ -214,7 +214,7 @@ activityLogSchema.statics.findByWorkspace = function(workspaceId, limit = 100) {
     .limit(limit);
 };
 
-// TTL: expire activities ~1 hour after creation
-activityLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 3600, name: 'ttl_createdAt_1h' });
+// TTL: expire activities ~24 hours after creation (increased for better debugging)
+activityLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400, name: 'ttl_createdAt_24h' });
 
 module.exports = mongoose.model('ActivityLog', activityLogSchema);

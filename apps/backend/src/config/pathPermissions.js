@@ -188,6 +188,25 @@ const USER_PERMISSIONS = {
     }
 };
 
+// Auth permissions (for authenticated users)
+const AUTH_PERMISSIONS = {
+    '/auth/me': {
+        GET: ['owner', 'admin', 'member', 'viewer']
+    },
+    '/auth/profile': {
+        PUT: ['owner', 'admin', 'member', 'viewer']
+    },
+    '/auth/activity': {
+        GET: ['owner', 'admin', 'member', 'viewer']
+    },
+    '/auth/sessions': {
+        GET: ['owner', 'admin', 'member', 'viewer']
+    },
+    '/auth/logout': {
+        POST: ['owner', 'admin', 'member', 'viewer']
+    }
+};
+
 // Organization permissions
 const ORGANIZATION_PERMISSIONS = {
     '/organization/:id': {
@@ -277,6 +296,7 @@ const ALL_PATH_PERMISSIONS = {
     ...BOARD_PERMISSIONS,
     ...TASK_PERMISSIONS,
     ...USER_PERMISSIONS,
+    ...AUTH_PERMISSIONS,
     ...ORGANIZATION_PERMISSIONS,
     ...NOTIFICATION_PERMISSIONS,
     ...REPORT_PERMISSIONS,
@@ -321,6 +341,7 @@ module.exports = {
     BOARD_PERMISSIONS,
     TASK_PERMISSIONS,
     USER_PERMISSIONS,
+    AUTH_PERMISSIONS,
     ORGANIZATION_PERMISSIONS,
     NOTIFICATION_PERMISSIONS,
     REPORT_PERMISSIONS,

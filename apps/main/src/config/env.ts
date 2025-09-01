@@ -39,16 +39,7 @@ export const env = {
   // Build Info
   BUILD_TIME: import.meta.env.VITE_BUILD_TIME,
   COMMIT_HASH: import.meta.env.VITE_COMMIT_HASH,
-  VITE_GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID||"625288272720-qem1ue46j75pt272mab8f35baimqgeag.apps.googleusercontent.com",
-  VITE_GOOGLE_CLIENT_SECRET: import.meta.env.VITE_GOOGLE_CLIENT_SECRET||"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",
-  VITE_GITHUB_CLIENT_ID: import.meta.env.VITE_GITHUB_CLIENT_ID||"Ov23liwZN5YwJ4eZvffU",
-  VITE_GITHUB_CLIENT_SECRET: import.meta.env.VITE_GITHUB_CLIENT_SECRET||"5499262125f3434db57f3377432053b29a4dcb89",
-  NODE_ENV: import.meta.env.NODE_ENV,
   MODE: import.meta.env.MODE,
-
-// // Feature Flags
-// VITE_ENABLE_ANALYTICS:false,
-// VITE_ENABLE_DEBUG:true,
 
 
 

@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from "../../../store";
 import { setCurrentWorkspaceId, fetchWorkspaces } from "../../../store/slices/workspaceSlice";
 import { useMemo, useState, useEffect } from "react";
 import { CreateWorkspaceModal } from "../../../components/dashboard/home/modals/CreateWorkspaceModal";
-import DeleteWorkspaceModal from "../../../components/dashboard/home/modals/DeleteWorkspaceModal";
+import { DeleteWorkspaceModal } from "../../../components/dashboard/home/modals/DeleteWorkspaceModal";
 import { useWorkspaces } from "../../../hooks/useWorkspaces";
 import { fetchWorkspace } from "../../../store/slices/workspaceSlice";
 
@@ -45,10 +45,7 @@ export const WorkspacesSection = () => {
   };
 
   const sortedWorkspaces = useMemo(() => {
-    const userId = user?.user?._id || user?.user?._id;
-    // console.log("userId", userId);
-    // console.log("workspaces", workspaces);
-    // Show all workspaces (no membership filtering), sorted by updatedAt/createdAt desc
+
     return [...workspaces]
       .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
   }, [workspaces, user]);
@@ -211,6 +208,7 @@ export const WorkspacesSection = () => {
       <CreateWorkspaceModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSubmit={() => {}}
       />
       <DeleteWorkspaceModal
         isOpen={isDeleteOpen}

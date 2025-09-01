@@ -5,11 +5,7 @@
 export { useSocket } from './useSocket';
 
 // Namespace-specific hooks
-export { useBoardSocket } from '../../contexts/SocketContext';
-export { useNotificationSocket } from '../../contexts/SocketContext';
-export { useSystemSocket } from '../../contexts/SocketContext';
-export { useChatSocket } from '../../contexts/SocketContext';
-export { useWorkspaceSocket } from '../../contexts/SocketContext';
+export { useBoardSocket, useNotificationSocket, useSystemSocket, useChatSocket, useWorkspaceSocket } from '../../contexts/SocketContext';
 
 // Business logic hooks
 export { useTaskSocket } from './useTaskSocket';
