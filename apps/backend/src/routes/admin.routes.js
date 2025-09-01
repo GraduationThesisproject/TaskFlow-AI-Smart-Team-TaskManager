@@ -6,7 +6,7 @@ const {
   requireUserManagementPermission 
 } = require('../middlewares/accessControl.middleware');
 
-// const { processUploadedFiles, uploadMiddlewares } = require('../middlewares/upload.middleware');
+const { processUploadedFiles, uploadMiddlewares } = require('../middlewares/upload.middleware');
 
 
 const router = express.Router();
@@ -37,8 +37,8 @@ router.post('/auth/change-password', adminController.changePassword);
 // Profile update route (simplified for now)
 router.put('/auth/profile', adminController.updateProfile);
 
-// Avatar upload route (simplified for now)
-router.post('/auth/avatar', adminController.uploadAvatar);
+// Avatar upload route with proper middleware
+router.post('/auth/avatar', uploadMiddlewares.avatar, processUploadedFiles, adminController.uploadAvatar);
 
 // User management routes - specific routes first
 router.get('/users', requireUserManagementAccess('view'), adminController.getUsers); // Admin users

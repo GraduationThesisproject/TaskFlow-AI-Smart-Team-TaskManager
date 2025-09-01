@@ -22,6 +22,7 @@ module.exports.ReminderSeeder = require('./modules/ReminderSeeder');
 module.exports.FileSeeder = require('./modules/FileSeeder');
 module.exports.InvitationSeeder = require('./modules/InvitationSeeder');
 module.exports.AnalyticsSeeder = require('./modules/AnalyticsSeeder');
+module.exports.IntegrationSeeder = require('./modules/IntegrationSeeder');
 module.exports.BaseSeeder = require('./base/BaseSeeder');
 module.exports.BackupManager = require('./utils/backup');
 module.exports.ProgressTracker = require('./utils/progress').ProgressTracker;
