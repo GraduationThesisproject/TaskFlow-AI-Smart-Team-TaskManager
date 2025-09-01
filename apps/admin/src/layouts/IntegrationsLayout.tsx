@@ -26,6 +26,7 @@ import {
   PresentationChartBarIcon
 } from '@heroicons/react/24/outline';
 import integrationService, { Integration } from '../services/integrationService';
+import AddIntegrationModal from '../components/AddIntegrationModal';
 
 const IntegrationsLayout: React.FC = () => {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
@@ -35,6 +36,7 @@ const IntegrationsLayout: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [syncing, setSyncing] = useState<string | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const filteredIntegrations = (integrations || []).filter(integration => {
     const matchesSearch = 
@@ -198,7 +200,7 @@ const IntegrationsLayout: React.FC = () => {
               Manage third-party integrations and API connections
             </Typography>
           </div>
-          <Button>
+          <Button onClick={() => setShowAddModal(true)}>
             <PlusIcon className="h-4 w-4 mr-2" />
             Add Integration
           </Button>
@@ -269,7 +271,7 @@ const IntegrationsLayout: React.FC = () => {
                   {getStatusBadge(integration.status)}
                   <Switch
                     checked={integration.isEnabled}
-                    onChange={() => handleToggleIntegration(integration.id)}
+                    onCheckedChange={() => handleToggleIntegration(integration.id)}
                   />
                 </div>
               </div>
@@ -366,6 +368,13 @@ const IntegrationsLayout: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Add Integration Modal */}
+      <AddIntegrationModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={loadIntegrations}
+      />
     </Container>
   );
 };

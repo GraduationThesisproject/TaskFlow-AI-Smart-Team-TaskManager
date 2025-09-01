@@ -9,6 +9,7 @@ export interface Integration {
   lastSync: string;
   syncStatus: 'success' | 'warning' | 'error';
   isEnabled: boolean;
+  apiKey?: string;
   errorMessage?: string;
   retryCount?: number;
   maxRetries?: number;

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const encryptionService = require('../utils/encryption');
 
 const integrationSchema = new mongoose.Schema({
   name: {
@@ -24,7 +25,21 @@ const integrationSchema = new mongoose.Schema({
   apiKey: {
     type: String,
     required: false,
-    select: false // Don't include in queries by default for security
+    select: false, // Don't include in queries by default for security
+    set: function(value) {
+      // Encrypt API key before saving
+      if (value && !encryptionService.isEncrypted(value)) {
+        return encryptionService.encryptApiKey(value);
+      }
+      return value;
+    },
+    get: function(value) {
+      // Decrypt API key when retrieved
+      if (value && encryptionService.isEncrypted(value)) {
+        return encryptionService.decryptApiKey(value);
+      }
+      return value;
+    }
   },
   config: {
     type: mongoose.Schema.Types.Mixed,
@@ -70,7 +85,21 @@ const integrationSchema = new mongoose.Schema({
   webhookSecret: {
     type: String,
     default: null,
-    select: false
+    select: false,
+    set: function(value) {
+      // Encrypt webhook secret before saving
+      if (value && !encryptionService.isEncrypted(value)) {
+        return encryptionService.encryptApiKey(value);
+      }
+      return value;
+    },
+    get: function(value) {
+      // Decrypt webhook secret when retrieved
+      if (value && encryptionService.isEncrypted(value)) {
+        return encryptionService.decryptApiKey(value);
+      }
+      return value;
+    }
   },
   metadata: {
     type: mongoose.Schema.Types.Mixed,
