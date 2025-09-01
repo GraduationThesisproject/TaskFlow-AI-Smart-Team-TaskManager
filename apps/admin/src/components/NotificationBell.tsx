@@ -80,12 +80,12 @@ export const NotificationBell: React.FC = () => {
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-foreground">Notifications</h3>
               {unreadCount > 0 && (
-                <button
+                <DropdownItem
                   onClick={handleMarkAllAsRead}
                   className="text-sm text-primary hover:text-primary/80 transition-colors"
                 >
                   Mark all as read
-                </button>
+                </DropdownItem>
               )}
             </div>
             <p className="text-sm text-muted-foreground mt-1">
@@ -103,12 +103,12 @@ export const NotificationBell: React.FC = () => {
             ) : (
               <div className="space-y-2">
                 {notifications.slice(0, 10).map((notification: any) => (
-                  <button
+                  <DropdownItem
                     key={notification.id}
+                    onClick={() => handleMarkAsRead(notification.id)}
                     className={`w-full text-left flex items-start gap-3 p-3 rounded-lg border transition-colors hover:bg-muted ${
                       !notification.isRead ? 'bg-muted/50 border-primary/20' : 'bg-card'
                     }`}
-                    onClick={() => handleMarkAsRead(notification.id)}
                   >
                     <div className={`text-lg ${getPriorityColor(notification.priority)}`}>
                       {getPriorityIcon(notification.priority)}
@@ -141,7 +141,7 @@ export const NotificationBell: React.FC = () => {
                         )}
                       </div>
                     </div>
-                  </button>
+                  </DropdownItem>
                 ))}
               </div>
             )}
