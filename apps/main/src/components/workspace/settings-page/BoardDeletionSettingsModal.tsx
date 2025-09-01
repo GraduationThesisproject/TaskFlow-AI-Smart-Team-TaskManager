@@ -1,17 +1,6 @@
 import React from 'react';
 import { Modal, ModalBody, ModalFooter, Button } from '@taskflow/ui';
-
-interface BoardDeletionSettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm?: (policy: 'everyone' | 'admins') => void;
-  canManage: boolean;
-  currentSetting: string;
-  newSetting: string;
-  userRole: string | null;
-  userName?: string;
-  loading: boolean;
-}
+import type { BoardDeletionSettingsModalProps } from '../../../types/interfaces/ui';
 
 const BoardDeletionSettingsModal: React.FC<BoardDeletionSettingsModalProps> = ({
   isOpen,

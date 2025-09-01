@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { Input } from '@taskflow/ui';
 import { Search } from 'lucide-react';
-
-interface SearchBarProps {
-  className?: string;
-  placeholder?: string;
-}
+import type { SearchBarProps } from '../../../types/interfaces/ui';
 
 export const SearchBar: React.FC<SearchBarProps> = ({ 
   className = '', 

@@ -4,11 +4,7 @@ import { useAppSelector, useAppDispatch } from '../../store';
 import { selectUserPreferences, updateUser } from '../../store/slices/authSlice';
 import { useUserTheme } from '../../hooks/useUserTheme';
 import { Sun, Moon } from 'lucide-react';
-
-interface ThemeToggleProps {
-  className?: string;
-  showLabel?: boolean;
-}
+import type { ThemeToggleProps } from '../../types/interfaces/ui';
 
 export const ThemeToggle: React.FC<ThemeToggleProps> = ({ 
   className = '', 

@@ -108,7 +108,7 @@ export const ColorPickerDemo: React.FC = () => {
         <CardContent>
           <Stack spacing="md">
             <Typography variant="body-medium">
-              Here's how to integrate the ColorPicker in your column components:
+              Here&apos;s how to integrate the ColorPicker in your column components:
             </Typography>
             <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
 {`// In your column modal or form

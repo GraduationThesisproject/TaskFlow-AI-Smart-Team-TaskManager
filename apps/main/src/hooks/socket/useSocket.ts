@@ -1,9 +1,10 @@
-import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { Socket, io } from 'socket.io-client';
 
 interface UseSocketOptions {
   url: string;
   autoConnect?: boolean;
+  namespace?: string;
   auth?: {
     token: string;
   };
@@ -14,10 +15,10 @@ export function useSocket(options: UseSocketOptions) {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
-  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const connect = useCallback(() => {
     if (socketRef.current?.connected) return;
@@ -47,7 +48,10 @@ export function useSocket(options: UseSocketOptions) {
       // console.log('🔌 Creating socket connection to:', options.url);
       // console.log('🔑 Authentication token:', options.auth?.token ? 'Present' : 'Missing');
 
-      socketRef.current = io(options.url, {
+      // Create socket with namespace if specified
+      const socketUrl = options.namespace ? `${options.url}${options.namespace}` : options.url;
+      
+      socketRef.current = io(socketUrl, {
         autoConnect: false, // We'll manually connect
         auth: options.auth,
         // Prefer polling first; upgrade to websocket when possible

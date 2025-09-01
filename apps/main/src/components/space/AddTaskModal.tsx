@@ -16,15 +16,7 @@ import {
 import type { Task } from '../../types/task.types';
 import type { Column } from '../../types/board.types';
 import { UserService, type User } from '../../services/userService';
-
-interface AddTaskModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (taskData: Partial<Task>) => Promise<void>;
-  selectedColumn?: string;
-  selectedBoard?: string;
-  columns?: Column[];
-}
+import type { AddTaskModalProps } from '../../types/interfaces/ui';
 
 const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Low' },

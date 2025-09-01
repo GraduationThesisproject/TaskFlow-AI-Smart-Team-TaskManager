@@ -1,10 +1,7 @@
 import React from 'react';
 import { Button } from '@taskflow/ui';
 import { Home, Plus } from 'lucide-react';
-
-interface NavigationActionsProps {
-  className?: string;
-}
+import type { NavigationActionsProps } from '../../../types/interfaces/ui';
 
 export const NavigationActions: React.FC<NavigationActionsProps> = ({ className = '' }) => {
   return (

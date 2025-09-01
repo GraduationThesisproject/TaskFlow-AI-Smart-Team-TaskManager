@@ -1,10 +1,7 @@
 import { BaseNavbar, NavbarLeft, NavbarRight } from './BaseNavbar';
 import { Logo } from './Logo';
 import { ThemeToggleButton } from './ThemeToggleButton';
-
-interface AuthNavbarProps {
-  className?: string;
-}
+import type { AuthNavbarProps } from '../../../../types/interfaces/ui';
 
 export function AuthNavbar({ className = '' }: AuthNavbarProps) {
   return (

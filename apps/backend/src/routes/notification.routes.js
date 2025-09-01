@@ -2,6 +2,7 @@ const express = require('express');
 const notificationController = require('../controllers/notification.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
 const { requireSystemAdmin } = require('../middlewares/permission.middleware');
+const { notification: notificationSchemas } = require('./validator');
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ router.get('/stats', notificationController.getNotificationStats);
 
 router.post('/',
     requireSystemAdmin,
-    validateMiddleware(createNotificationSchema),
+    validateMiddleware(notificationSchemas.createNotificationSchema),
     notificationController.createNotification
 );
 
@@ -58,7 +59,7 @@ router.patch('/:id/read', notificationController.markAsRead);
 router.post('/mark-all-read', notificationController.markAllAsRead);
 
 router.patch('/bulk-read',
-    validateMiddleware(bulkMarkReadSchema),
+    validateMiddleware(notificationSchemas.bulkMarkReadSchema),
     notificationController.bulkMarkAsRead
 );
 
@@ -66,7 +67,7 @@ router.delete('/:id', notificationController.deleteNotification);
 router.post('/clear-read', notificationController.deleteReadNotifications);
 
 router.put('/preferences',
-    validateMiddleware(updatePreferencesSchema),
+    validateMiddleware(notificationSchemas.updatePreferencesSchema),
     notificationController.updatePreferences
 );
 

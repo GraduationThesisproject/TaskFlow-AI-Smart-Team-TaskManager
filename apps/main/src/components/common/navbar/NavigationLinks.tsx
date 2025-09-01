@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@taskflow/ui';
 import { ChevronDown } from 'lucide-react';
 import type { NavigationItem } from '../../../types/navbar';
-
-interface NavigationLinksProps {
-  items: NavigationItem[];
-  className?: string;
-}
+import type { NavigationLinksProps } from '../../../types/interfaces/ui';
 
 export const NavigationLinks: React.FC<NavigationLinksProps> = ({ items, className = '' }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);

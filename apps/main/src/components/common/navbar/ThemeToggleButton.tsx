@@ -2,11 +2,7 @@ import React from 'react';
 import { Button } from '@taskflow/ui';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@taskflow/theme';
-
-interface ThemeToggleButtonProps {
-  className?: string;
-  showLabel?: boolean;
-}
+import type { ThemeToggleButtonProps } from '../../../types/interfaces/ui';
 
 export const ThemeToggleButton: React.FC<ThemeToggleButtonProps> = ({ 
   className = '', 

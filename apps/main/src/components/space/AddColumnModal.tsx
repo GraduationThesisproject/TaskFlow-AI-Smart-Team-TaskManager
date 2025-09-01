@@ -12,12 +12,7 @@ import {
   Stack
 } from '@taskflow/ui';
 import type { Column } from '../../store/slices/taskSlice';
-
-interface AddColumnModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (columnData: Partial<Column>) => Promise<void>;
-}
+import type { AddColumnModalProps } from '../../types/interfaces/ui';
 
 const COLOR_OPTIONS = [
   { value: 'default', label: 'Default' },

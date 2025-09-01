@@ -1,11 +1,7 @@
 import React from 'react';
 import { Button } from '@taskflow/ui';
 import { Bell } from 'lucide-react';
-
-interface NotificationButtonProps {
-  count?: number;
-  className?: string;
-}
+import type { NotificationButtonProps } from '../../../types/interfaces/ui';
 
 export const NotificationButton: React.FC<NotificationButtonProps> = ({ 
   count = 0, 

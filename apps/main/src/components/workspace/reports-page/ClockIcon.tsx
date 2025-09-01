@@ -1,8 +1,5 @@
 import React from "react";
-
-interface ClockIconProps extends React.SVGProps<SVGSVGElement> {
-  size?: number;
-}
+import type { ClockIconProps } from '../../../types/interfaces/ui';
 
 const ClockIcon: React.FC<ClockIconProps> = ({ size = 20, className, ...props }) => {
   // Maintain original aspect ratio width:height = 20:21
