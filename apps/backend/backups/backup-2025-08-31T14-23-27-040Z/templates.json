@@ -1,0 +1,1106 @@
+[
+  {
+    "_id": "68b1d3b3a7dda0d577a0687a",
+    "name": "Kanban Project Management",
+    "description": "A comprehensive Kanban board template for project management with predefined lists and workflow stages",
+    "type": "board",
+    "content": {
+      "lists": [
+        {
+          "title": "Backlog",
+          "order": 0,
+          "color": "#6B7280"
+        },
+        {
+          "title": "To Do",
+          "order": 1,
+          "color": "#3B82F6"
+        },
+        {
+          "title": "In Progress",
+          "order": 2,
+          "color": "#F59E0B"
+        },
+        {
+          "title": "Review",
+          "order": 3,
+          "color": "#8B5CF6"
+        },
+        {
+          "title": "Done",
+          "order": 4,
+          "color": "#10B981"
+        }
+      ],
+      "cards": [
+        {
+          "title": "Project Setup",
+          "description": "Initialize project repository and basic structure",
+          "listId": "To Do",
+          "order": 0,
+          "priority": "high",
+          "estimatedHours": 2,
+          "tags": [
+            "setup",
+            "initialization"
+          ]
+        },
+        {
+          "title": "Requirements Gathering",
+          "description": "Collect and document project requirements",
+          "listId": "To Do",
+          "order": 1,
+          "priority": "high",
+          "estimatedHours": 4,
+          "tags": [
+            "requirements",
+            "planning"
+          ]
+        }
+      ]
+    },
+    "structure": {
+      "version": "1.0",
+      "schema": {
+        "lists": "array",
+        "cards": "array"
+      },
+      "required": [
+        "lists",
+        "cards"
+      ],
+      "optional": [
+        "thumbnail",
+        "metadata"
+      ]
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "isPublic": true,
+    "isSystem": true,
+    "category": "Development",
+    "views": 0,
+    "likedBy": [],
+    "viewedBy": [],
+    "tags": [],
+    "accessControl": {
+      "allowedUsers": [],
+      "allowedWorkspaces": [],
+      "allowedRoles": []
+    },
+    "usage": {
+      "totalUses": 45,
+      "lastUsed": "2025-08-29T16:22:10.932Z",
+      "rating": {
+        "average": 4.5,
+        "count": 12
+      }
+    },
+    "status": "active",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "preview": {
+      "thumbnail": null,
+      "screenshot": null
+    },
+    "config": {
+      "allowCustomization": true,
+      "requireApproval": false,
+      "maxInstances": -1,
+      "expiryDate": null
+    },
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.028Z",
+    "updatedAt": "2025-08-29T16:22:11.028Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a0687d",
+    "name": "Scrum Sprint Board",
+    "description": "Scrum methodology template with sprint planning, daily standups, and sprint review phases",
+    "type": "board",
+    "content": {
+      "lists": [
+        {
+          "title": "Product Backlog",
+          "order": 0,
+          "color": "#6B7280"
+        },
+        {
+          "title": "Sprint Backlog",
+          "order": 1,
+          "color": "#3B82F6"
+        },
+        {
+          "title": "In Progress",
+          "order": 2,
+          "color": "#F59E0B"
+        },
+        {
+          "title": "Testing",
+          "order": 3,
+          "color": "#8B5CF6"
+        },
+        {
+          "title": "Done",
+          "order": 4,
+          "color": "#10B981"
+        }
+      ],
+      "cards": [
+        {
+          "title": "Sprint Planning",
+          "description": "Plan sprint goals and select user stories",
+          "listId": "Sprint Backlog",
+          "order": 0,
+          "priority": "high",
+          "estimatedHours": 3,
+          "tags": [
+            "planning",
+            "sprint"
+          ]
+        },
+        {
+          "title": "Daily Standup",
+          "description": "Daily team synchronization meeting",
+          "listId": "In Progress",
+          "order": 0,
+          "priority": "medium",
+          "estimatedHours": 0.5,
+          "tags": [
+            "meeting",
+            "sync"
+          ]
+        }
+      ]
+    },
+    "structure": {
+      "version": "1.0",
+      "schema": {
+        "lists": "array",
+        "cards": "array"
+      },
+      "required": [
+        "lists",
+        "cards"
+      ],
+      "optional": [
+        "sprintDuration",
+        "teamSize"
+      ]
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "isPublic": true,
+    "isSystem": true,
+    "category": "Development",
+    "views": 0,
+    "likedBy": [],
+    "viewedBy": [],
+    "tags": [],
+    "accessControl": {
+      "allowedUsers": [],
+      "allowedWorkspaces": [],
+      "allowedRoles": []
+    },
+    "usage": {
+      "totalUses": 32,
+      "lastUsed": "2025-08-29T16:22:10.932Z",
+      "rating": {
+        "average": 4.8,
+        "count": 8
+      }
+    },
+    "status": "active",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "preview": {
+      "thumbnail": null,
+      "screenshot": null
+    },
+    "config": {
+      "allowCustomization": true,
+      "requireApproval": false,
+      "maxInstances": -1,
+      "expiryDate": null
+    },
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.035Z",
+    "updatedAt": "2025-08-29T16:22:11.035Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a06880",
+    "name": "Bug Tracking System",
+    "description": "Specialized template for tracking and resolving software bugs with priority levels and resolution tracking",
+    "type": "board",
+    "content": {
+      "lists": [
+        {
+          "title": "New Bugs",
+          "order": 0,
+          "color": "#EF4444"
+        },
+        {
+          "title": "Investigating",
+          "order": 1,
+          "color": "#F59E0B"
+        },
+        {
+          "title": "In Progress",
+          "order": 2,
+          "color": "#3B82F6"
+        },
+        {
+          "title": "Testing Fix",
+          "order": 3,
+          "color": "#8B5CF6"
+        },
+        {
+          "title": "Resolved",
+          "order": 4,
+          "color": "#10B981"
+        }
+      ],
+      "cards": [
+        {
+          "title": "Bug Report Template",
+          "description": "Standard template for reporting new bugs",
+          "listId": "New Bugs",
+          "order": 0,
+          "priority": "high",
+          "estimatedHours": 0.5,
+          "tags": [
+            "template",
+            "bug-report"
+          ]
+        },
+        {
+          "title": "Bug Investigation",
+          "description": "Investigate root cause of reported bug",
+          "listId": "Investigating",
+          "order": 0,
+          "priority": "medium",
+          "estimatedHours": 2,
+          "tags": [
+            "investigation",
+            "debugging"
+          ]
+        }
+      ]
+    },
+    "structure": {
+      "version": "1.0",
+      "schema": {
+        "lists": "array",
+        "cards": "array"
+      },
+      "required": [
+        "lists",
+        "cards"
+      ],
+      "optional": [
+        "severityLevels",
+        "bugTypes"
+      ]
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "isPublic": true,
+    "isSystem": true,
+    "category": "Support",
+    "views": 0,
+    "likedBy": [],
+    "viewedBy": [],
+    "tags": [],
+    "accessControl": {
+      "allowedUsers": [],
+      "allowedWorkspaces": [],
+      "allowedRoles": []
+    },
+    "usage": {
+      "totalUses": 28,
+      "lastUsed": "2025-08-29T16:22:10.932Z",
+      "rating": {
+        "average": 4.2,
+        "count": 15
+      }
+    },
+    "status": "active",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "preview": {
+      "thumbnail": null,
+      "screenshot": null
+    },
+    "config": {
+      "allowCustomization": true,
+      "requireApproval": false,
+      "maxInstances": -1,
+      "expiryDate": null
+    },
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.038Z",
+    "updatedAt": "2025-08-29T16:22:11.038Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a06882",
+    "name": "Feature Development Task",
+    "description": "Standard template for developing new features with planning, development, and testing phases",
+    "type": "task",
+    "content": {
+      "stages": [
+        "Planning",
+        "Development",
+        "Testing",
+        "Review",
+        "Deployment"
+      ],
+      "estimatedHours": 16,
+      "priority": "medium",
+      "tags": [
+        "feature",
+        "development"
+      ],
+      "checklist": [
+        "Requirements analysis",
+        "Technical design",
+        "Implementation",
+        "Unit testing",
+        "Integration testing",
+        "Code review",
+        "Documentation"
+      ]
+    },
+    "structure": {
+      "version": "1.0",
+      "schema": {
+        "stages": "array",
+        "estimatedHours": "number",
+        "priority": "string",
+        "tags": "array",
+        "checklist": "array"
+      },
+      "required": [
+        "stages",
+        "estimatedHours"
+      ],
+      "optional": [
+        "priority",
+        "tags",
+        "checklist"
+      ]
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "isPublic": true,
+    "isSystem": true,
+    "category": "Development",
+    "views": 0,
+    "likedBy": [],
+    "viewedBy": [],
+    "tags": [],
+    "accessControl": {
+      "allowedUsers": [],
+      "allowedWorkspaces": [],
+      "allowedRoles": []
+    },
+    "usage": {
+      "totalUses": 67,
+      "lastUsed": "2025-08-29T16:22:10.932Z",
+      "rating": {
+        "average": 4.6,
+        "count": 23
+      }
+    },
+    "status": "active",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "preview": {
+      "thumbnail": null,
+      "screenshot": null
+    },
+    "config": {
+      "allowCustomization": true,
+      "requireApproval": false,
+      "maxInstances": -1,
+      "expiryDate": null
+    },
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.041Z",
+    "updatedAt": "2025-08-29T16:22:11.041Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a06884",
+    "name": "Bug Fix Task",
+    "description": "Template for fixing software bugs with investigation, fix, and verification steps",
+    "type": "task",
+    "content": {
+      "stages": [
+        "Investigation",
+        "Fix Development",
+        "Testing",
+        "Code Review",
+        "Deployment"
+      ],
+      "estimatedHours": 8,
+      "priority": "high",
+      "tags": [
+        "bug-fix",
+        "support"
+      ],
+      "checklist": [
+        "Reproduce the bug",
+        "Identify root cause",
+        "Develop fix",
+        "Test fix",
+        "Code review",
+        "Deploy fix"
+      ]
+    },
+    "structure": {
+      "version": "1.0",
+      "schema": {
+        "stages": "array",
+        "estimatedHours": "number",
+        "priority": "string",
+        "tags": "array",
+        "checklist": "array"
+      },
+      "required": [
+        "stages",
+        "estimatedHours"
+      ],
+      "optional": [
+        "priority",
+        "tags",
+        "checklist"
+      ]
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "isPublic": true,
+    "isSystem": true,
+    "category": "Support",
+    "views": 0,
+    "likedBy": [],
+    "viewedBy": [],
+    "tags": [],
+    "accessControl": {
+      "allowedUsers": [],
+      "allowedWorkspaces": [],
+      "allowedRoles": []
+    },
+    "usage": {
+      "totalUses": 89,
+      "lastUsed": "2025-08-29T16:22:10.932Z",
+      "rating": {
+        "average": 4.4,
+        "count": 31
+      }
+    },
+    "status": "active",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "preview": {
+      "thumbnail": null,
+      "screenshot": null
+    },
+    "config": {
+      "allowCustomization": true,
+      "requireApproval": false,
+      "maxInstances": -1,
+      "expiryDate": null
+    },
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.043Z",
+    "updatedAt": "2025-08-29T16:22:11.043Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a06886",
+    "name": "Content Creation Task",
+    "description": "Template for creating marketing content, documentation, or creative assets",
+    "type": "task",
+    "content": {
+      "stages": [
+        "Research",
+        "Drafting",
+        "Review",
+        "Revision",
+        "Final Approval"
+      ],
+      "estimatedHours": 12,
+      "priority": "medium",
+      "tags": [
+        "content",
+        "marketing"
+      ],
+      "checklist": [
+        "Topic research",
+        "Outline creation",
+        "First draft",
+        "Internal review",
+        "Stakeholder review",
+        "Final revisions",
+        "Approval and publishing"
+      ]
+    },
+    "structure": {
+      "version": "1.0",
+      "schema": {
+        "stages": "array",
+        "estimatedHours": "number",
+        "priority": "string",
+        "tags": "array",
+        "checklist": "array"
+      },
+      "required": [
+        "stages",
+        "estimatedHours"
+      ],
+      "optional": [
+        "priority",
+        "tags",
+        "checklist"
+      ]
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "isPublic": true,
+    "isSystem": true,
+    "category": "Marketing",
+    "views": 0,
+    "likedBy": [],
+    "viewedBy": [],
+    "tags": [],
+    "accessControl": {
+      "allowedUsers": [],
+      "allowedWorkspaces": [],
+      "allowedRoles": []
+    },
+    "usage": {
+      "totalUses": 34,
+      "lastUsed": "2025-08-29T16:22:10.932Z",
+      "rating": {
+        "average": 4.7,
+        "count": 12
+      }
+    },
+    "status": "active",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "preview": {
+      "thumbnail": null,
+      "screenshot": null
+    },
+    "config": {
+      "allowCustomization": true,
+      "requireApproval": false,
+      "maxInstances": -1,
+      "expiryDate": null
+    },
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.045Z",
+    "updatedAt": "2025-08-29T16:22:11.045Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a06888",
+    "name": "Sprint Backlog Generator",
+    "description": "Generate a comprehensive sprint backlog based on user stories and team capacity",
+    "type": "workflow",
+    "content": {
+      "prompt": "Generate a sprint backlog for a [project_type] project with [team_size] team members. The sprint duration is [sprint_duration] weeks. Include user stories with proper story points, acceptance criteria, and estimated effort. Prioritize based on business value and dependencies.",
+      "variables": [
+        "project_type",
+        "team_size",
+        "sprint_duration"
+      ],
+      "outputFormat": "JSON",
+      "examples": [
+        "Generate a sprint backlog for a mobile app development project with 6 team members. The sprint duration is 2 weeks.",
+        "Generate a sprint backlog for a website redesign project with 4 team members. The sprint duration is 1 week."
+      ]
+    },
+    "structure": {
+      "version": "1.0",
+      "schema": {
+        "prompt": "string",
+        "variables": "array",
+        "outputFormat": "string",
+        "examples": "array"
+      },
+      "required": [
+        "prompt",
+        "variables"
+      ],
+      "optional": [
+        "outputFormat",
+        "examples"
+      ]
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "isPublic": true,
+    "isSystem": true,
+    "category": "Development",
+    "views": 0,
+    "likedBy": [],
+    "viewedBy": [],
+    "tags": [],
+    "accessControl": {
+      "allowedUsers": [],
+      "allowedWorkspaces": [],
+      "allowedRoles": []
+    },
+    "usage": {
+      "totalUses": 156,
+      "lastUsed": "2025-08-29T16:22:10.932Z",
+      "rating": {
+        "average": 4.8,
+        "count": 45
+      }
+    },
+    "status": "active",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "preview": {
+      "thumbnail": null,
+      "screenshot": null
+    },
+    "config": {
+      "allowCustomization": true,
+      "requireApproval": false,
+      "maxInstances": -1,
+      "expiryDate": null
+    },
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.049Z",
+    "updatedAt": "2025-08-29T16:22:11.049Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a0688a",
+    "name": "Task Description Writer",
+    "description": "Create detailed and actionable task descriptions from brief requirements",
+    "type": "workflow",
+    "content": {
+      "prompt": "Write a detailed task description for: [task_summary]. Include: 1) Clear objectives, 2) Acceptance criteria, 3) Technical requirements, 4) Estimated effort, 5) Dependencies, 6) Success metrics. Make it actionable for developers.",
+      "variables": [
+        "task_summary"
+      ],
+      "outputFormat": "Structured Text",
+      "examples": [
+        "Write a detailed task description for: Implement user authentication system",
+        "Write a detailed task description for: Create responsive navigation menu"
+      ]
+    },
+    "structure": {
+      "version": "1.0",
+      "schema": {
+        "prompt": "string",
+        "variables": "array",
+        "outputFormat": "string",
+        "examples": "array"
+      },
+      "required": [
+        "prompt",
+        "variables"
+      ],
+      "optional": [
+        "outputFormat",
+        "examples"
+      ]
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "isPublic": true,
+    "isSystem": true,
+    "category": "Development",
+    "views": 0,
+    "likedBy": [],
+    "viewedBy": [],
+    "tags": [],
+    "accessControl": {
+      "allowedUsers": [],
+      "allowedWorkspaces": [],
+      "allowedRoles": []
+    },
+    "usage": {
+      "totalUses": 203,
+      "lastUsed": "2025-08-29T16:22:10.932Z",
+      "rating": {
+        "average": 4.6,
+        "count": 67
+      }
+    },
+    "status": "active",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "preview": {
+      "thumbnail": null,
+      "screenshot": null
+    },
+    "config": {
+      "allowCustomization": true,
+      "requireApproval": false,
+      "maxInstances": -1,
+      "expiryDate": null
+    },
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.051Z",
+    "updatedAt": "2025-08-29T16:22:11.051Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a0688c",
+    "name": "Code Review Assistant",
+    "description": "Generate code review checklists and questions based on the type of code being reviewed",
+    "type": "workflow",
+    "content": {
+      "prompt": "Generate a comprehensive code review checklist for [code_type] code. Include: 1) Security considerations, 2) Performance checks, 3) Code quality standards, 4) Testing requirements, 5) Documentation needs, 6) Best practices for [programming_language].",
+      "variables": [
+        "code_type",
+        "programming_language"
+      ],
+      "outputFormat": "Markdown",
+      "examples": [
+        "Generate a comprehensive code review checklist for API endpoint code. Include: 1) Security considerations, 2) Performance checks, 3) Code quality standards, 4) Testing requirements, 5) Documentation needs, 6) Best practices for Node.js.",
+        "Generate a comprehensive code review checklist for frontend component code. Include: 1) Security considerations, 2) Performance checks, 3) Code quality standards, 4) Testing requirements, 5) Documentation needs, 6) Best practices for React."
+      ]
+    },
+    "structure": {
+      "version": "1.0",
+      "schema": {
+        "prompt": "string",
+        "variables": "array",
+        "outputFormat": "string",
+        "examples": "array"
+      },
+      "required": [
+        "prompt",
+        "variables"
+      ],
+      "optional": [
+        "outputFormat",
+        "examples"
+      ]
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "isPublic": true,
+    "isSystem": true,
+    "category": "Development",
+    "views": 0,
+    "likedBy": [],
+    "viewedBy": [],
+    "tags": [],
+    "accessControl": {
+      "allowedUsers": [],
+      "allowedWorkspaces": [],
+      "allowedRoles": []
+    },
+    "usage": {
+      "totalUses": 89,
+      "lastUsed": "2025-08-29T16:22:10.932Z",
+      "rating": {
+        "average": 4.9,
+        "count": 28
+      }
+    },
+    "status": "active",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "preview": {
+      "thumbnail": null,
+      "screenshot": null
+    },
+    "config": {
+      "allowCustomization": true,
+      "requireApproval": false,
+      "maxInstances": -1,
+      "expiryDate": null
+    },
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.054Z",
+    "updatedAt": "2025-08-29T16:22:11.054Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a0688e",
+    "name": "Primary Brand Colors",
+    "description": "Main brand color palette for consistent visual identity",
+    "type": "workflow",
+    "content": {
+      "primary": "#3B82F6",
+      "secondary": "#10B981",
+      "accent": "#F59E0B",
+      "neutral": "#6B7280",
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "info": "#3B82F6"
+    },
+    "structure": {
+      "version": "1.0",
+      "schema": {
+        "primary": "string",
+        "secondary": "string",
+        "accent": "string",
+        "neutral": "string",
+        "success": "string",
+        "warning": "string",
+        "error": "string",
+        "info": "string"
+      },
+      "required": [
+        "primary",
+        "secondary"
+      ],
+      "optional": [
+        "accent",
+        "neutral",
+        "success",
+        "warning",
+        "error",
+        "info"
+      ]
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "isPublic": true,
+    "isSystem": true,
+    "category": "Design",
+    "views": 0,
+    "likedBy": [],
+    "viewedBy": [],
+    "tags": [],
+    "accessControl": {
+      "allowedUsers": [],
+      "allowedWorkspaces": [],
+      "allowedRoles": []
+    },
+    "usage": {
+      "totalUses": 234,
+      "lastUsed": "2025-08-29T16:22:10.932Z",
+      "rating": {
+        "average": 4.7,
+        "count": 89
+      }
+    },
+    "status": "active",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "preview": {
+      "thumbnail": null,
+      "screenshot": null
+    },
+    "config": {
+      "allowCustomization": true,
+      "requireApproval": false,
+      "maxInstances": -1,
+      "expiryDate": null
+    },
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.057Z",
+    "updatedAt": "2025-08-29T16:22:11.057Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a06890",
+    "name": "Typography System",
+    "description": "Consistent typography scale and font hierarchy for the platform",
+    "type": "workflow",
+    "content": {
+      "fontFamily": {
+        "primary": "Inter, system-ui, sans-serif",
+        "secondary": "Georgia, serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "fontSize": {
+        "xs": "0.75rem",
+        "sm": "0.875rem",
+        "base": "1rem",
+        "lg": "1.125rem",
+        "xl": "1.25rem",
+        "2xl": "1.5rem",
+        "3xl": "1.875rem",
+        "4xl": "2.25rem"
+      },
+      "fontWeight": {
+        "light": "300",
+        "normal": "400",
+        "medium": "500",
+        "semibold": "600",
+        "bold": "700"
+      }
+    },
+    "structure": {
+      "version": "1.0",
+      "schema": {
+        "fontFamily": "object",
+        "fontSize": "object",
+        "fontWeight": "object"
+      },
+      "required": [
+        "fontFamily",
+        "fontSize"
+      ],
+      "optional": [
+        "fontWeight"
+      ]
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "isPublic": true,
+    "isSystem": true,
+    "category": "Design",
+    "views": 0,
+    "likedBy": [],
+    "viewedBy": [],
+    "tags": [],
+    "accessControl": {
+      "allowedUsers": [],
+      "allowedWorkspaces": [],
+      "allowedRoles": []
+    },
+    "usage": {
+      "totalUses": 189,
+      "lastUsed": "2025-08-29T16:22:10.932Z",
+      "rating": {
+        "average": 4.8,
+        "count": 56
+      }
+    },
+    "status": "active",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "preview": {
+      "thumbnail": null,
+      "screenshot": null
+    },
+    "config": {
+      "allowCustomization": true,
+      "requireApproval": false,
+      "maxInstances": -1,
+      "expiryDate": null
+    },
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.060Z",
+    "updatedAt": "2025-08-29T16:22:11.060Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b1d3b3a7dda0d577a06892",
+    "name": "Icon Library",
+    "description": "Standard icon set for consistent user interface elements",
+    "type": "workflow",
+    "content": {
+      "iconStyle": "outline",
+      "iconSize": {
+        "xs": "16px",
+        "sm": "20px",
+        "md": "24px",
+        "lg": "32px",
+        "xl": "48px"
+      },
+      "iconColor": {
+        "primary": "#3B82F6",
+        "secondary": "#6B7280",
+        "success": "#10B981",
+        "warning": "#F59E0B",
+        "error": "#EF4444"
+      },
+      "categories": [
+        "navigation",
+        "actions",
+        "status",
+        "communication",
+        "files"
+      ]
+    },
+    "structure": {
+      "version": "1.0",
+      "schema": {
+        "iconStyle": "string",
+        "iconSize": "object",
+        "iconColor": "object",
+        "categories": "array"
+      },
+      "required": [
+        "iconStyle",
+        "iconSize"
+      ],
+      "optional": [
+        "iconColor",
+        "categories"
+      ]
+    },
+    "createdBy": "68b025ad0bd7371b487411ca",
+    "isPublic": true,
+    "isSystem": true,
+    "category": "Design",
+    "views": 0,
+    "likedBy": [],
+    "viewedBy": [],
+    "tags": [],
+    "accessControl": {
+      "allowedUsers": [],
+      "allowedWorkspaces": [],
+      "allowedRoles": []
+    },
+    "usage": {
+      "totalUses": 145,
+      "lastUsed": "2025-08-29T16:22:10.932Z",
+      "rating": {
+        "average": 4.5,
+        "count": 34
+      }
+    },
+    "status": "active",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "preview": {
+      "thumbnail": null,
+      "screenshot": null
+    },
+    "config": {
+      "allowCustomization": true,
+      "requireApproval": false,
+      "maxInstances": -1,
+      "expiryDate": null
+    },
+    "metadata": {},
+    "createdAt": "2025-08-29T16:22:11.063Z",
+    "updatedAt": "2025-08-29T16:22:11.063Z",
+    "__v": 0
+  }
+]
