@@ -2,14 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SpaceService } from '../../../services/spaceService';
 import { Button } from '@taskflow/ui';
 import type { Space } from '../../../types/space.types';
-
-interface SpaceTableProps {
-  filteredSpaces: Space[];
-  isLoading: boolean;
-  error: string | null;
-  onRemove: (spaceId: string) => Promise<void>;
-  onAddSpace: () => void;
-}
+import type { SpaceTableProps } from '../../../../types/interfaces/ui';
 
 const SpaceTable: React.FC<SpaceTableProps> = ({
   filteredSpaces,

@@ -1,16 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Button, Input, TextArea , Select, Typography } from "@taskflow/ui";
-
-interface CreateBoardModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSubmit: (boardData: {
-        name: string;
-        description: string;
-        type: 'kanban' | 'list' | 'calendar' | 'timeline';
-        color: string;
-    }) => void;
-}
+import type { CreateBoardModalProps } from '../../types/interfaces/ui';
 
 export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({
     isOpen,

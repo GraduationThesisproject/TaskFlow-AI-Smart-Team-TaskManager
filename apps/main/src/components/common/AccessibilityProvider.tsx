@@ -1,21 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-
-interface AccessibilityContextType {
-  isHighContrast: boolean;
-  toggleHighContrast: () => void;
-  isReducedMotion: boolean;
-  toggleReducedMotion: () => void;
-  fontSize: 'small' | 'medium' | 'large';
-  setFontSize: (size: 'small' | 'medium' | 'large') => void;
-  focusVisible: boolean;
-  setFocusVisible: (visible: boolean) => void;
-}
+import type { AccessibilityContextType, AccessibilityProviderProps } from '../../types/interfaces/ui';
 
 const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined);
-
-interface AccessibilityProviderProps {
-  children: React.ReactNode;
-}
 
 export function AccessibilityProvider({ children }: AccessibilityProviderProps) {
   const [isHighContrast, setIsHighContrast] = useState(false);

@@ -29,7 +29,7 @@ export const NoAccessPage: React.FC = () => {
             Access Denied
           </Typography>
           <Typography variant="body-medium" className="text-muted-foreground">
-            You don't have permission to access this page.
+            You don&apos;t have permission to access this page.
           </Typography>
         </div>
 

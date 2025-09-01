@@ -1,12 +1,7 @@
 import React from 'react';
 import { Button } from '@taskflow/ui';
 import type { NavigationItem } from '../../../types/navbar';
-
-interface MobileMenuProps {
-  items: NavigationItem[];
-  isOpen: boolean;
-  className?: string;
-}
+import type { MobileMenuProps } from '../../../types/interfaces/ui';
 
 export const MobileMenu: React.FC<MobileMenuProps> = ({ items, isOpen, className = '' }) => {
   if (!isOpen) return null;

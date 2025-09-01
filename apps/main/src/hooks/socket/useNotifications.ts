@@ -1,85 +1,62 @@
 // hooks/useNotifications.ts
 
-import { useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useEffect, useState } from 'react';
+import { useNotificationSocket } from '../../contexts/SocketContext';
 import type { Notification } from '../../types/dash.types';
-import { env } from '../../config/env';
 
-export const useNotifications = (token: string) => {
+export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const socketRef = useRef<Socket | null>(null);
+
+  // Use the centralized notification socket from SocketContext
+  const { socket, emit, on, off, isConnected } = useNotificationSocket();
 
   useEffect(() => {
-    if (!token) return;
-
-    // Close any existing socket first
-    if (socketRef.current) {
-      try { socketRef.current.disconnect(); } catch {}
-      socketRef.current = null;
-    }
-
-    // Connect to the notifications namespace; server applies auth middleware there
-    const socket: Socket = io(`${env.SOCKET_URL}/notifications`, {
-      auth: { token },
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000,
-    });
-
-    socketRef.current = socket;
+    if (!socket || !isConnected) return;
 
     // On connection
-    socket.on('connect', () => {
-      console.log('Connected to notification socket:', socket.id);
-      // Fetch initial unread count and recent notifications
-      socket.emit('notifications:getUnreadCount');
-      socket.emit('notifications:getRecent', { limit: 10 });
-    });
+    console.log('Connected to notification socket:', socket.id);
 
-    // Listen to unread count
-    socket.on('notifications:unreadCount', (payload: any) => {
-      // backend may send { count } or a number; support both
-      const count = typeof payload === 'number' ? payload : payload?.count;
-      if (typeof count === 'number') setUnreadCount(count);
-    });
+    // Fetch initial unread count
+    emit('notifications:getUnreadCount', {});
+    // Fetch recent notifications
+    emit('notifications:getRecent', { limit: 10 });
+  }, [socket, isConnected, emit]);
 
-    // Listen to recent notifications
-    socket.on('notifications:recent', ({ notifications: recents }) => {
-      setNotifications(recents || []);
-    });
+  // Listen to unread count
+  useEffect(() => {
+    if (!socket) return;
 
-    // Listen to new notifications
-    socket.on('notification:new', ({ notification }) => {
-      if (!notification) return;
+    const handleUnreadCount = ({ count }: { count: number }) => {
+      setUnreadCount(count);
+    };
+
+    const handleRecentNotifications = ({ notifications: recents }: { notifications: Notification[] }) => {
+      setNotifications(recents);
+    };
+
+    const handleNewNotification = ({ notification }: { notification: Notification }) => {
       setNotifications((prev) => [notification, ...prev]);
       setUnreadCount((prev) => prev + 1);
-    });
-
-    socket.on('disconnect', (reason) => {
-      console.warn('[useNotifications] socket disconnected', reason);
-    });
-
-    socket.on('connect_error', (err) => {
-      console.error('[useNotifications] connect_error', err?.message || err);
-    });
-
-    return () => {
-      try { socket.off(); } catch {}
-      try { socket.disconnect(); } catch {}
-      socketRef.current = null;
     };
-  }, [token]);
+
+    // Register event listeners
+    on('notifications:unreadCount', handleUnreadCount);
+    on('notifications:recent', handleRecentNotifications);
+    on('notification:new', handleNewNotification);
+
+    // Cleanup
+    return () => {
+      off('notifications:unreadCount');
+      off('notifications:recent');
+      off('notification:new');
+    };
+  }, [socket, on, off]);
 
   const markAsRead = (id: string) => {
-    const s = socketRef.current;
-    if (!s) return;
-    try {
-      s.emit('notifications:markRead', { notificationId: id });
-    } catch {}
+    if (socket && isConnected) {
+      emit('notifications:markRead', { notificationId: id });
+    }
   };
 
   return { notifications, unreadCount, markAsRead };

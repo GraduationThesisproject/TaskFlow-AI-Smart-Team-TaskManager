@@ -1,8 +1,5 @@
 import React from "react";
-
-interface CalendarIconProps extends React.SVGProps<SVGSVGElement> {
-  size?: number;
-}
+import type { CalendarIconProps } from '../../../types/interfaces/ui';
 
 const CalendarIcon: React.FC<CalendarIconProps> = ({ size = 15, className, ...props }) => (
   <svg

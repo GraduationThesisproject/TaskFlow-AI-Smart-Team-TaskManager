@@ -1,12 +1,7 @@
 import React from 'react';
 import { Button } from '@taskflow/ui';
 import { Menu, X } from 'lucide-react';
-
-interface MenuButtonProps {
-  isOpen: boolean;
-  onClick: () => void;
-  className?: string;
-}
+import type { MenuButtonProps } from '../../../types/interfaces/ui';
 
 export const MenuButton: React.FC<MenuButtonProps> = ({ 
   isOpen, 

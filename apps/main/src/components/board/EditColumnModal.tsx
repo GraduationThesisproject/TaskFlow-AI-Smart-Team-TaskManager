@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input, Typography, Card, CardContent, Flex, Stack, ColorPicker, IconPicker } from '@taskflow/ui';
-import type { Column } from '../../types/board.types';
-
-interface EditColumnModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  column: Column | null;
-  onSave: (columnId: string, data: { name: string; backgroundColor: string; icon?: string | null; settings?: any }) => Promise<void>;
-}
+import type { EditColumnModalProps } from '../../types/interfaces/ui';
 
 // Custom preset colors for columns
 const columnPresetColors = [

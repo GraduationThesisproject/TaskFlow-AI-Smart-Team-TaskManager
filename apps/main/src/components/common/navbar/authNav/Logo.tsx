@@ -1,9 +1,5 @@
 
-interface LogoProps {
-  className?: string;
-  showText?: boolean;
-  textClassName?: string;
-}
+import type { LogoProps } from '../../../../types/interfaces/ui';
 
 export function Logo({ className = '', showText = true, textClassName = '' }: LogoProps) {
   return (

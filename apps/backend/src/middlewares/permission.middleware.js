@@ -4,67 +4,63 @@ const Space = require('../models/Space');
 const Board = require('../models/Board');
 const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
+const { hasPermission } = require('../config/pathPermissions');
 
 // Require system admin role
 const requireSystemAdmin = async (req, res, next) => {
     try {
         const userId = req.user.id;
-        logger.info(`Permission middleware: Checking system admin for user ID: ${userId}`);
-        
-        // SECURITY FIX: Use verified roles from auth middleware
-        const userSystemRole = req.user.systemRole;
+        const user = await User.findById(userId);
+        const userRoles = await user.getRoles();
 
-        logger.info(`Permission middleware: User roles - systemRole: ${userSystemRole}`);
-
-        if (userSystemRole !== 'admin' && userSystemRole !== 'super_admin') {
-            logger.warn(`Permission middleware: Access denied for user ${userId} with role ${userSystemRole}`);
+        if (userRoles.systemRole !== 'admin' && userRoles.systemRole !== 'super_admin') {
             return sendResponse(res, 403, false, 'System admin permissions required');
         }
-
-        logger.info(`Permission middleware: Access granted for user ${userId}`);
         next();
     } catch (error) {
-        logger.error('System admin check error:', error);
         sendResponse(res, 500, false, 'Server error checking admin permissions');
     }
 };
 
 // Require workspace permission
-const requireWorkspacePermission = (roleOrPermission = 'member') => {
+const requireWorkspacePermission = () => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
+            const user = await User.findById(userId);
+            const userRoles = await user.getRoles();
             const workspaceId = req.params.workspaceId || req.params.id || req.body.workspaceId;
-
+            
             if (!workspaceId) {
                 return sendResponse(res, 400, false, 'Workspace ID required');
             }
-
-            // Check if workspace exists first
+            
             const workspace = await Workspace.findById(workspaceId);
             if (!workspace) {
                 return sendResponse(res, 404, false, 'Workspace not found');
             }
-
-            // SECURITY FIX: Use verified roles from auth middleware
-            const userRoles = req.user.roles;
-
-            // Permission-mode: roleOrPermission starts with 'can'
-            if (typeof roleOrPermission === 'string' && roleOrPermission.startsWith('can')) {
-                const wsRole = userRoles.workspaces.find(ws => ws.workspace.toString() === workspaceId.toString());
-                const allowed = wsRole?.permissions?.[roleOrPermission] === true;
-                if (!allowed) {
-                    return sendResponse(res, 403, false, `Workspace permission '${roleOrPermission}' required`);
-                }
-            } else {
-                // Role-mode: fallback to role hierarchy check
-                if (!userRoles.hasWorkspaceRole(workspaceId, roleOrPermission)) {
-                    return sendResponse(res, 403, false, `Workspace ${roleOrPermission} role required`);
-                }
+            
+            req.workspace = workspace;
+            
+            if(userRoles.systemRole !== 'user') {
+                return sendResponse(res, 403, false, 'You are not a user');
             }
 
-            req.workspace = workspace;
-            next();
+            // Get user's role in this specific workspace
+            const wsRole = userRoles.workspaces.find(ws => 
+                ws.workspace.toString() === workspaceId.toString()
+            );
+
+            if (!wsRole) {
+                return sendResponse(res, 403, false, 'No workspace access found');
+            }
+
+            // Check if user has permission for this path and method
+            if(hasPermission(wsRole.role, req.path, req.method)) {
+                return next();
+            }
+
+            return sendResponse(res, 403, false, 'You are not authorized to access this workspace');
         } catch (error) {
             logger.error('Workspace permission check error:', error);
             sendResponse(res, 500, false, 'Server error checking workspace permissions');
@@ -73,10 +69,12 @@ const requireWorkspacePermission = (roleOrPermission = 'member') => {
 };
 
 // Require space permission (replaces project permission)
-const requireSpacePermission = (roleOrPermission = 'member') => {
+const requireSpacePermission = () => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
+            const user = await User.findById(userId);
+            const userRoles = await user.getRoles();
             const spaceId = req.params.id || req.params.spaceId || req.body.spaceId;
 
             if (!spaceId) {
@@ -89,27 +87,28 @@ const requireSpacePermission = (roleOrPermission = 'member') => {
                 return sendResponse(res, 404, false, 'Space not found');
             }
 
-            // SECURITY FIX: Use verified roles from auth middleware
-            const userRoles = req.user.roles;
-            
-            // Check if it's a permission (starts with 'can') or a role
-            if (roleOrPermission.startsWith('can')) {
-                const hasRolePermission = userRoles.hasSpacePermission(spaceId, roleOrPermission);
-                const hasMemberPermission = (typeof space.hasPermission === 'function')
-                    ? space.hasPermission(userId, roleOrPermission)
-                    : false;
+            req.space = space;
 
-                if (!hasRolePermission && !hasMemberPermission) {
-                    return sendResponse(res, 403, false, `Permission '${roleOrPermission}' required`);
-                }
-            } else {
-                if (!userRoles.hasSpaceRole(spaceId, roleOrPermission)) {
-                    return sendResponse(res, 403, false, `Space ${roleOrPermission} role required`);
-                }
+            if(userRoles.systemRole !== 'user') {
+                return sendResponse(res, 403, false, 'You are not a user');
             }
 
-            req.space = space;
-            next();
+            // Get user's role in the workspace that contains this space
+            const workspaceId = space.workspace;
+            const wsRole = userRoles.workspaces.find(ws => 
+                ws.workspace.toString() === workspaceId.toString()
+            );
+
+            if (!wsRole) {
+                return sendResponse(res, 403, false, 'No workspace access found');
+            }
+
+            // Check if user has permission for this path and method
+            if(hasPermission(wsRole.role, req.path, req.method)) {
+                return next();
+            }
+
+            return sendResponse(res, 403, false, 'You are not authorized to access this space');
         } catch (error) {
             logger.error('Space permission check error:', error);
             sendResponse(res, 500, false, 'Server error checking space permissions');
@@ -118,10 +117,12 @@ const requireSpacePermission = (roleOrPermission = 'member') => {
 };
 
 // Require specific space permission
-const requireSpaceSpecificPermission = (permission) => {
+const requireSpaceSpecificPermission = () => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
+            const user = await User.findById(userId);
+            const userRoles = await user.getRoles();
             const spaceId = req.params.id || req.params.spaceId || req.body.spaceId;
 
             if (!spaceId) {
@@ -134,18 +135,28 @@ const requireSpaceSpecificPermission = (permission) => {
                 return sendResponse(res, 404, false, 'Space not found');
             }
 
-            // SECURITY FIX: Use verified roles from auth middleware
-            const userRoles = req.user.roles;
-            
-            // Check if user has the specific permission
-            const hasPermission = userRoles.hasSpacePermission(spaceId, permission);
-            
-            if (!hasPermission) {
-                return sendResponse(res, 403, false, `Permission '${permission}' required`);
+            req.space = space;
+
+            if(userRoles.systemRole !== 'user') {
+                return sendResponse(res, 403, false, 'You are not a user');
             }
 
-            req.space = space;
-            next();
+            // Get user's role in the workspace that contains this space
+            const workspaceId = space.workspace;
+            const wsRole = userRoles.workspaces.find(ws => 
+                ws.workspace.toString() === workspaceId.toString()
+            );
+
+            if (!wsRole) {
+                return sendResponse(res, 403, false, 'No workspace access found');
+            }
+
+            // Check if user has permission for this path and method
+            if(hasPermission(wsRole.role, req.path, req.method)) {
+                return next();
+            }
+
+            return sendResponse(res, 403, false, 'You are not authorized to access this space');
         } catch (error) {
             logger.error('Space specific permission check error:', error);
             sendResponse(res, 500, false, 'Server error checking space specific permissions');
@@ -154,25 +165,45 @@ const requireSpaceSpecificPermission = (permission) => {
 };
 
 // Require board permission
-const requireBoardPermission = (permission) => {
+const requireBoardPermission = () => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
+            const user = await User.findById(userId);
+            const userRoles = await user.getRoles();
             const boardId = req.params.boardId || req.body.boardId;
 
             if (!boardId) {
                 return sendResponse(res, 400, false, 'Board ID required');
             }
 
-            // SECURITY FIX: Use verified roles from auth middleware
-            const userRoles = req.user.roles;
-
-            if (!userRoles.hasBoardPermission(boardId, permission)) {
-                return sendResponse(res, 403, false, `Board permission '${permission}' required`);
+            const board = await Board.findById(boardId);
+            if (!board) {
+                return sendResponse(res, 404, false, 'Board not found');
             }
 
-            req.board = await Board.findById(boardId);
-            next();
+            req.board = board;
+
+            if(userRoles.systemRole !== 'user') {
+                return sendResponse(res, 403, false, 'You are not a user');
+            }
+
+            // Get user's role in the workspace that contains this board
+            const workspaceId = board.workspace;
+            const wsRole = userRoles.workspaces.find(ws => 
+                ws.workspace.toString() === workspaceId.toString()
+            );
+
+            if (!wsRole) {
+                return sendResponse(res, 403, false, 'No workspace access found');
+            }
+
+            // Check if user has permission for this path and method
+            if(hasPermission(wsRole.role, req.path, req.method)) {
+                return next();
+            }
+
+            return sendResponse(res, 403, false, 'You are not authorized to access this board');
         } catch (error) {
             logger.error('Board permission check error:', error);
             sendResponse(res, 500, false, 'Server error checking board permissions');
@@ -246,6 +277,8 @@ const requireAnyPermission = (...permissionChecks) => {
 const requireTaskAccess = async (req, res, next) => {
     try {
         const userId = req.user.id;
+        const user = await User.findById(userId);
+        const userRoles = await user.getRoles();
         const taskId = req.params.taskId || req.params.id;
 
         if (!taskId) {
@@ -259,23 +292,42 @@ const requireTaskAccess = async (req, res, next) => {
             return sendResponse(res, 404, false, 'Task not found');
         }
 
-        // SECURITY FIX: Use verified roles from auth middleware
-        const userRoles = req.user.roles;
+        req.task = task;
+
+        if(userRoles.systemRole !== 'user') {
+            return sendResponse(res, 403, false, 'You are not a user');
+        }
 
         // Check if user has direct access to task
         const hasDirectAccess = task.assignees.some(a => a.toString() === userId) ||
                                task.reporter.toString() === userId ||
                                task.watchers.some(w => w.toString() === userId);
 
-        // Check if user has board access
-        const hasBoardAccess = userRoles.hasBoardPermission(task.board, 'canView');
-
-        if (!hasDirectAccess && !hasBoardAccess) {
-            return sendResponse(res, 403, false, 'Access denied to this task');
+        if (hasDirectAccess) {
+            return next();
         }
 
-        req.task = task;
-        next();
+        // Get user's role in the workspace that contains this task
+        const board = await Board.findById(task.board);
+        if (!board) {
+            return sendResponse(res, 404, false, 'Board not found');
+        }
+
+        const workspaceId = board.workspace;
+        const wsRole = userRoles.workspaces.find(ws => 
+            ws.workspace.toString() === workspaceId.toString()
+        );
+
+        if (!wsRole) {
+            return sendResponse(res, 403, false, 'No workspace access found');
+        }
+
+        // Check if user has permission for this path and method
+        if(hasPermission(wsRole.role, req.path, req.method)) {
+            return next();
+        }
+
+        return sendResponse(res, 403, false, 'Access denied to this task');
     } catch (error) {
         logger.error('Task access check error:', error);
         sendResponse(res, 500, false, 'Server error checking task access');
@@ -286,25 +338,47 @@ const requireTaskAccess = async (req, res, next) => {
 const requireTaskEditPermission = async (req, res, next) => {
     try {
         const userId = req.user.id;
+        const user = await User.findById(userId);
+        const userRoles = await user.getRoles();
         const task = req.task; // Should be set by requireTaskAccess
 
         if (!task) {
             return sendResponse(res, 400, false, 'Task context required');
         }
 
-        // SECURITY FIX: Use verified roles from auth middleware
-        const userRoles = req.user.roles;
-
-        // Check if user can edit task
-        const canEdit = task.assignees.some(a => a.toString() === userId) ||
-                       task.reporter.toString() === userId ||
-                       userRoles.hasBoardPermission(task.board, 'canEditTasks');
-
-        if (!canEdit) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to edit this task');
+        if(userRoles.systemRole !== 'user') {
+            return sendResponse(res, 403, false, 'You are not a user');
         }
 
-        next();
+        // Check if user can edit task directly
+        const canEditDirectly = task.assignees.some(a => a.toString() === userId) ||
+                               task.reporter.toString() === userId;
+
+        if (canEditDirectly) {
+            return next();
+        }
+
+        // Get user's role in the workspace that contains this task
+        const board = await Board.findById(task.board);
+        if (!board) {
+            return sendResponse(res, 404, false, 'Board not found');
+        }
+
+        const workspaceId = board.workspace;
+        const wsRole = userRoles.workspaces.find(ws => 
+            ws.workspace.toString() === workspaceId.toString()
+        );
+
+        if (!wsRole) {
+            return sendResponse(res, 403, false, 'No workspace access found');
+        }
+
+        // Check if user has permission for this path and method
+        if(hasPermission(wsRole.role, req.path, req.method)) {
+            return next();
+        }
+
+        return sendResponse(res, 403, false, 'Insufficient permissions to edit this task');
     } catch (error) {
         logger.error('Task edit permission check error:', error);
         sendResponse(res, 500, false, 'Server error checking task edit permissions');
@@ -361,10 +435,10 @@ const requireWhitelistedIP = (whitelist = []) => {
 };
 
 // Combined middleware for common permission patterns
-const requireSpaceMember = requireSpacePermission('member');
-const requireSpaceAdmin = requireSpacePermission('admin');
-const requireWorkspaceMember = requireWorkspacePermission('member');
-const requireWorkspaceAdmin = requireWorkspacePermission('admin');
+const requireSpaceMember = requireSpacePermission();
+const requireSpaceAdmin = requireSpacePermission();
+const requireWorkspaceMember = requireWorkspacePermission();
+const requireWorkspaceAdmin = requireWorkspacePermission();
 
 module.exports = {
     requireSystemAdmin,

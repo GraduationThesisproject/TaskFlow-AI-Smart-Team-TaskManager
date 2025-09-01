@@ -2,6 +2,25 @@
 import type { UserPreferences } from "./auth.types";
 import type { Board, Column } from "./board.types";
 import type { Space } from "./space.types";
+
+// Task status and priority types - defined first to avoid redeclaration errors
+export const TASK_STATUS = {
+  TODO: 'todo',
+  IN_PROGRESS: 'in_progress',
+  REVIEW: 'review',
+  DONE: 'done',
+  ARCHIVED: 'archived',
+} as const;
+
+export const TASK_PRIORITY = {
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+  CRITICAL: 'critical',
+} as const;
+
+export type TaskStatus = typeof TASK_STATUS[keyof typeof TASK_STATUS];
+export type TaskPriority = typeof TASK_PRIORITY[keyof typeof TASK_PRIORITY];
 export interface User {
   _id: string;
   name: string;
@@ -35,8 +54,8 @@ export interface Task {
   board: string;
   space: string;
   column: string;
-  status: 'todo' | 'in_progress' | 'review' | 'done' | 'archived';
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: TaskStatus;
+  priority: TaskPriority;
   assignees: string[];
   reporter: string;
   watchers: string[];
@@ -266,7 +285,7 @@ export interface CreateTaskForm {
   description?: string;
   boardId: string;
   columnId: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  priority: TaskPriority;
   assignees: string[];
   tags: string[];
   estimatedHours?: number;
@@ -277,8 +296,8 @@ export interface CreateTaskForm {
 export interface UpdateTaskForm {
   title?: string;
   description?: string;
-  status?: 'todo' | 'in_progress' | 'review' | 'done' | 'archived';
-  priority?: 'low' | 'medium' | 'high' | 'critical';
+  status?: TaskStatus;
+  priority?: TaskPriority;
   assignees?: string[];
   tags?: string[];
   estimatedHours?: number;
@@ -291,23 +310,7 @@ export interface MoveTaskForm {
   position: number;
 }
 
-// Legacy types for backward compatibility (no enums due to erasableSyntaxOnly)
-export const TaskStatus = {
-  TODO: 'todo',
-  IN_PROGRESS: 'in_progress',
-  REVIEW: 'review',
-  DONE: 'done',
-  ARCHIVED: 'archived',
-} as const;
-export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
-
-export const TaskPriority = {
-  LOW: 'low',
-  MEDIUM: 'medium',
-  HIGH: 'high',
-  CRITICAL: 'critical',
-} as const;
-export type TaskPriority = typeof TaskPriority[keyof typeof TaskPriority];
+// Legacy types removed - now defined at the top of the file
 
 export interface Attachment {
   id: string;

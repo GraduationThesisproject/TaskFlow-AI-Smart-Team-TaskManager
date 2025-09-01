@@ -11,13 +11,7 @@ import {
   getAvatarColor
 } from '@taskflow/ui';
 import type { Task } from '../../store/slices/taskSlice';
-
-interface DraggableTaskProps {
-  task: Task;
-  index: number;
-  columnId: string;
-  onClick: (task: Task) => void;
-}
+import type { DraggableTaskProps } from '../../types/interfaces/ui';
 
 export const DraggableTask: React.FC<DraggableTaskProps> = ({
   task,
