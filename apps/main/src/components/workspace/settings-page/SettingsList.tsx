@@ -1,21 +1,7 @@
 import React from 'react';
 import SettingsCard from './SettingsCard';
-
-interface SettingsSection {
-  key: string;
-  title: string;
-  description?: string;
-  bullets?: string[];
-  cta: string;
-  learnMore?: boolean;
-}
-
-interface SettingsListProps {
-  sections: SettingsSection[];
-  loading: boolean;
-  settings?: any;
-  onClickByKey: Record<string, () => void>;
-}
+import UpgradeBanner from './UpgradeBanner';
+import type { SettingsSection, SettingsListProps } from '../../../types/interfaces/ui';
 
 const SettingsList: React.FC<SettingsListProps> = ({ 
   sections, 

@@ -1,10 +1,7 @@
 import React from 'react';
 import { Button } from '@taskflow/ui';
 import { Link } from 'react-router-dom';
-
-interface AuthButtonsProps {
-  className?: string;
-}
+import type { AuthButtonsProps } from '../../../types/interfaces/ui';
 
 export const AuthButtons: React.FC<AuthButtonsProps> = ({ className = '' }) => {
   return (

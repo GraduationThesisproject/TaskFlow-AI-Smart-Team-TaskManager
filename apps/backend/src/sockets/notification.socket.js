@@ -60,25 +60,25 @@ const authenticateSocket = async (socket, next) => {
             isAdmin: isAdmin
         };
 
-        logger.info(`Socket authenticated: ${isAdmin ? user.userEmail : user.email} (${isAdmin ? 'Admin' : 'User'})`);
+        logger.info(`Notification socket authenticated: ${user.email}`);
         next();
         
     } catch (error) {
-        logger.error('Socket authentication error:', error);
+        logger.error('Notification socket authentication error:', error);
         next(new Error('Authentication failed'));
     }
 };
 
-// Handle notification socket events
+// Handle notification socket events with dedicated namespace
 const handleNotificationSocket = (io) => {
-    // Create a separate namespace for notifications with authentication
+    // Create dedicated namespace for notifications
     const notificationNamespace = io.of('/notifications');
     
-    // Apply authentication middleware only to notification namespace
+    // Apply authentication middleware to namespace
     notificationNamespace.use(authenticateSocket);
     
     notificationNamespace.on('connection', (socket) => {
-        logger.info(`User connected: ${socket.user.name} (${socket.id})`);
+        logger.info(`User connected to notification namespace: ${socket.user.name} (${socket.id})`);
 
         // Join user's personal notification room
         socket.join(`notifications:${socket.userId}`);
@@ -197,58 +197,18 @@ const handleNotificationSocket = (io) => {
             }
         });
 
-        // Test event for direct notification testing
-        socket.on('notifications:test', async (data) => {
-            try {
-                const { title, message, type, recipient } = data;
-                
-                logger.info(`Test notification requested: ${title} for recipient ${recipient}`);
-                
-                // Create test notification in database
-                const notification = await Notification.create({
-                    title,
-                    message,
-                    type: type || 'system_alert',
-                    recipient: recipient || socket.userId,
-                    sender: socket.userId,
-                    category: 'system',
-                    priority: 'medium',
-                    relatedEntity: {
-                        entityType: 'user',
-                        entityId: socket.userId
-                    }
-                });
-
-                await notification.populate('sender', 'name avatar');
-
-                // Send real-time notification
-                notificationNamespace.to(`notifications:${recipient || socket.userId}`).emit('notification:new', {
-                    notification: notification.toObject()
-                });
-
-                // Update unread count
-                const unreadCount = await Notification.countDocuments({
-                    recipient: recipient || socket.userId,
-                    isRead: false
-                });
-
-                notificationNamespace.to(`notifications:${recipient || socket.userId}`).emit('notifications:unreadCount', { 
-                    count: unreadCount 
-                });
-
-                logger.info(`Test notification sent successfully: ${notification._id}`);
-                
-            } catch (error) {
-                logger.error('Test notification error:', error);
-                socket.emit('error', { message: 'Failed to send test notification' });
-            }
+        // Handle disconnection
+        socket.on('disconnect', (reason) => {
+            logger.info(`User disconnected from notification namespace: ${socket.user.name} (${reason})`);
         });
 
-        logger.info(`User ${socket.user.name} connected to notification socket`);
+        logger.info(`User ${socket.user.name} connected to notification namespace`);
     });
 
+    // ===== GLOBAL NOTIFICATION UTILITIES =====
+    
     // Global notification utilities for the application
-    io.sendNotification = async (recipientId, notificationData) => {
+    notificationNamespace.sendNotification = async (recipientId, notificationData) => {
         try {
             let notificationDoc;
             const readOption = notificationData?.readOption; // 'mark_read' | 'delete' | undefined
@@ -266,51 +226,31 @@ const handleNotificationSocket = (io) => {
                  });
 
                  await created.populate('sender', 'name avatar');
-                 notificationDoc = created.toObject();
+                 notificationDoc = created;
              }
- 
-             // Apply read/delete option BEFORE emitting
-             let deleted = false;
-             const notifId = notificationDoc._id || notificationData._id;
-             if (readOption === 'delete' && notifId) {
-                 await Notification.findOneAndDelete({ _id: notifId, recipient: recipientId });
-                 deleted = true;
-                 // Inform client of deletion instead of sending 'new'
-                 notificationNamespace.to(`notifications:${recipientId}`).emit('notifications:deleted', { id: notifId });
-             } else if (readOption === 'mark_read' && notifId) {
-                 await Notification.findOneAndUpdate(
-                     { _id: notifId, recipient: recipientId },
-                     { isRead: true, readAt: new Date() },
-                     { new: false }
-                 );
-                 // Reflect locally for emission
-                 notificationDoc.isRead = true;
-                 notificationDoc.readAt = new Date();
-             }
- 
-             // Emit 'new' only if not deleted
-             if (!deleted) {
-                 notificationNamespace.to(`notifications:${recipientId}`).emit('notification:new', {
-                     notification: notificationDoc
-                 });
-                 // Send to specific type subscribers
-                 if (notificationData.type) {
-                     notificationNamespace.to(`notifications:${recipientId}:${notificationData.type}`).emit('notification:typed', {
-                         notification: notificationDoc,
-                         type: notificationData.type
-                     });
-                 }
-             }
- 
-             // Update unread count
-             const unreadCount = await Notification.countDocuments({
-                 recipient: recipientId,
-                 isRead: false
-             });
 
-             notificationNamespace.to(`notifications:${recipientId}`).emit('notifications:unreadCount', { 
-                 count: unreadCount 
-             });
+            // Send real-time notification
+            notificationNamespace.to(`notifications:${recipientId}`).emit('notification:new', {
+                notification: notificationDoc.toObject ? notificationDoc.toObject() : notificationDoc
+            });
+
+            // Send to specific type subscribers
+            if (notificationData.type) {
+                notificationNamespace.to(`notifications:${recipientId}:${notificationData.type}`).emit('notification:typed', {
+                    notification: notificationDoc.toObject ? notificationDoc.toObject() : notificationDoc,
+                    type: notificationData.type
+                });
+            }
+
+            // Update unread count
+            const unreadCount = await Notification.countDocuments({
+                recipient: recipientId,
+                isRead: false
+            });
+
+            notificationNamespace.to(`notifications:${recipientId}`).emit('notifications:unreadCount', { 
+                count: unreadCount 
+            });
 
              return notificationDoc;
          } catch (error) {
@@ -320,13 +260,13 @@ const handleNotificationSocket = (io) => {
      };
 
     // Bulk notification sender
-    io.sendBulkNotifications = async (notifications) => {
+    notificationNamespace.sendBulkNotifications = async (notifications) => {
         try {
             const results = [];
             
             for (const notifData of notifications) {
                 try {
-                    const notification = await io.sendNotification(notifData.recipient, notifData);
+                    const notification = await notificationNamespace.sendNotification(notifData.recipient, notifData);
                     results.push({ success: true, notification });
                 } catch (error) {
                     results.push({ success: false, error: error.message, recipient: notifData.recipient });
@@ -341,7 +281,7 @@ const handleNotificationSocket = (io) => {
     };
 
     // System-wide notification broadcast
-    io.broadcastSystemNotification = async (notificationData, userFilter = {}) => {
+    notificationNamespace.broadcastSystemNotification = async (notificationData, userFilter = {}) => {
         try {
             // Find users matching filter
             const users = await User.find({ isActive: true, ...userFilter }).select('_id');
@@ -351,23 +291,17 @@ const handleNotificationSocket = (io) => {
                 recipient: user._id
             }));
 
-            return await io.sendBulkNotifications(notifications);
+            return await notificationNamespace.sendBulkNotifications(notifications);
         } catch (error) {
             logger.error('Broadcast system notification error:', error);
             throw error;
         }
     };
 
-    // Helper used by controllers to emit arbitrary events to a user within the notifications namespace
-    io.notifyUser = (recipientId, event, payload) => {
-        try {
-            notificationNamespace.to(`notifications:${recipientId}`).emit(event, payload);
-        } catch (err) {
-            logger.error(`notifyUser emit error for ${recipientId} on event ${event}: ${err.message}`, err);
-        }
-    };
-
-    return io;
+    // Make notification namespace available globally
+    global.notificationNamespace = notificationNamespace;
+    
+    return notificationNamespace;
 };
 
 module.exports = handleNotificationSocket;

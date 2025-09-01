@@ -1,14 +1,6 @@
 import React from 'react';
 import { Modal, ModalBody, ModalFooter, Button } from '@taskflow/ui';
-
-interface VisibilitySettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  currentVisibility: string;
-  newVisibility: string;
-  loading: boolean;
-}
+import type { VisibilitySettingsModalProps } from '../../../types/interfaces/ui';
 
 const VisibilitySettingsModal: React.FC<VisibilitySettingsModalProps> = ({
   isOpen,

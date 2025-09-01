@@ -1,21 +1,5 @@
 
-interface BaseNavbarProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export function BaseNavbar({ children, className = '' }: BaseNavbarProps) {
-  return (
-    <nav className={`w-full h-[67px] bg-background border-b border-border flex items-center px-4 relative font-inter ${className}`}>
-      {children}
-    </nav>
-  );
-}
-
-interface NavbarSectionProps {
-  children: React.ReactNode;
-  className?: string;
-}
+import type { BaseNavbarProps, NavbarSectionProps } from '../../../../types/interfaces/ui';
 
 export function NavbarLeft({ children, className = '' }: NavbarSectionProps) {
   return (

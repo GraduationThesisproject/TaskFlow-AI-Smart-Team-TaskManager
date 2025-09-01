@@ -1,22 +1,5 @@
 import React from 'react';
-
-interface BaseNavbarProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export const BaseNavbar: React.FC<BaseNavbarProps> = ({ children, className = '' }) => {
-  return (
-    <nav className={`w-full h-16 bg-card border-b border-border flex items-center px-4 ${className}`}>
-      {children}
-    </nav>
-  );
-};
-
-interface NavbarSectionProps {
-  children?: React.ReactNode;
-  className?: string;
-}
+import type { BaseNavbarProps, NavbarSectionProps } from '../../../types/interfaces/ui';
 
 export const NavbarLeft: React.FC<NavbarSectionProps> = ({ children, className = '' }) => {
   return (

@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Typography, Badge, EmptyState } from "@taskflow/ui";
 import { Calendar } from "lucide-react";
 import { useTasks } from "../../../hooks/useTasks";

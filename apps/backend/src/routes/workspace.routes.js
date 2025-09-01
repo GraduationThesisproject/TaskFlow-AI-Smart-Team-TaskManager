@@ -1,41 +1,14 @@
 const express = require('express');
 const workspaceController = require('../controllers/workspace.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const {requireWorkspacePermission, requireWorkspaceMember, requireWorkspaceAdmin } = require('../middlewares/permission.middleware');
+const { requireWorkspacePermission } = require('../middlewares/permission.middleware');
+const { workspace: workspaceSchemas } = require('./validator');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
-// Validation schemas
-const createWorkspaceSchema = {
-    name: { required: true, minLength: 2, maxLength: 200 },
-    description: { maxLength: 1000 },
-    plan: { enum: ['free', 'basic', 'premium', 'enterprise'] }
-};
-
-const updateWorkspaceSchema = {
-    name: { minLength: 2, maxLength: 200 },
-    description: { maxLength: 1000 },
-    settings: { object: true }
-};
-
-const inviteMemberSchema = {
-    email: { required: true, email: true },
-    role: { enum: ['member', 'admin'], default: 'member' },
-    message: { maxLength: 500 }
-};
-
-const updateSettingsSchema = {
-    section: { required: true, string: true },
-    updates: { required: true, object: true }
-};
-
-const transferOwnershipSchema = {
-    newOwnerId: { required: true, objectId: true }
-};
-
-const updateVisibilitySchema = {
-    visibility: { required: true, enum: ['public', 'private'] }
-};
+// Apply authentication to all routes
+router.use(authMiddleware);
 
 // Routes
 router.get('/', workspaceController.getAllWorkspaces);
@@ -51,17 +24,19 @@ router.get('/:id/invite-link',
 );
 
 router.post('/', 
-    validateMiddleware(createWorkspaceSchema),
+    validateMiddleware(workspaceSchemas.createWorkspaceSchema),
     workspaceController.createWorkspace
 );
 
 router.put('/:id', 
-    validateMiddleware(updateWorkspaceSchema),
+    requireWorkspacePermission(),
+    validateMiddleware(workspaceSchemas.updateWorkspaceSchema),
     workspaceController.updateWorkspace
 );
 
 router.post('/:id/invite',
-    validateMiddleware(inviteMemberSchema),
+    requireWorkspacePermission(),
+    validateMiddleware(workspaceSchemas.inviteMemberSchema),
     workspaceController.inviteMember
 );
 
@@ -74,11 +49,13 @@ router.get('/:id/members',
 );
 
 router.delete('/:id/members/:memberId',
+    requireWorkspacePermission(),
     workspaceController.removeMember
 );
 
 router.put('/:id/settings',
-    validateMiddleware(updateSettingsSchema),
+    requireWorkspacePermission(),
+    validateMiddleware(workspaceSchemas.updateSettingsSchema),
     workspaceController.updateSettings
 );
 
@@ -88,24 +65,24 @@ router.get('/:id/analytics',
 );
 
 router.post('/:id/transfer-ownership',
-    validateMiddleware(transferOwnershipSchema),
+    requireWorkspacePermission(), // Only owner has this permission
+    validateMiddleware(workspaceSchemas.transferOwnershipSchema),
     workspaceController.transferOwnership
 );
 
 // Restore archived workspace
 router.post('/:id/restore',
-    requireWorkspaceMember,
     workspaceController.restoreWorkspace
 );
 
 // Permanently delete an archived workspace
 router.delete('/:id/permanent',
-    requireWorkspaceMember,
     workspaceController.permanentDeleteWorkspace
 );
 
 // Delete workspace - rely on controller for final permission (owner or privileged admin)
 router.delete('/:id',
+    requireWorkspacePermission(),
     workspaceController.deleteWorkspace
 );
 

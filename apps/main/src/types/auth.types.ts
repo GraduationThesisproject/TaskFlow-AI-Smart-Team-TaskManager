@@ -76,13 +76,13 @@ export interface UserProfileResponse {
 }
 
 // export type UserRole = 'admin' | 'user' | 'moderator';
-export const UserRole = {
+export const USER_ROLES = {
   ADMIN: 'admin',
   SUPER_ADMIN: 'super_admin',
   MODERATOR: 'moderator',
 } as const;
 
-export type UserRole = typeof UserRole[keyof typeof UserRole];
+export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
 
 export interface AuthState {
   user: User | null;

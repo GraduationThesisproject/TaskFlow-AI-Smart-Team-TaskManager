@@ -4,22 +4,7 @@ import GlobeIcon from './GlobeIcon';
 import BuildingIcon from './BuildingIcon';
 import LockIcon from './LockIcon';
 import SlidersIcon from './SlidersIcon';
-
-interface SettingsSection {
-  key: string;
-  title: string;
-  description?: string;
-  bullets?: string[];
-  cta: string;
-  learnMore?: boolean;
-}
-
-interface SettingsCardProps {
-  section: SettingsSection;
-  loading: boolean;
-  settings?: any;
-  onClick: () => void;
-}
+import type { SettingsSection, SettingsCardProps } from '../../../types/interfaces/ui';
 
 const SettingsCard: React.FC<SettingsCardProps> = ({ section, loading, settings, onClick }) => {
   const renderBulletIcon = (sectionKey: string, index: number) => {

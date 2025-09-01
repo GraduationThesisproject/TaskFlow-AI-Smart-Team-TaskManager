@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Typography, Flex, Card } from '@taskflow/ui';
 import { LogOut, X } from 'lucide-react';
-
-interface LogoutConfirmDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: (allDevices?: boolean) => void;
-  userName?: string;
-}
+import type { LogoutConfirmDialogProps } from '../../types/interfaces/ui';
 
 export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
   isOpen,

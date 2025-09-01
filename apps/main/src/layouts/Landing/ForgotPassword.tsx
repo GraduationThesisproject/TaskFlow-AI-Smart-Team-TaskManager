@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, ArrowLeft } from "lucide-react";
@@ -62,7 +63,7 @@ export default function ForgotPassword() {
 
           <div className="space-y-3">
             <Typography variant="body-small" className="text-muted-foreground">
-              Didn't receive the email? Check your spam folder or try again.
+              Didn&apos;t receive the email? Check your spam folder or try again.
             </Typography>
             
             <Button

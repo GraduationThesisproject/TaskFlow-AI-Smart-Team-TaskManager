@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback, EmptyState, Skeleton, Button } from "@taskflow/ui";
+import React from 'react';
+import { useMemo } from "react";
+import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback, EmptyState, Skeleton } from "@taskflow/ui";
 import { Clock, AlertCircle } from "lucide-react";
 import { type ActivityItem } from "../../../store/slices/activitySlice";
 import { useAuth } from '../../../hooks/useAuth';

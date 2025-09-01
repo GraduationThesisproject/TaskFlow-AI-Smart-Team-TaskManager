@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AuthCard, Button, Input, Typography } from "@taskflow/ui";
@@ -137,7 +138,7 @@ export default function EmailVerification() {
       {/* Footer Links */}
       <div className="text-center">
         <Typography variant="body-small" className="text-muted-foreground mb-2">
-          Don't receive the code?
+          Don&apos;t receive the code?
         </Typography>
         <Button
           onClick={handleResendCode}

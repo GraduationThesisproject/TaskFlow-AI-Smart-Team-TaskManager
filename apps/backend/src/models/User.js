@@ -393,16 +393,11 @@ userSchema.methods.getSessions = async function() {
 
 userSchema.methods.getRoles = async function() {
   const UserRoles = mongoose.model('UserRoles');
-  
-  // First try to find existing roles
   let roles = await UserRoles.findOne({ userId: this._id });
   
   if (!roles) {
-    // Create default roles if they don't exist
     roles = new UserRoles({ userId: this._id });
     await roles.save();
-    
-    // Update user reference if not already set
     if (!this.roles) {
       this.roles = roles._id;
       await this.save();

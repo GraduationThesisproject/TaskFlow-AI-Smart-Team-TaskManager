@@ -2,11 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { env } from '../../config/env';
 import { Chat, ChatMessage, SendMessageRequest, CreateChatRequest } from '../../types/chat.types';
-
-interface ChatWidgetProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+import type { ChatWidgetProps } from '../../types/interfaces/ui';
 
 const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
@@ -14,7 +10,6 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const [typingAdmin, setTypingAdmin] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -42,13 +37,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, onClose }) => {
     try {
       setIsConnecting(true);
       
-      // Create a new chat with a default admin (you can implement admin selection logic)
-      const chatRequest: CreateChatRequest = {
-        adminId: 'default-admin-id', // This should be dynamically selected
-        category: 'general',
-        priority: 'medium',
-        initialMessage: 'Hello! I need help with TaskFlow.'
-      };
+
 
       // For now, we'll simulate creating a chat
       // In a real implementation, you'd make an API call here

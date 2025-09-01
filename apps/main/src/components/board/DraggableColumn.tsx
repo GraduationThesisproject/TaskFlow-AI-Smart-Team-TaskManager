@@ -8,12 +8,10 @@ import {
   Badge,
   Typography,
   Button,
-  Flex,
-  Stack
 } from '@taskflow/ui';
 import { DraggableTask } from './DraggableTask';
 import { useTheme } from '../../hooks';
-import type { Task, Column } from '../../store/slices/taskSlice';
+import type { DraggableColumnProps } from '../../types/interfaces/ui';
 
 // Portal component for dragging
 const Portal = ({ children }: { children: React.ReactNode }) => {
@@ -22,16 +20,6 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
   return createPortal(children, portalRoot);
 };
 
-interface DraggableColumnProps {
-  column: Column;
-  tasks: Task[];
-  index: number;
-  onTaskClick: (task: Task) => void;
-  onAddTask: (columnId: string) => void;
-  onEditColumn: (columnId: string) => void;
-  onDeleteColumn: (columnId: string) => void;
-}
-
 export const DraggableColumn: React.FC<DraggableColumnProps> = ({
   column,
   tasks,
@@ -39,9 +27,7 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
   onTaskClick,
   onAddTask,
   onEditColumn,
-  onDeleteColumn,
 }) => {
-  const { theme } = useTheme();
 
   const getColumnColor = (color?: string) => {
     switch (color) {
@@ -55,17 +41,7 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
     }
   };
 
-  const getColumnProgressColor = (color?: string) => {
-    switch (color) {
-      case 'primary': return 'bg-blue-200';
-      case 'secondary': return 'bg-purple-200';
-      case 'success': return 'bg-green-200';
-      case 'warning': return 'bg-yellow-200';
-      case 'error': return 'bg-red-200';
-      case 'info': return 'bg-cyan-200';
-      default: return 'bg-gray-200';
-    }
-  };
+
 
   const completedTasks = tasks.filter(task => task.status === 'done').length;
   const progressPercentage = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;

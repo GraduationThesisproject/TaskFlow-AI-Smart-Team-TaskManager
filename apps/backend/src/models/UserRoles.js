@@ -9,7 +9,7 @@ const userRolesSchema = new mongoose.Schema({
   },
   systemRole: {
     type: String,
-    enum: ['super_admin', 'admin', 'moderator', 'user'],
+    enum: ['super_admin', 'admin', 'moderator','user'],
     default: 'user'
   },
   workspaces: [{
@@ -145,7 +145,6 @@ userRolesSchema.methods.hasBoardPermission = function(boardId, permission) {
   const boardRole = this.boards.find(board => 
     board.board.toString() === boardId.toString()
   );
-  
   if (!boardRole) return false;
   
   return boardRole.permissions[permission] || false;

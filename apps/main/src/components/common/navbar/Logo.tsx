@@ -1,9 +1,6 @@
 import React from 'react';
 import { Typography } from '@taskflow/ui';
-
-interface LogoProps {
-  className?: string;
-}
+import type { LogoProps } from '../../../types/interfaces/ui';
 
 export const Logo: React.FC<LogoProps> = ({ className = '' }) => {
   return (

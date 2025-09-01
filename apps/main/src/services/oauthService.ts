@@ -26,12 +26,12 @@ class OAuthService {
     this.baseURL = env.API_URL || 'http://localhost:3001/api';
     this.config = {
       google: {
-        clientId: env.VITE_GOOGLE_CLIENT_ID || '',
+        clientId: env.GOOGLE_CLIENT_ID || '',
         scope: 'email profile',
         authUrl: `${this.baseURL}/auth/google`
       },
       github: {
-        clientId: env.VITE_GITHUB_CLIENT_ID || '',
+        clientId: env.GITHUB_CLIENT_ID || '',
         scope: 'user:email',
         authUrl: `${this.baseURL}/auth/github`
       }
@@ -55,7 +55,8 @@ class OAuthService {
     }
 
     const state = this.generateState();
-    const redirectUri = `${window.location.origin}/auth/callback/${provider}`;
+    // Use the backend callback URL directly since the backend handles the OAuth flow
+    const redirectUri = `${this.baseURL}/auth/${provider}/callback`;
     
     const params = new URLSearchParams({
       client_id: config.clientId,
@@ -165,7 +166,7 @@ class OAuthService {
     return {
       code,
       provider: verified.provider,
-      redirectUri: `${window.location.origin}/auth/callback/${verified.provider}`,
+      redirectUri: `${this.baseURL}/auth/${verified.provider}/callback`,
       action: verified.action
     };
   }
