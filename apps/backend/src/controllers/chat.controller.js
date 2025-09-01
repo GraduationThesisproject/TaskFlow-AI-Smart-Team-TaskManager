@@ -266,9 +266,8 @@ const acceptChat = async (req, res) => {
 
     // Add admin to participants
     chat.participants.push({
-      _id: adminId,
+      id: adminId,
       name: req.user.name || 'Admin',
-      email: req.user.email,
       model: 'Admin'
     });
 
@@ -287,6 +286,12 @@ const acceptChat = async (req, res) => {
     sendResponse(res, 200, true, 'Chat accepted successfully', { chat });
   } catch (error) {
     logger.error('Accept chat error:', error);
+    logger.error('Accept chat error details:', {
+      chatId,
+      adminId,
+      error: error.message,
+      stack: error.stack
+    });
     sendResponse(res, 500, false, 'Server error accepting chat');
   }
 };
@@ -315,9 +320,8 @@ const sendAdminMessage = async (req, res) => {
       content,
       messageType,
       sender: {
-        _id: adminId,
+        id: adminId,
         name: req.user.name || 'Admin',
-        email: req.user.email,
         model: 'Admin'
       },
       isRead: false,

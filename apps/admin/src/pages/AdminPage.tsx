@@ -19,8 +19,7 @@ import {
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
-  ChatBubbleLeftIcon,
-  ShieldCheckIcon
+  ChatBubbleLeftIcon
 } from '@heroicons/react/24/outline';
 
 // Import NotificationBell component
@@ -38,7 +37,6 @@ import SettingsLayout from '../layouts/SettingsLayout';
 import ProfileLayout from '../layouts/ProfileLayout';
 import PowerBILayout from '../layouts/PowerBILayout';
 import ChatLayout from '../layouts/ChatLayout';
-import PermissionTestPage from './PermissionTestPage';
 
 // Import language context and translation hook
 import { useLanguageContext } from '../contexts/LanguageContext';
@@ -138,13 +136,6 @@ const AdminPage: React.FC = () => {
       icon: UserIcon,
       description: 'Manage your personal profile and account',
       layout: ProfileLayout
-    },
-    {
-      name: '🔒 Permission Test',
-      path: '/permission-test',
-      icon: ShieldCheckIcon,
-      description: 'Test the permission system and verify access controls',
-      layout: PermissionTestPage
     }
   ];
 

@@ -1,0 +1,2008 @@
+[
+  {
+    "_id": "68b55a9916394394f7b49b57",
+    "name": "Frontend Sprint",
+    "description": "Focused area for specific project deliverables and milestones.",
+    "workspace": "68b55a9916394394f7b49b49",
+    "members": [
+      {
+        "user": "68b55a9316394394f7b49a71",
+        "role": "admin",
+        "joinedAt": "2025-08-14T19:32:09.395Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49b58"
+      },
+      {
+        "user": "68b55a9616394394f7b49add",
+        "role": "viewer",
+        "joinedAt": "2025-08-21T12:24:44.762Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b59"
+      },
+      {
+        "user": "68b55a9716394394f7b49af5",
+        "role": "member",
+        "joinedAt": "2025-08-03T02:17:49.807Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49b5a"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "role": "viewer",
+        "joinedAt": "2025-08-15T11:37:02.221Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49b5b"
+      },
+      {
+        "user": "68b55a9516394394f7b49ac5",
+        "role": "member",
+        "joinedAt": "2025-08-09T20:10:13.544Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b5c"
+      },
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "role": "admin",
+        "joinedAt": "2025-08-24T10:03:57.047Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b5d"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": false,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 6,
+      "lastActivityAt": "2025-09-01T08:34:33.371Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-05-04T14:15:22.602Z",
+    "updatedAt": "2025-05-04T14:15:22.602Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49b5f",
+    "name": "DevOps Squad",
+    "description": "Department space for organizational alignment and coordination.",
+    "workspace": "68b55a9916394394f7b49b49",
+    "members": [
+      {
+        "user": "68b55a9616394394f7b49ad1",
+        "role": "admin",
+        "joinedAt": "2025-08-26T03:23:32.787Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49b60"
+      },
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "role": "admin",
+        "joinedAt": "2025-08-17T05:06:00.274Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b61"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": true,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 2,
+      "lastActivityAt": "2025-09-01T08:34:33.377Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-04-15T03:22:48.513Z",
+    "updatedAt": "2025-04-15T03:22:48.513Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49b63",
+    "name": "Frontend Project",
+    "description": "Focused area for specific project deliverables and milestones.",
+    "workspace": "68b55a9916394394f7b49b49",
+    "members": [
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "role": "admin",
+        "joinedAt": "2025-08-25T10:03:55.664Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49b64"
+      },
+      {
+        "user": "68b55a9616394394f7b49ae9",
+        "role": "viewer",
+        "joinedAt": "2025-08-25T19:29:55.149Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b65"
+      },
+      {
+        "user": "68b55a9816394394f7b49b19",
+        "role": "viewer",
+        "joinedAt": "2025-08-12T10:32:08.368Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": false,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b66"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": true,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 3,
+      "lastActivityAt": "2025-09-01T08:34:33.382Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-03-31T02:05:54.280Z",
+    "updatedAt": "2025-03-31T02:05:54.280Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49b68",
+    "name": "QA Team",
+    "description": "Sprint workspace for agile development and iteration planning.",
+    "workspace": "68b55a9916394394f7b49b49",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "role": "admin",
+        "joinedAt": "2025-08-12T05:59:43.452Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49b69"
+      },
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "role": "member",
+        "joinedAt": "2025-08-08T02:53:29.834Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b6a"
+      },
+      {
+        "user": "68b55a9716394394f7b49af5",
+        "role": "viewer",
+        "joinedAt": "2025-08-16T05:17:43.229Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b6b"
+      },
+      {
+        "user": "68b55a9516394394f7b49ac5",
+        "role": "member",
+        "joinedAt": "2025-09-01T04:36:05.134Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b6c"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": false,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 4,
+      "lastActivityAt": "2025-09-01T08:34:33.389Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-06-17T17:44:25.152Z",
+    "updatedAt": "2025-06-17T17:44:25.152Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49b78",
+    "name": "Frontend Milestone",
+    "description": "Collaborative environment for cross-functional initiatives.",
+    "workspace": "68b55a9916394394f7b49b6e",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "role": "admin",
+        "joinedAt": "2025-08-14T15:14:27.213Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49b79"
+      },
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "role": "member",
+        "joinedAt": "2025-08-09T00:30:30.033Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b7a"
+      },
+      {
+        "user": "68b55a9816394394f7b49b31",
+        "role": "admin",
+        "joinedAt": "2025-08-31T12:47:03.033Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b7b"
+      },
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "role": "admin",
+        "joinedAt": "2025-08-25T06:01:54.296Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": false,
+          "canDeleteTasks": true,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b7c"
+      },
+      {
+        "user": "68b55a9816394394f7b49b19",
+        "role": "member",
+        "joinedAt": "2025-08-11T10:43:36.856Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": true,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b7d"
+      },
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "role": "viewer",
+        "joinedAt": "2025-08-04T07:27:38.081Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b7e"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": true,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 6,
+      "lastActivityAt": "2025-09-01T08:34:33.409Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-04-06T04:39:15.835Z",
+    "updatedAt": "2025-04-06T04:39:15.835Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49b80",
+    "name": "QA Release",
+    "description": "Focused area for specific project deliverables and milestones.",
+    "workspace": "68b55a9916394394f7b49b6e",
+    "members": [
+      {
+        "user": "68b55a9316394394f7b49a59",
+        "role": "admin",
+        "joinedAt": "2025-09-01T02:28:53.986Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49b81"
+      },
+      {
+        "user": "68b55a9516394394f7b49ac5",
+        "role": "viewer",
+        "joinedAt": "2025-08-20T11:36:36.925Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b82"
+      },
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "role": "viewer",
+        "joinedAt": "2025-08-07T09:34:27.160Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b83"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": true,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 3,
+      "lastActivityAt": "2025-09-01T08:34:33.416Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-06-27T09:29:09.139Z",
+    "updatedAt": "2025-06-27T09:29:09.139Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49b90",
+    "name": "QA Phase",
+    "description": "Focused area for specific project deliverables and milestones.",
+    "workspace": "68b55a9916394394f7b49b85",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49af5",
+        "role": "admin",
+        "joinedAt": "2025-08-11T16:05:39.505Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49b91"
+      },
+      {
+        "user": "68b55a9716394394f7b49af5",
+        "role": "viewer",
+        "joinedAt": "2025-08-13T05:59:45.662Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b92"
+      },
+      {
+        "user": "68b55a9516394394f7b49aad",
+        "role": "viewer",
+        "joinedAt": "2025-08-12T19:47:38.460Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b93"
+      },
+      {
+        "user": "68b55a9816394394f7b49b19",
+        "role": "admin",
+        "joinedAt": "2025-08-26T11:09:26.714Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b94"
+      },
+      {
+        "user": "68b55a9816394394f7b49b25",
+        "role": "member",
+        "joinedAt": "2025-08-15T02:31:50.394Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b95"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": true,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 5,
+      "lastActivityAt": "2025-09-01T08:34:33.437Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-07-13T05:01:13.351Z",
+    "updatedAt": "2025-07-13T05:01:13.351Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49b97",
+    "name": "Marketing Milestone",
+    "description": "Department space for organizational alignment and coordination.",
+    "workspace": "68b55a9916394394f7b49b85",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "role": "admin",
+        "joinedAt": "2025-08-22T16:19:44.221Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49b98"
+      },
+      {
+        "user": "68b55a9416394394f7b49a95",
+        "role": "admin",
+        "joinedAt": "2025-08-26T23:26:21.632Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": true,
+          "canCreateTasks": false,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49b99"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": true,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 2,
+      "lastActivityAt": "2025-09-01T08:34:33.443Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-06-19T01:09:23.068Z",
+    "updatedAt": "2025-06-19T01:09:23.068Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49ba6",
+    "name": "Design Squad",
+    "description": "Sprint workspace for agile development and iteration planning.",
+    "workspace": "68b55a9916394394f7b49b9b",
+    "members": [
+      {
+        "user": "68b55a9816394394f7b49b31",
+        "role": "admin",
+        "joinedAt": "2025-08-22T21:26:53.715Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49ba7"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "role": "admin",
+        "joinedAt": "2025-08-26T21:42:10.342Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49ba8"
+      },
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "role": "viewer",
+        "joinedAt": "2025-08-20T20:29:58.471Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49ba9"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": false,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 3,
+      "lastActivityAt": "2025-09-01T08:34:33.462Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-04-24T22:19:19.772Z",
+    "updatedAt": "2025-04-24T22:19:19.772Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49bab",
+    "name": "Design Phase",
+    "description": "Team workspace for coordinated development and planning.",
+    "workspace": "68b55a9916394394f7b49b9b",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49af5",
+        "role": "admin",
+        "joinedAt": "2025-08-10T03:14:28.656Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49bac"
+      },
+      {
+        "user": "68b55a9816394394f7b49b25",
+        "role": "admin",
+        "joinedAt": "2025-08-09T04:06:21.308Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bad"
+      },
+      {
+        "user": "68b55a9516394394f7b49ac5",
+        "role": "admin",
+        "joinedAt": "2025-08-15T17:50:25.570Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bae"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": true,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 3,
+      "lastActivityAt": "2025-09-01T08:34:33.469Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-07-11T19:20:38.638Z",
+    "updatedAt": "2025-07-11T19:20:38.638Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49bb0",
+    "name": "Design Squad",
+    "description": "Dedicated space for team collaboration and project management.",
+    "workspace": "68b55a9916394394f7b49b9b",
+    "members": [
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "role": "admin",
+        "joinedAt": "2025-08-22T18:22:10.043Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49bb1"
+      },
+      {
+        "user": "68b55a9516394394f7b49ab9",
+        "role": "member",
+        "joinedAt": "2025-08-21T19:07:07.476Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bb2"
+      },
+      {
+        "user": "68b55a9916394394f7b49b3d",
+        "role": "member",
+        "joinedAt": "2025-08-16T20:45:37.075Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bb3"
+      },
+      {
+        "user": "68b55a9816394394f7b49b25",
+        "role": "viewer",
+        "joinedAt": "2025-08-18T16:38:55.429Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": true,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bb4"
+      },
+      {
+        "user": "68b55a9316394394f7b49a59",
+        "role": "member",
+        "joinedAt": "2025-08-13T21:14:50.541Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": true,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bb5"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": false,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 5,
+      "lastActivityAt": "2025-09-01T08:34:33.474Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-05-13T23:45:34.127Z",
+    "updatedAt": "2025-05-13T23:45:34.127Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49bb7",
+    "name": "Marketing Release",
+    "description": "Collaborative environment for cross-functional initiatives.",
+    "workspace": "68b55a9916394394f7b49b9b",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "role": "admin",
+        "joinedAt": "2025-08-15T00:54:38.637Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49bb8"
+      },
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "role": "admin",
+        "joinedAt": "2025-08-18T17:06:12.943Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bb9"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": false,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 2,
+      "lastActivityAt": "2025-09-01T08:34:33.480Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-08-29T20:21:37.556Z",
+    "updatedAt": "2025-08-29T20:21:37.556Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49bbb",
+    "name": "QA Team",
+    "description": "Focused area for specific project deliverables and milestones.",
+    "workspace": "68b55a9916394394f7b49b9b",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "role": "admin",
+        "joinedAt": "2025-08-08T10:29:50.592Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49bbc"
+      },
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "role": "admin",
+        "joinedAt": "2025-08-03T13:22:51.848Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bbd"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": true,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 2,
+      "lastActivityAt": "2025-09-01T08:34:33.486Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-07-28T16:51:37.113Z",
+    "updatedAt": "2025-07-28T16:51:37.113Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49bcd",
+    "name": "Support Team",
+    "description": "Department space for organizational alignment and coordination.",
+    "workspace": "68b55a9916394394f7b49bbf",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "role": "admin",
+        "joinedAt": "2025-08-08T12:30:49.328Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49bce"
+      },
+      {
+        "user": "68b55a9816394394f7b49b31",
+        "role": "member",
+        "joinedAt": "2025-08-30T22:49:32.565Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bcf"
+      },
+      {
+        "user": "68b55a9316394394f7b49a59",
+        "role": "viewer",
+        "joinedAt": "2025-08-06T03:13:39.855Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bd0"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": false,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 3,
+      "lastActivityAt": "2025-09-01T08:34:33.504Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-03-16T23:41:34.631Z",
+    "updatedAt": "2025-03-16T23:41:34.631Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49bd2",
+    "name": "Marketing Phase",
+    "description": "Team workspace for coordinated development and planning.",
+    "workspace": "68b55a9916394394f7b49bbf",
+    "members": [
+      {
+        "user": "68b55a9516394394f7b49ab9",
+        "role": "admin",
+        "joinedAt": "2025-08-04T00:14:09.689Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49bd3"
+      },
+      {
+        "user": "68b55a9616394394f7b49add",
+        "role": "admin",
+        "joinedAt": "2025-08-21T01:59:09.739Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49bd4"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": true,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 2,
+      "lastActivityAt": "2025-09-01T08:34:33.508Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-08-20T09:24:17.925Z",
+    "updatedAt": "2025-08-20T09:24:17.925Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49bd6",
+    "name": "Support Sprint",
+    "description": "Team workspace for coordinated development and planning.",
+    "workspace": "68b55a9916394394f7b49bbf",
+    "members": [
+      {
+        "user": "68b55a9916394394f7b49b3d",
+        "role": "admin",
+        "joinedAt": "2025-08-21T18:16:34.960Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49bd7"
+      },
+      {
+        "user": "68b55a9416394394f7b49a95",
+        "role": "admin",
+        "joinedAt": "2025-08-31T11:23:19.849Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": true,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bd8"
+      },
+      {
+        "user": "68b55a9916394394f7b49b3d",
+        "role": "admin",
+        "joinedAt": "2025-08-07T14:56:38.215Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bd9"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": false,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 3,
+      "lastActivityAt": "2025-09-01T08:34:33.513Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-05-10T17:43:42.422Z",
+    "updatedAt": "2025-05-10T17:43:42.422Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49bdb",
+    "name": "QA Squad",
+    "description": "Project space for tracking progress and managing tasks.",
+    "workspace": "68b55a9916394394f7b49bbf",
+    "members": [
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "role": "admin",
+        "joinedAt": "2025-08-05T22:40:21.755Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": true,
+          "canCreateTasks": true,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": true,
+          "canEditSettings": true
+        },
+        "_id": "68b55a9916394394f7b49bdc"
+      },
+      {
+        "user": "68b55a9416394394f7b49a95",
+        "role": "admin",
+        "joinedAt": "2025-08-14T09:55:00.207Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": false,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bdd"
+      },
+      {
+        "user": "68b55a9616394394f7b49add",
+        "role": "admin",
+        "joinedAt": "2025-08-04T15:16:15.860Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": true,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": false,
+          "canDeleteTasks": true,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bde"
+      },
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "role": "viewer",
+        "joinedAt": "2025-08-12T20:40:07.957Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": false,
+          "canEditBoards": true,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49bdf"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "role": "viewer",
+        "joinedAt": "2025-08-29T13:30:34.668Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": false,
+          "canCreateTasks": false,
+          "canEditTasks": true,
+          "canDeleteTasks": true,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49be0"
+      },
+      {
+        "user": "68b55a9716394394f7b49af5",
+        "role": "viewer",
+        "joinedAt": "2025-08-30T23:44:37.374Z",
+        "permissions": {
+          "canViewBoards": true,
+          "canCreateBoards": true,
+          "canEditBoards": true,
+          "canDeleteBoards": false,
+          "canCreateTasks": true,
+          "canEditTasks": false,
+          "canDeleteTasks": false,
+          "canManageMembers": false,
+          "canEditSettings": false
+        },
+        "_id": "68b55a9916394394f7b49be1"
+      }
+    ],
+    "boards": [],
+    "invitations": [],
+    "permissions": {
+      "defaultMemberRole": "member",
+      "boardCreation": "all_members",
+      "taskCreation": "all_members",
+      "memberInvitation": "admins_only",
+      "boardVisibility": "space_members",
+      "commentingRules": "all_members"
+    },
+    "settings": {
+      "features": {
+        "timeTracking": true,
+        "aiSuggestions": true,
+        "customFields": true,
+        "fileAttachments": true,
+        "voting": true,
+        "dependencies": true
+      },
+      "color": "#6B7280",
+      "icon": "📋",
+      "isPrivate": false,
+      "allowGuestAccess": false,
+      "autoArchiveCompletedTasks": false,
+      "archiveAfterDays": 30,
+      "defaultBoardTemplate": null,
+      "notifications": {
+        "newTaskNotifications": true,
+        "taskUpdatesNotifications": true,
+        "taskCompletedNotifications": false,
+        "dueDateReminders": true,
+        "memberJoinedNotifications": true
+      }
+    },
+    "activityLog": [],
+    "stats": {
+      "totalBoards": 0,
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "overdueTasks": 0,
+      "activeMembersCount": 6,
+      "lastActivityAt": "2025-09-01T08:34:33.518Z"
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "createdAt": "2025-05-07T09:34:37.267Z",
+    "updatedAt": "2025-05-07T09:34:37.267Z",
+    "__v": 0
+  }
+]
