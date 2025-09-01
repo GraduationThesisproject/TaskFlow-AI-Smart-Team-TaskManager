@@ -1,0 +1,730 @@
+[
+  {
+    "_id": "68b55a9916394394f7b49cfe",
+    "name": "Dark Mode",
+    "color": "#EC4899",
+    "textColor": "#FFFFFF",
+    "scope": "global",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9316394394f7b49a59",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "User experience and design work.",
+    "category": "ui",
+    "icon": "star",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "creator",
+        "canEdit": "admins",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Management",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.738Z",
+    "updatedAt": "2025-09-01T08:34:33.738Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49d00",
+    "name": "Mobile First",
+    "color": "#9D174D",
+    "textColor": "#FFFFFF",
+    "scope": "global",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9716394394f7b49b01",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "User experience and design work.",
+    "category": "ui",
+    "icon": "check",
+    "settings": {
+      "isSystemTag": true,
+      "autoAssign": {
+        "enabled": true,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": true,
+        "onRemove": true,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "members",
+        "canEdit": "creator",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Management",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.744Z",
+    "updatedAt": "2025-09-01T08:34:33.744Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49d02",
+    "name": "Design",
+    "color": "#EC4899",
+    "textColor": "#FFFFFF",
+    "scope": "global",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9716394394f7b49b01",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Marketing and promotion activities.",
+    "category": "department",
+    "icon": "pin",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "admins",
+        "canEdit": "creator",
+        "canDelete": "creator"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Management",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.750Z",
+    "updatedAt": "2025-09-01T08:34:33.750Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49d04",
+    "name": "Custom Tag 5",
+    "color": "#E5E7EB",
+    "textColor": "#FFFFFF",
+    "scope": "global",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9816394394f7b49b19",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Custom labeling and classification.",
+    "category": "custom",
+    "icon": "star",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": true,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "members",
+        "canEdit": "creator",
+        "canDelete": "creator"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Testing",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.754Z",
+    "updatedAt": "2025-09-01T08:34:33.754Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49d06",
+    "name": "Research",
+    "color": "#8B5CF6",
+    "textColor": "#FFFFFF",
+    "scope": "workspace",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9616394394f7b49add",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Improvements to existing features.",
+    "category": "type",
+    "icon": "bookmark",
+    "settings": {
+      "isSystemTag": true,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": true,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "everyone",
+        "canEdit": "everyone",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Documentation",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.758Z",
+    "updatedAt": "2025-09-01T08:34:33.758Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49d08",
+    "name": "Support",
+    "color": "#F59E0B",
+    "textColor": "#FFFFFF",
+    "scope": "global",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9416394394f7b49a7d",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Design and user experience work.",
+    "category": "department",
+    "icon": "tag",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": true,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "members",
+        "canEdit": "everyone",
+        "canDelete": "creator"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Testing",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.763Z",
+    "updatedAt": "2025-09-01T08:34:33.763Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49d0a",
+    "name": "Backend",
+    "color": "#10B981",
+    "textColor": "#FFFFFF",
+    "scope": "space",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9716394394f7b49b0d",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Design and user experience work.",
+    "category": "department",
+    "icon": "star",
+    "settings": {
+      "isSystemTag": true,
+      "autoAssign": {
+        "enabled": true,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "creator",
+        "canEdit": "everyone",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Management",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.767Z",
+    "updatedAt": "2025-09-01T08:34:33.767Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49d0c",
+    "name": "Marketing",
+    "color": "#10B981",
+    "textColor": "#FFFFFF",
+    "scope": "global",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9516394394f7b49ac5",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Marketing and promotion activities.",
+    "category": "department",
+    "icon": "bug",
+    "settings": {
+      "isSystemTag": true,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "everyone",
+        "canEdit": "creator",
+        "canDelete": "creator"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Design",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.771Z",
+    "updatedAt": "2025-09-01T08:34:33.771Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49d0e",
+    "name": "Support",
+    "color": "#3B82F6",
+    "textColor": "#FFFFFF",
+    "scope": "global",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9416394394f7b49a7d",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Sales and business development.",
+    "category": "department",
+    "icon": "check",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": true,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "members",
+        "canEdit": "creator",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Design",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.775Z",
+    "updatedAt": "2025-09-01T08:34:33.775Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49d10",
+    "name": "Node.js",
+    "color": "#8B5CF6",
+    "textColor": "#FFFFFF",
+    "scope": "workspace",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9916394394f7b49b3d",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Professional competencies and capabilities.",
+    "category": "skill",
+    "icon": "check",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "members",
+        "canEdit": "admins",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Documentation",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.780Z",
+    "updatedAt": "2025-09-01T08:34:33.780Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49d12",
+    "name": "Mobile First",
+    "color": "#831843",
+    "textColor": "#FFFFFF",
+    "scope": "global",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9516394394f7b49aad",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Frontend and visual design tasks.",
+    "category": "ui",
+    "icon": "label",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": true,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "members",
+        "canEdit": "everyone",
+        "canDelete": "creator"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Testing",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.785Z",
+    "updatedAt": "2025-09-01T08:34:33.785Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49d14",
+    "name": "Custom Tag 1",
+    "color": "#D1D5DB",
+    "textColor": "#FFFFFF",
+    "scope": "space",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9516394394f7b49ac5",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "User-defined tags for organization.",
+    "category": "custom",
+    "icon": "bookmark",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "admins",
+        "canEdit": "everyone",
+        "canDelete": "creator"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Development",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.789Z",
+    "updatedAt": "2025-09-01T08:34:33.789Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49d16",
+    "name": "Completed",
+    "color": "#3B82F6",
+    "textColor": "#FFFFFF",
+    "scope": "global",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68b55a9816394394f7b49b25",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Tasks ready for review and approval.",
+    "category": "status",
+    "icon": "pin",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": true,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "creator",
+        "canEdit": "admins",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Design",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-01T08:34:33.794Z",
+    "updatedAt": "2025-09-01T08:34:33.794Z",
+    "__v": 0
+  }
+]
