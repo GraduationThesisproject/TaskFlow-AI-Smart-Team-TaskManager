@@ -225,17 +225,19 @@ const handleNotificationSocket = (io) => {
                      recipient: recipientId
                  });
 
-            await notification.populate('sender', 'name avatar');
+                 await created.populate('sender', 'name avatar');
+                 notificationDoc = created;
+             }
 
             // Send real-time notification
             notificationNamespace.to(`notifications:${recipientId}`).emit('notification:new', {
-                notification: notification.toObject()
+                notification: notificationDoc.toObject ? notificationDoc.toObject() : notificationDoc
             });
 
             // Send to specific type subscribers
             if (notificationData.type) {
                 notificationNamespace.to(`notifications:${recipientId}:${notificationData.type}`).emit('notification:typed', {
-                    notification: notification.toObject(),
+                    notification: notificationDoc.toObject ? notificationDoc.toObject() : notificationDoc,
                     type: notificationData.type
                 });
             }

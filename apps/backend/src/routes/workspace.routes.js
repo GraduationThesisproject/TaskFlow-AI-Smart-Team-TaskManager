@@ -72,13 +72,11 @@ router.post('/:id/transfer-ownership',
 
 // Restore archived workspace
 router.post('/:id/restore',
-    requireWorkspaceMember,
     workspaceController.restoreWorkspace
 );
 
 // Permanently delete an archived workspace
 router.delete('/:id/permanent',
-    requireWorkspaceMember,
     workspaceController.permanentDeleteWorkspace
 );
 
