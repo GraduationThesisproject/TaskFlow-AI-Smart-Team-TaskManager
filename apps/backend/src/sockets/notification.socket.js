@@ -213,29 +213,32 @@ const handleNotificationSocket = (io) => {
             let notificationDoc;
             const readOption = notificationData?.readOption; // 'mark_read' | 'delete' | undefined
  
-             // If notification already exists (has _id), don't recreate it
-             if (notificationData && notificationData._id) {
-                 // Ensure we have a plain object to emit
-                 const notifObj = notificationData.toObject ? notificationData.toObject() : notificationData;
-                 notificationDoc = notifObj;
-             } else {
-                 // Create notification in database
-                 const created = await Notification.create({
-                     ...notificationData,
-                     recipient: recipientId
-                 });
-
-            await notification.populate('sender', 'name avatar');
+            // If notification already exists (has _id), don't recreate it
+            if (notificationData && notificationData._id) {
+                // Ensure we have a plain object to emit
+                const notifObj = notificationData.toObject ? notificationData.toObject() : notificationData;
+                notificationDoc = notifObj;
+            } else {
+                // Create notification in database
+                const created = await Notification.create({
+                    ...notificationData,
+                    recipient: recipientId
+                });
+                
+                // Populate the created notification
+                await created.populate('sender', 'name avatar');
+                notificationDoc = created;
+            }
 
             // Send real-time notification
             notificationNamespace.to(`notifications:${recipientId}`).emit('notification:new', {
-                notification: notification.toObject()
+                notification: notificationDoc.toObject ? notificationDoc.toObject() : notificationDoc
             });
 
             // Send to specific type subscribers
             if (notificationData.type) {
                 notificationNamespace.to(`notifications:${recipientId}:${notificationData.type}`).emit('notification:typed', {
-                    notification: notification.toObject(),
+                    notification: notificationDoc.toObject ? notificationDoc.toObject() : notificationDoc,
                     type: notificationData.type
                 });
             }
@@ -250,12 +253,12 @@ const handleNotificationSocket = (io) => {
                 count: unreadCount 
             });
 
-             return notificationDoc;
-         } catch (error) {
-             logger.error('Send notification error:', error);
-             throw error;
-         }
-     };
+            return notificationDoc;
+        } catch (error) {
+            logger.error('Send notification error:', error);
+            throw error;
+        }
+    };
 
     // Bulk notification sender
     notificationNamespace.sendBulkNotifications = async (notifications) => {

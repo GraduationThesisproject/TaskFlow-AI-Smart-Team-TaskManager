@@ -1,7 +1,7 @@
 const express = require('express');
 const workspaceController = require('../controllers/workspace.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { requireWorkspacePermission } = require('../middlewares/permission.middleware');
+const { requireWorkspacePermission, requireWorkspaceMember } = require('../middlewares/permission.middleware');
 const { workspace: workspaceSchemas } = require('./validator');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 
@@ -13,13 +13,14 @@ router.use(authMiddleware);
 // Routes
 router.get('/', workspaceController.getAllWorkspaces);
 
-router.get('/:id', 
+router.get('/:id',
+    requireWorkspacePermission(),
     workspaceController.getWorkspace
 );
 
 // Generate invite link for workspace
 router.get('/:id/invite-link', 
-    
+    requireWorkspacePermission(),
     workspaceController.generateInviteLink
 );
 
@@ -45,6 +46,7 @@ router.post('/accept-invitation/:token',
 );
 
 router.get('/:id/members',
+    requireWorkspacePermission(),
     workspaceController.getWorkspaceMembers
 );
 
@@ -60,7 +62,7 @@ router.put('/:id/settings',
 );
 
 router.get('/:id/analytics',
-
+    requireWorkspacePermission(),
     workspaceController.getWorkspaceAnalytics
 );
 
@@ -72,13 +74,13 @@ router.post('/:id/transfer-ownership',
 
 // Restore archived workspace
 router.post('/:id/restore',
-    requireWorkspaceMember,
+    requireWorkspacePermission(),
     workspaceController.restoreWorkspace
 );
 
 // Permanently delete an archived workspace
 router.delete('/:id/permanent',
-    requireWorkspaceMember,
+    requireWorkspacePermission(),
     workspaceController.permanentDeleteWorkspace
 );
 
@@ -87,6 +89,5 @@ router.delete('/:id',
     requireWorkspacePermission(),
     workspaceController.deleteWorkspace
 );
-
 
 module.exports = router;

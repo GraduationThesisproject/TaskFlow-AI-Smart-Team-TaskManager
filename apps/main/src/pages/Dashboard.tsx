@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Home from '../layouts/Dashboard/Home.Layouts';
 import Templates from '../layouts/Dashboard/Templates.Layouts';
 import Settings from '../layouts/Dashboard/Settings.Layouts';
-import UserAnalyticsLayout from '../layouts/Dashboard/UserAnalytics.Layout.tsx';
+import UserAnalyticsLayout from '../layouts/Dashboard/UserAnalytics.Layout';
 import WorkspacesLayout from '../layouts/Dashboard/Workspaces.Layouts';
 
 const Dashboard: React.FC = () => {

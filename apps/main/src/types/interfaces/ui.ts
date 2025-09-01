@@ -125,6 +125,10 @@ export interface FormFieldProps extends BaseUIProps {
   helpText?: string;
 }
 
+export interface FormErrors {
+  [key: string]: string;
+}
+
 export interface FormSectionProps extends BaseUIProps {
   title?: string;
   description?: string;
@@ -662,7 +666,8 @@ export interface CalendarIconProps extends SVGProps<SVGSVGElement> {
 export interface LogoutConfirmDialogProps extends BaseUIProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (allDevices?: boolean) => void;
+  userName?: string;
 }
 
 export interface AppLayoutProps extends BaseUIProps {
@@ -793,7 +798,7 @@ export interface MobileMenuProps extends BaseUIProps {
 }
 
 export interface NavigationLinksProps extends BaseUIProps {
-  children: ReactNode;
+  children?: ReactNode;
   items: NavigationItem[];
   activeKey?: string;
   onItemClick?: (key: string) => void;
@@ -828,8 +833,8 @@ export interface WelcomeHeaderProps extends BaseUIProps {
 export interface DeleteWorkspaceModalProps extends BaseUIProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
-  workspace: any;
+  workspaceId: string;
+  workspaceName?: string;
 }
 
 export interface CreateWorkspaceModalProps extends BaseUIProps {

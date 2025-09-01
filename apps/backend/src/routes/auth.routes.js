@@ -112,7 +112,7 @@ router.delete('/sessions/:sessionId',
 // Activity Logging
 router.get('/activity',
     authMiddleware,
-    validateMiddleware(authSchemas.activityLogSchema),
+    validateMiddleware.validateQuery(authSchemas.activityLogSchema),
     authController.getActivityLog
 );
 

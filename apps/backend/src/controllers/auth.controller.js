@@ -9,6 +9,7 @@ const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
 const passport = require('passport');
+const env = require('../config/env');
 
 // ============================================================================
 // USER REGISTRATION & INVITATION
@@ -117,7 +118,7 @@ exports.googleCallback = async (req, res, next) => {
             user.lastLogin = new Date();
             await user.save();
             const token = generateToken(user._id);
-            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=google`;
+            const redirectUrl = `${env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}&provider=google`;
             res.redirect(redirectUrl);
         } catch (error) {
             logger.error('Google callback error:', error);
@@ -155,7 +156,7 @@ exports.githubCallback = (req, res, next) => {
             user.lastLogin = new Date();
             await user.save();
             const token = generateToken(user._id);
-            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}&provider=github`;
+            const redirectUrl = `${env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}&provider=github`;
             logger.info('GitHub authentication successful, redirecting to:', redirectUrl);
             return res.redirect(redirectUrl);
         } catch (error) {
@@ -896,6 +897,6 @@ exports.getActivityLog = async (req, res) => {
         });
     } catch (error) {
         logger.error('Get activity log error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving profile');
+        sendResponse(res, 500, false, 'Server error retrieving activity log');
     }
 };

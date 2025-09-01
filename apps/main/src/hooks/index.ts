@@ -19,3 +19,6 @@ export * from './usePermissions';
 export * from './useTaskManager';
 export * from './useTemplates';
 export * from './useRoutePermissions';
+export * from './useProtectedRoute';
+export * from './useDropdown';
+export * from './socket';

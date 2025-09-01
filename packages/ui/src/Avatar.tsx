@@ -3,37 +3,62 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from './utils';
 
 const avatarVariants = cva(
-  "relative flex shrink-0 overflow-hidden rounded-full",
+  "relative flex shrink-0 overflow-hidden rounded-full ring-2 ring-background transition-all duration-200",
   {
     variants: {
       size: {
-        xs: "h-6 w-6",
-        sm: "h-8 w-8",
-        default: "h-10 w-10",
-        lg: "h-12 w-12",
-        xl: "h-16 w-16",
-        "2xl": "h-20 w-20",
+        xs: "h-6 w-6 ring-1",
+        sm: "h-8 w-8 ring-1",
+        default: "h-10 w-10 ring-2",
+        lg: "h-12 w-12 ring-2",
+        xl: "h-16 w-16 ring-2",
+        "2xl": "h-20 w-20 ring-2",
+        "3xl": "h-24 w-24 ring-2",
+      },
+      variant: {
+        default: "",
+        square: "rounded-lg",
+        rounded: "rounded-xl",
       },
     },
     defaultVariants: {
       size: "default",
+      variant: "default",
     },
   }
 );
 
-const avatarImageVariants = cva("aspect-square h-full w-full object-cover");
+const avatarImageVariants = cva(
+  "aspect-square h-full w-full object-cover transition-all duration-200",
+  {
+    variants: {
+      loading: {
+        true: "animate-pulse bg-muted",
+        false: "",
+      },
+    },
+    defaultVariants: {
+      loading: false,
+    },
+  }
+);
 
 const avatarFallbackVariants = cva(
-  "flex h-full w-full items-center justify-center rounded-full font-medium text-white",
+  "flex h-full w-full items-center justify-center font-semibold shadow-inner",
   {
     variants: {
       variant: {
-        default: "bg-muted text-muted-foreground",
-        primary: "bg-primary text-primary-foreground",
-        accent: "bg-accent text-accent-foreground",
-        success: "bg-success text-white",
-        warning: "bg-warning text-white",
-        error: "bg-error text-white",
+        default: "bg-gradient-to-br from-muted to-muted/80 text-muted-foreground",
+        primary: "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground",
+        accent: "bg-gradient-to-br from-accent to-accent/80 text-accent-foreground",
+        success: "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white dark:from-emerald-600 dark:to-emerald-700",
+        warning: "bg-gradient-to-br from-amber-500 to-amber-600 text-white dark:from-amber-600 dark:to-amber-700",
+        error: "bg-gradient-to-br from-destructive to-destructive/80 text-destructive-foreground",
+        purple: "bg-gradient-to-br from-violet-500 to-violet-600 text-white dark:from-violet-600 dark:to-violet-700",
+        blue: "bg-gradient-to-br from-blue-500 to-blue-600 text-white dark:from-blue-600 dark:to-blue-700",
+        pink: "bg-gradient-to-br from-pink-500 to-pink-600 text-white dark:from-pink-600 dark:to-pink-700",
+        indigo: "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white dark:from-indigo-600 dark:to-indigo-700",
+        teal: "bg-gradient-to-br from-teal-500 to-teal-600 text-white dark:from-teal-600 dark:to-teal-700",
       },
       size: {
         xs: "text-xs",
@@ -42,6 +67,7 @@ const avatarFallbackVariants = cva(
         lg: "text-base",
         xl: "text-lg",
         "2xl": "text-xl",
+        "3xl": "text-2xl",
       },
     },
     defaultVariants: {
@@ -53,30 +79,55 @@ const avatarFallbackVariants = cva(
 
 interface AvatarProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof avatarVariants> {}
+    VariantProps<typeof avatarVariants> {
+  status?: 'online' | 'offline' | 'away' | 'busy';
+  statusColor?: string;
+}
 
-interface AvatarImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {}
+interface AvatarImageProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'loading'> {
+  loading?: boolean;
+}
 
 interface AvatarFallbackProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof avatarFallbackVariants> {}
 
 const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
-  ({ className, size, ...props }, ref) => (
+  ({ className, size, variant, status, statusColor, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(avatarVariants({ size }), className)}
+      className={cn(avatarVariants({ size, variant }), className)}
       {...props}
-    />
+    >
+      {children}
+      {status && (
+        <div
+          className={cn(
+            "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background",
+            status === 'online' && "bg-emerald-500 dark:bg-emerald-400",
+            status === 'offline' && "bg-muted-foreground/50 dark:bg-muted-foreground/70",
+            status === 'away' && "bg-amber-500 dark:bg-amber-400",
+            status === 'busy' && "bg-destructive dark:bg-destructive/80",
+            size === 'xs' && "h-2 w-2",
+            size === 'sm' && "h-2.5 w-2.5",
+            size === 'lg' && "h-3.5 w-3.5",
+            size === 'xl' && "h-4 w-4",
+            size === '2xl' && "h-5 w-5",
+            size === '3xl' && "h-6 w-6"
+          )}
+          style={statusColor ? { backgroundColor: statusColor } : undefined}
+        />
+      )}
+    </div>
   )
 );
 Avatar.displayName = "Avatar";
 
 const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
-  ({ className, onError, ...props }, ref) => (
+  ({ className, onError, loading = false, ...props }, ref) => (
     <img
       ref={ref}
-      className={cn(avatarImageVariants(), className)}
+      className={cn(avatarImageVariants({ loading }), className)}
       onError={(e) => {
         // Hide the image on error
         e.currentTarget.style.display = 'none';
@@ -104,8 +155,11 @@ AvatarFallback.displayName = "AvatarFallback";
 
 // Utility function to generate initials from a name
 export const getInitials = (name: string): string => {
+  if (!name) return '?';
+  
   return name
-    .split(' ')
+    .trim()
+    .split(/\s+/)
     .map(word => word.charAt(0))
     .join('')
     .toUpperCase()
@@ -114,23 +168,44 @@ export const getInitials = (name: string): string => {
 
 // Utility function to generate a consistent color based on a string
 export const getAvatarColor = (str: string): AvatarFallbackProps['variant'] => {
-  const colors: AvatarFallbackProps['variant'][] = ['primary', 'accent', 'success', 'warning', 'error'];
+  if (!str) return 'default';
+  
+  const colors: AvatarFallbackProps['variant'][] = [
+    'primary', 'accent', 'success', 'warning', 'error', 
+    'purple', 'blue', 'pink', 'indigo', 'teal'
+  ];
+  
   const hash = str.split('').reduce((a, b) => {
     a = ((a << 5) - a) + b.charCodeAt(0);
     return a & a;
   }, 0);
-  return colors[Math.abs(hash) % colors.length];
+  
+  return colors[Math.abs(hash) % colors.length] || 'default';
 };
 
-// New component that automatically handles image fallbacks
+// Enhanced component that automatically handles image fallbacks
 interface AvatarWithFallbackProps extends AvatarProps {
   src?: string;
   alt?: string;
   fallback?: string;
+  loading?: boolean;
+  showStatus?: boolean;
 }
 
 const AvatarWithFallback = React.forwardRef<HTMLDivElement, AvatarWithFallbackProps>(
-  ({ className, size, src, alt, fallback, children, ...props }, ref) => {
+  ({ 
+    className, 
+    size, 
+    variant, 
+    src, 
+    alt, 
+    fallback, 
+    loading = false,
+    showStatus = false,
+    status,
+    children, 
+    ...props 
+  }, ref) => {
     const [imageError, setImageError] = React.useState(false);
     const [imageLoaded, setImageLoaded] = React.useState(false);
 
@@ -150,30 +225,111 @@ const AvatarWithFallback = React.forwardRef<HTMLDivElement, AvatarWithFallbackPr
       return children || '?';
     };
 
+    // Generate color variant from alt text or fallback
+    const getColorVariant = () => {
+      if (variant && variant !== 'square' && variant !== 'rounded') return variant;
+      const text = alt || fallback || '';
+      return getAvatarColor(text);
+    };
+
+    // Auto-generate status if showStatus is true
+    const getStatus = () => {
+      if (status) return status;
+      if (showStatus) {
+        const statuses: Array<'online' | 'offline' | 'away' | 'busy'> = ['online', 'offline', 'away', 'busy'];
+        const text = alt || fallback || '';
+        const hash = text.split('').reduce((a, b) => {
+          a = ((a << 5) - a) + b.charCodeAt(0);
+          return a & a;
+        }, 0);
+        return statuses[Math.abs(hash) % statuses.length];
+      }
+      return undefined;
+    };
+
     return (
-      <div
+      <Avatar
         ref={ref}
-        className={cn(avatarVariants({ size }), className)}
+        className={cn(avatarVariants({ size, variant }), className)}
+        status={getStatus()}
         {...props}
       >
-        {src && !imageError && (
-          <img
+        {src && !imageError ? (
+          <AvatarImage
             src={src}
             alt={alt}
-            className={cn(avatarImageVariants())}
+            loading={loading}
+            className={avatarImageVariants({ loading })}
             onError={handleImageError}
             onLoad={handleImageLoad}
           />
-        )}
+        ) : null}
+        
         {(!src || imageError || !imageLoaded) && (
-          <div className={cn(avatarFallbackVariants({ size }))}>
+          <AvatarFallback 
+            variant={getColorVariant()}
+            size={size}
+          >
             {getFallbackText()}
-          </div>
+          </AvatarFallback>
         )}
-      </div>
+      </Avatar>
     );
   }
 );
 AvatarWithFallback.displayName = "AvatarWithFallback";
 
-export { Avatar, AvatarImage, AvatarFallback, AvatarWithFallback, avatarVariants };
+// Avatar Group component for displaying multiple avatars
+interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+  max?: number;
+  size?: AvatarProps['size'];
+  spacing?: 'tight' | 'normal' | 'loose';
+}
+
+const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
+  ({ className, children, max, size = 'default', spacing = 'normal', ...props }, ref) => {
+    const avatars = React.Children.toArray(children);
+    const displayAvatars = max ? avatars.slice(0, max) : avatars;
+    const remainingCount = max ? avatars.length - max : 0;
+
+    const spacingClasses = {
+      tight: '-space-x-1',
+      normal: '-space-x-2',
+      loose: '-space-x-3',
+    };
+
+    return (
+      <div
+        ref={ref}
+        className={cn("flex items-center", spacingClasses[spacing], className)}
+        {...props}
+      >
+        {displayAvatars.map((avatar, index) => (
+          <div key={index} className="relative">
+            {React.cloneElement(avatar as React.ReactElement, { size })}
+          </div>
+        ))}
+        {remainingCount > 0 && (
+          <Avatar size={size} className="bg-muted/50 text-muted-foreground">
+            <AvatarFallback size={size} variant="default">
+              +{remainingCount}
+            </AvatarFallback>
+          </Avatar>
+        )}
+      </div>
+    );
+  }
+);
+AvatarGroup.displayName = "AvatarGroup";
+
+export { 
+  Avatar, 
+  AvatarImage, 
+  AvatarFallback, 
+  AvatarWithFallback, 
+  AvatarGroup,
+  avatarVariants,
+  avatarImageVariants,
+  avatarFallbackVariants
+};

@@ -16,6 +16,7 @@ try {
 
 const User = require('../models/User');
 const logger = require('./logger');
+const env = require('./env');
 
 // Configuration check function
 const checkOAuthConfig = (provider, clientId, clientSecret) => {
@@ -29,13 +30,13 @@ const checkOAuthConfig = (provider, clientId, clientSecret) => {
 };
 
 // Google OAuth Strategy - only initialize if credentials are provided and package is available
-const googleConfig = checkOAuthConfig('google', process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET);
+const googleConfig = checkOAuthConfig('google', env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET);
 
 if (GoogleStrategy && googleConfig.available) {
     passport.use(new GoogleStrategy({
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
+        clientID: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+        callbackURL: env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
         scope: ['profile', 'email']
     }, async (accessToken, refreshToken, profile, done) => {
         console.log('🔵 Google OAuth Strategy - Profile received');
@@ -83,7 +84,7 @@ if (GoogleStrategy && googleConfig.available) {
                 avatar: profile.photos[0]?.value,
                 googleId: profile.id,
                 oauthProviders: ['google'],
-                isEmailVerified: true, // OAuth users are pre-verified
+                emailVerified: true, // OAuth users are pre-verified
                 password: null // No password for OAuth users
             };
             
@@ -117,28 +118,28 @@ if (GoogleStrategy && googleConfig.available) {
 }
 
 // GitHub OAuth Strategy - only initialize if credentials are provided and package is available
-const githubConfig = checkOAuthConfig('github', process.env.GITHUB_CLIENT_ID, process.env.GITHUB_CLIENT_SECRET);
+const githubConfig = checkOAuthConfig('github', env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET);
 
 console.log('🔍 GitHub OAuth Configuration Check:', {
     hasStrategy: !!GitHubStrategy,
-    clientId: process.env.GITHUB_CLIENT_ID ? `${process.env.GITHUB_CLIENT_ID.substring(0, 10)}...` : 'NOT SET',
-    clientSecret: process.env.GITHUB_CLIENT_SECRET ? `${process.env.GITHUB_CLIENT_SECRET.substring(0, 10)}...` : 'NOT SET',
-    callbackURL: process.env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
+    clientId: env.GITHUB_CLIENT_ID ? `${env.GITHUB_CLIENT_ID.substring(0, 10)}...` : 'NOT SET',
+    clientSecret: env.GITHUB_CLIENT_SECRET ? `${env.GITHUB_CLIENT_SECRET.substring(0, 10)}...` : 'NOT SET',
+    callbackURL: env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
     configAvailable: githubConfig.available,
     reason: githubConfig.reason
 });
 
 if (GitHubStrategy && githubConfig.available) {
     console.log('🔵 Initializing GitHub OAuth Strategy with config:', {
-        clientID: process.env.GITHUB_CLIENT_ID,
-        callbackURL: process.env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
+        clientID: env.GITHUB_CLIENT_ID,
+        callbackURL: env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
         scope: ['user:email']
     });
     
     passport.use(new GitHubStrategy({
-        clientID: process.env.GITHUB_CLIENT_ID,
-        clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        callbackURL: process.env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
+        clientID: env.GITHUB_CLIENT_ID,
+        clientSecret: env.GITHUB_CLIENT_SECRET,
+        callbackURL: env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
         scope: ['user:email']
     }, async (accessToken, refreshToken, profile, done) => {
         console.log('🟣 GitHub OAuth Strategy - Profile received');
@@ -202,7 +203,7 @@ if (GitHubStrategy && githubConfig.available) {
                 avatar: profile.photos[0]?.value,
                 githubId: profile.id,
                 oauthProviders: ['github'],
-                isEmailVerified: true, // OAuth users are pre-verified
+                emailVerified: true, // OAuth users are pre-verified
                 password: null // No password for OAuth users
             };
             
