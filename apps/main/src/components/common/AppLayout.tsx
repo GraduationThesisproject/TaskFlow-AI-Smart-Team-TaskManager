@@ -1,14 +1,10 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTheme } from '@taskflow/theme';
 import { useAuth } from '../../hooks/useAuth';
-
-interface AppLayoutProps {
-  children: React.ReactNode;
-  className?: string;
-}
+import type { AppLayoutProps } from '../../types/interfaces/ui';
 
 export function AppLayout({ children, className = '' }: AppLayoutProps) {
-  const { theme, userPrimaryColor } = useTheme();
+  const {  userPrimaryColor } = useTheme();
   const { user } = useAuth();
 
   useEffect(() => {

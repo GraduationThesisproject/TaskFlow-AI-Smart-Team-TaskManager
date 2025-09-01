@@ -94,7 +94,7 @@ const LandingPageHome = () => {
                     </Typography>
                     <Typography variant="muted">
                       Get intelligent recommendations, automated task prioritization, and predictive analytics 
-                      to optimize your team's productivity.
+                      to optimize your team&apos;s productivity.
                     </Typography>
                   </div>
                 </div>
@@ -194,8 +194,8 @@ const LandingPageHome = () => {
             variant="lead" 
             className="text-xl md:text-2xl font-medium mb-8"
           >
-            "TaskFlow transformed our productivity completely. The AI insights helped us identify 
-            bottlenecks we didn't even know existed, and now our team delivers projects 40% faster."
+            &quot;TaskFlow transformed our productivity completely. The AI insights helped us identify 
+            bottlenecks we didn&apos;t even know existed, and now our team delivers projects 40% faster.&quot;
           </Typography>
           <div className="flex items-center justify-center space-x-3">
             <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">

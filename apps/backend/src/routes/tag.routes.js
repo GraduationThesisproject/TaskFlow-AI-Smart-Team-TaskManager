@@ -1,8 +1,13 @@
 const express = require('express');
 const tagController = require('../controllers/tag.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
+const { tag: tagSchemas } = require('./validator');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
+
+// Apply authentication to all routes
+router.use(authMiddleware);
 // List/search all accessible tags
 router.get('/', async (req, res) => {
     try {
@@ -21,42 +26,26 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Validation schemas
-const createTagSchema = {
-    name: { required: true, minLength: 1, maxLength: 50 },
-    color: { required: true, pattern: /^#[0-9A-F]{6}$/i },
-    description: { maxLength: 200 }
-};
 
-const updateTagSchema = {
-    name: { minLength: 1, maxLength: 50 },
-    color: { pattern: /^#[0-9A-F]{6}$/i },
-    description: { maxLength: 200 }
-};
-
-const mergeTagsSchema = {
-    sourceTagId: { required: true, objectId: true },
-    targetTagId: { required: true, objectId: true }
-};
 
 // Routes
 router.get('/space/:spaceId', tagController.getSpaceTags);
 router.get('/space/:spaceId/usage', tagController.getTagUsage);
 
 router.post('/space/:spaceId',
-    validateMiddleware(createTagSchema),
+    validateMiddleware(tagSchemas.createTagSchema),
     tagController.createTag
 );
 
 router.put('/:id',
-    validateMiddleware(updateTagSchema),
+    validateMiddleware(tagSchemas.updateTagSchema),
     tagController.updateTag
 );
 
 router.delete('/:id', tagController.deleteTag);
 
 router.post('/merge',
-    validateMiddleware(mergeTagsSchema),
+    validateMiddleware(tagSchemas.mergeTagsSchema),
     tagController.mergeTags
 );
 

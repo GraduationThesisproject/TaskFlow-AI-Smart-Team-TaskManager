@@ -7,22 +7,12 @@ import {
   Button,
   TextArea,
   Badge,
-  Stack,
-  Flex,
   getInitials,
   getAvatarColor
 } from '@taskflow/ui';
-import type { Comment, User, CommentReaction } from '../../types/task.types';
+import type { CommentReaction } from '../../types/task.types';
 import { CommentService } from '../../services/commentService';
-
-interface CommentItemProps {
-  comment: Comment;
-  users: User[];
-  currentUserId: string;
-  onCommentUpdate: (commentId: string, updatedComment: Comment) => void;
-  onCommentDelete: (commentId: string) => void;
-  onReplyAdd: (parentCommentId: string, reply: Comment) => void;
-}
+import type { CommentItemProps } from '../../types/interfaces/ui';
 
 const REACTION_EMOJIS = ['👍', '❤️', '😊', '🎉', '👏', '🔥', '💯', '🚀'];
 
@@ -143,9 +133,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
     }
   };
 
-  const getReactionCount = (emoji: string) => {
-    return comment.reactions.filter(r => r.emoji === emoji).length;
-  };
+
 
   const hasUserReacted = (emoji: string) => {
     return comment.reactions.some(r => r.user === currentUserId && r.emoji === emoji);

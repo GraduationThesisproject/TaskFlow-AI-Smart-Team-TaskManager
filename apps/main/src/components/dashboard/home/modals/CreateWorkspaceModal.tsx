@@ -2,11 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, TextArea, Select, SelectOption, Typography, Stack } from '@taskflow/ui';
 import { useAppSelector } from '../../../../store';
 import { useWorkspaces } from '../../../../hooks/useWorkspaces';
-
-interface CreateWorkspaceModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+import type { CreateWorkspaceModalProps } from '../../../../types/interfaces/ui';
 
 const VISIBILITY_OPTIONS = [
   { value: 'private', label: 'Private' },

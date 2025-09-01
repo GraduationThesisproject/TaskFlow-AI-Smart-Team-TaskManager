@@ -2,19 +2,7 @@ import { useState } from "react";
 import { Button, Avatar, AvatarImage, AvatarFallback } from "@taskflow/ui";
 import { ThemeToggleButton } from "../common/navbar/authNav/ThemeToggleButton";
 import { LogOut } from "lucide-react";
-
-interface User {
-  user?: {
-    name?: string;
-    avatar?: string;
-  };
-}
-
-interface UserProfileProps {
-  user?: User;
-  onLogout?: () => void;
-  className?: string;
-}
+import type { User, UserProfileProps } from "../../types/interfaces/ui";
 
 export function UserProfile({ user, onLogout, className = "" }: UserProfileProps) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);

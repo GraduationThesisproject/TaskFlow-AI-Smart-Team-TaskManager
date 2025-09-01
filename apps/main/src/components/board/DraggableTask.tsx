@@ -12,7 +12,7 @@ import {
   getAvatarColor
 } from '@taskflow/ui';
 import { useTheme } from '../../hooks';
-import type { Task } from '../../store/slices/taskSlice';
+import type { DraggableTaskProps } from '../../types/interfaces/ui';
 
 // Portal component for dragging
 const Portal = ({ children }: { children: React.ReactNode }) => {
@@ -21,17 +21,9 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
   return createPortal(children, portalRoot);
 };
 
-interface DraggableTaskProps {
-  task: Task;
-  index: number;
-  columnId: string;
-  onClick: (task: Task) => void;
-}
-
 export const DraggableTask: React.FC<DraggableTaskProps> = ({
   task,
   index,
-  columnId,
   onClick,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -92,7 +84,7 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
 
   const progressPercentage = (task.estimatedHours || 0) > 0 ? (task.actualHours / (task.estimatedHours || 1)) * 100 : 0;
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = () => {
     // Prevent click during drag operations
     if (!isDragging) {
       onClick(task);

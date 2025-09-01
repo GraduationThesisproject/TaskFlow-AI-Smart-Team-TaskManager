@@ -3,6 +3,7 @@ const Board = require('../models/Board');
 const Column = require('../models/Column');
 const Task = require('../models/Task');
 const User = require('../models/User');
+const Comment = require('../models/Comment');
 const logger = require('../config/logger');
 
 // Socket authentication middleware
@@ -38,7 +39,7 @@ const authenticateSocket = async (socket, next) => {
     }
 };
 
-// Handle board socket events
+// Handle unified board and task socket events
 const handleBoardSocket = (io) => {
     // Apply authentication middleware
     io.use(authenticateSocket);
@@ -49,6 +50,8 @@ const handleBoardSocket = (io) => {
         // Join user's personal room for notifications
         socket.join(`user:${socket.userId}`);
 
+        // ===== BOARD OPERATIONS =====
+        
         // Join board room
         socket.on('board:join', async (data) => {
             try {
@@ -109,7 +112,8 @@ const handleBoardSocket = (io) => {
             });
         });
 
-        // Column operations
+        // ===== COLUMN OPERATIONS =====
+        
         socket.on('column:create', async (data) => {
             try {
                 const { boardId, columnData } = data;
@@ -254,6 +258,120 @@ const handleBoardSocket = (io) => {
             }
         });
 
+        // ===== TASK OPERATIONS =====
+        
+        // Handle task updates
+        socket.on('task:update', async (data) => {
+            try {
+                const { taskId, updates, boardId } = data;
+                
+                const task = await Task.findById(taskId);
+                if (!task) {
+                    socket.emit('error', { message: 'Task not found' });
+                    return;
+                }
+
+                // Update task
+                Object.assign(task, updates);
+                task.lastActivity = new Date();
+                await task.save();
+
+                await task.populate('assignees', 'name email avatar');
+                await task.populate('reporter', 'name email avatar');
+
+                // Broadcast to all users in the board
+                io.to(`board:${boardId}`).emit('task:updated', {
+                    task: task.toObject(),
+                    updatedBy: socket.user,
+                    timestamp: new Date()
+                });
+
+                logger.info(`Task ${taskId} updated by ${socket.user.name}`);
+
+            } catch (error) {
+                logger.error('Task update error:', error);
+                socket.emit('error', { message: 'Failed to update task' });
+            }
+        });
+
+        // Handle task movement (drag & drop)
+        socket.on('task:move', async (data) => {
+            try {
+                const { taskId, sourceColumnId, targetColumnId, targetPosition, boardId } = data;
+                
+                const task = await Task.findById(taskId);
+                if (!task) {
+                    socket.emit('error', { message: 'Task not found' });
+                    return;
+                }
+
+                // Update task position and column
+                task.column = targetColumnId;
+                task.position = targetPosition;
+                await task.save();
+
+                // Broadcast task movement to board
+                io.to(`board:${boardId}`).emit('task:moved', {
+                    taskId,
+                    sourceColumnId,
+                    targetColumnId,
+                    targetPosition,
+                    movedBy: socket.user,
+                    timestamp: new Date()
+                });
+
+                logger.info(`Task ${taskId} moved by ${socket.user.name}`);
+
+            } catch (error) {
+                logger.error('Task move error:', error);
+                socket.emit('error', { message: 'Failed to move task' });
+            }
+        });
+
+        // Handle real-time comments
+        socket.on('comment:add', async (data) => {
+            try {
+                const { taskId, content, mentions = [] } = data;
+                
+                const comment = await Comment.create({
+                    content,
+                    task: taskId,
+                    author: socket.userId,
+                    mentions
+                });
+
+                await comment.populate('author', 'name email avatar');
+                await comment.populate('mentions', 'name email avatar');
+
+                const task = await Task.findById(taskId);
+                
+                // Broadcast to board and mentioned users
+                io.to(`board:${task.board}`).emit('comment:added', {
+                    comment: comment.toObject(),
+                    taskId,
+                    timestamp: new Date()
+                });
+
+                // Send notifications to mentioned users
+                for (const mentionId of mentions) {
+                    io.to(`user:${mentionId}`).emit('notification', {
+                        type: 'mention',
+                        message: `${socket.user.name} mentioned you in a comment`,
+                        taskId,
+                        taskTitle: task.title
+                    });
+                }
+
+                logger.info(`Comment added to task ${taskId} by ${socket.user.name}`);
+
+            } catch (error) {
+                logger.error('Add comment error:', error);
+                socket.emit('error', { message: 'Failed to add comment' });
+            }
+        });
+
+        // ===== BOARD SETTINGS & UTILITIES =====
+        
         // Board settings updates
         socket.on('board:settings-update', async (data) => {
             try {
@@ -374,9 +492,64 @@ const handleBoardSocket = (io) => {
                 socket.emit('error', { message: 'Bulk operation failed' });
             }
         });
+
+        // ===== USER INTERACTION FEATURES =====
+        
+        // Handle user typing indicators
+        socket.on('typing:start', (data) => {
+            const { boardId, taskId } = data;
+            socket.to(`board:${boardId}`).emit('user:typing', {
+                user: socket.user,
+                taskId,
+                isTyping: true
+            });
+        });
+
+        socket.on('typing:stop', (data) => {
+            const { boardId, taskId } = data;
+            socket.to(`board:${boardId}`).emit('user:typing', {
+                user: socket.user,
+                taskId,
+                isTyping: false
+            });
+        });
+
+        // Handle user presence
+        socket.on('presence:update', (data) => {
+            const { boardId, status } = data;
+            socket.to(`board:${boardId}`).emit('user:presence', {
+                user: socket.user,
+                status,
+                timestamp: new Date()
+            });
+        });
+
+        // Handle disconnection
+        socket.on('disconnect', (reason) => {
+            logger.info(`User disconnected: ${socket.user.name} (${reason})`);
+            
+            // Notify all rooms user was in about disconnection
+            socket.broadcast.emit('user:left', {
+                user: socket.user,
+                timestamp: new Date()
+            });
+        });
+
+        // Handle errors
+        socket.on('error', (error) => {
+            logger.error('Socket error:', error);
+        });
+
+        // Send welcome message
+        socket.emit('connected', {
+            message: 'Successfully connected to TaskFlow Board',
+            user: socket.user,
+            timestamp: new Date()
+        });
     });
 
-    // Global board utilities
+    // ===== GLOBAL BOARD UTILITIES =====
+    
     io.notifyBoard = (boardId, event, data) => {
         io.to(`board:${boardId}`).emit(event, data);
     };
@@ -395,6 +568,15 @@ const handleBoardSocket = (io) => {
         } catch (error) {
             logger.error('Notify board admins error:', error);
         }
+    };
+
+    // Global socket utilities
+    io.notifyUser = (userId, event, data) => {
+        io.to(`user:${userId}`).emit(event, data);
+    };
+
+    io.notifyProject = (projectId, event, data) => {
+        io.to(`project:${projectId}`).emit(event, data);
     };
 
     return io;

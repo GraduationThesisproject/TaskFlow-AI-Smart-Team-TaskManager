@@ -14,14 +14,7 @@ import {
   Flex
 } from '@taskflow/ui';
 import type { Task, Column } from '../../store/slices/taskSlice';
-
-interface AddTaskModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (taskData: Partial<Task>) => Promise<void>;
-  selectedColumn?: string;
-  columns?: Column[];
-}
+import type { AddTaskModalProps } from '../../types/interfaces/ui';
 
 const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Low' },

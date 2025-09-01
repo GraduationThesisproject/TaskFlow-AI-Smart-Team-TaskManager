@@ -1,13 +1,7 @@
 import React from 'react';
 import { usePermissions, Permission } from '../../hooks/usePermissions';
 import { WorkspaceRole } from '../../types/workspace.types';
-
-interface PermissionGuardProps {
-  children: React.ReactNode;
-  requiredRole?: WorkspaceRole;
-  requiredPermission?: keyof Permission;
-  fallback?: React.ReactNode;
-}
+import type { PermissionGuardProps } from '../../types/interfaces/ui';
 
 export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   children,

@@ -1,66 +1,45 @@
 const express = require('express');
 const checklistController = require('../controllers/checklist.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
+const { checklist: checklistSchemas } = require('./validator');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
-// Validation schemas
-const createChecklistSchema = {
-    title: { required: true, minLength: 1, maxLength: 100 },
-    items: { 
-        array: true,
-        arrayOf: 'object'
-    }
-};
+// Apply authentication to all routes
+router.use(authMiddleware);
 
-const updateChecklistSchema = {
-    title: { minLength: 1, maxLength: 100 },
-    hideCompletedItems: { boolean: true }
-};
 
-const addItemSchema = {
-    text: { required: true, minLength: 1, maxLength: 200 },
-    position: { number: true, min: 0 }
-};
-
-const updateItemSchema = {
-    text: { minLength: 1, maxLength: 200 },
-    completed: { boolean: true }
-};
-
-const reorderItemsSchema = {
-    itemOrder: { required: true, array: true }
-};
 
 // Routes
 router.get('/task/:taskId', checklistController.getTaskChecklists);
 
 router.post('/task/:taskId',
-    validateMiddleware(createChecklistSchema),
+    validateMiddleware(checklistSchemas.createChecklistSchema),
     checklistController.createChecklist
 );
 
 router.put('/:id',
-    validateMiddleware(updateChecklistSchema),
+    validateMiddleware(checklistSchemas.updateChecklistSchema),
     checklistController.updateChecklist
 );
 
 router.delete('/:id', checklistController.deleteChecklist);
 
 router.post('/:id/items',
-    validateMiddleware(addItemSchema),
+    validateMiddleware(checklistSchemas.addItemSchema),
     checklistController.addItem
 );
 
 router.put('/:id/items/:itemId',
-    validateMiddleware(updateItemSchema),
+    validateMiddleware(checklistSchemas.updateItemSchema),
     checklistController.updateItem
 );
 
 router.delete('/:id/items/:itemId', checklistController.deleteItem);
 
 router.patch('/:id/reorder',
-    validateMiddleware(reorderItemsSchema),
+    validateMiddleware(checklistSchemas.reorderItemsSchema),
     checklistController.reorderItems
 );
 

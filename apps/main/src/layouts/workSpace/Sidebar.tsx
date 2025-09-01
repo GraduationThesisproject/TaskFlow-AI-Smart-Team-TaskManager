@@ -37,7 +37,7 @@ const Sidebar = () => {
 
             </div>
             <div className="flex min-w-0 flex-col">
-              <span className="truncate text-sm font-small" style={{color: "hsl(var(--accent))"}}>{displayName}'s</span>
+              <span className="truncate text-sm font-small" style={{color: "hsl(var(--accent))"}}>{displayName}&apos;s</span>
               <span className="truncate text-xs text-foreground/70" style={{color: "hsl(var(--accent))"}}>workspace</span>
             </div>
           </div>

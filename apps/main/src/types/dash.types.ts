@@ -1,5 +1,6 @@
 import { LucideIcon } from 'lucide-react';
 import type { Task } from './task.types';
+import type { ReactNode } from 'react';
 
 export interface Workspace {
   _id: string;
@@ -188,7 +189,7 @@ export interface UseNotificationsReturn {
 }
 
 export interface DashboardShellProps {
-  children: React.ReactNode;
+  children: ReactNode;
   title?: string;
   breadcrumbs?: Array<{ label: string; href?: string }>;
 }
@@ -300,49 +301,14 @@ export interface UseTemplatesReturn {
   incrementViews: (id: string) => void;
   toggleLike: (id: string) => void;
 }
-// Types
 
-export interface TemplateItem {
-  _id: string;
-  name: string;
-  description?: string;
-  type: TemplateType;
-  content: Record<string, any>;
-  category?: string;
-  tags?: string[];
-  isPublic?: boolean;
-  status?: TemplateStatus;
-  accessControl?: {
-    allowedUsers?: string[];
-    allowedWorkspaces?: string[];
-    allowedRoles?: string[];
-  };
-  createdBy?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  views?: number;
-  likedBy?: string[];
-}
-
-export interface TemplatesFilters {
-  workspaceId?: string;
-  type?: TemplateType;
-  category?: string;
-  q?: string;
-  isPublic?: boolean;
-  status?: TemplateStatus;
-  limit?: number;
-  all?: boolean;
-  // Admin-only: request all templates regardless of access control
-  scope?: 'all';
-}
 
 export type CategoryKey = 'Marketing' | 'Development' | 'Design' | 'Sales' | 'Support' | 'Operations' | 'HR' | 'Finance' | 'General' | 'Custom';
 
 export interface Category {
   key: CategoryKey;
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   count: number;
 }
 

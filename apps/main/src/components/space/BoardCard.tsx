@@ -1,27 +1,7 @@
 import React from 'react';
 import { Card, Typography, Badge, Avatar } from "@taskflow/ui";
 import { Grid, List, Calendar, BarChart3 } from 'lucide-react';
-
-interface BoardCardProps {
-    board: {
-        id: string;
-        name: string;
-        description: string;
-        type: 'kanban' | 'list' | 'calendar' | 'timeline';
-        totalTasks: number;
-        completedTasks: number;
-        members: Array<{
-            id: string;
-            name: string;
-            avatar: string;
-        }>;
-        lastActivity: string;
-        isTemplate: boolean;
-        color: string;
-    };
-    onClick: () => void;
-    viewMode: 'grid' | 'list';
-}
+import type { BoardCardProps } from '../../types/interfaces/ui';
 
 export const BoardCard: React.FC<BoardCardProps> = ({ board, onClick, viewMode }) => {
     const getBoardIcon = (type: string) => {

@@ -1,27 +1,6 @@
 import React from 'react';
 import { Typography, Button, Card, Avatar, Stack } from "@taskflow/ui";
-
-interface SpaceHeaderProps {
-    space: {
-        id: string;
-        name: string;
-        description: string;
-        color: string;
-        icon: string;
-        totalBoards: number;
-        totalTasks: number;
-        completedTasks: number;
-        members: Array<{
-            id: string;
-            name: string;
-            avatar: string;
-            role: string;
-        }>;
-    };
-    onCreateBoard: () => void;
-    onSettings: () => void;
-    onMembers: () => void;
-}
+import type { SpaceHeaderProps } from '../../types/interfaces/ui';
 
 export const SpaceHeader: React.FC<SpaceHeaderProps> = ({
     space,

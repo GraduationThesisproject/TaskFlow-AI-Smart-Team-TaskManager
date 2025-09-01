@@ -10,9 +10,7 @@ import WorkSpace from './pages/workSpace';
 import { SpacePage } from './pages/space.page';
 import { BoardPage } from './pages/board.page';
 import { LandingPage } from './pages/LandingPage';
-import SignIn from './layouts/Landing/SignIn';
-import SignUP from './layouts/Landing/SignUP';
-import EmailVerification from './layouts/Landing/EmailVerif';
+
 import OAuthCallback from './components/auth/OAuthCallback';
 import { LogoutConfirmDialog, AppLayout } from './components';
 import { AccessibilityProvider } from './components/common/AccessibilityProvider';
@@ -191,11 +189,7 @@ function AppContent() {
         userName={user?.user?.name || 'User'}
       />
       
-      {/* Socket Debugger - Commented out for production */}
-      {/* {process.env.NODE_ENV === 'development' && <SocketDebugger />} */}
-      
-      {/* Socket Connection Test - Commented out for production */}
-      {/* {process.env.NODE_ENV === 'development' && <SocketConnectionTest />} */}
+
     </AppLayout>
   );
 }

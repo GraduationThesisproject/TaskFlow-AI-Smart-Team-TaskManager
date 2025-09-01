@@ -1,11 +1,7 @@
 import React from 'react';
 import { Button} from '@taskflow/ui';
 import OutlineBtn from './OutlineBtn';
-
-interface InviteSectionProps {
-  onGenerateInvite: () => void;
-  onDisableInvite: () => void;
-}
+import type { InviteSectionProps } from '../../../../types/interfaces/ui';
 
 const InviteSection: React.FC<InviteSectionProps> = ({
   onGenerateInvite,

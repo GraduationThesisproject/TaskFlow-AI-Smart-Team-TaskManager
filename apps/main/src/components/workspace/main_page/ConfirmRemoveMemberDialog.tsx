@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@taskflow/ui';
 import { Modal } from '@taskflow/ui';
-
-interface ConfirmRemoveMemberDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: (password: string) => Promise<void>;
-  memberName: string;
-  isOwner?: boolean;
-}
+import type { ConfirmRemoveMemberDialogProps } from '../../../types/interfaces/ui';
 
 const ConfirmRemoveMemberDialog: React.FC<ConfirmRemoveMemberDialogProps> = ({
   isOpen,
