@@ -22,6 +22,7 @@ require('./AIJob');
 require('./Template');
 require('./BoardTemplate');
 require('./Quota');
+require('./PushSubscription');
 
 module.exports = {
   User: require('./User'),
@@ -46,5 +47,6 @@ module.exports = {
   AIJob: require('./AIJob'),
   Template: require('./Template'),
   BoardTemplate: require('./BoardTemplate'),
-  Quota: require('./Quota')
+  Quota: require('./Quota'),
+  PushSubscription: require('./PushSubscription')
 };

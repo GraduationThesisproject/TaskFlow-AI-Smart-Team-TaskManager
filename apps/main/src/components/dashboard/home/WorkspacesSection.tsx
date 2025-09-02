@@ -2,7 +2,7 @@ import { Card, CardHeader, CardTitle, CardContent, Typography, Button, Badge, Em
 import { Plus, Users, Trash, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../../store";
-import { setCurrentWorkspaceId, fetchWorkspaces } from "../../../store/slices/workspaceSlice";
+import { setCurrentWorkspaceId } from "../../../store/slices/workspaceSlice";
 import { useMemo, useState, useEffect } from "react";
 import { CreateWorkspaceModal } from "../../../components/dashboard/home/modals/CreateWorkspaceModal";
 import DeleteWorkspaceModal from "../../../components/dashboard/home/modals/DeleteWorkspaceModal";
@@ -45,7 +45,7 @@ export const WorkspacesSection = () => {
   };
 
   const sortedWorkspaces = useMemo(() => {
-    const userId = user?.user?._id || user?.user?._id;
+    // const userId = user?.user?._id || user?.user?._id;
     // console.log("userId", userId);
     // console.log("workspaces", workspaces);
     // Show all workspaces (no membership filtering), sorted by updatedAt/createdAt desc
