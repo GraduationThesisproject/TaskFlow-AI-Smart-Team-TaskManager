@@ -69,7 +69,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
     tags: [],
     isPublic: true,
     isActive: true
-  });
+  } as CreateBoardTemplateRequest);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [tagInput, setTagInput] = useState(''); // Add state for tag input
@@ -77,14 +77,14 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
   useEffect(() => {
     if (template && mode === 'edit') {
       setFormData({
-        name: template.name,
-        description: template.description,
-        categories: template.categories,
-        defaultLists: template.defaultLists,
-        defaultCards: template.defaultCards,
-        tags: template.tags,
-        isPublic: template.isPublic,
-        isActive: template.isActive
+        name: template.name || '',
+        description: template.description || '',
+        categories: template.categories || ['General'],
+        defaultLists: template.defaultLists || [],
+        defaultCards: template.defaultCards || [],
+        tags: template.tags || [],
+        isPublic: template.isPublic ?? true,
+        isActive: template.isActive ?? true
       });
     }
   }, [template, mode]);
@@ -118,7 +118,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
     }
 
     // Validate cards reference valid lists
-    if (formData.defaultCards.length > 0) {
+    if (formData.defaultCards && formData.defaultCards.length > 0) {
       const validListTitles = formData.defaultLists.map(list => list.title);
       const invalidCards = formData.defaultCards.filter(card => 
         !validListTitles.includes(card.listId)
@@ -209,7 +209,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
     
     // Remove cards that reference the deleted list
     const removedListTitle = formData.defaultLists[index].title;
-    const updatedCards = formData.defaultCards.filter(card => card.listId !== removedListTitle);
+    const updatedCards = (formData.defaultCards || []).filter(card => card.listId !== removedListTitle);
     
     setFormData(prev => ({
       ...prev,
@@ -225,7 +225,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
       title: '',
       description: '',
       listId: formData.defaultLists[0].title,
-      order: formData.defaultCards.filter(card => card.listId === formData.defaultLists[0].title).length,
+              order: (formData.defaultCards || []).filter(card => card.listId === formData.defaultLists[0].title).length,
       priority: 'medium',
       estimatedHours: 0,
       tags: []
@@ -233,12 +233,12 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
     
     setFormData(prev => ({
       ...prev,
-      defaultCards: [...prev.defaultCards, newCard]
+      defaultCards: [...(prev.defaultCards || []), newCard]
     }));
   };
 
   const updateCard = (index: number, field: keyof BoardTemplateCard, value: any) => {
-    const updatedCards = [...formData.defaultCards];
+    const updatedCards = [...(formData.defaultCards || [])];
     updatedCards[index] = { ...updatedCards[index], [field]: value };
     
     // Reorder cards if order changed
@@ -255,15 +255,15 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
   };
 
   const removeCard = (index: number) => {
-    const updatedCards = formData.defaultCards.filter((_, i) => i !== index);
+    const updatedCards = (formData.defaultCards || []).filter((_, i) => i !== index);
     setFormData(prev => ({ ...prev, defaultCards: updatedCards }));
   };
 
   const addTag = (tag: string) => {
-    if (tag.trim() && !formData.tags.includes(tag.trim())) {
+    if (tag.trim() && !(formData.tags || []).includes(tag.trim())) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, tag.trim()]
+        tags: [...(prev.tags || []), tag.trim()]
       }));
     }
   };
@@ -271,7 +271,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
   const removeTag = (tagToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: (prev.tags || []).filter(tag => tag !== tagToRemove)
     }));
   };
 
@@ -379,7 +379,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
                       </Button>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {formData.tags.map(tag => (
+                      {(formData.tags || []).map(tag => (
                         <Badge key={tag} variant="secondary" className="flex items-center space-x-1">
                           <span>{tag}</span>
                           <button
@@ -398,14 +398,14 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
                 <div className="flex items-center space-x-6">
                   <FormField label="Public Template">
                     <Switch
-                      checked={formData.isPublic}
+                      checked={formData.isPublic ?? true}
                       onCheckedChange={(checked) => handleInputChange('isPublic', checked)}
                     />
                   </FormField>
                   
                   <FormField label="Active">
                     <Switch
-                      checked={formData.isActive}
+                      checked={formData.isActive ?? true}
                       onCheckedChange={(checked) => handleInputChange('isActive', checked)}
                     />
                   </FormField>
@@ -498,7 +498,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
                 )}
                 
                 <div className="space-y-4">
-                  {formData.defaultCards.map((card, index) => (
+                  {(formData.defaultCards || []).map((card, index) => (
                     <div key={index} className="p-4 border rounded-lg space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <FormField label="Title" required>
@@ -534,22 +534,26 @@ const TemplateForm: React.FC<TemplateFormProps> = ({ mode, template, onClose }) 
                       
                       <div className="grid grid-cols-3 gap-3">
                         <FormField label="Priority">
-                          <Select
-                            value={card.priority}
-                            onChange={(value) => updateCard(index, 'priority', value)}
-                          >
-                            {PRIORITY_OPTIONS.map(option => (
-                              <SelectItem key={option.value} value={option.value}>
-                                <div className="flex items-center space-x-2">
-                                  <div 
-                                    className="w-3 h-3 rounded-full" 
-                                    style={{ backgroundColor: option.color }}
-                                  />
-                                  <span>{option.label}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </Select>
+                          <div className="flex items-center space-x-2">
+                            <Select
+                              value={card.priority}
+                              onChange={(value) => updateCard(index, 'priority', value)}
+                              className="flex-1"
+                            >
+                              {PRIORITY_OPTIONS.map(option => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </Select>
+                            <div 
+                              className="w-4 h-4 rounded-full border"
+                              style={{ 
+                                backgroundColor: PRIORITY_OPTIONS.find(p => p.value === card.priority)?.color || '#6B7280'
+                              }}
+                              title={`${card.priority} priority`}
+                            />
+                          </div>
                         </FormField>
                         
                         <FormField label="Estimated Hours">

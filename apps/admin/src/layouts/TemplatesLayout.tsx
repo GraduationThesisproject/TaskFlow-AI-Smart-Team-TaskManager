@@ -38,6 +38,7 @@ import {
 } from '../services/adminService';
 import AdminTemplateManager from '../components/templates/AdminTemplateManager';
 import TemplateForm from '../components/templates/TemplateForm';
+import { ConfirmationDialog } from '../components/common';
 import { useTranslation } from '../hooks/useTranslation';
 
 const TemplatesLayout: React.FC = () => {
@@ -46,6 +47,10 @@ const TemplatesLayout: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItemType, setSelectedItemType] = useState<string>('');
   
   // Template data
   const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>([]);
@@ -64,6 +69,57 @@ const TemplatesLayout: React.FC = () => {
 
   const handleCloseCreateModal = () => {
     setShowCreateModal(false);
+  };
+
+  const handleEditItem = (item: any, type: string) => {
+    setSelectedItem(item);
+    setSelectedItemType(type);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteItem = (item: any, type: string) => {
+    setSelectedItem(item);
+    setSelectedItemType(type);
+    setShowDeleteModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setSelectedItem(null);
+    setSelectedItemType('');
+  };
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setSelectedItem(null);
+    setSelectedItemType('');
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedItem || !selectedItemType) return;
+    
+    try {
+      // For now, we'll just remove from local state
+      // TODO: Implement actual API calls when backend endpoints are available
+      switch (selectedItemType) {
+        case 'project':
+          setProjectTemplates(prev => prev.filter(t => t.id !== selectedItem.id));
+          break;
+        case 'task':
+          setTaskTemplates(prev => prev.filter(t => t.id !== selectedItem.id));
+          break;
+        case 'ai-prompt':
+          setAiPrompts(prev => prev.filter(p => p.id !== selectedItem.id));
+          break;
+        case 'branding':
+          setBrandingAssets(prev => prev.filter(b => b.id !== selectedItem.id));
+          break;
+      }
+      handleCloseDeleteModal();
+    } catch (error) {
+      console.error('Failed to delete item:', error);
+      // You might want to show an error toast here
+    }
   };
 
   const fetchTemplates = async () => {
@@ -238,8 +294,8 @@ const TemplatesLayout: React.FC = () => {
     <Container size="7xl">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
+          <div className="flex-1 min-w-0">
             <Typography variant="heading-large" className="text-foreground mb-2">
               Templates & Assets
             </Typography>
@@ -247,7 +303,7 @@ const TemplatesLayout: React.FC = () => {
               Manage project templates, task templates, AI prompts, and branding assets
             </Typography>
           </div>
-          <Button onClick={handleCreateTemplate}>
+          <Button onClick={handleCreateTemplate} className="flex-shrink-0">
             <PlusIcon className="h-4 w-4 mr-2" />
             Create Template
           </Button>
@@ -257,7 +313,7 @@ const TemplatesLayout: React.FC = () => {
       {/* Search and Filters */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <div className="flex-1 relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -276,42 +332,42 @@ const TemplatesLayout: React.FC = () => {
         <Button
           variant="outline"
           onClick={() => setActiveTab('projects')}
-          className={`flex-1 ${activeTab === 'projects' ? 'bg-primary text-white' : ''}`}
+          className={`flex-1 min-w-0 ${activeTab === 'projects' ? 'bg-primary text-white' : ''}`}
         >
-          <FolderIcon className="h-4 w-4 mr-2" />
-          Project Templates ({(projectTemplates || []).length})
+          <FolderIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+          <span className="truncate">Projects ({(projectTemplates || []).length})</span>
         </Button>
         <Button
           variant="outline"
           onClick={() => setActiveTab('tasks')}
-          className={`flex-1 ${activeTab === 'tasks' ? 'bg-primary text-white' : ''}`}
+          className={`flex-1 min-w-0 ${activeTab === 'tasks' ? 'bg-primary text-white' : ''}`}
         >
-          <DocumentTextIcon className="h-4 w-4 mr-2" />
-          Task Templates ({(taskTemplates || []).length})
+          <DocumentTextIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+          <span className="truncate">Tasks ({(taskTemplates || []).length})</span>
         </Button>
         <Button
           variant="outline"
           onClick={() => setActiveTab('board-templates')}
-          className={`flex-1 ${activeTab === 'board-templates' ? 'bg-primary text-white' : ''}`}
+          className={`flex-1 min-w-0 ${activeTab === 'board-templates' ? 'bg-primary text-white' : ''}`}
         >
-          <DocumentTextIcon className="h-4 w-4 mr-2" />
-          Board Templates
+          <DocumentTextIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+          <span className="truncate">Boards</span>
         </Button>
         <Button
           variant="outline"
           onClick={() => setActiveTab('ai-prompts')}
-          className={`flex-1 ${activeTab === 'ai-prompts' ? 'bg-primary text-white' : ''}`}
+          className={`flex-1 min-w-0 ${activeTab === 'ai-prompts' ? 'bg-primary text-white' : ''}`}
         >
-          <SparklesIcon className="h-4 w-4 mr-2" />
-          AI Prompts ({(aiPrompts || []).length})
+          <SparklesIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+          <span className="truncate">AI ({(aiPrompts || []).length})</span>
         </Button>
         <Button
           variant="outline"
           onClick={() => setActiveTab('branding')}
-          className={`flex-1 ${activeTab === 'branding' ? 'bg-primary text-white' : ''}`}
+          className={`flex-1 min-w-0 ${activeTab === 'branding' ? 'bg-primary text-white' : ''}`}
         >
-          <PaintBrushIcon className="h-4 w-4 mr-2" />
-          Branding Assets ({(brandingAssets || []).length})
+          <PaintBrushIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+          <span className="truncate">Branding ({(brandingAssets || []).length})</span>
         </Button>
       </Grid>
 
@@ -351,34 +407,44 @@ const TemplatesLayout: React.FC = () => {
                       <Typography variant="body-medium" className="text-muted-foreground mb-3">
                         {template.description}
                       </Typography>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Typography variant="body-small" className="text-muted-foreground">
-                            Category
-                          </Typography>
-                          <Badge variant="secondary">{template.category}</Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Typography variant="body-small" className="text-muted-foreground">
-                            Usage Count
-                          </Typography>
-                          <Typography variant="body-medium">{template.usageCount || 0}</Typography>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Typography variant="body-small" className="text-muted-foreground">
-                            Created
-                          </Typography>
-                          <Typography variant="body-small">
-                            {template.createdAt ? new Date(template.createdAt).toLocaleDateString() : 'N/A'}
-                          </Typography>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2 mt-4">
-                        <Button variant="outline" size="sm" className="flex-1">
+                                             <div className="space-y-2">
+                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0">
+                           <Typography variant="body-small" className="text-muted-foreground flex-shrink-0">
+                             Category
+                           </Typography>
+                           <Badge variant="secondary" className="flex-shrink-0">{template.category}</Badge>
+                         </div>
+                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0">
+                           <Typography variant="body-small" className="text-muted-foreground flex-shrink-0">
+                             Usage Count
+                           </Typography>
+                           <Typography variant="body-medium" className="flex-shrink-0">{template.usageCount || 0}</Typography>
+                         </div>
+                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0">
+                           <Typography variant="body-small" className="text-muted-foreground flex-shrink-0">
+                             Created
+                           </Typography>
+                           <Typography variant="body-small" className="truncate min-w-0">
+                             {template.createdAt ? new Date(template.createdAt).toLocaleDateString() : 'N/A'}
+                           </Typography>
+                         </div>
+                       </div>
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 min-w-0"
+                          onClick={() => handleEditItem(template, 'project')}
+                        >
                           <PencilIcon className="h-4 w-4 mr-2" />
                           Edit
                         </Button>
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 min-w-0"
+                          onClick={() => handleDeleteItem(template, 'project')}
+                        >
                           <TrashIcon className="h-4 w-4 mr-2" />
                           Delete
                         </Button>
@@ -428,32 +494,42 @@ const TemplatesLayout: React.FC = () => {
                       <Typography variant="body-medium" className="text-muted-foreground mb-3">
                         {template.description}
                       </Typography>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Typography variant="body-small" className="text-muted-foreground">
-                            Category
-                          </Typography>
-                          <Badge variant="secondary">{template.category}</Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Typography variant="body-small" className="text-muted-foreground">
-                            Estimated Hours
-                          </Typography>
-                          <Typography variant="body-medium">{template.estimatedHours || 0}h</Typography>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Typography variant="body-small" className="text-muted-foreground">
-                            Usage Count
-                          </Typography>
-                          <Typography variant="body-medium">{template.usageCount || 0}</Typography>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2 mt-4">
-                        <Button variant="outline" size="sm" className="flex-1">
+                                             <div className="space-y-2">
+                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0">
+                           <Typography variant="body-small" className="text-muted-foreground flex-shrink-0">
+                             Category
+                           </Typography>
+                           <Badge variant="secondary" className="flex-shrink-0">{template.category}</Badge>
+                         </div>
+                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0">
+                           <Typography variant="body-small" className="text-muted-foreground flex-shrink-0">
+                             Estimated Hours
+                           </Typography>
+                           <Typography variant="body-medium" className="flex-shrink-0">{template.estimatedHours || 0}h</Typography>
+                         </div>
+                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0">
+                           <Typography variant="body-small" className="text-muted-foreground flex-shrink-0">
+                             Usage Count
+                           </Typography>
+                           <Typography variant="body-medium" className="flex-shrink-0">{template.usageCount || 0}</Typography>
+                         </div>
+                       </div>
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 min-w-0"
+                          onClick={() => handleEditItem(template, 'task')}
+                        >
                           <PencilIcon className="h-4 w-4 mr-2" />
                           Edit
                         </Button>
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 min-w-0"
+                          onClick={() => handleDeleteItem(template, 'task')}
+                        >
                           <TrashIcon className="h-4 w-4 mr-2" />
                           Delete
                         </Button>
@@ -503,26 +579,36 @@ const TemplatesLayout: React.FC = () => {
                       <Typography variant="body-medium" className="text-muted-foreground mb-3">
                         {prompt.prompt}
                       </Typography>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Typography variant="body-small" className="text-muted-foreground">
-                            Category
-                          </Typography>
-                          <Badge variant="secondary">{prompt.category}</Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Typography variant="body-small" className="text-muted-foreground">
-                            Usage Count
-                          </Typography>
-                          <Typography variant="body-medium">{prompt.usageCount || 0}</Typography>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2 mt-4">
-                        <Button variant="outline" size="sm" className="flex-1">
+                                             <div className="space-y-2">
+                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0">
+                           <Typography variant="body-small" className="text-muted-foreground flex-shrink-0">
+                             Category
+                           </Typography>
+                           <Badge variant="secondary" className="flex-shrink-0">{prompt.category}</Badge>
+                         </div>
+                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0">
+                           <Typography variant="body-small" className="text-muted-foreground flex-shrink-0">
+                             Usage Count
+                           </Typography>
+                           <Typography variant="body-medium" className="flex-shrink-0">{prompt.usageCount || 0}</Typography>
+                         </div>
+                       </div>
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 min-w-0"
+                          onClick={() => handleEditItem(prompt, 'ai-prompt')}
+                        >
                           <PencilIcon className="h-4 w-4 mr-2" />
                           Edit
                         </Button>
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 min-w-0"
+                          onClick={() => handleDeleteItem(prompt, 'ai-prompt')}
+                        >
                           <TrashIcon className="h-4 w-4 mr-2" />
                           Delete
                         </Button>
@@ -568,42 +654,54 @@ const TemplatesLayout: React.FC = () => {
                 return (
                   <Card key={asset.id} className="hover:shadow-md transition-shadow">
                     <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{asset.name}</CardTitle>
-                        {getStatusBadge(asset.isActive)}
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
+                        <CardTitle className="text-lg truncate flex-1 min-w-0">{asset.name}</CardTitle>
+                        <div className="flex-shrink-0">
+                          {getStatusBadge(asset.isActive)}
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Typography variant="body-small" className="text-muted-foreground">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0">
+                          <Typography variant="body-small" className="text-muted-foreground flex-shrink-0">
                             Type
                           </Typography>
-                          <Badge variant="secondary">{asset.type}</Badge>
+                          <Badge variant="secondary" className="flex-shrink-0">{asset.type}</Badge>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <Typography variant="body-small" className="text-muted-foreground">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0">
+                          <Typography variant="body-small" className="text-muted-foreground flex-shrink-0">
                             Value
                           </Typography>
-                          <Typography variant="body-small" className="truncate max-w-24">
+                          <Typography variant="body-small" className="truncate min-w-0 max-w-24">
                             {asset.value || 'N/A'}
                           </Typography>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <Typography variant="body-small" className="text-muted-foreground">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0">
+                          <Typography variant="body-small" className="text-muted-foreground flex-shrink-0">
                             Created
                           </Typography>
-                          <Typography variant="body-small">
+                          <Typography variant="body-small" className="truncate min-w-0">
                             {asset.createdAt ? new Date(asset.createdAt).toLocaleDateString() : 'N/A'}
                           </Typography>
                         </div>
                       </div>
-                      <div className="flex space-x-2 mt-4">
-                        <Button variant="outline" size="sm" className="flex-1">
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 min-w-0"
+                          onClick={() => handleEditItem(asset, 'branding')}
+                        >
                           <PencilIcon className="h-4 w-4 mr-2" />
                           Edit
                         </Button>
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 min-w-0"
+                          onClick={() => handleDeleteItem(asset, 'branding')}
+                        >
                           <TrashIcon className="h-4 w-4 mr-2" />
                           Delete
                         </Button>
@@ -622,6 +720,29 @@ const TemplatesLayout: React.FC = () => {
         <TemplateForm
           mode="create"
           onClose={handleCloseCreateModal}
+        />
+      )}
+
+      {/* Edit Template Modal */}
+      {showEditModal && selectedItem && (
+        <TemplateForm
+          mode="edit"
+          template={selectedItem}
+          onClose={handleCloseEditModal}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedItem && (
+        <ConfirmationDialog
+          isOpen={showDeleteModal}
+          onClose={handleCloseDeleteModal}
+          onConfirm={handleConfirmDelete}
+          title="Delete Template"
+          description={`Are you sure you want to delete "${selectedItem.name}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
         />
       )}
     </Container>
