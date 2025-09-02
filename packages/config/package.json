@@ -1,0 +1,26 @@
+{
+  "name": "@taskflow/config",
+  "version": "0.0.0",
+  "description": "Shared configuration for TaskFlow",
+  "main": "index.js",
+  "exports": {
+    "./eslint-config": "./eslint-config.js",
+    "./tailwind-config": "./tailwind.config.js",
+    "./tailwind.config.js": "./tailwind.config.js"
+  },
+  "files": [
+    "tailwind.config.js",
+    "eslint-config.js"
+  ],
+  "dependencies": {
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "@tailwindcss/typography": "^0.5.0",
+    "@tailwindcss/forms": "^0.5.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

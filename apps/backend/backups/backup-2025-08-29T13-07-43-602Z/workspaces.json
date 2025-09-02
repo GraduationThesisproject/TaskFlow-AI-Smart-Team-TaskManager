@@ -1,0 +1,624 @@
+[
+  {
+    "_id": "68b0259ec70cd65c07c531ee",
+    "name": "Project Zieme - Green Workspace",
+    "description": "Collaborative environment for cross-functional teams.",
+    "owner": "68b02599c70cd65c07c5313a",
+    "members": [
+      {
+        "user": "68b02599c70cd65c07c5313a",
+        "role": "admin",
+        "joinedAt": "2025-08-03T14:57:05.566Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": true,
+          "canEditSettings": true,
+          "canDeleteWorkspace": true
+        },
+        "_id": "68b0259ec70cd65c07c531ef"
+      },
+      {
+        "user": "68b0259cc70cd65c07c531b2",
+        "role": "member",
+        "joinedAt": "2025-08-05T04:17:59.641Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": false,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c531f0"
+      },
+      {
+        "user": "68b0259bc70cd65c07c53182",
+        "role": "member",
+        "joinedAt": "2025-08-11T00:26:36.262Z",
+        "permissions": {
+          "canCreateSpaces": false,
+          "canManageMembers": false,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c531f1"
+      }
+    ],
+    "spaces": [],
+    "settings": {
+      "features": {
+        "integrations": true,
+        "aiSuggestions": true,
+        "timeTracking": true,
+        "fileAttachments": true,
+        "customFields": true
+      },
+      "notifications": {
+        "emailDigests": true,
+        "slackIntegration": false,
+        "webhooks": []
+      },
+      "permissions": {
+        "defaultMemberRole": "member",
+        "allowMemberInvites": true,
+        "requireApprovalForMembers": false,
+        "maxMembers": null,
+        "publicJoin": false
+      },
+      "defaultBoardVisibility": "workspace",
+      "branding": {
+        "logo": null,
+        "primaryColor": "#3B82F6"
+      }
+    },
+    "invitations": [],
+    "activityLog": [],
+    "isPublic": false,
+    "isActive": true,
+    "plan": "free",
+    "billing": {
+      "status": "trial"
+    },
+    "usage": {
+      "membersCount": 4,
+      "spacesCount": 0,
+      "boardsCount": 0,
+      "tasksCount": 0,
+      "storageUsed": 0,
+      "apiCalls": 0
+    },
+    "limits": {
+      "maxMembers": 10,
+      "maxSpaces": 5,
+      "maxBoards": 50,
+      "maxStorage": 1000,
+      "maxApiCalls": 10000
+    },
+    "createdAt": "2025-01-06T15:51:13.240Z",
+    "updatedAt": "2025-01-06T15:51:13.240Z",
+    "inviteTokens": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b0259ec70cd65c07c5320a",
+    "name": "Company Dickinson Group Hub",
+    "description": "Creative workspace for design and development projects.",
+    "owner": "68b0259cc70cd65c07c531a6",
+    "members": [
+      {
+        "user": "68b0259cc70cd65c07c531a6",
+        "role": "admin",
+        "joinedAt": "2025-08-26T22:41:31.993Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": true,
+          "canEditSettings": true,
+          "canDeleteWorkspace": true
+        },
+        "_id": "68b0259ec70cd65c07c5320b"
+      },
+      {
+        "user": "68b0259bc70cd65c07c53176",
+        "role": "admin",
+        "joinedAt": "2025-08-15T01:33:03.713Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": true,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c5320c"
+      },
+      {
+        "user": "68b0259bc70cd65c07c53182",
+        "role": "admin",
+        "joinedAt": "2025-08-01T12:28:10.696Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": false,
+          "canEditSettings": true,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c5320d"
+      }
+    ],
+    "spaces": [],
+    "settings": {
+      "features": {
+        "integrations": false,
+        "aiSuggestions": true,
+        "timeTracking": true,
+        "fileAttachments": true,
+        "customFields": true
+      },
+      "notifications": {
+        "emailDigests": true,
+        "slackIntegration": false,
+        "webhooks": []
+      },
+      "permissions": {
+        "defaultMemberRole": "member",
+        "allowMemberInvites": true,
+        "requireApprovalForMembers": false,
+        "maxMembers": null,
+        "publicJoin": false
+      },
+      "defaultBoardVisibility": "workspace",
+      "branding": {
+        "logo": null,
+        "primaryColor": "#3B82F6"
+      }
+    },
+    "invitations": [],
+    "activityLog": [],
+    "isPublic": false,
+    "isActive": true,
+    "plan": "free",
+    "billing": {
+      "status": "trial"
+    },
+    "usage": {
+      "membersCount": 4,
+      "spacesCount": 0,
+      "boardsCount": 0,
+      "tasksCount": 0,
+      "storageUsed": 0,
+      "apiCalls": 0
+    },
+    "limits": {
+      "maxMembers": 10,
+      "maxSpaces": 5,
+      "maxBoards": 50,
+      "maxStorage": 1000,
+      "maxApiCalls": 10000
+    },
+    "createdAt": "2025-05-14T21:10:26.099Z",
+    "updatedAt": "2025-05-14T21:10:26.099Z",
+    "inviteTokens": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b0259ec70cd65c07c53229",
+    "name": "Hub Parisian LLC Workspace",
+    "description": "Central hub for project coordination and team communication.",
+    "owner": "68b0259dc70cd65c07c531d6",
+    "members": [
+      {
+        "user": "68b0259dc70cd65c07c531d6",
+        "role": "admin",
+        "joinedAt": "2025-08-26T09:14:05.436Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": true,
+          "canEditSettings": true,
+          "canDeleteWorkspace": true
+        },
+        "_id": "68b0259ec70cd65c07c5322a"
+      },
+      {
+        "user": "68b02598c70cd65c07c53122",
+        "role": "admin",
+        "joinedAt": "2025-07-30T06:32:28.314Z",
+        "permissions": {
+          "canCreateSpaces": false,
+          "canManageMembers": true,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c5322b"
+      },
+      {
+        "user": "68b0259dc70cd65c07c531ca",
+        "role": "member",
+        "joinedAt": "2025-08-07T04:35:38.138Z",
+        "permissions": {
+          "canCreateSpaces": false,
+          "canManageMembers": false,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c5322c"
+      },
+      {
+        "user": "68b02599c70cd65c07c5312e",
+        "role": "admin",
+        "joinedAt": "2025-08-18T21:14:04.572Z",
+        "permissions": {
+          "canCreateSpaces": false,
+          "canManageMembers": true,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c5322d"
+      },
+      {
+        "user": "68b0259ac70cd65c07c5316a",
+        "role": "member",
+        "joinedAt": "2025-08-01T07:31:51.046Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": false,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c5322e"
+      },
+      {
+        "user": "68b02597c70cd65c07c5310a",
+        "role": "member",
+        "joinedAt": "2025-08-03T16:19:21.036Z",
+        "permissions": {
+          "canCreateSpaces": false,
+          "canManageMembers": true,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c5322f"
+      },
+      {
+        "user": "68b0259cc70cd65c07c531b2",
+        "role": "admin",
+        "joinedAt": "2025-08-07T05:16:55.105Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": false,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c53230"
+      },
+      {
+        "user": "68b0259cc70cd65c07c5319a",
+        "role": "member",
+        "joinedAt": "2025-08-24T04:10:13.910Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": true,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c53231"
+      },
+      {
+        "user": "68b0259ac70cd65c07c5315e",
+        "role": "member",
+        "joinedAt": "2025-08-15T23:15:09.410Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": false,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c53232"
+      }
+    ],
+    "spaces": [],
+    "settings": {
+      "features": {
+        "integrations": true,
+        "aiSuggestions": true,
+        "timeTracking": true,
+        "fileAttachments": true,
+        "customFields": true
+      },
+      "notifications": {
+        "emailDigests": true,
+        "slackIntegration": false,
+        "webhooks": []
+      },
+      "permissions": {
+        "defaultMemberRole": "member",
+        "allowMemberInvites": true,
+        "requireApprovalForMembers": false,
+        "maxMembers": null,
+        "publicJoin": false
+      },
+      "defaultBoardVisibility": "workspace",
+      "branding": {
+        "logo": null,
+        "primaryColor": "#3B82F6"
+      }
+    },
+    "invitations": [],
+    "activityLog": [],
+    "isPublic": false,
+    "isActive": true,
+    "plan": "free",
+    "billing": {
+      "status": "trial"
+    },
+    "usage": {
+      "membersCount": 10,
+      "spacesCount": 0,
+      "boardsCount": 0,
+      "tasksCount": 0,
+      "storageUsed": 0,
+      "apiCalls": 0
+    },
+    "limits": {
+      "maxMembers": 10,
+      "maxSpaces": 5,
+      "maxBoards": 50,
+      "maxStorage": 1000,
+      "maxApiCalls": 10000
+    },
+    "createdAt": "2024-11-29T10:18:59.698Z",
+    "updatedAt": "2024-11-29T10:18:59.698Z",
+    "inviteTokens": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b0259ec70cd65c07c53251",
+    "name": "Studio Jaskolski and Sons Workspace",
+    "description": "Collaborative environment for cross-functional teams.",
+    "owner": "68b02599c70cd65c07c5312e",
+    "members": [
+      {
+        "user": "68b02599c70cd65c07c5312e",
+        "role": "admin",
+        "joinedAt": "2025-08-20T14:40:28.733Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": true,
+          "canEditSettings": true,
+          "canDeleteWorkspace": true
+        },
+        "_id": "68b0259ec70cd65c07c53252"
+      },
+      {
+        "user": "68b0259cc70cd65c07c531be",
+        "role": "member",
+        "joinedAt": "2025-08-25T17:33:13.136Z",
+        "permissions": {
+          "canCreateSpaces": false,
+          "canManageMembers": false,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c53253"
+      },
+      {
+        "user": "68b0259bc70cd65c07c5318e",
+        "role": "member",
+        "joinedAt": "2025-08-07T01:20:42.834Z",
+        "permissions": {
+          "canCreateSpaces": false,
+          "canManageMembers": false,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c53254"
+      },
+      {
+        "user": "68b02598c70cd65c07c53116",
+        "role": "admin",
+        "joinedAt": "2025-08-16T21:57:31.094Z",
+        "permissions": {
+          "canCreateSpaces": false,
+          "canManageMembers": false,
+          "canEditSettings": true,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c53255"
+      },
+      {
+        "user": "68b0259cc70cd65c07c531a6",
+        "role": "member",
+        "joinedAt": "2025-08-20T02:46:32.342Z",
+        "permissions": {
+          "canCreateSpaces": false,
+          "canManageMembers": true,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c53256"
+      },
+      {
+        "user": "68b0259dc70cd65c07c531ca",
+        "role": "member",
+        "joinedAt": "2025-08-19T08:40:38.516Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": true,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c53257"
+      },
+      {
+        "user": "68b0259cc70cd65c07c531b2",
+        "role": "member",
+        "joinedAt": "2025-08-13T20:06:36.598Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": false,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c53258"
+      },
+      {
+        "user": "68b02599c70cd65c07c5313a",
+        "role": "admin",
+        "joinedAt": "2025-08-21T10:48:50.802Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": true,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c53259"
+      }
+    ],
+    "spaces": [],
+    "settings": {
+      "features": {
+        "integrations": false,
+        "aiSuggestions": true,
+        "timeTracking": true,
+        "fileAttachments": true,
+        "customFields": true
+      },
+      "notifications": {
+        "emailDigests": true,
+        "slackIntegration": false,
+        "webhooks": []
+      },
+      "permissions": {
+        "defaultMemberRole": "member",
+        "allowMemberInvites": true,
+        "requireApprovalForMembers": false,
+        "maxMembers": null,
+        "publicJoin": false
+      },
+      "defaultBoardVisibility": "workspace",
+      "branding": {
+        "logo": null,
+        "primaryColor": "#3B82F6"
+      }
+    },
+    "invitations": [],
+    "activityLog": [],
+    "isPublic": false,
+    "isActive": true,
+    "plan": "free",
+    "billing": {
+      "status": "trial"
+    },
+    "usage": {
+      "membersCount": 9,
+      "spacesCount": 0,
+      "boardsCount": 0,
+      "tasksCount": 0,
+      "storageUsed": 0,
+      "apiCalls": 0
+    },
+    "limits": {
+      "maxMembers": 10,
+      "maxSpaces": 5,
+      "maxBoards": 50,
+      "maxStorage": 1000,
+      "maxApiCalls": 10000
+    },
+    "createdAt": "2025-08-12T14:14:52.052Z",
+    "updatedAt": "2025-08-12T14:14:52.052Z",
+    "inviteTokens": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b0259ec70cd65c07c5326a",
+    "name": "Lab Green - Anderson Studio",
+    "description": "Innovation lab for research and development initiatives.",
+    "owner": "68b0259ac70cd65c07c5315e",
+    "members": [
+      {
+        "user": "68b0259ac70cd65c07c5315e",
+        "role": "admin",
+        "joinedAt": "2025-08-07T07:18:23.785Z",
+        "permissions": {
+          "canCreateSpaces": true,
+          "canManageMembers": true,
+          "canEditSettings": true,
+          "canDeleteWorkspace": true
+        },
+        "_id": "68b0259ec70cd65c07c5326b"
+      },
+      {
+        "user": "68b02597c70cd65c07c5310a",
+        "role": "admin",
+        "joinedAt": "2025-08-03T10:56:53.807Z",
+        "permissions": {
+          "canCreateSpaces": false,
+          "canManageMembers": false,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c5326c"
+      },
+      {
+        "user": "68b02599c70cd65c07c53146",
+        "role": "member",
+        "joinedAt": "2025-08-25T10:55:57.573Z",
+        "permissions": {
+          "canCreateSpaces": false,
+          "canManageMembers": false,
+          "canEditSettings": false,
+          "canDeleteWorkspace": false
+        },
+        "_id": "68b0259ec70cd65c07c5326d"
+      }
+    ],
+    "spaces": [],
+    "settings": {
+      "features": {
+        "integrations": false,
+        "aiSuggestions": true,
+        "timeTracking": true,
+        "fileAttachments": true,
+        "customFields": true
+      },
+      "notifications": {
+        "emailDigests": true,
+        "slackIntegration": false,
+        "webhooks": []
+      },
+      "permissions": {
+        "defaultMemberRole": "member",
+        "allowMemberInvites": true,
+        "requireApprovalForMembers": false,
+        "maxMembers": null,
+        "publicJoin": false
+      },
+      "defaultBoardVisibility": "workspace",
+      "branding": {
+        "logo": null,
+        "primaryColor": "#3B82F6"
+      }
+    },
+    "invitations": [],
+    "activityLog": [],
+    "isPublic": true,
+    "isActive": true,
+    "plan": "free",
+    "billing": {
+      "status": "trial"
+    },
+    "usage": {
+      "membersCount": 4,
+      "spacesCount": 0,
+      "boardsCount": 0,
+      "tasksCount": 0,
+      "storageUsed": 0,
+      "apiCalls": 0
+    },
+    "limits": {
+      "maxMembers": 10,
+      "maxSpaces": 5,
+      "maxBoards": 50,
+      "maxStorage": 1000,
+      "maxApiCalls": 10000
+    },
+    "createdAt": "2025-08-10T14:09:43.050Z",
+    "updatedAt": "2025-08-10T14:09:43.050Z",
+    "inviteTokens": [],
+    "__v": 0
+  }
+]

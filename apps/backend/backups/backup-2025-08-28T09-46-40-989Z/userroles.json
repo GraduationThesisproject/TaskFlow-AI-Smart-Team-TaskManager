@@ -1,0 +1,24 @@
+[
+  {
+    "_id": "68b0253b7e07c811299bb740",
+    "userId": "68b0253b7e07c811299bb73a",
+    "systemRole": "super_admin",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T09:45:31.658Z",
+    "updatedAt": "2025-08-28T09:45:31.658Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0253c7e07c811299bb74c",
+    "userId": "68b0253b7e07c811299bb746",
+    "systemRole": "admin",
+    "workspaces": [],
+    "spaces": [],
+    "boards": [],
+    "createdAt": "2025-08-28T09:45:32.103Z",
+    "updatedAt": "2025-08-28T09:45:32.103Z",
+    "__v": 0
+  }
+]

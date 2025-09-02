@@ -1,0 +1,106 @@
+[
+  {
+    "_id": "68b0f19382871a3514439c8d",
+    "user": "68b0e4f7316ef920158ec5cb",
+    "action": "user_login",
+    "description": "User logged in: manager.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b0e4f7316ef920158ec5cb",
+      "name": "Manager User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-08-29T00:17:23.449Z",
+    "updatedAt": "2025-08-29T00:17:23.449Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0f6e95cfda8b7668591fa",
+    "user": "68b0e4f7316ef920158ec5cb",
+    "action": "user_login",
+    "description": "User logged in: manager.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b0e4f7316ef920158ec5cb",
+      "name": "Manager User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-08-29T00:40:09.004Z",
+    "updatedAt": "2025-08-29T00:40:09.004Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0f7fca9e87628911e1fac",
+    "user": "68b0e4f7316ef920158ec5cb",
+    "action": "user_login",
+    "description": "User logged in: manager.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b0e4f7316ef920158ec5cb",
+      "name": "Manager User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-08-29T00:44:44.854Z",
+    "updatedAt": "2025-08-29T00:44:44.854Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b0f96317cc5b0336f0dec2",
+    "user": "68b0e4f7316ef920158ec5cb",
+    "action": "user_login",
+    "description": "User logged in: manager.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b0e4f7316ef920158ec5cb",
+      "name": "Manager User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-08-29T00:50:43.103Z",
+    "updatedAt": "2025-08-29T00:50:43.103Z",
+    "__v": 0
+  }
+]

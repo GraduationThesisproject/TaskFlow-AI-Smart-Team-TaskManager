@@ -1,0 +1,2374 @@
+[
+  {
+    "_id": "68b55a9916394394f7b49be3",
+    "name": "Review Ameliorated 24 hour encoding Workflow",
+    "description": "Track and manage project tasks and milestones.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49b57",
+    "owner": "68b55a9416394394f7b49aa1",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-14T07:40:18.073Z",
+        "_id": "68b55a9916394394f7b49be4"
+      },
+      {
+        "user": "68b55a9516394394f7b49ac5",
+        "permissions": [
+          "manage_members"
+        ],
+        "addedAt": "2025-08-22T01:11:31.313Z",
+        "_id": "68b55a9916394394f7b49be5"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 88
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-07T11:44:10.789Z",
+    "updatedAt": "2025-08-07T11:44:10.789Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49be7",
+    "name": "Release Quality-focused grid-enabled benchmark Scrum",
+    "description": "Track feature development and bug fixes.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49b57",
+    "owner": "68b55a9316394394f7b49a71",
+    "members": [
+      {
+        "user": "68b55a9316394394f7b49a71",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-27T08:06:36.681Z",
+        "_id": "68b55a9916394394f7b49be8"
+      },
+      {
+        "user": "68b55a9616394394f7b49add",
+        "permissions": [
+          "manage_columns",
+          "delete",
+          "edit"
+        ],
+        "addedAt": "2025-08-26T01:58:05.494Z",
+        "_id": "68b55a9916394394f7b49be9"
+      },
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "permissions": [
+          "edit",
+          "view"
+        ],
+        "addedAt": "2025-08-03T03:54:26.848Z",
+        "_id": "68b55a9916394394f7b49bea"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "manage_columns",
+          "delete",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-27T00:19:43.723Z",
+        "_id": "68b55a9916394394f7b49beb"
+      },
+      {
+        "user": "68b55a9516394394f7b49ac5",
+        "permissions": [
+          "manage_members"
+        ],
+        "addedAt": "2025-08-17T02:38:02.588Z",
+        "_id": "68b55a9916394394f7b49bec"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 11
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-22T21:58:09.680Z",
+    "updatedAt": "2025-08-22T21:58:09.680Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49bee",
+    "name": "Sprint Implemented scalable open system Backlog",
+    "description": "Track and manage project tasks and milestones.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49b5f",
+    "owner": "68b55a9416394394f7b49a89",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-16T21:44:11.628Z",
+        "_id": "68b55a9916394394f7b49bef"
+      },
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "permissions": [
+          "delete"
+        ],
+        "addedAt": "2025-08-10T02:51:13.352Z",
+        "_id": "68b55a9916394394f7b49bf0"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 66
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-19T09:10:13.710Z",
+    "updatedAt": "2025-06-19T09:10:13.710Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49bf2",
+    "name": "Sprint Right-sized exuding system engine Tasks",
+    "description": "Visualize workflow and project status.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49b5f",
+    "owner": "68b55a9416394394f7b49a89",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-20T15:24:41.112Z",
+        "_id": "68b55a9916394394f7b49bf3"
+      },
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "permissions": [
+          "view"
+        ],
+        "addedAt": "2025-08-15T11:37:02.403Z",
+        "_id": "68b55a9916394394f7b49bf4"
+      },
+      {
+        "user": "68b55a9616394394f7b49ad1",
+        "permissions": [
+          "edit",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-13T15:07:24.625Z",
+        "_id": "68b55a9916394394f7b49bf5"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 27
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-04T14:23:17.177Z",
+    "updatedAt": "2025-07-04T14:23:17.177Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49bf7",
+    "name": "Review Configurable needs-based policy Board",
+    "description": "Coordinate team efforts and project timeline.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49b5f",
+    "owner": "68b55a9416394394f7b49a89",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-31T15:36:38.565Z",
+        "_id": "68b55a9916394394f7b49bf8"
+      },
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "permissions": [
+          "manage_members",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-30T21:50:47.589Z",
+        "_id": "68b55a9916394394f7b49bf9"
+      },
+      {
+        "user": "68b55a9616394394f7b49ad1",
+        "permissions": [
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-14T15:47:53.732Z",
+        "_id": "68b55a9916394394f7b49bfa"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 35
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-10T19:10:45.022Z",
+    "updatedAt": "2025-06-10T19:10:45.022Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49bfc",
+    "name": "Planning Realigned hybrid hierarchy Tasks",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49b5f",
+    "owner": "68b55a9616394394f7b49ad1",
+    "members": [
+      {
+        "user": "68b55a9616394394f7b49ad1",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-24T21:13:05.721Z",
+        "_id": "68b55a9916394394f7b49bfd"
+      },
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "permissions": [
+          "edit",
+          "delete",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-09T22:22:14.366Z",
+        "_id": "68b55a9916394394f7b49bfe"
+      },
+      {
+        "user": "68b55a9616394394f7b49ad1",
+        "permissions": [
+          "delete",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-13T09:07:54.836Z",
+        "_id": "68b55a9916394394f7b49bff"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": true,
+      "archiveAfterDays": 36
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-31T22:24:57.070Z",
+    "updatedAt": "2025-07-31T22:24:57.070Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c01",
+    "name": "Sprint Public-key systematic benchmark Tasks",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49b63",
+    "owner": "68b55a9316394394f7b49a65",
+    "members": [
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-10T01:52:25.796Z",
+        "_id": "68b55a9916394394f7b49c02"
+      },
+      {
+        "user": "68b55a9816394394f7b49b19",
+        "permissions": [
+          "delete"
+        ],
+        "addedAt": "2025-08-29T16:17:53.686Z",
+        "_id": "68b55a9916394394f7b49c03"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 82
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-07T04:50:27.815Z",
+    "updatedAt": "2025-06-07T04:50:27.815Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c05",
+    "name": "Feature Extended bifurcated productivity Board",
+    "description": "Manage sprint planning and execution.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49b68",
+    "owner": "68b55a9716394394f7b49b0d",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-15T22:58:09.286Z",
+        "_id": "68b55a9916394394f7b49c06"
+      },
+      {
+        "user": "68b55a9716394394f7b49af5",
+        "permissions": [
+          "manage_members",
+          "manage_columns",
+          "view"
+        ],
+        "addedAt": "2025-08-21T18:40:35.047Z",
+        "_id": "68b55a9916394394f7b49c07"
+      },
+      {
+        "user": "68b55a9516394394f7b49ac5",
+        "permissions": [
+          "delete"
+        ],
+        "addedAt": "2025-08-08T02:53:30.014Z",
+        "_id": "68b55a9916394394f7b49c08"
+      },
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "permissions": [
+          "view",
+          "edit",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-29T08:41:27.460Z",
+        "_id": "68b55a9916394394f7b49c09"
+      },
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "permissions": [
+          "manage_members",
+          "delete"
+        ],
+        "addedAt": "2025-08-02T23:21:03.552Z",
+        "_id": "68b55a9916394394f7b49c0a"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 50
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-03T18:27:56.824Z",
+    "updatedAt": "2025-08-03T18:27:56.824Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c0c",
+    "name": "Feature Intuitive mobile emulation Backlog",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49b78",
+    "owner": "68b55a9816394394f7b49b31",
+    "members": [
+      {
+        "user": "68b55a9816394394f7b49b31",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-15T20:57:37.856Z",
+        "_id": "68b55a9916394394f7b49c0d"
+      },
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "edit",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-19T18:06:12.198Z",
+        "_id": "68b55a9916394394f7b49c0e"
+      },
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-16T22:23:01.797Z",
+        "_id": "68b55a9916394394f7b49c0f"
+      },
+      {
+        "user": "68b55a9816394394f7b49b31",
+        "permissions": [
+          "manage_members",
+          "delete"
+        ],
+        "addedAt": "2025-08-03T06:00:09.714Z",
+        "_id": "68b55a9916394394f7b49c10"
+      },
+      {
+        "user": "68b55a9816394394f7b49b19",
+        "permissions": [
+          "manage_members",
+          "delete",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-17T21:24:26.496Z",
+        "_id": "68b55a9916394394f7b49c11"
+      },
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "permissions": [
+          "manage_members",
+          "edit",
+          "view"
+        ],
+        "addedAt": "2025-08-02T19:26:49.765Z",
+        "_id": "68b55a9916394394f7b49c12"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": true,
+      "archiveAfterDays": 20
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-01T12:11:37.204Z",
+    "updatedAt": "2025-07-01T12:11:37.204Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c14",
+    "name": "Review Adaptive systemic projection Kanban",
+    "description": "Visualize workflow and project status.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49b78",
+    "owner": "68b55a9416394394f7b49a7d",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-11T11:07:11.697Z",
+        "_id": "68b55a9916394394f7b49c15"
+      },
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "permissions": [
+          "manage_members",
+          "edit"
+        ],
+        "addedAt": "2025-08-25T09:41:16.135Z",
+        "_id": "68b55a9916394394f7b49c16"
+      },
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "manage_members",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-28T22:37:22.463Z",
+        "_id": "68b55a9916394394f7b49c17"
+      },
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "view",
+          "edit",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-04T06:58:22.655Z",
+        "_id": "68b55a9916394394f7b49c18"
+      },
+      {
+        "user": "68b55a9416394394f7b49a89",
+        "permissions": [
+          "manage_members",
+          "view"
+        ],
+        "addedAt": "2025-08-30T07:23:15.249Z",
+        "_id": "68b55a9916394394f7b49c19"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 11
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-25T12:14:05.363Z",
+    "updatedAt": "2025-07-25T12:14:05.363Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c1b",
+    "name": "Planning Robust fresh-thinking policy Scrum",
+    "description": "Manage sprint planning and execution.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49b80",
+    "owner": "68b55a9516394394f7b49ac5",
+    "members": [
+      {
+        "user": "68b55a9516394394f7b49ac5",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-28T02:50:29.725Z",
+        "_id": "68b55a9916394394f7b49c1c"
+      },
+      {
+        "user": "68b55a9316394394f7b49a59",
+        "permissions": [
+          "edit",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-25T17:50:05.517Z",
+        "_id": "68b55a9916394394f7b49c1d"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "critical",
+      "autoArchive": true,
+      "archiveAfterDays": 82
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-26T23:33:13.402Z",
+    "updatedAt": "2025-06-26T23:33:13.402Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c1f",
+    "name": "Project Versatile even-keeled encryption Tasks",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49b80",
+    "owner": "68b55a9716394394f7b49b0d",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-20T15:04:02.604Z",
+        "_id": "68b55a9916394394f7b49c20"
+      },
+      {
+        "user": "68b55a9316394394f7b49a59",
+        "permissions": [
+          "delete",
+          "manage_columns",
+          "view"
+        ],
+        "addedAt": "2025-08-02T08:39:11.581Z",
+        "_id": "68b55a9916394394f7b49c21"
+      },
+      {
+        "user": "68b55a9516394394f7b49ac5",
+        "permissions": [
+          "manage_columns",
+          "manage_members",
+          "view"
+        ],
+        "addedAt": "2025-08-17T21:36:24.989Z",
+        "_id": "68b55a9916394394f7b49c22"
+      },
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "permissions": [
+          "edit",
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-08-07T09:05:15.081Z",
+        "_id": "68b55a9916394394f7b49c23"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 66
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-15T13:58:22.828Z",
+    "updatedAt": "2025-07-15T13:58:22.828Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c25",
+    "name": "Planning Customizable zero tolerance adapter Workflow",
+    "description": "Manage sprint planning and execution.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49b90",
+    "owner": "68b55a9716394394f7b49af5",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49af5",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-25T05:15:42.878Z",
+        "_id": "68b55a9916394394f7b49c26"
+      },
+      {
+        "user": "68b55a9716394394f7b49af5",
+        "permissions": [
+          "view",
+          "manage_members",
+          "edit"
+        ],
+        "addedAt": "2025-08-02T14:11:36.140Z",
+        "_id": "68b55a9916394394f7b49c27"
+      },
+      {
+        "user": "68b55a9816394394f7b49b19",
+        "permissions": [
+          "view",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-07T09:34:27.338Z",
+        "_id": "68b55a9916394394f7b49c28"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 75
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-06T08:47:06.094Z",
+    "updatedAt": "2025-07-06T08:47:06.094Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c2a",
+    "name": "Project Optional modular hierarchy Board",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49b97",
+    "owner": "68b55a9716394394f7b49b01",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-24T02:47:33.728Z",
+        "_id": "68b55a9916394394f7b49c2b"
+      },
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-10T07:43:13.454Z",
+        "_id": "68b55a9916394394f7b49c2c"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 67
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-09T12:41:37.760Z",
+    "updatedAt": "2025-06-09T12:41:37.760Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c2e",
+    "name": "Review Diverse optimal implementation Kanban",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49b97",
+    "owner": "68b55a9716394394f7b49b01",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-25T05:59:13.784Z",
+        "_id": "68b55a9916394394f7b49c2f"
+      },
+      {
+        "user": "68b55a9416394394f7b49a95",
+        "permissions": [
+          "delete"
+        ],
+        "addedAt": "2025-08-10T11:48:47.510Z",
+        "_id": "68b55a9916394394f7b49c30"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": true,
+      "archiveAfterDays": 71
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-26T08:15:55.223Z",
+    "updatedAt": "2025-06-26T08:15:55.223Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c32",
+    "name": "Design Inverse eco-centric moratorium Board",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49b97",
+    "owner": "68b55a9716394394f7b49b01",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-22T03:38:30.253Z",
+        "_id": "68b55a9916394394f7b49c33"
+      },
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-11T09:31:54.547Z",
+        "_id": "68b55a9916394394f7b49c34"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "medium",
+      "autoArchive": true,
+      "archiveAfterDays": 66
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-05T09:57:30.405Z",
+    "updatedAt": "2025-08-05T09:57:30.405Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c36",
+    "name": "Review Programmable modular structure Kanban",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49b97",
+    "owner": "68b55a9716394394f7b49b01",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-14T18:53:50.769Z",
+        "_id": "68b55a9916394394f7b49c37"
+      },
+      {
+        "user": "68b55a9416394394f7b49a95",
+        "permissions": [
+          "view",
+          "delete",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-11T16:05:39.677Z",
+        "_id": "68b55a9916394394f7b49c38"
+      },
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-09T03:52:11.621Z",
+        "_id": "68b55a9916394394f7b49c39"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 27
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-20T21:59:26.630Z",
+    "updatedAt": "2025-06-20T21:59:26.630Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c3b",
+    "name": "Feature Pre-emptive uniform neural-net Roadmap",
+    "description": "Coordinate team efforts and project timeline.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49ba6",
+    "owner": "68b55a9416394394f7b49a7d",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-15T07:13:21.172Z",
+        "_id": "68b55a9916394394f7b49c3c"
+      },
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-10T00:15:11.405Z",
+        "_id": "68b55a9916394394f7b49c3d"
+      },
+      {
+        "user": "68b55a9816394394f7b49b31",
+        "permissions": [
+          "edit",
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-08-19T02:18:25.236Z",
+        "_id": "68b55a9916394394f7b49c3e"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-08-05T00:28:49.918Z",
+        "_id": "68b55a9916394394f7b49c3f"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 11
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-06T11:25:08.142Z",
+    "updatedAt": "2025-07-06T11:25:08.142Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c41",
+    "name": "Project Re-engineered coherent data-warehouse Tasks",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49ba6",
+    "owner": "68b55a9416394394f7b49a7d",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-23T16:50:28.669Z",
+        "_id": "68b55a9916394394f7b49c42"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "delete",
+          "manage_members",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-08T01:02:03.653Z",
+        "_id": "68b55a9916394394f7b49c43"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 36
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-11T02:42:15.336Z",
+    "updatedAt": "2025-07-11T02:42:15.336Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c45",
+    "name": "Review Customer-focused grid-enabled project Roadmap",
+    "description": "Organize work items and track progress efficiently.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49bab",
+    "owner": "68b55a9516394394f7b49ac5",
+    "members": [
+      {
+        "user": "68b55a9516394394f7b49ac5",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-22T19:40:52.465Z",
+        "_id": "68b55a9916394394f7b49c46"
+      },
+      {
+        "user": "68b55a9716394394f7b49af5",
+        "permissions": [
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-08-28T08:04:58.075Z",
+        "_id": "68b55a9916394394f7b49c47"
+      },
+      {
+        "user": "68b55a9516394394f7b49ac5",
+        "permissions": [
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-31T17:08:48.512Z",
+        "_id": "68b55a9916394394f7b49c48"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 17
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-15T00:10:37.177Z",
+    "updatedAt": "2025-07-15T00:10:37.177Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c4a",
+    "name": "Planning Networked logistical algorithm Backlog",
+    "description": "Organize work items and track progress efficiently.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49bb0",
+    "owner": "68b55a9816394394f7b49b25",
+    "members": [
+      {
+        "user": "68b55a9816394394f7b49b25",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-23T22:24:16.422Z",
+        "_id": "68b55a9916394394f7b49c4b"
+      },
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "permissions": [
+          "view",
+          "delete",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-17T03:35:02.510Z",
+        "_id": "68b55a9916394394f7b49c4c"
+      },
+      {
+        "user": "68b55a9816394394f7b49b25",
+        "permissions": [
+          "manage_columns",
+          "manage_members",
+          "view"
+        ],
+        "addedAt": "2025-08-21T05:53:23.105Z",
+        "_id": "68b55a9916394394f7b49c4d"
+      },
+      {
+        "user": "68b55a9316394394f7b49a59",
+        "permissions": [
+          "delete",
+          "edit",
+          "view"
+        ],
+        "addedAt": "2025-08-23T06:30:12.792Z",
+        "_id": "68b55a9916394394f7b49c4e"
+      },
+      {
+        "user": "68b55a9516394394f7b49ab9",
+        "permissions": [
+          "delete",
+          "edit"
+        ],
+        "addedAt": "2025-08-29T17:35:47.364Z",
+        "_id": "68b55a9916394394f7b49c4f"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 86
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-18T13:25:39.741Z",
+    "updatedAt": "2025-06-18T13:25:39.741Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c51",
+    "name": "Design Sharable bifurcated collaboration Workflow",
+    "description": "Track and manage project tasks and milestones.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49bb0",
+    "owner": "68b55a9516394394f7b49ab9",
+    "members": [
+      {
+        "user": "68b55a9516394394f7b49ab9",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-03T09:24:17.147Z",
+        "_id": "68b55a9916394394f7b49c52"
+      },
+      {
+        "user": "68b55a9916394394f7b49b3d",
+        "permissions": [
+          "manage_columns",
+          "delete"
+        ],
+        "addedAt": "2025-08-25T16:56:55.500Z",
+        "_id": "68b55a9916394394f7b49c53"
+      },
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "permissions": [
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-07T23:09:15.469Z",
+        "_id": "68b55a9916394394f7b49c54"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": false,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 33
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-28T06:28:09.393Z",
+    "updatedAt": "2025-07-28T06:28:09.393Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c56",
+    "name": "Bug Fix Face to face national conglomeration Kanban",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49bb0",
+    "owner": "68b55a9816394394f7b49b25",
+    "members": [
+      {
+        "user": "68b55a9816394394f7b49b25",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-30T01:41:08.942Z",
+        "_id": "68b55a9916394394f7b49c57"
+      },
+      {
+        "user": "68b55a9916394394f7b49b3d",
+        "permissions": [
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-10T20:08:56.529Z",
+        "_id": "68b55a9916394394f7b49c58"
+      },
+      {
+        "user": "68b55a9516394394f7b49ab9",
+        "permissions": [
+          "manage_members"
+        ],
+        "addedAt": "2025-08-09T04:06:21.468Z",
+        "_id": "68b55a9916394394f7b49c59"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "low",
+      "autoArchive": true,
+      "archiveAfterDays": 31
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-15T21:39:32.862Z",
+    "updatedAt": "2025-08-15T21:39:32.862Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c5b",
+    "name": "Feature Ameliorated coherent middleware Workflow",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49bb7",
+    "owner": "68b55a9416394394f7b49a7d",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-12T18:40:00.954Z",
+        "_id": "68b55a9916394394f7b49c5c"
+      },
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "manage_members",
+          "edit"
+        ],
+        "addedAt": "2025-08-04T06:41:43.611Z",
+        "_id": "68b55a9916394394f7b49c5d"
+      },
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-23T18:22:14.493Z",
+        "_id": "68b55a9916394394f7b49c5e"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": true,
+      "archiveAfterDays": 48
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-24T19:38:51.245Z",
+    "updatedAt": "2025-06-24T19:38:51.245Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c60",
+    "name": "Design Right-sized zero tolerance middleware Kanban",
+    "description": "Visualize workflow and project status.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49bb7",
+    "owner": "68b55a9416394394f7b49a7d",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-23T13:41:05.306Z",
+        "_id": "68b55a9916394394f7b49c61"
+      },
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "edit",
+          "delete",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-15T13:19:14.229Z",
+        "_id": "68b55a9916394394f7b49c62"
+      },
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "manage_members",
+          "view",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-29T11:00:50.170Z",
+        "_id": "68b55a9916394394f7b49c63"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 8
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-20T00:22:54.939Z",
+    "updatedAt": "2025-08-20T00:22:54.939Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c65",
+    "name": "Feature Innovative motivating ability Roadmap",
+    "description": "Coordinate team efforts and project timeline.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49bb7",
+    "owner": "68b55a9416394394f7b49a7d",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-24T10:12:00.759Z",
+        "_id": "68b55a9916394394f7b49c66"
+      },
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "manage_members",
+          "edit"
+        ],
+        "addedAt": "2025-08-31T12:19:38.528Z",
+        "_id": "68b55a9916394394f7b49c67"
+      },
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "manage_columns",
+          "view"
+        ],
+        "addedAt": "2025-08-16T07:32:15.514Z",
+        "_id": "68b55a9916394394f7b49c68"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "medium",
+      "autoArchive": true,
+      "archiveAfterDays": 20
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-16T10:33:24.589Z",
+    "updatedAt": "2025-07-16T10:33:24.589Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c6a",
+    "name": "Review Public-key eco-centric hub Backlog",
+    "description": "Organize work items and track progress efficiently.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49bb7",
+    "owner": "68b55a9716394394f7b49b01",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-16T05:42:58.336Z",
+        "_id": "68b55a9916394394f7b49c6b"
+      },
+      {
+        "user": "68b55a9716394394f7b49b01",
+        "permissions": [
+          "manage_columns",
+          "delete",
+          "view"
+        ],
+        "addedAt": "2025-08-31T04:04:02.199Z",
+        "_id": "68b55a9916394394f7b49c6c"
+      },
+      {
+        "user": "68b55a9416394394f7b49a7d",
+        "permissions": [
+          "manage_columns",
+          "delete",
+          "edit"
+        ],
+        "addedAt": "2025-08-26T16:34:20.296Z",
+        "_id": "68b55a9916394394f7b49c6d"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": false,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 18
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-21T14:20:24.966Z",
+    "updatedAt": "2025-06-21T14:20:24.966Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c6f",
+    "name": "Bug Fix Upgradable dedicated help-desk Kanban",
+    "description": "Coordinate team efforts and project timeline.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49bbb",
+    "owner": "68b55a9416394394f7b49aa1",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-17T00:44:51.309Z",
+        "_id": "68b55a9916394394f7b49c70"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "manage_members",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-21T06:17:12.822Z",
+        "_id": "68b55a9916394394f7b49c71"
+      },
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "permissions": [
+          "view"
+        ],
+        "addedAt": "2025-08-26T13:57:24.251Z",
+        "_id": "68b55a9916394394f7b49c72"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 73
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-21T02:54:55.112Z",
+    "updatedAt": "2025-08-21T02:54:55.112Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c74",
+    "name": "Planning Self-enabling incremental local area network Kanban",
+    "description": "Manage sprint planning and execution.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49bbb",
+    "owner": "68b55a9416394394f7b49aa1",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-05T13:04:08.670Z",
+        "_id": "68b55a9916394394f7b49c75"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "view",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-23T14:04:53.732Z",
+        "_id": "68b55a9916394394f7b49c76"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 76
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-24T10:51:29.659Z",
+    "updatedAt": "2025-08-24T10:51:29.659Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c78",
+    "name": "Sprint Fundamental cohesive alliance Roadmap",
+    "description": "Track feature development and bug fixes.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49bbb",
+    "owner": "68b55a9316394394f7b49a65",
+    "members": [
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-09T09:50:00.626Z",
+        "_id": "68b55a9916394394f7b49c79"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "manage_members",
+          "edit",
+          "view"
+        ],
+        "addedAt": "2025-08-27T20:39:42.423Z",
+        "_id": "68b55a9916394394f7b49c7a"
+      },
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "permissions": [
+          "manage_columns",
+          "delete"
+        ],
+        "addedAt": "2025-08-29T03:32:33.167Z",
+        "_id": "68b55a9916394394f7b49c7b"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 75
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-15T19:52:07.291Z",
+    "updatedAt": "2025-06-15T19:52:07.291Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c7d",
+    "name": "Sprint Monitored intangible moratorium Tasks",
+    "description": "Track feature development and bug fixes.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49bbb",
+    "owner": "68b55a9316394394f7b49a65",
+    "members": [
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-26T00:40:45.701Z",
+        "_id": "68b55a9916394394f7b49c7e"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "view",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-23T16:51:53.862Z",
+        "_id": "68b55a9916394394f7b49c7f"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 19
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-02T16:35:11.880Z",
+    "updatedAt": "2025-07-02T16:35:11.880Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c81",
+    "name": "Planning Grass-roots web-enabled middleware Kanban",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49bcd",
+    "owner": "68b55a9416394394f7b49aa1",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-31T02:41:45.301Z",
+        "_id": "68b55a9916394394f7b49c82"
+      },
+      {
+        "user": "68b55a9816394394f7b49b31",
+        "permissions": [
+          "manage_columns",
+          "edit"
+        ],
+        "addedAt": "2025-08-22T22:59:04.241Z",
+        "_id": "68b55a9916394394f7b49c83"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "view"
+        ],
+        "addedAt": "2025-08-06T03:13:40.016Z",
+        "_id": "68b55a9916394394f7b49c84"
+      },
+      {
+        "user": "68b55a9316394394f7b49a59",
+        "permissions": [
+          "delete"
+        ],
+        "addedAt": "2025-08-26T18:56:35.089Z",
+        "_id": "68b55a9916394394f7b49c85"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "medium",
+      "autoArchive": true,
+      "archiveAfterDays": 34
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-14T13:07:08.738Z",
+    "updatedAt": "2025-07-14T13:07:08.738Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c87",
+    "name": "Project Cross-group local hub Scrum",
+    "description": "Track feature development and bug fixes.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49bd2",
+    "owner": "68b55a9616394394f7b49add",
+    "members": [
+      {
+        "user": "68b55a9616394394f7b49add",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-13T12:35:33.165Z",
+        "_id": "68b55a9916394394f7b49c88"
+      },
+      {
+        "user": "68b55a9616394394f7b49add",
+        "permissions": [
+          "manage_members"
+        ],
+        "addedAt": "2025-08-21T01:59:09.899Z",
+        "_id": "68b55a9916394394f7b49c89"
+      },
+      {
+        "user": "68b55a9516394394f7b49ab9",
+        "permissions": [
+          "view",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-02T09:22:32.175Z",
+        "_id": "68b55a9916394394f7b49c8a"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 56
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-13T17:04:32.088Z",
+    "updatedAt": "2025-07-13T17:04:32.088Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c8c",
+    "name": "Release Face to face optimal installation Workflow",
+    "description": "Visualize workflow and project status.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49bd6",
+    "owner": "68b55a9416394394f7b49a95",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a95",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-21T18:16:35.120Z",
+        "_id": "68b55a9916394394f7b49c8d"
+      },
+      {
+        "user": "68b55a9916394394f7b49b3d",
+        "permissions": [
+          "view",
+          "delete",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-12T09:59:10.044Z",
+        "_id": "68b55a9916394394f7b49c8e"
+      },
+      {
+        "user": "68b55a9416394394f7b49a95",
+        "permissions": [
+          "manage_members",
+          "delete"
+        ],
+        "addedAt": "2025-08-29T05:51:20.659Z",
+        "_id": "68b55a9916394394f7b49c8f"
+      },
+      {
+        "user": "68b55a9916394394f7b49b3d",
+        "permissions": [
+          "edit",
+          "view",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-17T16:09:50.196Z",
+        "_id": "68b55a9916394394f7b49c90"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "critical",
+      "autoArchive": true,
+      "archiveAfterDays": 39
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-02T00:21:42.915Z",
+    "updatedAt": "2025-08-02T00:21:42.915Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c92",
+    "name": "Planning Horizontal 6th generation throughput Scrum",
+    "description": "Track feature development and bug fixes.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49bd6",
+    "owner": "68b55a9916394394f7b49b3d",
+    "members": [
+      {
+        "user": "68b55a9916394394f7b49b3d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-12T18:34:41.435Z",
+        "_id": "68b55a9916394394f7b49c93"
+      },
+      {
+        "user": "68b55a9916394394f7b49b3d",
+        "permissions": [
+          "delete",
+          "edit",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-10T01:54:20.423Z",
+        "_id": "68b55a9916394394f7b49c94"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 35
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-10T16:28:35.049Z",
+    "updatedAt": "2025-06-10T16:28:35.049Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c96",
+    "name": "Review Vision-oriented analyzing benchmark Board",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49bd6",
+    "owner": "68b55a9916394394f7b49b3d",
+    "members": [
+      {
+        "user": "68b55a9916394394f7b49b3d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-31T15:43:42.496Z",
+        "_id": "68b55a9916394394f7b49c97"
+      },
+      {
+        "user": "68b55a9416394394f7b49a95",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-21T07:26:27.399Z",
+        "_id": "68b55a9916394394f7b49c98"
+      },
+      {
+        "user": "68b55a9916394394f7b49b3d",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-17T15:12:29.698Z",
+        "_id": "68b55a9916394394f7b49c99"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 33
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-01T05:55:34.570Z",
+    "updatedAt": "2025-07-01T05:55:34.570Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c9b",
+    "name": "Planning Customizable foreground workforce Kanban",
+    "description": "Visualize workflow and project status.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68b55a9916394394f7b49bdb",
+    "owner": "68b55a9416394394f7b49a95",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a95",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-30T23:44:37.543Z",
+        "_id": "68b55a9916394394f7b49c9c"
+      },
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-09T03:05:23.150Z",
+        "_id": "68b55a9916394394f7b49c9d"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 76
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-24T21:12:13.483Z",
+    "updatedAt": "2025-07-24T21:12:13.483Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49c9f",
+    "name": "Design Fundamental systematic core Scrum",
+    "description": "Coordinate team efforts and project timeline.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49bdb",
+    "owner": "68b55a9716394394f7b49b0d",
+    "members": [
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-27T21:28:26.094Z",
+        "_id": "68b55a9916394394f7b49ca0"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "manage_columns",
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-08-13T03:29:08.461Z",
+        "_id": "68b55a9916394394f7b49ca1"
+      },
+      {
+        "user": "68b55a9716394394f7b49af5",
+        "permissions": [
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-08-31T08:08:53.990Z",
+        "_id": "68b55a9916394394f7b49ca2"
+      },
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "permissions": [
+          "manage_members",
+          "delete"
+        ],
+        "addedAt": "2025-08-27T04:22:46.298Z",
+        "_id": "68b55a9916394394f7b49ca3"
+      },
+      {
+        "user": "68b55a9416394394f7b49a95",
+        "permissions": [
+          "edit",
+          "view"
+        ],
+        "addedAt": "2025-08-18T22:50:07.253Z",
+        "_id": "68b55a9916394394f7b49ca4"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 38
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-23T11:05:14.376Z",
+    "updatedAt": "2025-08-23T11:05:14.376Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49ca6",
+    "name": "Project Virtual asynchronous task-force Board",
+    "description": "Visualize workflow and project status.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68b55a9916394394f7b49bdb",
+    "owner": "68b55a9616394394f7b49add",
+    "members": [
+      {
+        "user": "68b55a9616394394f7b49add",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-20T02:03:28.208Z",
+        "_id": "68b55a9916394394f7b49ca7"
+      },
+      {
+        "user": "68b55a9716394394f7b49b0d",
+        "permissions": [
+          "delete",
+          "view"
+        ],
+        "addedAt": "2025-08-03T20:41:06.882Z",
+        "_id": "68b55a9916394394f7b49ca8"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": false,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 71
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-19T16:35:24.893Z",
+    "updatedAt": "2025-08-19T16:35:24.893Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68b55a9916394394f7b49caa",
+    "name": "Feature Configurable even-keeled budgetary management Backlog",
+    "description": "Track feature development and bug fixes.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68b55a9916394394f7b49bdb",
+    "owner": "68b55a9416394394f7b49a95",
+    "members": [
+      {
+        "user": "68b55a9416394394f7b49a95",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-24T17:15:21.892Z",
+        "_id": "68b55a9916394394f7b49cab"
+      },
+      {
+        "user": "68b55a9316394394f7b49a65",
+        "permissions": [
+          "view",
+          "delete",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-09T20:03:49.570Z",
+        "_id": "68b55a9916394394f7b49cac"
+      },
+      {
+        "user": "68b55a9416394394f7b49a95",
+        "permissions": [
+          "manage_columns",
+          "manage_members",
+          "edit"
+        ],
+        "addedAt": "2025-08-02T12:54:30.072Z",
+        "_id": "68b55a9916394394f7b49cad"
+      },
+      {
+        "user": "68b55a9416394394f7b49aa1",
+        "permissions": [
+          "edit",
+          "view",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-31T22:43:44.965Z",
+        "_id": "68b55a9916394394f7b49cae"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 24
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-24T18:44:15.273Z",
+    "updatedAt": "2025-07-24T18:44:15.273Z",
+    "tags": [],
+    "__v": 0
+  }
+]
