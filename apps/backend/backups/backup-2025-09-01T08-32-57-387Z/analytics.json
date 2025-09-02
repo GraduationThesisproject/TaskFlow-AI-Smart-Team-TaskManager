@@ -1,0 +1,427 @@
+[
+  {
+    "_id": "68b45b0cfe69dd4b135c57b3",
+    "scopeType": "workspace",
+    "scopeId": "68b45b09fe69dd4b135c5227",
+    "kind": "velocity",
+    "data": {
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "inProgressTasks": 0,
+      "overdueTasks": 0,
+      "completionRate": 0,
+      "averageTaskDuration": 0,
+      "totalHoursSpent": 0,
+      "totalHoursEstimated": 0,
+      "productivityScore": 0,
+      "teamVelocity": 0,
+      "taskDistribution": {
+        "todo": 0,
+        "inProgress": 0,
+        "review": 0,
+        "completed": 0
+      },
+      "priorityDistribution": {
+        "low": 0,
+        "medium": 0,
+        "high": 0,
+        "urgent": 0
+      }
+    },
+    "period": {
+      "startDate": "2025-08-01T14:24:12.705Z",
+      "endDate": "2025-08-31T14:24:12.705Z",
+      "type": "monthly"
+    },
+    "board": null,
+    "taskMetrics": {
+      "total": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "overdue": 0,
+      "completionRate": 0,
+      "averageCompletionTime": 0,
+      "velocity": 0,
+      "blocked": 0
+    },
+    "timeMetrics": {
+      "totalEstimated": 0,
+      "totalActual": 0,
+      "averageAccuracy": 99.03357543144108,
+      "totalOvertime": 0
+    },
+    "teamMetrics": {
+      "totalMembers": 0,
+      "activeMembers": 0,
+      "memberProductivity": [],
+      "topPerformers": []
+    },
+    "qualityMetrics": {
+      "totalBugs": 0,
+      "resolvedBugs": 0,
+      "bugResolutionRate": 0,
+      "averageBugResolutionTime": 0,
+      "customerSatisfaction": 1
+    },
+    "aiInsights": {
+      "trendAnalysis": {
+        "completionTrend": "stable",
+        "velocityTrend": "stable",
+        "qualityTrend": "stable"
+      },
+      "predictedCompletionDate": null,
+      "riskFactors": [],
+      "optimizationSuggestions": []
+    },
+    "trend": "stable",
+    "trendStrength": 0,
+    "trendConfidence": 0,
+    "customMetrics": {},
+    "isCalculated": false,
+    "calculationDuration": 0,
+    "lastUpdated": "2025-08-31T14:24:12.707Z",
+    "createdAt": "2025-08-31T14:24:12.708Z",
+    "updatedAt": "2025-08-31T14:24:12.708Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b45b0cfe69dd4b135c57b5",
+    "scopeType": "workspace",
+    "scopeId": "68b45b09fe69dd4b135c5243",
+    "kind": "velocity",
+    "data": {
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "inProgressTasks": 0,
+      "overdueTasks": 0,
+      "completionRate": 0,
+      "averageTaskDuration": 0,
+      "totalHoursSpent": 0,
+      "totalHoursEstimated": 0,
+      "productivityScore": 0,
+      "teamVelocity": 0,
+      "taskDistribution": {
+        "todo": 0,
+        "inProgress": 0,
+        "review": 0,
+        "completed": 0
+      },
+      "priorityDistribution": {
+        "low": 0,
+        "medium": 0,
+        "high": 0,
+        "urgent": 0
+      }
+    },
+    "period": {
+      "startDate": "2025-08-01T14:24:12.711Z",
+      "endDate": "2025-08-31T14:24:12.711Z",
+      "type": "monthly"
+    },
+    "board": null,
+    "taskMetrics": {
+      "total": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "overdue": 0,
+      "completionRate": 0,
+      "averageCompletionTime": 0,
+      "velocity": 0,
+      "blocked": 0
+    },
+    "timeMetrics": {
+      "totalEstimated": 0,
+      "totalActual": 0,
+      "averageAccuracy": 95.90586701593145,
+      "totalOvertime": 0
+    },
+    "teamMetrics": {
+      "totalMembers": 0,
+      "activeMembers": 0,
+      "memberProductivity": [],
+      "topPerformers": []
+    },
+    "qualityMetrics": {
+      "totalBugs": 0,
+      "resolvedBugs": 0,
+      "bugResolutionRate": 0,
+      "averageBugResolutionTime": 0,
+      "customerSatisfaction": 1
+    },
+    "aiInsights": {
+      "trendAnalysis": {
+        "completionTrend": "stable",
+        "velocityTrend": "stable",
+        "qualityTrend": "stable"
+      },
+      "predictedCompletionDate": null,
+      "riskFactors": [],
+      "optimizationSuggestions": []
+    },
+    "trend": "stable",
+    "trendStrength": 0,
+    "trendConfidence": 0,
+    "customMetrics": {},
+    "isCalculated": false,
+    "calculationDuration": 0,
+    "lastUpdated": "2025-08-31T14:24:12.712Z",
+    "createdAt": "2025-08-31T14:24:12.713Z",
+    "updatedAt": "2025-08-31T14:24:12.713Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b45b0cfe69dd4b135c57b7",
+    "scopeType": "workspace",
+    "scopeId": "68b45b09fe69dd4b135c5262",
+    "kind": "velocity",
+    "data": {
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "inProgressTasks": 0,
+      "overdueTasks": 0,
+      "completionRate": 0,
+      "averageTaskDuration": 0,
+      "totalHoursSpent": 0,
+      "totalHoursEstimated": 0,
+      "productivityScore": 0,
+      "teamVelocity": 0,
+      "taskDistribution": {
+        "todo": 0,
+        "inProgress": 0,
+        "review": 0,
+        "completed": 0
+      },
+      "priorityDistribution": {
+        "low": 0,
+        "medium": 0,
+        "high": 0,
+        "urgent": 0
+      }
+    },
+    "period": {
+      "startDate": "2025-08-01T14:24:12.716Z",
+      "endDate": "2025-08-31T14:24:12.716Z",
+      "type": "monthly"
+    },
+    "board": null,
+    "taskMetrics": {
+      "total": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "overdue": 0,
+      "completionRate": 0,
+      "averageCompletionTime": 0,
+      "velocity": 0,
+      "blocked": 0
+    },
+    "timeMetrics": {
+      "totalEstimated": 0,
+      "totalActual": 0,
+      "averageAccuracy": 87.76648845470017,
+      "totalOvertime": 0
+    },
+    "teamMetrics": {
+      "totalMembers": 0,
+      "activeMembers": 0,
+      "memberProductivity": [],
+      "topPerformers": []
+    },
+    "qualityMetrics": {
+      "totalBugs": 0,
+      "resolvedBugs": 0,
+      "bugResolutionRate": 0,
+      "averageBugResolutionTime": 0,
+      "customerSatisfaction": 1
+    },
+    "aiInsights": {
+      "trendAnalysis": {
+        "completionTrend": "stable",
+        "velocityTrend": "stable",
+        "qualityTrend": "stable"
+      },
+      "predictedCompletionDate": null,
+      "riskFactors": [],
+      "optimizationSuggestions": []
+    },
+    "trend": "stable",
+    "trendStrength": 0,
+    "trendConfidence": 0,
+    "customMetrics": {},
+    "isCalculated": false,
+    "calculationDuration": 0,
+    "lastUpdated": "2025-08-31T14:24:12.717Z",
+    "createdAt": "2025-08-31T14:24:12.718Z",
+    "updatedAt": "2025-08-31T14:24:12.718Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b45b0cfe69dd4b135c57b9",
+    "scopeType": "workspace",
+    "scopeId": "68b45b09fe69dd4b135c528a",
+    "kind": "velocity",
+    "data": {
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "inProgressTasks": 0,
+      "overdueTasks": 0,
+      "completionRate": 0,
+      "averageTaskDuration": 0,
+      "totalHoursSpent": 0,
+      "totalHoursEstimated": 0,
+      "productivityScore": 0,
+      "teamVelocity": 0,
+      "taskDistribution": {
+        "todo": 0,
+        "inProgress": 0,
+        "review": 0,
+        "completed": 0
+      },
+      "priorityDistribution": {
+        "low": 0,
+        "medium": 0,
+        "high": 0,
+        "urgent": 0
+      }
+    },
+    "period": {
+      "startDate": "2025-08-01T14:24:12.722Z",
+      "endDate": "2025-08-31T14:24:12.722Z",
+      "type": "monthly"
+    },
+    "board": null,
+    "taskMetrics": {
+      "total": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "overdue": 0,
+      "completionRate": 0,
+      "averageCompletionTime": 0,
+      "velocity": 0,
+      "blocked": 0
+    },
+    "timeMetrics": {
+      "totalEstimated": 0,
+      "totalActual": 0,
+      "averageAccuracy": 93.22771567030168,
+      "totalOvertime": 0
+    },
+    "teamMetrics": {
+      "totalMembers": 0,
+      "activeMembers": 0,
+      "memberProductivity": [],
+      "topPerformers": []
+    },
+    "qualityMetrics": {
+      "totalBugs": 0,
+      "resolvedBugs": 0,
+      "bugResolutionRate": 0,
+      "averageBugResolutionTime": 0,
+      "customerSatisfaction": 1
+    },
+    "aiInsights": {
+      "trendAnalysis": {
+        "completionTrend": "stable",
+        "velocityTrend": "stable",
+        "qualityTrend": "stable"
+      },
+      "predictedCompletionDate": null,
+      "riskFactors": [],
+      "optimizationSuggestions": []
+    },
+    "trend": "stable",
+    "trendStrength": 0,
+    "trendConfidence": 0,
+    "customMetrics": {},
+    "isCalculated": false,
+    "calculationDuration": 0,
+    "lastUpdated": "2025-08-31T14:24:12.723Z",
+    "createdAt": "2025-08-31T14:24:12.724Z",
+    "updatedAt": "2025-08-31T14:24:12.724Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b45b0cfe69dd4b135c57bb",
+    "scopeType": "workspace",
+    "scopeId": "68b45b09fe69dd4b135c52a3",
+    "kind": "velocity",
+    "data": {
+      "totalTasks": 0,
+      "completedTasks": 0,
+      "inProgressTasks": 0,
+      "overdueTasks": 0,
+      "completionRate": 0,
+      "averageTaskDuration": 0,
+      "totalHoursSpent": 0,
+      "totalHoursEstimated": 0,
+      "productivityScore": 0,
+      "teamVelocity": 0,
+      "taskDistribution": {
+        "todo": 0,
+        "inProgress": 0,
+        "review": 0,
+        "completed": 0
+      },
+      "priorityDistribution": {
+        "low": 0,
+        "medium": 0,
+        "high": 0,
+        "urgent": 0
+      }
+    },
+    "period": {
+      "startDate": "2025-08-01T14:24:12.727Z",
+      "endDate": "2025-08-31T14:24:12.727Z",
+      "type": "monthly"
+    },
+    "board": null,
+    "taskMetrics": {
+      "total": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "overdue": 0,
+      "completionRate": 0,
+      "averageCompletionTime": 0,
+      "velocity": 0,
+      "blocked": 0
+    },
+    "timeMetrics": {
+      "totalEstimated": 0,
+      "totalActual": 0,
+      "averageAccuracy": 89.82822467501272,
+      "totalOvertime": 0
+    },
+    "teamMetrics": {
+      "totalMembers": 0,
+      "activeMembers": 0,
+      "memberProductivity": [],
+      "topPerformers": []
+    },
+    "qualityMetrics": {
+      "totalBugs": 0,
+      "resolvedBugs": 0,
+      "bugResolutionRate": 0,
+      "averageBugResolutionTime": 0,
+      "customerSatisfaction": 1
+    },
+    "aiInsights": {
+      "trendAnalysis": {
+        "completionTrend": "stable",
+        "velocityTrend": "stable",
+        "qualityTrend": "stable"
+      },
+      "predictedCompletionDate": null,
+      "riskFactors": [],
+      "optimizationSuggestions": []
+    },
+    "trend": "stable",
+    "trendStrength": 0,
+    "trendConfidence": 0,
+    "customMetrics": {},
+    "isCalculated": false,
+    "calculationDuration": 0,
+    "lastUpdated": "2025-08-31T14:24:12.728Z",
+    "createdAt": "2025-08-31T14:24:12.728Z",
+    "updatedAt": "2025-08-31T14:24:12.728Z",
+    "__v": 0
+  }
+]
