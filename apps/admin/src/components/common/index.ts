@@ -5,5 +5,4 @@ export { PermissionDeniedPopup, usePermissionDeniedPopup } from './PermissionDen
 export { PermissionDemo } from './PermissionDemo';
 export { ProtectedFeature, withFeatureProtection, useFeatureAccess } from './ProtectedFeature';
 export { PermissionIntegrationExample } from './PermissionIntegrationExample';
-export { PermissionTestSuite } from './PermissionTestSuite';
 export { useAdminPermissions } from '../../hooks/useAdminPermissions';

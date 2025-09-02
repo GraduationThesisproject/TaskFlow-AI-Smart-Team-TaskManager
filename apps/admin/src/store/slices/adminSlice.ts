@@ -155,7 +155,7 @@ export const uploadAdminAvatar = createAsyncThunk(
   async (file: File, { rejectWithValue }) => {
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('avatar', file);
 
       const response = await fetch(`${env.API_BASE_URL}/admin/auth/avatar`, {
         method: 'POST',

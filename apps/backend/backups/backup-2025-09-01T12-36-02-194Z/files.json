@@ -1,0 +1,62 @@
+[
+  {
+    "_id": "68b561967c5cc299bddfcc01",
+    "filename": "avatar_68b45f9e77639810cd621991_1756717462984_51afc05fa5ab.png",
+    "originalName": "test-avatar.png",
+    "mimeType": "image/png",
+    "size": 67,
+    "path": "C:\\Users\\Sekri\\OneDrive\\Desktop\\work\\SENIOR\\TaskFlow-AI-Smart-Team-TaskManager\\apps\\backend\\uploads\\avatars\\avatar_68b45f9e77639810cd621991_1756717462984_51afc05fa5ab.png",
+    "url": "http://localhost:3001/uploads/avatars/avatar_68b45f9e77639810cd621991_1756717462984_51afc05fa5ab.png",
+    "extension": "png",
+    "checksum": "6d57e7eef671f57fb910bbf9b833bc68",
+    "category": "avatar",
+    "uploadedBy": "68b45f9e77639810cd621991",
+    "workspace": null,
+    "space": null,
+    "attachedTo": {
+      "model": "User",
+      "objectId": "68b45f9e77639810cd621991",
+      "attachedAt": "2025-09-01T09:04:22.991Z"
+    },
+    "dimensions": null,
+    "isPublic": false,
+    "tags": [],
+    "isActive": true,
+    "encoding": "7bit",
+    "fieldname": "avatar",
+    "thumbnails": [],
+    "createdAt": "2025-09-01T09:04:23.006Z",
+    "updatedAt": "2025-09-01T09:04:23.006Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b561b27c5cc299bddfcc6b",
+    "filename": "avatar_68b45f9e77639810cd621991_1756717490830_449f0e6aa2da.jpeg",
+    "originalName": "Messenger_creation_d36e0a2f-7042-4c54-a6c2-80b4987fa2d0.jpeg",
+    "mimeType": "image/jpeg",
+    "size": 99912,
+    "path": "C:\\Users\\Sekri\\OneDrive\\Desktop\\work\\SENIOR\\TaskFlow-AI-Smart-Team-TaskManager\\apps\\backend\\uploads\\avatars\\avatar_68b45f9e77639810cd621991_1756717490830_449f0e6aa2da.jpeg",
+    "url": "http://localhost:3001/uploads/avatars/avatar_68b45f9e77639810cd621991_1756717490830_449f0e6aa2da.jpeg",
+    "extension": "jpeg",
+    "checksum": "e3d49e378b139766bd8835c9f8b24cb3",
+    "category": "avatar",
+    "uploadedBy": "68b45f9e77639810cd621991",
+    "workspace": null,
+    "space": null,
+    "attachedTo": {
+      "model": "User",
+      "objectId": "68b45f9e77639810cd621991",
+      "attachedAt": "2025-09-01T09:04:50.835Z"
+    },
+    "dimensions": null,
+    "isPublic": false,
+    "tags": [],
+    "isActive": true,
+    "encoding": "7bit",
+    "fieldname": "avatar",
+    "thumbnails": [],
+    "createdAt": "2025-09-01T09:04:50.838Z",
+    "updatedAt": "2025-09-01T09:04:50.838Z",
+    "__v": 0
+  }
+]
