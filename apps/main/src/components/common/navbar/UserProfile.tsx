@@ -156,6 +156,7 @@ const NotificationBell: React.FC = () => {
       size="sm"
       align="end"
       contentClassName="w-80"
+      triggerIsButton={false}
     >
       <div className="p-3 border-b border-border">
         <div className="flex items-center justify-between">

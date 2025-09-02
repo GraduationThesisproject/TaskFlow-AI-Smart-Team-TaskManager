@@ -1,0 +1,366 @@
+[
+  {
+    "_id": "68b5698d024e66e271ed9322",
+    "user": "68b55a9316394394f7b49a65",
+    "action": "user_login",
+    "description": "User logged in: admin.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a65",
+      "name": "Admin User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:38:21.964Z",
+    "updatedAt": "2025-09-01T09:38:21.964Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56a11024e66e271ed9350",
+    "user": "68b55a9316394394f7b49a65",
+    "action": "user_login",
+    "description": "User logged in: admin.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a65",
+      "name": "Admin User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:40:33.674Z",
+    "updatedAt": "2025-09-01T09:40:33.674Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56a52024e66e271ed936f",
+    "user": "68b55a9316394394f7b49a65",
+    "action": "user_login",
+    "description": "User logged in: admin.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a65",
+      "name": "Admin User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:41:38.806Z",
+    "updatedAt": "2025-09-01T09:41:38.806Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56a53024e66e271ed937a",
+    "user": "68b55a9316394394f7b49a71",
+    "action": "user_login",
+    "description": "User logged in: user.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a71",
+      "name": "Regular User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:41:39.149Z",
+    "updatedAt": "2025-09-01T09:41:39.149Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56b4c024e66e271ed93c7",
+    "user": "68b55a9316394394f7b49a65",
+    "action": "user_login",
+    "description": "User logged in: admin.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a65",
+      "name": "Admin User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:45:48.632Z",
+    "updatedAt": "2025-09-01T09:45:48.632Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56b4c024e66e271ed93d4",
+    "user": "68b55a9316394394f7b49a71",
+    "action": "user_login",
+    "description": "User logged in: user.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a71",
+      "name": "Regular User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:45:48.872Z",
+    "updatedAt": "2025-09-01T09:45:48.872Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56b817ed0b49c4250edbe",
+    "user": "68b55a9316394394f7b49a65",
+    "action": "user_login",
+    "description": "User logged in: admin.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a65",
+      "name": "Admin User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:46:41.259Z",
+    "updatedAt": "2025-09-01T09:46:41.259Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56b817ed0b49c4250edcd",
+    "user": "68b55a9316394394f7b49a71",
+    "action": "user_login",
+    "description": "User logged in: user.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a71",
+      "name": "Regular User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:46:41.514Z",
+    "updatedAt": "2025-09-01T09:46:41.514Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56bac29678250a4d556bf",
+    "user": "68b55a9316394394f7b49a65",
+    "action": "user_login",
+    "description": "User logged in: admin.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a65",
+      "name": "Admin User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:47:24.698Z",
+    "updatedAt": "2025-09-01T09:47:24.698Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56bac29678250a4d556d0",
+    "user": "68b55a9316394394f7b49a71",
+    "action": "user_login",
+    "description": "User logged in: user.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a71",
+      "name": "Regular User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:47:24.952Z",
+    "updatedAt": "2025-09-01T09:47:24.952Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56bd929678250a4d55709",
+    "user": "68b55a9316394394f7b49a65",
+    "action": "user_login",
+    "description": "User logged in: admin.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a65",
+      "name": "Admin User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:48:09.175Z",
+    "updatedAt": "2025-09-01T09:48:09.175Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56bf2b6a41ca1cd25e91b",
+    "user": "68b55a9316394394f7b49a65",
+    "action": "user_login",
+    "description": "User logged in: admin.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a65",
+      "name": "Admin User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:48:34.051Z",
+    "updatedAt": "2025-09-01T09:48:34.051Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56c18b6a41ca1cd25e954",
+    "user": "68b55a9316394394f7b49a65",
+    "action": "user_login",
+    "description": "User logged in: admin.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a65",
+      "name": "Admin User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:49:12.750Z",
+    "updatedAt": "2025-09-01T09:49:12.750Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56c18b6a41ca1cd25e959",
+    "user": "68b55a9316394394f7b49a71",
+    "action": "user_login",
+    "description": "User logged in: user.test@gmail.com",
+    "entity": {
+      "type": "User",
+      "id": "68b55a9316394394f7b49a71",
+      "name": "Regular User"
+    },
+    "relatedEntities": [],
+    "metadata": {
+      "ipAddress": "::1",
+      "userAgent": "axios/1.11.0"
+    },
+    "workspace": null,
+    "project": null,
+    "space": null,
+    "board": null,
+    "severity": "info",
+    "isSuccessful": true,
+    "isVisible": true,
+    "createdAt": "2025-09-01T09:49:12.756Z",
+    "updatedAt": "2025-09-01T09:49:12.756Z",
+    "__v": 0
+  }
+]
