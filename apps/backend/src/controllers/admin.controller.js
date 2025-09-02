@@ -383,41 +383,54 @@ const uploadAvatar = async (req, res) => {
       return sendResponse(res, 400, false, 'No file uploaded');
     }
 
-    const userId = req.user.id;
+    const adminId = req.user.id;
     const avatarUrl = req.uploadedFile.url; // Use the processed file URL
 
-    logger.info('uploadAvatar: Processing avatar upload for userId:', userId);
+    logger.info('uploadAvatar: Processing avatar upload for adminId:', adminId);
     logger.info('uploadAvatar: Avatar URL:', avatarUrl);
     logger.info('uploadAvatar: Full uploadedFile object:', JSON.stringify(req.uploadedFile, null, 2));
 
-    // Update user avatar
-    const user = await User.findByIdAndUpdate(userId, { avatar: avatarUrl }, { new: true });
-    if (!user) {
-      logger.error('uploadAvatar: User not found for userId:', userId);
-      return sendResponse(res, 404, false, 'User not found');
+    // Find and update admin directly
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      logger.error('uploadAvatar: Admin not found for adminId:', adminId);
+      return sendResponse(res, 404, false, 'Admin not found');
     }
 
-    logger.info('uploadAvatar: User avatar updated successfully');
-    logger.info('uploadAvatar: Updated user object:', JSON.stringify(user, null, 2));
+    logger.info('uploadAvatar: Admin found:', {
+      userName: admin.userName,
+      userEmail: admin.userEmail,
+      hasUserId: !!admin.userId
+    });
 
-    // Get updated admin info
-    const admin = await Admin.findOne({ userId: user._id, isActive: true });
-    if (!admin) {
-      logger.error('uploadAvatar: Admin not found for userId:', userId);
-      return sendResponse(res, 404, false, 'Admin not found');
+    // Update admin avatar directly
+    admin.avatar = avatarUrl;
+    await admin.save();
+
+    logger.info('uploadAvatar: Admin avatar updated successfully');
+
+    // If admin has a linked user, also update the user's avatar
+    if (admin.userId) {
+      try {
+        const user = await User.findByIdAndUpdate(admin.userId, { avatar: avatarUrl }, { new: true });
+        logger.info('uploadAvatar: Linked user avatar also updated');
+      } catch (userError) {
+        logger.warn('uploadAvatar: Failed to update linked user avatar:', userError.message);
+        // Continue anyway, admin avatar is updated
+      }
     }
 
     const adminResponse = {
       admin: {
         id: admin._id,
-        userId: admin.userId._id,
-        name: user.name,
-        email: user.email,
+        userId: admin.userId || null,
+        name: admin.userName,
+        email: admin.userEmail,
         role: admin.role,
         permissions: admin.permissions,
-        avatar: user.avatar,
+        avatar: admin.avatar,
         isActive: admin.isActive,
-        lastActivity: admin.lastActivity
+        lastActivity: admin.lastActivityAt
       }
     };
 
