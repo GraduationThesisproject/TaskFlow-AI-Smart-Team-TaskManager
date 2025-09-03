@@ -7,6 +7,7 @@
     "apps/admin",
     "apps/main",
     "apps/backend",
+    "apps/my-expo-app",
     "packages/*"
   ],
   "scripts": {
@@ -22,7 +23,7 @@
     "dev:admin": "concurrently -k -p \"[{name}]\" -n \"Backend,Admin\" -c \"red,green\" \"npm run dev:backend\" \"cd apps/admin && npm run dev\"",
     "dev:backend": "cd apps/backend && npm run dev",
     "dev:main": "cd apps/main && npm run dev",
-    "dev:mobile": "cd apps/mobile && npm start",
+    "dev:mobile": "cd apps/my-expo-app && npm start",
     "start": "npm run dev:all",
     "start:web": "npm run dev:web",
     "start:backend": "cd apps/backend && npm start",
