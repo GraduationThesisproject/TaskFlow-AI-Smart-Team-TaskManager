@@ -10,6 +10,7 @@ import { fetchMockData, fetchUserProfile, fetchWorkspaces, fetchTasks, clearData
 import { useSocket } from '@/hooks/socket/useSocket';
 import { testSocketConnection, checkBackendHealth, getConnectionTips } from '@/utils/socketTest';
 import { env } from '@/config/env';
+import { router } from 'expo-router';
 
 export default function TabOneScreen() {
   const { theme, toggleTheme, setUserPrimaryColor } = useTheme();
@@ -233,6 +234,21 @@ export default function TabOneScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Navigation to Components Test */}
+      <Card style={styles.section}>
+        <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
+          🧪 Test Components
+        </Text>
+        <TouchableOpacity 
+          onPress={() => router.push('/components-test' as any)}
+          style={[styles.button, { backgroundColor: colors.primary }]}
+        >
+          <Text style={{ color: colors['primary-foreground'], textAlign: 'center' }}>
+            Open Components Test Screen
+          </Text>
+        </TouchableOpacity>
+      </Card>
+
       {/* Socket Connection Test */}
       <Card style={styles.section}>
         <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
