@@ -170,6 +170,57 @@ export const createGlobalStyles = (theme: Theme): GlobalStyles => ({
     borderRadius: 2,
   },
   
+  // Task Footer and Assignees
+  taskFooter: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+  },
+  
+  assignees: {
+    flexDirection: 'row' as const,
+  },
+  
+  avatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.card,
+  },
+  
+  // Add List/Task Styles
+  addListButton: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.xl,
+    height: 48,
+    marginRight: theme.spacing.md,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  
+  addListContent: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+  },
+  
+  addTaskContainer: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+  },
+  
+  addTaskButton: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.xl,
+    paddingVertical: theme.spacing.md,
+    alignItems: 'center' as const,
+  },
+  
+  addTaskContent: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+  },
+
   // Button styles
   primaryButton: {
     backgroundColor: theme.colors.primary,

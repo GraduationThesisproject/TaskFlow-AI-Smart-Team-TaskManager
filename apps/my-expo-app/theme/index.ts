@@ -8,4 +8,3 @@ export * from './components';
 
 // Default exports
 export { darkTheme as defaultTheme } from './theme';
-export { useTheme } from './ThemeProvider';
