@@ -63,51 +63,8 @@ export default function BoardScreen() {
   const screenWidth = Dimensions.get('window').width;
   const columnWidth = screenWidth * 0.85;
 
-  // Use global styles from theme with additional custom styles
-  const styles = {
-    ...theme.globalStyles,
-    taskFooter: {
-      flexDirection: 'row' as const,
-      justifyContent: 'space-between' as const,
-      alignItems: 'center' as const,
-    },
-    assignees: {
-      flexDirection: 'row' as const,
-    },
-    avatar: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: theme.colors.card,
-    },
-    addListButton: {
-      backgroundColor: theme.colors.card,
-      borderRadius: theme.borderRadius.xl,
-      height: 48,
-      marginRight: theme.spacing.md,
-      alignItems: 'center' as const,
-      justifyContent: 'center' as const,
-    },
-    addListContent: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-    },
-    addTaskContainer: {
-      paddingHorizontal: theme.spacing.md,
-      paddingVertical: theme.spacing.md,
-    },
-    addTaskButton: {
-      backgroundColor: theme.colors.primary,
-      borderRadius: theme.borderRadius.xl,
-      paddingVertical: theme.spacing.md,
-      alignItems: 'center' as const,
-    },
-    addTaskContent: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-    },
-  };
+  // Use global styles from theme
+  const styles = theme.globalStyles;
 
   return (
     <ThemedView variant="background" style={styles.container}>
@@ -142,7 +99,7 @@ export default function BoardScreen() {
       {/* View Tabs */}
       <ThemedView style={styles.viewTabs}>
         <TouchableOpacity style={styles.activeTab}>
-          <ThemedText weight="medium" style={{ color: '#000000' }}>
+          <ThemedText weight="medium" style={{ color: theme.colors.text }}>
             Kanban
           </ThemedText>
         </TouchableOpacity>
@@ -204,7 +161,7 @@ export default function BoardScreen() {
                         backgroundColor: getPriorityColor(task.priority, theme)
                       }}
                     >
-                      <ThemedText size="xs" style={{ color: 'white' }}>
+                      <ThemedText size="xs" style={{ color: theme.colors.surface }}>
                         {task.priority}
                       </ThemedText>
                     </ThemedView>
@@ -267,8 +224,8 @@ export default function BoardScreen() {
       <ThemedView style={styles.addTaskContainer}>
         <TouchableOpacity style={styles.addTaskButton}>
           <ThemedView style={styles.addTaskContent}>
-            <Plus color="#000000" size={20} />
-            <ThemedText weight="medium" style={{ color: '#000000', marginLeft: theme.spacing.sm }}>
+            <Plus color={theme.colors.text} size={20} />
+            <ThemedText weight="medium" style={{ color: theme.colors.text, marginLeft: theme.spacing.sm }}>
               Add Task
             </ThemedText>
           </ThemedView>
