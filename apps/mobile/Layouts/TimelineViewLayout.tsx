@@ -1,9 +1,8 @@
 import { Text, View } from "@/components/Themed";
-
-const Space = () => {
+export const TimelineViewLayout = ()=> {
     return (
         <View>
-            <Text>Space</Text>
+            <Text>TimelineViewLayout</Text>
         </View>
     );
-};
+}
