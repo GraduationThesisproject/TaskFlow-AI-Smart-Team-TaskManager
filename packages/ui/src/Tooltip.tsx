@@ -43,7 +43,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
   className 
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: number;
 
   const showTooltip = () => {
     if (disabled) return;
