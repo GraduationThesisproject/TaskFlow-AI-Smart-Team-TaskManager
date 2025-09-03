@@ -2,12 +2,10 @@
   "extends": "./tsconfig.base.json",
   "include": [
     "apps/**/*",
-    "packages/**/*",
-    "apps/mobile/node_modules/tailwind.config.js"
+    "packages/**/*"
   ],
   "exclude": [
     "node_modules",
-    "**/node_modules",
     "dist",
     "build"
   ]
