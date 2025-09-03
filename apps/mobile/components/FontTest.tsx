@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Text, View } from './Themed';
 import { TextStyles } from '@/constants/Fonts';
 
 export default function FontTest() {
