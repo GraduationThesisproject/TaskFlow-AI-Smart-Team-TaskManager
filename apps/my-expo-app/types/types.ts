@@ -154,6 +154,16 @@ export interface GlobalStyles {
   progressContainer: object;
   progressBar: object;
   progressFill: object;
+  taskFooter: object;
+  assignees: object;
+  avatar: object;
+  
+  // Add List/Task styles
+  addListButton: object;
+  addListContent: object;
+  addTaskContainer: object;
+  addTaskButton: object;
+  addTaskContent: object;
   
   // Button styles
   primaryButton: object;
