@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Text as DefaultText, View as DefaultView, TextInput as DefaultTextInput, ScrollView as DefaultScrollView } from 'react-native';
+import { Text as DefaultText, View as DefaultView, TextInput as DefaultTextInput, ScrollView as DefaultScrollView, TouchableOpacity } from 'react-native';
 import { useTheme, useThemeColors } from './ThemeProvider';
 import { ThemeColors } from '@/constants/Colors';
 
@@ -130,7 +130,7 @@ export function Card(props: ViewProps) {
 /**
  * Button component with themed styling
  */
-export function Button(props: ViewProps & { variant?: 'primary' | 'secondary' | 'destructive' }) {
+export function Button(props: ViewProps & { variant?: 'primary' | 'secondary' | 'destructive'; disabled?: boolean; onPress?: () => void }) {
   const { style, variant = 'primary', ...otherProps } = props;
   const colors = useThemeColors();
   
@@ -162,7 +162,7 @@ export function Button(props: ViewProps & { variant?: 'primary' | 'secondary' | 
   const buttonColors = getButtonColors();
   
   return (
-    <View 
+    <TouchableOpacity 
       style={[
         {
           backgroundColor: buttonColors.backgroundColor,
@@ -171,9 +171,11 @@ export function Button(props: ViewProps & { variant?: 'primary' | 'secondary' | 
           paddingVertical: 12,
           alignItems: 'center',
           justifyContent: 'center',
+          opacity: otherProps.disabled ? 0.6 : 1,
         },
         style
       ]} 
+      disabled={otherProps.disabled}
       {...otherProps} 
     />
   );
