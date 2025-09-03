@@ -1,921 +1,390 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, Dimensions } from 'react-native';
-import { Text, View, Card, TextInput } from '@/components/Themed';
-import { TouchableOpacity } from 'react-native';
-import { useTheme, useThemeColors, useThemeColor } from '@/components/ThemeProvider';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { Text, View, Card } from '@/components/Themed';
+import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
-import { ThemeUtils } from '@/utils/themeUtils';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchMockData, fetchUserProfile, fetchWorkspaces, fetchTasks, clearData } from '@/store/slices/testSlice';
-import { useSocket } from '@/hooks/socket/useSocket';
-import { testSocketConnection, checkBackendHealth, getConnectionTips } from '@/utils/socketTest';
-import { env } from '@/config/env';
-import { router } from 'expo-router';
+import { useAppSelector, useAppDispatch } from '@/store';
+import { fetchWorkspaces } from '@/store/slices/workspaceSlice';
+import { fetchAnalytics } from '@/store/slices/analyticsSlice';
+import { listTemplates } from '@/store/slices/templatesSlice';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Sidebar from '@/components/navigation/Sidebar';
 
-export default function TabOneScreen() {
-  const { theme, toggleTheme, setUserPrimaryColor } = useTheme();
+export default function DashboardScreen() {
   const colors = useThemeColors();
-  const screenWidth = Dimensions.get('window').width;
   const dispatch = useAppDispatch();
-  
-  // Redux state
-  const { data, isLoading, error, lastFetched } = useAppSelector(state => state.test);
-  const { isLoading: appLoading } = useAppSelector(state => state.app);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Socket test state
-  const [socketTestResult, setSocketTestResult] = useState<any>(null);
-  const [backendHealth, setBackendHealth] = useState<boolean | null>(null);
-  const [socketMessages, setSocketMessages] = useState<string[]>([]);
-  const [isSocketTesting, setIsSocketTesting] = useState(false);
+  // Redux selectors
+  const { user } = useAppSelector(state => state.auth);
+  const { workspaces, loading: workspacesLoading, error: workspacesError } = useAppSelector(state => state.workspace);
+  const { data: analytics, loading: analyticsLoading, error: analyticsError } = useAppSelector(state => state.analytics);
+  const { items: templates, loading: templatesLoading, error: templatesError } = useAppSelector(state => state.templates);
 
-  // Socket connections for testing
-  const testSocket = useSocket({
-    url: env.SOCKET_URL,
-    autoConnect: false,
-    namespace: '/test',
-  });
+  const displayName = user?.user?.name || "User";
 
-  const notificationSocket = useSocket({
-    url: env.SOCKET_URL,
-    autoConnect: false,
-    namespace: '/notifications',
-  });
+  // Fetch data on component mount
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
 
-  const chatSocket = useSocket({
-    url: env.SOCKET_URL,
-    autoConnect: false,
-    namespace: '/chat',
-  });
-
-  // Test different color tokens
-  const primaryColor = useThemeColor('primary');
-  const accentColor = useThemeColor('accent');
-  const successColor = useThemeColor('success');
-  const warningColor = useThemeColor('warning');
-  const errorColor = useThemeColor('error');
-
-  // Test responsive font size
-  const responsiveFontSize = ThemeUtils.getResponsiveFontSize('lg', screenWidth);
-
-  // Test color palette creation
-  const colorPalette = ThemeUtils.createColorPalette(primaryColor);
-
-  // Test gradient creation
-  const gradient = ThemeUtils.createGradient(primaryColor, accentColor, 5);
-
-  // Test API calls
-  const handleFetchMockData = () => {
-    dispatch(fetchMockData());
+  const loadDashboardData = async () => {
+    try {
+      await Promise.all([
+        dispatch(fetchWorkspaces()),
+        dispatch(fetchAnalytics({ period: 'month', startDate: '2024-01-01', endDate: '2024-12-31' })),
+        dispatch(listTemplates({ status: 'active' })),
+      ]);
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    }
   };
 
-  const handleFetchUserProfile = () => {
-    dispatch(fetchUserProfile());
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadDashboardData();
+    setRefreshing(false);
   };
 
-  const handleFetchWorkspaces = () => {
-    dispatch(fetchWorkspaces());
+  const toggleSidebar = () => {
+    setSidebarVisible(!sidebarVisible);
   };
 
-  const handleFetchTasks = () => {
-    dispatch(fetchTasks());
-  };
-
-  const handleClearData = () => {
-    dispatch(clearData());
-  };
-
-  // Socket test functions
-  const handleTestSocketConnection = async () => {
-    setIsSocketTesting(true);
-    setSocketTestResult(null);
+  // Calculate stats from real data
+  const getTaskStats = () => {
+    // Use analytics data for task stats
+    const totalTasks = analytics?.coreMetrics?.totalTasks || 0;
+    const completedTasks = Math.round((analytics?.coreMetrics?.completionRate || 0) * totalTasks / 100);
+    const overdueTasks = analytics?.coreMetrics?.overdueTasks || 0;
+    const inProgressTasks = totalTasks - completedTasks - overdueTasks;
     
-    try {
-      const result = await testSocketConnection();
-      setSocketTestResult(result);
-      addSocketMessage(`Socket test: ${result.success ? 'SUCCESS' : 'FAILED'} - ${result.error || 'Connected'}`);
-    } catch (error) {
-      setSocketTestResult({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-      addSocketMessage(`Socket test: ERROR - ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsSocketTesting(false);
-    }
+    return {
+      total: totalTasks,
+      completed: completedTasks,
+      inProgress: inProgressTasks,
+      overdue: overdueTasks,
+      completionRate: analytics?.coreMetrics?.completionRate || 0,
+    };
   };
 
-  const handleCheckBackendHealth = async () => {
-    try {
-      const isHealthy = await checkBackendHealth();
-      setBackendHealth(isHealthy);
-      addSocketMessage(`Backend health check: ${isHealthy ? 'HEALTHY' : 'UNHEALTHY'}`);
-    } catch (error) {
-      setBackendHealth(false);
-      addSocketMessage(`Backend health check: ERROR - ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
+  const taskStats = getTaskStats();
 
-  const handleConnectTestSocket = () => {
-    addSocketMessage('Connecting to test socket...');
-    testSocket.connect();
-  };
+  // Get recent workspaces
+  const recentWorkspaces = workspaces?.slice(0, 3) || [];
 
-  const handleDisconnectTestSocket = () => {
-    addSocketMessage('Disconnecting test socket...');
-    testSocket.disconnect();
-  };
+  // Get upcoming deadlines from analytics (mock data for now)
+  const upcomingDeadlines = [
+    { title: 'Review Design Mockups', dueDate: '2 hours ago' },
+    { title: 'Submit Project Report', dueDate: '1 day ago' },
+  ];
 
-  const handleConnectNotificationSocket = () => {
-    addSocketMessage('Connecting to notification socket...');
-    notificationSocket.connect();
-  };
+  const isLoading = workspacesLoading || analyticsLoading || templatesLoading;
+  const hasError = workspacesError || analyticsError || templatesError;
 
-  const handleConnectChatSocket = () => {
-    addSocketMessage('Connecting to chat socket...');
-    chatSocket.connect();
-  };
-
-  const handleSendTestMessage = () => {
-    if (testSocket.isConnected) {
-      testSocket.emit('test:message', {
-        message: 'Hello from mobile app!',
-        timestamp: new Date().toISOString(),
-        platform: 'mobile'
-      });
-      addSocketMessage('Sent test message to server');
-    } else {
-      addSocketMessage('Cannot send message - socket not connected');
-    }
-  };
-
-  const handleClearSocketMessages = () => {
-    setSocketMessages([]);
-  };
-
-  const addSocketMessage = (message: string) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setSocketMessages(prev => [`[${timestamp}] ${message}`, ...prev.slice(0, 9)]); // Keep last 10 messages
-  };
-
-  // Socket event listeners
-  useEffect(() => {
-    const testSocketInstance = testSocket.socket;
-    if (testSocketInstance) {
-      testSocketInstance.on('connect', () => {
-        addSocketMessage('Test socket connected');
-      });
-
-      testSocketInstance.on('disconnect', (reason) => {
-        addSocketMessage(`Test socket disconnected: ${reason}`);
-      });
-
-      testSocketInstance.on('test:response', (data) => {
-        addSocketMessage(`Received test response: ${JSON.stringify(data)}`);
-      });
-
-      testSocketInstance.on('error', (error) => {
-        addSocketMessage(`Test socket error: ${error.message || error}`);
-      });
-
-      return () => {
-        testSocketInstance.off('connect');
-        testSocketInstance.off('disconnect');
-        testSocketInstance.off('test:response');
-        testSocketInstance.off('error');
-      };
-    }
-  }, [testSocket.socket]);
-
-  useEffect(() => {
-    const notificationSocketInstance = notificationSocket.socket;
-    if (notificationSocketInstance) {
-      notificationSocketInstance.on('connect', () => {
-        addSocketMessage('Notification socket connected');
-      });
-
-      notificationSocketInstance.on('disconnect', (reason) => {
-        addSocketMessage(`Notification socket disconnected: ${reason}`);
-      });
-
-      notificationSocketInstance.on('notification:new', (data) => {
-        addSocketMessage(`New notification: ${data.title || 'Unknown'}`);
-      });
-
-      return () => {
-        notificationSocketInstance.off('connect');
-        notificationSocketInstance.off('disconnect');
-        notificationSocketInstance.off('notification:new');
-      };
-    }
-  }, [notificationSocket.socket]);
-
-  useEffect(() => {
-    const chatSocketInstance = chatSocket.socket;
-    if (chatSocketInstance) {
-      chatSocketInstance.on('connect', () => {
-        addSocketMessage('Chat socket connected');
-      });
-
-      chatSocketInstance.on('disconnect', (reason) => {
-        addSocketMessage(`Chat socket disconnected: ${reason}`);
-      });
-
-      chatSocketInstance.on('message:new', (data) => {
-        addSocketMessage(`New chat message: ${data.content || 'Unknown'}`);
-      });
-
-      return () => {
-        chatSocketInstance.off('connect');
-        chatSocketInstance.off('disconnect');
-        chatSocketInstance.off('message:new');
-      };
-    }
-  }, [chatSocket.socket]);
+  if (isLoading && !refreshing) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <TouchableOpacity
+            style={[styles.sidebarButton, { backgroundColor: colors.primary }]}
+            onPress={toggleSidebar}
+          >
+            <FontAwesome name="bars" size={20} color={colors['primary-foreground']} />
+          </TouchableOpacity>
+          <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
+            Dashboard
+          </Text>
+          <View style={styles.headerSpacer} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
+            Loading dashboard...
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Navigation to Components Test */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
-          🧪 Test Components
-        </Text>
-        <TouchableOpacity 
-          onPress={() => router.push('/components-test' as any)}
-          style={[styles.button, { backgroundColor: colors.primary }]}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header with Sidebar Toggle */}
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <TouchableOpacity
+          style={[styles.sidebarButton, { backgroundColor: colors.primary }]}
+          onPress={toggleSidebar}
         >
-          <Text style={{ color: colors['primary-foreground'], textAlign: 'center' }}>
-            Open Components Test Screen
-          </Text>
+          <FontAwesome name="bars" size={20} color={colors['primary-foreground']} />
         </TouchableOpacity>
-      </Card>
-
-      {/* Socket Connection Test */}
-      <Card style={styles.section}>
         <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
-          Socket Connection Test
+          Dashboard
         </Text>
-        
-        {/* Socket Status */}
-        <View style={styles.statusRow}>
-          <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
-            Test Socket: {testSocket.isConnected ? '🟢 Connected' : '🔴 Disconnected'}
-          </Text>
-          <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
-            Notifications: {notificationSocket.isConnected ? '🟢 Connected' : '🔴 Disconnected'}
-          </Text>
-          <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
-            Chat: {chatSocket.isConnected ? '🟢 Connected' : '🔴 Disconnected'}
-          </Text>
-        </View>
+        <View style={styles.headerSpacer} />
+      </View>
 
-        {testSocket.error && (
-          <Text style={[TextStyles.body.small, { color: colors.error }]}>
-            Test Socket Error: {testSocket.error}
-          </Text>
+      <ScrollView 
+        style={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Error Message */}
+        {hasError && (
+          <Card style={[styles.errorCard, { backgroundColor: colors.destructive }]}>
+            <Text style={[TextStyles.body.medium, { color: colors['destructive-foreground'] }]}>
+              Failed to load dashboard data. Pull to refresh.
+            </Text>
+          </Card>
         )}
 
-        {notificationSocket.error && (
-          <Text style={[TextStyles.body.small, { color: colors.error }]}>
-            Notification Socket Error: {notificationSocket.error}
-          </Text>
-        )}
-
-        {chatSocket.error && (
-          <Text style={[TextStyles.body.small, { color: colors.error }]}>
-            Chat Socket Error: {chatSocket.error}
-          </Text>
-        )}
-      </Card>
-
-      {/* Socket Test Buttons */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          Socket Test Controls
-        </Text>
-        
-        <View style={styles.buttonRow}>
-          <TouchableOpacity 
-            onPress={handleTestSocketConnection}
-            style={[styles.button, { backgroundColor: colors.primary }]}
-            disabled={isSocketTesting}
-          >
-            <Text style={{ color: colors['primary-foreground'] }}>
-              {isSocketTesting ? 'Testing...' : 'Test Connection'}
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            onPress={handleCheckBackendHealth}
-            style={[styles.button, { backgroundColor: colors.accent }]}
-          >
-            <Text style={{ color: colors['accent-foreground'] }}>
-              Check Backend
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.buttonRow}>
-          <TouchableOpacity 
-            onPress={handleConnectTestSocket}
-            style={[styles.button, { backgroundColor: colors.secondary }]}
-            disabled={testSocket.isConnected}
-          >
-            <Text style={{ color: colors['secondary-foreground'] }}>
-              Connect Test
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            onPress={handleDisconnectTestSocket}
-            style={[styles.button, { backgroundColor: colors.destructive }]}
-            disabled={!testSocket.isConnected}
-          >
-            <Text style={{ color: colors['destructive-foreground'] }}>
-              Disconnect Test
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.buttonRow}>
-          <TouchableOpacity 
-            onPress={handleConnectNotificationSocket}
-            style={[styles.button, { backgroundColor: colors.success }]}
-            disabled={notificationSocket.isConnected}
-          >
-            <Text style={{ color: '#ffffff' }}>
-              Connect Notifications
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            onPress={handleConnectChatSocket}
-            style={[styles.button, { backgroundColor: colors.warning }]}
-            disabled={chatSocket.isConnected}
-          >
-            <Text style={{ color: '#000000' }}>
-              Connect Chat
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity 
-          onPress={handleSendTestMessage}
-          style={[styles.button, { backgroundColor: colors.primary }]}
-          disabled={!testSocket.isConnected}
-        >
-          <Text style={{ color: colors['primary-foreground'] }}>
-            Send Test Message
-          </Text>
-        </TouchableOpacity>
-      </Card>
-
-      {/* Socket Test Results */}
-      {socketTestResult && (
-        <Card style={styles.section}>
+        {/* Welcome Header */}
+        <Card style={styles.welcomeCard}>
           <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-            Connection Test Results
+            Welcome back, {displayName}! 👋
           </Text>
-          
-          <View style={[
-            styles.resultBox, 
-            { backgroundColor: socketTestResult.success ? colors.success : colors.error }
-          ]}>
-            <Text style={[
-              TextStyles.body.medium, 
-              { color: socketTestResult.success ? '#ffffff' : '#ffffff' }
-            ]}>
-              Status: {socketTestResult.success ? 'SUCCESS' : 'FAILED'}
-            </Text>
-            {socketTestResult.error && (
-              <Text style={[
-                TextStyles.body.small, 
-                { color: socketTestResult.success ? '#ffffff' : '#ffffff' }
-              ]}>
-                Error: {socketTestResult.error}
-              </Text>
-            )}
-            {socketTestResult.details && (
-              <Text style={[
-                TextStyles.caption.small, 
-                { color: socketTestResult.success ? '#ffffff' : '#ffffff' }
-              ]}>
-                Details: {JSON.stringify(socketTestResult.details)}
-              </Text>
-            )}
-          </View>
+          <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'], marginTop: 8 }]}>
+            Here's what's happening with your tasks today.
+          </Text>
         </Card>
-      )}
 
-      {/* Backend Health Status */}
-      {backendHealth !== null && (
-        <Card style={styles.section}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-            Backend Health Status
-          </Text>
-          
-          <View style={[
-            styles.resultBox, 
-            { backgroundColor: backendHealth ? colors.success : colors.error }
-          ]}>
-            <Text style={[
-              TextStyles.body.medium, 
-              { color: '#ffffff' }
-            ]}>
-              Backend: {backendHealth ? 'HEALTHY' : 'UNHEALTHY'}
+        {/* Stats Cards */}
+        <View style={styles.statsContainer}>
+          <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
+            <Text style={[TextStyles.heading.h3, { color: colors.primary }]}>
+              {taskStats.total}
             </Text>
-          </View>
-        </Card>
-      )}
-
-      {/* Socket Messages Log */}
-      <Card style={styles.section}>
-        <View style={styles.headerRow}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-            Socket Messages Log
-          </Text>
-          <TouchableOpacity 
-            onPress={handleClearSocketMessages}
-            style={[styles.smallButton, { backgroundColor: colors.destructive }]}
-          >
-            <Text style={{ color: colors['destructive-foreground'], fontSize: 12 }}>
-              Clear
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+              Total Tasks
             </Text>
-          </TouchableOpacity>
+          </Card>
+          <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
+            <Text style={[TextStyles.heading.h3, { color: colors.success }]}>
+              {taskStats.completed}
+            </Text>
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+              Completed
+            </Text>
+          </Card>
+          <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
+            <Text style={[TextStyles.heading.h3, { color: colors.warning }]}>
+              {taskStats.inProgress}
+            </Text>
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+              In Progress
+            </Text>
+          </Card>
+          <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
+            <Text style={[TextStyles.heading.h3, { color: colors.destructive }]}>
+              {taskStats.overdue}
+            </Text>
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+              Overdue
+            </Text>
+          </Card>
         </View>
-        
-        <View style={styles.messageLog}>
-          {socketMessages.length === 0 ? (
-            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], fontStyle: 'italic' }]}>
-              No messages yet. Try connecting to sockets or sending test messages.
+
+        {/* Workspaces Section */}
+        {recentWorkspaces.length > 0 && (
+          <Card style={styles.sectionCard}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
+              Your Workspaces
             </Text>
-          ) : (
-            socketMessages.map((message, index) => (
-              <Text key={index} style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                {message}
-              </Text>
-            ))
-          )}
-        </View>
-      </Card>
-
-      {/* Connection Tips */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          Troubleshooting Tips
-        </Text>
-        
-        {getConnectionTips().map((tip, index) => (
-          <Text key={index} style={[TextStyles.body.small, { color: colors['muted-foreground'], marginVertical: 2 }]}>
-            • {tip}
-          </Text>
-        ))}
-      </Card>
-
-      {/* Redux Store Test */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
-          Redux Store Test
-        </Text>
-        <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
-          Store Status: {isLoading ? 'Loading...' : 'Ready'}
-        </Text>
-        {error && (
-          <Text style={[TextStyles.body.small, { color: colors.error }]}>
-            Error: {error}
-          </Text>
+                         <View style={styles.workspaceList}>
+               {recentWorkspaces.map((workspace) => (
+                 <View key={workspace._id} style={[styles.workspaceItem, { backgroundColor: colors.card }]}>
+                   <FontAwesome name="folder" size={24} color={colors.primary} />
+                   <View style={styles.workspaceInfo}>
+                     <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
+                       {workspace.name}
+                     </Text>
+                     <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                       {workspace.members?.length || 0} members • {workspace.spaces?.length || 0} spaces
+                     </Text>
+                   </View>
+                   <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+                     <View style={[
+                       styles.progressFill, 
+                       { 
+                         backgroundColor: colors.primary, 
+                         width: `${workspace.isActive ? 75 : 25}%` 
+                       }
+                     ]} />
+                   </View>
+                 </View>
+               ))}
+             </View>
+          </Card>
         )}
-        {lastFetched && (
-          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-            Last fetched: {new Date(lastFetched).toLocaleTimeString()}
-          </Text>
-        )}
-      </Card>
 
-      {/* API Test Buttons */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          API Test Buttons
-        </Text>
-        
-        <View style={styles.buttonRow}>
-          <TouchableOpacity 
-            onPress={handleFetchMockData}
-            style={[styles.button, { backgroundColor: colors.primary }]}
-            disabled={isLoading}
-          >
-            <Text style={{ color: colors['primary-foreground'] }}>
-              {isLoading ? 'Loading...' : 'Fetch Mock Data'}
+        {/* Upcoming Deadlines */}
+        {upcomingDeadlines.length > 0 && (
+          <Card style={styles.sectionCard}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
+              Upcoming Deadlines
             </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            onPress={handleFetchUserProfile}
-            style={[styles.button, { backgroundColor: colors.accent }]}
-            disabled={isLoading}
-          >
-            <Text style={{ color: colors['accent-foreground'] }}>
-              Fetch Profile
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.buttonRow}>
-          <TouchableOpacity 
-            onPress={handleFetchWorkspaces}
-            style={[styles.button, { backgroundColor: colors.secondary }]}
-            disabled={isLoading}
-          >
-            <Text style={{ color: colors['secondary-foreground'] }}>
-              Fetch Workspaces
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            onPress={handleFetchTasks}
-            style={[styles.button, { backgroundColor: colors.success }]}
-            disabled={isLoading}
-          >
-            <Text style={{ color: '#ffffff' }}>
-              Fetch Tasks
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity 
-          onPress={handleClearData}
-          style={[styles.button, { backgroundColor: colors.destructive }]}
-        >
-          <Text style={{ color: colors['destructive-foreground'] }}>
-            Clear Data
-          </Text>
-        </TouchableOpacity>
-      </Card>
-
-      {/* API Data Display */}
-      {data && (
-        <Card style={styles.section}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-            API Response Data
-          </Text>
-          
-          {data.user && (
-            <View style={styles.dataSection}>
-              <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>
-                User Profile
-              </Text>
-              <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                Name: {data.user.name}
-              </Text>
-              <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                Email: {data.user.email}
-              </Text>
-            </View>
-          )}
-
-          {data.workspaces && (
-            <View style={styles.dataSection}>
-              <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>
-                Workspaces ({data.workspaces.length})
-              </Text>
-              {data.workspaces.map((workspace: any, index: number) => (
-                <Text key={index} style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                  • {workspace.name} ({workspace.members} members)
-                </Text>
+            <View style={styles.deadlineList}>
+              {upcomingDeadlines.slice(0, 3).map((deadline, index) => (
+                <View key={index} style={[styles.deadlineItem, { backgroundColor: colors.card }]}>
+                  <View style={[styles.deadlineDot, { backgroundColor: colors.warning }]} />
+                  <View style={styles.deadlineInfo}>
+                    <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
+                      {deadline.title}
+                    </Text>
+                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                      Due {deadline.dueDate}
+                    </Text>
+                  </View>
+                </View>
               ))}
             </View>
-          )}
+          </Card>
+        )}
 
-          {data.tasks && (
-            <View style={styles.dataSection}>
-              <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>
-                Tasks ({data.tasks.length})
+        {/* Quick Actions */}
+        <Card style={styles.sectionCard}>
+          <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
+            Quick Actions
+          </Text>
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: colors.primary }]}
+              onPress={() => {/* Navigate to create task */}}
+            >
+              <FontAwesome name="plus" size={16} color={colors['primary-foreground']} />
+              <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>
+                New Task
               </Text>
-              {data.tasks.map((task: any, index: number) => (
-                <Text key={index} style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                  • {task.title} ({task.status})
-                </Text>
-              ))}
-            </View>
-          )}
-
-          {data.timestamp && (
-            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-              Timestamp: {new Date(data.timestamp).toLocaleString()}
-            </Text>
-          )}
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: colors.secondary }]}
+              onPress={() => {/* Navigate to create workspace */}}
+            >
+              <FontAwesome name="plus" size={16} color={colors['secondary-foreground']} />
+              <Text style={[TextStyles.body.small, { color: colors['secondary-foreground'] }]}>
+                New Workspace
+              </Text>
+            </TouchableOpacity>
+          </View>
         </Card>
-      )}
+      </ScrollView>
 
-      {/* Theme Information */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
-          Theme System Test
-        </Text>
-        <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
-          Current theme: {theme}
-        </Text>
-        <TouchableOpacity onPress={toggleTheme} style={[styles.button, { backgroundColor: colors.primary }]}>
-          <Text style={{ color: colors['primary-foreground'] }}>Toggle Theme</Text>
-        </TouchableOpacity>
-      </Card>
-
-      {/* Color Tokens Test */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          Color Tokens
-        </Text>
-        
-        <View style={styles.colorGrid}>
-          <View style={[styles.colorSwatch, { backgroundColor: colors.primary }]}>
-            <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'] }]}>
-              Primary
-            </Text>
-          </View>
-          <View style={[styles.colorSwatch, { backgroundColor: colors.accent }]}>
-            <Text style={[TextStyles.caption.small, { color: colors['accent-foreground'] }]}>
-              Accent
-            </Text>
-          </View>
-          <View style={[styles.colorSwatch, { backgroundColor: colors.success }]}>
-            <Text style={[TextStyles.caption.small, { color: '#ffffff' }]}>
-              Success
-            </Text>
-          </View>
-          <View style={[styles.colorSwatch, { backgroundColor: colors.warning }]}>
-            <Text style={[TextStyles.caption.small, { color: '#000000' }]}>
-              Warning
-            </Text>
-          </View>
-          <View style={[styles.colorSwatch, { backgroundColor: colors.error }]}>
-            <Text style={[TextStyles.caption.small, { color: '#ffffff' }]}>
-              Error
-            </Text>
-          </View>
-        </View>
-      </Card>
-
-      {/* Font System Test */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          Font System
-        </Text>
-        
-        <Text style={[TextStyles.display.large, { color: colors.foreground }]}>
-          Display Large
-        </Text>
-        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
-          Heading H1
-        </Text>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          Heading H2
-        </Text>
-        <Text style={[TextStyles.body.large, { color: colors.foreground }]}>
-          Body Large Text
-        </Text>
-        <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-          Body Medium Text
-        </Text>
-        <Text style={[TextStyles.caption.large, { color: colors['muted-foreground'] }]}>
-          Caption Text
-        </Text>
-        
-        {/* Test responsive font size */}
-        <Text style={[styles.responsiveText, { fontSize: responsiveFontSize, color: colors.foreground }]}>
-          Responsive Font Size: {responsiveFontSize}px
-        </Text>
-      </Card>
-
-      {/* Component Test */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          Themed Components
-        </Text>
-        
-        <TextInput 
-          placeholder="Test input field"
-          style={styles.input}
-        />
-        
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]}>
-            <Text style={{ color: colors['primary-foreground'] }}>Primary</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, { backgroundColor: colors.secondary }]}>
-            <Text style={{ color: colors['secondary-foreground'] }}>Secondary</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, { backgroundColor: colors.destructive }]}>
-            <Text style={{ color: colors['destructive-foreground'] }}>Destructive</Text>
-          </TouchableOpacity>
-        </View>
-      </Card>
-
-      {/* Color Palette Test */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          Color Palette
-        </Text>
-        
-        <View style={styles.colorGrid}>
-          <View style={[styles.colorSwatch, { backgroundColor: colorPalette.light }]}>
-            <Text style={[TextStyles.caption.small, { color: colorPalette.contrast }]}>
-              Light
-            </Text>
-          </View>
-          <View style={[styles.colorSwatch, { backgroundColor: colorPalette.main }]}>
-            <Text style={[TextStyles.caption.small, { color: colorPalette.contrast }]}>
-              Main
-            </Text>
-          </View>
-          <View style={[styles.colorSwatch, { backgroundColor: colorPalette.dark }]}>
-            <Text style={[TextStyles.caption.small, { color: colorPalette.contrast }]}>
-              Dark
-            </Text>
-          </View>
-        </View>
-      </Card>
-
-      {/* Gradient Test */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          Gradient Test
-        </Text>
-        
-        <View style={styles.gradientContainer}>
-          {gradient.map((color, index) => (
-            <View 
-              key={index} 
-              style={[
-                styles.gradientSwatch, 
-                { backgroundColor: color }
-              ]} 
-            />
-          ))}
-        </View>
-      </Card>
-
-      {/* Shadow Test */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          Shadow Test
-        </Text>
-        
-        <View style={[
-          styles.shadowTest,
-          ThemeUtils.getThemeShadowStyle(colors, 4, 0.2)
-        ]}>
-          <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-            Elevated Card with Shadow
-          </Text>
-        </View>
-      </Card>
-
-      {/* Custom Color Test */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          Custom Color Test
-        </Text>
-        
-        <TouchableOpacity 
-          onPress={() => setUserPrimaryColor('#FF6B6B')}
-          style={[styles.button, { backgroundColor: '#FF6B6B' }]}
-        >
-          <Text style={{ color: '#ffffff' }}>Set Red Primary</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          onPress={() => setUserPrimaryColor('#4ECDC4')}
-          style={[styles.button, { backgroundColor: '#4ECDC4' }]}
-        >
-          <Text style={{ color: '#ffffff' }}>Set Teal Primary</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          onPress={() => setUserPrimaryColor('#45B7D1')}
-          style={[styles.button, { backgroundColor: '#45B7D1' }]}
-        >
-          <Text style={{ color: '#ffffff' }}>Set Blue Primary</Text>
-        </TouchableOpacity>
-      </Card>
-
-      {/* Spacing and Border Radius Test */}
-      <Card style={styles.section}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          Spacing & Border Radius
-        </Text>
-        
-        <View style={[
-          styles.spacingTest,
-          { 
-            margin: ThemeUtils.getSpacing('md'),
-            padding: ThemeUtils.getSpacing('lg'),
-            borderRadius: ThemeUtils.getBorderRadius('lg'),
-            backgroundColor: colors.secondary
-          }
-        ]}>
-          <Text style={[TextStyles.body.medium, { color: colors['secondary-foreground'] }]}>
-            Spacing: md margin, lg padding, lg border radius
-          </Text>
-        </View>
-      </Card>
-    </ScrollView>
+      {/* Sidebar */}
+      <Sidebar
+        isVisible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        currentSection="dashboard"
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
+    borderBottomWidth: 1,
   },
-  section: {
-    marginBottom: 20,
-    padding: 16,
-  },
-  button: {
-    marginVertical: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  smallButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 16,
-  },
-  statusRow: {
-    marginVertical: 8,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  resultBox: {
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  messageLog: {
-    maxHeight: 200,
-    padding: 8,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    borderRadius: 4,
-  },
-  input: {
-    marginVertical: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    marginTop: 16,
-  },
-  colorSwatch: {
-    width: 80,
-    height: 60,
-    borderRadius: 8,
+  sidebarButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 4,
+    marginRight: 12,
   },
-  gradientContainer: {
+  headerSpacer: {
+    width: 40,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  errorCard: {
+    padding: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+  },
+  welcomeCard: {
+    padding: 20,
+    marginBottom: 20,
+  },
+  statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+    marginBottom: 20,
   },
-  gradientSwatch: {
+  statCard: {
     flex: 1,
-    height: 40,
-    marginHorizontal: 2,
-    borderRadius: 4,
+    padding: 16,
+    marginHorizontal: 4,
+    alignItems: 'center',
+    borderRadius: 12,
   },
-  shadowTest: {
+  sectionCard: {
+    padding: 20,
+    marginBottom: 20,
+  },
+  workspaceList: {
+    gap: 12,
+  },
+  workspaceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
     borderRadius: 12,
-    backgroundColor: '#ffffff',
-    marginTop: 16,
   },
-  spacingTest: {
-    marginTop: 16,
+  workspaceInfo: {
+    flex: 1,
+    marginLeft: 12,
   },
-  responsiveText: {
-    marginTop: 8,
+  progressBar: {
+    width: 60,
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
   },
-  dataSection: {
-    marginVertical: 8,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  deadlineList: {
+    gap: 12,
+  },
+  deadlineItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+  },
+  deadlineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 12,
+  },
+  deadlineInfo: {
+    flex: 1,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    gap: 8,
   },
 });
