@@ -14,13 +14,15 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "tailwind-merge": "^1.14.0"
   },
   "devDependencies": {
-    "@types/react": "~19.0.10",
-    "@types/react-dom": "~19.0.3",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "typescript": "^5.0.0",
     "eslint": "^8.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
@@ -29,7 +31,7 @@
     "eslint-plugin-react-hooks": "^4.6.0"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }

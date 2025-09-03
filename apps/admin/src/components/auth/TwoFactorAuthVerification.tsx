@@ -23,11 +23,7 @@ const TwoFactorAuthVerification: React.FC<TwoFactorAuthVerificationProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
-console.log(token);
-console.log(rememberDevice);
-console.log(isLoading);
-console.log(error);
-console.log(useBackupCode);
+
   const handleVerification = async () => {
     if (!token.trim()) {
       setError('Please enter the verification code');
