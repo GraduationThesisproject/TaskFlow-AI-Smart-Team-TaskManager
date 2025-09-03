@@ -26,8 +26,7 @@ import { SocketProvider } from './contexts/SocketContext';
 // import { SocketConnectionTest } from './components/debug/SocketConnectionTest';
 import  Cancel  from './layouts/workSpace/Cancel';
 import  Success  from './layouts/workSpace/Success';
-import { SocketDebugger } from './components/debug/SocketDebugger';
-import { SocketConnectionTest } from './components/debug/SocketConnectionTest';
+
 
 // Support Page Component
 const SupportPage = () => {
