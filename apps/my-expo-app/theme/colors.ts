@@ -35,6 +35,9 @@ export const darkColors: Colors = {
   // Interactive states
   disabled: '#6B7280', // gray-500
   placeholder: '#9CA3AF', // gray-400
+
+  // muted
+  muted: '#6B7280', // gray-500
 };
 
 export const lightColors: Colors = {
