@@ -1,0 +1,394 @@
+[
+  {
+    "_id": "68b56b817ed0b49c4250edd1",
+    "chatId": "chat_1756720001520",
+    "participants": [
+      {
+        "id": "68b56b817ed0b49c4250edd0",
+        "model": "User",
+        "name": "Test User",
+        "isOnline": false,
+        "_id": "68b56b817ed0b49c4250edd2"
+      }
+    ],
+    "messages": [
+      {
+        "sender": {
+          "id": "68b56b817ed0b49c4250edd0",
+          "model": "User",
+          "name": "Test User"
+        },
+        "content": "Hello support!",
+        "messageType": "text",
+        "isRead": false,
+        "_id": "68b56b817ed0b49c4250edd3",
+        "attachments": [],
+        "createdAt": "2025-09-01T09:46:41.523Z",
+        "updatedAt": "2025-09-01T09:46:41.523Z"
+      }
+    ],
+    "status": "pending",
+    "category": "general",
+    "priority": "medium",
+    "tags": [],
+    "lastMessage": {
+      "content": "Hello support!",
+      "timestamp": "2025-09-01T09:46:41.523Z",
+      "sender": {
+        "id": "68b56b817ed0b49c4250edd0",
+        "name": "Test User"
+      }
+    },
+    "metrics": {
+      "totalMessages": 1
+    },
+    "settings": {
+      "notifications": {
+        "email": true,
+        "push": true
+      },
+      "autoAssign": true
+    },
+    "createdAt": "2025-09-01T09:46:41.523Z",
+    "updatedAt": "2025-09-01T09:46:41.523Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56b827ed0b49c4250ede3",
+    "chatId": "chat_1756720002607",
+    "participants": [
+      {
+        "id": "68b56b827ed0b49c4250ede2",
+        "model": "User",
+        "name": "Real Test User",
+        "isOnline": false,
+        "_id": "68b56b827ed0b49c4250ede4"
+      }
+    ],
+    "messages": [
+      {
+        "sender": {
+          "id": "68b56b827ed0b49c4250ede2",
+          "model": "User",
+          "name": "Real Test User"
+        },
+        "content": "This is a real chat test!",
+        "messageType": "text",
+        "isRead": false,
+        "_id": "68b56b827ed0b49c4250ede5",
+        "attachments": [],
+        "createdAt": "2025-09-01T09:46:42.609Z",
+        "updatedAt": "2025-09-01T09:46:42.609Z"
+      }
+    ],
+    "status": "pending",
+    "category": "general",
+    "priority": "medium",
+    "tags": [],
+    "lastMessage": {
+      "content": "This is a real chat test!",
+      "timestamp": "2025-09-01T09:46:42.609Z",
+      "sender": {
+        "id": "68b56b827ed0b49c4250ede2",
+        "name": "Real Test User"
+      }
+    },
+    "metrics": {
+      "totalMessages": 1
+    },
+    "settings": {
+      "notifications": {
+        "email": true,
+        "push": true
+      },
+      "autoAssign": true
+    },
+    "createdAt": "2025-09-01T09:46:42.609Z",
+    "updatedAt": "2025-09-01T09:46:42.609Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56bac29678250a4d556d4",
+    "chatId": "chat_1756720044961",
+    "participants": [
+      {
+        "id": "68b56bac29678250a4d556d3",
+        "model": "User",
+        "name": "Test User",
+        "isOnline": false,
+        "_id": "68b56bac29678250a4d556d5"
+      }
+    ],
+    "messages": [
+      {
+        "sender": {
+          "id": "68b56bac29678250a4d556d3",
+          "model": "User",
+          "name": "Test User"
+        },
+        "content": "Hello support!",
+        "messageType": "text",
+        "isRead": false,
+        "_id": "68b56bac29678250a4d556d6",
+        "attachments": [],
+        "createdAt": "2025-09-01T09:47:24.964Z",
+        "updatedAt": "2025-09-01T09:47:24.964Z"
+      }
+    ],
+    "status": "pending",
+    "category": "general",
+    "priority": "medium",
+    "tags": [],
+    "lastMessage": {
+      "content": "Hello support!",
+      "timestamp": "2025-09-01T09:47:24.964Z",
+      "sender": {
+        "id": "68b56bac29678250a4d556d3",
+        "name": "Test User"
+      }
+    },
+    "metrics": {
+      "totalMessages": 1
+    },
+    "settings": {
+      "notifications": {
+        "email": true,
+        "push": true
+      },
+      "autoAssign": true
+    },
+    "createdAt": "2025-09-01T09:47:24.964Z",
+    "updatedAt": "2025-09-01T09:47:24.964Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56baf29678250a4d556e6",
+    "chatId": "chat_1756720047042",
+    "participants": [
+      {
+        "id": "68b56baf29678250a4d556e5",
+        "model": "User",
+        "name": "Real Test User",
+        "isOnline": false,
+        "_id": "68b56baf29678250a4d556e7"
+      }
+    ],
+    "messages": [
+      {
+        "sender": {
+          "id": "68b56baf29678250a4d556e5",
+          "model": "User",
+          "name": "Real Test User"
+        },
+        "content": "This is a real chat test!",
+        "messageType": "text",
+        "isRead": false,
+        "_id": "68b56baf29678250a4d556e8",
+        "attachments": [],
+        "createdAt": "2025-09-01T09:47:27.045Z",
+        "updatedAt": "2025-09-01T09:47:27.045Z"
+      }
+    ],
+    "status": "pending",
+    "category": "general",
+    "priority": "medium",
+    "tags": [],
+    "lastMessage": {
+      "content": "This is a real chat test!",
+      "timestamp": "2025-09-01T09:47:27.045Z",
+      "sender": {
+        "id": "68b56baf29678250a4d556e5",
+        "name": "Real Test User"
+      }
+    },
+    "metrics": {
+      "totalMessages": 1
+    },
+    "settings": {
+      "notifications": {
+        "email": true,
+        "push": true
+      },
+      "autoAssign": true
+    },
+    "createdAt": "2025-09-01T09:47:27.045Z",
+    "updatedAt": "2025-09-01T09:47:27.045Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56bda29678250a4d5570f",
+    "chatId": "chat_1756720090210",
+    "participants": [
+      {
+        "id": "68b56bda29678250a4d5570e",
+        "model": "User",
+        "name": "Test User for Admin Notification",
+        "isOnline": false,
+        "_id": "68b56bda29678250a4d55710"
+      }
+    ],
+    "messages": [
+      {
+        "sender": {
+          "id": "68b56bda29678250a4d5570e",
+          "model": "User",
+          "name": "Test User for Admin Notification"
+        },
+        "content": "Hello admin, this is a test notification!",
+        "messageType": "text",
+        "isRead": false,
+        "_id": "68b56bda29678250a4d55711",
+        "attachments": [],
+        "createdAt": "2025-09-01T09:48:10.212Z",
+        "updatedAt": "2025-09-01T09:48:10.212Z"
+      }
+    ],
+    "status": "pending",
+    "category": "general",
+    "priority": "high",
+    "tags": [],
+    "lastMessage": {
+      "content": "Hello admin, this is a test notification!",
+      "timestamp": "2025-09-01T09:48:10.212Z",
+      "sender": {
+        "id": "68b56bda29678250a4d5570e",
+        "name": "Test User for Admin Notification"
+      }
+    },
+    "metrics": {
+      "totalMessages": 1
+    },
+    "settings": {
+      "notifications": {
+        "email": true,
+        "push": true
+      },
+      "autoAssign": true
+    },
+    "createdAt": "2025-09-01T09:48:10.212Z",
+    "updatedAt": "2025-09-01T09:48:10.212Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56bf3b6a41ca1cd25e922",
+    "chatId": "chat_1756720115095",
+    "participants": [
+      {
+        "id": "68b56bf3b6a41ca1cd25e921",
+        "model": "User",
+        "name": "Test User for Admin Notification",
+        "isOnline": false,
+        "_id": "68b56bf3b6a41ca1cd25e923"
+      }
+    ],
+    "messages": [
+      {
+        "sender": {
+          "id": "68b56bf3b6a41ca1cd25e921",
+          "model": "User",
+          "name": "Test User for Admin Notification"
+        },
+        "content": "Hello admin, this is a test notification!",
+        "messageType": "text",
+        "isRead": false,
+        "_id": "68b56bf3b6a41ca1cd25e924",
+        "attachments": [],
+        "createdAt": "2025-09-01T09:48:35.098Z",
+        "updatedAt": "2025-09-01T09:48:35.098Z"
+      }
+    ],
+    "status": "pending",
+    "category": "general",
+    "priority": "high",
+    "tags": [],
+    "lastMessage": {
+      "content": "Hello admin, this is a test notification!",
+      "timestamp": "2025-09-01T09:48:35.098Z",
+      "sender": {
+        "id": "68b56bf3b6a41ca1cd25e921",
+        "name": "Test User for Admin Notification"
+      }
+    },
+    "metrics": {
+      "totalMessages": 1
+    },
+    "settings": {
+      "notifications": {
+        "email": true,
+        "push": true
+      },
+      "autoAssign": true
+    },
+    "createdAt": "2025-09-01T09:48:35.098Z",
+    "updatedAt": "2025-09-01T09:48:35.098Z",
+    "__v": 0
+  },
+  {
+    "_id": "68b56c18b6a41ca1cd25e961",
+    "chatId": "chat_1756720152783",
+    "participants": [
+      {
+        "id": "68b56c18b6a41ca1cd25e960",
+        "model": "User",
+        "name": "Complete Test User",
+        "isOnline": false,
+        "_id": "68b56c18b6a41ca1cd25e962"
+      }
+    ],
+    "messages": [
+      {
+        "sender": {
+          "id": "68b56c18b6a41ca1cd25e960",
+          "model": "User",
+          "name": "Complete Test User"
+        },
+        "content": "Hi! I need help with my account setup.",
+        "messageType": "text",
+        "isRead": false,
+        "_id": "68b56c18b6a41ca1cd25e963",
+        "attachments": [],
+        "createdAt": "2025-09-01T09:49:12.785Z",
+        "updatedAt": "2025-09-01T09:49:12.785Z"
+      },
+      {
+        "sender": {
+          "id": "68b56c1cb6a41ca1cd25e969",
+          "model": "User",
+          "name": "Complete Test User"
+        },
+        "content": "Thank you! I'm having trouble with email verification.",
+        "messageType": "text",
+        "isRead": false,
+        "_id": "68b56c1cb6a41ca1cd25e96a",
+        "createdAt": "2025-09-01T09:49:16.826Z",
+        "attachments": [],
+        "updatedAt": "2025-09-01T09:49:16.826Z"
+      }
+    ],
+    "status": "pending",
+    "category": "general",
+    "priority": "medium",
+    "tags": [],
+    "lastMessage": {
+      "content": "Thank you! I'm having trouble with email verification.",
+      "timestamp": "2025-09-01T09:49:16.826Z",
+      "sender": {
+        "id": "68b56c1cb6a41ca1cd25e969",
+        "name": "Complete Test User"
+      }
+    },
+    "metrics": {
+      "totalMessages": 2
+    },
+    "settings": {
+      "notifications": {
+        "email": true,
+        "push": true
+      },
+      "autoAssign": true
+    },
+    "createdAt": "2025-09-01T09:49:12.785Z",
+    "updatedAt": "2025-09-01T09:49:16.828Z",
+    "__v": 1
+  }
+]

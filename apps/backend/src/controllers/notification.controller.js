@@ -8,10 +8,10 @@ const logger = require('../config/logger');
 // Get user notifications
 exports.getNotifications = async (req, res) => {
     try {
-        const { limit = 50, page = 1, isRead, type, priority } = req.query;
+        const { limit = 50, page = 1, isRead, types, priority, entityType, entityId} = req.query;
         const userId = req.user.id;
 
-        console.log(' [getNotifications] userId:', userId, 'query:', { limit, page, isRead, type, priority });
+        console.log(' [getNotifications] userId:', userId, 'query:', { limit, page, isRead, types, priority, entityType, entityId });
 
         let query = { recipient: userId };
         
@@ -20,14 +20,20 @@ exports.getNotifications = async (req, res) => {
             query.isRead = isRead === 'true';
         }
         
-        // Filter by type
-        if (type) {
-            query.type = type;
+        // Filter by type (multiple)
+        if (types) {
+            query.type = { $in: types.split(',') };
         }
         
         // Filter by priority
         if (priority) {
             query.priority = priority;
+        }
+
+        // Filter by related entity
+        if (entityType && entityId) {
+            query['relatedEntity.entityType'] = entityType;
+            query['relatedEntity.entityId'] = entityId;
         }
 
         const notifications = await Notification.find(query)

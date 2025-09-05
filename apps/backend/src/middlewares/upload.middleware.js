@@ -357,7 +357,7 @@ const setUploadContext = () => {
 
 // Pre-configured middleware for common use cases
 const uploadMiddlewares = {
-  avatar: createMulterUpload('avatar'), // <- call .single here
+  avatar: createMulterUpload('avatar').single('avatar'),
   taskAttachment: createUploadMiddleware('task_attachment', true, 10, true), // Make task attachments optional
   commentAttachment: createUploadMiddleware('comment_attachment', true, 5, true), // Make comment attachments optional
   logo: createUploadMiddleware('logo', false),
