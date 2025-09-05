@@ -40,6 +40,7 @@ const aiRoutes = require('./routes/ai.routes');
 const templateRoutes = require('./routes/template.routes');
 const boardTemplateRoutes = require('./routes/boardTemplate.routes');
 const powerbiRoutes = require('./routes/powerbi.routes');
+const integrationRoutes = require('./routes/integration.routes');
 const chatRoutes = require('./routes/chat.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
 const githubRoutes = require('./routes/github.routes');
@@ -250,6 +251,7 @@ app.use('/api/templates', authMiddleware, templateRoutes);
 app.use('/api/board-templates', boardTemplateRoutes);
 
 app.use('/api/powerbi', authMiddleware, powerbiRoutes);
+app.use('/api/integrations', integrationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/github', githubRoutes);
 

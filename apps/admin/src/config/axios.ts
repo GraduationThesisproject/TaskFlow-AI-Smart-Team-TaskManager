@@ -12,6 +12,8 @@ const axiosInstance: AxiosInstance = axios.create({
 });
 
 // Request interceptor
+
+console.log('Admin API Base URL:', env.API_BASE_URL);
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Get token from localStorage
@@ -20,8 +22,6 @@ axiosInstance.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
-
     
     return config;
   },

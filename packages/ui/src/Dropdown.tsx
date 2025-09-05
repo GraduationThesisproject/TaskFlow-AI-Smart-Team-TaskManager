@@ -214,11 +214,17 @@ export const Dropdown: React.FC<DropdownProps> = ({
     }
   };
 
+  // Check if the trigger is a Button component to avoid nested buttons
+  const isButtonTrigger2 = React.isValidElement(trigger) && (
+    trigger.type === 'button' || 
+    (typeof trigger.type === 'function' && (trigger.type as any).displayName === 'Button')
+  );
+
   return (
     <div className="relative inline-block" ref={dropdownRef}>
       <button
         className={cn(
-          dropdownTriggerVariants({ variant: isButtonTrigger ? 'button' : variant, size }), 
+          dropdownTriggerVariants({ variant: isButtonTrigger2 ? 'button' : variant, size }), 
           className,
           disabled && "opacity-50 cursor-not-allowed"
         )}

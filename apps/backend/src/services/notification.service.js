@@ -337,7 +337,9 @@ class NotificationService {
             'comment_added': 'comments',
             'due_date_reminder': 'dueDateReminders',
             'space_update': 'spaceUpdates',
-            'mention': 'mentions'
+            'mention': 'mentions',
+            'template_liked': 'general',
+            'template_unliked': 'general'
         };
         
         return typeMap[notificationType] || 'general';
@@ -380,6 +382,8 @@ class NotificationService {
                     return `${baseUrl}/boards/${notification.relatedEntity.entityId}`;
                 case 'workspace':
                     return `${baseUrl}/workspaces/${notification.relatedEntity.entityId}`;
+                case 'template':
+                    return `${baseUrl}/templates/${notification.relatedEntity.entityId}`;
                 default:
                     return baseUrl;
             }

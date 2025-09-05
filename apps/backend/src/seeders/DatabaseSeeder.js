@@ -21,6 +21,7 @@ const ReminderSeeder = require('./modules/ReminderSeeder');
 const FileSeeder = require('./modules/FileSeeder');
 const InvitationSeeder = require('./modules/InvitationSeeder');
 const AnalyticsSeeder = require('./modules/AnalyticsSeeder');
+const IntegrationSeeder = require('./modules/IntegrationSeeder');
 
 class DatabaseSeeder {
   constructor() {
@@ -42,6 +43,7 @@ class DatabaseSeeder {
     this.fileSeeder = new FileSeeder(this.userSeeder, this.taskSeeder);
     this.invitationSeeder = new InvitationSeeder(this.userSeeder, this.workspaceSeeder);
     this.analyticsSeeder = new AnalyticsSeeder(this.userSeeder, this.workspaceSeeder, this.taskSeeder);
+    this.integrationSeeder = new IntegrationSeeder();
     
     // Store created data for cross-seeder dependencies
     this.createdData = {
@@ -57,7 +59,8 @@ class DatabaseSeeder {
       reminders: [],
       files: [],
       invitations: [],
-      analytics: []
+      analytics: [],
+      integrations: []
     };
   }
 
@@ -122,6 +125,7 @@ class DatabaseSeeder {
       'Create Files',
       'Create Invitations',
       'Create Analytics',
+      'Create Integrations',
       'Update Statistics'
     ];
 
@@ -147,7 +151,7 @@ class DatabaseSeeder {
     if (this.config.files.count > 0) enabledSteps.push('Create Files');
     
     // Always include these steps
-    enabledSteps.push('Create Reminders', 'Create Invitations', 'Create Analytics', 'Update Statistics');
+    enabledSteps.push('Create Reminders', 'Create Invitations', 'Create Analytics', 'Create Integrations', 'Update Statistics');
 
     return enabledSteps;
   }
@@ -217,6 +221,10 @@ class DatabaseSeeder {
             
           case 'Create Analytics':
             await this.seedAnalytics();
+            break;
+            
+          case 'Create Integrations':
+            await this.seedIntegrations();
             break;
             
           case 'Update Statistics':
@@ -411,6 +419,18 @@ class DatabaseSeeder {
     this.createdData.analytics = analytics;
     
     console.log(`✅ Created ${analytics.length} analytics records`);
+  }
+
+  /**
+   * Seed integrations
+   */
+  async seedIntegrations() {
+    console.log('🔗 Seeding integrations...');
+    
+    const integrations = await this.integrationSeeder.seed();
+    this.createdData.integrations = integrations;
+    
+    console.log(`✅ Created ${integrations.count || 0} integrations`);
   }
 
   /**
