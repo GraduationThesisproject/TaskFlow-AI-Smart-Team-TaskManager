@@ -10,21 +10,310 @@ import { listTemplates } from '@/store/slices/templatesSlice';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
 
+// Welcome Header Component
+const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
+  const colors = useThemeColors();
+  
+  return (
+    <View style={styles.welcomeHeader}>
+      <Text style={[TextStyles.heading.h1, { color: colors.foreground, textAlign: 'center', marginBottom: 16 }]}>
+        Welcome to TaskFlow AI
+      </Text>
+      <Text style={[TextStyles.body.large, { color: colors['muted-foreground'], textAlign: 'center', marginBottom: 24 }]}>
+        Your smart team task manager that helps you stay organized and productive
+      </Text>
+    </View>
+  );
+};
+
+// Stats Cards Component
+const StatsCards: React.FC = () => {
+  const colors = useThemeColors();
+  const { data: analytics, loading: analyticsLoading, error: analyticsError } = useAppSelector(state => state.analytics);
+
+  const getTaskStats = () => {
+    const totalTasks = analytics?.coreMetrics?.totalTasks || 0;
+    const completedTasks = Math.round((analytics?.coreMetrics?.completionRate || 0) * totalTasks / 100);
+    const overdueTasks = analytics?.coreMetrics?.overdueTasks || 0;
+    const inProgressTasks = totalTasks - completedTasks - overdueTasks;
+    
+    return {
+      total: totalTasks,
+      completed: completedTasks,
+      inProgress: inProgressTasks,
+      overdue: overdueTasks,
+      completionRate: analytics?.coreMetrics?.completionRate || 0,
+    };
+  };
+
+  const taskStats = getTaskStats();
+
+  if (analyticsLoading) {
+    return (
+      <View style={styles.statsGrid}>
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} style={[styles.statsCard, { backgroundColor: colors.card }]}>
+            <View style={styles.statsCardHeader}>
+              <View style={[styles.skeleton, { backgroundColor: colors.border }]} />
+              <View style={[styles.skeletonIcon, { backgroundColor: colors.border }]} />
+            </View>
+            <View style={styles.statsCardContent}>
+              <View style={[styles.skeletonNumber, { backgroundColor: colors.border }]} />
+              <View style={[styles.skeletonText, { backgroundColor: colors.border }]} />
+            </View>
+          </Card>
+        ))}
+      </View>
+    );
+  }
+
+  if (analyticsError) {
+    return (
+      <Card style={[styles.errorCard, { backgroundColor: colors.card }]}>
+        <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>
+          Error loading statistics: {analyticsError}
+        </Text>
+      </Card>
+    );
+  }
+
+  return (
+    <View style={styles.statsGrid}>
+      <Card style={[styles.statsCard, { backgroundColor: colors.card }]}>
+        <View style={styles.statsCardHeader}>
+          <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Total Tasks</Text>
+          <FontAwesome name="users" size={16} color={colors['muted-foreground']} />
+        </View>
+        <View style={styles.statsCardContent}>
+          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{taskStats.total}</Text>
+          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+            {taskStats.completionRate}% completed
+          </Text>
+        </View>
+      </Card>
+
+      <Card style={[styles.statsCard, { backgroundColor: colors.card }]}>
+        <View style={styles.statsCardHeader}>
+          <Text style={[TextStyles.body.small, { color: colors.foreground }]}>In Progress</Text>
+          <FontAwesome name="clock-o" size={16} color={colors['muted-foreground']} />
+        </View>
+        <View style={styles.statsCardContent}>
+          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{taskStats.inProgress}</Text>
+          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+            Currently working on
+          </Text>
+        </View>
+      </Card>
+
+      <Card style={[styles.statsCard, { backgroundColor: colors.card }]}>
+        <View style={styles.statsCardHeader}>
+          <Text style={[TextStyles.body.small, { color: colors.foreground }]}>High Priority</Text>
+          <FontAwesome name="exclamation-triangle" size={16} color={colors['muted-foreground']} />
+        </View>
+        <View style={styles.statsCardContent}>
+          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
+            {analytics?.coreMetrics?.overdueTasks || 0}
+          </Text>
+          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+            Requires attention
+          </Text>
+        </View>
+      </Card>
+
+      <Card style={[styles.statsCard, { backgroundColor: colors.card }]}>
+        <View style={styles.statsCardHeader}>
+          <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Overdue</Text>
+          <FontAwesome name="calendar" size={16} color={colors['muted-foreground']} />
+        </View>
+        <View style={styles.statsCardContent}>
+          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{taskStats.overdue}</Text>
+          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+            Past due date
+          </Text>
+        </View>
+      </Card>
+    </View>
+  );
+};
+
+// Workspaces Section Component
+const WorkspacesSection: React.FC = () => {
+  const colors = useThemeColors();
+  const { workspaces, loading: workspacesLoading, error: workspacesError } = useAppSelector(state => state.workspace);
+
+  const recentWorkspaces = workspaces?.slice(0, 3) || [];
+
+  if (workspacesLoading) {
+    return (
+      <Card style={[styles.workspacesCard, { backgroundColor: colors.card }]}>
+        <View style={styles.workspacesCardHeader}>
+          <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Your Workspaces</Text>
+          <TouchableOpacity style={[styles.addButton, { borderColor: colors.border }]}>
+            <FontAwesome name="plus" size={16} color={colors['muted-foreground']} />
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>New Workspace</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.workspacesCardContent}>
+          {[1, 2, 3].map((i) => (
+            <View key={i} style={[styles.workspaceSkeleton, { backgroundColor: colors.border }]} />
+          ))}
+        </View>
+      </Card>
+    );
+  }
+
+  if (workspacesError) {
+    return (
+      <Card style={[styles.workspacesCard, { backgroundColor: colors.card }]}>
+        <View style={styles.workspacesCardHeader}>
+          <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Your Workspaces</Text>
+        </View>
+        <View style={styles.workspacesCardContent}>
+          <View style={styles.errorState}>
+            <FontAwesome name="users" size={32} color={colors.destructive} />
+            <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Error loading workspaces</Text>
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>{workspacesError}</Text>
+          </View>
+        </View>
+      </Card>
+    );
+  }
+
+  return (
+    <Card style={[styles.workspacesCard, { backgroundColor: colors.card }]}>
+      <View style={styles.workspacesCardHeader}>
+        <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Your Workspaces</Text>
+        <TouchableOpacity style={[styles.addButton, { borderColor: colors.border }]}>
+          <FontAwesome name="plus" size={16} color={colors['muted-foreground']} />
+          <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>New Workspace</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.workspacesCardContent}>
+        {recentWorkspaces.length > 0 ? (
+          <View style={styles.workspacesList}>
+            {recentWorkspaces.map((workspace) => (
+              <TouchableOpacity
+                key={workspace._id}
+                style={[styles.workspaceItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+              >
+                <View style={styles.workspaceItemHeader}>
+                  <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>
+                    {workspace.name}
+                  </Text>
+                  <View style={styles.workspaceBadges}>
+                    <View style={[styles.badge, { backgroundColor: workspace.isPublic ? colors.success : colors.muted }]}>
+                      <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>
+                        {workspace.isPublic ? 'Public' : 'Private'}
+                      </Text>
+                    </View>
+                    <View style={[styles.badge, { backgroundColor: workspace.isActive ? colors.success : colors.destructive }]}>
+                      <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>
+                        {workspace.isActive ? 'Active' : 'Archived'}
+                      </Text>
+                    </View>
+                    <View style={[styles.badge, { backgroundColor: colors.muted }]}>
+                      <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>
+                        {workspace.members?.length || 0} members
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]} numberOfLines={2}>
+                  {workspace.description || "No description"}
+                </Text>
+                <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                  Created: {new Date(workspace.createdAt).toLocaleDateString()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            {workspaces.length > 3 && (
+              <TouchableOpacity style={styles.viewAllButton}>
+                <Text style={[TextStyles.body.small, { color: colors.primary }]}>
+                  View all {workspaces.length} workspaces →
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <FontAwesome name="users" size={32} color={colors['muted-foreground']} />
+            <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>No workspaces yet</Text>
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], textAlign: 'center' }]}>
+              Create your first workspace to get started with team collaboration.
+            </Text>
+            <TouchableOpacity style={[styles.createButton, { backgroundColor: colors.primary }]}>
+              <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>Create Workspace</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </Card>
+  );
+};
+
+// Upcoming Deadlines Component
+const UpcomingDeadlines: React.FC = () => {
+  const colors = useThemeColors();
+  
+  // Mock upcoming deadlines data - in real app this would come from tasks
+  const upcomingDeadlines = [
+    { id: '1', title: 'Review Design Mockups', dueDate: '2024-01-15', priority: 'high' },
+    { id: '2', title: 'Submit Project Report', dueDate: '2024-01-18', priority: 'medium' },
+    { id: '3', title: 'Client Meeting Preparation', dueDate: '2024-01-20', priority: 'low' },
+  ];
+
+  return (
+    <Card style={[styles.deadlinesCard, { backgroundColor: colors.card }]}>
+      <View style={styles.deadlinesCardHeader}>
+        <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Upcoming Deadlines</Text>
+      </View>
+      <View style={styles.deadlinesCardContent}>
+        {upcomingDeadlines.length > 0 ? (
+          <View style={styles.deadlinesList}>
+            {upcomingDeadlines.map((task) => (
+              <View key={task.id} style={[styles.deadlineItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.deadlineItemContent}>
+                  <Text style={[TextStyles.body.small, { color: colors.foreground }]} numberOfLines={1}>
+                    {task.title}
+                  </Text>
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                    Due {new Date(task.dueDate).toLocaleDateString()}
+                  </Text>
+                </View>
+                <View style={[
+                  styles.priorityBadge,
+                  { backgroundColor: task.priority === 'high' ? colors.destructive : colors.muted }
+                ]}>
+                  <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>
+                    {task.priority}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <FontAwesome name="calendar" size={32} color={colors['muted-foreground']} />
+            <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>No upcoming deadlines</Text>
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], textAlign: 'center' }]}>
+              You're all caught up! No tasks are due in the next 7 days.
+            </Text>
+          </View>
+        )}
+      </View>
+    </Card>
+  );
+};
+
 export default function DashboardScreen() {
   const colors = useThemeColors();
   const dispatch = useAppDispatch();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Redux selectors
   const { user } = useAppSelector(state => state.auth);
-  const { workspaces, loading: workspacesLoading, error: workspacesError } = useAppSelector(state => state.workspace);
-  const { data: analytics, loading: analyticsLoading, error: analyticsError } = useAppSelector(state => state.analytics);
-  const { items: templates, loading: templatesLoading, error: templatesError } = useAppSelector(state => state.templates);
-
   const displayName = user?.user?.name || "User";
 
-  // Fetch data on component mount
   useEffect(() => {
     loadDashboardData();
   }, []);
@@ -51,75 +340,15 @@ export default function DashboardScreen() {
     setSidebarVisible(!sidebarVisible);
   };
 
-  // Calculate stats from real data
-  const getTaskStats = () => {
-    // Use analytics data for task stats
-    const totalTasks = analytics?.coreMetrics?.totalTasks || 0;
-    const completedTasks = Math.round((analytics?.coreMetrics?.completionRate || 0) * totalTasks / 100);
-    const overdueTasks = analytics?.coreMetrics?.overdueTasks || 0;
-    const inProgressTasks = totalTasks - completedTasks - overdueTasks;
-    
-    return {
-      total: totalTasks,
-      completed: completedTasks,
-      inProgress: inProgressTasks,
-      overdue: overdueTasks,
-      completionRate: analytics?.coreMetrics?.completionRate || 0,
-    };
-  };
-
-  const taskStats = getTaskStats();
-
-  // Get recent workspaces
-  const recentWorkspaces = workspaces?.slice(0, 3) || [];
-
-  // Get upcoming deadlines from analytics (mock data for now)
-  const upcomingDeadlines = [
-    { title: 'Review Design Mockups', dueDate: '2 hours ago' },
-    { title: 'Submit Project Report', dueDate: '1 day ago' },
-  ];
-
-  const isLoading = workspacesLoading || analyticsLoading || templatesLoading;
-  const hasError = workspacesError || analyticsError || templatesError;
-
-  if (isLoading && !refreshing) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <TouchableOpacity
-            style={[styles.sidebarButton, { backgroundColor: colors.primary }]}
-            onPress={toggleSidebar}
-          >
-            <FontAwesome name="bars" size={20} color={colors['primary-foreground']} />
-          </TouchableOpacity>
-          <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
-            Dashboard
-          </Text>
-          <View style={styles.headerSpacer} />
-        </View>
-        <View style={styles.loadingContainer}>
-          <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-            Loading dashboard...
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header with Sidebar Toggle */}
+      {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          style={[styles.sidebarButton, { backgroundColor: colors.primary }]}
-          onPress={toggleSidebar}
-        >
-          <FontAwesome name="bars" size={20} color={colors['primary-foreground']} />
+        <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton}>
+          <FontAwesome name="bars" size={24} color={colors.foreground} />
         </TouchableOpacity>
-        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
-          Dashboard
-        </Text>
-        <View style={styles.headerSpacer} />
+        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Dashboard</Text>
+        <View style={styles.headerRight} />
       </View>
 
       <ScrollView 
@@ -128,152 +357,16 @@ export default function DashboardScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Error Message */}
-        {hasError && (
-          <Card style={[styles.errorCard, { backgroundColor: colors.destructive }]}>
-            <Text style={[TextStyles.body.medium, { color: colors['destructive-foreground'] }]}>
-              Failed to load dashboard data. Pull to refresh.
-            </Text>
-          </Card>
-        )}
-
-        {/* Welcome Header */}
-        <Card style={styles.welcomeCard}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-            Welcome back, {displayName}! 👋
-          </Text>
-          <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'], marginTop: 8 }]}>
-            Here's what's happening with your tasks today.
-          </Text>
-        </Card>
-
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
-            <Text style={[TextStyles.heading.h3, { color: colors.primary }]}>
-              {taskStats.total}
-            </Text>
-            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-              Total Tasks
-            </Text>
-          </Card>
-          <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
-            <Text style={[TextStyles.heading.h3, { color: colors.success }]}>
-              {taskStats.completed}
-            </Text>
-            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-              Completed
-            </Text>
-          </Card>
-          <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
-            <Text style={[TextStyles.heading.h3, { color: colors.warning }]}>
-              {taskStats.inProgress}
-            </Text>
-            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-              In Progress
-            </Text>
-          </Card>
-          <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
-            <Text style={[TextStyles.heading.h3, { color: colors.destructive }]}>
-              {taskStats.overdue}
-            </Text>
-            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-              Overdue
-            </Text>
-          </Card>
+        <WelcomeHeader displayName={displayName} />
+        <StatsCards />
+        
+        <View style={styles.mainContent}>
+          <WorkspacesSection />
+          <UpcomingDeadlines />
         </View>
-
-        {/* Workspaces Section */}
-        {recentWorkspaces.length > 0 && (
-          <Card style={styles.sectionCard}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
-              Your Workspaces
-            </Text>
-                         <View style={styles.workspaceList}>
-               {recentWorkspaces.map((workspace) => (
-                 <View key={workspace._id} style={[styles.workspaceItem, { backgroundColor: colors.card }]}>
-                   <FontAwesome name="folder" size={24} color={colors.primary} />
-                   <View style={styles.workspaceInfo}>
-                     <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-                       {workspace.name}
-                     </Text>
-                     <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                       {workspace.members?.length || 0} members • {workspace.spaces?.length || 0} spaces
-                     </Text>
-                   </View>
-                   <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-                     <View style={[
-                       styles.progressFill, 
-                       { 
-                         backgroundColor: colors.primary, 
-                         width: `${workspace.isActive ? 75 : 25}%` 
-                       }
-                     ]} />
-                   </View>
-                 </View>
-               ))}
-             </View>
-          </Card>
-        )}
-
-        {/* Upcoming Deadlines */}
-        {upcomingDeadlines.length > 0 && (
-          <Card style={styles.sectionCard}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
-              Upcoming Deadlines
-            </Text>
-            <View style={styles.deadlineList}>
-              {upcomingDeadlines.slice(0, 3).map((deadline, index) => (
-                <View key={index} style={[styles.deadlineItem, { backgroundColor: colors.card }]}>
-                  <View style={[styles.deadlineDot, { backgroundColor: colors.warning }]} />
-                  <View style={styles.deadlineInfo}>
-                    <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-                      {deadline.title}
-                    </Text>
-                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                      Due {deadline.dueDate}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </Card>
-        )}
-
-        {/* Quick Actions */}
-        <Card style={styles.sectionCard}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
-            Quick Actions
-          </Text>
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: colors.primary }]}
-              onPress={() => {/* Navigate to create task */}}
-            >
-              <FontAwesome name="plus" size={16} color={colors['primary-foreground']} />
-              <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>
-                New Task
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: colors.secondary }]}
-              onPress={() => {/* Navigate to create workspace */}}
-            >
-              <FontAwesome name="plus" size={16} color={colors['secondary-foreground']} />
-              <Text style={[TextStyles.body.small, { color: colors['secondary-foreground'] }]}>
-                New Workspace
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
       </ScrollView>
 
-      {/* Sidebar */}
-      <Sidebar
-        isVisible={sidebarVisible}
-        onClose={() => setSidebarVisible(false)}
-        currentSection="dashboard"
-      />
+      <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="dashboard" />
     </View>
   );
 }
@@ -285,106 +378,176 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
   },
-  sidebarButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+  menuButton: {
+    padding: 8,
   },
-  headerSpacer: {
+  headerRight: {
     width: 40,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   content: {
     flex: 1,
     padding: 16,
   },
-  errorCard: {
+  welcomeHeader: {
+    marginBottom: 24,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 24,
+  },
+  statsCard: {
+    flex: 1,
+    minWidth: '45%',
     padding: 16,
-    marginBottom: 16,
     borderRadius: 12,
+    borderWidth: 1,
   },
-  welcomeCard: {
-    padding: 20,
-    marginBottom: 20,
-  },
-  statsContainer: {
+  statsCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  statCard: {
-    flex: 1,
-    padding: 16,
-    marginHorizontal: 4,
     alignItems: 'center',
+    marginBottom: 8,
+  },
+  statsCardContent: {
+    gap: 4,
+  },
+  skeleton: {
+    height: 16,
+    width: 80,
+    borderRadius: 4,
+  },
+  skeletonIcon: {
+    height: 16,
+    width: 16,
+    borderRadius: 8,
+  },
+  skeletonNumber: {
+    height: 24,
+    width: 40,
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  skeletonText: {
+    height: 12,
+    width: 60,
+    borderRadius: 4,
+  },
+  errorCard: {
+    padding: 16,
     borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 24,
   },
-  sectionCard: {
-    padding: 20,
-    marginBottom: 20,
+  mainContent: {
+    gap: 16,
   },
-  workspaceList: {
+  workspacesCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  workspacesCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  workspacesCardContent: {
+    gap: 12,
+  },
+  workspacesList: {
     gap: 12,
   },
   workspaceItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: 16,
     borderRadius: 12,
+    borderWidth: 1,
   },
-  workspaceInfo: {
-    flex: 1,
-    marginLeft: 12,
+  workspaceItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
   },
-  progressBar: {
-    width: 60,
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
+  workspaceBadges: {
+    flexDirection: 'row',
+    gap: 4,
   },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
+  badge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  deadlineList: {
+  viewAllButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  workspaceSkeleton: {
+    height: 80,
+    borderRadius: 12,
+  },
+  errorState: {
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 24,
+  },
+  emptyState: {
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 24,
+  },
+  createButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  deadlinesCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  deadlinesCardHeader: {
+    marginBottom: 16,
+  },
+  deadlinesCardContent: {
     gap: 12,
+  },
+  deadlinesList: {
+    gap: 8,
   },
   deadlineItem: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
   },
-  deadlineDot: {
-    width: 8,
-    height: 8,
+  deadlineItemContent: {
+    flex: 1,
+    gap: 2,
+  },
+  priorityBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 4,
-    marginRight: 12,
-  },
-  deadlineInfo: {
-    flex: 1,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
   },
 });
