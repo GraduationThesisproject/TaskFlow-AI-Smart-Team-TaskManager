@@ -80,11 +80,11 @@ function ErrorFallback({ error, errorInfo, onRetry, onReport }: ErrorFallbackPro
             <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>
               Error Details
             </Text>
-            <Text style={[TextStyles.body.small, { color: colors.error, fontFamily: 'JetBrainsMono-VariableFont_wght' }]}>
+            <Text style={[TextStyles.body.small, { color: colors.error, fontFamily: 'JetBrainsMono' }]}>
               {error.message}
             </Text>
             {error.stack && (
-              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], fontFamily: 'JetBrainsMono-VariableFont_wght' }]}>
+              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], fontFamily: 'JetBrainsMono' }]}>
                 {error.stack}
               </Text>
             )}

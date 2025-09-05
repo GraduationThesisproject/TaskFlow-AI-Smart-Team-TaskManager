@@ -30,12 +30,15 @@ const InviteLanding: React.FC = () => {
       }
     };
     if (token) run();
+    else {
+      setLoading(false);
+      setError('Invalid invitation link. Token is missing.');
+    }
     return () => {
       mounted = false;
     };
   }, [token]);
 
-  const invitedEmail = invitation?.invitedBy ? undefined : undefined; // placeholder if we later show inviter info
   const targetName = invitation?.targetEntity?.name || 'Workspace';
 
   const requireAuthAndReturn = useCallback(() => {

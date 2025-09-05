@@ -8,7 +8,7 @@ import { router } from 'expo-router';
 interface SidebarProps {
   isVisible: boolean;
   onClose: () => void;
-  currentSection: 'dashboard' | 'settings';
+  currentSection: 'dashboard' | 'settings' | 'board';
 }
 
 interface NavItem {
@@ -16,11 +16,18 @@ interface NavItem {
   label: string;
   icon: React.ComponentProps<typeof FontAwesome>['name'];
   route: string;
-  section: 'dashboard' | 'settings';
+  section: 'dashboard' | 'settings' | 'board';
 }
 
 const dashboardItems: NavItem[] = [
   { id: 'home', label: 'Dashboard', icon: 'home', route: '/index', section: 'dashboard' },
+];
+
+const boardItems: NavItem[] = [
+  { id: 'kanban', label: 'Kanban', icon: 'th-large', route: '/board/kanban', section: 'board' },
+  { id: 'list', label: 'List', icon: 'list', route: '/board/list', section: 'board' },
+  { id: 'timeline', label: 'Timeline', icon: 'clock-o', route: '/board/timeline', section: 'board' },
+  { id: 'task', label: 'Task Details', icon: 'tasks', route: '/board/task', section: 'board' },
 ];
 
 const settingsItems: NavItem[] = [
@@ -59,11 +66,27 @@ export default function Sidebar({ isVisible, onClose, currentSection }: SidebarP
   };
 
   const getCurrentItems = () => {
-    return currentSection === 'dashboard' ? dashboardItems : settingsItems;
+    switch (currentSection) {
+      case 'dashboard':
+        return dashboardItems;
+      case 'board':
+        return boardItems;
+      case 'settings':
+      default:
+        return settingsItems;
+    }
   };
 
   const getSectionTitle = () => {
-    return currentSection === 'dashboard' ? 'Dashboard' : 'Settings';
+    switch (currentSection) {
+      case 'dashboard':
+        return 'Dashboard';
+      case 'board':
+        return 'Board';
+      case 'settings':
+      default:
+        return 'Settings';
+    }
   };
 
   if (!isVisible) return null;

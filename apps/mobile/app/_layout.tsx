@@ -7,7 +7,6 @@ import 'react-native-reanimated';
 import { Provider } from 'react-redux';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { FontConfig } from '@/constants/Fonts';
 import { store } from '@/store';
 
 export {
@@ -25,9 +24,10 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
+    // Register custom font family names WITHOUT commas (commas break CSS font-family on web)
     // Inter variable fonts
-    'Inter-VariableFont_opsz,wght': require('../assets/fonts/Inter-VariableFont_opsz,wght.ttf'),
-    'Inter-Italic-VariableFont_opsz,wght': require('../assets/fonts/Inter-Italic-VariableFont_opsz,wght.ttf'),
+    Inter: require('../assets/fonts/Inter-VariableFont_opsz,wght.ttf'),
+    'Inter-Italic': require('../assets/fonts/Inter-Italic-VariableFont_opsz,wght.ttf'),
     
     // Poppins fonts
     'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'),
@@ -37,8 +37,8 @@ export default function RootLayout() {
     'Poppins-Light': require('../assets/fonts/Poppins-Light.ttf'),
     
     // JetBrains Mono variable fonts
-    'JetBrainsMono-VariableFont_wght': require('../assets/fonts/JetBrainsMono-VariableFont_wght.ttf'),
-    'JetBrainsMono-Italic-VariableFont_wght': require('../assets/fonts/JetBrainsMono-Italic-VariableFont_wght.ttf'),
+    JetBrainsMono: require('../assets/fonts/JetBrainsMono-VariableFont_wght.ttf'),
+    'JetBrainsMono-Italic': require('../assets/fonts/JetBrainsMono-Italic-VariableFont_wght.ttf'),
     
     // Additional fonts
     'SpaceMono-Regular': require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -57,6 +57,14 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+  // Fallback: Ensure the splash screen is hidden even if font loading stalls on web
+  useEffect(() => {
+    const t = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 6000);
+    return () => clearTimeout(t);
+  }, []);
 
   if (!loaded) {
     return null;
