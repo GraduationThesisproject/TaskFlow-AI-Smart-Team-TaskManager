@@ -17,8 +17,13 @@
     "@taskflow/theme": "*",
     "@taskflow/ui": "*",
     "@taskflow/utils": "*",
+    "@types/crypto-js": "^4.2.2",
     "chart.js": "^4.4.0",
+    "clsx": "^2.1.1",
+    "crypto-js": "^4.2.0",
     "date-fns": "^2.30.0",
+    "framer-motion": "^12.23.12",
+    "jspdf": "^3.0.2",
     "lucide-react": "^0.540.0",
     "react": "19.0.0",
     "react-beautiful-dnd": "^13.1.1",
@@ -28,7 +33,10 @@
     "react-dom": "19.0.0",
     "react-redux": "^8.1.3",
     "react-router-dom": "^6.15.0",
-    "socket.io-client": "^4.8.1"
+    "redux-persist": "^6.0.0",
+    "redux-persist-transform-encrypt": "^5.1.1",
+    "socket.io-client": "^4.8.1",
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@types/react": "~19.0.10",

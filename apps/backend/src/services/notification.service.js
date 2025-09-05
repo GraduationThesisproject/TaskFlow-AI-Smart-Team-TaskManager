@@ -6,6 +6,19 @@ const config = require('../config/env');
 
 class NotificationService {
     
+    // Helper method to safely send socket notifications
+    static async sendSocketNotification(recipientId, notificationData) {
+        try {
+            if (global.notificationNamespace && global.notificationNamespace.sendNotification) {
+                return await global.notificationNamespace.sendNotification(recipientId, notificationData);
+            }
+            return null;
+        } catch (error) {
+            logger.warn('Socket notification delivery failed:', error.message);
+            return null;
+        }
+    }
+    
     // Create and send notification
     static async createNotification(notificationData) {
         try {
@@ -37,14 +50,7 @@ class NotificationService {
             // In-app notification (always created)
             if (notification.deliveryMethods?.inApp !== false) {
                 // Already created, just emit via socket if available
-                const io = global.io;
-                if (io) {
-                    // Ensure we pass a plain object, not a Mongoose document
-                    const notifObject = typeof notification.toObject === 'function' 
-                        ? notification.toObject() 
-                        : notification;
-                    io.sendNotification(recipient._id, notifObject);
-                }
+                await this.sendSocketNotification(recipient._id, notification);
             }
             
             // Email notification

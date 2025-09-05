@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback, Badge } from '@taskflow/ui';
+import { Card, CardHeader, CardTitle, CardContent, Typography, AvatarWithFallback, Badge } from '@taskflow/ui';
 import { Heart } from 'lucide-react';
 import type { TemplateCardProps } from '../../../types/dash.types';
 
@@ -31,12 +31,11 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onClick, onLike }
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-2 mb-3">
-          <Avatar size="sm">
-            <AvatarImage src={template.author.avatar} />
-            <AvatarFallback variant="primary" size="sm">
-              {template.author.name.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
+          <AvatarWithFallback
+            size="sm"
+            src={template.author.avatar}
+            alt={template.author.name}
+          />
           <Typography variant="caption" className="text-muted-foreground">
             by {template.author.name}
           </Typography>

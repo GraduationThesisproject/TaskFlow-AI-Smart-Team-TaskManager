@@ -18,7 +18,7 @@ const activityLogSchema = new mongoose.Schema({
       'workspace_create', 'workspace_update', 'workspace_delete', 'workspace_restore',
       'workspace_member_add', 'workspace_member_remove',
       // Space actions
-      'space_create', 'space_update', 'space_delete', 'space_archive', 'space_restore',
+      'space_create', 'space_update', 'space_delete', 'space_archive', 'space_restore', 'space_permanent_delete',
       'space_member_add', 'space_member_remove',
       // Board actions
       'board_create', 'board_update', 'board_delete', 'board_archive', 'board_restore',
@@ -214,7 +214,7 @@ activityLogSchema.statics.findByWorkspace = function(workspaceId, limit = 100) {
     .limit(limit);
 };
 
-// TTL: expire activities ~1 hour after creation
-activityLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 3600, name: 'ttl_createdAt_1h' });
+// TTL: expire activities ~24 hours after creation (increased for better debugging)
+activityLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400, name: 'ttl_createdAt_24h' });
 
 module.exports = mongoose.model('ActivityLog', activityLogSchema);

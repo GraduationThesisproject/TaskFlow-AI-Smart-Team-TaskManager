@@ -1,22 +1,37 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Space } from '../../types/space.types';
-import { WorkspaceService, type InviteLinkInfo } from "../../services/D_workspaceService.ts";
+import { WorkspaceService, type InviteLinkInfo } from "../../services/D_workspaceService";
 import { SpaceService } from '../../services/spaceService';
+import { workspaceRulesService } from '../../services/workspaceRulesService';
+import type { WorkspaceSliceState } from '../../types/store.types';
 
-import type { Workspace, WorkspaceMember, WorkspaceState as BaseWorkspaceState } from '../../types/workspace.types';
+import type { Workspace, WorkspaceMember} from '../../types/workspace.types';
+import type { UpdateWorkspaceRulesData } from '../../types/workspaceRules.types';
 
 // Async thunks - combining both implementations
 export const fetchWorkspace = createAsyncThunk(
   'workspace/fetchWorkspace',
   async (workspaceId: string) => {
     const response = await WorkspaceService.getWorkspace(workspaceId);
-    // Backend returns data: { workspace: {...}, userRole: '...', userPermissions: {...} }
     const ws: any = response as any;
+    
+    // Also fetch workspace rules
+    let rules = null;
+    try {
+      const rulesResponse = await workspaceRulesService.getWorkspaceRules(workspaceId);
+      console.log('fetchWorkspace - rules response:', rulesResponse);
+      rules = rulesResponse;
+    } catch (error) {
+      console.log('Failed to fetch workspace rules:', error);
+      // Don't throw error, just continue without rules
+    }
+    
     return {
       ...ws,
       _id: ws?._id ?? ws?.id,
       id: ws?.id ?? (typeof ws?._id === 'object' ? String(ws._id) : ws?._id),
+      rules: rules, // Include rules in the workspace object
     };
   }
 )
@@ -26,7 +41,6 @@ export const fetchWorkspaces = createAsyncThunk<Workspace[]>(
   'workspace/fetchWorkspaces',
   async () => {
     const response = await WorkspaceService.getWorkspaces({ status: 'all' });
-    // The response is an object with a workspaces array
     const list = Array.isArray((response as any)?.workspaces)
       ? (response as any).workspaces
       : Array.isArray(response)
@@ -80,12 +94,62 @@ export const fetchSpacesByWorkspace = createAsyncThunk(
   }
 );
 
+export const fetchWorkspaceMembers = createAsyncThunk(
+  'workspace/fetchWorkspaceMembers',
+  async (workspaceId: string) => {
+    const response = await WorkspaceService.getWorkspaceMembers(workspaceId);
+    return response;
+  }
+);
+
+// Workspace Rules async thunks
+export const fetchWorkspaceRules = createAsyncThunk(
+  'workspace/fetchWorkspaceRules',
+  async (workspaceId: string) => {
+    const response = await workspaceRulesService.getWorkspaceRules(workspaceId);
+    return response;
+  }
+);
+
+export const updateWorkspaceRules = createAsyncThunk(
+  'workspace/updateWorkspaceRules',
+  async ({ workspaceId, data }: { workspaceId: string; data: UpdateWorkspaceRulesData }) => {
+    const response = await workspaceRulesService.updateWorkspaceRules(workspaceId, data);
+    return response;
+  }
+);
+
+export const deleteWorkspaceRules = createAsyncThunk(
+  'workspace/deleteWorkspaceRules',
+  async (workspaceId: string) => {
+    await workspaceRulesService.deleteWorkspaceRules(workspaceId);
+    return workspaceId;
+  }
+);
+
 export const fetchSpace = createAsyncThunk(
   'workspace/fetchSpace',
   async (spaceId: string) => {
     const response = await SpaceService.getSpace(spaceId);
     // Backend returns { space: {...}, userRole: '...', userPermissions: {...} }
     return (response as any).space;
+  }
+);
+
+export const createSpace = createAsyncThunk(
+  'workspace/createSpace',
+  async (spaceData: { name: string; description?: string; workspaceId: string }, { rejectWithValue }) => {
+    try {
+      const response = await SpaceService.createSpace(spaceData);
+      if (response.success && response.data) {
+        return response.data;
+      } else {
+        throw new Error('Failed to create space');
+      }
+    } catch (error: any) {
+      console.error('Error creating space:', error);
+      return rejectWithValue(error.message || 'Failed to create space');
+    }
   }
 );
 
@@ -96,8 +160,11 @@ export const inviteMember = createAsyncThunk<WorkspaceMember, { id: string; emai
     try {
       const response = await WorkspaceService.inviteMember(id, { email, role });
       return response;
-    } catch (error) {
-      return rejectWithValue(error|| 'Failed to invite member');
+    } catch (error: any) {
+      console.error('Error inviting member:', error);
+      // Extract the proper error message from the backend response
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to invite member';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -110,9 +177,9 @@ export const updateWorkspaceSettings = createAsyncThunk(
     updates: any 
   }, { rejectWithValue }) => {
     try {
-      const response = await WorkspaceService.updateWorkspace(id, {
-        settings: updates
-      });
+             const response = await WorkspaceService.updateWorkspace(id, {
+         settings: { [section]: updates } as any
+       });
       
       // The service returns the workspace directly, not wrapped in response.data
       if (!response) {
@@ -123,6 +190,42 @@ export const updateWorkspaceSettings = createAsyncThunk(
     } catch (error: any) {
       console.error('Error updating workspace settings:', error);
       return rejectWithValue(error.response?.data?.message || 'Failed to update workspace settings');
+    }
+  }
+);
+
+// Update basic workspace fields (name, description)
+export const updateWorkspace = createAsyncThunk(
+  'workspace/updateWorkspace',
+  async ({ id, data }: { 
+    id: string; 
+    data: { 
+      name?: string; 
+      description?: string; 
+      settings?: any;
+      githubOrg?: {
+        id: number;
+        login: string;
+        name: string;
+        url: string;
+        avatar: string;
+        description: string;
+        isPrivate: boolean;
+        linkedAt: string;
+      } | null;
+    } 
+  }, { rejectWithValue }) => {
+    try {
+      const response = await WorkspaceService.updateWorkspace(id, data);
+      
+      if (!response) {
+        throw new Error('Invalid response from server');
+      }
+      
+      return response as Workspace;
+    } catch (error: any) {
+      console.error('Error updating workspace:', error);
+      return rejectWithValue(error.response?.data?.message || 'Failed to update workspace');
     }
   }
 );
@@ -183,6 +286,34 @@ export const restoreWorkspace = createAsyncThunk<Workspace, { id: string }>(
   }
 );
 
+// Upload workspace avatar
+export const uploadWorkspaceAvatar = createAsyncThunk<{ workspace: Workspace; avatar: { url: string; filename: string; size: number } }, { id: string; file: File }>(
+  'workspace/uploadAvatar',
+  async ({ id, file }, { rejectWithValue }) => {
+    try {
+      const response = await WorkspaceService.uploadAvatar(id, file);
+      return response;
+    } catch (error: any) {
+      console.error('Error uploading workspace avatar:', error);
+      return rejectWithValue(error.message || 'Failed to upload workspace avatar');
+    }
+  }
+);
+
+// Remove workspace avatar
+export const removeWorkspaceAvatar = createAsyncThunk<{ workspace: Workspace }, { id: string }>(
+  'workspace/removeAvatar',
+  async ({ id }, { rejectWithValue }) => {
+    try {
+      const response = await WorkspaceService.removeAvatar(id);
+      return response;
+    } catch (error: any) {
+      console.error('Error removing workspace avatar:', error);
+      return rejectWithValue(error.message || 'Failed to remove workspace avatar');
+    }
+  }
+);
+
 // Dev-only: force current user as owner for a workspace (repairs old data)
 
 export const forceOwnerDev = createAsyncThunk<{ id: string; message: string }, { id: string }>(
@@ -194,27 +325,20 @@ export const forceOwnerDev = createAsyncThunk<{ id: string; message: string }, {
   }
 );
 
-// Combined state interface
-interface WorkspaceState extends BaseWorkspaceState {
-  workspaces: Workspace[];
-  spaces: Space[];
-  selectedSpace: Space | null;
-  currentWorkspaceId: string | null;
-  members: WorkspaceMember[];
-  loading: boolean;
-}
+// Combined state interface - using imported type from store.types.ts
 
 
 
-const initialState: WorkspaceState = {
+const initialState: WorkspaceSliceState = {
   workspaces: [],
   currentWorkspace: null,
   spaces: [],
   selectedSpace: null,
-  currentWorkspaceId:null,
   members: [],
+  rules: null,
   loading: false,
   isLoading: false,
+  rulesLoading: false,
   error: null,
 };
 
@@ -238,20 +362,31 @@ const workspaceSlice = createSlice({
       state.error = null;
     },
     setCurrentWorkspaceId(state, action: PayloadAction<string | null>) {
-      state.currentWorkspaceId = action.payload;
-      
+      // Remove currentWorkspaceId from state since it's redundant
+      // When setting a workspace ID, we should find and set the actual workspace
+      if (action.payload) {
+        const workspace = state.workspaces.find(w => w._id === action.payload || w.id === action.payload);
+        if (workspace) {
+          // Include rules from the separate rules state if they exist
+          state.currentWorkspace = {
+            ...workspace,
+            rules: state.rules
+          };
+        }
+      } else {
+        state.currentWorkspace = null;
+      }
     },
     setCurrentWorkspace(state, action: PayloadAction<Workspace | null>) {
       state.currentWorkspace = action.payload;
     },
     removeWorkspaceById(state, action: PayloadAction<string>) {
       const id = action.payload;
-      state.workspaces = (state.workspaces || []).filter((w) => (w as any)._id !== id && (w as any).id !== id);
-      if (state.currentWorkspace && ((state.currentWorkspace as any)._id === id || (state.currentWorkspace as any).id === id)) {
+      // Remove from workspaces list
+      state.workspaces = state.workspaces.filter(w => w._id !== id && w.id !== id);
+      // If current workspace is the one removed, clear it
+      if (state.currentWorkspace && (state.currentWorkspace._id === id || state.currentWorkspace.id === id)) {
         state.currentWorkspace = null;
-      }
-      if (state.currentWorkspaceId === id) {
-        state.currentWorkspaceId = null;
       }
     },
     upsertWorkspaceStatus(state, action: PayloadAction<{ id: string; status: 'active' | 'archived'; archivedAt?: string | null; archiveExpiresAt?: string | null }>) {
@@ -306,9 +441,11 @@ const workspaceSlice = createSlice({
         }
         state.error = null;
       })
-      .addCase(inviteMember.rejected, (state, action) => {
+      .addCase(inviteMember.rejected, (state, _action) => {
         state.isLoading = false;
-        state.error = action.error.message || 'Failed to invite member';
+        // Don't set the main workspace error for invitation failures
+        // These should be handled by the UI as toast messages
+        // state.error = (action.payload as string) || action.error?.message || 'Failed to invite member';
       })
       // Fetch single workspace
       .addCase(fetchWorkspace.pending, (state) => {
@@ -318,6 +455,10 @@ const workspaceSlice = createSlice({
       .addCase(fetchWorkspace.fulfilled, (state, action) => {
         state.loading = false;
         state.currentWorkspace = action.payload;
+        // Also set the rules in the separate rules state if they exist
+        if (action.payload.rules) {
+          state.rules = action.payload.rules;
+        }
         state.error = null;
       })
       .addCase(fetchWorkspace.rejected, (state, action) => {
@@ -360,6 +501,23 @@ const workspaceSlice = createSlice({
       .addCase(updateWorkspaceSettings.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to update workspace settings';
+      })
+      // Update basic workspace fields
+      .addCase(updateWorkspace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentWorkspace = action.payload;
+        // Optionally keep workspaces list in sync
+        const idx = state.workspaces.findIndex((w) => w._id === action.payload._id);
+        if (idx >= 0) state.workspaces[idx] = action.payload;
+        state.error = null;
+      })
+      .addCase(updateWorkspace.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to update workspace';
       })
       // Delete workspace
       .addCase(deleteWorkspace.pending, (state) => {
@@ -414,11 +572,9 @@ const workspaceSlice = createSlice({
         const id = action.payload?.id;
         if (id) {
           state.workspaces = (state.workspaces || []).filter((w: any) => (w?._id !== id && w?.id !== id));
-          if (state.currentWorkspace && ((state.currentWorkspace as any)._id === id || (state.currentWorkspace as any).id === id)) {
+          // If current workspace is the one permanently deleted, clear it
+          if (state.currentWorkspace && (state.currentWorkspace._id === id || state.currentWorkspace.id === id)) {
             state.currentWorkspace = null as any;
-          }
-          if (state.currentWorkspaceId === id) {
-            state.currentWorkspaceId = null;
           }
         }
         state.error = null;
@@ -452,13 +608,151 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.payload || action.error?.message || 'Failed to restore workspace';
       })
-       
-       }})
-    
-    // You can add other thunks (spaces, members, invite links) here similarly...
-  
-
-
+      
+      // Fetch spaces by workspace
+      .addCase(fetchSpacesByWorkspace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchSpacesByWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        state.spaces = Array.isArray(action.payload) ? action.payload : [];
+        state.error = null;
+      })
+      .addCase(fetchSpacesByWorkspace.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch spaces';
+      })
+      
+      // Create space
+      .addCase(createSpace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createSpace.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload) {
+          state.spaces = Array.isArray(state.spaces)
+            ? [...state.spaces, action.payload]
+            : [action.payload];
+        }
+        state.error = null;
+      })
+      .addCase(createSpace.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to create space';
+      })
+      
+      // Fetch workspace members
+      .addCase(fetchWorkspaceMembers.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchWorkspaceMembers.fulfilled, (state, action) => {
+        state.loading = false;
+        state.members = Array.isArray(action.payload) ? action.payload : [];
+        state.error = null;
+      })
+      .addCase(fetchWorkspaceMembers.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch members';
+      })
+      
+      // Upload workspace avatar
+      .addCase(uploadWorkspaceAvatar.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(uploadWorkspaceAvatar.fulfilled, (state, action) => {
+        state.loading = false;
+        const { workspace } = action.payload;
+        state.currentWorkspace = workspace;
+        // Update workspace in list
+        const idx = state.workspaces.findIndex((w) => w._id === workspace._id);
+        if (idx >= 0) state.workspaces[idx] = workspace;
+        state.error = null;
+      })
+      .addCase(uploadWorkspaceAvatar.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string || 'Failed to upload workspace avatar';
+      })
+      
+      // Remove workspace avatar
+      .addCase(removeWorkspaceAvatar.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(removeWorkspaceAvatar.fulfilled, (state, action) => {
+        state.loading = false;
+        const { workspace } = action.payload;
+        state.currentWorkspace = workspace;
+        // Update workspace in list
+        const idx = state.workspaces.findIndex((w) => w._id === workspace._id);
+        if (idx >= 0) state.workspaces[idx] = workspace;
+        state.error = null;
+      })
+      .addCase(removeWorkspaceAvatar.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string || 'Failed to remove workspace avatar';
+      })
+      
+      // Fetch workspace rules
+      .addCase(fetchWorkspaceRules.pending, (state) => {
+        state.rulesLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchWorkspaceRules.fulfilled, (state, action) => {
+        state.rulesLoading = false;
+        state.rules = action.payload;
+        // Also update the current workspace with rules
+        if (state.currentWorkspace) {
+          state.currentWorkspace.rules = action.payload;
+        }
+        state.error = null;
+      })
+      .addCase(fetchWorkspaceRules.rejected, (state, action) => {
+        state.rulesLoading = false;
+        state.error = action.error.message || 'Failed to fetch workspace rules';
+      })
+      
+      // Update workspace rules
+      .addCase(updateWorkspaceRules.pending, (state) => {
+        state.rulesLoading = true;
+        state.error = null;
+      })
+      .addCase(updateWorkspaceRules.fulfilled, (state, action) => {
+        state.rulesLoading = false;
+        state.rules = action.payload;
+        // Also update the current workspace with rules
+        if (state.currentWorkspace) {
+          state.currentWorkspace.rules = action.payload;
+        }
+        state.error = null;
+      })
+      .addCase(updateWorkspaceRules.rejected, (state, action) => {
+        state.rulesLoading = false;
+        state.error = action.error.message || 'Failed to update workspace rules';
+      })
+      
+      // Delete workspace rules
+      .addCase(deleteWorkspaceRules.pending, (state) => {
+        state.rulesLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteWorkspaceRules.fulfilled, (state) => {
+        state.rulesLoading = false;
+        state.rules = null;
+        // Also clear rules from current workspace
+        if (state.currentWorkspace) {
+          state.currentWorkspace.rules = undefined;
+        }
+        state.error = null;
+      })
+      .addCase(deleteWorkspaceRules.rejected, (state, action) => {
+        state.rulesLoading = false;
+        state.error = action.error.message || 'Failed to delete workspace rules';
+      });
+   }});
 
 export const {
   setSelectedSpace,
@@ -473,9 +767,9 @@ export const {
 
 // Selectors
 // Note: accept `any` for state to avoid importing RootState and to be compatible with useSelector typing.
-export const selectWorkspaceState = (state: any) => state.workspace as WorkspaceState;
-export const selectMembers = (state: any) => (state.workspace as WorkspaceState).members;
-export const selectWorkspaceLoading = (state: any) => (state.workspace as WorkspaceState).isLoading;
-export const selectWorkspaceError = (state: any) => (state.workspace as WorkspaceState).error;
+export const selectWorkspaceState = (state: any) => state.workspace as WorkspaceSliceState;
+export const selectMembers = (state: any) => (state.workspace as WorkspaceSliceState).members;
+export const selectWorkspaceLoading = (state: any) => (state.workspace as WorkspaceSliceState).isLoading;
+export const selectWorkspaceError = (state: any) => (state.workspace as WorkspaceSliceState).error;
 
 export default workspaceSlice.reducer;

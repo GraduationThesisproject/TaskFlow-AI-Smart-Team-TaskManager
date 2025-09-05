@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useBoardSocket } from '../../contexts/SocketContext';
+import { useSocketContext } from '../../contexts/SocketContext';
 import {
   setSocketConnected,
   updateTaskRealTime,
@@ -26,8 +26,14 @@ export const useTaskSocket = (options: UseTaskSocketOptions = {}) => {
   const isConnected = useSelector(selectSocketConnected);
   const currentBoard = useSelector(selectCurrentBoard);
 
-  // Use the centralized board socket from SocketContext
-  const { socket, isConnected: socketConnected, emit, on, off } = useBoardSocket();
+  // Use the centralized socket context
+  const { 
+    boardSocket: socket, 
+    isConnected: socketConnected, 
+    emit, 
+    on, 
+    off 
+  } = useSocketContext();
 
   // Update Redux state when socket connection changes
   useEffect(() => {

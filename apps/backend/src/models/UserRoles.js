@@ -91,7 +91,6 @@ const userRolesSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for efficient queries
 // userId index is created automatically by 'unique: true' in schema
 userRolesSchema.index({ 'workspaces.workspace': 1 });
 userRolesSchema.index({ 'spaces.space': 1 });

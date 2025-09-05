@@ -1,57 +1,53 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { usePermissions } from '../../hooks/usePermissions';
-import type { WorkspaceRole } from '../../types/workspace.types';
-import type { ProtectedRouteProps } from '../../types/interfaces/ui';
+import { Loading } from '@taskflow/ui';
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  redirectTo?: string;
+  fallback?: React.ReactNode;
+  showLoading?: boolean;
+}
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
-  requiredRole,
-  requiredPermission,
-  redirectTo,
-  fallback = null,
+  redirectTo = '/signin',
+  showLoading = true,
 }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-  const { hasPermission, permissions } = usePermissions();
   const location = useLocation();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
-  // Show loading while auth is initializing
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Checking permissions...</p>
-        </div>
-      </div>
-    );
+  // Show loading spinner while checking authentication
+  if (isLoading && showLoading) {
+    return <Loading text="Checking authentication..." />;
   }
 
-  // If not authenticated, redirect to landing page
+  // Check if user is authenticated
   if (!isAuthenticated) {
-    return <Navigate to="/" replace state={{ from: location }} />;
+    // Redirect to login with return URL
+    return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
-  // Check role-based permissions
-  if (requiredRole && !hasPermission(requiredRole)) {
-    // Redirect to no-access page or fallback
-    return redirectTo ? (
-      <Navigate to={redirectTo} replace state={{ from: location }} />
-    ) : (
-      <Navigate to="/no-access" replace state={{ from: location }} />
-    );
+  // Check if user exists
+  if (!user) {
+    return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
-  // Check specific permission
-  if (requiredPermission && !permissions[requiredPermission as keyof typeof permissions]) {
-    return redirectTo ? (
-      <Navigate to={redirectTo} replace state={{ from: location }} />
-    ) : (
-      <Navigate to="/no-access" replace state={{ from: location }} />
-    );
-  }
-
-  // User has access, render children
   return <>{children}</>;
+};
+
+// Higher-order component for protecting components
+export const withProtection = <P extends object>(
+  Component: React.ComponentType<P>,
+  options: Omit<ProtectedRouteProps, 'children'> = {}
+) => {
+  const ProtectedComponent: React.FC<P> = (props) => (
+    <ProtectedRoute {...options}>
+      <Component {...props} />
+    </ProtectedRoute>
+  );
+
+  ProtectedComponent.displayName = `withProtection(${Component.displayName || Component.name})`;
+  return ProtectedComponent;
 };

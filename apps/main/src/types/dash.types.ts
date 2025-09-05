@@ -122,13 +122,7 @@ export interface CreateWorkspaceModalProps {
     visibility: 'private' | 'public';
   }) => Promise<void>;
 }
-export interface DeleteWorkspaceModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  workspace?: { id: string; name: string } | null;
-  onConfirm: (workspaceId: string) => Promise<void> | void;
-  isLoading?: boolean;
-}
+
 
 export interface Notification {
   _id: string;
@@ -185,6 +179,7 @@ export interface UseNotificationsReturn {
   markAllAsRead: () => void;
   deleteNotification: (notificationId: string) => void;
   clearReadNotifications: () => void;
+  clearAllNotifications: () => void;
   clearError: () => void;
 }
 

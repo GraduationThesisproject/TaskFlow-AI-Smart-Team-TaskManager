@@ -9,6 +9,7 @@ const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
 const passport = require('passport');
+const env = require('../config/env');
 
 // ============================================================================
 // USER REGISTRATION & INVITATION
@@ -117,7 +118,7 @@ exports.googleCallback = async (req, res, next) => {
             user.lastLogin = new Date();
             await user.save();
             const token = generateToken(user._id);
-            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=google`;
+            const redirectUrl = `${env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}&provider=google`;
             res.redirect(redirectUrl);
         } catch (error) {
             logger.error('Google callback error:', error);
@@ -130,7 +131,7 @@ exports.githubLogin = (req, res, next) => {
     if (!passport._strategies?.github) {
         return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
     }
-    const scope = req.query.scope || 'user:email';
+    const scope = req.query.scope || 'user:email read:org repo';
     passport.authenticate('github', { scope: scope.split(' ') })(req, res, next);
 };
 
@@ -152,10 +153,17 @@ exports.githubCallback = (req, res, next) => {
         }
 
         try {
+            // Check if user has GitHub access token
+            if (!user.github?.accessToken) {
+                logger.error('GitHub access token not found for user:', user._id);
+                return sendResponse(res, 500, false, 'GitHub access token not available');
+            }
+
             user.lastLogin = new Date();
             await user.save();
+            
             const token = generateToken(user._id);
-            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}&provider=github`;
+            const redirectUrl = `${env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}&provider=github&githubLinked=true`;
             logger.info('GitHub authentication successful, redirecting to:', redirectUrl);
             return res.redirect(redirectUrl);
         } catch (error) {
@@ -896,6 +904,6 @@ exports.getActivityLog = async (req, res) => {
         });
     } catch (error) {
         logger.error('Get activity log error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving profile');
+        sendResponse(res, 500, false, 'Server error retrieving activity log');
     }
 };

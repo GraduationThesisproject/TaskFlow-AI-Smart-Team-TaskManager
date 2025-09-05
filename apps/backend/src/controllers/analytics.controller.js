@@ -16,19 +16,7 @@ exports.getSpaceAnalytics = async (req, res) => {
         console.log("-------------------------------------------------------")
         console.log('🔍 [getSpaceAnalytics] Request params:', { spaceId, period, startDate, endDate, userId });
 
-        // Check space access
-        const user = await User.findById(userId);
-        console.log('👤 [getSpaceAnalytics] User found:', { userId: user._id, name: user.name });
-        
-        const userRoles = await user.getRoles();
-        console.log('🔐 [getSpaceAnalytics] User roles:', userRoles);
-        
-        if (!userRoles.hasSpaceRole(spaceId)) {
-            console.log('❌ [getSpaceAnalytics] Access denied for user:', userId, 'to space:', spaceId);
-            return sendResponse(res, 403, false, 'Access denied to this space');
-        }
-
-        console.log('✅ [getSpaceAnalytics] Access granted for space:', spaceId);
+        // Access control handled by middleware
         let analytics;
         
         if (startDate && endDate) {
@@ -87,13 +75,7 @@ exports.generateSpaceAnalytics = async (req, res) => {
         } = req.body;
         const userId = req.user.id;
 
-        // Check space access
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        if (!userRoles.hasSpaceRole(spaceId, 'member')) {
-            return sendResponse(res, 403, false, 'Access denied to this space');
-        }
+        // Access control handled by middleware
 
         const space = await Space.findById(spaceId);
         if (!space) {
@@ -174,19 +156,7 @@ exports.getWorkspaceAnalytics = async (req, res) => {
 
         console.log('🏢 [getWorkspaceAnalytics] Request params:', { workspaceId, period, startDate, endDate, userId });
 
-        // Check workspace access
-        const user = await User.findById(userId);
-        console.log('👤 [getWorkspaceAnalytics] User found:', { userId: user._id, name: user.name });
-        
-        const userRoles = await user.getRoles();
-        console.log('🔐 [getWorkspaceAnalytics] User roles:', userRoles);
-        
-        if (!userRoles.hasWorkspaceRole(workspaceId)) {
-            console.log('❌ [getWorkspaceAnalytics] Access denied for user:', userId, 'to workspace:', workspaceId);
-            return sendResponse(res, 403, false, 'Access denied to this workspace');
-        }
-        
-        console.log('✅ [getWorkspaceAnalytics] Access granted for workspace:', workspaceId);
+        // Access control handled by middleware
         let analytics;
         
         if (startDate && endDate) {
@@ -215,7 +185,8 @@ exports.getWorkspaceAnalytics = async (req, res) => {
         });
     } catch (error) {
         logger.error('Get workspace analytics error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving workspace analytics');
+        logger.error('Error stack:', error.stack);
+        sendResponse(res, 500, false, `Server error retrieving workspace analytics: ${error.message}`);
     }
 };
 
@@ -228,19 +199,7 @@ exports.getTeamPerformance = async (req, res) => {
 
         console.log('👥 [getTeamPerformance] Request params:', { spaceId, period, startDate, endDate, userId });
 
-        // Check space access
-        const user = await User.findById(userId);
-        console.log('👤 [getTeamPerformance] User found:', { userId: user._id, name: user.name });
-        
-        const userRoles = await user.getRoles();
-        console.log('🔐 [getTeamPerformance] User roles:', userRoles);
-        
-        if (!userRoles.hasSpaceRole(spaceId)) {
-            console.log('❌ [getTeamPerformance] Access denied for user:', userId, 'to space:', spaceId);
-            return sendResponse(res, 403, false, 'Access denied to this space');
-        }
-
-        console.log('✅ [getTeamPerformance] Access granted for space:', spaceId);
+        // Access control handled by middleware
         const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const end = endDate ? new Date(endDate) : new Date();
 
@@ -273,13 +232,7 @@ exports.exportAnalytics = async (req, res) => {
         const { format = 'json', period = 'monthly', startDate, endDate } = req.query;
         const userId = req.user.id;
 
-        // Check space access
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        if (!userRoles.hasSpaceRole(spaceId)) {
-            return sendResponse(res, 403, false, 'Access denied to this space');
-        }
+        // Access control handled by middleware
         
         const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const end = endDate ? new Date(endDate) : new Date();

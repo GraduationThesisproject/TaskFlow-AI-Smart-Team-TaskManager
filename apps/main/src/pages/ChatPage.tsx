@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Button, Input, Typography, Avatar, Badge } from '@taskflow/ui';
+import { Button, Input, Typography, AvatarWithFallback, Badge } from '@taskflow/ui';
 import { 
   MessageCircle, 
   Send, 
@@ -356,7 +356,7 @@ const ChatPage: React.FC = () => {
                     <div className={`max-w-xs lg:max-w-md ${message.sender.model === 'User' ? 'order-2' : 'order-1'}`}>
                       {message.sender.model === 'Admin' && (
                         <div className="flex items-center gap-2 mb-1">
-                          <Avatar
+                          <AvatarWithFallback
                             size="sm"
                             src={message.sender.avatar}
                             alt={message.sender.name}

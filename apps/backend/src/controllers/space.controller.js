@@ -16,36 +16,15 @@ exports.getSpacesByWorkspace = async (req, res) => {
         
         const userId = req.user.id;
 
-        // SECURITY FIX: Use verified roles from auth middleware
-        const userRoles = req.user.roles;
-        
-        if (!userRoles.hasWorkspaceRole(workspaceId)) {
-            // return sendResponse(res, 403, false, 'Access denied to workspace');
-        }
-
-        const spaces = await Space.findByWorkspace(workspaceId)
+        // Get both active and archived spaces
+        const spaces = await Space.find({ workspace: workspaceId, isActive: true })
             .populate('members.user', 'name email avatar')
             .populate('boards', 'name type')
             .sort({ updatedAt: -1 });
 
-        // Enrich with user permissions for each space
-        const enrichedSpaces = spaces.map(space => {
-            const userSpaceRole = userRoles.spaces.find(s =>
-                s.space.toString() === space._id.toString()
-            );
-
-            return {
-                ...space.toObject(),
-                userRole: userSpaceRole ? userSpaceRole.role : null,
-                userPermissions: userSpaceRole ? userSpaceRole.permissions : null,
-                healthStatus: space.healthStatus,
-                completionRate: space.completionRate
-            };
-        });
-
         sendResponse(res, 200, true, 'Spaces retrieved successfully', {
-            spaces: enrichedSpaces,
-            count: enrichedSpaces.length
+            spaces: spaces,
+            count: spaces.length
         });
     } catch (error) {
         logger.error('Get spaces by workspace error:', error);
@@ -59,36 +38,15 @@ exports.getSpaces = async (req, res) => {
         const { workspaceId } = req.params;
         const userId = req.user.id;
 
-        // SECURITY FIX: Use verified roles from auth middleware
-        const userRoles = req.user.roles;
-        
-        if (!userRoles.hasWorkspaceRole(workspaceId)) {
-            // return sendResponse(res, 403, false, 'Access denied to workspace');
-        }
-
-        const spaces = await Space.findByWorkspace(workspaceId)
+        // Get both active and archived spaces
+        const spaces = await Space.find({ workspace: workspaceId, isActive: true })
             .populate('members.user', 'name email avatar')
             .populate('boards', 'name type')
             .sort({ updatedAt: -1 });
 
-        // Enrich with user permissions for each space
-        const enrichedSpaces = spaces.map(space => {
-            const userSpaceRole = userRoles.spaces.find(s => 
-                s.space.toString() === space._id.toString()
-            );
-
-            return {
-                ...space.toObject(),
-                userRole: userSpaceRole ? userSpaceRole.role : null,
-                userPermissions: userSpaceRole ? userSpaceRole.permissions : null,
-                healthStatus: space.healthStatus,
-                completionRate: space.completionRate
-            };
-        });
-
         sendResponse(res, 200, true, 'Spaces retrieved successfully', {
-            spaces: enrichedSpaces,
-            count: enrichedSpaces.length
+            spaces: spaces,
+            count: spaces.length
         });
     } catch (error) {
         logger.error('Get spaces error:', error);
@@ -102,13 +60,6 @@ exports.getSpace = async (req, res) => {
         const { id: spaceId } = req.params;
         const userId = req.user.id;
 
-        // SECURITY FIX: Use verified roles from auth middleware
-        const userRoles = req.user.roles;
-        
-        if (!userRoles.hasSpacePermission(spaceId, 'canViewBoards')) {
-            // return sendResponse(res, 403, false, 'Access denied to this space');
-        }
-
         const space = await Space.findById(spaceId)
             .populate('workspace', 'name')
             .populate('members.user', 'name email avatar')
@@ -120,20 +71,13 @@ exports.getSpace = async (req, res) => {
             return sendResponse(res, 404, false, 'Space not found');
         }
 
-        // Get user's role and permissions
-        const userSpaceRole = userRoles.spaces.find(s => 
-            s.space.toString() === spaceId
-        );
-
         sendResponse(res, 200, true, 'Space retrieved successfully', {
             space: {
                 ...space.toObject(),
                 healthStatus: space.healthStatus,
                 completionRate: space.completionRate,
                 memberCount: space.memberCount
-            },
-            userRole: userSpaceRole.role,
-            userPermissions: userSpaceRole.permissions
+            }
         });
     } catch (error) {
         logger.error('Get space error:', error);
@@ -152,18 +96,6 @@ exports.createSpace = async (req, res) => {
             permissions 
         } = req.body;
         const userId = req.user.id;
-
-        // Check workspace permissions
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        const workspaceRole = userRoles.workspaces.find(ws => 
-            ws.workspace.toString() === workspaceId
-        );
-
-        if (!workspaceRole || !workspaceRole.permissions.canCreateSpaces) {
-            // return sendResponse(res, 403, false, 'Insufficient permissions to create spaces');
-        }
 
         const workspace = await Workspace.findById(workspaceId);
         if (!workspace) {
@@ -190,9 +122,6 @@ exports.createSpace = async (req, res) => {
 
         // Add space to workspace
         await workspace.addSpace(space._id);
-
-        // Add space role to user
-        await userRoles.addSpaceRole(space._id, 'admin');
 
         await space.populate('workspace', 'name');
 
@@ -223,21 +152,12 @@ exports.createSpace = async (req, res) => {
 exports.updateSpace = async (req, res) => {
     try {
         const { id: spaceId } = req.params;
-        const { name, description, settings, permissions } = req.body;
+        const { name, description, settings, permissions, isArchived } = req.body;
         const userId = req.user.id;
 
         const space = await Space.findById(spaceId);
         if (!space) {
             return sendResponse(res, 404, false, 'Space not found');
-        }
-
-        // Check permissions using both role model and space membership
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        const hasRolePermission = userRoles.hasSpacePermission(spaceId, 'canEditSettings');
-        const hasMemberPermission = space.hasPermission(userId, 'canEditSettings');
-        if (!hasRolePermission && !hasMemberPermission) {
-            // return sendResponse(res, 403, false, 'Insufficient permissions to edit space');
         }
 
         // Store old values
@@ -249,6 +169,21 @@ exports.updateSpace = async (req, res) => {
         // Update fields
         if (name) space.name = name;
         if (description) space.description = description;
+        
+        // Handle archive/unarchive
+        if (typeof isArchived === 'boolean') {
+            if (isArchived && !space.isArchived) {
+                // Archive the space
+                space.isArchived = true;
+                space.archivedAt = new Date();
+                space.archivedBy = userId;
+            } else if (!isArchived && space.isArchived) {
+                // Unarchive the space
+                space.isArchived = false;
+                space.archivedAt = null;
+                space.archivedBy = null;
+            }
+        }
 
         // Update settings
         if (settings) {
@@ -263,16 +198,29 @@ exports.updateSpace = async (req, res) => {
         await space.save();
 
         // Log activity
+        let action = 'space_update';
+        let logDescription = `Updated space: ${space.name}`;
+        
+        if (typeof isArchived === 'boolean') {
+            if (isArchived && !space.isArchived) {
+                action = 'space_archive';
+                logDescription = `Archived space: ${space.name}`;
+            } else if (!isArchived && space.isArchived) {
+                action = 'space_unarchive';
+                logDescription = `Unarchived space: ${space.name}`;
+            }
+        }
+        
         await ActivityLog.logActivity({
             userId,
-            action: 'space_update',
-            description: `Updated space: ${space.name}`,
+            action,
+            description: logDescription,
             entity: { type: 'Space', id: spaceId, name: space.name },
             workspaceId: space.workspace,
             spaceId,
             metadata: {
                 oldValues,
-                newValues: { name, description },
+                newValues: { name, description, isArchived },
                 ipAddress: req.ip
             }
         });
@@ -298,38 +246,10 @@ exports.addMember = async (req, res) => {
             return sendResponse(res, 404, false, 'Space not found');
         }
 
-        // SECURITY FIX: Use verified roles from auth middleware
-        const userRoles = req.user.roles;
-        const hasRolePermission = userRoles.hasSpacePermission(spaceId, 'canManageMembers');
-        const hasMemberPermission = space.hasPermission(currentUserId, 'canManageMembers');
-        if (!hasRolePermission && !hasMemberPermission) {
-            // return sendResponse(res, 403, false, 'Insufficient permissions to manage members');
-        }
-
-        // SECURITY FIX: Validate role assignment permissions
-        // Get current user's space role to determine what roles they can assign
-        const currentUserSpaceRole = userRoles.spaces.find(s => 
-            s.space.toString() === spaceId
-        );
-
-        if (!currentUserSpaceRole) {
-            // return sendResponse(res, 403, false, 'You are not a member of this space');
-        }
-
-        // Role assignment validation based on current user's role
+        // Validate role
         const allowedRoles = ['viewer', 'member', 'admin'];
         if (!allowedRoles.includes(role)) {
             return sendResponse(res, 400, false, 'Invalid role specified');
-        }
-
-        // Only space admins can assign admin roles
-        if (role === 'admin' && currentUserSpaceRole.role !== 'admin') {
-            // return sendResponse(res, 403, false, 'Only space admins can assign admin roles');
-        }
-
-        // Space admins can assign any role, members can only assign viewer/member roles
-        if (currentUserSpaceRole.role === 'member' && role === 'admin') {
-            // return sendResponse(res, 403, false, 'Members can only assign viewer or member roles');
         }
 
         // Ensure new member is part of workspace
@@ -341,18 +261,6 @@ exports.addMember = async (req, res) => {
 
         // Add member to space
         await space.addMember(newMemberId, role, currentUserId);
-
-        // Add space role to user
-        const newMember = await User.findById(newMemberId);
-        const newMemberRoles = await newMember.getRoles();
-        
-        // Add space role with default permissions
-        newMemberRoles.spaces.push({
-            space: spaceId,
-            role,
-            permissions: space.getDefaultPermissions(role)
-        });
-        await newMemberRoles.save();
 
         // Log activity
         await ActivityLog.logActivity({
@@ -388,15 +296,6 @@ exports.archiveSpace = async (req, res) => {
             return sendResponse(res, 404, false, 'Space not found');
         }
 
-        // Check permissions using both role model and space membership
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        const hasRolePermission = userRoles.hasSpacePermission(spaceId, 'canEditSettings');
-        const hasMemberPermission = space.hasPermission(userId, 'canEditSettings');
-        if (!hasRolePermission && !hasMemberPermission) {
-            // return sendResponse(res, 403, false, 'Insufficient permissions to archive space');
-        }
-
         if (unarchive) {
             await space.unarchive();
             
@@ -411,7 +310,9 @@ exports.archiveSpace = async (req, res) => {
                 metadata: { ipAddress: req.ip }
             });
 
-            sendResponse(res, 200, true, 'Space unarchived successfully');
+            sendResponse(res, 200, true, 'Space unarchived successfully', {
+                space: space.toObject()
+            });
         } else {
             await space.archive(userId);
 
@@ -427,10 +328,60 @@ exports.archiveSpace = async (req, res) => {
                 severity: 'warning'
             });
 
-            sendResponse(res, 200, true, 'Space archived successfully');
+            sendResponse(res, 200, true, 'Space archived successfully', {
+                space: {
+                    ...space.toObject(),
+                    archiveCountdownSeconds: Math.max(0, Math.floor((space.archiveExpiresAt.getTime() - Date.now()) / 1000))
+                }
+            });
         }
     } catch (error) {
         logger.error('Archive space error:', error);
         sendResponse(res, 500, false, 'Server error archiving space');
+    }
+};
+
+// Permanently delete an archived space
+exports.permanentDeleteSpace = async (req, res) => {
+    try {
+        const { id: spaceId } = req.params;
+        const userId = req.user.id;
+
+        const space = await Space.findById(spaceId);
+        if (!space) {
+            return sendResponse(res, 404, false, 'Space not found');
+        }
+
+        // Check if space is archived
+        if (!space.isArchived) {
+            return sendResponse(res, 400, false, 'Space must be archived before permanent deletion');
+        }
+
+        // Check if archive expiration time has passed (24 hours)
+        if (space.archiveExpiresAt && space.archiveExpiresAt > new Date()) {
+            const remainingMs = space.archiveExpiresAt.getTime() - Date.now();
+            const remainingHours = Math.ceil(remainingMs / (1000 * 60 * 60));
+            return sendResponse(res, 400, false, `Space cannot be permanently deleted yet. Please wait ${remainingHours} more hours.`);
+        }
+
+        // Perform permanent deletion
+        const result = await space.permanentDelete(userId);
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId,
+            action: 'space_permanent_delete',
+            description: `Permanently deleted space: ${space.name}`,
+            entity: { type: 'Space', id: spaceId, name: space.name },
+            workspaceId: space.workspace,
+            spaceId,
+            metadata: { ipAddress: req.ip },
+            severity: 'critical'
+        });
+
+        sendResponse(res, 200, true, result.message);
+    } catch (error) {
+        logger.error('Permanent delete space error:', error);
+        sendResponse(res, 500, false, 'Server error permanently deleting space');
     }
 };
