@@ -106,28 +106,13 @@ export const loginUser = createAsyncThunk(
       } else {
         setAuthHeaderOnly(token);
       }
-      // Protect against a hanging profile request by adding a timeout
-      const profileTimeoutMs = 8000;
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Profile fetch timeout')), profileTimeoutMs);
-      });
-      let userData: any = null;
-      try {
-        const profileResponse = await Promise.race([AuthService.getProfile(), timeoutPromise]);
-        userData = (profileResponse as any)?.data?.data;
-        if (userData) {
-          console.log('[Auth] Authenticated user:', userData);
-        } else {
-          console.log('[Auth] Login succeeded but profile payload missing');
-        }
-      } catch (e) {
-        // Proceed without profile to avoid blocking login; reducers will set isAuthenticated
-        console.warn('Proceeding without profile after login:', (e as Error).message);
-      }
       
-      return {
+      // Get complete user profile data (same as main app)
+      const profileResponse = await AuthService.getProfile();
+      
+      const result = {
         ...(response as any).data,
-        user: userData ? serializeUser(userData) : null,
+        user: serializeUser(profileResponse.data),
         token
       };
       
@@ -236,7 +221,7 @@ export const logoutUser = createAsyncThunk(
   async (params: { allDevices?: boolean, navigate?: (path: string) => void } = {}, { rejectWithValue }) => {
     try {
       const { allDevices = false, navigate } = params;
-      const deviceId = getDeviceId();
+      const deviceId = await getDeviceId();
       
       await AuthService.logout(deviceId, allDevices);
       
@@ -532,6 +517,14 @@ const authSlice = createSlice({
       })
       .addCase(checkAuthStatus.fulfilled, (state, action) => {
         state.isLoading = false;
+        console.log('🔧 [authSlice] checkAuthStatus.fulfilled - Setting user data:', {
+          hasUser: !!action.payload.user,
+          userEmail: action.payload.user?.user?.email,
+          userName: action.payload.user?.user?.name,
+          isAuthenticated: action.payload.isAuthenticated,
+          userStructure: action.payload.user ? Object.keys(action.payload.user) : 'No user',
+          fullPayload: action.payload
+        });
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = action.payload.isAuthenticated;
@@ -552,6 +545,13 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
         // User data is already serialized in the thunk
+        console.log('🔧 [authSlice] loginUser.fulfilled - Setting user data:', {
+          hasUser: !!action.payload.user,
+          userEmail: action.payload.user?.user?.email,
+          userName: action.payload.user?.user?.name,
+          userStructure: action.payload.user ? Object.keys(action.payload.user) : 'No user',
+          fullPayload: action.payload
+        });
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
