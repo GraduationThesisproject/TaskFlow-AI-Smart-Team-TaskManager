@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import type { DropResult } from 'react-beautiful-dnd';
 import { useTasks, useColumns, useSpaceManager, useTheme } from '../../hooks';
+import { useToast } from '../../hooks/useToast';
 import type { Task } from '../../types/task.types';
 import type { Column } from '../../types/board.types';
 import {
@@ -38,6 +39,7 @@ export const KanbanViewLayout: React.FC = () => {
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
   const { theme } = useTheme();
+  const { warning } = useToast();
   
   const {
     loadBoard,
@@ -189,11 +191,14 @@ export const KanbanViewLayout: React.FC = () => {
   const handleDeleteColumn = async (columnId: string) => {
     console.log('handleDeleteColumn called with columnId:', columnId);
     try {
-      if (confirm('Are you sure you want to delete this column? This action cannot be undone.')) {
-        console.log('User confirmed deletion, calling removeColumn...');
-        await removeColumn(columnId, boardId);
-        console.log('Column deleted successfully');
-      }
+      warning(
+        'Are you sure you want to delete this column? This action cannot be undone.',
+        'Delete Column',
+        { duration: 0, dismissible: true }
+      );
+      console.log('User confirmed deletion, calling removeColumn...');
+      await removeColumn(columnId, boardId);
+      console.log('Column deleted successfully');
     } catch (error) {
       console.error('Failed to delete column:', error);
     }

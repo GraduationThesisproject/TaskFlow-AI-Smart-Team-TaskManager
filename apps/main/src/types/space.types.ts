@@ -9,6 +9,7 @@ export interface Space {
   stats: SpaceStats;
   isActive: boolean;
   isArchived: boolean;
+  archiveExpiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +72,7 @@ export interface SpaceStats {
 export interface SpaceState {
   spaces: Space[];
   currentSpace: Space | null;
+  currentWorkspaceId: string | null;
   loading: boolean;
   error: string | null;
   socketConnected: boolean;

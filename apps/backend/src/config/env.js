@@ -4,7 +4,8 @@ module.exports = {
   // Server Configuration
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: parseInt(process.env.PORT || '3001', 10),
-
+  // Frontend URL
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
   // Database Configuration
   DATABASE_URL: process.env.DATABASE_URL || 'mongodb://localhost:27017/taskflow',
 
@@ -13,7 +14,7 @@ module.exports = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
 
   // CORS Configuration
-  CORS_ORIGIN: process.env.CORS_ORIGIN?.split(',') || [
+  CORS_ORIGIN: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()) : [
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',
@@ -34,13 +35,10 @@ module.exports = {
   UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10),
 
-  // Frontend URL
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
-
   // OAuth Configuration
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '625288272720-qem1ue46j75pt272mab8f35baimqgeag.apps.googleusercontent.com',
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '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',
-  GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/api/auth/google/callback',
+  GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/auth/google/callback',
   GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID || 'Ov23liwZN5YwJ4eZvffU',
   GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || '1b3a20e1252907cce61a9e382c33f90142a8e73b',
   GITHUB_CALLBACK_URL: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/auth/github/callback',

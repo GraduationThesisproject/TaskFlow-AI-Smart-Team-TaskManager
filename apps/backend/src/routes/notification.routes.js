@@ -45,13 +45,13 @@ router.get('/stats', notificationController.getNotificationStats);
 
 router.post('/',
     requireSystemAdmin,
-    validateMiddleware(notificationSchemas.createNotificationSchema),
+    validateMiddleware.validateBody(notificationSchemas.createNotificationSchema),
     notificationController.createNotification
 );
 
 // Payment success notification endpoint (no admin required)
 router.post('/payment-success',
-    validateMiddleware(paymentNotificationSchema),
+    validateMiddleware.validateBody(paymentNotificationSchema),
     notificationController.createPaymentNotification
 );
 
@@ -59,15 +59,16 @@ router.patch('/:id/read', notificationController.markAsRead);
 router.post('/mark-all-read', notificationController.markAllAsRead);
 
 router.patch('/bulk-read',
-    validateMiddleware(notificationSchemas.bulkMarkReadSchema),
+    validateMiddleware.validateBody(notificationSchemas.bulkMarkReadSchema),
     notificationController.bulkMarkAsRead
 );
 
+router.delete('/clear-all', notificationController.clearAllNotifications);
 router.delete('/:id', notificationController.deleteNotification);
 router.post('/clear-read', notificationController.deleteReadNotifications);
 
 router.put('/preferences',
-    validateMiddleware(notificationSchemas.updatePreferencesSchema),
+    validateMiddleware.validateBody(notificationSchemas.updatePreferencesSchema),
     notificationController.updatePreferences
 );
 

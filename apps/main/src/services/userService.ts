@@ -54,6 +54,16 @@ export class UserService {
     } catch (error) {
       console.error('Error updating user profile:', error);
       throw error;
+    }
+  }
+
+  // Search users by email or name
+  static async searchUsers(query: string): Promise<ApiResponse<User[]>> {
+    try {
+      const response = await axiosInstance.get(`/users/search?q=${encodeURIComponent(query)}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error searching users:', error);
       throw error;
     }
   }

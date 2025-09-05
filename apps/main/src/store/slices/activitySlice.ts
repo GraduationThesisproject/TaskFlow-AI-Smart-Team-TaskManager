@@ -1,61 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import axiosInstance from '../../config/axios';
-import type { RootState } from '../index';
+import type { 
+  ActivityItem, 
+  ActivitySliceState, 
+  FetchActivitiesParams 
+} from '../../types/store.types';
 
-interface ActivityUser {
-  _id: string;
-  name: string;
-  email?: string;
-  avatar?: string;
-}
-
-export interface ActivityItem {
-  _id: string;
-  user: ActivityUser | string;
-  action: string;
-  description: string;
-  entity: {
-    type: string;
-    id: string;
-    name?: string;
-  };
-  relatedEntities?: Array<{
-    type: string;
-    id: string;
-    name?: string;
-  }>;
-  metadata?: Record<string, any>;
-  workspace?: string;
-  project?: string;
-  space?: string;
-  board?: string;
-  severity?: 'info' | 'low' | 'medium' | 'high' | 'critical';
-  isSuccessful?: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ActivityState {
-  activities: ActivityItem[];
-  loading: boolean;
-  error: string | null;
-  lastFetched: number | null;
-  count: number;
-  total: number;
-}
-
-interface FetchActivitiesParams {
-  limit?: number;
-  page?: number;
-  workspaceId?: string;
-  projectId?: string;
-  spaceId?: string;
-  boardId?: string;
-  userId?: string;
-}
-
-const initialState: ActivityState = {
+const initialState: ActivitySliceState = {
   activities: [],
   loading: false,
   error: null,
@@ -152,10 +104,10 @@ const activitySlice = createSlice({
 export const { addActivity, clearActivities } = activitySlice.actions;
 
 // Selectors
-export const selectRecentActivities = (state: RootState) => state.activity.activities;
-export const selectActivityLoading = (state: RootState) => state.activity.loading;
-export const selectActivityError = (state: RootState) => state.activity.error;
-export const selectActivityCount = (state: RootState) => state.activity.count;
-export const selectActivityTotal = (state: RootState) => state.activity.total;
+export const selectRecentActivities = (state: any) => state.activity.activities;
+export const selectActivityLoading = (state: any) => state.activity.loading;
+export const selectActivityError = (state: any) => state.activity.error;
+export const selectActivityCount = (state: any) => state.activity.count;
+export const selectActivityTotal = (state: any) => state.activity.total;
 
 export default activitySlice.reducer;

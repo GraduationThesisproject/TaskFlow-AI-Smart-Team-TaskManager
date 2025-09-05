@@ -3,7 +3,7 @@ require('dotenv').config();
 //👉 dotenv allows you to use a .env file to store secret information (like database passwords, API keys, JWT secrets).
 const http = require('http');
 const socketIo = require('socket.io');
-
+const env = require('./config/env');
 const app = require('./app');
 const connectDB = require('./config/db');
 const config = require('./config/env');
@@ -17,7 +17,7 @@ const logger = require('./config/logger');
 const { ensureDirectoriesExist } = require('./config/multer');
 const { initializeSockets } = require('./sockets');
 
-const PORT = config.PORT || 3001;
+const PORT = env.PORT || 3001;
 
 // Connect to database
 connectDB();
@@ -34,12 +34,12 @@ const socketCorsOptions = {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        // Parse CORS_ORIGIN from environment or use defaults
-        let allowedOrigins;
-        if (process.env.CORS_ORIGIN) {
-            allowedOrigins = process.env.CORS_ORIGIN.split(',').map(origin => origin.trim());
-        } else {
-            allowedOrigins = config.CORS_ORIGIN;
+        // CORS_ORIGIN is already processed as an array in env.js
+        let allowedOrigins = env.CORS_ORIGIN || [];
+        
+        // Ensure allowedOrigins is always an array
+        if (!Array.isArray(allowedOrigins)) {
+            allowedOrigins = [];
         }
         
         if (allowedOrigins.indexOf(origin) !== -1) {
@@ -52,7 +52,6 @@ const socketCorsOptions = {
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Socket-ID']
 };
-
 
 
 const io = socketIo(server, {

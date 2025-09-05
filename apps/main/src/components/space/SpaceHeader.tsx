@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography, Button, Card, Avatar, Stack } from "@taskflow/ui";
+import { Typography, Button, Card, AvatarWithFallback, Stack } from "@taskflow/ui";
 import type { SpaceHeaderProps } from '../../types/interfaces/ui';
 
 export const SpaceHeader: React.FC<SpaceHeaderProps> = ({
@@ -124,15 +124,14 @@ export const SpaceHeader: React.FC<SpaceHeaderProps> = ({
                             </Typography>
                             <div className="flex -space-x-2">
                                 {(space.members || []).filter(member => member && member.name).slice(0, 5).map((member, index) => (
-                                    <Avatar 
+                                    <AvatarWithFallback 
                                         key={member.id}
                                         size="sm"
                                         className="border-2 border-white"
-                                    >
-                                        {typeof member.name === 'string' && member.name.length > 0 
-                                            ? member.name.charAt(0).toUpperCase() 
-                                            : '?'}
-                                    </Avatar>
+                                        alt={typeof member.name === 'string' && member.name.length > 0 
+                                            ? member.name 
+                                            : 'User'}
+                                    />
                                 ))}
                                 {(space.members || []).filter(member => member && member.name).length > 5 && (
                                     <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center border-2 border-white">
