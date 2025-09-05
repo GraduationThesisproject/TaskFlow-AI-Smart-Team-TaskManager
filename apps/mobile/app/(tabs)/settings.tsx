@@ -270,7 +270,8 @@ export default function SettingsScreen() {
       <Sidebar
         isVisible={sidebarVisible}
         onClose={() => setSidebarVisible(false)}
-        currentSection="settings"
+        context="settings"
+        currentSectionId="settings"
       />
     </View>
   );
