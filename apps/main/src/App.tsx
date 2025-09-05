@@ -8,7 +8,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import WorkSpace from "./pages/workSpace";
-import { SpacePage } from "./pages/space.page";
+import SpacePage from "./pages/SpacePage";
 import { BoardPage } from "./pages/board.page";
 import LandingPage  from "./pages/LandingPage";
 import OAuthCallback from "./components/auth/OAuthCallback";
@@ -17,13 +17,15 @@ import { ProtectedRoute, PublicOnlyRoute } from "./components/common";
 import UniversalNavbar from "./components/common/navbar/UniversalNavbar";
 import Dashboard from "./pages/Dashboard";
 import InviteLanding from "./pages/InviteLanding";
+import JoinWorkspace from "./pages/JoinWorkspace";
 import { NoAccessPage } from "./pages/NoAccessPage";
 import ChatPage from "./pages/ChatPage";
 import ChatWidget from "./components/chat/ChatWidget";
 import { MessageCircle, X } from "lucide-react";
 import Cancel from "./layouts/workSpace/Cancel";
 import Success from "./layouts/workSpace/Success";
-
+import { Loading } from "@taskflow/ui";
+import { ToastProvider } from "./hooks/useToast";
 
 
 
@@ -32,8 +34,6 @@ function App() {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-
-
   useEffect(() => {
     dispatch(checkAuthStatus());
   }, [dispatch]);
@@ -42,10 +42,7 @@ function App() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Initializing...</p>
-          </div>
+        <Loading text="Initializing..." />
         </div>
       </AppLayout>
     );
@@ -60,27 +57,27 @@ function App() {
   };
 
   return (
-    <AppLayout>
-      {/* Universal Navbar - hidden on auth pages (signin/signup) */}
-        <UniversalNavbar
-          user={user || undefined}
-          onLogout={handleLogout}
-          className="sticky top-0 z-50"
-          onChatClick={toggleChat}
-        />
-
-      {/* Main Content */}
-      <main className="flex-1 bg-gradient-to-br from-background via-muted/50 to-background">
-        <Routes>
-          {/* Public Routes - Only accessible to unauthenticated users */}
-          <Route 
-            path="/*" 
-            element={
-              <PublicOnlyRoute redirectTo="/dashboard">
-                <LandingPage />
-              </PublicOnlyRoute>
-            } 
+      <AppLayout>
+        {/* Universal Navbar - hidden on auth pages (signin/signup) */}
+          <UniversalNavbar
+            user={user || undefined}
+            onLogout={handleLogout}
+            className="sticky top-0 z-50"
+            onChatClick={toggleChat}
           />
+
+        {/* Main Content */}
+        <main className="flex-1 bg-gradient-to-br from-background via-muted/50 to-background">
+          <Routes>
+            {/* Public Routes - Only accessible to unauthenticated users */}
+            <Route 
+              path="/*" 
+              element={
+                <PublicOnlyRoute redirectTo="/dashboard">
+                  <LandingPage />
+                </PublicOnlyRoute>
+              } 
+            />
           
           <Route 
             path="/auth/callback" 
@@ -98,6 +95,11 @@ function App() {
                 <InviteLanding />
               </PublicOnlyRoute>
             } 
+          />
+          
+          <Route 
+            path="/join-workspace/*" 
+            element={<JoinWorkspace />}
           />
           
           <Route 
@@ -211,7 +213,7 @@ function App() {
         userName={user?.user?.name || "User"}
       />
       )}
-    </AppLayout>
+      </AppLayout>
   );
 }
 

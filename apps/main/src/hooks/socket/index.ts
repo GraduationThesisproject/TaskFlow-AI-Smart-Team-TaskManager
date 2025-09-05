@@ -9,7 +9,6 @@ export { useBoardSocket, useNotificationSocket, useSystemSocket, useChatSocket, 
 
 // Business logic hooks
 export { useTaskSocket } from './useTaskSocket';
-export { useNotifications } from './useNotifications';
 export { useSystemMonitoring } from './useSystemSocket';
 export { useWorkspaceSocketOperations } from './useWorkspaceSocket';
 export { useChatSocketOperations } from './useChatSocket';

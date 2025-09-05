@@ -184,11 +184,48 @@ const AdminPage: React.FC = () => {
   const handleLogout = async () => {
     try {
       await dispatch(logoutAdmin()).unwrap();
+      // Clear all admin-related localStorage items
+      clearAdminData();
       navigate('/login');
     } catch (error) {
       // Force logout by clearing local state
-      localStorage.removeItem('adminToken');
+      clearAdminData();
       navigate('/login');
+    }
+  };
+
+  // Helper function to clear all admin-related data
+  const clearAdminData = () => {
+    if (typeof window !== 'undefined') {
+      // Clear admin tokens
+      localStorage.removeItem('adminToken');
+      
+      // Clear language and text direction preferences
+      localStorage.removeItem('taskflow-language');
+      localStorage.removeItem('text-direction');
+      
+      // Clear any other admin-related storage
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (
+          key.includes('admin') ||
+          key.includes('taskflow') ||
+          key.includes('auth') ||
+          key.includes('user') ||
+          key.includes('workspace') ||
+          key.includes('board') ||
+          key.includes('space') ||
+          key.includes('language') ||
+          key.includes('direction') ||
+          key.includes('test-') // Remove test keys
+        )) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      // Remove identified keys
+      keysToRemove.forEach(key => localStorage.removeItem(key));
     }
   };
 

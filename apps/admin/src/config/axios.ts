@@ -44,7 +44,28 @@ axiosInstance.interceptors.response.use(
       switch (status) {
         case 401:
           // Unauthorized - redirect to admin login
-          localStorage.removeItem('adminToken');
+          // Clear all admin-related data
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (
+              key.includes('admin') ||
+              key.includes('taskflow') ||
+              key.includes('auth') ||
+              key.includes('user') ||
+              key.includes('workspace') ||
+              key.includes('board') ||
+              key.includes('space') ||
+              key.includes('language') ||
+              key.includes('direction') ||
+              key.includes('test-') // Remove test keys
+            )) {
+              keysToRemove.push(key);
+            }
+          }
+          
+          // Remove identified keys
+          keysToRemove.forEach(key => localStorage.removeItem(key));
           window.location.href = '/login';
           break;
         case 403:

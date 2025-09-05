@@ -135,42 +135,44 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
     return (
       <div className="relative inline-block" ref={dropdownRef}>
+        {/* Clone the trigger and add dropdown functionality without DOM nesting */}
         {React.cloneElement(trigger as React.ReactElement, {
-          onClick: () => !disabled && handleToggle(!isOpen),
-          onKeyDown: (event: React.KeyboardEvent) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
+          onClick: (e: React.MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!disabled) {
+              handleToggle(!isOpen);
+            }
+            // Call original onClick if it exists
+            if (trigger.props.onClick) {
+              trigger.props.onClick(e);
+            }
+          },
+          onKeyDown: (e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
               if (!disabled) {
                 handleToggle(!isOpen);
               }
+            }
+            // Call original onKeyDown if it exists
+            if (trigger.props.onKeyDown) {
+              trigger.props.onKeyDown(e);
             }
           },
           'aria-haspopup': 'true',
           'aria-expanded': isOpen,
           disabled: disabled,
-          children: (
-            <>
-              {trigger.props.children}
-              {showChevron && (
-                <div className="flex items-center ml-2">
-                  {isOpen ? (
-                    <ChevronUp className="h-4 w-4 transition-transform duration-200" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 transition-transform duration-200" />
-                  )}
-                </div>
-              )}
-            </>
-          ),
         })}
-
+        
         {isOpen && (
-          <div 
-            className={cn(dropdownContentVariants({ side, align }), contentClassName)}
-            data-side={side}
-            style={{
-              animationDuration: '150ms',
-            }}
+          <div
+            className={cn(
+              'absolute z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+              side === 'top' ? 'bottom-full mb-2' : 'top-full mt-2',
+              side === 'left' ? 'right-full mr-2' : side === 'right' ? 'left-full ml-2' : '',
+              contentClassName
+            )}
           >
             {children}
           </div>

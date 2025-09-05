@@ -404,6 +404,39 @@ exports.deleteReadNotifications = async (req, res) => {
     }
 };
 
+// Delete all notifications (both read and unread)
+exports.clearAllNotifications = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        console.log(' [clearAllNotifications] Clearing all notifications for userId:', userId);
+
+        const result = await Notification.deleteMany({
+            recipient: userId
+        });
+
+        console.log(' [clearAllNotifications] Deleted count:', result.deletedCount);
+
+        // Emit unread count update so clients refresh state
+        try {
+            const io = req.app.get('io') || global.io;
+            if (io) {
+                io.notifyUser(userId, 'notifications:unreadCount', {});
+                console.log(' [clearAllNotifications] emitted unreadCount to:', userId);
+            }
+        } catch (e) {
+            logger.warn('Socket emit failed (clearAllNotifications unreadCount):', e);
+        }
+
+        sendResponse(res, 200, true, 'All notifications cleared successfully', {
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        logger.error('Clear all notifications error:', error);
+        sendResponse(res, 500, false, 'Server error clearing all notifications');
+    }
+};
+
 // Create payment notification (for payment success/failure)
 exports.createPaymentNotification = async (req, res) => {
     try {

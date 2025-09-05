@@ -137,8 +137,6 @@ interface PageTransitionProps {
 export const PageTransition = ({ children, location, className = "" }: PageTransitionProps) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-
-
   // Reset transition state when location changes
   useEffect(() => {
     setIsTransitioning(false);

@@ -185,11 +185,9 @@ const Logo: React.FC<LogoProps> = ({
     }
   };
 
-  const navigate = useNavigate();
 
   return (
     <div
-      onClick={() => navigate("/")}
       className={cn(
         "flex items-center cursor-pointer group select-none",
         sizeClasses[size],

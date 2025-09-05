@@ -179,6 +179,7 @@ export interface UseNotificationsReturn {
   markAllAsRead: () => void;
   deleteNotification: (notificationId: string) => void;
   clearReadNotifications: () => void;
+  clearAllNotifications: () => void;
   clearError: () => void;
 }
 

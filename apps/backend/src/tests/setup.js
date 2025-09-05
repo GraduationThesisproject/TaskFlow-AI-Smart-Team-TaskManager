@@ -108,6 +108,23 @@ jest.mock('../utils/email', () => ({
   sendNotificationEmail: jest.fn().mockResolvedValue(true)
 }));
 
+// Mock global notification namespace for tests
+global.notificationNamespace = {
+  sendNotification: jest.fn().mockResolvedValue({
+    _id: 'mock-notification-id',
+    title: 'Mock Notification',
+    message: 'Mock message',
+    recipient: 'mock-recipient-id'
+  }),
+  sendBulkNotifications: jest.fn().mockResolvedValue([
+    { success: true, notification: { _id: 'mock-1' } },
+    { success: true, notification: { _id: 'mock-2' } }
+  ]),
+  broadcastSystemNotification: jest.fn().mockResolvedValue([
+    { success: true, notification: { _id: 'mock-system-1' } }
+  ])
+};
+
 // Suppress MongoDB deprecation warnings in tests
 const originalConsoleWarn = console.warn;
 console.warn = (...args) => {

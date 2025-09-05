@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useAppDispatch, useAppSelector, type AppDispatch } from '../store';
-import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../store';
 import { 
   loginUser, 
   registerUser, 
@@ -18,20 +17,10 @@ import {
   updateProfileSecure,
   changePassword,
 } from '../store/slices/authSlice';
-import type { LoginCredentials, RegisterData, OAuthCallbackData, EmailVerificationData, ResendVerificationData, PasswordResetRequestData, PasswordResetData } from '../types/auth.types';
+import type { LoginCredentials, RegisterData,  EmailVerificationData, ResendVerificationData, PasswordResetRequestData, PasswordResetData } from '../types/auth.types';
+import type { UseOAuthReturn, UseOAuthCallbackReturn } from '../types/hooks.types';
 import { oauthService } from '../services/oauthService';
-
-type UseOAuthReturn = {
-  loginWithOAuth: (provider: 'google' | 'github') => void;
-  signupWithOAuth: (provider: 'google' | 'github') => void;
-};
-
-type UseOAuthCallbackReturn = {
-  handleOAuthCallback: (provider: 'google' | 'github', code: string, state?: string) => Promise<any>;
-  isProcessing: boolean;
-  error: string | null;
-  clearError: () => void;
-};
+import { logoutHelper } from '../utils/logoutHelper';
 
 export const useAuth = () => {
   const dispatch = useAppDispatch();
@@ -58,6 +47,7 @@ export const useAuth = () => {
   const logoutUserHandler = useCallback(async (params: { allDevices?: boolean, navigate?: (path: string) => void } = {}) => {
     const { allDevices = false, navigate } = params;
     await dispatch(logoutUser({ allDevices, navigate }));
+    // logoutHelper is now called internally by logoutUser thunk
   }, [dispatch]);
 
   const clearAuthError = useCallback(() => {

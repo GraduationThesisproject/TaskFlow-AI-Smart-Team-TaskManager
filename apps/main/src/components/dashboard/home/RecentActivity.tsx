@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Typography, Avatar, AvatarImage, AvatarFallback, EmptyState, Skeleton, Button } from "@taskflow/ui";
-import { Clock, AlertCircle } from "lucide-react";
-import { type ActivityItem } from "../../../store/slices/activitySlice";
+import { Card, CardHeader, CardTitle, CardContent, Typography, AvatarWithFallback, EmptyState, Skeleton, Button } from "@taskflow/ui";
+import { Clock, AlertCircle, Settings } from "lucide-react";
 import { useAuth } from '../../../hooks/useAuth';
 import { useActivity } from '../../../hooks/useActivity';
+import { useNavigate } from 'react-router-dom';
+import type { ActivityItem } from '../../../types/store.types';
 
 const ActivityItemComponent: React.FC<{ activity: ActivityItem }> = ({ activity }) => {
   // Prefer the actor from the activity; fall back to authenticated user
@@ -25,7 +26,6 @@ const ActivityItemComponent: React.FC<{ activity: ActivityItem }> = ({ activity 
     ? ((activity.user as any).avatar || (activity.user as any).image || undefined)
     : undefined;
     
-
   const initials = String(actorName)
     .trim()
     .split(' ')
@@ -47,19 +47,19 @@ const ActivityItemComponent: React.FC<{ activity: ActivityItem }> = ({ activity 
     .replace(/^logged out.*$/i, 'Logged out');
 
   return (
-    <div className="flex items-start gap-3 p-2 hover:bg-muted/10 rounded-md transition-colors">
-      <Avatar size="sm" className="flex-shrink-0 mt-1">
-        <AvatarImage src={avatarUrl} alt={actorName} />
-        <AvatarFallback variant="primary" size="sm">
-          {initials}
-        </AvatarFallback>
-      </Avatar>
+    <div className="flex items-start gap-2 py-1 hover:bg-muted/10 rounded-md transition-colors">
+      <AvatarWithFallback 
+        size="xs" 
+        className="flex-shrink-0 mt-0.5"
+        src={avatarUrl}
+        alt={actorName}
+      />
       <div className="flex-1 min-w-0">
-        <Typography variant="body-small" className="font-medium">{actorName}</Typography>
-        <Typography variant="body-small" className="text-muted-foreground break-words">
+        <Typography variant="caption" className="font-medium text-xs">{actorName}</Typography>
+        <Typography variant="caption" className="text-muted-foreground break-words text-xs leading-tight">
           {displayDescription}
         </Typography>
-        <Typography variant="caption" className="text-muted-foreground mt-0.5 block">
+        <Typography variant="caption" className="text-muted-foreground mt-0.5 block text-xs">
           {(() => {
             const d = new Date(activity.createdAt);
             const date = d.toLocaleDateString();
@@ -75,6 +75,7 @@ const ActivityItemComponent: React.FC<{ activity: ActivityItem }> = ({ activity 
 export const RecentActivity: React.FC = () => {
   const { activities, loading, error } = useActivity(true);
   const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
 
   const recentActivities = useMemo(() => {
     return [...activities]
@@ -83,15 +84,19 @@ export const RecentActivity: React.FC = () => {
 
   const displayedActivities = expanded ? recentActivities : recentActivities.slice(0, 3);
 
+  const handleShowMore = () => {
+    navigate('/dashboard/settings/activity');
+  };
+
   if (error) {
     return (
       <Card className="h-auto backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)]">
         <CardHeader className="py-2">
-          <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+          <CardTitle className="text-sm font-semibold">Recent Activity</CardTitle>
         </CardHeader>
         <CardContent className="py-2">
-          <Typography variant="body-medium" className="text-red-600 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" /> Failed to load activity.
+          <Typography variant="caption" className="text-red-600 flex items-center gap-2 text-xs">
+            <AlertCircle className="h-3 w-3" /> Failed to load activity.
           </Typography>
         </CardContent>
       </Card>
@@ -101,24 +106,23 @@ export const RecentActivity: React.FC = () => {
   return (
     <Card className="h-auto backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)]">
       <CardHeader className="py-2">
-        <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+        <CardTitle className="text-sm font-semibold">Recent Activity</CardTitle>
       </CardHeader>
       <CardContent className="py-2">
         {loading && !recentActivities.length ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-md" />)}
+          <div className="space-y-1">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-8 w-full rounded-md" />)}
           </div>
         ) : recentActivities.length === 0 ? (
           <EmptyState
-            icon={<Clock className="h-8 w-8" />}
+            icon={<Clock className="h-5 w-5" />}
             title="No recent activity"
             description="Activity will appear here as your team works on tasks."
           />
         ) : (
           <>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {displayedActivities.map(activity => {
-                // console.log(activity);
                 return <ActivityItemComponent key={activity._id} activity={activity} />
               })}
             </div>
@@ -126,11 +130,12 @@ export const RecentActivity: React.FC = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="mt-2 w-full"
-                onClick={() => setExpanded(v => !v)}
+                className="mt-2 w-full text-xs h-6"
+                onClick={handleShowMore}
                 aria-expanded={expanded}
               >
-                {expanded ? 'Show less' : 'Show more details'}
+                <Settings className="h-3 w-3 mr-1" />
+                View all in Settings
               </Button>
             )}
           </>
