@@ -1,7 +1,11 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
+import { persistStore, persistReducer, createMigrate } from 'redux-persist';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch, useSelector } from 'react-redux';
 import type { TypedUseSelectorHook} from 'react-redux';
 import { env } from '../config/env';
+import { persistEncryptTransform } from './encryptionTransform';
+import { PERSIST_VERSION, persistMigrations } from './persistMigrations';
 
 // Conditionally import socket middleware only when not in mock mode
 let notificationsSocketMiddleware: any = null;
@@ -25,29 +29,49 @@ import activityReducer from './slices/activitySlice';
 import notificationReducer from './slices/notificationSlice';
 import templatesReducer from './slices/templatesSlice.ts';
 import analyticsReducer from './slices/analyticsSlice.ts';
+import permissionReducer from './slices/permissionSlice.ts';
 import testReducer from './slices/testSlice.ts';
 
+const rootReducer = combineReducers({
+  app: appReducer,
+  tasks: taskReducer,
+  workspace: workspaceReducer,
+  spaces: spaceReducer,
+  boards: boardReducer,
+  columns: columnReducer,
+  auth: authReducer,
+  activity: activityReducer,
+  notifications: notificationReducer,
+  templates: templatesReducer,
+  analytics: analyticsReducer,
+  permissions: permissionReducer,
+  test: testReducer,
+});
+
+const persistConfig = {
+  key: 'root',
+  storage: AsyncStorage,
+  version: PERSIST_VERSION,
+  migrate: createMigrate(persistMigrations, { debug: false }),
+  whitelist: ['auth', 'workspace', 'boards', 'spaces'],
+  transforms: [persistEncryptTransform],
+};
+
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
 export const store = configureStore({
-  reducer: {
-    app: appReducer,
-    tasks: taskReducer,
-    workspace: workspaceReducer,
-    spaces: spaceReducer,
-    boards: boardReducer,
-    columns: columnReducer,
-    auth: authReducer,
-    activity: activityReducer,
-    notifications: notificationReducer,
-    templates: templatesReducer,
-    analytics: analyticsReducer,
-    test: testReducer,
-  },
+  reducer: persistedReducer,
   middleware: (getDefaultMiddleware) => {
     const middleware = getDefaultMiddleware({
       serializableCheck: {
         // Ignore specific action types that might contain non-serializable data
         ignoredActions: [
           'persist/PERSIST',
+          'persist/REHYDRATE',
+          'persist/PAUSE',
+          'persist/PURGE',
+          'persist/REGISTER',
+          'persist/FLUSH',
           'auth/setCredentials',
           'auth/updateUser',
           'auth/loginUser/fulfilled'
@@ -78,7 +102,10 @@ export const store = configureStore({
       return middleware;
     }
   },
+  devTools: true,
 });
+
+export const persistor = persistStore(store);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

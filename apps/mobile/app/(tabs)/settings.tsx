@@ -25,6 +25,15 @@ export default function SettingsScreen() {
 
   // Redux selectors
   const { user } = useAppSelector(state => state.auth);
+  
+  // Debug logging
+  console.log('🔧 [Settings] User data from Redux:', {
+    hasUser: !!user,
+    userEmail: user?.user?.email,
+    userName: user?.user?.name,
+    userStructure: user ? Object.keys(user) : 'No user',
+    fullUser: user
+  });
   const { workspaces } = useAppSelector(state => state.workspace);
   const { data: analytics } = useAppSelector(state => state.analytics);
 

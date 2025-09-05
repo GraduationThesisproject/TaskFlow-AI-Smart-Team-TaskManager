@@ -52,18 +52,6 @@ export class AuthService {
   // Get current profile
   static async getProfile(): Promise<ApiResponse<AuthResponse>> {
     try {
-      console.log('🔧 AuthService.getProfile called');
-      console.log('🔧 env.IS_DEV:', env.IS_DEV);
-      console.log('🔧 env.ENABLE_API_MOCKING:', env.ENABLE_API_MOCKING);
-      
-      // Use mock authentication in development mode (force enable for testing)
-      if (env.IS_DEV) {
-        console.log('🔧 Using mock profile service (forced for testing)');
-        return await MockAuthService.getProfile();
-      }
-
-      // Use real authentication
-      console.log('🔧 Using real profile service');
       const response = await axiosInstance.get('/auth/me');
       return response.data;
     } catch (error: any) {
