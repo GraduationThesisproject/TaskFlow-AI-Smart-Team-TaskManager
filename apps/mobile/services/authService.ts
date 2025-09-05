@@ -24,7 +24,6 @@ export class AuthService {
   static async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await axiosInstance.post('/auth/login', credentials);
-      if (response.data.data?.token) await setAuthToken(response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error logging in:', error);
@@ -35,7 +34,7 @@ export class AuthService {
   // Register user
   static async register(data: RegisterData): Promise<ApiResponse<AuthResponse>> {
     try {
-      const response = await axiosInstance.post('/auth/register', data);
+      const response = await axiosInstance.post('/auth/register', data, { timeout: 30000 });
       return response.data;
     } catch (error) {
       console.error('Error registering:', error);

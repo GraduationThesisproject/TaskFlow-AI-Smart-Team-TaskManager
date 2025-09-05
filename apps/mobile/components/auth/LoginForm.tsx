@@ -21,6 +21,7 @@ export default function LoginForm({
   const { login, isLoading, error, clearAuthError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -62,7 +63,7 @@ export default function LoginForm({
       // Clear any general auth error before attempting login
       clearAuthError();
       setSubmitting(true);
-      const result = await login({ email, password });
+      const result = await login({ email, password, rememberMe });
       if ((result as any)?.meta?.requestStatus === 'fulfilled') {
         onSuccess?.();
       }
@@ -121,6 +122,32 @@ export default function LoginForm({
           error={passwordError}
           required
         />
+
+        {/* Remember me toggle */}
+        <TouchableOpacity
+          onPress={() => setRememberMe((v) => !v)}
+          style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}
+        >
+          <View
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: 4,
+              marginRight: 8,
+              borderWidth: 1,
+              borderColor: colors.border,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: rememberMe ? colors.primary : 'transparent',
+            }}
+          >
+            {/* simple check indicator */}
+            {rememberMe ? (
+              <Text style={{ color: colors['primary-foreground'], fontSize: 12 }}>✓</Text>
+            ) : null}
+          </View>
+          <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Remember me</Text>
+        </TouchableOpacity>
 
         {onForgotPassword && (
           <TouchableOpacity onPress={onForgotPassword} style={styles.forgotPassword}>
