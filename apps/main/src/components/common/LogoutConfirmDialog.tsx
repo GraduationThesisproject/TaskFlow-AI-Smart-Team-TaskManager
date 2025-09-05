@@ -1,117 +1,93 @@
-import React, { useState } from 'react';
-import { Button, Typography, Flex, Card } from '@taskflow/ui';
-import { LogOut, X } from 'lucide-react';
-import type { LogoutConfirmDialogProps } from '../../types/interfaces/ui';
+import React from 'react';
+import { Button } from '@taskflow/ui';
+import { Typography } from '@taskflow/ui';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@taskflow/ui';
+import { LogOut, AlertTriangle } from 'lucide-react';
+
+interface LogoutConfirmDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (allDevices?: boolean) => void;
+  userName?: string;
+}
 
 export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  userName = 'User',
+  userName = 'User'
 }) => {
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [logoutAllDevices, setLogoutAllDevices] = useState(false);
-
-  const handleConfirm = async () => {
-    setIsLoggingOut(true);
-    setError(null);
-    try {
-      await onConfirm(logoutAllDevices);
-    } catch (err: any) {
-      setError(err.message || 'Logout failed. Please try again.');
-    } finally {
-      setIsLoggingOut(false);
-      if (!error) {
-        onClose();
-      }
-    }
+  const handleConfirm = (allDevices: boolean = false) => {
+    onConfirm(allDevices);
+    onClose();
   };
 
-  // Reset error and state when dialog opens/closes
-  React.useEffect(() => {
-    if (isOpen) {
-      setError(null);
-      setLogoutAllDevices(false);
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-md p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
-              <LogOut className="w-5 h-5 text-red-500" />
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <ModalContent>
+        <ModalHeader>
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+              <LogOut className="w-5 h-5 text-red-600" />
             </div>
-            <Typography variant="body-medium">Logout</Typography>
+            <div>
+              <Typography variant="h3" className="text-lg font-semibold">
+                Confirm Logout
+              </Typography>
+              <Typography variant="body" className="text-slate-600">
+                Are you sure you want to log out?
+              </Typography>
+            </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <Typography variant="body-medium" className="mb-4 text-muted-foreground">
-          Are you sure you want to log out, <span className="font-medium text-foreground">{userName}</span>?
-        </Typography>
-
-        <div className="mb-6">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={logoutAllDevices}
-              onChange={(e) => setLogoutAllDevices(e.target.checked)}
-              className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
-            />
-            <Typography variant="body-small" className="text-muted-foreground">
-              Log out from all devices
-            </Typography>
-          </label>
-        </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md">
-            <Typography variant="body-small" className="text-red-600 dark:text-red-400">
-              {error}
-            </Typography>
+        </ModalHeader>
+        
+        <ModalBody>
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <Typography variant="body-medium" className="font-medium text-blue-900 mb-1">
+                  Logout Options
+                </Typography>
+                <Typography variant="body" className="text-blue-800 text-sm">
+                  You can log out from this device only, or from all devices where you're signed in.
+                </Typography>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <Typography variant="body" className="text-slate-700">
+                <strong>{userName}</strong>, please choose your logout preference:
+              </Typography>
+            </div>
           </div>
-        )}
-
-        <Flex gap="xs" className="justify-end">
-          <Button
-            variant="ghost"
-            onClick={onClose}
-            disabled={isLoggingOut}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleConfirm}
-            disabled={isLoggingOut}
-            className="flex items-center gap-2"
-          >
-            {isLoggingOut ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Logging out...
-              </>
-            ) : (
-              <>
-                <LogOut className="h-4 w-4" />
-                Log out
-              </>
-            )}
-          </Button>
-        </Flex>
-      </Card>
-    </div>
+        </ModalBody>
+        
+        <ModalFooter>
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleConfirm(false)}
+              className="flex-1"
+            >
+              This Device Only
+            </Button>
+            <Button
+              onClick={() => handleConfirm(true)}
+              className="flex-1 bg-red-600 hover:bg-red-700"
+            >
+              All Devices
+            </Button>
+          </div>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 };

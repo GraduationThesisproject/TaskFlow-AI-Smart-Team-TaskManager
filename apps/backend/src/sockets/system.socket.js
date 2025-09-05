@@ -2,6 +2,7 @@ const jwt = require('../utils/jwt');
 const User = require('../models/User');
 const logger = require('../config/logger');
 const os = require('os');
+const { socketRateLimit } = require('../middlewares/socketRateLimit.middleware');
 
 // Socket authentication middleware for system operations
 const authenticateSystemSocket = async (socket, next) => {
@@ -47,8 +48,13 @@ const handleSystemSocket = (io) => {
     // Create dedicated namespace for system operations
     const systemNamespace = io.of('/system');
     
-    // Apply authentication middleware to namespace
+    // Apply authentication and rate limiting middleware to namespace
     systemNamespace.use(authenticateSystemSocket);
+    systemNamespace.use(socketRateLimit({
+        windowMs: 60000, // 1 minute
+        maxEvents: 50,   // 50 events per minute for system operations
+        message: 'System operation rate limit exceeded. Please wait before making more requests.'
+    }));
     
     systemNamespace.on('connection', (socket) => {
         logger.info(`Admin connected to system namespace: ${socket.user.name} (${socket.id})`);
@@ -85,15 +91,26 @@ const handleSystemSocket = (io) => {
         // Handle system configuration updates
         socket.on('system:update-config', async (data) => {
             try {
-                const { configKey, configValue } = data;
+                const { configKey, configValue } = data || {};
+                
+                // Validate input parameters
+                if (!configKey || typeof configKey !== 'string') {
+                    socket.emit('error', { message: 'Config key is required and must be a string' });
+                    return;
+                }
+                
+                if (configValue === undefined || configValue === null) {
+                    socket.emit('error', { message: 'Config value is required' });
+                    return;
+                }
                 
                 // Validate configuration update
                 if (!isValidSystemConfig(configKey, configValue)) {
-                    socket.emit('error', { message: 'Invalid configuration' });
+                    socket.emit('error', { message: 'Invalid configuration key or value' });
                     return;
                 }
 
-                // Update system configuration (mock implementation)
+                // Update system configuration
                 const result = await updateSystemConfig(configKey, configValue);
                 
                 // Broadcast configuration change to all system monitors
@@ -199,18 +216,41 @@ const handleSystemSocket = (io) => {
 
         // Handle real-time system monitoring subscription
         socket.on('system:subscribe-monitoring', (data) => {
-            const { interval = 5000 } = data || {}; // Default 5 second updates
-            
-            // Start sending periodic system updates
-            const monitoringInterval = setInterval(() => {
-                const systemStatus = getSystemStatus();
-                socket.emit('system:status-update', systemStatus);
-            }, interval);
+            try {
+                const { interval = 30000 } = data || {}; // Default 30 second updates
+                
+                // Validate interval to prevent abuse
+                if (interval < 5000 || interval > 300000) { // 5 seconds to 5 minutes
+                    socket.emit('error', { message: 'Invalid interval value. Must be between 5000 and 300000 ms' });
+                    return;
+                }
+                
+                // Clear any existing monitoring interval
+                if (socket.monitoringInterval) {
+                    clearInterval(socket.monitoringInterval);
+                }
+                
+                // Start sending periodic system updates
+                const monitoringInterval = setInterval(() => {
+                    // Check if socket is still connected before sending
+                    if (socket.connected) {
+                        const systemStatus = getSystemStatus();
+                        socket.emit('system:status-update', systemStatus);
+                    } else {
+                        // Clean up if socket is disconnected
+                        clearInterval(monitoringInterval);
+                    }
+                }, interval);
 
-            // Store interval reference for cleanup
-            socket.monitoringInterval = monitoringInterval;
-            
-            socket.emit('system:monitoring-subscribed', { interval });
+                // Store interval reference for cleanup
+                socket.monitoringInterval = monitoringInterval;
+                
+                socket.emit('system:monitoring-subscribed', { interval });
+                
+            } catch (error) {
+                logger.error('System monitoring subscription error:', error);
+                socket.emit('error', { message: 'Failed to subscribe to system monitoring' });
+            }
         });
 
         // Handle disconnection
@@ -220,6 +260,18 @@ const handleSystemSocket = (io) => {
             // Clean up monitoring interval
             if (socket.monitoringInterval) {
                 clearInterval(socket.monitoringInterval);
+                socket.monitoringInterval = null;
+            }
+        });
+
+        // Handle connection errors
+        socket.on('connect_error', (error) => {
+            logger.error('System socket connection error:', error);
+            
+            // Clean up monitoring interval on connection error
+            if (socket.monitoringInterval) {
+                clearInterval(socket.monitoringInterval);
+                socket.monitoringInterval = null;
             }
         });
 
@@ -315,8 +367,12 @@ const handleSystemSocket = (io) => {
     function isValidSystemConfig(key, value) {
         const validConfigs = {
             'maintenance.enabled': typeof value === 'boolean',
-            'backup.retention': typeof value === 'number' && value > 0,
-            'monitoring.interval': typeof value === 'number' && value >= 1000
+            'backup.retention': typeof value === 'number' && value > 0 && value <= 365, // Max 1 year
+            'monitoring.interval': typeof value === 'number' && value >= 5000 && value <= 300000, // 5s to 5min
+            'backup.enabled': typeof value === 'boolean',
+            'notifications.enabled': typeof value === 'boolean',
+            'max.file.size': typeof value === 'number' && value > 0 && value <= 100 * 1024 * 1024, // Max 100MB
+            'session.timeout': typeof value === 'number' && value >= 300 && value <= 86400 // 5min to 24h
         };
         
         return validConfigs[key] || false;
@@ -361,13 +417,23 @@ const handleSystemSocket = (io) => {
         // Mock backup progress monitoring
         let progress = 0;
         const progressInterval = setInterval(() => {
-            progress += Math.random() * 20;
-            if (progress >= 100) {
-                progress = 100;
+            try {
+                progress += Math.random() * 20;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(progressInterval);
+                }
+                callback({ backupId, progress: Math.round(progress) });
+            } catch (error) {
+                logger.error('Backup progress monitoring error:', error);
                 clearInterval(progressInterval);
             }
-            callback({ backupId, progress: Math.round(progress) });
         }, 1000);
+        
+        // Return cleanup function
+        return () => {
+            clearInterval(progressInterval);
+        };
     }
 
     // Schedule system restart
@@ -404,9 +470,7 @@ const handleSystemSocket = (io) => {
         };
     }
 
-    // Make system namespace available globally
-    global.systemNamespace = systemNamespace;
-    
+    // Return system namespace for proper module management
     return systemNamespace;
 };
 

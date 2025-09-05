@@ -5,24 +5,31 @@ import { cn } from './utils';
 const typographyVariants = cva("", {
   variants: {
     variant: {
-      h1: "text-text-36 font-bold leading-tight tracking-tight",
-      "heading-xl": "text-text-36 font-bold leading-tight tracking-tight",
-      "heading-large": "text-text-20 font-bold leading-tight",
-      h2: "text-text-20 font-bold leading-tight",
-      h3: "text-lg font-semibold leading-tight",
-      h4: "text-base font-semibold leading-tight",
-      "body-large": "text-text-18 font-normal leading-normal",
-      interregular24: "text-2xl font-normal leading-normal",
-      "body-medium": "text-text-16 font-normal leading-normal",
-      "body-small": "text-text-14 font-normal leading-normal",
-      p: "text-text-16 font-normal leading-normal",
-      lead: "text-xl text-muted-foreground",
-      large: "text-lg font-semibold",
-      small: "text-sm font-medium leading-none",
-      muted: "text-sm text-muted-foreground",
+      h1: "text-2xl font-semibold leading-tight tracking-tight",
+      "heading-xl": "text-2xl font-semibold leading-tight tracking-tight",
+      "heading-large": "text-lg font-semibold leading-tight",
+      h2: "text-lg font-semibold leading-tight",
+      h3: "text-base font-semibold leading-tight",
+      h4: "text-sm font-semibold leading-tight",
+      "body-large": "text-base font-normal leading-normal",
+      interregular24: "text-xl font-normal leading-normal",
+      "body-medium": "text-sm font-normal leading-normal",
+      "body-small": "text-xs font-normal leading-normal",
+      p: "text-sm font-normal leading-normal",
+      lead: "text-base text-muted-foreground",
+      large: "text-base font-semibold",
+      small: "text-xs font-medium leading-none",
+      muted: "text-xs text-muted-foreground",
       caption: "text-xs text-muted-foreground",
-      label: "text-sm font-medium leading-none",
-      body: "text-text-16 font-normal leading-normal",
+      label: "text-xs font-medium leading-none",
+      body: "text-sm font-normal leading-normal",
+      // New professional variants
+      "heading-compact": "text-xl font-semibold leading-tight tracking-tight",
+      "subtitle": "text-sm font-medium text-muted-foreground leading-tight",
+      "card-title": "text-sm font-semibold leading-tight",
+      "card-subtitle": "text-xs font-medium text-muted-foreground leading-tight",
+      "metric": "text-lg font-bold leading-tight",
+      "metric-label": "text-xs font-medium text-muted-foreground leading-tight",
     },
     textColor: {
       default: "text-foreground",
@@ -66,6 +73,7 @@ function getDefaultTag(variant: TypographyProps['variant']): keyof JSX.Intrinsic
   switch (variant) {
     case 'h1':
     case 'heading-xl':
+    case 'heading-compact':
       return 'h1';
     case 'h2':
     case 'heading-large':
@@ -80,12 +88,18 @@ function getDefaultTag(variant: TypographyProps['variant']): keyof JSX.Intrinsic
     case 'body-medium':
     case 'body-small':
     case 'body':
+    case 'subtitle':
+      return 'p';
     case 'p':
       return 'p';
     case 'small':
     case 'muted':
     case 'caption':
     case 'label':
+    case 'card-title':
+    case 'card-subtitle':
+    case 'metric':
+    case 'metric-label':
       return 'span';
     case 'interregular24':
       return 'p';

@@ -1,5 +1,16 @@
 // Navbar Types and Interfaces
 
+// Base navbar component interfaces
+export interface BaseNavbarProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface NavbarSectionProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
 export interface User {
   user?: {
     name?: string;

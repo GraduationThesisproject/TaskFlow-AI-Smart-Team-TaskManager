@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { Button, Avatar, AvatarImage, AvatarFallback } from '@taskflow/ui';
+import { Button, AvatarWithFallback } from '@taskflow/ui';
 import Pill from './Pill';
 import { roleBadgeVariant, statusBadgeVariant } from './data';
 import ConfirmRemoveMemberDialog from './ConfirmRemoveMemberDialog';
-import type { User, Member, MembersTableProps } from '../../../../types/interfaces/ui';
+import type { MembersTableProps, Member } from './types';
 
 const MembersTable: React.FC<MembersTableProps> = ({
   filteredMembers,
@@ -102,15 +102,14 @@ const MembersTable: React.FC<MembersTableProps> = ({
               </tr>
             )}
             {!isLoading && !error && filteredMembers.map((m) => (
-              <tr key={m.id} className="rounded-lg">
+              <tr key={m.id || m._id || `member-${m.email}`} className="rounded-lg">
                 <td className="px-3 py-2 border-b border-neutral-100">
                   <div className="flex items-center gap-3 ">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={m.avatar} alt={m.name || 'User'} />
-                      <AvatarFallback variant="primary" className="text-xs">
-                        {m.name && m.name.length > 0 ? m.name.charAt(0).toUpperCase() : 'U'}
-                      </AvatarFallback>
-                    </Avatar>
+                    <AvatarWithFallback
+                      size="sm"
+                      src={m.avatar}
+                      alt={m.name || 'User'}
+                    />
                     <div>
                       <div className="text-sm font-medium" style={{ color: 'hsl(var(--primary-foreground))' }}>
                         {m.name}

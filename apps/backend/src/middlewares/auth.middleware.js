@@ -37,10 +37,12 @@ const authMiddleware = async (req, res, next) => {
                     await userSessions.updateActivity(session.sessionId);
                 }
             } catch (sessionError) {
-                logger.warn('Session validation warning:', sessionError);
                 return sendResponse(res, 401, false, 'Session validation warning');
             }
         }
+        // Populate user roles
+        const userRoles = await user.populate('roles');
+        
         req.user = {
             id: user._id,
             email: user.email,
@@ -48,8 +50,8 @@ const authMiddleware = async (req, res, next) => {
             avatar: user.avatar,
             emailVerified: user.emailVerified,
             isActive: user.isActive,
+            roles: userRoles.roles,
         };
-        logger.info(`Auth middleware: User authenticated - ID: ${req.user.id}, Email: ${req.user.email}, System Role: ${req.user.systemRole}`);
         next();
     } catch (error) {
         if (error.name === 'JsonWebTokenError') {

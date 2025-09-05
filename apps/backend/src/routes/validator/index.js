@@ -16,6 +16,7 @@ const notificationSchemas = require('./notification.schemas');
 const reminderSchemas = require('./reminder.schemas');
 const aiSchemas = require('./ai.schemas');
 const analyticsSchemas = require('./analytics.schemas');
+const githubSchemas = require('./github.schemas');
 
 // Export all schemas
 module.exports = {
@@ -30,5 +31,6 @@ module.exports = {
     notification: notificationSchemas,
     reminder: reminderSchemas,
     ai: aiSchemas,
-    analytics: analyticsSchemas
+    analytics: analyticsSchemas,
+    github: githubSchemas
 };

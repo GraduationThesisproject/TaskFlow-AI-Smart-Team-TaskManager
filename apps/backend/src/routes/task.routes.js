@@ -20,19 +20,19 @@ router.get('/:id', taskController.getTask);
 router.post('/', 
     requireBoardPermission(),
     uploadMiddlewares.taskAttachment,
-    validateMiddleware(taskSchemas.createTaskSchema),
+    validateMiddleware.validateBody(taskSchemas.createTaskSchema),
     taskController.createTask
 );
 
 router.put('/:id', 
     requireBoardPermission(),
-    validateMiddleware(taskSchemas.updateTaskSchema),
+    validateMiddleware.validateBody(taskSchemas.updateTaskSchema),
     taskController.updateTask
 );
 
 router.patch('/:id/move',
     requireBoardPermission(),
-    validateMiddleware(taskSchemas.moveTaskSchema),
+    validateMiddleware.validateBody(taskSchemas.moveTaskSchema),
     taskController.moveTask
 );
 
@@ -40,7 +40,7 @@ router.delete('/:id', requireBoardPermission(), taskController.deleteTask);
 
 router.patch('/bulk-update',
     requireBoardPermission(),
-    validateMiddleware(taskSchemas.bulkUpdateSchema),
+    validateMiddleware.validateBody(taskSchemas.bulkUpdateSchema),
     taskController.bulkUpdateTasks
 );
 
@@ -61,24 +61,24 @@ router.delete('/:id/dependencies/:dependencyId', taskController.removeTaskDepend
 // Comment routes
 router.post('/:id/comments',
     uploadMiddlewares.commentAttachment,
-    validateMiddleware(taskSchemas.addCommentSchema),
+    validateMiddleware.validateBody(taskSchemas.addCommentSchema),
     taskController.addComment
 );
 
 router.put('/comments/:commentId',
-    validateMiddleware(taskSchemas.updateCommentSchema),
+    validateMiddleware.validateBody(taskSchemas.updateCommentSchema),
     taskController.updateComment
 );
 
 router.delete('/comments/:commentId', taskController.deleteComment);
 
 router.post('/comments/:commentId/reactions',
-    validateMiddleware(taskSchemas.addReactionSchema),
+    validateMiddleware.validateBody(taskSchemas.addReactionSchema),
     taskController.addReaction
 );
 
 router.delete('/comments/:commentId/reactions',
-    validateMiddleware(taskSchemas.addReactionSchema),
+    validateMiddleware.validateBody(taskSchemas.addReactionSchema),
     taskController.removeReaction
 );
 
@@ -92,12 +92,12 @@ router.post('/comments/:commentId/resolve',
 
 // Watcher routes
 router.post('/:id/watchers',
-    validateMiddleware(taskSchemas.addWatcherSchema),
+    validateMiddleware.validateBody(taskSchemas.addWatcherSchema),
     taskController.addWatcher
 );
 
 router.delete('/:id/watchers',
-    validateMiddleware(taskSchemas.addWatcherSchema),
+    validateMiddleware.validateBody(taskSchemas.addWatcherSchema),
     taskController.removeWatcher
 );
 

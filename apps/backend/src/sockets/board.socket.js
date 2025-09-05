@@ -55,7 +55,13 @@ const handleBoardSocket = (io) => {
         // Join board room
         socket.on('board:join', async (data) => {
             try {
-                const { boardId } = data;
+                const { boardId } = data || {};
+                
+                // Validate input
+                if (!boardId || typeof boardId !== 'string') {
+                    socket.emit('error', { message: 'Board ID is required and must be a string' });
+                    return;
+                }
                 
                 const board = await Board.findById(boardId);
                 if (!board) {

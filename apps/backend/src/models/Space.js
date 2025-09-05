@@ -136,6 +136,21 @@ const spaceSchema = new mongoose.Schema({
       memberJoinedNotifications: { type: Boolean, default: true }
     }
   },
+  // GitHub Integration
+  githubRepo: {
+    id: { type: Number, default: null },
+    name: { type: String, default: null },
+    fullName: { type: String, default: null },
+    description: { type: String, default: null },
+    url: { type: String, default: null },
+    htmlUrl: { type: String, default: null },
+    cloneUrl: { type: String, default: null },
+    isPrivate: { type: Boolean, default: null },
+    isFork: { type: Boolean, default: null },
+    language: { type: String, default: null },
+    defaultBranch: { type: String, default: 'main' },
+    linkedAt: { type: Date, default: null }
+  },
   activityLog: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ActivityLog'
@@ -164,6 +179,11 @@ const spaceSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     default: null
+  },
+  // When archived, the time after which the space may be auto-purged
+  archiveExpiresAt: { 
+    type: Date, 
+    default: null 
   }
 }, {
   timestamps: true,
@@ -180,6 +200,13 @@ spaceSchema.virtual('memberCount').get(function() {
 spaceSchema.virtual('completionRate').get(function() {
   if (this.stats.totalTasks === 0) return 0;
   return Math.round((this.stats.completedTasks / this.stats.totalTasks) * 100);
+});
+
+// Virtual: seconds remaining until archive expiration (null if not archived or no expiry)
+spaceSchema.virtual('archiveCountdownSeconds').get(function () {
+  if (!this.archiveExpiresAt) return null;
+  const remainingMs = this.archiveExpiresAt.getTime() - Date.now();
+  return remainingMs > 0 ? Math.floor(remainingMs / 1000) : 0;
 });
 
 // Virtual for space health status
@@ -330,6 +357,8 @@ spaceSchema.methods.archive = function(userId) {
   this.isArchived = true;
   this.archivedAt = new Date();
   this.archivedBy = userId;
+  // Set archive expiration to 24 hours from now
+  this.archiveExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
   return this.save();
 };
 
@@ -338,7 +367,56 @@ spaceSchema.methods.unarchive = function() {
   this.isArchived = false;
   this.archivedAt = null;
   this.archivedBy = null;
+  this.archiveExpiresAt = null;
   return this.save();
+};
+
+// Method to permanently delete space and all related data
+spaceSchema.methods.permanentDelete = async function(userId) {
+  const spaceId = this._id;
+  const spaceName = this.name;
+  
+  // Require models locally to avoid duplicate top-level declarations
+  const Task = require('./Task');
+  const Board = require('./Board');
+  const File = require('./File');
+  const Notification = require('./Notification');
+  const Checklist = require('./Checklist');
+  const Reminder = require('./Reminder');
+  const Analytics = require('./Analytics');
+  const Tag = require('./Tag');
+  
+  // Delete all related data in parallel
+  await Promise.all([
+    // Delete all boards in this space
+    Board.deleteMany({ space: spaceId }),
+    // Delete all tasks in this space
+    Task.deleteMany({ space: spaceId }),
+    // Delete all files in this space
+    File.deleteMany({ space: spaceId }),
+    // Delete all notifications related to this space
+    Notification.deleteMany({ space: spaceId }),
+    // Delete all checklists in this space
+    Checklist.deleteMany({ space: spaceId }),
+    // Delete all reminders in this space
+    Reminder.deleteMany({ space: spaceId }),
+    // Delete all analytics for this space
+    Analytics.deleteMany({ space: spaceId }),
+    // Delete all tags in this space
+    Tag.deleteMany({ space: spaceId })
+  ]);
+  
+  // Remove space from workspace
+  const Workspace = require('./Workspace');
+  await Workspace.findByIdAndUpdate(
+    this.workspace,
+    { $pull: { spaces: spaceId } }
+  );
+  
+  // Finally delete the space itself
+  await this.deleteOne();
+  
+  return { message: `Space "${spaceName}" and all related data have been permanently deleted` };
 };
 
 // Method to update settings

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Input, Dropdown, DropdownItem } from '@taskflow/ui';
 import { useAppDispatch } from '../../../store';
-import type { SearchAndFilterProps } from '../../../types/interfaces/ui';
+import type { SearchAndFilterProps } from './types';
 
 const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   search,
@@ -44,10 +44,16 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
         </svg>
       </div>
       <Dropdown
-        trigger={<span className="flex items-center justify-between gap-3">{roleLabel}</span>}
+        trigger={
+          <button className="flex items-center justify-between w-full min-w-[160px] px-3 py-2 text-sm bg-background border border-input rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
+            <span>{roleLabel}</span>
+            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        }
         variant="outline"
         size="sm"
-        className="rounded-lg px-3 py-2 text-sm"
         contentClassName="min-w-[160px]"
       >
         <DropdownItem onClick={() => setRole('all')}>All Roles</DropdownItem>
