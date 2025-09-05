@@ -23,6 +23,7 @@ export default function LoginForm({
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -60,12 +61,15 @@ export default function LoginForm({
     try {
       // Clear any general auth error before attempting login
       clearAuthError();
+      setSubmitting(true);
       const result = await login({ email, password });
       if ((result as any)?.meta?.requestStatus === 'fulfilled') {
         onSuccess?.();
       }
     } catch (_) {
       // Error is handled in the auth slice; local UI will display via `error`
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -128,11 +132,11 @@ export default function LoginForm({
 
         <TouchableOpacity 
           onPress={handleSubmit} 
-          disabled={isLoading} 
-          style={[styles.submitButton, { backgroundColor: colors.primary, opacity: isLoading ? 0.6 : 1 }]}
+          disabled={submitting}
+          style={[styles.submitButton, { backgroundColor: colors.primary, opacity: submitting ? 0.6 : 1 }]}
         >
           <Text style={{ color: colors['primary-foreground'], textAlign: 'center' }}>
-            {isLoading ? 'Signing In...' : 'Sign In'}
+            {submitting ? 'Signing In...' : 'Sign In'}
           </Text>
         </TouchableOpacity>
       </View>

@@ -2,7 +2,7 @@
 
 //--------------------- Imports --------------------
 
-import axiosInstance from '../config/axios';
+import axiosInstance, { setAuthToken } from '../config/axios';
 import axios from 'axios';
 import type { ApiResponse } from '../types/task.types';
 import type {
@@ -24,7 +24,7 @@ export class AuthService {
   static async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await axiosInstance.post('/auth/login', credentials);
-      if (response.data.data?.token) localStorage.setItem('token', response.data.data.token);
+      if (response.data.data?.token) await setAuthToken(response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error logging in:', error);
@@ -92,7 +92,7 @@ export class AuthService {
   static async oauthLogin(oauthData: OAuthUserData): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await axiosInstance.post('/auth/oauth/login', oauthData);
-      if (response.data.data?.token) localStorage.setItem('token', response.data.data.token);
+      if (response.data.data?.token) await setAuthToken(response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error with OAuth login:', error);
@@ -103,7 +103,7 @@ export class AuthService {
   static async oauthRegister(oauthData: OAuthUserData): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await axiosInstance.post('/auth/oauth/register', oauthData);
-      if (response.data.data?.token) localStorage.setItem('token', response.data.data.token);
+      if (response.data.data?.token) await setAuthToken(response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error with OAuth registration:', error);
@@ -125,7 +125,7 @@ export class AuthService {
   static async verifyEmail(verificationData: EmailVerificationData): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await axiosInstance.post('/auth/verify-email', verificationData);
-      if (response.data.data?.token) localStorage.setItem('token', response.data.data.token);
+      if (response.data.data?.token) await setAuthToken(response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error verifying email:', error);

@@ -9,6 +9,7 @@ import { fetchAnalytics } from '@/store/slices/analyticsSlice';
 import { listTemplates } from '@/store/slices/templatesSlice';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
+import { router } from 'expo-router';
 
 export default function DashboardScreen() {
   const colors = useThemeColors();
@@ -262,6 +263,15 @@ export default function DashboardScreen() {
               <FontAwesome name="plus" size={16} color={colors['secondary-foreground']} />
               <Text style={[TextStyles.body.small, { color: colors['secondary-foreground'] }]}>
                 New Workspace
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: colors.accent || colors.card }]}
+              onPress={() => router.push('/login')}
+            >
+              <FontAwesome name="sign-in" size={16} color={colors['foreground']} />
+              <Text style={[TextStyles.body.small, { color: colors.foreground }]}> 
+                Login
               </Text>
             </TouchableOpacity>
           </View>
