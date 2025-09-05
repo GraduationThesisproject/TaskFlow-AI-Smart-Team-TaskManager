@@ -8,7 +8,8 @@ import { Provider } from 'react-redux';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { FontConfig } from '@/constants/Fonts';
-import { store } from '@/store';
+import { store, useAppDispatch, useAppSelector } from '@/store';
+import { checkAuthStatus } from '@/store/slices/authSlice';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -69,11 +70,40 @@ function RootLayoutNav() {
   return (
     <Provider store={store}>
       <ThemeProvider>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
+        <AuthGate />
       </ThemeProvider>
     </Provider>
+  );
+}
+
+function AuthGate() {
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+
+  // On app start, check auth status (reads token from storage and fetches profile with timeout)
+  useEffect(() => {
+    dispatch(checkAuthStatus());
+  }, [dispatch]);
+
+  // Optional: show splash/blank while determining auth
+  if (isLoading) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    // Unauthenticated: expose only login screen to prevent access to other screens
+    return (
+      <Stack>
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+      </Stack>
+    );
+  }
+
+  // Authenticated: show main tabs (workspace section lives under tabs/index)
+  return (
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+    </Stack>
   );
 }
