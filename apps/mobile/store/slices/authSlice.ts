@@ -13,6 +13,7 @@ import type {
   PasswordResetData
 } from '../../types/auth.types';
 import { AuthService } from '../../services/authService';
+import { setAuthToken, clearAuthToken, getAuthToken } from '../../config/axios';
 import { oauthService } from '../../services/oauthService';
 import { getDeviceId } from '../../utils';
 
@@ -86,19 +87,29 @@ export const loginUser = createAsyncThunk(
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
       const response = await AuthService.login(credentials);
-      
-      if (!response.data.token) {
+      const token = (response as any)?.data?.data?.token;
+      if (!token) {
         throw new Error('No token received from server');
       }
-      
-      localStorage.setItem('token', response.data.token);
-      
-      const profileResponse = await AuthService.getProfile();
+      await setAuthToken(token);
+      // Protect against a hanging profile request by adding a timeout
+      const profileTimeoutMs = 8000;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Profile fetch timeout')), profileTimeoutMs);
+      });
+      let userData: any = null;
+      try {
+        const profileResponse = await Promise.race([AuthService.getProfile(), timeoutPromise]);
+        userData = (profileResponse as any)?.data?.data;
+      } catch (e) {
+        // Proceed without profile to avoid blocking login; reducers will set isAuthenticated
+        console.warn('Proceeding without profile after login:', (e as Error).message);
+      }
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: userData ? serializeUser(userData) : null,
+        token
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Login failed';
@@ -112,17 +123,17 @@ export const registerUser = createAsyncThunk(
   async (userData: RegisterData, { rejectWithValue }) => {
     try {
       const response = await AuthService.register(userData);
-      
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
       }
-      
       const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: serializeUser(profileData),
+        token
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
@@ -136,14 +147,14 @@ export const refreshToken = createAsyncThunk(
   async (refreshToken: string, { rejectWithValue }) => {
     try {
       const response = await AuthService.refreshToken(refreshToken);
-      
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
       }
-      
+      const newRefreshToken = (response as any)?.data?.data?.refreshToken;
       return {
-        token: response.data.token,
-        refreshToken: response.data.refreshToken
+        token,
+        refreshToken: newRefreshToken
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Token refresh failed';
@@ -169,7 +180,7 @@ export const checkAuthStatus = createAsyncThunk(
   'auth/checkStatus',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = await getAuthToken();
       
       if (!token) {
         return { isAuthenticated: false, user: null, token: null };
@@ -186,11 +197,11 @@ export const checkAuthStatus = createAsyncThunk(
       
       return {
         isAuthenticated: true,
-        user: serializeUser((response as any).data),
+        user: serializeUser((response as any)?.data?.data),
         token
       };
     } catch (error: any) {
-      localStorage.removeItem('token');
+      await clearAuthToken();
       const errorMessage = error.response?.data?.message || error.message || 'Authentication check failed';
       return rejectWithValue(errorMessage);
     }
@@ -206,7 +217,7 @@ export const logoutUser = createAsyncThunk(
       
       await AuthService.logout(deviceId, allDevices);
       
-      localStorage.removeItem('token');
+      await clearAuthToken();
       
       // Redirect to landing page after successful logout
       if (navigate) {
@@ -217,7 +228,7 @@ export const logoutUser = createAsyncThunk(
       
       return true;
     } catch (error: any) {
-      localStorage.removeItem('token');
+      await clearAuthToken();
       // Still redirect even if there's an error with the API call
       if (typeof window !== 'undefined') {
         window.location.href = '/';
@@ -254,21 +265,21 @@ export const oauthLogin = createAsyncThunk(
         avatar: userInfo.avatar
       });
       
-      if (!response.data.token) {
+      const token = (response as any)?.data?.data?.token;
+      if (!token) {
         throw new Error('No token received from server');
       }
-      
-      localStorage.setItem('token', response.data.token);
-      
+      await setAuthToken(token);
       const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
       
       // Clear OAuth session data
       oauthService.clearOAuthSession();
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: serializeUser(profileData),
+        token
       };
     } catch (error: any) {
       oauthService.clearOAuthSession();
@@ -304,19 +315,20 @@ export const oauthRegister = createAsyncThunk(
         avatar: userInfo.avatar
       });
       
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
       }
-      
       const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
       
       // Clear OAuth session data
       oauthService.clearOAuthSession();
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: serializeUser(profileData),
+        token
       };
     } catch (error: any) {
       oauthService.clearOAuthSession();
@@ -332,17 +344,17 @@ export const verifyEmail = createAsyncThunk(
   async (verificationData: EmailVerificationData, { rejectWithValue }) => {
     try {
       const response = await AuthService.verifyEmail(verificationData);
-      
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
       }
-      
       const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: serializeUser(profileData),
+        token
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Email verification failed';
@@ -450,7 +462,7 @@ const initialState: AuthState = {
   user: null,
   token: null,
   isAuthenticated: false,
-  isLoading: true, // Start with loading true to check auth status
+  isLoading: false,
   error: null,
 };
 
