@@ -13,6 +13,10 @@ const workspaceSchema = new mongoose.Schema({
     trim: true,
     maxlength: [1000, 'Description cannot exceed 1000 characters']
   },
+  avatar: {
+    type: String,
+    default: null
+  },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -128,6 +132,16 @@ const workspaceSchema = new mongoose.Schema({
       }]
     }
   },
+  githubOrg: {
+    id: { type: Number, default: null },
+    login: { type: String, default: null },
+    name: { type: String, default: null },
+    url: { type: String, default: null },
+    avatar: { type: String, default: null },
+    description: { type: String, default: null },
+    isPrivate: { type: Boolean, default: null },
+    linkedAt: { type: Date, default: null }
+  },
   invitations: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Invitation'
@@ -184,6 +198,31 @@ const workspaceSchema = new mongoose.Schema({
     maxBoards: { type: Number, default: 50 },
     maxStorage: { type: Number, default: 1000 }, // in MB
     maxApiCalls: { type: Number, default: 10000 }
+  },
+  // Workspace rules
+  rules: {
+    content: {
+      type: String,
+      default: '',
+      maxlength: 10000 // Limit content size
+    },
+    lastUpdatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    version: {
+      type: Number,
+      default: 1
+    },
+    fileReference: {
+      filename: String,
+      originalName: String,
+      mimeType: String,
+      size: Number,
+      path: String,
+      uploadedAt: Date
+    }
   }
 }, {
   timestamps: true,
@@ -224,6 +263,18 @@ workspaceSchema.virtual('availableFeatures').get(function() {
   };
   
   return planFeatures[this.plan] || planFeatures.free;
+});
+
+// Virtual for formatted rules content
+workspaceSchema.virtual('rulesFormattedContent').get(function() {
+  if (!this.rules || !this.rules.content) return '';
+  
+  // Convert markdown-like formatting to HTML
+  return this.rules.content
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>')
+    .replace(/\n/g, '<br>');
 });
 
 // Virtual: seconds remaining until archive expiration (null if not archived or no expiry)
@@ -364,6 +415,93 @@ workspaceSchema.methods.updateUsage = function(metric, value) {
 // Method to check if feature is available
 workspaceSchema.methods.hasFeature = function(feature) {
   return this.availableFeatures.includes(feature) || this.availableFeatures.includes('all_features');
+};
+
+// Method to update workspace rules
+workspaceSchema.methods.updateRules = function(content, userId) {
+  this.rules = this.rules || {};
+  this.rules.content = content;
+  this.rules.lastUpdatedBy = userId;
+  this.rules.version = (this.rules.version || 0) + 1;
+  return this.save();
+};
+
+// Method to upload rules file
+workspaceSchema.methods.uploadRulesFile = function(file, userId) {
+  this.rules = this.rules || {};
+  this.rules.content = `# Workspace Rules\n\nRules document uploaded as PDF file.\n\nFile: ${file.originalname}\nUploaded: ${new Date().toISOString()}`;
+  this.rules.lastUpdatedBy = userId;
+  this.rules.version = (this.rules.version || 0) + 1;
+  this.rules.fileReference = {
+    filename: file.filename,
+    originalName: file.originalname,
+    mimeType: file.mimetype,
+    size: file.size,
+    path: file.path,
+    uploadedAt: new Date()
+  };
+  return this.save();
+};
+
+// Method to delete workspace rules
+workspaceSchema.methods.deleteRules = function() {
+  this.rules = {
+    content: '',
+    lastUpdatedBy: null,
+    version: 1,
+    fileReference: null
+  };
+  return this.save();
+};
+
+// Method to get or create default rules
+workspaceSchema.methods.getOrCreateRules = function(userId) {
+  console.log('getOrCreateRules called:', {
+    workspaceId: this._id,
+    hasRules: !!this.rules,
+    hasContent: !!this.rules?.content,
+    contentLength: this.rules?.content?.length || 0,
+    contentValue: this.rules?.content
+  });
+  
+  // If rules don't exist or content is empty, create default rules
+  if (!this.rules || !this.rules.content || this.rules.content.trim() === '') {
+    const defaultContent = `# Workspace Rules
+
+Welcome to **${this.name}**! Please follow these guidelines to ensure a productive and respectful environment.
+
+## General Guidelines
+- Be respectful and professional in all communications
+- Use clear and concise language
+- Keep discussions relevant to the workspace goals
+
+## Task Management
+- Update task status regularly
+- Provide clear descriptions and requirements
+- Use appropriate priority levels
+
+## Collaboration
+- Share knowledge and help team members
+- Provide constructive feedback
+- Respect different perspectives and working styles
+
+## Communication
+- Use appropriate channels for different types of communication
+- Respond to messages in a timely manner
+- Keep sensitive information confidential
+
+*These rules can be updated by workspace admins and owners.*`;
+
+    this.rules = {
+      content: defaultContent,
+      lastUpdatedBy: userId,
+      version: 1,
+      fileReference: null
+    };
+    console.log('Creating default rules for workspace:', this._id);
+    return this.save();
+  }
+  return Promise.resolve(this);
 };
 
 // Method to update logo

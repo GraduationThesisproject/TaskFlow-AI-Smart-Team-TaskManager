@@ -7,11 +7,18 @@ export * from './interfaces';
 // Categorized types
 export * from './auth';
 export * from './entities';
+export * from './github.types';
+
+// Store types
+export * from './store.types';
+
+// Hook types
+export * from './hooks.types';
 
 // Legacy type exports (for backward compatibility)
 export * from './api.types';
 export * from './common.types';
-export * from './navbar.types';
+export * from './navbar';
 
 // Re-export specific types that might be used directly
 export type { 

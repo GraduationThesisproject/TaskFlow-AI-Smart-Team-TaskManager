@@ -354,18 +354,18 @@ describe('Notification Socket Tests', () => {
 
   describe('Global Notification Utilities', () => {
     test('should have sendNotification utility', () => {
-      expect(io.sendNotification).toBeDefined();
-      expect(typeof io.sendNotification).toBe('function');
+      expect(global.notificationNamespace.sendNotification).toBeDefined();
+      expect(typeof global.notificationNamespace.sendNotification).toBe('function');
     });
 
     test('should have sendBulkNotifications utility', () => {
-      expect(io.sendBulkNotifications).toBeDefined();
-      expect(typeof io.sendBulkNotifications).toBe('function');
+      expect(global.notificationNamespace.sendBulkNotifications).toBeDefined();
+      expect(typeof global.notificationNamespace.sendBulkNotifications).toBe('function');
     });
 
     test('should have broadcastSystemNotification utility', () => {
-      expect(io.broadcastSystemNotification).toBeDefined();
-      expect(typeof io.broadcastSystemNotification).toBe('function');
+      expect(global.notificationNamespace.broadcastSystemNotification).toBeDefined();
+      expect(typeof global.notificationNamespace.broadcastSystemNotification).toBe('function');
     });
 
     test('should send notification to user', async () => {
@@ -380,7 +380,7 @@ describe('Notification Socket Tests', () => {
          }
        };
 
-      const notification = await io.sendNotification(testUser._id, notificationData);
+      const notification = await global.notificationNamespace.sendNotification(testUser._id, notificationData);
 
       expect(notification).toBeDefined();
       expect(notification.title).toBe(notificationData.title);
@@ -414,7 +414,7 @@ describe('Notification Socket Tests', () => {
          }
       ];
 
-      const results = await io.sendBulkNotifications(notifications);
+      const results = await global.notificationNamespace.sendBulkNotifications(notifications);
 
       expect(results).toBeDefined();
       expect(Array.isArray(results)).toBe(true);
@@ -435,7 +435,7 @@ describe('Notification Socket Tests', () => {
          }
        };
 
-      const results = await io.broadcastSystemNotification(notificationData);
+      const results = await global.notificationNamespace.broadcastSystemNotification(notificationData);
 
       expect(results).toBeDefined();
       expect(Array.isArray(results)).toBe(true);
@@ -497,7 +497,7 @@ describe('Notification Socket Tests', () => {
         });
 
                  // Send a notification using the global utility
-         io.sendNotification(testUser._id, {
+         global.notificationNamespace.sendNotification(testUser._id, {
            title: 'Real-time Test',
            message: 'This is a real-time notification',
            type: 'task_assigned',
@@ -526,7 +526,7 @@ describe('Notification Socket Tests', () => {
           });
 
           // Send a typed notification
-          io.sendNotification(testUser._id, {
+          global.notificationNamespace.sendNotification(testUser._id, {
             title: 'Mention Notification',
             message: 'You were mentioned',
             type: 'comment_mentioned',

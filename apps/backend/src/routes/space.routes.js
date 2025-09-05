@@ -25,25 +25,31 @@ router.get('/:id',
 );
 
 router.post('/', 
-    validateMiddleware(spaceSchemas.createSpaceSchema),
+    validateMiddleware.validateBody(spaceSchemas.createSpaceSchema),
     spaceController.createSpace
 );
 
 router.put('/:id', 
-    requireSpacePermission(),
-    validateMiddleware(spaceSchemas.updateSpaceSchema),
+    requireSpacePermission('/:id'),
+    validateMiddleware.validateBody(spaceSchemas.updateSpaceSchema),
     spaceController.updateSpace
 );
 
 router.post('/:id/members',
-    requireSpacePermission(),
-    validateMiddleware(spaceSchemas.addMemberSchema),
+    requireSpacePermission('/:id/members'),
+    validateMiddleware.validateBody(spaceSchemas.addMemberSchema),
     spaceController.addMember
 );
 
 router.post('/:id/archive',
-    requireSpacePermission(),
+    requireSpacePermission('/:id/archive'),
     spaceController.archiveSpace
+);
+
+// Permanently delete an archived space
+router.delete('/:id/permanent',
+    requireSpacePermission('/:id/permanent'),
+    spaceController.permanentDeleteSpace
 );
 
 module.exports = router;

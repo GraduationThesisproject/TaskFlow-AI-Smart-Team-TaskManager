@@ -1,53 +1,50 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@taskflow/ui';
-import { InvitationService, type InvitationDetails } from '../services/invitationService';
 import { useAuth } from '../hooks/useAuth';
+import { useWorkspace } from '../hooks/useWorkspace';
+import { InvitationService, type InvitationDetails } from '../services/invitationService';
 
 const InviteLanding: React.FC = () => {
-  const { token = '' } = useParams<{ token: string }>();
+  const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-
+  const { setWorkspaceId } = useWorkspace();
+  
+  const [invitation, setInvitation] = useState<InvitationDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [invitation, setInvitation] = useState<InvitationDetails | null>(null);
   const [submitting, setSubmitting] = useState<'accept' | 'decline' | null>(null);
 
-  // Fetch invitation details
   useEffect(() => {
-    let mounted = true;
-    const run = async () => {
-      setLoading(true);
-      setError(null);
+    if (!token) {
+      setError('No invitation token provided');
+      setLoading(false);
+      return;
+    }
+
+    const loadInvitation = async () => {
       try {
         const data = await InvitationService.getByToken(token);
-        if (mounted) setInvitation(data);
+        setInvitation(data);
       } catch (e: any) {
         setError(e?.response?.data?.message || e?.message || 'Failed to load invitation');
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     };
-    if (token) run();
-    else {
-      setLoading(false);
-      setError('Invalid invitation link. Token is missing.');
-    }
-    return () => {
-      mounted = false;
-    };
+
+    loadInvitation();
   }, [token]);
 
-  const targetName = invitation?.targetEntity?.name || 'Workspace';
-
-  const requireAuthAndReturn = useCallback(() => {
-    // Store desired return path and send to landing (sign-in is accessible from landing)
-    try {
-      localStorage.setItem('postLoginRedirect', `/invite/${token}`);
-    } catch {}
-    navigate('/', { replace: true });
-  }, [navigate, token]);
+  const requireAuthAndReturn = () => {
+    navigate('/signin', { 
+      state: { 
+        returnTo: `/invite/${token}`,
+        message: 'Please sign in to accept this invitation'
+      } 
+    });
+  };
 
   const handleAccept = async () => {
     if (!isAuthenticated) return requireAuthAndReturn();
@@ -55,9 +52,12 @@ const InviteLanding: React.FC = () => {
     setError(null);
     try {
       await InvitationService.accept(token);
-      // Navigate to workspace/space
+      // Navigate to workspace/space using Redux state
       if (invitation?.targetEntity?.type === 'Workspace') {
-        navigate(`/workspace?id=${invitation.targetEntity.id}`, { replace: true });
+        // Set the workspace in Redux state first
+        setWorkspaceId(invitation.targetEntity.id);
+        // Navigate to workspace without query parameters
+        navigate('/workspace', { replace: true });
       } else if (invitation?.targetEntity?.type === 'Space') {
         // If there is a space page, navigate accordingly; fallback to workspace
         navigate(`/space?id=${invitation.targetEntity.id}`, { replace: true });
@@ -114,7 +114,7 @@ const InviteLanding: React.FC = () => {
     <div className="min-h-[60vh] flex items-center justify-center p-4">
       <div className="bg-card border rounded-lg p-6 w-full max-w-lg">
         <h1 className="text-2xl font-bold mb-2">You’re invited!</h1>
-        <p className="text-muted-foreground mb-6">Join {invitation.targetEntity.type.toLowerCase()} “{targetName}” as {invitation.role}.</p>
+        <p className="text-muted-foreground mb-6">Join {invitation.targetEntity.type.toLowerCase()} “{invitation.targetEntity.name}” as {invitation.role}.</p>
 
         {invitation.message && (
           <div className="mb-6 p-3 rounded-md border bg-muted/30 text-sm">

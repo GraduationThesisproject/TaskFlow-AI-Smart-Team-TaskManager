@@ -30,7 +30,16 @@ const axiosInstance: AxiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     // Get token from AsyncStorage for each request
-    const token = await AsyncStorage.getItem('token');
+    let token = await AsyncStorage.getItem('token');
+
+    // DEV fallback token: allows testing protected endpoints before login
+    const DEV_TOKEN = (env as any).DEV_TOKEN || (env as any).DEV_AUTH_TOKEN || (env as any).API_DEV_TOKEN;
+    if (!token && __DEV__ && DEV_TOKEN) {
+      token = DEV_TOKEN as string;
+      if (env.ENABLE_DEBUG) {
+        console.warn('⚠️ Using DEV_TOKEN from env for Authorization (development only).');
+      }
+    }
     
     if (env.ENABLE_DEBUG) {
       console.log('🔍 Axios Request:', {
@@ -89,18 +98,45 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error) => {
+    const originalRequest = error?.config;
+
     // Handle common errors
     if (error.response) {
       const { status, data } = error.response;
       
       switch (status) {
-        case 401:
-          // Unauthorized - clear token and redirect to login
+        case 401: {
+          // Attempt a single refresh+retry if we have a refresh token and haven't retried yet
+          if (!originalRequest?._retry) {
+            originalRequest._retry = true;
+            try {
+              const refreshToken = await AsyncStorage.getItem('refreshToken');
+              if (refreshToken) {
+                if (env.ENABLE_DEBUG) console.log('🔁 Attempting token refresh...');
+                const refreshResp = await axiosInstance.post('/auth/refresh', { refreshToken });
+                const accessToken = refreshResp?.data?.data?.token || refreshResp?.data?.accessToken;
+                const newRefresh = refreshResp?.data?.data?.refreshToken || refreshResp?.data?.refreshToken;
+                if (accessToken) {
+                  await AsyncStorage.setItem('token', accessToken);
+                  axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+                  originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+                }
+                if (newRefresh) {
+                  await AsyncStorage.setItem('refreshToken', newRefresh);
+                }
+                if (env.ENABLE_DEBUG) console.log('🔁 Refresh successful. Retrying original request...');
+                return axiosInstance(originalRequest);
+              }
+            } catch (refreshErr) {
+              console.error('🔁 Refresh failed:', refreshErr);
+            }
+          }
+          // Unauthorized - clear token; navigation handled elsewhere
           console.error('Unauthorized access - Token may be invalid or expired');
           await AsyncStorage.removeItem('token');
-          // In React Native, we need to handle navigation differently
-          // This will be handled by the app's navigation system
+          await AsyncStorage.removeItem('refreshToken');
           break;
+        }
         case 403:
           // Forbidden
           console.error('Access forbidden');

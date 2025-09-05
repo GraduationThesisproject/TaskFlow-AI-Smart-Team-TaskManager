@@ -2,7 +2,6 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import axiosInstance from '../../config/axios';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { RootState } from '../index';
 
 import type { TemplateItem, TemplatesFilters, TemplatesState } from '../../types/dash.types';
 
@@ -111,7 +110,7 @@ export const toggleTemplateLike = createAsyncThunk(
 
       // If a request is already in-flight for this id, return current state snapshot to avoid extra POSTs
       if (likeInFlight.has(id)) {
-        const state = getState() as RootState;
+        const state = getState() as any;
         const current = state.templates.items.find((t) => (t as any)._id === id) || state.templates.selected;
         return current as any;
       }
@@ -298,10 +297,10 @@ const templatesSlice = createSlice({
 export const { setFilters, clearSelected, toggleLikeLocal } = templatesSlice.actions;
 
 // Selectors
-export const selectTemplates = (state: RootState) => state.templates.items;
-export const selectTemplatesLoading = (state: RootState) => state.templates.loading;
-export const selectTemplatesError = (state: RootState) => state.templates.error;
-export const selectTemplateSelected = (state: RootState) => state.templates.selected;
-export const selectTemplateFilters = (state: RootState) => state.templates.filters;
+export const selectTemplates = (state: any) => state.templates.items;
+export const selectTemplatesLoading = (state: any) => state.templates.loading;
+export const selectTemplatesError = (state: any) => state.templates.error;
+export const selectTemplateSelected = (state: any) => state.templates.selected;
+export const selectTemplateFilters = (state: any) => state.templates.filters;
 
 export default templatesSlice.reducer;

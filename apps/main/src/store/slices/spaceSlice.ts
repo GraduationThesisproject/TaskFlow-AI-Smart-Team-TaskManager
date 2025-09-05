@@ -18,8 +18,12 @@ export const fetchSpace = createAsyncThunk(
 export const fetchSpacesByWorkspace = createAsyncThunk(
   'spaces/fetchSpacesByWorkspace',
   async (workspaceId: string) => {
-    const response = await SpaceService.getSpacesByWorkspace(workspaceId);
-    return response.data || [];
+    try {
+      const response = await SpaceService.getSpacesByWorkspace(workspaceId);
+      return response.data || [];
+    } catch (error) {
+      throw error;
+    }
   }
 );
 
@@ -71,10 +75,35 @@ export const removeSpaceMember = createAsyncThunk(
   }
 );
 
+export const archiveSpace = createAsyncThunk(
+  'spaces/archiveSpace',
+  async (spaceId: string) => {
+    const response = await SpaceService.updateSpace(spaceId, { isArchived: true });
+    return response.data;
+  }
+);
+
+export const unarchiveSpace = createAsyncThunk(
+  'spaces/unarchiveSpace',
+  async (spaceId: string) => {
+    const response = await SpaceService.updateSpace(spaceId, { isArchived: false });
+    return response.data;
+  }
+);
+
+export const permanentDeleteSpace = createAsyncThunk(
+  'spaces/permanentDeleteSpace',
+  async (spaceId: string) => {
+    const response = await SpaceService.permanentDeleteSpace(spaceId);
+    return { spaceId, message: response.message };
+  }
+);
+
 // Initial state
 const initialState: SpaceState = {
   spaces: [],
   currentSpace: null,
+  currentWorkspaceId: null,
   loading: false,
   error: null,
   socketConnected: false
@@ -88,6 +117,20 @@ const spaceSlice = createSlice({
     // Set current space
     setCurrentSpace: (state, action: PayloadAction<Space | null>) => {
       state.currentSpace = action.payload;
+    },
+    
+    // Clear loading state
+    clearLoading: (state) => {
+      state.loading = false;
+      state.error = null;
+    },
+    
+    // Clear spaces data
+    clearSpaces: (state) => {
+      state.spaces = [];
+      state.currentWorkspaceId = null;
+      state.loading = false;
+      state.error = null;
     },
     
     // Socket connection status
@@ -128,9 +171,9 @@ const spaceSlice = createSlice({
       })
       .addCase(fetchSpace.fulfilled, (state, action) => {
         state.loading = false;
-        // The response might have a space property or be the space directly
+        // Backend returns ApiResponse<Space> with data.space property
         const responseData = action.payload as any;
-        state.currentSpace = responseData.space || responseData;
+        state.currentSpace = responseData?.data?.space || responseData?.space;
       })
       .addCase(fetchSpace.rejected, (state, action) => {
         state.loading = false;
@@ -145,11 +188,18 @@ const spaceSlice = createSlice({
       })
       .addCase(fetchSpacesByWorkspace.fulfilled, (state, action) => {
         state.loading = false;
-        state.spaces = action.payload;
+        // Backend sendResponse structure: { success, message, timestamp, data: { spaces: [...], count: number } }
+        // So we need to extract action.payload.data.spaces
+        const spacesData = action.payload?.data?.spaces || action.payload?.spaces || action.payload?.data || action.payload || [];
+        state.spaces = Array.isArray(spacesData) ? spacesData : [];
+        // Store the workspace ID to track which workspace these spaces belong to
+        state.currentWorkspaceId = action.meta.arg;
       })
       .addCase(fetchSpacesByWorkspace.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch spaces';
+        // Clear current workspace ID on error to allow retry
+        state.currentWorkspaceId = null;
       });
     
     // Create space
@@ -160,7 +210,11 @@ const spaceSlice = createSlice({
       })
       .addCase(createSpace.fulfilled, (state, action) => {
         state.loading = false;
-        state.spaces.push(action.payload);
+        // Backend returns ApiResponse<Space> with data.space property
+        const newSpace = action.payload?.data?.space || action.payload?.space;
+        if (newSpace) {
+          state.spaces.push(newSpace);
+        }
       })
       .addCase(createSpace.rejected, (state, action) => {
         state.loading = false;
@@ -175,12 +229,16 @@ const spaceSlice = createSlice({
       })
       .addCase(updateSpace.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.spaces.findIndex(space => space._id === action.payload._id);
-        if (index !== -1) {
-          state.spaces[index] = action.payload;
-        }
-        if (state.currentSpace?._id === action.payload._id) {
-          state.currentSpace = action.payload;
+        // Backend returns ApiResponse<Space> with data.space property
+        const updatedSpace = action.payload?.data?.space || action.payload?.space;
+        if (updatedSpace) {
+          const index = state.spaces.findIndex(space => space._id === updatedSpace._id);
+          if (index !== -1) {
+            state.spaces[index] = updatedSpace;
+          }
+          if (state.currentSpace?._id === updatedSpace._id) {
+            state.currentSpace = updatedSpace;
+          }
         }
       })
       .addCase(updateSpace.rejected, (state, action) => {
@@ -188,29 +246,161 @@ const spaceSlice = createSlice({
         state.error = action.error.message || 'Failed to update space';
       });
     
-    // Delete space
-    builder
-      .addCase(deleteSpace.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(deleteSpace.fulfilled, (state, action) => {
+         // Delete space
+     builder
+       .addCase(deleteSpace.pending, (state) => {
+         state.loading = true;
+         state.error = null;
+       })
+       .addCase(deleteSpace.fulfilled, (state, action) => {
+         state.loading = false;
+         state.spaces = state.spaces.filter(space => space._id !== action.payload);
+         if (state.currentSpace?._id === action.payload) {
+           state.currentSpace = null;
+         }
+       })
+       .addCase(deleteSpace.rejected, (state, action) => {
+         state.loading = false;
+         state.error = action.error.message || 'Failed to delete space';
+       });
+     
+     // Get space members
+     builder
+       .addCase(getSpaceMembers.pending, (state) => {
+         state.loading = true;
+         state.error = null;
+       })
+       .addCase(getSpaceMembers.fulfilled, (state, action) => {
+         state.loading = false;
+         // Handle space members response
+         const membersData = action.payload?.data || action.payload || [];
+         // You might want to store members in a separate state property
+         // For now, we'll just clear the error
+       })
+       .addCase(getSpaceMembers.rejected, (state, action) => {
+         state.loading = false;
+         state.error = action.error.message || 'Failed to fetch space members';
+       });
+     
+     // Add space member
+     builder
+       .addCase(addSpaceMember.pending, (state) => {
+         state.loading = true;
+         state.error = null;
+       })
+       .addCase(addSpaceMember.fulfilled, (state, action) => {
+         state.loading = false;
+         // Handle adding space member
+         // You might want to update the space's member list
+       })
+       .addCase(addSpaceMember.rejected, (state, action) => {
+         state.loading = false;
+         state.error = action.error.message || 'Failed to add space member';
+       });
+     
+     // Remove space member
+     builder
+       .addCase(removeSpaceMember.pending, (state) => {
+         state.loading = true;
+         state.error = null;
+       })
+       .addCase(removeSpaceMember.fulfilled, (state, action) => {
+         state.loading = false;
+         // Handle removing space member
+         // You might want to update the space's member list
+       })
+       .addCase(removeSpaceMember.rejected, (state, action) => {
+         state.loading = false;
+         state.error = action.error.message || 'Failed to remove space member';
+       });
+     
+     // Archive space
+     builder
+       .addCase(archiveSpace.pending, (state) => {
+         state.loading = true;
+         state.error = null;
+       })
+             .addCase(archiveSpace.fulfilled, (state, action) => {
         state.loading = false;
-        state.spaces = state.spaces.filter(space => space._id !== action.payload);
-        if (state.currentSpace?._id === action.payload) {
-          state.currentSpace = null;
+        console.log('Archive space fulfilled:', { payload: action.payload, data: action.payload?.data });
+        const updatedSpace = action.payload?.data?.space || action.payload?.space;
+        if (updatedSpace) {
+          console.log('Updating space in state:', { spaceId: updatedSpace._id, isArchived: updatedSpace.isArchived });
+          const index = state.spaces.findIndex(space => space._id === updatedSpace._id);
+          if (index !== -1) {
+            state.spaces[index] = updatedSpace;
+            console.log('Space updated in array at index:', index);
+          }
+          if (state.currentSpace?._id === updatedSpace._id) {
+            state.currentSpace = updatedSpace;
+            console.log('Current space updated');
+          }
+        } else {
+          console.warn('No updated space data found in archive response');
         }
       })
-      .addCase(deleteSpace.rejected, (state, action) => {
+       .addCase(archiveSpace.rejected, (state, action) => {
+         state.loading = false;
+         state.error = action.error.message || 'Failed to archive space';
+       });
+     
+     // Unarchive space
+     builder
+       .addCase(unarchiveSpace.pending, (state) => {
+         state.loading = true;
+         state.error = null;
+       })
+             .addCase(unarchiveSpace.fulfilled, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Failed to delete space';
+        console.log('Unarchive space fulfilled:', { payload: action.payload, data: action.payload?.data });
+        const updatedSpace = action.payload?.data?.space || action.payload?.space;
+        if (updatedSpace) {
+          console.log('Updating space in state:', { spaceId: updatedSpace._id, isArchived: updatedSpace.isArchived });
+          const index = state.spaces.findIndex(space => space._id === updatedSpace._id);
+          if (index !== -1) {
+            state.spaces[index] = updatedSpace;
+            console.log('Space updated in array at index:', index);
+          }
+          if (state.currentSpace?._id === updatedSpace._id) {
+            state.currentSpace = updatedSpace;
+            console.log('Current space updated');
+          }
+        } else {
+          console.warn('No updated space data found in unarchive response');
+        }
+      })
+             .addCase(unarchiveSpace.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to unarchive space';
       });
+     
+     // Permanent delete space
+     builder
+       .addCase(permanentDeleteSpace.pending, (state) => {
+         state.loading = true;
+         state.error = null;
+       })
+       .addCase(permanentDeleteSpace.fulfilled, (state, action) => {
+         state.loading = false;
+         const { spaceId } = action.payload;
+         // Remove the space from the state
+         state.spaces = state.spaces.filter(space => space._id !== spaceId);
+         if (state.currentSpace?._id === spaceId) {
+           state.currentSpace = null;
+         }
+       })
+       .addCase(permanentDeleteSpace.rejected, (state, action) => {
+         state.loading = false;
+         state.error = action.error.message || 'Failed to permanently delete space';
+       });
   }
 });
 
 // Export actions
 export const {
   setCurrentSpace,
+  clearLoading,
+  clearSpaces,
   setSocketConnected,
   updateSpaceRealTime,
   addSpaceRealTime,

@@ -48,7 +48,7 @@
     // File categorization
     category: {
       type: String,
-      enum: ['avatar', 'task_attachment', 'comment_attachment', 'logo', 'board_background', 'general'],
+      enum: ['avatar', 'workspace_avatar', 'task_attachment', 'comment_attachment', 'logo', 'board_background', 'general'],
       required: true
     },
     
@@ -361,7 +361,7 @@
 
   // Static method to create from Multer upload
   fileSchema.statics.createFromUpload = function(multerFile, uploadedBy, category = 'general', additionalData = {}) {
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3001';
+    const baseUrl = process.env.BASE_URL || env.BASE_URL || 'http://localhost:3001';
     
     // Import fileTypeConfigs from multer config to get the correct storage folder
     const { fileTypeConfigs } = require('../config/multer');

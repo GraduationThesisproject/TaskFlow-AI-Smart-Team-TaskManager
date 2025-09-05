@@ -15,27 +15,27 @@ router.get('/space/:spaceId', boardController.getBoards);
 router.get('/:id', boardController.getBoard);
 
 router.post('/', 
-    requireBoardPermission(),
-    validateMiddleware(boardSchemas.createBoardSchema),
+    requireBoardPermission('/'),
+    validateMiddleware.validateBody(boardSchemas.createBoardSchema),
     boardController.createBoard
 );
 
 router.put('/:id', 
-    requireBoardPermission(),
-    validateMiddleware(boardSchemas.updateBoardSchema),
+    requireBoardPermission('/:id'),
+    validateMiddleware.validateBody(boardSchemas.updateBoardSchema),
     boardController.updateBoard
 );
 
-router.delete('/:id', requireBoardPermission(), boardController.deleteBoard);
+router.delete('/:id', requireBoardPermission('/:id'), boardController.deleteBoard);
 
 // Column routes
 router.post('/:id/columns',
-    validateMiddleware(boardSchemas.addColumnSchema),
+    validateMiddleware.validateBody(boardSchemas.addColumnSchema),
     boardController.addColumn
 );
 
 router.put('/:id/columns/:columnId',
-    validateMiddleware(boardSchemas.updateColumnSchema),
+    validateMiddleware.validateBody(boardSchemas.updateColumnSchema),
     boardController.updateColumn
 );
 

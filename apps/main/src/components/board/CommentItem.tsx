@@ -12,6 +12,7 @@ import {
 } from '@taskflow/ui';
 import type { CommentReaction } from '../../types/task.types';
 import { CommentService } from '../../services/commentService';
+import { useToast } from '../../hooks/useToast';
 import type { CommentItemProps } from '../../types/interfaces/ui';
 
 const REACTION_EMOJIS = ['👍', '❤️', '😊', '🎉', '👏', '🔥', '💯', '🚀'];
@@ -24,6 +25,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   onCommentDelete,
   onReplyAdd
 }) => {
+  const { warning } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
@@ -64,7 +66,11 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this comment?')) return;
+    warning(
+      'Are you sure you want to delete this comment?',
+      'Delete Comment',
+      { duration: 0, dismissible: true }
+    );
     
     setIsSubmitting(true);
     try {
