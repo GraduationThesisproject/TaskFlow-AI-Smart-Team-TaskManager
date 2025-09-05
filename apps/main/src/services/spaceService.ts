@@ -125,4 +125,15 @@ export class SpaceService {
       throw error;
     }
   }
+
+  // Permanently delete space
+  static async permanentDeleteSpace(id: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.delete(`/spaces/${id}/permanent`);
+      return response.data;
+    } catch (error) {
+      console.error('Error permanently deleting space:', error);
+      throw error;
+    }
+  }
 }

@@ -1,89 +1,110 @@
-import React, { Component } from 'react';
-import { Typography, Button, Card, CardContent } from '@taskflow/ui';
-import {env} from '../../config/env';
-import type { ErrorBoundaryProps, ErrorBoundaryState, ErrorBoundaryWrapperProps } from '../../types/interfaces/ui';
+import React, { Component, ReactNode } from 'react';
+import { Button } from '@taskflow/ui';
+import { Typography } from '@taskflow/ui';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+  errorInfo?: any;
+}
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: any) => void;
+}
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    // Update state so the next render will show the fallback UI
-    return { hasError: true, error, errorInfo: null };
+    return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error details
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: any) {
+    this.setState({ errorInfo });
     
-    // Update state with error info
-    this.setState({
-      error,
-      errorInfo
-    });
-
-    // Call custom error handler if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
+    }
+    
+    // Log error to console in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('ErrorBoundary caught an error:', error, errorInfo);
     }
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+  };
+
+  handleGoHome = () => {
+    window.location.href = '/';
   };
 
   render() {
     if (this.state.hasError) {
-      // Custom fallback UI
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
-      // Default fallback UI
       return (
-        <div className="flex items-center justify-center min-h-[400px] p-6">
-          <Card className="max-w-lg w-full">
-            <CardContent className="p-8 text-center">
-              <div className="text-6xl mb-4">⚠️</div>
-              <Typography variant="h3" className="mb-4 text-destructive">
-                Something went wrong
-              </Typography>
-              <Typography variant="body-medium" textColor="muted" className="mb-6">
-                We encountered an unexpected error. Please try refreshing the page or contact support if the problem persists.
-              </Typography>
-              
-              {/* Error details in development */}
-              {env.NODE_ENV === 'development' && this.state.error && (
-                <div className="mb-6 p-4 bg-muted rounded-lg text-left">
-                  <Typography variant="body-small" className="font-mono text-destructive">
-                    {this.state.error.message}
-                  </Typography>
-                  {this.state.errorInfo?.componentStack && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-sm">Component Stack</summary>
-                      <pre className="text-xs mt-2 overflow-auto">
-                        {this.state.errorInfo.componentStack}
-                      </pre>
-                    </details>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="w-8 h-8 text-red-600" />
+            </div>
+            
+            <Typography variant="h2" className="text-2xl font-bold text-slate-900 mb-3">
+              Oops! Something went wrong
+            </Typography>
+            
+            <Typography variant="body" className="text-slate-600 mb-6">
+              We encountered an unexpected error. Don't worry, our team has been notified and is working to fix it.
+            </Typography>
+            
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <details className="mb-6 text-left">
+                <summary className="cursor-pointer text-sm font-medium text-slate-700 mb-2">
+                  Error Details (Development)
+                </summary>
+                <div className="bg-slate-100 rounded-lg p-3 text-xs font-mono text-slate-800 overflow-auto max-h-32">
+                  <div className="mb-2">
+                    <strong>Error:</strong> {this.state.error.message}
+                  </div>
+                  {this.state.error.stack && (
+                    <div>
+                      <strong>Stack:</strong>
+                      <pre className="whitespace-pre-wrap">{this.state.error.stack}</pre>
+                    </div>
                   )}
                 </div>
-              )}
-
-              <div className="flex gap-3 justify-center">
-                <Button onClick={this.handleRetry} variant="default">
-                  Try Again
-                </Button>
-                <Button 
-                  onClick={() => window.location.reload()} 
-                  variant="outline"
-                >
-                  Refresh Page
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </details>
+            )}
+            
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                onClick={this.handleRetry}
+                className="flex-1"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Try Again
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={this.handleGoHome}
+                className="flex-1"
+              >
+                <Home className="w-4 h-4 mr-2" />
+                Go Home
+              </Button>
+            </div>
+          </div>
         </div>
       );
     }
@@ -92,25 +113,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 }
 
-// Functional component wrapper for easier usage
-
-export const ErrorBoundaryWrapper: React.FC<ErrorBoundaryWrapperProps> = ({ 
-  children, 
-  fallback,
-  name 
-}) => {
-  const handleError = (error: Error, errorInfo: React.ErrorInfo) => {
-    // Log to console with component name if provided
-    const componentName = name || 'Unknown Component';
-    console.error(`Error in ${componentName}:`, error, errorInfo);
-    
-    // In production, you might want to send this to an error reporting service
-    // like Sentry, LogRocket, etc.
-  };
-
-  return (
-    <ErrorBoundary fallback={fallback} onError={handleError}>
-      {children}
-    </ErrorBoundary>
-  );
-};
+// Higher-order component wrapper for easier usage
+export const ErrorBoundaryWrapper: React.FC<{
+  children: ReactNode;
+  fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: any) => void;
+}> = ({ children, fallback, onError }) => (
+  <ErrorBoundary fallback={fallback} onError={onError}>
+    {children}
+  </ErrorBoundary>
+);

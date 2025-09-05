@@ -42,17 +42,18 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="workspace"
+        options={{
+          title: 'Workspace',
+          tabBarIcon: ({ color }) => <TabBarIcon name="folder" color={color} />,
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
           tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="board"
-        options={{
-          title: 'Board',
-          tabBarIcon: ({ color }) => <TabBarIcon name="columns" color={color} />,
         }}
       />
     </Tabs>

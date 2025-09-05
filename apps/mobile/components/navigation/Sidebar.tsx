@@ -8,7 +8,7 @@ import { router } from 'expo-router';
 interface SidebarProps {
   isVisible: boolean;
   onClose: () => void;
-  currentSection: 'dashboard' | 'settings' | 'board';
+  currentSection: 'dashboard' | 'settings' | 'workspace';
 }
 
 interface NavItem {
@@ -16,18 +16,11 @@ interface NavItem {
   label: string;
   icon: React.ComponentProps<typeof FontAwesome>['name'];
   route: string;
-  section: 'dashboard' | 'settings' | 'board';
+  section: 'dashboard' | 'settings' | 'workspace';
 }
 
 const dashboardItems: NavItem[] = [
   { id: 'home', label: 'Dashboard', icon: 'home', route: '/index', section: 'dashboard' },
-];
-
-const boardItems: NavItem[] = [
-  { id: 'kanban', label: 'Kanban', icon: 'th-large', route: '/board/kanban', section: 'board' },
-  { id: 'list', label: 'List', icon: 'list', route: '/board/list', section: 'board' },
-  { id: 'timeline', label: 'Timeline', icon: 'clock-o', route: '/board/timeline', section: 'board' },
-  { id: 'task', label: 'Task Details', icon: 'tasks', route: '/board/task', section: 'board' },
 ];
 
 const settingsItems: NavItem[] = [
@@ -35,6 +28,11 @@ const settingsItems: NavItem[] = [
   { id: 'theme', label: 'Theme Settings', icon: 'paint-brush', route: '/settings/theme', section: 'settings' },
   { id: 'notifications', label: 'Notifications', icon: 'bell', route: '/settings/notifications', section: 'settings' },
   { id: 'upgrade', label: 'Upgrade', icon: 'star', route: '/settings/upgrade', section: 'settings' },
+];
+
+const workspaceItems: NavItem[] = [
+  { id: 'ws-reports', label: 'Reports', icon: 'line-chart', route: '/(tabs)/workspace/reports', section: 'workspace' },
+  { id: 'ws-settings', label: 'Settings', icon: 'cog', route: '/(tabs)/workspace/settings', section: 'workspace' },
 ];
 
 export default function Sidebar({ isVisible, onClose, currentSection }: SidebarProps) {
@@ -59,7 +57,6 @@ export default function Sidebar({ isVisible, onClose, currentSection }: SidebarP
 
   const handleNavigation = (route: string) => {
     onClose();
-    // Navigate to the route
     if (route.startsWith('/')) {
       router.push(route as any);
     }
@@ -69,8 +66,8 @@ export default function Sidebar({ isVisible, onClose, currentSection }: SidebarP
     switch (currentSection) {
       case 'dashboard':
         return dashboardItems;
-      case 'board':
-        return boardItems;
+      case 'workspace':
+        return workspaceItems;
       case 'settings':
       default:
         return settingsItems;
@@ -81,8 +78,8 @@ export default function Sidebar({ isVisible, onClose, currentSection }: SidebarP
     switch (currentSection) {
       case 'dashboard':
         return 'Dashboard';
-      case 'board':
-        return 'Board';
+      case 'workspace':
+        return 'Workspace';
       case 'settings':
       default:
         return 'Settings';

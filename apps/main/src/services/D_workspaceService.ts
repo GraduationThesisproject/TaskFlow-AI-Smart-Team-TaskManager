@@ -171,6 +171,35 @@ export class WorkspaceService {
     }
   }
 
+  // Avatar management
+  static async uploadAvatar(id: string, file: File): Promise<{ workspace: Workspace; avatar: { url: string; filename: string; size: number } }> {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const response = await axiosInstance.post(`/workspaces/${id}/avatar`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Error uploading workspace avatar:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to upload workspace avatar');
+    }
+  }
+
+  static async removeAvatar(id: string): Promise<{ workspace: Workspace }> {
+    try {
+      const response = await axiosInstance.delete(`/workspaces/${id}/avatar`);
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Error removing workspace avatar:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to remove workspace avatar');
+    }
+  }
+
   // Dev-only: force owner
   static async forceOwnerDev(id: string): Promise<{ message: string }> {
     try {

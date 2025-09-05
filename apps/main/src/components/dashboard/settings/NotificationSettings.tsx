@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Typography, Switch, Button } from '@taskflow/ui';
-import { Save } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, Typography, Switch, Button, Badge, Separator } from '@taskflow/ui';
+import { Save, Bell, Mail, Smartphone, Clock, Calendar, Megaphone, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { updatePreferences, updateUser } from '../../../store/slices/authSlice';
 import {NotificationSettingsState} from "../../../types/dash.types"
-
 
 const NotificationSettings: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -14,7 +13,6 @@ const NotificationSettings: React.FC = () => {
     emailNotifications: (() => {
       const pref: any = user?.preferences?.notifications?.email;
       if (pref && typeof pref === 'object') {
-        // If backend returns object, toggle is on if any sub-flag is true
         return Object.values(pref).some(Boolean);
       }
       return pref ?? true;
@@ -43,7 +41,7 @@ const NotificationSettings: React.FC = () => {
     marketingEmails: user?.preferences?.notifications?.marketing ?? false,
   });
 
-  // Keep local UI settings in sync when Redux user.preferences change (e.g., after saves or external updates)
+  // Keep local UI settings in sync when Redux user.preferences change
   React.useEffect(() => {
     setSettings({
       emailNotifications: (() => {
@@ -113,7 +111,7 @@ const NotificationSettings: React.FC = () => {
           templateCreated: settings.realTimeNotifications,
         };
 
-        // Optimistic update so middleware reacts instantly (connect/disconnect without refresh)
+        // Optimistic update so middleware reacts instantly
         const currentPrefs: any = user.preferences || {};
         const currentNotif: any = currentPrefs.notifications || {};
         dispatch(updateUser({
@@ -129,7 +127,7 @@ const NotificationSettings: React.FC = () => {
           },
         } as any));
 
-        // Persist to backend preferences (authService -> /auth/preferences)
+        // Persist to backend preferences
         await dispatch(
           updatePreferences({
             section: 'notifications',
@@ -150,38 +148,228 @@ const NotificationSettings: React.FC = () => {
     }
   };
 
+  const notificationOptions = [
+    {
+      key: 'emailNotifications',
+      title: 'Email Notifications',
+      description: 'Receive important updates and summaries via email',
+      icon: Mail,
+      gradient: 'from-blue-500 to-cyan-500',
+      category: 'Communication'
+    },
+    {
+      key: 'pushNotifications',
+      title: 'Push Notifications',
+      description: 'Get instant alerts on your device for real-time updates',
+      icon: Smartphone,
+      gradient: 'from-green-500 to-emerald-500',
+      category: 'Communication'
+    },
+    {
+      key: 'realTimeNotifications',
+      title: 'Real-time Updates',
+      description: 'Instant notifications for live collaboration and changes',
+      icon: Clock,
+      gradient: 'from-purple-500 to-pink-500',
+      category: 'Communication'
+    },
+    {
+      key: 'weeklySummary',
+      title: 'Weekly Summary',
+      description: 'Receive a comprehensive weekly progress report',
+      icon: Calendar,
+      gradient: 'from-orange-500 to-red-500',
+      category: 'Reports'
+    },
+    {
+      key: 'marketingEmails',
+      title: 'Marketing Updates',
+      description: 'Stay informed about new features and improvements',
+      icon: Megaphone,
+      gradient: 'from-indigo-500 to-purple-500',
+      category: 'Updates'
+    }
+  ];
+
+  const getActiveCount = () => {
+    return Object.values(settings).filter(Boolean).length;
+  };
+
+  const getCategoryCount = (category: string) => {
+    return notificationOptions.filter(opt => opt.category === category).length;
+  };
+
+  const getCategoryActiveCount = (category: string) => {
+    return notificationOptions
+      .filter(opt => opt.category === category)
+      .filter(opt => settings[opt.key as keyof NotificationSettingsState]).length;
+  };
+
   return (
-    <Card className="backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)] hover:shadow-[0_0_28px_hsl(var(--accent)/0.18)] transition-shadow">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <CardTitle>Notifications</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {[
-          { key: 'emailNotifications', title: 'Email Notifications', desc: 'Receive notifications via email' },
-          { key: 'pushNotifications', title: 'Push Notifications', desc: 'Get instant updates on your device' },
-          { key: 'realTimeNotifications', title: 'Real Time Notifications', desc: 'Get instant updates on your device' },
-          { key: 'weeklySummary', title: 'Weekly Summary', desc: 'Weekly progress reports' },
-          { key: 'marketingEmails', title: 'Marketing Emails', desc: 'Receive updates about new features' },
-        ].map((item) => (
-          <div key={item.key} className="flex items-center justify-between p-4 border rounded-lg ring-1 ring-accent/10 border-[hsl(var(--accent))]/20 shadow-[0_0_8px_hsl(var(--accent)/0.08)]">
-            <div>
-              <Typography variant="body-medium" className="font-medium">{item.title}</Typography>
-              <Typography variant="caption" className="text-muted-foreground">{item.desc}</Typography>
+    <div className="space-y-8">
+      {/* Header Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-6 border-0 shadow-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-500/20">
+              <Bell className="h-5 w-5 text-blue-600" />
             </div>
-            <Switch
-              checked={settings[item.key as keyof NotificationSettingsState]}
-              onCheckedChange={(checked) => onToggle(item.key as keyof NotificationSettingsState, checked)}
-            />
+            <div>
+              <Typography variant="h3" className="font-bold">{getActiveCount()}</Typography>
+              <Typography variant="body-small" className="text-muted-foreground">Active Notifications</Typography>
+            </div>
           </div>
-        ))}
-        <Button onClick={onSave} disabled={isLoading}>
-          <Save className="h-4 w-4 mr-2" />
-          Save Settings
-        </Button>
-      </CardContent>
-    </Card>
+        </Card>
+        
+        <Card className="p-6 border-0 shadow-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-green-500/20">
+              <Mail className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <Typography variant="h3" className="font-bold">{getCategoryActiveCount('Communication')}</Typography>
+              <Typography variant="body-small" className="text-muted-foreground">Communication</Typography>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="p-6 border-0 shadow-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-purple-500/20">
+              <Calendar className="h-5 w-5 text-purple-600" />
+            </div>
+            <div>
+              <Typography variant="h3" className="font-bold">{getCategoryActiveCount('Reports')}</Typography>
+              <Typography variant="body-small" className="text-muted-foreground">Reports & Updates</Typography>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Main Settings Card */}
+      <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-card to-card/50 backdrop-blur-sm">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Bell className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-semibold">Notification Preferences</CardTitle>
+              <Typography variant="body-small" className="text-muted-foreground mt-1">
+                Customize how and when you receive notifications
+              </Typography>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-8 space-y-8">
+          {/* Communication Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Typography variant="body-medium" className="font-semibold">Communication</Typography>
+              <Badge variant="secondary" className="text-xs">
+                {getCategoryActiveCount('Communication')}/{getCategoryCount('Communication')}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              {notificationOptions
+                .filter(opt => opt.category === 'Communication')
+                .map((item) => {
+                  const IconComponent = item.icon;
+                  return (
+                    <div
+                      key={item.key}
+                      className={`p-6 rounded-xl border-2 transition-all duration-200 ${
+                        settings[item.key as keyof NotificationSettingsState]
+                          ? 'border-primary/50 bg-primary/5 shadow-lg shadow-primary/20'
+                          : 'border-border hover:border-primary/30 hover:bg-primary/5'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center`}>
+                            <IconComponent className="h-6 w-6 text-white" />
+                          </div>
+                          <div className="space-y-1">
+                            <Typography variant="body-medium" className="font-medium">{item.title}</Typography>
+                            <Typography variant="body-small" className="text-muted-foreground">{item.description}</Typography>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={settings[item.key as keyof NotificationSettingsState]}
+                          onCheckedChange={(checked) => onToggle(item.key as keyof NotificationSettingsState, checked)}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Reports Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Typography variant="body-medium" className="font-semibold">Reports & Updates</Typography>
+              <Badge variant="secondary" className="text-xs">
+                {getCategoryActiveCount('Reports') + getCategoryActiveCount('Updates')}/{getCategoryCount('Reports') + getCategoryCount('Updates')}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              {notificationOptions
+                .filter(opt => opt.category === 'Reports' || opt.category === 'Updates')
+                .map((item) => {
+                  const IconComponent = item.icon;
+                  return (
+                    <div
+                      key={item.key}
+                      className={`p-6 rounded-xl border-2 transition-all duration-200 ${
+                        settings[item.key as keyof NotificationSettingsState]
+                          ? 'border-primary/50 bg-primary/5 shadow-lg shadow-primary/20'
+                          : 'border-border hover:border-primary/30 hover:bg-primary/5'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center`}>
+                            <IconComponent className="h-6 w-6 text-white" />
+                          </div>
+                          <div className="space-y-1">
+                            <Typography variant="body-medium" className="font-medium">{item.title}</Typography>
+                            <Typography variant="body-small" className="text-muted-foreground">{item.description}</Typography>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={settings[item.key as keyof NotificationSettingsState]}
+                          onCheckedChange={(checked) => onToggle(item.key as keyof NotificationSettingsState, checked)}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex items-center justify-between pt-6 border-t border-border/50">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-emerald-500" />
+              <Typography variant="body-small" className="text-muted-foreground">
+                Changes will be applied immediately
+              </Typography>
+            </div>
+            <Button 
+              onClick={onSave} 
+              disabled={isLoading}
+              className="gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {isLoading ? 'Saving...' : 'Save Settings'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

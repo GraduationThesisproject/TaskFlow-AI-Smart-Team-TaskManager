@@ -39,7 +39,6 @@ export interface WorkspaceState extends BaseState {
   currentWorkspace: any | null;
   spaces: any[];
   selectedSpace: any | null;
-  currentWorkspaceId: string | null;
   members: any[];
 }
 

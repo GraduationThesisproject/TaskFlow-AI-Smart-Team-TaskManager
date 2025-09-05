@@ -11,7 +11,7 @@ router.use(authMiddleware);
 
 // Routes
 router.post('/suggestions',
-    validateMiddleware(aiSchemas.taskSuggestionsSchema),
+    validateMiddleware.validateBody(aiSchemas.taskSuggestionsSchema),
     aiController.generateTaskSuggestions
 );
 
@@ -19,12 +19,12 @@ router.get('/risks/space/:spaceId', aiController.analyzeTaskRisks);
 router.get('/risks/board/:boardId', aiController.analyzeTaskRisks);
 
 router.post('/parse',
-    validateMiddleware(aiSchemas.naturalLanguageSchema),
+    validateMiddleware.validateBody(aiSchemas.naturalLanguageSchema),
     aiController.parseNaturalLanguage
 );
 
 router.post('/timeline/:spaceId',
-    validateMiddleware(aiSchemas.timelineSchema),
+    validateMiddleware.validateBody(aiSchemas.timelineSchema),
     aiController.generateSpaceTimeline
 );
 
@@ -33,7 +33,7 @@ router.get('/recommendations/:spaceId', aiController.getSmartRecommendations);
 router.get('/performance/:spaceId', aiController.analyzeTeamPerformance);
 
 router.post('/description',
-    validateMiddleware(aiSchemas.taskDescriptionSchema),
+    validateMiddleware.validateBody(aiSchemas.taskDescriptionSchema),
     aiController.generateTaskDescription
 );
 

@@ -3,9 +3,7 @@ import type {
   AuthState, 
   LoginCredentials, 
   RegisterData, 
-  AuthResponse, 
   User,
-  OAuthLoginData,
   OAuthCallbackData,
   EmailVerificationData,
   ResendVerificationData,
@@ -182,6 +180,7 @@ export const checkAuthStatus = createAsyncThunk(
       });
       
       const profilePromise = AuthService.getProfile();
+      
       const response = await Promise.race([profilePromise, timeoutPromise]);
       
       return {
@@ -206,21 +205,19 @@ export const logoutUser = createAsyncThunk(
       
       await AuthService.logout(deviceId, allDevices);
       
-      localStorage.removeItem('token');
-      
-      // Redirect to landing page after successful logout
-      if (navigate) {
-        navigate('/');
-      } else if (typeof window !== 'undefined') {
-        window.location.href = '/';
+      // Use comprehensive logout helper to clear all data
+      if (typeof window !== 'undefined') {
+        // Import and use logoutHelper
+        const { logoutHelper } = await import('../../utils/logoutHelper');
+        logoutHelper();
       }
       
       return true;
     } catch (error: any) {
-      localStorage.removeItem('token');
-      // Still redirect even if there's an error with the API call
+      // Even if API call fails, clear local data
       if (typeof window !== 'undefined') {
-        window.location.href = '/';
+        const { logoutHelper } = await import('../../utils/logoutHelper');
+        logoutHelper();
       }
       const errorMessage = error.response?.data?.message || error.message || 'Logout failed';
       return rejectWithValue(errorMessage);
@@ -487,6 +484,13 @@ const authSlice = createSlice({
         }
       }
     },
+    logout: (state) => {
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+      state.error = null;
+      state.isLoading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -671,7 +675,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setCredentials, updateUser } = authSlice.actions;
+export const { clearError, setCredentials, updateUser, logout } = authSlice.actions;
 export default authSlice.reducer;
 
 // Selectors for easy access to user data

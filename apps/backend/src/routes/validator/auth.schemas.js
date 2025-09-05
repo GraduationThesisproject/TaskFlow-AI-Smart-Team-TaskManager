@@ -196,12 +196,16 @@ const sessionIdSchema = {
 
 const activityLogSchema = {
     limit: { 
-        number: true, 
+        string: true,
+        pattern: /^\d+$/,
+        transform: (value) => parseInt(value, 10),
         min: 1, 
         max: 100 
     },
     page: { 
-        number: true, 
+        string: true,
+        pattern: /^\d+$/,
+        transform: (value) => parseInt(value, 10),
         min: 1 
     }
 };

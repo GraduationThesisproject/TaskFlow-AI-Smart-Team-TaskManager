@@ -8,7 +8,7 @@ const logger = require('../config/logger');
 // Get user notifications
 exports.getNotifications = async (req, res) => {
     try {
-        const { limit = 50, page = 1, isRead, types, priority} = req.query;
+        const { limit = 50, page = 1, isRead, types, priority, entityType, entityId} = req.query;
         const userId = req.user.id;
 
         console.log(' [getNotifications] userId:', userId, 'query:', { limit, page, isRead, types, priority, entityType, entityId });
@@ -407,6 +407,39 @@ exports.deleteReadNotifications = async (req, res) => {
     } catch (error) {
         logger.error('Delete read notifications error:', error);
         sendResponse(res, 500, false, 'Server error deleting read notifications');
+    }
+};
+
+// Delete all notifications (both read and unread)
+exports.clearAllNotifications = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        console.log(' [clearAllNotifications] Clearing all notifications for userId:', userId);
+
+        const result = await Notification.deleteMany({
+            recipient: userId
+        });
+
+        console.log(' [clearAllNotifications] Deleted count:', result.deletedCount);
+
+        // Emit unread count update so clients refresh state
+        try {
+            const io = req.app.get('io') || global.io;
+            if (io) {
+                io.notifyUser(userId, 'notifications:unreadCount', {});
+                console.log(' [clearAllNotifications] emitted unreadCount to:', userId);
+            }
+        } catch (e) {
+            logger.warn('Socket emit failed (clearAllNotifications unreadCount):', e);
+        }
+
+        sendResponse(res, 200, true, 'All notifications cleared successfully', {
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        logger.error('Clear all notifications error:', error);
+        sendResponse(res, 500, false, 'Server error clearing all notifications');
     }
 };
 
