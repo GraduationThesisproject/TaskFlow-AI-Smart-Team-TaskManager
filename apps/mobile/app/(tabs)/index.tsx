@@ -11,6 +11,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
 import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
+import StatsCards from '@/components/cards/StatsCards';
 
 // Welcome Header Component
 const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
@@ -302,6 +303,7 @@ const UpcomingDeadlines: React.FC = () => {
 export default function DashboardScreen() {
   const colors = useThemeColors();
   const dispatch = useAppDispatch();
+  const { logout } = useAuth();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -617,5 +619,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
 });

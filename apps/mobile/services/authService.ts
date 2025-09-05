@@ -27,18 +27,10 @@ export class AuthService {
   static async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
     try {
       console.log('🔧 AuthService.login called');
-      console.log('🔧 env.IS_DEV:', env.IS_DEV);
-      console.log('🔧 env.ENABLE_API_MOCKING:', env.ENABLE_API_MOCKING);
-      
-      // Use mock authentication in development mode (force enable for testing)
-      if (env.IS_DEV) {
-        console.log('🔧 Using mock authentication service (forced for testing)');
-        return await MockAuthService.login(credentials);
-      }
-
-      // Use real authentication
       console.log('🔧 Using real authentication service');
+      
       const response = await axiosInstance.post('/auth/login', credentials);
+      if (response.data.data?.token) await AsyncStorage.setItem('token', response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error logging in:', error);

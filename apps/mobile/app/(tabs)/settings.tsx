@@ -10,11 +10,13 @@ import Sidebar from '@/components/navigation/Sidebar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MockAuthService, TEST_ACCOUNT } from '@/services/mockAuthService';
 import { loginUser } from '@/store/slices/authSlice';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function SettingsScreen() {
   const colors = useThemeColors();
   const { theme, setTheme } = useTheme();
   const dispatch = useAppDispatch();
+  const { logout } = useAuth();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -47,6 +49,31 @@ export default function SettingsScreen() {
 
   const handleThemeToggle = (value: boolean) => {
     setTheme(value ? 'dark' : 'light');
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout? You will need to login again to access your account.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Logout', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('🚪 Logging out user...');
+              await logout();
+              console.log('✅ Logout successful');
+              Alert.alert('Logged Out', 'You have been successfully logged out.');
+            } catch (error) {
+              console.error('❌ Logout failed:', error);
+              Alert.alert('Logout Failed', 'Failed to logout. Please try again.');
+            }
+          }
+        },
+      ]
+    );
   };
 
   const handleDeleteAccount = () => {
@@ -165,6 +192,17 @@ export default function SettingsScreen() {
               </Text>
             </View>
           </View>
+          
+          {/* Quick Logout Button */}
+          <TouchableOpacity 
+            style={[styles.quickLogoutButton, { backgroundColor: colors.secondary, marginTop: 16 }]}
+            onPress={handleLogout}
+          >
+            <FontAwesome name="sign-out" size={16} color={colors['secondary-foreground']} />
+            <Text style={[TextStyles.body.small, { color: colors['secondary-foreground'] }]}>
+              Logout
+            </Text>
+          </TouchableOpacity>
         </Card>
 
         {/* Account Summary */}
@@ -387,8 +425,21 @@ export default function SettingsScreen() {
           <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
             Danger Zone
           </Text>
+          
+          {/* Logout Button */}
           <TouchableOpacity 
-            style={[styles.dangerButton, { backgroundColor: colors.destructive }]}
+            style={[styles.logoutButton, { backgroundColor: colors.warning }]}
+            onPress={handleLogout}
+          >
+            <FontAwesome name="sign-out" size={16} color={colors.foreground} />
+            <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
+              Logout
+            </Text>
+          </TouchableOpacity>
+          
+          {/* Delete Account Button */}
+          <TouchableOpacity 
+            style={[styles.dangerButton, { backgroundColor: colors.destructive, marginTop: 12 }]}
             onPress={handleDeleteAccount}
           >
             <FontAwesome name="trash" size={16} color={colors['destructive-foreground']} />
@@ -456,6 +507,14 @@ const styles = StyleSheet.create({
   profileDetails: {
     flex: 1,
   },
+  quickLogoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
   accountStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -497,6 +556,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     marginTop: 16,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    gap: 8,
   },
   dangerButton: {
     flexDirection: 'row',
