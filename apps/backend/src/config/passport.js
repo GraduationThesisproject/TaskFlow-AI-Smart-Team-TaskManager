@@ -1,4 +1,9 @@
 const passport = require('passport');
+const User = require('../models/User');
+const logger = require('../config/logger');
+const env = require('../config/env');
+const { encryptToken } = require('../utils/github');
+
 let GoogleStrategy, GitHubStrategy;
 
 // Try to load OAuth strategies, but don't crash if they're not available
@@ -13,10 +18,6 @@ try {
 } catch (error) {
     console.warn('GitHub OAuth package not installed - GitHub OAuth disabled');
 }
-
-const User = require('../models/User');
-const logger = require('./logger');
-const env = require('./env');
 
 // Configuration check function
 const checkOAuthConfig = (provider, clientId, clientSecret) => {
@@ -124,29 +125,26 @@ console.log('🔍 GitHub OAuth Configuration Check:', {
     hasStrategy: !!GitHubStrategy,
     clientId: env.GITHUB_CLIENT_ID ? `${env.GITHUB_CLIENT_ID.substring(0, 10)}...` : 'NOT SET',
     clientSecret: env.GITHUB_CLIENT_SECRET ? `${env.GITHUB_CLIENT_SECRET.substring(0, 10)}...` : 'NOT SET',
-    callbackURL: env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
+    callbackURL: env.GITHUB_CALLBACK_URL,
     configAvailable: githubConfig.available,
     reason: githubConfig.reason
 });
 
 if (GitHubStrategy && githubConfig.available) {
-    console.log('🔵 Initializing GitHub OAuth Strategy with config:', {
-        clientID: env.GITHUB_CLIENT_ID,
-        callbackURL: env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
-        scope: ['user:email']
-    });
+
     
     passport.use(new GitHubStrategy({
         clientID: env.GITHUB_CLIENT_ID,
         clientSecret: env.GITHUB_CLIENT_SECRET,
-        callbackURL: env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
-        scope: ['user:email']
+        callbackURL: env.GITHUB_CALLBACK_URL,
+        scope: ['user:email', 'read:org', 'repo']
     }, async (accessToken, refreshToken, profile, done) => {
         console.log('🟣 GitHub OAuth Strategy - Profile received');
         console.log('🟣 Profile ID:', profile.id);
         console.log('🟣 Profile username:', profile.username);
         console.log('🟣 Profile display name:', profile.displayName);
         console.log('🟣 Profile photos:', profile.photos);
+        console.log('🟣 Access Token received:', accessToken ? 'YES' : 'NO');
         
         try {
             // Get user email from GitHub
@@ -187,10 +185,22 @@ if (GitHubStrategy && githubConfig.available) {
                 if (!user.oauthProviders.includes('github')) {
                     console.log('🔵 Adding GitHub to oauthProviders');
                     user.oauthProviders.push('github');
-                    user.githubId = profile.id;
-                    await user.save();
-                    console.log('✅ User updated with GitHub OAuth info');
                 }
+                
+                // Update GitHub information
+                user.github = {
+                    accessToken: encryptToken(accessToken),
+                    githubId: profile.id,
+                    username: profile.username,
+                    avatar: profile.photos[0]?.value,
+                    email: primaryEmail.value,
+                    scope: 'user:email read:org repo',
+                    lastSync: new Date()
+                };
+                user.hasOAuthProviders = true;
+                
+                await user.save();
+                console.log('✅ User updated with GitHub OAuth info');
                 return done(null, user);
             }
             
@@ -203,6 +213,16 @@ if (GitHubStrategy && githubConfig.available) {
                 avatar: profile.photos[0]?.value,
                 githubId: profile.id,
                 oauthProviders: ['github'],
+                hasOAuthProviders: true,
+                github: {
+                    accessToken: encryptToken(accessToken),
+                    githubId: profile.id,
+                    username: profile.username,
+                    avatar: profile.photos[0]?.value,
+                    email: primaryEmail.value,
+                    scope: 'user:email read:org repo',
+                    lastSync: new Date()
+                },
                 emailVerified: true, // OAuth users are pre-verified
                 password: null // No password for OAuth users
             };
@@ -221,19 +241,18 @@ if (GitHubStrategy && githubConfig.available) {
             
             logger.info(`New GitHub OAuth user created: ${user.email}`);
             return done(null, user);
+            
         } catch (error) {
             console.log('❌ GitHub OAuth error in strategy:', error);
             logger.error('GitHub OAuth error:', error);
             return done(error, null);
         }
     }));
+    
     logger.info('GitHub OAuth strategy initialized');
 } else {
-    if (!GitHubStrategy) {
-        logger.warn('GitHub OAuth package not available - GitHub OAuth disabled');
-    } else {
-        logger.warn(`GitHub OAuth disabled: ${githubConfig.reason}`);
-    }
+    logger.warn('GitHub OAuth package not available - GitHub OAuth disabled');
+    logger.warn(`GitHub OAuth disabled: ${githubConfig.reason}`);
 }
 
 // Serialize user for session

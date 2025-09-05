@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Avatar, AvatarImage, AvatarFallback } from "@taskflow/ui";
+import { Button, AvatarWithFallback } from "@taskflow/ui";
 import { ThemeToggleButton } from "../common/navbar/authNav/ThemeToggleButton";
 import { LogOut } from "lucide-react";
 import type { User, UserProfileProps } from "../../types/interfaces/ui";
@@ -21,14 +21,11 @@ export function UserProfile({ user, onLogout, className = "" }: UserProfileProps
       {/* User Info and Logout */}
       <div className="flex items-center gap-3">
         <div className="hidden sm:flex items-center gap-2 text-sm">
-          <Avatar size="sm">
-            {user?.user?.avatar && (
-              <AvatarImage src={user.user.avatar} alt={user.user.name || 'User'} />
-            )}
-            <AvatarFallback variant="primary">
-              {user?.user?.name?.charAt(0) || 'U'}
-            </AvatarFallback>
-          </Avatar>
+          <AvatarWithFallback
+            size="sm"
+            src={user?.user?.avatar}
+            alt={user?.user?.name || 'User'}
+          />
           <span className="font-medium text-foreground">
             {user?.user?.name || 'User'}
           </span>

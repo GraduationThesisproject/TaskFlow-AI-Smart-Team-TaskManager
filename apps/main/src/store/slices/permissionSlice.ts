@@ -1,13 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { WorkspaceRole } from '../../types/workspace.types';
 import type { PayloadAction } from '@reduxjs/toolkit';
-
-export interface PermissionState {
-  currentUserRole: WorkspaceRole | null;
-  workspacePermissions: Record<string, WorkspaceRole>;
-  isLoading: boolean;
-  error: string | null;
-}
+import type { PermissionState } from '../../types/store.types';
 
 const initialState: PermissionState = {
   currentUserRole: null,

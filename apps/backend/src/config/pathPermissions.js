@@ -58,6 +58,31 @@ const WORKSPACE_PERMISSIONS = {
         GET: ['owner', 'admin', 'member', 'viewer'],
         PUT: ['owner', 'admin'],
         DELETE: ['owner', 'admin']
+    },
+    '/workspace/:id/avatar': {
+        GET: ['owner', 'admin', 'member', 'viewer'],
+        POST: ['owner', 'admin'],
+        DELETE: ['owner', 'admin']
+    },
+    '/workspace/:id/rules': {
+        GET: ['owner', 'admin', 'member', 'viewer'],
+        PUT: ['owner', 'admin'],
+        DELETE: ['owner']
+    },
+    '/workspace/:id/rules/upload': {
+        POST: ['owner', 'admin']
+    },
+    '/workspace/:id/invite-link': {
+        GET: ['owner', 'admin']
+    },
+    '/workspace/:id/invite': {
+        POST: ['owner', 'admin']
+    },
+    '/workspace/:id/transfer-ownership': {
+        POST: ['owner']
+    },
+    '/workspace/:id/permanent': {
+        DELETE: ['owner']
     }
 };
 
@@ -91,6 +116,9 @@ const SPACE_PERMISSIONS = {
     },
     '/space/:id/archive': {
         POST: ['owner', 'admin']
+    },
+    '/space/:id/permanent': {
+        DELETE: ['owner', 'admin']
     }
 };
 
@@ -313,7 +341,20 @@ const hasRolePermission = (userRole, requiredRoles) => {
     return requiredRoles.includes(userRole);
 };
 const hasPermission = (userRole, path, method) => {
-    return ALL_PATH_PERMISSIONS[path]?.[method]?.includes(userRole);
+    const permissions = ALL_PATH_PERMISSIONS[path];
+    const allowedRoles = permissions?.[method];
+    const hasAccess = allowedRoles?.includes(userRole);
+    
+    console.log(`Permission check:`, {
+        userRole,
+        path,
+        method,
+        permissions,
+        allowedRoles,
+        hasAccess
+    });
+    
+    return hasAccess;
 };
 
 const getRoleLevel = (role) => {

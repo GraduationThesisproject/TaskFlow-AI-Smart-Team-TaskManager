@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@taskflow/ui';
 import { Modal } from '@taskflow/ui';
-import type { ConfirmRemoveMemberDialogProps } from '../../../types/interfaces/ui';
+import type { ConfirmRemoveMemberDialogProps } from './types';
 
 const ConfirmRemoveMemberDialog: React.FC<ConfirmRemoveMemberDialogProps> = ({
   isOpen,

@@ -117,13 +117,13 @@ const LandingPageHome = () => {
 
   const renderStatCard = useCallback((stat: typeof stats[0], index: number) => (
     <div key={index} className="text-center group">
-      <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-        <stat.icon className="w-8 h-8 text-blue-600" />
+      <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+        <stat.icon className="w-8 h-8 text-primary" />
       </div>
-      <Typography variant="h3" className="text-3xl font-bold text-slate-900 mb-2">
+      <Typography variant="h3" className="text-3xl font-bold text-foreground mb-2">
         {stat.number}
       </Typography>
-      <Typography variant="body" className="text-slate-600 font-medium">
+      <Typography variant="body" className="text-muted-foreground font-medium">
         {stat.label}
       </Typography>
     </div>
@@ -131,7 +131,7 @@ const LandingPageHome = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-900">
+      <div className="min-h-screen bg-gradient-to-br from-background via-card to-muted/30 text-foreground">
         
         <HeroSection
           title="Transform Your"
@@ -152,7 +152,7 @@ const LandingPageHome = () => {
 
         {/* Stats Section with Lazy Loading */}
         <LazyComponent>
-          <section className="py-16 bg-white/50 backdrop-blur-sm border-y border-slate-200/50">
+          <section className="py-16 bg-card/50 backdrop-blur-sm border-y border-border/50">
             <Container size="6xl">
               <div ref={setStatsRef} className="grid grid-cols-2 md:grid-cols-4 gap-8">
                 <DataRenderer
@@ -174,10 +174,10 @@ const LandingPageHome = () => {
           <section className="py-24">
             <Container size="6xl">
               <div className="text-center mb-20">
-                <Typography variant="h2" className="text-4xl md:text-5xl font-bold mb-6 text-slate-900">
+                <Typography variant="h2" className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
                   Why Teams Choose TaskFlow
                 </Typography>
-                <Typography variant="lead" className="text-xl text-slate-600 max-w-2xl mx-auto">
+                <Typography variant="lead" className="text-xl text-muted-foreground max-w-2xl mx-auto">
                   Powerful features designed to make your team more productive, collaborative, and successful
                 </Typography>
               </div>
@@ -187,7 +187,7 @@ const LandingPageHome = () => {
                   data={features}
                   renderItem={renderFeatureCard}
                   renderEmpty={() => (
-                    <div className="col-span-4 text-center text-slate-500">
+                    <div className="col-span-4 text-center text-muted-foreground">
                       No features available at the moment.
                     </div>
                   )}
@@ -364,18 +364,18 @@ const LandingPageHome = () => {
 
         {/* Trust Indicators */}
         <LazyComponent>
-          <section className="py-16 bg-slate-50/50">
+          <section className="py-16 bg-muted/30">
             <Container size="6xl">
               <div className="text-center mb-12">
-                <Typography variant="h3" className="text-2xl font-semibold text-slate-700 mb-4">
+                <Typography variant="h3" className="text-2xl font-semibold text-foreground mb-4">
                   Trusted by Industry Leaders
                 </Typography>
               </div>
               
               <div className="flex items-center justify-center space-x-12 opacity-60">
-                <div className="text-slate-400 font-semibold text-lg">Company</div>
-                <div className="text-slate-400 font-semibold text-lg">GrowthCo</div>
-                <div className="text-slate-400 font-semibold text-lg">FutureTech</div>
+                <div className="text-muted-foreground font-semibold text-lg">Company</div>
+                <div className="text-muted-foreground font-semibold text-lg">GrowthCo</div>
+                <div className="text-muted-foreground font-semibold text-lg">FutureTech</div>
               </div>
             </Container>
           </section>
@@ -397,63 +397,63 @@ const LandingPageHome = () => {
         />
 
         {/* Footer */}
-        <footer className="bg-slate-900 text-white py-16">
+        <footer className="bg-card text-card-foreground py-16">
           <Container size="6xl">
             <div className="grid md:grid-cols-4 gap-8">
               <div className="col-span-2">
                 <div className="flex items-center space-x-2 mb-6">
                   <Logo variant="minimal" size="lg" showTagline={false} />
                 </div>
-                <Typography variant="body" className="text-slate-300 mb-6 max-w-md">
+                <Typography variant="body" className="text-muted-foreground mb-6 max-w-md">
                   Transform your team's productivity with AI-powered task management, 
                   intelligent automation, and seamless collaboration.
                 </Typography>
                 <div className="flex space-x-4">
-                  <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                     <Rocket className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                     <TrendingUp className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                     <Award className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
               
               <div>
-                <Typography variant="h4" className="text-lg font-semibold mb-6 text-white">
+                <Typography variant="h4" className="text-lg font-semibold mb-6 text-card-foreground">
                   Product
                 </Typography>
                 <div className="space-y-3">
-                  <Link to="/features" className="block text-slate-300 hover:text-white transition-colors">Features</Link>
-                  <Link to="/pricing" className="block text-slate-300 hover:text-white transition-colors">Pricing</Link>
-                  <Link to="/integrations" className="block text-slate-300 hover:text-white transition-colors">Integrations</Link>
-                  <Link to="/api" className="block text-slate-300 hover:text-white transition-colors">API</Link>
+                  <Link to="/features" className="block text-muted-foreground hover:text-foreground transition-colors">Features</Link>
+                  <Link to="/pricing" className="block text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
+                  <Link to="/integrations" className="block text-muted-foreground hover:text-foreground transition-colors">Integrations</Link>
+                  <Link to="/api" className="block text-muted-foreground hover:text-foreground transition-colors">API</Link>
                 </div>
               </div>
               
               <div>
-                <Typography variant="h4" className="text-lg font-semibold mb-6 text-white">
+                <Typography variant="h4" className="text-lg font-semibold mb-6 text-card-foreground">
                   Company
                 </Typography>
                 <div className="space-y-3">
-                  <Link to="/about" className="block text-slate-300 hover:text-white transition-colors">About</Link>
-                  <Link to="/contact" className="block text-slate-300 hover:text-white transition-colors">Contact</Link>
-                  <Link to="/careers" className="block text-slate-300 hover:text-white transition-colors">Careers</Link>
-                  <Link to="/blog" className="block text-slate-300 hover:text-white transition-colors">Blog</Link>
+                  <Link to="/about" className="block text-muted-foreground hover:text-foreground transition-colors">About</Link>
+                  <Link to="/contact" className="block text-muted-foreground hover:text-foreground transition-colors">Contact</Link>
+                  <Link to="/careers" className="block text-muted-foreground hover:text-foreground transition-colors">Careers</Link>
+                  <Link to="/blog" className="block text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
                 </div>
               </div>
             </div>
             
-            <div className="border-t border-slate-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-              <Typography variant="small" className="text-slate-400">
+            <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+              <Typography variant="small" className="text-muted-foreground">
                 © 2024 TaskFlow. All rights reserved.
               </Typography>
               <div className="flex space-x-6 mt-4 md:mt-0">
-                <Link to="/privacy" className="text-slate-400 hover:text-white transition-colors">Privacy</Link>
-                <Link to="/terms" className="text-slate-400 hover:text-white transition-colors">Terms</Link>
-                <Link to="/cookies" className="text-slate-400 hover:text-white transition-colors">Cookies</Link>
+                <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy</Link>
+                <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">Terms</Link>
+                <Link to="/cookies" className="text-muted-foreground hover:text-foreground transition-colors">Cookies</Link>
               </div>
             </div>
           </Container>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTasks, useTheme } from '../../hooks';
+import { useToast } from '../../hooks/useToast';
 import type { Task } from '../../types/task.types';
 import { 
   Button, 
@@ -30,6 +31,7 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
   const { taskId: paramTaskId, boardId } = useParams<{ taskId: string; boardId: string }>();
   const navigate = useNavigate();
   const taskId = propTaskId || paramTaskId;
+  const { warning } = useToast();
   
   const {
     currentTask,
@@ -67,7 +69,12 @@ export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = ({ taskId: pr
   };
 
   const handleDelete = async () => {
-    if (taskId && confirm('Are you sure you want to delete this task?')) {
+    if (taskId) {
+      warning(
+        'Are you sure you want to delete this task?',
+        'Delete Task',
+        { duration: 0, dismissible: true }
+      );
       try {
         await removeTask(taskId);
         // Redirect to the board page where the task was located

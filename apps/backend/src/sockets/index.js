@@ -30,6 +30,9 @@ const initializeSockets = (io) => {
         chat: chatSocket(io)
     };
 
+    // Store namespaces locally for getNamespace function
+    socketNamespaces = namespaces;
+
     // Log socket initialization
     const logger = require('../config/logger');
     logger.info('Socket system initialized with namespaces:', Object.keys(namespaces));
@@ -37,21 +40,16 @@ const initializeSockets = (io) => {
     return namespaces;
 };
 
+// Store namespaces locally instead of using globals
+let socketNamespaces = {};
+
 /**
  * Get socket namespace by name
  * @param {string} namespaceName - Name of the namespace
  * @returns {Object|null} Socket namespace or null if not found
  */
 const getNamespace = (namespaceName) => {
-    const namespaces = {
-        board: global.io,
-        notification: global.notificationNamespace,
-        system: global.systemNamespace,
-        workspace: global.workspaceNamespace,
-        chat: global.chatNamespace
-    };
-
-    return namespaces[namespaceName] || null;
+    return socketNamespaces[namespaceName] || null;
 };
 
 /**
@@ -60,8 +58,9 @@ const getNamespace = (namespaceName) => {
  * @param {*} data - Event data
  */
 const broadcastToAll = (event, data) => {
-    if (global.io) {
-        global.io.emit(event, data);
+    const boardNamespace = socketNamespaces.board;
+    if (boardNamespace) {
+        boardNamespace.emit(event, data);
     }
 };
 
@@ -72,8 +71,9 @@ const broadcastToAll = (event, data) => {
  * @returns {Promise<Object>} Created notification
  */
 const sendNotification = async (userId, notificationData) => {
-    if (global.notificationNamespace) {
-        return await global.notificationNamespace.sendNotification(userId, notificationData);
+    const notificationNamespace = socketNamespaces.notification;
+    if (notificationNamespace && notificationNamespace.sendNotification) {
+        return await notificationNamespace.sendNotification(userId, notificationData);
     }
     throw new Error('Notification namespace not available');
 };
@@ -85,8 +85,9 @@ const sendNotification = async (userId, notificationData) => {
  * @returns {Promise<Array>} Results of bulk notification sending
  */
 const broadcastSystemNotification = async (notificationData, userFilter = {}) => {
-    if (global.notificationNamespace) {
-        return await global.notificationNamespace.broadcastSystemNotification(notificationData, userFilter);
+    const notificationNamespace = socketNamespaces.notification;
+    if (notificationNamespace && notificationNamespace.broadcastSystemNotification) {
+        return await notificationNamespace.broadcastSystemNotification(notificationData, userFilter);
     }
     throw new Error('Notification namespace not available');
 };
@@ -98,8 +99,9 @@ const broadcastSystemNotification = async (notificationData, userFilter = {}) =>
  * @param {*} data - Event data
  */
 const notifyBoard = (boardId, event, data) => {
-    if (global.io) {
-        global.io.notifyBoard(boardId, event, data);
+    const boardNamespace = socketNamespaces.board;
+    if (boardNamespace && boardNamespace.notifyBoard) {
+        boardNamespace.notifyBoard(boardId, event, data);
     }
 };
 
@@ -108,7 +110,8 @@ const notifyBoard = (boardId, event, data) => {
  * @returns {Object} System health information
  */
 const getSystemHealth = () => {
-    if (global.systemNamespace) {
+    const systemNamespace = socketNamespaces.system;
+    if (systemNamespace) {
         // This would typically call a method on the system namespace
         return {
             status: 'available',

@@ -1,12 +1,8 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import {createSlice} from '@reduxjs/toolkit'
+import type { AppSliceState } from '../../types/store.types';
 
-interface AppState {
-  isLoading: boolean;
-  error: string | null;
-}
-
-const initialState: AppState = {
+const initialState: AppSliceState = {
   isLoading: false,
   error: null,
 };

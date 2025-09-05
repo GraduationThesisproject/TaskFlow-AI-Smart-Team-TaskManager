@@ -17,29 +17,29 @@ const router = express.Router();
 
 // User Registration & Invitation
 router.post('/register', 
-    validateMiddleware(authSchemas.registerSchema), 
+    validateMiddleware.validateBody(authSchemas.registerSchema), 
     authController.register
 );
 
 // User Authentication
 router.post('/login', 
-    validateMiddleware(authSchemas.loginSchema), 
+    validateMiddleware.validateBody(authSchemas.loginSchema), 
     authController.login
 );
 
 router.post('/login/2fa-complete', 
-    validateMiddleware(authSchemas.completeLogin2FASchema),
+    validateMiddleware.validateBody(authSchemas.completeLogin2FASchema),
     authController.completeLoginWith2FA
 );
 
 // Password Reset
 router.post('/password-reset/request',
-    validateMiddleware(authSchemas.passwordResetRequestSchema),
+    validateMiddleware.validateBody(authSchemas.passwordResetRequestSchema),
     authController.requestPasswordReset
 );
 
 router.put('/password-reset/confirm',
-    validateMiddleware(authSchemas.passwordResetSchema),
+    validateMiddleware.validateBody(authSchemas.passwordResetSchema),
     authController.resetPassword
 );
 
@@ -66,13 +66,13 @@ router.get('/me',
 
 router.put('/profile', 
     authMiddleware,
-    validateMiddleware(authSchemas.updateProfileSchema),
+    validateMiddleware.validateBody(authSchemas.updateProfileSchema),
     authController.updateProfile
 );
 
 router.put('/profile/secure',
     authMiddleware,
-    validateMiddleware(authSchemas.secureProfileUpdateSchema),
+    validateMiddleware.validateBody(authSchemas.secureProfileUpdateSchema),
     authController.updateProfileSecure
 );
 
@@ -80,21 +80,21 @@ router.put('/profile/secure',
 router.put('/change-password',
     authMiddleware,
     rateLimitSensitiveOps(5, 15 * 60 * 1000), 
-    validateMiddleware(authSchemas.changePasswordSchema),
+    validateMiddleware.validateBody(authSchemas.changePasswordSchema),
     authController.changePassword
 );
 
 // User Preferences & Settings
 router.put('/preferences',
     authMiddleware,
-    validateMiddleware(authSchemas.updatePreferencesSchema),
+    validateMiddleware.validateBody(authSchemas.updatePreferencesSchema),
     authController.updatePreferences
 );
 
 // Session Management
 router.post('/logout',
     authMiddleware,
-    validateMiddleware(authSchemas.logoutSchema),
+    validateMiddleware.validateBody(authSchemas.logoutSchema),
     authController.logout
 );
 
@@ -105,7 +105,7 @@ router.get('/sessions',
 
 router.delete('/sessions/:sessionId',
     authMiddleware,
-    validateMiddleware(authSchemas.sessionIdSchema),
+    validateMiddleware.validateParams(authSchemas.sessionIdSchema),
     authController.endSession
 );
 

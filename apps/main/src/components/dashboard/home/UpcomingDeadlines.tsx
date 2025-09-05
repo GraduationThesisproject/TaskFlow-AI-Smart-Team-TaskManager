@@ -6,7 +6,6 @@ import { useTasks } from "../../../hooks/useTasks";
 export const UpcomingDeadlines: React.FC = () => {
   const { timelineTasks, loading, error } = useTasks();
   
-  // Filter for upcoming deadlines (next 7 days)
   const upcomingDeadlines = timelineTasks
     .filter(task => {
       const dueDate = new Date(task.dueDate!);
@@ -19,17 +18,17 @@ export const UpcomingDeadlines: React.FC = () => {
 
   if (loading) {
     return (
-      <Card className="backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)]">
-        <CardHeader><CardTitle>Upcoming Deadlines</CardTitle></CardHeader>
+      <Card className="backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_8px_hsl(var(--accent)/0.08)]" size="full">
+        <CardHeader><CardTitle className="text-sm">Upcoming Deadlines</CardTitle></CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex items-center justify-between p-3 border rounded-lg ring-1 ring-accent/10 border-[hsl(var(--accent))]/20 shadow-[0_0_8px_hsl(var(--accent)/0.08)]">
+              <div key={i} className="flex items-center justify-between p-2 border rounded-md ring-1 ring-accent/10 border-[hsl(var(--accent))]/20 shadow-[0_0_4px_hsl(var(--accent)/0.06)]">
                 <div className="flex-1">
-                  <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-24"></div>
+                  <div className="h-2.5 bg-gray-200 rounded w-24 mb-1"></div>
+                  <div className="h-2 bg-gray-200 rounded w-16"></div>
                 </div>
-                <div className="h-6 bg-gray-200 rounded w-16"></div>
+                <div className="h-4 bg-gray-200 rounded w-10"></div>
               </div>
             ))}
           </div>
@@ -40,10 +39,10 @@ export const UpcomingDeadlines: React.FC = () => {
 
   if (error) {
     return (
-      <Card className="backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)]">
-        <CardHeader><CardTitle>Upcoming Deadlines</CardTitle></CardHeader>
+      <Card className="backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_8px_hsl(var(--accent)/0.08)]" size="full">
+        <CardHeader><CardTitle className="text-sm">Upcoming Deadlines</CardTitle></CardHeader>
         <CardContent>
-          <Typography variant="body-medium" className="text-red-600">
+          <Typography variant="body-medium" className="text-red-600 text-sm">
             Error loading deadlines: {error}
           </Typography>
         </CardContent>
@@ -52,20 +51,20 @@ export const UpcomingDeadlines: React.FC = () => {
   }
 
   return (
-    <Card className="backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_16px_hsl(var(--accent)/0.12)]">
-      <CardHeader><CardTitle>Upcoming Deadlines</CardTitle></CardHeader>
+    <Card className="backdrop-blur-sm ring-1 ring-accent/10 border border-[hsl(var(--accent))]/20 shadow-[0_0_8px_hsl(var(--accent)/0.08)]" size="full">
+      <CardHeader><CardTitle className="text-sm">Upcoming Deadlines</CardTitle></CardHeader>
       <CardContent>
         {upcomingDeadlines.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             {upcomingDeadlines.map(task => (
-              <div key={task._id} className="flex items-center justify-between p-3 border rounded-lg ring-1 ring-accent/10 border-[hsl(var(--accent))]/20 shadow-[0_0_8px_hsl(var(--accent)/0.08)]">
+              <div key={task._id} className="flex items-center justify-between p-2 border rounded-md ring-1 ring-accent/10 border-[hsl(var(--accent))]/20 shadow-[0_0_4px_hsl(var(--accent)/0.06)]">
                 <div className="flex-1">
-                  <Typography variant="body-small" className="font-medium">{task.title}</Typography>
-                  <Typography variant="caption" className="text-muted-foreground">
+                  <Typography variant="body-small" className="font-medium text-xs">{task.title}</Typography>
+                  <Typography variant="caption" className="text-muted-foreground text-xs">
                     Due {new Date(task.dueDate!).toLocaleDateString()}
                   </Typography>
                 </div>
-                <Badge variant={task.priority === 'high' || task.priority === 'critical' ? 'destructive' : 'secondary'}>
+                <Badge variant={task.priority === 'high' || task.priority === 'critical' ? 'destructive' : 'secondary'} className="text-xs px-1.5 py-0.5">
                   {task.priority}
                 </Badge>
               </div>
@@ -73,7 +72,7 @@ export const UpcomingDeadlines: React.FC = () => {
           </div>
         ) : (
           <EmptyState 
-            icon={<Calendar className="h-8 w-8" />} 
+            icon={<Calendar className="h-5 w-5" />} 
             title="No upcoming deadlines" 
             description="You're all caught up! No tasks are due in the next 7 days." 
           />

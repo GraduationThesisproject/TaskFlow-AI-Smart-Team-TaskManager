@@ -114,8 +114,11 @@ const handleNotificationSocket = (io) => {
         // Mark notification as read (DEPRECATED - use REST endpoint instead)
         socket.on('notifications:markRead', async (data) => {
             try {
-                // Deprecated: do not auto-mark read via socket anymore
-                socket.emit('notifications:error', { message: 'Deprecated: use PATCH /api/notifications/:id/read' });
+                logger.warn(`Deprecated socket event 'notifications:markRead' used by user ${socket.user.name}. Use PATCH /api/notifications/:id/read instead.`);
+                socket.emit('notifications:error', { 
+                    message: 'Deprecated: use PATCH /api/notifications/:id/read',
+                    code: 'DEPRECATED_ENDPOINT'
+                });
             } catch (error) {
                 logger.error('Mark notification as read (socket) error:', error);
             }
@@ -124,8 +127,11 @@ const handleNotificationSocket = (io) => {
         // Mark all notifications as read (DEPRECATED - use REST endpoint instead)
         socket.on('notifications:markAllRead', async () => {
             try {
-                // Deprecated: do not auto-mark read via socket anymore
-                socket.emit('notifications:error', { message: 'Deprecated: use PATCH /api/notifications/read-all' });
+                logger.warn(`Deprecated socket event 'notifications:markAllRead' used by user ${socket.user.name}. Use PATCH /api/notifications/read-all instead.`);
+                socket.emit('notifications:error', { 
+                    message: 'Deprecated: use PATCH /api/notifications/read-all',
+                    code: 'DEPRECATED_ENDPOINT'
+                });
             } catch (error) {
                 logger.error('Mark all notifications as read (socket) error:', error);
             }

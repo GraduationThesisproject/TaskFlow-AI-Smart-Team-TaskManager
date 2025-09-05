@@ -51,14 +51,14 @@ const avatarFallbackVariants = cva(
         default: "bg-gradient-to-br from-muted to-muted/80 text-muted-foreground",
         primary: "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground",
         accent: "bg-gradient-to-br from-accent to-accent/80 text-accent-foreground",
-        success: "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white dark:from-emerald-600 dark:to-emerald-700",
-        warning: "bg-gradient-to-br from-amber-500 to-amber-600 text-white dark:from-amber-600 dark:to-amber-700",
+        success: "bg-gradient-to-br from-success to-success/80 text-white",
+        warning: "bg-gradient-to-br from-warning to-warning/80 text-white",
         error: "bg-gradient-to-br from-destructive to-destructive/80 text-destructive-foreground",
-        purple: "bg-gradient-to-br from-violet-500 to-violet-600 text-white dark:from-violet-600 dark:to-violet-700",
-        blue: "bg-gradient-to-br from-blue-500 to-blue-600 text-white dark:from-blue-600 dark:to-blue-700",
-        pink: "bg-gradient-to-br from-pink-500 to-pink-600 text-white dark:from-pink-600 dark:to-pink-700",
-        indigo: "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white dark:from-indigo-600 dark:to-indigo-700",
-        teal: "bg-gradient-to-br from-teal-500 to-teal-600 text-white dark:from-teal-600 dark:to-teal-700",
+        purple: "bg-gradient-to-br from-purple to-purple/80 text-purple-foreground",
+        blue: "bg-gradient-to-br from-info to-info/80 text-info-foreground",
+        pink: "bg-gradient-to-br from-pink to-pink/80 text-pink-foreground",
+        indigo: "bg-gradient-to-br from-indigo to-indigo/80 text-indigo-foreground",
+        teal: "bg-gradient-to-br from-accent to-accent/80 text-accent-foreground",
       },
       size: {
         xs: "text-xs",
@@ -104,10 +104,10 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
         <div
           className={cn(
             "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background",
-            status === 'online' && "bg-emerald-500 dark:bg-emerald-400",
-            status === 'offline' && "bg-muted-foreground/50 dark:bg-muted-foreground/70",
-            status === 'away' && "bg-amber-500 dark:bg-amber-400",
-            status === 'busy' && "bg-destructive dark:bg-destructive/80",
+            status === 'online' && "bg-success",
+            status === 'offline' && "bg-muted-foreground/50",
+            status === 'away' && "bg-warning",
+            status === 'busy' && "bg-destructive",
             size === 'xs' && "h-2 w-2",
             size === 'sm' && "h-2.5 w-2.5",
             size === 'lg' && "h-3.5 w-3.5",
@@ -168,7 +168,7 @@ export const getInitials = (name: string): string => {
 
 // Utility function to generate a consistent color based on a string
 export const getAvatarColor = (str: string): AvatarFallbackProps['variant'] => {
-  if (!str) return 'default';
+  if (!str) return 'primary';
   
   const colors: AvatarFallbackProps['variant'][] = [
     'primary', 'accent', 'success', 'warning', 'error', 
@@ -180,7 +180,7 @@ export const getAvatarColor = (str: string): AvatarFallbackProps['variant'] => {
     return a & a;
   }, 0);
   
-  return colors[Math.abs(hash) % colors.length] || 'default';
+  return colors[Math.abs(hash) % colors.length] || 'primary';
 };
 
 // Enhanced component that automatically handles image fallbacks

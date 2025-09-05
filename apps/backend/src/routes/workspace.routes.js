@@ -4,8 +4,12 @@ const validateMiddleware = require('../middlewares/validate.middleware');
 const { requireWorkspacePermission, requireWorkspaceMember } = require('../middlewares/permission.middleware');
 const { workspace: workspaceSchemas } = require('./validator');
 const { authMiddleware } = require('../middlewares/auth.middleware');
+const { createMulterUpload } = require('../config/multer');
 
 const router = express.Router();
+
+// Create multer upload instances
+const multerUpload = createMulterUpload('workspace_rules');
 
 // Apply authentication to all routes
 router.use(authMiddleware);
@@ -14,30 +18,46 @@ router.use(authMiddleware);
 router.get('/', workspaceController.getAllWorkspaces);
 
 router.get('/:id',
-    requireWorkspacePermission(),
+    requireWorkspacePermission('/:id'),
     workspaceController.getWorkspace
 );
 
 // Generate invite link for workspace
 router.get('/:id/invite-link', 
-    requireWorkspacePermission(),
+    requireWorkspacePermission('/:id/invite-link'),
     workspaceController.generateInviteLink
 );
 
 router.post('/', 
-    validateMiddleware(workspaceSchemas.createWorkspaceSchema),
+    validateMiddleware.validateBody(workspaceSchemas.createWorkspaceSchema),
     workspaceController.createWorkspace
 );
 
+router.get('/:id/analytics',
+    requireWorkspacePermission('/:id/analytics'),
+    workspaceController.getWorkspaceAnalytics
+);
+
+
+
+
+
+router.post('/:id/restore',
+    requireWorkspacePermission('/:id/restore'),
+    workspaceController.restoreWorkspace
+);
+
+
+
 router.put('/:id', 
-    requireWorkspacePermission(),
-    validateMiddleware(workspaceSchemas.updateWorkspaceSchema),
+    requireWorkspacePermission('/:id'),
+    validateMiddleware.validateBody(workspaceSchemas.updateWorkspaceSchema),
     workspaceController.updateWorkspace
 );
 
 router.post('/:id/invite',
-    requireWorkspacePermission(),
-    validateMiddleware(workspaceSchemas.inviteMemberSchema),
+    requireWorkspacePermission('/:id/invite'),
+    validateMiddleware.validateBody(workspaceSchemas.inviteMemberSchema),
     workspaceController.inviteMember
 );
 
@@ -46,47 +66,74 @@ router.post('/accept-invitation/:token',
 );
 
 router.get('/:id/members',
-    requireWorkspacePermission(),
+    requireWorkspacePermission('/:id/members'),
     workspaceController.getWorkspaceMembers
 );
 
 router.delete('/:id/members/:memberId',
-    requireWorkspacePermission(),
+    requireWorkspacePermission('/:id/members/:memberId'),
     workspaceController.removeMember
 );
 
 router.put('/:id/settings',
-    requireWorkspacePermission(),
-    validateMiddleware(workspaceSchemas.updateSettingsSchema),
+    requireWorkspacePermission('/:id/settings'),
+    validateMiddleware.validateBody(workspaceSchemas.updateSettingsSchema),
     workspaceController.updateSettings
 );
 
-router.get('/:id/analytics',
-    requireWorkspacePermission(),
-    workspaceController.getWorkspaceAnalytics
+// Avatar upload routes
+router.post('/:id/avatar',
+    requireWorkspacePermission('/:id/avatar'),
+    createMulterUpload('workspace_avatar').single('avatar'),
+    workspaceController.uploadWorkspaceAvatar
+);
+
+router.delete('/:id/avatar',
+    requireWorkspacePermission('/:id/avatar'),
+    workspaceController.removeWorkspaceAvatar
+);
+
+// Workspace rules routes
+router.get('/:id/rules',
+    requireWorkspacePermission('/:id/rules'),
+    workspaceController.getWorkspaceRules
+);
+
+router.put('/:id/rules',
+    requireWorkspacePermission('/:id/rules'),
+    validateMiddleware.validateBody(workspaceSchemas.updateWorkspaceRulesSchema),
+    workspaceController.updateWorkspaceRules
+);
+
+// File upload route for workspace rules (PDF)
+router.post('/:id/rules/upload',
+    requireWorkspacePermission('/:id/rules/upload'),
+    multerUpload.single('rulesFile'),
+    workspaceController.uploadWorkspaceRules
+);
+
+router.delete('/:id/rules',
+    requireWorkspacePermission('/:id/rules'),
+    workspaceController.deleteWorkspaceRules
 );
 
 router.post('/:id/transfer-ownership',
-    requireWorkspacePermission(), // Only owner has this permission
-    validateMiddleware(workspaceSchemas.transferOwnershipSchema),
+    requireWorkspacePermission('/:id/transfer-ownership'), // Only owner has this permission
+    validateMiddleware.validateBody(workspaceSchemas.transferOwnershipSchema),
     workspaceController.transferOwnership
 );
 
-// Restore archived workspace
-router.post('/:id/restore',
-    requireWorkspacePermission(),
-    workspaceController.restoreWorkspace
-);
+
 
 // Permanently delete an archived workspace
 router.delete('/:id/permanent',
-    requireWorkspacePermission(),
+    requireWorkspacePermission('/:id/permanent'),
     workspaceController.permanentDeleteWorkspace
 );
 
 // Delete workspace - rely on controller for final permission (owner or privileged admin)
 router.delete('/:id',
-    requireWorkspacePermission(),
+    requireWorkspacePermission('/:id'),
     workspaceController.deleteWorkspace
 );
 

@@ -131,7 +131,7 @@ exports.githubLogin = (req, res, next) => {
     if (!passport._strategies?.github) {
         return sendResponse(res, 503, false, 'GitHub OAuth is not configured');
     }
-    const scope = req.query.scope || 'user:email';
+    const scope = req.query.scope || 'user:email read:org repo';
     passport.authenticate('github', { scope: scope.split(' ') })(req, res, next);
 };
 
@@ -153,10 +153,17 @@ exports.githubCallback = (req, res, next) => {
         }
 
         try {
+            // Check if user has GitHub access token
+            if (!user.github?.accessToken) {
+                logger.error('GitHub access token not found for user:', user._id);
+                return sendResponse(res, 500, false, 'GitHub access token not available');
+            }
+
             user.lastLogin = new Date();
             await user.save();
+            
             const token = generateToken(user._id);
-            const redirectUrl = `${env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}&provider=github`;
+            const redirectUrl = `${env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}&provider=github&githubLinked=true`;
             logger.info('GitHub authentication successful, redirecting to:', redirectUrl);
             return res.redirect(redirectUrl);
         } catch (error) {

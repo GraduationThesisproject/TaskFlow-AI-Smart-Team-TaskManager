@@ -24,7 +24,7 @@ export const env = {
   GOOGLE_CALLBACK_URL: import.meta.env.VITE_GOOGLE_CALLBACK_URL || 'http://localhost:5173/auth/google/callback',
   GITHUB_CLIENT_ID: import.meta.env.VITE_GITHUB_CLIENT_ID || 'Ov23liwZN5YwJ4eZvffU',
   GITHUB_CLIENT_SECRET: import.meta.env.VITE_GITHUB_CLIENT_SECRET || '1b3a20e1252907cce61a9e382c33f90142a8e73b',
-  GITHUB_CALLBACK_URL: import.meta.env.VITE_GITHUB_CALLBACK_URL || 'http://localhost:5173/auth/github/callback',
+  GITHUB_CALLBACK_URL: import.meta.env.VITE_GITHUB_CALLBACK_URL || 'http://localhost:3001/api/auth/github/callback',
   
   // Storage Configuration
   UPLOAD_DIR: import.meta.env.VITE_UPLOAD_DIR || 'uploads',
