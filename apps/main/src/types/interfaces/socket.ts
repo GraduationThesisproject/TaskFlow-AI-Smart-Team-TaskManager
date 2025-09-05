@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 
 // Socket-related interfaces used across the application
 
-// Base socket interface
+// Base socket interface - compatible with Socket.io client
 export interface Socket {
-  id: string;
+  id?: string;
   connected: boolean;
   disconnected: boolean;
   connect(): void;
@@ -42,7 +42,7 @@ export interface SocketRoom {
 // Socket namespace interface
 export interface SocketNamespace {
   name: string;
-  socket: Socket;
+  socket: Socket | null;
   rooms: Map<string, SocketRoom>;
   on(event: string, callback: (data?: any) => void): void;
   off(event: string, callback?: (data?: any) => void): void;

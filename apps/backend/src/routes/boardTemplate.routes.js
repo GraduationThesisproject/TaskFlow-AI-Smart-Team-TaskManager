@@ -140,7 +140,7 @@ router.get('/admin/stats',
 
 router.post('/', 
   adminMiddleware, 
-  validateMiddleware(createTemplateSchema), 
+  validateMiddleware.validateBody(createTemplateSchema), 
   validateLists, 
   validateCards, 
   ctrl.createTemplate
@@ -148,7 +148,7 @@ router.post('/',
 
 router.put('/:id', 
   adminMiddleware, 
-  validateMiddleware(updateTemplateSchema), 
+  validateMiddleware.validateBody(updateTemplateSchema), 
   validateLists, 
   validateCards, 
   ctrl.updateTemplate
@@ -156,7 +156,7 @@ router.put('/:id',
 
 router.patch('/:id', 
   adminMiddleware, 
-  validateMiddleware(updateTemplateSchema), 
+  validateMiddleware.validateBody(updateTemplateSchema), 
   validateLists, 
   validateCards, 
   ctrl.updateTemplate
@@ -189,7 +189,7 @@ router.post('/:id/use',
 
 router.post('/:id/rate', 
   authMiddleware, 
-  validateMiddleware(ratingSchema), 
+  validateMiddleware.validateBody(ratingSchema), 
   ctrl.rateTemplate
 );
 

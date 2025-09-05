@@ -545,7 +545,239 @@ class AnalyticsService {
         })).sort((a, b) => new Date(a.date) - new Date(b.date));
     }
 
-    // Workspace analytics
+    // Generate comprehensive workspace analytics
+    static async generateWorkspaceAnalytics(workspaceId, options = {}) {
+        try {
+            const { startDate, endDate, periodType = 'monthly', includeAI = true } = options;
+            
+            const start = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            const end = endDate || new Date();
+
+            const Workspace = require('../models/Workspace');
+            const workspace = await Workspace.findById(workspaceId)
+                .populate('members.user', 'name email');
+
+            if (!workspace) {
+                logger.error(`Workspace not found: ${workspaceId}`);
+                throw new Error('Workspace not found');
+            }
+            
+            logger.info(`Found workspace: ${workspace.name} with ${workspace.members.length} members`);
+
+            // Get all spaces in workspace
+            const spaces = await Space.find({ workspace: workspaceId });
+            const spaceIds = spaces.map(s => s._id);
+            
+            logger.info(`Found ${spaces.length} spaces in workspace`);
+
+            // Get tasks from all spaces
+            const tasks = await Task.find({ 
+                space: { $in: spaceIds },
+                createdAt: { $gte: start, $lte: end }
+            }).populate('assignees', 'name').populate('reporter', 'name');
+
+            // Generate analytics
+            const taskMetrics = await AnalyticsService.calculateTaskMetrics(tasks, start, end);
+            const timeMetrics = await AnalyticsService.calculateTimeMetrics(tasks, start, end);
+            const qualityMetrics = await AnalyticsService.calculateQualityMetrics(tasks);
+            // Simple custom metrics for workspace
+            const customMetrics = {
+                productivityScore: Math.round(taskMetrics.completionRate * 0.8),
+                efficiencyRating: Math.round((taskMetrics.completedTasks / Math.max(taskMetrics.totalTasks, 1)) * 100),
+                collaborationIndex: 0
+            };
+            
+            // Calculate workspace-specific team metrics
+            const teamMetrics = {
+                totalMembers: workspace.members.length,
+                activeMembers: workspace.members.length,
+                topPerformers: [],
+                workloadDistribution: []
+            };
+            
+            // Calculate member performance across all spaces
+            for (const member of workspace.members) {
+                const memberTasks = tasks.filter(task => 
+                    task.assignees.some(assignee => assignee._id.toString() === member.user._id.toString())
+                );
+                
+                const completedTasks = memberTasks.filter(t => t.status === 'completed');
+                
+                teamMetrics.topPerformers.push({
+                    name: member.user.name,
+                    tasksCompleted: completedTasks.length
+                });
+                
+                teamMetrics.workloadDistribution.push({
+                    member: member.user.name,
+                    tasks: memberTasks.length
+                });
+            }
+            
+            // Sort top performers by tasks completed
+            teamMetrics.topPerformers.sort((a, b) => b.tasksCompleted - a.tasksCompleted);
+
+            // Workspace-specific metrics
+            const workspaceMetrics = {
+                totalSpaces: spaces.length,
+                activeSpaces: spaces.filter(s => s.status === 'active').length,
+                totalMembers: workspace.members.length,
+                memberActivity: await AnalyticsService.getWorkspaceMemberActivity(workspaceId, start)
+            };
+
+            // Generate simple time insights from tasks
+            const dailyActivity = [];
+            const weeklyTrends = [];
+            const peakHours = [];
+            
+            // Group tasks by date for daily activity
+            const tasksByDate = {};
+            tasks.forEach(task => {
+                const date = task.createdAt.toISOString().split('T')[0];
+                tasksByDate[date] = (tasksByDate[date] || 0) + 1;
+            });
+            
+            Object.entries(tasksByDate).forEach(([date, count]) => {
+                dailyActivity.push({ date, tasks: count });
+            });
+            
+            // Calculate real weekly trends from task data
+            const weeklyData = {};
+            const completedWeeklyData = {};
+            
+            tasks.forEach(task => {
+                const taskDate = new Date(task.createdAt);
+                const weekStart = new Date(taskDate);
+                weekStart.setDate(taskDate.getDate() - taskDate.getDay()); // Start of week (Sunday)
+                const weekKey = weekStart.toISOString().split('T')[0];
+                
+                // Count created tasks
+                weeklyData[weekKey] = (weeklyData[weekKey] || 0) + 1;
+                
+                // Count completed tasks
+                if (task.status === 'completed' && task.completedAt) {
+                    const completedDate = new Date(task.completedAt);
+                    const completedWeekStart = new Date(completedDate);
+                    completedWeekStart.setDate(completedDate.getDate() - completedDate.getDay());
+                    const completedWeekKey = completedWeekStart.toISOString().split('T')[0];
+                    completedWeeklyData[completedWeekKey] = (completedWeeklyData[completedWeekKey] || 0) + 1;
+                }
+            });
+            
+            // Convert to weekly trends format
+            const allWeeks = [...new Set([...Object.keys(weeklyData), ...Object.keys(completedWeeklyData)])].sort();
+            allWeeks.forEach((weekKey, index) => {
+                const weekDate = new Date(weekKey);
+                const weekNumber = `Week ${index + 1}`;
+                weeklyTrends.push({
+                    week: weekNumber,
+                    created: weeklyData[weekKey] || 0,
+                    completed: completedWeeklyData[weekKey] || 0
+                });
+            });
+            
+            // If no weekly data, show empty state
+            if (weeklyTrends.length === 0) {
+                weeklyTrends.push(
+                    { week: 'Week 1', created: 0, completed: 0 },
+                    { week: 'Week 2', created: 0, completed: 0 },
+                    { week: 'Week 3', created: 0, completed: 0 }
+                );
+            }
+            
+            // Calculate real peak hours from task creation times
+            const hourlyActivity = {};
+            tasks.forEach(task => {
+                const hour = new Date(task.createdAt).getHours();
+                hourlyActivity[hour] = (hourlyActivity[hour] || 0) + 1;
+            });
+            
+            // Generate peak hours data for work hours (9 AM to 5 PM)
+            for (let hour = 9; hour <= 17; hour++) {
+                peakHours.push({ 
+                    hour, 
+                    activity: hourlyActivity[hour] || 0 
+                });
+            }
+            
+            // Get top performers from team metrics
+            const topPerformers = teamMetrics.topPerformers || [];
+            const workloadDistribution = teamMetrics.workloadDistribution || [];
+
+            // Flatten analytics structure to match frontend expectations
+            const analytics = {
+                // Core metrics (flattened for frontend compatibility)
+                coreMetrics: {
+                    totalTasks: taskMetrics.totalTasks,
+                    completionRate: parseFloat(taskMetrics.completionRate),
+                    velocity: timeMetrics.averageCompletionTime,
+                    avgTaskDuration: timeMetrics.averageCompletionTime,
+                    overdueTasks: taskMetrics.overdueTasks
+                },
+                
+                // Time insights
+                timeInsights: {
+                    dailyActivity,
+                    weeklyTrends,
+                    peakHours
+                },
+                
+                // Team metrics
+                teamMetrics: {
+                    topPerformers,
+                    workloadDistribution
+                },
+                
+                // Project health
+                projectHealth: {
+                    bugRate: qualityMetrics.bugRate || 0,
+                    reworkRate: qualityMetrics.reworkRate || 0,
+                    blockedTasks: taskMetrics.blockedTasks || 0,
+                    cycleTime: timeMetrics.averageCompletionTime
+                },
+                
+                // Workspace-specific metrics
+                workspaceMetrics,
+                
+                // Period information
+                period: {
+                    startDate: start,
+                    endDate: end,
+                    type: periodType
+                },
+                
+                // Nested structures for detailed access
+                taskMetrics,
+                timeMetrics,
+                teamMetrics,
+                qualityMetrics,
+                customMetrics
+            };
+
+            // Add AI insights if requested
+            if (includeAI) {
+                try {
+                    analytics.aiInsights = await AnalyticsService.generateAIInsights(workspaceId, analytics);
+                } catch (error) {
+                    logger.warn('AI insights generation failed, continuing without AI insights:', error.message);
+                    analytics.aiInsights = {
+                        riskAssessment: [],
+                        recommendations: [],
+                        predictedOutcomes: [],
+                        anomalies: []
+                    };
+                }
+            }
+
+            return analytics;
+
+        } catch (error) {
+            logger.error('Generate workspace analytics error:', error);
+            throw error;
+        }
+    }
+
+    // Workspace analytics (legacy method for backward compatibility)
     static async getWorkspaceAnalytics(workspaceId, timeframe = '30d') {
         try {
             const days = parseInt(timeframe.replace('d', ''));

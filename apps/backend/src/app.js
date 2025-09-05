@@ -35,14 +35,15 @@ const reminderRoutes = require('./routes/reminder.routes');
 const checkoutRoutes = require('./routes/Checkout.routes');
 const tagRoutes = require('./routes/tag.routes');
 const invitationRoutes = require('./routes/invitation.routes');
+const userRoutes = require('./routes/user.routes');
 const aiRoutes = require('./routes/ai.routes');
 const templateRoutes = require('./routes/template.routes');
 const boardTemplateRoutes = require('./routes/boardTemplate.routes');
 const powerbiRoutes = require('./routes/powerbi.routes');
 const integrationRoutes = require('./routes/integration.routes');
 const chatRoutes = require('./routes/chat.routes');
-const testRoutes = require('./routes/test.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
+const githubRoutes = require('./routes/github.routes');
 const app = express();
 
 
@@ -59,12 +60,12 @@ const corsOptions = {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        // Parse CORS_ORIGIN from environment or use defaults
-        let allowedOrigins;
-        if (process.env.CORS_ORIGIN) {
-            allowedOrigins = process.env.CORS_ORIGIN.split(',').map(origin => origin.trim());
-        } else {
-            allowedOrigins = env.CORS_ORIGIN;
+        // Use the processed CORS_ORIGIN from env.js
+        let allowedOrigins = env.CORS_ORIGIN || [];
+        
+        // Ensure allowedOrigins is always an array
+        if (!Array.isArray(allowedOrigins)) {
+            allowedOrigins = [];
         }
         
         if (allowedOrigins.indexOf(origin) !== -1) {
@@ -75,7 +76,7 @@ const corsOptions = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Socket-ID'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Socket-ID', 'x-debug'],
     exposedHeaders: ['X-Socket-ID']
 };
 
@@ -238,6 +239,7 @@ app.use('/api/reminders', authMiddleware, reminderRoutes);
 app.use('/api/checkout', authMiddleware, checkoutRoutes);
 app.use('/api/tags', authMiddleware, tagRoutes);
 app.use('/api/invitations', invitationRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
 app.use('/api/analytics', authMiddleware, analyticsRoutes);
 // Make templates routes publicly accessible for GET requests.
@@ -251,7 +253,7 @@ app.use('/api/board-templates', boardTemplateRoutes);
 app.use('/api/powerbi', authMiddleware, powerbiRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/test', testRoutes);
+app.use('/api/github', githubRoutes);
 
 // 404 handler - using catch-all middleware instead of wildcard
 app.use((req, res) => {

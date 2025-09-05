@@ -19,7 +19,7 @@ router.post('/token/:token/decline', authMiddleware, invitationController.declin
 // Protected routes
 router.post('/', 
     authMiddleware,
-    validateMiddleware(invitationSchemas.createInvitationSchema),
+    validateMiddleware.validateBody(invitationSchemas.createInvitationSchema),
     invitationController.createInvitation
 );
 
@@ -34,7 +34,7 @@ router.get('/entity/:entityType/:entityId',
 
 router.post('/bulk-invite',
     authMiddleware,
-    validateMiddleware(invitationSchemas.bulkInviteSchema),
+    validateMiddleware.validateBody(invitationSchemas.bulkInviteSchema),
     invitationController.bulkInvite
 );
 
@@ -44,7 +44,7 @@ router.post('/:id/resend', authMiddleware, invitationController.resendInvitation
 
 router.patch('/:id/extend',
     authMiddleware,
-    validateMiddleware(invitationSchemas.extendInvitationSchema),
+    validateMiddleware.validateBody(invitationSchemas.extendInvitationSchema),
     invitationController.extendInvitation
 );
 

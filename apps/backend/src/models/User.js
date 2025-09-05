@@ -146,6 +146,50 @@ const userSchema = new mongoose.Schema({
     ref: 'UserRoles'
   },
   
+  // GitHub OAuth Integration
+  github: {
+    accessToken: {
+      type: String,
+      select: false, // Don't include in queries by default for security
+      default: null
+    },
+    githubId: {
+      type: Number,
+      default: null
+    },
+    username: {
+      type: String,
+      default: null
+    },
+    avatar: {
+      type: String,
+      default: null
+    },
+    email: {
+      type: String,
+      default: null
+    },
+    scope: {
+      type: String,
+      default: null
+    },
+    tokenExpiresAt: {
+      type: Date,
+      default: null
+    },
+    lastSync: {
+      type: Date,
+      default: null
+    }
+  },
+  
+  // OAuth Providers tracking (keep this separate from github object)
+  oauthProviders: [{
+    type: String,
+    enum: ['github', 'google'],
+    default: []
+  }],
+  
   // Metadata and audit trail
   metadata: {
     type: Map,

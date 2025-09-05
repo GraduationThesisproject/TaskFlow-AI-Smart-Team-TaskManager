@@ -39,8 +39,8 @@ const initialState: AnalyticsState = {
   filters: {
     period: 'month',
     dateRange: {
-      start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
-      end: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
+      start: format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'), // Last 30 days
+      end: format(new Date(), 'yyyy-MM-dd'), // Today
     },
     chartType: 'line',
   },
@@ -79,23 +79,6 @@ export const fetchAnalytics = createAsyncThunk(
       console.log('🔍 [Analytics Slice] Full API Response:', analyticsResponse);
       const analytics = (analyticsResponse as any)?.analytics || (analyticsResponse as any)?.data || analyticsResponse || {};
       console.log('🔍 [Analytics Slice] Extracted analytics object:', analytics);
-      
-      // Generate mock time-based data (replace with actual API data when available)
-      const mockDailyActivity = Array.from({ length: 30 }, (_, i) => ({
-        date: format(new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000), 'MMM dd'),
-        tasks: Math.floor(Math.random() * 20) + 5,
-      }));
-
-      const mockWeeklyTrends = Array.from({ length: 12 }, (_, i) => ({
-        week: `Week ${i + 1}`,
-        completed: Math.floor(Math.random() * 30) + 20,
-        created: Math.floor(Math.random() * 35) + 25,
-      }));
-
-      const mockPeakHours = Array.from({ length: 24 }, (_, i) => ({
-        hour: i,
-        activity: Math.floor(Math.random() * 50) + 10,
-      }));
 
       const transformedData: AnalyticsData = {
         coreMetrics: {
@@ -112,9 +95,9 @@ export const fetchAnalytics = createAsyncThunk(
           workloadDistribution: (teamResponse?.analytics as any)?.members || (analytics as any).teamMetrics?.workloadDistribution || [],
         },
         timeInsights: {
-          peakHours: mockPeakHours,
-          dailyActivity: mockDailyActivity,
-          weeklyTrends: mockWeeklyTrends,
+          peakHours: (analytics as any)?.timeInsights?.peakHours || [],
+          dailyActivity: (analytics as any)?.timeInsights?.dailyActivity || [],
+          weeklyTrends: (analytics as any)?.timeInsights?.weeklyTrends || [],
         },
         projectHealth: {
           bugRate: (analytics as any)?.qualityMetrics?.bugRate || 0,

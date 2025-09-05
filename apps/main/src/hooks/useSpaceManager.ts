@@ -1,4 +1,5 @@
 import { useSelector, useDispatch } from 'react-redux';
+import { useCallback } from 'react';
 import type { Space } from '../types/space.types';
 import type { Board } from '../types/board.types';
 import type { RootState } from '../store';
@@ -21,10 +22,8 @@ import {
   setCurrentBoard
 } from '../store/slices/boardSlice';
 import { fetchBoard } from '../store/slices/taskSlice';
-import { useCallback } from 'react';
 
 export const useSpaceManager = () => {
-  console.log('useSpaceManager hook called');
   const dispatch = useDispatch();
   
   // Select state from Redux store
@@ -35,6 +34,7 @@ export const useSpaceManager = () => {
     error: spaceError
   } = useSelector((state: RootState) => state.spaces);
 
+  console.log('useSpaceManager - spaceError:', spaceError);
   const {
     boards,
     currentBoard,
@@ -43,13 +43,14 @@ export const useSpaceManager = () => {
   } = useSelector((state: RootState) => state.boards);
 
   // Space API actions
-  const loadSpace = (spaceId: string) => {
+  const loadSpace = useCallback((spaceId: string) => {
+    console.log('loadSpace called with spaceId:', spaceId);
     dispatch(fetchSpace(spaceId) as any);
-  };
+  }, [dispatch]);
 
-  const loadSpacesByWorkspace = (workspaceId: string) => {
+  const loadSpacesByWorkspace = useCallback((workspaceId: string) => {
     dispatch(fetchSpacesByWorkspace(workspaceId) as any);
-  };
+  }, [dispatch]);
 
   const addSpace = async (spaceData: any) => {
     try {
@@ -79,6 +80,7 @@ export const useSpaceManager = () => {
   };
 
   const loadSpaceMembers = async (spaceId: string) => {
+    console.log('loadSpaceMembers called with spaceId:', spaceId);
     try {
       await dispatch(getSpaceMembers(spaceId) as any).unwrap();
     } catch (error) {
@@ -105,9 +107,9 @@ export const useSpaceManager = () => {
     }
   };
 
-  const selectSpace = (space: Space | null) => {
+  const selectSpace = useCallback((space: Space | null) => {
     dispatch(setCurrentSpace(space));
-  };
+  }, [dispatch]);
 
   // Board API actions
   const loadBoard = useCallback((boardId: string) => {
@@ -179,6 +181,7 @@ export const useSpaceManager = () => {
     return getBoardsBySpace(spaceId).filter(board => board.isActive && !board.archived);
   };
 
+console.log('useSpaceManager - spaceError:', spaceError);
   return {
     // State
     spaces,

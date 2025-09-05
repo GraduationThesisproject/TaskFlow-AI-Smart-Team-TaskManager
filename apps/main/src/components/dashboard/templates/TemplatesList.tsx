@@ -1,15 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import TemplateCard  from './TemplateCard';
 import { EmptyState, Button, Input, Typography } from '@taskflow/ui';
-import { FileText, Grid, List, Search, Plus } from 'lucide-react';
+import { FileText, Grid, List, Search } from 'lucide-react';
 import type { TemplateCardItem } from '../../../types/dash.types';
 import { useTemplates } from '../../../hooks/useTemplates';
 import { useAppSelector } from '../../../store';
 import { selectUserBasic } from '../../../store/slices/authSlice';
 import { CATEGORY_OPTIONS } from '../../../types/dash.types';
-import { CreateTemplateModal } from './modals/CreateTemplateModal';
 
-// Category options are sourced from Create Template modal options
+// Category options for template filtering
 
 const TemplatesList: React.FC = () => {
   const { items: storeItems, loading, error, load, incrementViews, toggleLike } = useTemplates();
@@ -19,7 +18,6 @@ const TemplatesList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'name'>('newest');
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   // Track which templates this user has already viewed in this session to avoid multiple increments
   const [locallyViewed, setLocallyViewed] = useState<Record<string, boolean>>({});
 
@@ -111,7 +109,7 @@ const TemplatesList: React.FC = () => {
   }, [storeItems, userBasic]);
 
   const categories = useMemo(() => {
-    // Initialize counts for each category from Create Template options
+    // Initialize counts for each category
     const counts: Record<string, number> = CATEGORY_OPTIONS.reduce((acc, opt) => {
       acc[opt.value] = 0;
       return acc;
@@ -271,25 +269,13 @@ const TemplatesList: React.FC = () => {
       {/* Templates Grid/List */}
       {!loading && !error && filteredTemplates.length === 0 ? (
         <div className="space-y-6">
-          <div className="flex justify-center">
-            <button
-              type="button"
-              onClick={() => setIsCreateOpen(true)}
-              className="flex h-24 w-full max-w-md items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                <span className="text-sm">Create new template</span>
-              </div>
-            </button>
-          </div>
           <EmptyState
             icon={<FileText className="h-12 w-12" />}
             title="No templates found"
             description={
               searchQuery
                 ? `No templates match "${searchQuery}". Try adjusting your search.`
-                : 'No templates available yet. Create your first template to get started.'
+                : 'No templates available yet.'
             }
             action={
               searchQuery
@@ -300,30 +286,13 @@ const TemplatesList: React.FC = () => {
         </div>
       ) : (
         !loading && !error && (
-          <>
-            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
-              {viewMode === 'grid' && (
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(true)}
-                  className="flex h-24 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    <span className="text-sm">Create new template</span>
-                  </div>
-                </button>
-              )}
-
-              {filteredTemplates.map((template) => (
-                <TemplateCard key={template.id} template={template} onClick={handleTemplateClick} onLike={handleLike} />
-              ))}
-            </div>
-          </>
+          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+            {filteredTemplates.map((template) => (
+              <TemplateCard key={template.id} template={template} onClick={handleTemplateClick} onLike={handleLike} />
+            ))}
+          </div>
         )
       )}
-      {/* Modal mount (always available) */}
-      <CreateTemplateModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
     </>
   );
 };
