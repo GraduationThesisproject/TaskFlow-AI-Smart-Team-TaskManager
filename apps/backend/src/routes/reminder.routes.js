@@ -13,19 +13,19 @@ router.get('/', reminderController.getReminders);
 router.get('/:id', reminderController.getReminder);
 
 router.post('/',
-    validateMiddleware(reminderSchemas.createReminderSchema),
+    validateMiddleware.validateBody(reminderSchemas.createReminderSchema),
     reminderController.createReminder
 );
 
 router.put('/:id',
-    validateMiddleware(reminderSchemas.updateReminderSchema),
+    validateMiddleware.validateBody(reminderSchemas.updateReminderSchema),
     reminderController.updateReminder
 );
 
 router.delete('/:id', reminderController.deleteReminder);
 
 router.patch('/:id/snooze',
-    validateMiddleware(reminderSchemas.snoozeReminderSchema),
+    validateMiddleware.validateBody(reminderSchemas.snoozeReminderSchema),
     reminderController.snoozeReminder
 );
 

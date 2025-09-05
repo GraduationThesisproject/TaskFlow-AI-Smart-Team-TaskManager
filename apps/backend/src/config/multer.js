@@ -83,6 +83,16 @@ const fileTypeConfigs = {
       { name: 'large', width: 400, height: 400 }
     ]
   },
+  workspace_avatar: {
+    folder: 'avatars',
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    maxFileSize: 5 * 1024 * 1024, // 5MB
+    thumbnails: [
+      { name: 'small', width: 50, height: 50 },
+      { name: 'medium', width: 150, height: 150 },
+      { name: 'large', width: 300, height: 300 }
+    ]
+  },
   board_background: {
     folder: 'boards',
     allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
@@ -91,6 +101,12 @@ const fileTypeConfigs = {
       { name: 'preview', width: 800, height: 450 },
       { name: 'full', width: 1920, height: 1080 }
     ]
+  },
+  workspace_rules: {
+    folder: 'rules',
+    allowedMimeTypes: ['application/pdf'],
+    maxFileSize: 5 * 1024 * 1024, // 5MB
+    thumbnails: []
   },
   general: {
     folder: 'general',

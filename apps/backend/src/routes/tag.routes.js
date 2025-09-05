@@ -33,19 +33,19 @@ router.get('/space/:spaceId', tagController.getSpaceTags);
 router.get('/space/:spaceId/usage', tagController.getTagUsage);
 
 router.post('/space/:spaceId',
-    validateMiddleware(tagSchemas.createTagSchema),
+    validateMiddleware.validateBody(tagSchemas.createTagSchema),
     tagController.createTag
 );
 
 router.put('/:id',
-    validateMiddleware(tagSchemas.updateTagSchema),
+    validateMiddleware.validateBody(tagSchemas.updateTagSchema),
     tagController.updateTag
 );
 
 router.delete('/:id', tagController.deleteTag);
 
 router.post('/merge',
-    validateMiddleware(tagSchemas.mergeTagsSchema),
+    validateMiddleware.validateBody(tagSchemas.mergeTagsSchema),
     tagController.mergeTags
 );
 

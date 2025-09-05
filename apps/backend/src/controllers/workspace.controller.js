@@ -9,7 +9,7 @@ const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
 const mongoose = require('mongoose');
-
+const env  = require('../config/env')
 // Get all workspaces for a specific user (owner or member)
 exports.getAllWorkspaces = async (req, res) => {
     try {
@@ -210,10 +210,82 @@ exports.createWorkspace = async (req, res) => {
 // Update workspace
 exports.updateWorkspace = async (req, res) => {
     try {
-        
         const { id: workspaceId } = req.params;
-        const { name, description, settings } = req.body;
+        const { name, description, settings, githubOrg } = req.body;
         const userId = req.user.id;
+        // SECURITY FIX: Use verified roles from auth middleware
+        const userRoles = req.user.roles;
+        
+        const workspaceRole = userRoles.workspaces.find(ws => 
+            ws.workspace.toString() === workspaceId
+        );
+
+        // Fetch workspace to reliably determine ownership
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // Allow owners to edit settings regardless of cached roles on the token
+        const isOwner = workspace.owner && workspace.owner.toString() === userId.toString();
+        if (!isOwner) {
+            if (!workspaceRole || !workspaceRole.permissions?.canEditSettings) {
+                return sendResponse(res, 403, false, 'Insufficient permissions to edit workspace');
+            }
+        }
+
+        // Update basic fields
+        if (name) workspace.name = name;
+        if (description) workspace.description = description;
+
+        // Update GitHub organization if provided
+        if (githubOrg !== undefined) {
+            workspace.githubOrg = githubOrg;
+        }
+
+        // Update settings if provided
+        if (settings) {
+            Object.entries(settings).forEach(([section, updates]) => {
+                if (workspace.settings[section]) {
+                    Object.assign(workspace.settings[section], updates);
+                }
+            });
+        }
+
+        await workspace.save();
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId,
+            action: 'workspace_update',
+            description: `Updated workspace: ${workspace.name}`,
+            entity: { type: 'Workspace', id: workspaceId, name: workspace.name },
+            workspaceId,
+            metadata: {
+                newValues: { name, description, githubOrg },
+                ipAddress: req.ip
+            }
+        });
+
+        sendResponse(res, 200, true, 'Workspace updated successfully', {
+            workspace: workspace.toObject()
+        });
+    } catch (error) {
+        logger.error('Update workspace error:', error);
+        sendResponse(res, 500, false, 'Server error updating workspace');
+    }
+};
+
+// Upload workspace avatar
+exports.uploadWorkspaceAvatar = async (req, res) => {
+    try {
+        const { id: workspaceId } = req.params;
+        const userId = req.user.id;
+        
+        // Check if file was uploaded
+        if (!req.file) {
+            return sendResponse(res, 400, false, 'No avatar file provided');
+        }
 
         // SECURITY FIX: Use verified roles from auth middleware
         const userRoles = req.user.roles;
@@ -236,47 +308,101 @@ exports.updateWorkspace = async (req, res) => {
             }
         }
 
-        // Store old values
-        const oldValues = {
-            name: workspace.name,
-            description: workspace.description
-        };
+        // Create file record
+        const File = require('../models/File');
+        const fileRecord = File.createFromUpload(req.file, userId, 'workspace_avatar', {
+            workspace: workspaceId,
+            attachedTo: {
+                model: 'Workspace',
+                objectId: workspaceId,
+                attachedAt: new Date()
+            }
+        });
 
-        // Update basic fields
-        if (name) workspace.name = name;
-        if (description) workspace.description = description;
+        await fileRecord.save();
 
-        // Update settings if provided
-        if (settings) {
-            Object.entries(settings).forEach(([section, updates]) => {
-                if (workspace.settings[section]) {
-                    Object.assign(workspace.settings[section], updates);
-                }
-            });
-        }
-
+        // Update workspace avatar
+        workspace.avatar = fileRecord.url;
         await workspace.save();
 
         // Log activity
         await ActivityLog.logActivity({
             userId,
-            action: 'workspace_update',
-            description: `Updated workspace: ${workspace.name}`,
+            action: 'workspace_avatar_upload',
+            description: `Uploaded avatar for workspace: ${workspace.name}`,
             entity: { type: 'Workspace', id: workspaceId, name: workspace.name },
             workspaceId,
             metadata: {
-                oldValues,
-                newValues: { name, description },
+                fileId: fileRecord._id,
+                fileName: req.file.originalname,
+                fileSize: req.file.size,
                 ipAddress: req.ip
             }
         });
 
-        sendResponse(res, 200, true, 'Workspace updated successfully', {
+        sendResponse(res, 200, true, 'Workspace avatar uploaded successfully', {
+            workspace: workspace.toObject(),
+            avatar: {
+                url: fileRecord.url,
+                filename: fileRecord.filename,
+                size: fileRecord.size
+            }
+        });
+    } catch (error) {
+        logger.error('Upload workspace avatar error:', error);
+        sendResponse(res, 500, false, 'Server error uploading workspace avatar');
+    }
+};
+
+// Remove workspace avatar
+exports.removeWorkspaceAvatar = async (req, res) => {
+    try {
+        const { id: workspaceId } = req.params;
+        const userId = req.user.id;
+        
+        // SECURITY FIX: Use verified roles from auth middleware
+        const userRoles = req.user.roles;
+        
+        const workspaceRole = userRoles.workspaces.find(ws => 
+            ws.workspace.toString() === workspaceId
+        );
+
+        // Fetch workspace to reliably determine ownership
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // Allow owners to edit settings regardless of cached roles on the token
+        const isOwner = workspace.owner && workspace.owner.toString() === userId.toString();
+        if (!isOwner) {
+            if (!workspaceRole || !workspaceRole.permissions?.canEditSettings) {
+                return sendResponse(res, 403, false, 'Insufficient permissions to edit workspace');
+            }
+        }
+
+        // Remove avatar
+        workspace.avatar = null;
+        await workspace.save();
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId,
+            action: 'workspace_avatar_remove',
+            description: `Removed avatar for workspace: ${workspace.name}`,
+            entity: { type: 'Workspace', id: workspaceId, name: workspace.name },
+            workspaceId,
+            metadata: {
+                ipAddress: req.ip
+            }
+        });
+
+        sendResponse(res, 200, true, 'Workspace avatar removed successfully', {
             workspace: workspace.toObject()
         });
     } catch (error) {
-        logger.error('Update workspace error:', error);
-        sendResponse(res, 500, false, 'Server error updating workspace');
+        logger.error('Remove workspace avatar error:', error);
+        sendResponse(res, 500, false, 'Server error removing workspace avatar');
     }
 };
 
@@ -287,37 +413,17 @@ exports.inviteMember = async (req, res) => {
         const { email, role = 'member', message } = req.body;
         const userId = req.user.id;
 
-        // SECURITY FIX: Use verified roles from auth middleware
-        const userRoles = req.user.roles;
-        
-        const workspaceRole = userRoles.workspaces.find(ws => 
-            ws.workspace.toString() === workspaceId
-        );
 
-        if (!workspaceRole || !workspaceRole.permissions.canManageMembers) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to invite members');
-        }
+
 
         const workspace = await Workspace.findById(workspaceId);
         if (!workspace) {
             return sendResponse(res, 404, false, 'Workspace not found');
         }
 
-        // SECURITY FIX: Validate role assignment permissions
-        // Only workspace owners can assign admin roles, admins can only assign member roles
-        if (role === 'admin' && workspaceRole.role !== 'owner') {
-            return sendResponse(res, 403, false, 'Only workspace owners can assign admin roles');
-        }
 
-        if (role === 'owner') {
-            return sendResponse(res, 403, false, 'Cannot assign owner role through invitation');
-        }
 
-        // Validate role is one of the allowed values
-        const allowedRoles = ['member', 'admin'];
-        if (!allowedRoles.includes(role)) {
-            return sendResponse(res, 400, false, 'Invalid role specified');
-        }
+
 
         // Check if user is already a member
         const existingUser = await User.findOne({ email });
@@ -338,6 +444,8 @@ exports.inviteMember = async (req, res) => {
 
         // Create invitation
         const crypto = require('crypto');
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+        
         const invitation = new Invitation({
             type: 'workspace',
             invitedBy: userId,
@@ -352,7 +460,8 @@ exports.inviteMember = async (req, res) => {
             },
             role,
             message,
-            token: crypto.randomBytes(32).toString('hex')
+            token: crypto.randomBytes(32).toString('hex'),
+            expiresAt
         });
         await invitation.save();
         
@@ -369,7 +478,9 @@ exports.inviteMember = async (req, res) => {
                 workspaceDescription: workspace.description,
                 role,
                 message,
-                invitationUrl: invitation.inviteUrl
+                invitationUrl: invitation.inviteUrl,
+                supportUrl: `${env.FRONTEND_URL || 'http://localhost:5173'}/support`,
+                docsUrl: `${env.FRONTEND_URL || 'http://localhost:5173'}/docs`
             }
         });
 
@@ -507,40 +618,41 @@ exports.generateInviteLink = async (req, res) => {
         const workspace = await Workspace.findById(workspaceId);
         if (!workspace) {
             return sendResponse(res, 404, false, 'Workspace not found');
-        }
+        }     
 
-        // Debug log workspace members and current user
-        console.log('Workspace members:', JSON.stringify(workspace.members, null, 2));
-        console.log('Current user ID:', userId);
-        console.log('User making request:', req.user);
 
-        // Check if user is the workspace owner
-        const isOwner = workspace.owner.toString() === userId.toString();
-        
-        // Check if user is an admin member
-        const isAdminMember = workspace.members.some(member => {
-            const isUser = member.user && (
-                (member.user._id ? member.user._id.toString() === userId.toString() : member.user.toString() === userId.toString())
-            );
-            const isAdmin = member.role && (
-                member.role.toLowerCase() === 'admin' || 
-                member.role.toLowerCase() === 'owner' ||
-                member.role.toLowerCase() === 'administrator'
-            );
-            return isUser && isAdmin;
-        });
-
-        if (!isOwner && !isAdminMember) {
-            console.log('Permission denied - Member not found or insufficient permissions');
-            return sendResponse(res, 403, false, 'You need to be an admin or owner to generate invite links');
-        }
 
         // Generate a unique token for the invite link
         const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7); // Link expires in 7 days
 
-        // Save the invite token to the workspace
+        // Create a proper invitation record
+        const Invitation = require('../models/Invitation');
+        const invitation = new Invitation({
+            type: 'workspace',
+            invitedBy: userId,
+            invitedUser: {
+                email: null, // Will be filled when someone uses the link
+                userId: null
+            },
+            targetEntity: {
+                type: 'Workspace',
+                id: workspaceId,
+                name: workspace.name
+            },
+            role: 'member', // Default role for invite links
+            message: 'Join via invite link',
+            token: token,
+            status: 'pending',
+            expiresAt: expiresAt,
+            metadata: {
+                invitationMethod: 'link'
+            }
+        });
+        await invitation.save();
+
+        // Also save the invite token to the workspace for backward compatibility
         workspace.inviteTokens = workspace.inviteTokens || [];
         workspace.inviteTokens.push({
             token,
@@ -552,7 +664,7 @@ exports.generateInviteLink = async (req, res) => {
         await workspace.save();
 
         // Construct the invite link
-        const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/join-workspace?token=${token}&workspace=${workspaceId}`;
+        const inviteLink = `${env.FRONTEND_URL || 'http://localhost:3000'}/join-workspace?token=${token}&workspace=${workspaceId}`;
 
         sendResponse(res, 200, true, 'Invite link generated successfully', {
             link: inviteLink,
@@ -739,13 +851,7 @@ exports.getWorkspaceAnalytics = async (req, res) => {
         const { timeframe = '30d' } = req.query;
         const userId = req.user.id;
 
-        // Check access
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        if (!userRoles.hasWorkspaceRole(workspaceId)) {
-            // return sendResponse(res, 403, false, 'Access denied to this workspace');
-        }
+        // Access control handled by middleware
 
         const workspace = await Workspace.findById(workspaceId);
         if (!workspace) {
@@ -937,5 +1043,202 @@ exports.deleteWorkspace = async (req, res) => {
     } catch (error) {
         logger.error('Delete workspace error:', error);
         return sendResponse(res, 500, false, 'Server error deleting workspace');
+    }
+};
+
+// Workspace Rules Controllers
+
+/**
+ * Get workspace rules
+ */
+exports.getWorkspaceRules = async (req, res) => {
+    try {
+        const { id: workspaceId } = req.params;
+        const userId = req.user.id;
+
+        // Get workspace with rules populated
+        const workspace = await Workspace.findById(workspaceId).populate('rules.lastUpdatedBy', 'name email');
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // If rules exist but lastUpdatedBy is not populated, populate it manually
+        if (workspace.rules && workspace.rules.lastUpdatedBy && typeof workspace.rules.lastUpdatedBy === 'string') {
+            const user = await User.findById(workspace.rules.lastUpdatedBy).select('name email');
+            if (user) {
+                workspace.rules.lastUpdatedBy = user;
+            }
+        }
+
+        logger.info('Workspace fetched from database:', {
+            workspaceId,
+            hasRules: !!workspace.rules,
+            hasContent: !!workspace.rules?.content,
+            contentLength: workspace.rules?.content?.length || 0,
+            rulesStructure: workspace.rules
+        });
+
+        // If no rules exist, create default rules
+        const hasRules = !!workspace.rules;
+        const hasContent = !!workspace.rules?.content;
+        const contentLength = workspace.rules?.content?.length || 0;
+        const contentTrimmed = workspace.rules?.content?.trim() || '';
+        const shouldCreateRules = !hasRules || !hasContent || contentTrimmed === '';
+        
+        logger.info('Rules creation check:', {
+            workspaceId,
+            hasRules,
+            hasContent,
+            contentLength,
+            contentTrimmed,
+            shouldCreateRules,
+            rulesObject: workspace.rules
+        });
+        
+        if (shouldCreateRules) {
+            logger.info('Creating default rules for workspace:', workspaceId);
+            await workspace.getOrCreateRules(userId);
+            // Refresh the workspace after creating rules
+            const updatedWorkspace = await Workspace.findById(workspaceId).populate('rules.lastUpdatedBy', 'name email');
+            workspace.rules = updatedWorkspace.rules;
+        } else {
+            logger.info('Rules already exist, skipping creation:', workspaceId);
+        }
+
+        // Check if rules exist
+        if (!workspace.rules) {
+            logger.error('Workspace rules is null after getOrCreateRules:', { workspaceId });
+            return sendResponse(res, 500, false, 'Failed to retrieve workspace rules');
+        }
+
+        logger.info('Workspace rules before formatting:', {
+            workspaceId,
+            rules: workspace.rules,
+            hasContent: !!workspace.rules.content,
+            contentLength: workspace.rules.content?.length || 0,
+            contentValue: workspace.rules.content
+        });
+
+        // Add formatted content to rules
+        const rulesWithFormatted = {
+            ...workspace.rules.toObject({ virtuals: true }),
+            formattedContent: workspace.rulesFormattedContent || ''
+        };
+
+        logger.info('Workspace rules response:', {
+            workspaceId,
+            rules: rulesWithFormatted,
+            hasContent: !!rulesWithFormatted.content,
+            contentLength: rulesWithFormatted.content?.length || 0
+        });
+
+        // Send response with rules directly in the response object (not nested in data)
+        res.status(200).json({
+            success: true,
+            message: 'Workspace rules retrieved successfully',
+            rules: rulesWithFormatted,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        logger.error('Error getting workspace rules:', error);
+        sendResponse(res, 500, false, 'Internal server error');
+    }
+};
+
+/**
+ * Update workspace rules
+ */
+exports.updateWorkspaceRules = async (req, res) => {
+    try {
+        const { id: workspaceId } = req.params;
+        const { content } = req.body;
+        const userId = req.user.id;
+
+        // Get workspace
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // Update rules
+        await workspace.updateRules(content, userId);
+        
+        // Populate the lastUpdatedBy field
+        await workspace.populate('rules.lastUpdatedBy', 'name email');
+
+        // Add formatted content to rules
+        const rulesWithFormatted = {
+            ...workspace.rules.toObject(),
+            formattedContent: workspace.rulesFormattedContent
+        };
+
+        sendResponse(res, 200, true, 'Workspace rules updated successfully', {
+            rules: rulesWithFormatted
+        });
+    } catch (error) {
+        logger.error('Error updating workspace rules:', error);
+        sendResponse(res, 500, false, 'Internal server error');
+    }
+};
+
+/**
+ * Upload workspace rules as PDF file
+ */
+exports.uploadWorkspaceRules = async (req, res) => {
+    try {
+        const { id: workspaceId } = req.params;
+        const userId = req.user.id;
+
+        if (!req.file) {
+            return sendResponse(res, 400, false, 'No file uploaded');
+        }
+
+        // Get workspace
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // Upload rules file
+        await workspace.uploadRulesFile(req.file, userId);
+        
+        // Populate the lastUpdatedBy field
+        await workspace.populate('rules.lastUpdatedBy', 'name email');
+
+        // Add formatted content to rules
+        const rulesWithFormatted = {
+            ...workspace.rules.toObject(),
+            formattedContent: workspace.rulesFormattedContent
+        };
+
+        sendResponse(res, 200, true, 'Workspace rules uploaded successfully', {
+            rules: rulesWithFormatted
+        });
+    } catch (error) {
+        logger.error('Error uploading workspace rules:', error);
+        sendResponse(res, 500, false, 'Internal server error');
+    }
+};
+
+/**
+ * Delete workspace rules (reset to default)
+ */
+exports.deleteWorkspaceRules = async (req, res) => {
+    try {
+        const { id: workspaceId } = req.params;
+
+        // Get workspace
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // Delete workspace rules
+        await workspace.deleteRules();
+
+        sendResponse(res, 200, true, 'Workspace rules deleted successfully');
+    } catch (error) {
+        logger.error('Error deleting workspace rules:', error);
+        sendResponse(res, 500, false, 'Internal server error');
     }
 };
