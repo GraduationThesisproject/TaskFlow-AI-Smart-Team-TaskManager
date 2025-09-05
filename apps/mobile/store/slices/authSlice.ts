@@ -13,7 +13,7 @@ import type {
   PasswordResetData
 } from '../../types/auth.types';
 import { AuthService } from '../../services/authService';
-import { setAuthToken, clearAuthToken, getAuthToken } from '../../config/axios';
+import { setAuthToken, clearAuthToken, getAuthToken, setAuthHeaderOnly } from '../../config/axios';
 import { oauthService } from '../../services/oauthService';
 import { getDeviceId } from '../../utils';
 
@@ -82,16 +82,28 @@ const serializeUser = (userData: any): User => {
   }
 };
 
+// Safely serialize user-like payloads that may be undefined/null
+const safeSerializeUser = (userData: any | null | undefined): User | null => {
+  if (!userData) return null as any;
+  return serializeUser(userData);
+};
+
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
       const response = await AuthService.login(credentials);
-      const token = (response as any)?.data?.data?.token;
+      console.log('---------------------------------------------------',response);
+      const token = (response as any)?.data?.token || (response as any)?.data?.data?.token;
       if (!token) {
         throw new Error('No token received from server');
       }
-      await setAuthToken(token);
+      // Persist or session-only based on rememberMe
+      if (credentials.rememberMe) {
+        await setAuthToken(token);
+      } else {
+        setAuthHeaderOnly(token);
+      }
       // Protect against a hanging profile request by adding a timeout
       const profileTimeoutMs = 8000;
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -101,6 +113,11 @@ export const loginUser = createAsyncThunk(
       try {
         const profileResponse = await Promise.race([AuthService.getProfile(), timeoutPromise]);
         userData = (profileResponse as any)?.data?.data;
+        if (userData) {
+          console.log('[Auth] Authenticated user:', userData);
+        } else {
+          console.log('[Auth] Login succeeded but profile payload missing');
+        }
       } catch (e) {
         // Proceed without profile to avoid blocking login; reducers will set isAuthenticated
         console.warn('Proceeding without profile after login:', (e as Error).message);
@@ -132,7 +149,7 @@ export const registerUser = createAsyncThunk(
       
       return {
         ...(response as any).data,
-        user: serializeUser(profileData),
+        user: safeSerializeUser(profileData),
         token
       };
     } catch (error: any) {
@@ -197,7 +214,7 @@ export const checkAuthStatus = createAsyncThunk(
       
       return {
         isAuthenticated: true,
-        user: serializeUser((response as any)?.data?.data),
+        user: safeSerializeUser((response as any)?.data?.data),
         token
       };
     } catch (error: any) {
@@ -278,7 +295,7 @@ export const oauthLogin = createAsyncThunk(
       
       return {
         ...(response as any).data,
-        user: serializeUser(profileData),
+        user: safeSerializeUser(profileData),
         token
       };
     } catch (error: any) {
@@ -327,7 +344,7 @@ export const oauthRegister = createAsyncThunk(
       
       return {
         ...(response as any).data,
-        user: serializeUser(profileData),
+        user: safeSerializeUser(profileData),
         token
       };
     } catch (error: any) {
@@ -353,7 +370,7 @@ export const verifyEmail = createAsyncThunk(
       
       return {
         ...(response as any).data,
-        user: serializeUser(profileData),
+        user: safeSerializeUser(profileData),
         token
       };
     } catch (error: any) {
@@ -637,7 +654,7 @@ const authSlice = createSlice({
       })
       .addCase(updateProfileSecure.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = serializeUser(action.payload);
+        state.user = safeSerializeUser(action.payload) as any;
         state.error = null;
       })
       .addCase(updateProfileSecure.rejected, (state, action) => {
