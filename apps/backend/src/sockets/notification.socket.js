@@ -114,8 +114,11 @@ const handleNotificationSocket = (io) => {
         // Mark notification as read (DEPRECATED - use REST endpoint instead)
         socket.on('notifications:markRead', async (data) => {
             try {
-                // Deprecated: do not auto-mark read via socket anymore
-                socket.emit('notifications:error', { message: 'Deprecated: use PATCH /api/notifications/:id/read' });
+                logger.warn(`Deprecated socket event 'notifications:markRead' used by user ${socket.user.name}. Use PATCH /api/notifications/:id/read instead.`);
+                socket.emit('notifications:error', { 
+                    message: 'Deprecated: use PATCH /api/notifications/:id/read',
+                    code: 'DEPRECATED_ENDPOINT'
+                });
             } catch (error) {
                 logger.error('Mark notification as read (socket) error:', error);
             }
@@ -124,8 +127,11 @@ const handleNotificationSocket = (io) => {
         // Mark all notifications as read (DEPRECATED - use REST endpoint instead)
         socket.on('notifications:markAllRead', async () => {
             try {
-                // Deprecated: do not auto-mark read via socket anymore
-                socket.emit('notifications:error', { message: 'Deprecated: use PATCH /api/notifications/read-all' });
+                logger.warn(`Deprecated socket event 'notifications:markAllRead' used by user ${socket.user.name}. Use PATCH /api/notifications/read-all instead.`);
+                socket.emit('notifications:error', { 
+                    message: 'Deprecated: use PATCH /api/notifications/read-all',
+                    code: 'DEPRECATED_ENDPOINT'
+                });
             } catch (error) {
                 logger.error('Mark all notifications as read (socket) error:', error);
             }
@@ -213,21 +219,22 @@ const handleNotificationSocket = (io) => {
             let notificationDoc;
             const readOption = notificationData?.readOption; // 'mark_read' | 'delete' | undefined
  
-             // If notification already exists (has _id), don't recreate it
-             if (notificationData && notificationData._id) {
-                 // Ensure we have a plain object to emit
-                 const notifObj = notificationData.toObject ? notificationData.toObject() : notificationData;
-                 notificationDoc = notifObj;
-             } else {
-                 // Create notification in database
-                 const created = await Notification.create({
-                     ...notificationData,
-                     recipient: recipientId
-                 });
-
-                 await created.populate('sender', 'name avatar');
-                 notificationDoc = created;
-             }
+            // If notification already exists (has _id), don't recreate it
+            if (notificationData && notificationData._id) {
+                // Ensure we have a plain object to emit
+                const notifObj = notificationData.toObject ? notificationData.toObject() : notificationData;
+                notificationDoc = notifObj;
+            } else {
+                // Create notification in database
+                const created = await Notification.create({
+                    ...notificationData,
+                    recipient: recipientId
+                });
+                
+                // Populate the created notification
+                await created.populate('sender', 'name avatar');
+                notificationDoc = created;
+            }
 
             // Send real-time notification
             notificationNamespace.to(`notifications:${recipientId}`).emit('notification:new', {
@@ -252,12 +259,12 @@ const handleNotificationSocket = (io) => {
                 count: unreadCount 
             });
 
-             return notificationDoc;
-         } catch (error) {
-             logger.error('Send notification error:', error);
-             throw error;
-         }
-     };
+            return notificationDoc;
+        } catch (error) {
+            logger.error('Send notification error:', error);
+            throw error;
+        }
+    };
 
     // Bulk notification sender
     notificationNamespace.sendBulkNotifications = async (notifications) => {

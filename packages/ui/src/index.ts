@@ -40,7 +40,10 @@ export * from './ColorPicker';
 export * from './IconPicker';
 export * from './Popover';
 export * from './Pagination';
+export * from './Tabs';
 export * from './utils';
+export * from './Separator';
+export * from './ThemeToggle';
 
 // Re-export GridLayout as Grid for backward compatibility
 export { GridLayout as Grid } from './Layout';

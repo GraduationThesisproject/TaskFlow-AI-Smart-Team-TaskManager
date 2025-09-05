@@ -2,47 +2,12 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import axiosInstance from '../../config/axios';
 import type { RootState } from '../../store';
+import type { 
+  Notification, 
+  NotificationSliceState 
+} from '../../types/store.types';
 
-interface Notification {
-  _id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error' | 'workspace_invitation' | 'space_invitation' | 'invitation_accepted';
-  recipientId: string;
-  relatedEntity?: {
-    type: string;
-    id: string;
-    name?: string;
-  };
-  priority: 'low' | 'medium' | 'high';
-  isRead: boolean;
-  createdAt: string;
-  updatedAt: string;
-  clientOnly?: boolean;
-}
-
-interface NotificationStats {
-  total: number;
-  unread: number;
-  byType: {
-    info: number;
-    success: number;
-    warning: number;
-    error: number;
-    workspace_invitation: number;
-    space_invitation: number;
-    invitation_accepted: number;
-  };
-}
-
-interface NotificationState {
-  notifications: Notification[];
-  stats: NotificationStats | null;
-  loading: boolean;
-  error: string | null;
-}
-
-const initialState: NotificationState = {
+const initialState: NotificationSliceState = {
   notifications: [],
   stats: null,
   loading: false,
@@ -152,7 +117,15 @@ export const deleteNotification = createAsyncThunk(
 export const clearReadNotifications = createAsyncThunk(
   'notifications/clearReadNotifications',
   async () => {
-    await axiosInstance.post('/notifications/clear-read');
+    await axiosInstance.delete('/notifications/clear-read');
+    return true;
+  }
+);
+
+export const clearAllNotifications = createAsyncThunk(
+  'notifications/clearAllNotifications',
+  async () => {
+    await axiosInstance.delete('/notifications/clear-all');
     return true;
   }
 );
@@ -317,6 +290,27 @@ const notificationSlice = createSlice({
       })
       .addCase(clearReadNotifications.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to clear read notifications';
+      })
+      
+      // Clear all notifications
+      .addCase(clearAllNotifications.fulfilled, (state) => {
+        state.notifications = [];
+        if (state.stats) {
+          state.stats.total = 0;
+          state.stats.unread = 0;
+          state.stats.byType = {
+            info: 0,
+            success: 0,
+            warning: 0,
+            error: 0,
+            workspace_invitation: 0,
+            space_invitation: 0,
+            invitation_accepted: 0,
+          };
+        }
+      })
+      .addCase(clearAllNotifications.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to clear all notifications';
       });
   },
 });

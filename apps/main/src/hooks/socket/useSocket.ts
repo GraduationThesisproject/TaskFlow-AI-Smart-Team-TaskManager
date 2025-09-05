@@ -191,9 +191,13 @@ export function useSocket(options: UseSocketOptions) {
       socketRef.current.emit(event, data);
     } else {
       setError('Socket not connected');
-      // console.warn('Attempted to emit event on disconnected socket:', event);
+      // Attempt to reconnect if not connected
+      if (socketRef.current && !socketRef.current.connected) {
+        console.warn('Attempted to emit event on disconnected socket, attempting reconnect:', event);
+        connect();
+      }
     }
-  }, []);
+  }, [connect]);
 
   const on = useCallback((event: string, callback: (data: any) => void) => {
     if (socketRef.current) {

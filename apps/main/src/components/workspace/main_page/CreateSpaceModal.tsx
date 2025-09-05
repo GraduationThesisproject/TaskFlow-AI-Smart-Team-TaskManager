@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Modal, ModalBody, ModalFooter, Button, Input, TextArea } from '@taskflow/ui';
 import { SpaceService } from '../../../services/spaceService';
 import type { CreateSpaceData } from '../../../services/spaceService';
-import type { CreateSpaceModalProps } from '../../../types/interfaces/ui';
+import type { CreateSpaceModalProps } from './types';
 
 const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({
   isOpen,

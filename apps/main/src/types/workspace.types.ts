@@ -4,6 +4,7 @@ export interface Workspace {
   _id: string;
   name: string;
   description?: string;
+  avatar?: string;
   owner: string;
   members: WorkspaceMember[];
   spaces: string[];
@@ -15,8 +16,38 @@ export interface Workspace {
   archivedAt?: string;
   archiveExpiresAt?: string;
   isPublic?: boolean;
+  // GitHub Integration
+  githubOrg?: {
+    id: number;
+    login: string;
+    name: string;
+    url: string;
+    avatar: string;
+    description: string;
+    isPrivate: boolean;
+    linkedAt: string;
+  };
   createdAt: string;
   updatedAt: string;
+  // Workspace rules
+  rules?: {
+    content: string;
+    lastUpdatedBy: {
+      _id: string;
+      name: string;
+      email: string;
+    } | null;
+    version: number;
+    formattedContent?: string;
+    fileReference?: {
+      filename: string;
+      originalName: string;
+      mimeType: string;
+      size: number;
+      path: string;
+      uploadedAt: string;
+    } | null;
+  };
 }
 
 export interface WorkspaceMember {
@@ -65,7 +96,18 @@ export interface CreateWorkspaceData {
 export interface UpdateWorkspaceData {
   name?: string;
   description?: string;
+  avatar?: string;
   settings?: WorkspaceSettings;
+  githubOrg?: {
+    id: number;
+    login: string;
+    name: string;
+    url: string;
+    avatar: string;
+    description: string;
+    isPrivate: boolean;
+    linkedAt: string;
+  } | null;
 }
 
 export interface InviteMemberData {

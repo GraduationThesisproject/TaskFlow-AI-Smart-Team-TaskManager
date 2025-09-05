@@ -88,9 +88,9 @@ const validateAccessControl = (req, res, next) => {
 // CRUD
 router.get('/', validateMiddleware.validateQuery(listQuerySchema), ctrl.list);
 router.get('/:id', optionalAuth, validateMiddleware.validateParams(idParamSchema), ctrl.getById);
-router.post('/', authMiddleware, validateMiddleware(createTemplateSchema), validateTagsLength, validateAccessControl, ctrl.create);
-router.patch('/:id', authMiddleware, validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update);
-router.put('/:id', authMiddleware, validateMiddleware.validateParams(idParamSchema), validateMiddleware(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update); // backward compatibility
+router.post('/', authMiddleware, validateMiddleware.validateBody(createTemplateSchema), validateTagsLength, validateAccessControl, ctrl.create);
+router.patch('/:id', authMiddleware, validateMiddleware.validateParams(idParamSchema), validateMiddleware.validateBody(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update);
+router.put('/:id', authMiddleware, validateMiddleware.validateParams(idParamSchema), validateMiddleware.validateBody(updateTemplateSchema), validateTagsLength, validateAccessControl, ctrl.update); // backward compatibility
 router.delete('/:id', authMiddleware, validateMiddleware.validateParams(idParamSchema), ctrl.remove);
 
 // Engagement

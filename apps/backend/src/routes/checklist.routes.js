@@ -15,31 +15,31 @@ router.use(authMiddleware);
 router.get('/task/:taskId', checklistController.getTaskChecklists);
 
 router.post('/task/:taskId',
-    validateMiddleware(checklistSchemas.createChecklistSchema),
+    validateMiddleware.validateBody(checklistSchemas.createChecklistSchema),
     checklistController.createChecklist
 );
 
 router.put('/:id',
-    validateMiddleware(checklistSchemas.updateChecklistSchema),
+    validateMiddleware.validateBody(checklistSchemas.updateChecklistSchema),
     checklistController.updateChecklist
 );
 
 router.delete('/:id', checklistController.deleteChecklist);
 
 router.post('/:id/items',
-    validateMiddleware(checklistSchemas.addItemSchema),
+    validateMiddleware.validateBody(checklistSchemas.addItemSchema),
     checklistController.addItem
 );
 
 router.put('/:id/items/:itemId',
-    validateMiddleware(checklistSchemas.updateItemSchema),
+    validateMiddleware.validateBody(checklistSchemas.updateItemSchema),
     checklistController.updateItem
 );
 
 router.delete('/:id/items/:itemId', checklistController.deleteItem);
 
 router.patch('/:id/reorder',
-    validateMiddleware(checklistSchemas.reorderItemsSchema),
+    validateMiddleware.validateBody(checklistSchemas.reorderItemsSchema),
     checklistController.reorderItems
 );
 

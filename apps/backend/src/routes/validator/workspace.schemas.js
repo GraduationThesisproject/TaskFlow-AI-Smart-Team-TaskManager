@@ -12,7 +12,10 @@ const createWorkspaceSchema = {
 const updateWorkspaceSchema = {
     name: { minLength: 2, maxLength: 200 },
     description: { maxLength: 1000 },
-    settings: { object: true }
+    settings: { object: true },
+    githubOrg: { 
+        object: true
+    }
 };
 
 const inviteMemberSchema = {
@@ -34,11 +37,16 @@ const updateVisibilitySchema = {
     visibility: { required: true, enum: ['public', 'private'] }
 };
 
+const updateWorkspaceRulesSchema = {
+    content: { required: true, string: true, maxLength: 10000 }
+};
+
 module.exports = {
     createWorkspaceSchema,
     updateWorkspaceSchema,
     inviteMemberSchema,
     updateSettingsSchema,
     transferOwnershipSchema,
-    updateVisibilitySchema
+    updateVisibilitySchema,
+    updateWorkspaceRulesSchema
 };

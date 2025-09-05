@@ -457,6 +457,85 @@ const templates = {
             </body>
             </html>
         `
+    },
+    'workspace-invitation': {
+        subject: '🎯 You\'re invited to join {{workspaceName}} on TaskFlow!',
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Workspace Invitation</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🎯 Workspace Invitation</h1>
+                        <p style="color: #d1fae5; margin: 10px 0 0 0; font-size: 16px;">Join your team on TaskFlow</p>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div style="padding: 40px 30px;">
+                        <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hello!</h2>
+                        
+                        <p style="color: #475569; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                            <strong>{{inviterName}}</strong> has invited you to join the workspace <strong>"{{workspaceName}}"</strong> on TaskFlow.
+                        </p>
+                        
+                        {{#if workspaceDescription}}
+                        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 24px; margin: 30px 0;">
+                            <h3 style="color: #166534; margin: 0 0 16px 0; font-size: 18px;">📋 Workspace Description</h3>
+                            <p style="color: #166534; margin: 0; line-height: 1.6; font-size: 16px;">{{workspaceDescription}}</p>
+                        </div>
+                        {{/if}}
+                        
+                        <div style="background-color: #f1f5f9; border-radius: 12px; padding: 24px; margin: 30px 0;">
+                            <h3 style="color: #1e293b; margin: 0 0 16px 0; font-size: 18px;">👥 Your Role</h3>
+                            <p style="color: #475569; margin: 0; line-height: 1.6; font-size: 16px;">
+                                You'll be joining as a <strong>{{role}}</strong> with access to manage tasks, collaborate with your team, and contribute to project success.
+                            </p>
+                        </div>
+                        
+                        {{#if message}}
+                        <div style="background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 12px; padding: 24px; margin: 30px 0;">
+                            <h3 style="color: #92400e; margin: 0 0 16px 0; font-size: 18px;">💬 Personal Message</h3>
+                            <p style="color: #92400e; margin: 0; line-height: 1.6; font-size: 16px;">{{message}}</p>
+                        </div>
+                        {{/if}}
+                        
+                        <div style="text-align: center; margin: 40px 0;">
+                            <a href="{{invitationUrl}}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">
+                                🚀 Accept Invitation
+                            </a>
+                        </div>
+                        
+                        <p style="color: #64748b; line-height: 1.6; margin: 0 0 20px 0; font-size: 14px;">
+                            Click the button above to accept this invitation and start collaborating with your team on TaskFlow.
+                        </p>
+                        
+                        <div style="background-color: #f8fafc; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                            <p style="color: #64748b; margin: 0; font-size: 12px; text-align: center;">
+                                <strong>Note:</strong> This invitation link will expire in 7 days for security reasons.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                        <p style="color: #64748b; margin: 0 0 10px 0; font-size: 14px;">Best regards,</p>
+                        <p style="color: #1e293b; margin: 0; font-weight: 600; font-size: 16px;">The TaskFlow Team</p>
+                        <div style="margin-top: 20px;">
+                            <a href="{{supportUrl}}" style="color: #10b981; text-decoration: none; font-size: 14px;">📧 Support</a>
+                            <span style="color: #cbd5e1; margin: 0 10px;">•</span>
+                            <a href="{{docsUrl}}" style="color: #10b981; text-decoration: none; font-size: 14px;">📚 Documentation</a>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
     }
 };
 

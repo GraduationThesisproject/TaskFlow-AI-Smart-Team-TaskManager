@@ -3,7 +3,7 @@ import axiosInstance from '../config/axios';
 export interface InvitationDetails {
   id: string;
   type: 'workspace' | 'space';
-  invitedBy: string;
+  invitedBy: string | { _id: string; name: string; avatar?: string };
   targetEntity: { type: 'Workspace' | 'Space'; id: string; name: string };
   role: string;
   message?: string;

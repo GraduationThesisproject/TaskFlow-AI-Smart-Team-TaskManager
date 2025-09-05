@@ -2,7 +2,7 @@ import type { Middleware } from '@reduxjs/toolkit';
 import { io, Socket } from 'socket.io-client';
 import { env } from '../../config/env';
 import { addNotification, fetchNotifications } from '../slices/notificationSlice';
-import { removeWorkspaceById, upsertWorkspaceStatus } from '../slices/workspaceSlice';
+import { removeWorkspaceById, upsertWorkspaceStatus, createWorkspace } from '../slices/workspaceSlice';
 import { logoutUser } from '../slices/authSlice';
 import { addActivity } from '../slices/activitySlice';
 
@@ -339,6 +339,40 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     if (action.type === logoutUser.fulfilled.type) {
       disconnect();
       return result;
+    }
+
+    // Handle workspace creation - emit socket event and create notification
+    if (action.type === createWorkspace.fulfilled.type && socket?.connected) {
+      const workspace = action.payload;
+      const currentUser = state.auth.user;
+      
+      if (workspace && currentUser) {
+        // Emit socket event for real-time updates
+        socket.emit('workspace:created', {
+          workspace,
+          userId: currentUser.user._id,
+          timestamp: new Date().toISOString()
+        });
+
+        // Create local notification
+        store.dispatch(addNotification({
+          _id: `workspace-created-${Date.now()}`,
+          title: 'Workspace Created',
+          message: `Successfully created workspace "${workspace.name}"`,
+          type: 'success',
+          recipientId: currentUser.user._id,
+          relatedEntity: {
+            type: 'workspace',
+            id: workspace._id || workspace.id,
+            name: workspace.name
+          },
+          priority: 'low',
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          clientOnly: true,
+        } as any));
+      }
     }
 
     // Handle token or preference changes
