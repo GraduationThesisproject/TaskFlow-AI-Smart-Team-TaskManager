@@ -49,10 +49,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="space"
+        name="board"
         options={{
-          title: 'space',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Board',
+          tabBarIcon: ({ color }) => <TabBarIcon name="columns" color={color} />,
         }}
       />
     </Tabs>

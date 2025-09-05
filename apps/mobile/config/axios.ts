@@ -5,7 +5,15 @@ import { env } from './env';
 
 // Create axios instance
 // Normalize base URL to ensure it targets the backend API prefix
-const rawBase = (env.API_BASE_URL || env.API_URL || '').trim();
+let rawBase = (env.API_BASE_URL || env.API_URL || '').trim();
+
+// On Android emulator, localhost should point to the host machine via 10.0.2.2
+if (env.IS_ANDROID && __DEV__) {
+  rawBase = rawBase
+    .replace('http://localhost', 'http://10.0.2.2')
+    .replace('http://127.0.0.1', 'http://10.0.2.2');
+}
+
 const trimmed = rawBase.replace(/\/$/, '');
 const baseURL = /\/api$/.test(trimmed) ? trimmed : `${trimmed}/api`;
 

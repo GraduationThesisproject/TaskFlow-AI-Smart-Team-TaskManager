@@ -17,7 +17,7 @@ export const BoardPage = () => {
             {/* Sub Navigation for switching between board views */}
             <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
                 <div className="px-6 sm:px-8 lg:px-12 py-4">
-                    <SubNavigation />
+                    <SubNavigation items={[]} />
                 </div>
             </div>
             
