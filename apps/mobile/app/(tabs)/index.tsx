@@ -9,26 +9,20 @@ import { fetchAnalytics } from '@/store/slices/analyticsSlice';
 import { listTemplates } from '@/store/slices/templatesSlice';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
+import { router } from 'expo-router';
+import { useAuth } from '@/hooks/useAuth';
 
 // Welcome Header Component
 const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
   const colors = useThemeColors();
-  
-  return (
-    <View style={styles.welcomeHeader}>
-      <Text style={[TextStyles.heading.h1, { color: colors.foreground, textAlign: 'center', marginBottom: 16 }]}>
-        Welcome to TaskFlow AI
-      </Text>
-      <Text style={[TextStyles.body.large, { color: colors['muted-foreground'], textAlign: 'center', marginBottom: 24 }]}>
-        Your smart team task manager that helps you stay organized and productive
-      </Text>
-    </View>
-  );
-};
+  const dispatch = useAppDispatch();
+  const { logout } = useAuth();
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-// Stats Cards Component
-const StatsCards: React.FC = () => {
-  const colors = useThemeColors();
+  // Redux selectors
+  const { user } = useAppSelector(state => state.auth);
+  const { workspaces, loading: workspacesLoading, error: workspacesError } = useAppSelector(state => state.workspace);
   const { data: analytics, loading: analyticsLoading, error: analyticsError } = useAppSelector(state => state.analytics);
 
   const getTaskStats = () => {
@@ -390,6 +384,41 @@ export default function DashboardScreen() {
           <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
             User: {user ? '✅ Loaded' : '❌ Missing'}
           </Text>
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: colors.primary }]}
+              onPress={() => {/* Navigate to create task */}}
+            >
+              <FontAwesome name="plus" size={16} color={colors['primary-foreground']} />
+              <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>
+                New Task
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: colors.secondary }]}
+              onPress={() => {/* Navigate to create workspace */}}
+            >
+              <FontAwesome name="plus" size={16} color={colors['secondary-foreground']} />
+              <Text style={[TextStyles.body.small, { color: colors['secondary-foreground'] }]}>
+                New Workspace
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: colors.destructive }]}
+              onPress={async () => {
+                try {
+                  await logout();
+                } catch (e) {
+                  console.warn('Logout failed:', (e as Error).message);
+                }
+              }}
+            >
+              <FontAwesome name="sign-out" size={16} color={colors['destructive-foreground']} />
+              <Text style={[TextStyles.body.small, { color: colors['destructive-foreground'] }]}>
+                Logout
+              </Text>
+            </TouchableOpacity>
+          </View>
         </Card>
         
         <StatsCards />

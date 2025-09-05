@@ -149,6 +149,11 @@ export async function clearAuthToken(): Promise<void> {
   delete axiosInstance.defaults.headers.common['Authorization'];
 }
 
+// Set auth header for current process only (no persistence)
+export function setAuthHeaderOnly(token: string): void {
+  axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
+
 // Helper function to get auth token
 export async function getAuthToken(): Promise<string | null> {
   return await AsyncStorage.getItem('token');

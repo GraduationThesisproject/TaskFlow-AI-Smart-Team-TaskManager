@@ -13,6 +13,7 @@ import type {
   PasswordResetData
 } from '../../types/auth.types';
 import { AuthService } from '../../services/authService';
+import { setAuthToken, clearAuthToken, getAuthToken, setAuthHeaderOnly } from '../../config/axios';
 import { oauthService } from '../../services/oauthService';
 import { getDeviceId } from '../../utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -82,30 +83,52 @@ const serializeUser = (userData: any): User => {
   }
 };
 
+// Safely serialize user-like payloads that may be undefined/null
+const safeSerializeUser = (userData: any | null | undefined): User | null => {
+  if (!userData) return null as any;
+  return serializeUser(userData);
+};
+
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
       console.log('🔧 authSlice.loginUser called with:', credentials);
       const response = await AuthService.login(credentials);
-      console.log('🔧 AuthService.login response:', response);
-      
-      if (!response.data.token) {
-        console.log('❌ No token in response:', response);
+      console.log('---------------------------------------------------',response);
+      const token = (response as any)?.data?.token || (response as any)?.data?.data?.token;
+      if (!token) {
         throw new Error('No token received from server');
       }
+      // Persist or session-only based on rememberMe
+      if (credentials.rememberMe) {
+        await setAuthToken(token);
+      } else {
+        setAuthHeaderOnly(token);
+      }
+      // Protect against a hanging profile request by adding a timeout
+      const profileTimeoutMs = 8000;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Profile fetch timeout')), profileTimeoutMs);
+      });
+      let userData: any = null;
+      try {
+        const profileResponse = await Promise.race([AuthService.getProfile(), timeoutPromise]);
+        userData = (profileResponse as any)?.data?.data;
+        if (userData) {
+          console.log('[Auth] Authenticated user:', userData);
+        } else {
+          console.log('[Auth] Login succeeded but profile payload missing');
+        }
+      } catch (e) {
+        // Proceed without profile to avoid blocking login; reducers will set isAuthenticated
+        console.warn('Proceeding without profile after login:', (e as Error).message);
+      }
       
-      console.log('✅ Token found, storing in AsyncStorage');
-      await AsyncStorage.setItem('token', response.data.token);
-      
-      console.log('🔧 Getting profile...');
-      const profileResponse = await AuthService.getProfile();
-      console.log('🔧 Profile response:', profileResponse);
-      
-      const result = {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+      return {
+        ...(response as any).data,
+        user: userData ? serializeUser(userData) : null,
+        token
       };
       
       console.log('✅ Login result:', result);
@@ -123,17 +146,17 @@ export const registerUser = createAsyncThunk(
   async (userData: RegisterData, { rejectWithValue }) => {
     try {
       const response = await AuthService.register(userData);
-      
-      if (response.data.token) {
-        await AsyncStorage.setItem('token', response.data.token);
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
       }
-      
       const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: safeSerializeUser(profileData),
+        token
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
@@ -147,14 +170,14 @@ export const refreshToken = createAsyncThunk(
   async (refreshToken: string, { rejectWithValue }) => {
     try {
       const response = await AuthService.refreshToken(refreshToken);
-      
-      if (response.data.token) {
-        await AsyncStorage.setItem('token', response.data.token);
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
       }
-      
+      const newRefreshToken = (response as any)?.data?.data?.refreshToken;
       return {
-        token: response.data.token,
-        refreshToken: response.data.refreshToken
+        token,
+        refreshToken: newRefreshToken
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Token refresh failed';
@@ -180,7 +203,7 @@ export const checkAuthStatus = createAsyncThunk(
   'auth/checkStatus',
   async (_, { rejectWithValue }) => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await getAuthToken();
       
       if (!token) {
         return { isAuthenticated: false, user: null, token: null };
@@ -197,11 +220,11 @@ export const checkAuthStatus = createAsyncThunk(
       
       return {
         isAuthenticated: true,
-        user: serializeUser((response as any).data),
+        user: safeSerializeUser((response as any)?.data?.data),
         token
       };
     } catch (error: any) {
-      await AsyncStorage.removeItem('token');
+      await clearAuthToken();
       const errorMessage = error.response?.data?.message || error.message || 'Authentication check failed';
       return rejectWithValue(errorMessage);
     }
@@ -217,7 +240,7 @@ export const logoutUser = createAsyncThunk(
       
       await AuthService.logout(deviceId, allDevices);
       
-      await AsyncStorage.removeItem('token');
+      await clearAuthToken();
       
       // Redirect to landing page after successful logout
       if (navigate) {
@@ -228,7 +251,7 @@ export const logoutUser = createAsyncThunk(
       
       return true;
     } catch (error: any) {
-      await AsyncStorage.removeItem('token');
+      await clearAuthToken();
       // Still redirect even if there's an error with the API call
       if (typeof window !== 'undefined') {
         window.location.href = '/';
@@ -265,21 +288,21 @@ export const oauthLogin = createAsyncThunk(
         avatar: userInfo.avatar
       });
       
-      if (!response.data.token) {
+      const token = (response as any)?.data?.data?.token;
+      if (!token) {
         throw new Error('No token received from server');
       }
-      
-      await AsyncStorage.setItem('token', response.data.token);
-      
+      await setAuthToken(token);
       const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
       
       // Clear OAuth session data
       oauthService.clearOAuthSession();
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: safeSerializeUser(profileData),
+        token
       };
     } catch (error: any) {
       oauthService.clearOAuthSession();
@@ -315,19 +338,20 @@ export const oauthRegister = createAsyncThunk(
         avatar: userInfo.avatar
       });
       
-      if (response.data.token) {
-        await AsyncStorage.setItem('token', response.data.token);
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
       }
-      
       const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
       
       // Clear OAuth session data
       oauthService.clearOAuthSession();
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: safeSerializeUser(profileData),
+        token
       };
     } catch (error: any) {
       oauthService.clearOAuthSession();
@@ -343,17 +367,17 @@ export const verifyEmail = createAsyncThunk(
   async (verificationData: EmailVerificationData, { rejectWithValue }) => {
     try {
       const response = await AuthService.verifyEmail(verificationData);
-      
-      if (response.data.token) {
-        await AsyncStorage.setItem('token', response.data.token);
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
       }
-      
       const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: safeSerializeUser(profileData),
+        token
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Email verification failed';
@@ -461,7 +485,7 @@ const initialState: AuthState = {
   user: null,
   token: null,
   isAuthenticated: false,
-  isLoading: true, // Start with loading true to check auth status
+  isLoading: false,
   error: null,
 };
 
@@ -636,7 +660,7 @@ const authSlice = createSlice({
       })
       .addCase(updateProfileSecure.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = serializeUser(action.payload);
+        state.user = safeSerializeUser(action.payload) as any;
         state.error = null;
       })
       .addCase(updateProfileSecure.rejected, (state, action) => {
