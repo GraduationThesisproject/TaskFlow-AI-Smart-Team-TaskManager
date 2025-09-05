@@ -98,22 +98,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
   // Update socket connections when authentication state changes
   useEffect(() => {
     if (isReadyToConnect) {
-      // Skip socket connections in development with mock authentication
-      if (env.IS_DEV && env.ENABLE_API_MOCKING) {
-        console.log('🔧 Skipping socket connections - using mock authentication');
-        console.log('🔧 Mock tokens cannot authenticate with real backend socket server');
-        setIsReady(true);
-        return;
-      }
-      
-      // Validate token format before attempting socket connections
-      if (token && token.startsWith('mock-jwt-token-')) {
-        console.log('🔧 Detected mock token, skipping socket connections');
-        console.log('🔧 Mock tokens are not valid for real backend authentication');
-        setIsReady(true);
-        return;
-      }
-      
       console.log('✅ Setting up authenticated socket connections for all namespaces');
       setIsReady(true);
       
@@ -153,19 +137,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
   // Connection methods
   const connect = () => {
     if (isReadyToConnect) {
-      // Skip socket connections in development with mock authentication
-      if (env.IS_DEV && env.ENABLE_API_MOCKING) {
-        console.log('🔧 Skipping manual connection - using mock authentication');
-        return;
-      }
-      
-      // Validate token format before attempting socket connections
-      if (token && token.startsWith('mock-jwt-token-')) {
-        console.log('🔧 Detected mock token, skipping manual connection');
-        console.log('🔧 Mock tokens are not valid for real backend authentication');
-        return;
-      }
-      
       console.log('🔄 Manual connection requested for all namespaces');
       
       try {

@@ -24,23 +24,6 @@ export function useSocket(options: UseSocketOptions) {
   const connect = useCallback(() => {
     if (socketRef.current?.connected) return;
 
-    // Skip socket connection in development with mock authentication
-    if (env.IS_DEV && env.ENABLE_API_MOCKING) {
-      console.log('🔧 [useSocket] Skipping socket connection - using mock authentication');
-      setIsConnecting(false);
-      setError(null);
-      return;
-    }
-
-    // Skip socket connection if using mock token
-    if (options.auth?.token && options.auth.token.startsWith('mock-jwt-token-')) {
-      console.log('🔧 [useSocket] Skipping socket connection - detected mock token');
-      console.log('🔧 [useSocket] Mock tokens cannot authenticate with real backend');
-      setIsConnecting(false);
-      setError(null);
-      return;
-    }
-
     // Clear any existing reconnection attempts
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
