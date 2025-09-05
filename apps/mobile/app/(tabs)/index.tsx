@@ -311,7 +311,7 @@ export default function DashboardScreen() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { user } = useAppSelector(state => state.auth);
+  const { user, isAuthenticated, token } = useAppSelector(state => state.auth);
   const displayName = user?.user?.name || "User";
 
   useEffect(() => {
@@ -320,13 +320,30 @@ export default function DashboardScreen() {
 
   const loadDashboardData = async () => {
     try {
-      await Promise.all([
-        dispatch(fetchWorkspaces()),
-        dispatch(fetchAnalytics({ period: 'month', startDate: '2024-01-01', endDate: '2024-12-31' })),
-        dispatch(listTemplates({ status: 'active' })),
-      ]);
+      console.log('🔄 Loading dashboard data...');
+      console.log('🔐 Auth status:', { isAuthenticated, hasToken: !!token, hasUser: !!user });
+      
+      if (!isAuthenticated || !token) {
+        console.log('❌ Not authenticated, skipping dashboard data load');
+        return;
+      }
+      
+      // Load data one by one to identify which call fails
+      console.log('📁 Fetching workspaces...');
+      const workspacesResult = await dispatch(fetchWorkspaces());
+      console.log('📁 Workspaces result:', workspacesResult);
+      
+      console.log('📊 Fetching analytics...');
+      const analyticsResult = await dispatch(fetchAnalytics({ period: 'month', startDate: '2024-01-01', endDate: '2024-12-31' }));
+      console.log('📊 Analytics result:', analyticsResult);
+      
+      console.log('📋 Fetching templates...');
+      const templatesResult = await dispatch(listTemplates({ status: 'active' }));
+      console.log('📋 Templates result:', templatesResult);
+      
+      console.log('✅ Dashboard data loaded successfully');
     } catch (error) {
-      console.error('Failed to load dashboard data:', error);
+      console.error('❌ Failed to load dashboard data:', error);
     }
   };
 
@@ -358,6 +375,23 @@ export default function DashboardScreen() {
         }
       >
         <WelcomeHeader displayName={displayName} />
+        
+        {/* Auth Status Debug */}
+        <Card style={[styles.authStatusCard, { backgroundColor: colors.card }]}>
+          <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 8 }]}>
+            Authentication Status
+          </Text>
+          <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+            Authenticated: {isAuthenticated ? '✅ Yes' : '❌ No'}
+          </Text>
+          <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+            Token: {token ? '✅ Present' : '❌ Missing'}
+          </Text>
+          <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+            User: {user ? '✅ Loaded' : '❌ Missing'}
+          </Text>
+        </Card>
+        
         <StatsCards />
         
         <View style={styles.mainContent}>
@@ -518,6 +552,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     marginTop: 8,
+  },
+  authStatusCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
   },
   deadlinesCard: {
     padding: 16,

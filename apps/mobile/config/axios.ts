@@ -7,7 +7,19 @@ import { env } from './env';
 // Normalize base URL to ensure it targets the backend API prefix
 const rawBase = (env.API_BASE_URL || env.API_URL || '').trim();
 const trimmed = rawBase.replace(/\/$/, '');
+// Ensure the URL has a proper scheme (http:// or https://)
 const baseURL = /\/api$/.test(trimmed) ? trimmed : `${trimmed}/api`;
+
+// Debug logging to see what URL is being used
+if (env.ENABLE_DEBUG) {
+  console.log('🔧 Axios Base URL Configuration:', {
+    rawBase,
+    trimmed,
+    baseURL,
+    envAPI_BASE_URL: env.API_BASE_URL,
+    envAPI_URL: env.API_URL
+  });
+}
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL,
@@ -30,7 +42,8 @@ axiosInstance.interceptors.request.use(
         url: config.url,
         baseURL: config.baseURL,
         fullURL: `${config.baseURL}${config.url}`,
-        hasToken: !!token
+        hasToken: !!token,
+        tokenPreview: token ? token.substring(0, 20) + '...' : 'none'
       });
     }
     

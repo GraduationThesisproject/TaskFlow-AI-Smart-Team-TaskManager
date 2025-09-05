@@ -7,6 +7,9 @@ import { useTheme } from '@/components/ThemeProvider';
 import { useAppSelector, useAppDispatch } from '@/store';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MockAuthService, TEST_ACCOUNT } from '@/services/mockAuthService';
+import { loginUser } from '@/store/slices/authSlice';
 
 export default function SettingsScreen() {
   const colors = useThemeColors();
@@ -16,6 +19,7 @@ export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
+  const [tokenStatus, setTokenStatus] = useState<string>('Not checked');
 
   // Redux selectors
   const { user } = useAppSelector(state => state.auth);
@@ -61,6 +65,69 @@ export default function SettingsScreen() {
         },
       ]
     );
+  };
+
+  const checkToken = async () => {
+    try {
+      setTokenStatus('Checking...');
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        setTokenStatus('✅ Token found: ' + token.substring(0, 20) + '...');
+        console.log('✅ Token found:', token);
+        Alert.alert('Token Status', 'Token found and stored correctly!');
+      } else {
+        setTokenStatus('❌ No token found');
+        console.log('❌ No token found');
+        Alert.alert('Token Status', 'No authentication token found. Please login first.');
+      }
+    } catch (error) {
+      setTokenStatus('❌ Error checking token: ' + error);
+      console.error('❌ Error checking token:', error);
+      Alert.alert('Error', 'Failed to check token: ' + error);
+    }
+  };
+
+  const clearToken = async () => {
+    try {
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('refreshToken');
+      setTokenStatus('✅ Token cleared');
+      console.log('✅ Token cleared');
+      Alert.alert('Token Cleared', 'Authentication token has been cleared. You will need to login again.');
+    } catch (error) {
+      setTokenStatus('❌ Error clearing token: ' + error);
+      console.error('❌ Error clearing token:', error);
+      Alert.alert('Error', 'Failed to clear token: ' + error);
+    }
+  };
+
+  const quickLogin = async () => {
+    try {
+      setTokenStatus('Logging in...');
+      console.log('🔐 Attempting quick login with test account...');
+      
+      // Use Redux action to ensure state is updated properly
+      const result = await dispatch(loginUser({
+        email: TEST_ACCOUNT.email,
+        password: TEST_ACCOUNT.password
+      }));
+      
+      if (result.type.endsWith('/fulfilled')) {
+        const payload = result.payload as any;
+        setTokenStatus('✅ Login successful: ' + payload.token.substring(0, 20) + '...');
+        console.log('✅ Quick login successful:', payload);
+        Alert.alert('Login Successful', 'You are now logged in with the test account!');
+      } else {
+        const payload = result.payload as string;
+        setTokenStatus('❌ Login failed: ' + payload);
+        console.log('❌ Quick login failed:', payload);
+        Alert.alert('Login Failed', 'Failed to login: ' + payload);
+      }
+    } catch (error: any) {
+      setTokenStatus('❌ Login error: ' + error.message);
+      console.error('❌ Quick login error:', error);
+      Alert.alert('Login Error', 'Failed to login: ' + error.message);
+    }
   };
 
   return (
@@ -249,6 +316,72 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
+        {/* Debug Section */}
+        <Card style={styles.sectionCard}>
+          <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
+            Debug Tools
+          </Text>
+          
+          {/* Token Status */}
+          <View style={[styles.settingItem, { backgroundColor: colors.card, marginBottom: 12 }]}>
+            <View style={styles.settingInfo}>
+              <FontAwesome name="key" size={20} color={colors.primary} />
+              <View style={styles.settingText}>
+                <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
+                  Authentication Token
+                </Text>
+                <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                  {tokenStatus}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Token Actions */}
+          <View style={styles.debugActions}>
+            <TouchableOpacity 
+              style={[styles.debugButton, { backgroundColor: colors.primary }]}
+              onPress={checkToken}
+            >
+              <FontAwesome name="search" size={16} color={colors['primary-foreground']} />
+              <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'] }]}>
+                Check Token
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.debugButton, { backgroundColor: colors.destructive }]}
+              onPress={clearToken}
+            >
+              <FontAwesome name="trash" size={16} color={colors['destructive-foreground']} />
+              <Text style={[TextStyles.body.medium, { color: colors['destructive-foreground'] }]}>
+                Clear Token
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Quick Login */}
+          <TouchableOpacity 
+            style={[styles.quickLoginButton, { backgroundColor: colors.accent, marginTop: 12 }]}
+            onPress={quickLogin}
+          >
+            <FontAwesome name="sign-in" size={16} color={colors['accent-foreground']} />
+            <Text style={[TextStyles.body.medium, { color: colors['accent-foreground'] }]}>
+              Quick Login (Test Account)
+            </Text>
+          </TouchableOpacity>
+
+          {/* Test Account Info */}
+          <View style={[styles.testAccountInfo, { backgroundColor: colors.card, marginTop: 12 }]}>
+            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+              Test Account: {TEST_ACCOUNT.email}
+            </Text>
+            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+              Password: {TEST_ACCOUNT.password}
+            </Text>
+          </View>
+        </Card>
+
         {/* Danger Zone */}
         <Card style={styles.sectionCard}>
           <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
@@ -372,5 +505,30 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     gap: 8,
+  },
+  debugActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  debugButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  quickLoginButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  testAccountInfo: {
+    padding: 12,
+    borderRadius: 8,
   },
 });

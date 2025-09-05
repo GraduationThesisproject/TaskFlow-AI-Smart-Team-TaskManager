@@ -37,7 +37,7 @@ export const env = {
   IS_DEV: __DEV__,
   IS_PRODUCTION: !__DEV__,
   ENABLE_DEVTOOLS: __DEV__,
-  ENABLE_API_MOCKING: __DEV__ && (process.env.EXPO_PUBLIC_ENABLE_API_MOCKING === 'true' || Constants.expoConfig?.extra?.enableApiMocking === true),
+  ENABLE_API_MOCKING: __DEV__ && (process.env.EXPO_PUBLIC_ENABLE_API_MOCKING !== 'false' && Constants.expoConfig?.extra?.enableApiMocking !== false),
   
   // Build Info
   BUILD_TIME: process.env.EXPO_PUBLIC_BUILD_TIME || Constants.expoConfig?.extra?.buildTime,

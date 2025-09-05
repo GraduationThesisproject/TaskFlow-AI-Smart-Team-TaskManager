@@ -15,6 +15,7 @@ import type {
 import { AuthService } from '../../services/authService';
 import { oauthService } from '../../services/oauthService';
 import { getDeviceId } from '../../utils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const serializeUser = (userData: any): User => {
   if (userData.user) {
@@ -85,22 +86,32 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
+      console.log('🔧 authSlice.loginUser called with:', credentials);
       const response = await AuthService.login(credentials);
+      console.log('🔧 AuthService.login response:', response);
       
       if (!response.data.token) {
+        console.log('❌ No token in response:', response);
         throw new Error('No token received from server');
       }
       
-      localStorage.setItem('token', response.data.token);
+      console.log('✅ Token found, storing in AsyncStorage');
+      await AsyncStorage.setItem('token', response.data.token);
       
+      console.log('🔧 Getting profile...');
       const profileResponse = await AuthService.getProfile();
+      console.log('🔧 Profile response:', profileResponse);
       
-      return {
+      const result = {
         ...response.data,
         user: serializeUser(profileResponse.data),
         token: response.data.token
       };
+      
+      console.log('✅ Login result:', result);
+      return result;
     } catch (error: any) {
+      console.error('❌ Login error in authSlice:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Login failed';
       return rejectWithValue(errorMessage);
     }
@@ -114,7 +125,7 @@ export const registerUser = createAsyncThunk(
       const response = await AuthService.register(userData);
       
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem('token', response.data.token);
       }
       
       const profileResponse = await AuthService.getProfile();
@@ -138,7 +149,7 @@ export const refreshToken = createAsyncThunk(
       const response = await AuthService.refreshToken(refreshToken);
       
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem('token', response.data.token);
       }
       
       return {
@@ -169,7 +180,7 @@ export const checkAuthStatus = createAsyncThunk(
   'auth/checkStatus',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = await AsyncStorage.getItem('token');
       
       if (!token) {
         return { isAuthenticated: false, user: null, token: null };
@@ -190,7 +201,7 @@ export const checkAuthStatus = createAsyncThunk(
         token
       };
     } catch (error: any) {
-      localStorage.removeItem('token');
+      await AsyncStorage.removeItem('token');
       const errorMessage = error.response?.data?.message || error.message || 'Authentication check failed';
       return rejectWithValue(errorMessage);
     }
@@ -206,7 +217,7 @@ export const logoutUser = createAsyncThunk(
       
       await AuthService.logout(deviceId, allDevices);
       
-      localStorage.removeItem('token');
+      await AsyncStorage.removeItem('token');
       
       // Redirect to landing page after successful logout
       if (navigate) {
@@ -217,7 +228,7 @@ export const logoutUser = createAsyncThunk(
       
       return true;
     } catch (error: any) {
-      localStorage.removeItem('token');
+      await AsyncStorage.removeItem('token');
       // Still redirect even if there's an error with the API call
       if (typeof window !== 'undefined') {
         window.location.href = '/';
@@ -258,7 +269,7 @@ export const oauthLogin = createAsyncThunk(
         throw new Error('No token received from server');
       }
       
-      localStorage.setItem('token', response.data.token);
+      await AsyncStorage.setItem('token', response.data.token);
       
       const profileResponse = await AuthService.getProfile();
       
@@ -305,7 +316,7 @@ export const oauthRegister = createAsyncThunk(
       });
       
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem('token', response.data.token);
       }
       
       const profileResponse = await AuthService.getProfile();
@@ -334,7 +345,7 @@ export const verifyEmail = createAsyncThunk(
       const response = await AuthService.verifyEmail(verificationData);
       
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem('token', response.data.token);
       }
       
       const profileResponse = await AuthService.getProfile();
