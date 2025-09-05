@@ -79,11 +79,19 @@ axiosInstance.interceptors.response.use(
       
       switch (status) {
         case 401:
-          // Unauthorized - clear token and redirect to login
+          // Unauthorized - clear all data and redirect to login
           console.error('Unauthorized access - Token may be invalid or expired');
-          localStorage.removeItem('token');
-          // Force page reload to trigger auth check
-          window.location.href = '/';
+          // Use comprehensive logout helper to clear all data
+          if (typeof window !== 'undefined') {
+            // Import and use logoutHelper
+            import('../utils/logoutHelper').then(({ logoutHelper }) => {
+              logoutHelper();
+            }).catch(() => {
+              // Fallback: just clear token and redirect
+              localStorage.removeItem('token');
+              window.location.href = '/';
+            });
+          }
           break;
         case 403:
           // Forbidden

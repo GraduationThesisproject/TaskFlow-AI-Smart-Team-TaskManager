@@ -38,7 +38,7 @@ export const NoAccessPage: React.FC = () => {
             You were trying to access: <span className="font-mono text-sm">{from}</span>
           </Typography>
 
-          <Flex direction="column" gap="small" className="mt-6">
+          <Flex direction="col" gap="sm" className="mt-6">
             <Link to="/dashboard">
               <Button variant="primary" className="w-full">
                 Go to Dashboard

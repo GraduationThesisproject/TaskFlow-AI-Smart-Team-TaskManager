@@ -106,6 +106,20 @@ const boardSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Board',
     default: null
+  },
+  // GitHub Integration
+  githubBranch: {
+    name: { type: String, default: null },
+    commit: {
+      sha: { type: String, default: null },
+      url: { type: String, default: null }
+    },
+    protection: {
+      enabled: { type: Boolean, default: false },
+      requiredStatusChecks: { type: Boolean, default: false },
+      enforceAdmins: { type: Boolean, default: false }
+    },
+    linkedAt: { type: Date, default: null }
   }
 }, {
   timestamps: true,

@@ -2,6 +2,7 @@ const Invitation = require('../models/Invitation');
 const Workspace = require('../models/Workspace');
 const Space = require('../models/Space');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
@@ -201,7 +202,8 @@ exports.acceptInvitation = async (req, res) => {
         }
 
         // Check if the user accepting is the one who was invited
-        if (invitation.invitedUser.email !== req.user.email) {
+        // For invite links, the email might be null initially, so we allow any authenticated user
+        if (invitation.invitedUser.email && invitation.invitedUser.email !== req.user.email) {
             return sendResponse(res, 400, false, 'Only the invited user can accept this invitation');
         }
 
@@ -248,6 +250,14 @@ exports.acceptInvitation = async (req, res) => {
 
         // Accept invitation
         await invitation.accept(userId);
+        
+        // Update invitation with user info for invite links
+        if (!invitation.invitedUser.email) {
+            await invitation.updateOne({
+                'invitedUser.email': req.user.email,
+                'invitedUser.userId': userId
+            });
+        }
 // create a new notification for the user
 const notification_receiver = new Notification({
     userId: userId,

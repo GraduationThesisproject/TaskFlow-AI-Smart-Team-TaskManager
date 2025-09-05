@@ -17,7 +17,10 @@ const invitationSchema = new mongoose.Schema({
   invitedUser: {
     email: {
       type: String,
-      required: true,
+      required: function() {
+        // Email is required for direct invitations, but not for invite links
+        return this.metadata?.invitationMethod !== 'link';
+      },
       lowercase: true,
       trim: true
     },
@@ -119,7 +122,8 @@ invitationSchema.pre('save', function(next) {
 // Virtual for invitation URL
 invitationSchema.virtual('inviteUrl').get(function() {
   const baseUrl = process.env.FRONTEND_URL || config.FRONTEND_URL;
-  return `${baseUrl}/invite/${this.token}`;
+  // Use the correct URL format that matches the invitation flow
+  return `${baseUrl}/join-workspace?token=${this.token}&workspace=${this.targetEntity.id}`;
 });
 
 // Virtual for is expired
