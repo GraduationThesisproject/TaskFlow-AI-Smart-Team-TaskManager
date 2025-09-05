@@ -4,6 +4,9 @@
 
 import axiosInstance from '../config/axios';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MockAuthService } from './mockAuthService';
+import { env } from '../config/env';
 import type { ApiResponse } from '../types/task.types';
 import type {
   LoginCredentials,
@@ -23,8 +26,20 @@ export class AuthService {
   // Login user
   static async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
     try {
+      console.log('🔧 AuthService.login called');
+      console.log('🔧 env.IS_DEV:', env.IS_DEV);
+      console.log('🔧 env.ENABLE_API_MOCKING:', env.ENABLE_API_MOCKING);
+      
+      // Use mock authentication in development mode (force enable for testing)
+      if (env.IS_DEV) {
+        console.log('🔧 Using mock authentication service (forced for testing)');
+        return await MockAuthService.login(credentials);
+      }
+
+      // Use real authentication
+      console.log('🔧 Using real authentication service');
       const response = await axiosInstance.post('/auth/login', credentials);
-      if (response.data.data?.token) localStorage.setItem('token', response.data.data.token);
+      if (response.data.data?.token) await AsyncStorage.setItem('token', response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error logging in:', error);
@@ -46,6 +61,18 @@ export class AuthService {
   // Get current profile
   static async getProfile(): Promise<ApiResponse<AuthResponse>> {
     try {
+      console.log('🔧 AuthService.getProfile called');
+      console.log('🔧 env.IS_DEV:', env.IS_DEV);
+      console.log('🔧 env.ENABLE_API_MOCKING:', env.ENABLE_API_MOCKING);
+      
+      // Use mock authentication in development mode (force enable for testing)
+      if (env.IS_DEV) {
+        console.log('🔧 Using mock profile service (forced for testing)');
+        return await MockAuthService.getProfile();
+      }
+
+      // Use real authentication
+      console.log('🔧 Using real profile service');
       const response = await axiosInstance.get('/auth/me');
       return response.data;
     } catch (error: any) {
@@ -92,7 +119,7 @@ export class AuthService {
   static async oauthLogin(oauthData: OAuthUserData): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await axiosInstance.post('/auth/oauth/login', oauthData);
-      if (response.data.data?.token) localStorage.setItem('token', response.data.data.token);
+      if (response.data.data?.token) await AsyncStorage.setItem('token', response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error with OAuth login:', error);
@@ -103,7 +130,7 @@ export class AuthService {
   static async oauthRegister(oauthData: OAuthUserData): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await axiosInstance.post('/auth/oauth/register', oauthData);
-      if (response.data.data?.token) localStorage.setItem('token', response.data.data.token);
+      if (response.data.data?.token) await AsyncStorage.setItem('token', response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error with OAuth registration:', error);
@@ -125,7 +152,7 @@ export class AuthService {
   static async verifyEmail(verificationData: EmailVerificationData): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await axiosInstance.post('/auth/verify-email', verificationData);
-      if (response.data.data?.token) localStorage.setItem('token', response.data.data.token);
+      if (response.data.data?.token) await AsyncStorage.setItem('token', response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error verifying email:', error);

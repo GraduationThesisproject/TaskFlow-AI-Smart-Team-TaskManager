@@ -1,7 +1,17 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { notificationsSocketMiddleware } from './middleware/notificationsSocketMiddleware';
 import { useDispatch, useSelector } from 'react-redux';
 import type { TypedUseSelectorHook} from 'react-redux';
+import { env } from '../config/env';
+
+// Conditionally import socket middleware only when not in mock mode
+let notificationsSocketMiddleware: any = null;
+if (!(env.IS_DEV && env.ENABLE_API_MOCKING)) {
+  console.log('🔧 [store] Loading socket middleware - not in mock mode');
+  const middlewareModule = require('./middleware/notificationsSocketMiddleware');
+  notificationsSocketMiddleware = middlewareModule.notificationsSocketMiddleware;
+} else {
+  console.log('🔧 [store] Skipping socket middleware import - using mock authentication');
+}
 
 // Import reducers here
 import appReducer from './slices/appSlice.ts';
@@ -32,8 +42,8 @@ export const store = configureStore({
     analytics: analyticsReducer,
     test: testReducer,
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
+  middleware: (getDefaultMiddleware) => {
+    const middleware = getDefaultMiddleware({
       serializableCheck: {
         // Ignore specific action types that might contain non-serializable data
         ignoredActions: [
@@ -51,7 +61,23 @@ export const store = configureStore({
         // Warn about non-serializable values in development
         warnAfter: 128,
       },
-    }).concat(notificationsSocketMiddleware),
+    });
+
+    // Only add socket middleware if not in mock mode
+    console.log('🔧 [store] Configuring middleware...');
+    console.log('🔧 [store] env.IS_DEV:', env.IS_DEV);
+    console.log('🔧 [store] env.ENABLE_API_MOCKING:', env.ENABLE_API_MOCKING);
+    console.log('🔧 [store] Should skip socket middleware:', env.IS_DEV && env.ENABLE_API_MOCKING);
+    console.log('🔧 [store] Socket middleware available:', !!notificationsSocketMiddleware);
+    
+    if (notificationsSocketMiddleware) {
+      console.log('🔧 [store] Adding socket middleware - not in mock mode');
+      return middleware.concat(notificationsSocketMiddleware);
+    } else {
+      console.log('🔧 [store] Socket middleware not available - using mock authentication');
+      return middleware;
+    }
+  },
 });
 
 export type RootState = ReturnType<typeof store.getState>;

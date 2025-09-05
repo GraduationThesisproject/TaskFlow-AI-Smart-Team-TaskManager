@@ -9,6 +9,24 @@ import { addActivity } from '../slices/activitySlice';
 import type { RootState } from "../../store"
 
 export const notificationsSocketMiddleware: Middleware = (store) => {
+  // FORCE DISABLE: Skip entire middleware in development with mock authentication
+  console.log('🔧 [notificationsSocketMiddleware] Middleware loaded - checking environment...');
+  console.log('🔧 [notificationsSocketMiddleware] env.IS_DEV:', env.IS_DEV);
+  console.log('🔧 [notificationsSocketMiddleware] env.ENABLE_API_MOCKING:', env.ENABLE_API_MOCKING);
+  
+  if (env.IS_DEV && env.ENABLE_API_MOCKING) {
+    console.log('🔧 [notificationsSocketMiddleware] Middleware COMPLETELY DISABLED - using mock authentication');
+    console.log('🔧 [notificationsSocketMiddleware] No socket logic will be executed');
+    console.log('🔧 [notificationsSocketMiddleware] All actions will pass through unchanged');
+    return (next) => (action) => {
+      // Completely pass through all actions without any socket logic
+      // No socket connections, no reconnection attempts, no event handling
+      return next(action);
+    };
+  }
+  
+  console.log('🔧 [notificationsSocketMiddleware] Middleware ENABLED - real authentication mode');
+
   let socket: Socket | null = null;
   let prevToken: string | null | undefined;
   let prevRealTimeEnabled: boolean | undefined;
@@ -79,6 +97,22 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     // Don't reconnect if already connected or connecting
     if (socket?.connected || isConnecting) return;
     if (!token) return;
+
+    // FORCE DISABLE: Skip socket connection in development with mock authentication
+    if (env.IS_DEV && env.ENABLE_API_MOCKING) {
+      console.log('🔧 [notificationsSocketMiddleware] FORCE DISABLED - Skipping socket connection - using mock authentication');
+      console.log('🔧 [notificationsSocketMiddleware] No socket will be created or connected');
+      isConnecting = false;
+      return;
+    }
+
+    // Skip socket connection if using mock token
+    if (token.startsWith('mock-jwt-token-')) {
+      console.log('🔧 [notificationsSocketMiddleware] Skipping socket connection - detected mock token');
+      console.log('🔧 [notificationsSocketMiddleware] Mock tokens cannot authenticate with real backend');
+      isConnecting = false;
+      return;
+    }
 
     isConnecting = true;
     
@@ -346,6 +380,14 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     const prefChanged = prevRealTimeEnabled !== realTimeEnabled;
     if (tokenChanged || prefChanged) {
       if (currentToken && realTimeEnabled) {
+        // FORCE DISABLE: Skip socket connection in development with mock authentication
+        if (env.IS_DEV && env.ENABLE_API_MOCKING) {
+          console.log('🔧 [notificationsSocketMiddleware] FORCE DISABLED - Skipping socket connection in middleware - using mock authentication');
+          console.log('🔧 [notificationsSocketMiddleware] No socket connections will be attempted');
+          prevToken = currentToken;
+          prevRealTimeEnabled = realTimeEnabled;
+          return result;
+        }
         connect(currentToken);
       } else {
         // Either token missing or RT disabled -> disconnect

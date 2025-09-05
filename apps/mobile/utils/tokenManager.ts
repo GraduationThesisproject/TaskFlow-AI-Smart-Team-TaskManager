@@ -1,92 +1,118 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 // Enhanced token manager for handling authentication tokens
 class TokenManager {
     private accessTokenKey = 'accessToken';
     private refreshTokenKey = 'refreshToken';
     private tokenExpiryKey = 'tokenExpiry';
 
-    // Get access token from localStorage
-    getAccessToken(): string | null {
-        if (typeof window === 'undefined') return null;
-        // Support both legacy 'accessToken' and axios-used 'token' keys
-        return (
-            localStorage.getItem(this.accessTokenKey) ||
-            localStorage.getItem('token') ||
-            null
-        );
+    // Get access token from AsyncStorage
+    async getAccessToken(): Promise<string | null> {
+        try {
+            // Support both legacy 'accessToken' and axios-used 'token' keys
+            const accessToken = await AsyncStorage.getItem(this.accessTokenKey);
+            const token = await AsyncStorage.getItem('token');
+            return accessToken || token || null;
+        } catch (error) {
+            console.error('Error getting access token:', error);
+            return null;
+        }
     }
 
-    // Set access token in localStorage
-    setAccessToken(token: string): void {
-        if (typeof window === 'undefined') return;
-        // Write to both keys to keep axios and fetch clients in sync
-        localStorage.setItem(this.accessTokenKey, token);
-        localStorage.setItem('token', token);
+    // Set access token in AsyncStorage
+    async setAccessToken(token: string): Promise<void> {
+        try {
+            // Write to both keys to keep axios and fetch clients in sync
+            await AsyncStorage.setItem(this.accessTokenKey, token);
+            await AsyncStorage.setItem('token', token);
+        } catch (error) {
+            console.error('Error setting access token:', error);
+        }
     }
 
-    // Get refresh token from localStorage
-    getRefreshToken(): string | null {
-        if (typeof window === 'undefined') return null;
-        return localStorage.getItem(this.refreshTokenKey);
+    // Get refresh token from AsyncStorage
+    async getRefreshToken(): Promise<string | null> {
+        try {
+            return await AsyncStorage.getItem(this.refreshTokenKey);
+        } catch (error) {
+            console.error('Error getting refresh token:', error);
+            return null;
+        }
     }
 
-    // Set refresh token in localStorage
-    setRefreshToken(token: string): void {
-        if (typeof window === 'undefined') return;
-        localStorage.setItem(this.refreshTokenKey, token);
+    // Set refresh token in AsyncStorage
+    async setRefreshToken(token: string): Promise<void> {
+        try {
+            await AsyncStorage.setItem(this.refreshTokenKey, token);
+        } catch (error) {
+            console.error('Error setting refresh token:', error);
+        }
     }
 
     // Clear all tokens
-    clearTokens(): void {
-        if (typeof window === 'undefined') return;
-        localStorage.removeItem(this.accessTokenKey);
-        localStorage.removeItem('token');
-        localStorage.removeItem(this.refreshTokenKey);
-        localStorage.removeItem(this.tokenExpiryKey);
+    async clearTokens(): Promise<void> {
+        try {
+            await AsyncStorage.removeItem(this.accessTokenKey);
+            await AsyncStorage.removeItem('token');
+            await AsyncStorage.removeItem(this.refreshTokenKey);
+            await AsyncStorage.removeItem(this.tokenExpiryKey);
+        } catch (error) {
+            console.error('Error clearing tokens:', error);
+        }
     }
 
     // Check if user is authenticated
-    isAuthenticated(): boolean {
-        const token = this.getAccessToken();
+    async isAuthenticated(): Promise<boolean> {
+        const token = await this.getAccessToken();
         if (!token) return false;
         
         // Check if token is expired
-        return !this.isTokenExpired();
+        return !(await this.isTokenExpired());
     }
 
     // Check if token is expired
-    isTokenExpired(): boolean {
-        if (typeof window === 'undefined') return true;
-        
-        const expiryTime = localStorage.getItem(this.tokenExpiryKey);
-        if (!expiryTime) return false; // No expiry set, assume valid
-        
-        return Date.now() > parseInt(expiryTime);
+    async isTokenExpired(): Promise<boolean> {
+        try {
+            const expiryTime = await AsyncStorage.getItem(this.tokenExpiryKey);
+            if (!expiryTime) return false; // No expiry set, assume valid
+            
+            return Date.now() > parseInt(expiryTime);
+        } catch (error) {
+            console.error('Error checking token expiry:', error);
+            return true; // Assume expired if error
+        }
     }
 
     // Get token expiry time
-    getTokenExpiry(): Date | null {
-        if (typeof window === 'undefined') return null;
-        
-        const expiryTime = localStorage.getItem(this.tokenExpiryKey);
-        if (!expiryTime) return null;
-        
-        return new Date(parseInt(expiryTime));
+    async getTokenExpiry(): Promise<Date | null> {
+        try {
+            const expiryTime = await AsyncStorage.getItem(this.tokenExpiryKey);
+            if (!expiryTime) return null;
+            
+            return new Date(parseInt(expiryTime));
+        } catch (error) {
+            console.error('Error getting token expiry:', error);
+            return null;
+        }
     }
 
     // Check if token needs refresh (expires within 5 minutes)
-    needsRefresh(): boolean {
-        if (typeof window === 'undefined') return false;
-        
-        const expiryTime = localStorage.getItem(this.tokenExpiryKey);
-        if (!expiryTime) return false;
-        
-        const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000);
-        return parseInt(expiryTime) < fiveMinutesFromNow;
+    async needsRefresh(): Promise<boolean> {
+        try {
+            const expiryTime = await AsyncStorage.getItem(this.tokenExpiryKey);
+            if (!expiryTime) return false;
+            
+            const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000);
+            return parseInt(expiryTime) < fiveMinutesFromNow;
+        } catch (error) {
+            console.error('Error checking if token needs refresh:', error);
+            return false;
+        }
     }
 
     // Refresh access token using the AuthService
     async refreshAccessToken(): Promise<string | null> {
-        const refreshToken = this.getRefreshToken();
+        const refreshToken = await this.getRefreshToken();
         if (!refreshToken) return null;
 
         try {
@@ -96,9 +122,9 @@ class TokenManager {
             const response = await AuthService.refreshToken(refreshToken);
             
             if (response.success && response.data?.token) {
-                this.setAccessToken(response.data.token);
+                await this.setAccessToken(response.data.token);
                 if (response.data.refreshToken) {
-                    this.setRefreshToken(response.data.refreshToken);
+                    await this.setRefreshToken(response.data.refreshToken);
                 }
                 return response.data.token;
             }
@@ -106,30 +132,27 @@ class TokenManager {
             console.error('Failed to refresh token:', error);
         }
 
-        // If refresh fails, clear tokens and redirect to login
-        this.clearTokens();
-        if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-        }
+        // If refresh fails, clear tokens
+        await this.clearTokens();
         return null;
     }
 
     // Initialize tokens from Redux state (for integration)
-    initializeFromRedux(token: string | null, refreshToken?: string): void {
+    async initializeFromRedux(token: string | null, refreshToken?: string): Promise<void> {
         if (token) {
-            this.setAccessToken(token);
+            await this.setAccessToken(token);
         }
         if (refreshToken) {
-            this.setRefreshToken(refreshToken);
+            await this.setRefreshToken(refreshToken);
         }
     }
 
     // Get all token data for Redux integration
-    getTokenData(): { accessToken: string | null; refreshToken: string | null; isExpired: boolean } {
+    async getTokenData(): Promise<{ accessToken: string | null; refreshToken: string | null; isExpired: boolean }> {
         return {
-            accessToken: this.getAccessToken(),
-            refreshToken: this.getRefreshToken(),
-            isExpired: this.isTokenExpired()
+            accessToken: await this.getAccessToken(),
+            refreshToken: await this.getRefreshToken(),
+            isExpired: await this.isTokenExpired()
         };
     }
 }
