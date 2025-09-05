@@ -23,14 +23,13 @@ const requireSystemAdmin = async (req, res, next) => {
 };
 
 // Require workspace permission
-const requireWorkspacePermission = () => {
+const requireWorkspacePermission = (path) => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
             const user = await User.findById(userId);
             const userRoles = await user.getRoles();
             const workspaceId = req.params.workspaceId || req.params.id || req.body.workspaceId;
-            
             if (!workspaceId) {
                 return sendResponse(res, 400, false, 'Workspace ID required');
             }
@@ -42,21 +41,40 @@ const requireWorkspacePermission = () => {
             
             req.workspace = workspace;
             
-            if(userRoles.systemRole !== 'user') {
-                return sendResponse(res, 403, false, 'You are not a user');
+            // Allow users and admins to access workspace analytics
+            // Handle users without system roles (default to 'user' role)
+            const systemRole = userRoles.systemRole || 'user';
+            if(!['user', 'admin', 'super_admin'].includes(systemRole)) {
+                return sendResponse(res, 403, false, 'Insufficient permissions');
             }
 
             // Get user's role in this specific workspace
-            const wsRole = userRoles.workspaces.find(ws => 
+            let wsRole = userRoles.workspaces.find(ws => 
                 ws.workspace.toString() === workspaceId.toString()
             );
+
+            logger.info(`User ${userId} workspace role check:`, {
+                workspaceId,
+                userRoles: userRoles.workspaces,
+                foundRole: wsRole,
+                workspaceOwner: workspace.owner?.toString()
+            });
+
+            // If no role found but user is workspace owner, create a temporary role object
+            if (!wsRole && workspace.owner && workspace.owner.toString() === userId.toString()) {
+                logger.info(`User ${userId} is workspace owner, creating temporary role`);
+                wsRole = { role: 'owner' };
+            }
 
             if (!wsRole) {
                 return sendResponse(res, 403, false, 'No workspace access found');
             }
 
             // Check if user has permission for this path and method
-            if(hasPermission(wsRole.role, req.path, req.method)) {
+            const fullPath = `/workspace${path}`;
+            logger.info(`Permission check: role=${wsRole.role}, path=${fullPath}, method=${req.method}`);
+            
+            if(hasPermission(wsRole.role, fullPath, req.method)) {
                 return next();
             }
 
@@ -69,7 +87,7 @@ const requireWorkspacePermission = () => {
 };
 
 // Require space permission (replaces project permission)
-const requireSpacePermission = () => {
+const requireSpacePermission = (path = '') => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
@@ -104,7 +122,7 @@ const requireSpacePermission = () => {
             }
 
             // Check if user has permission for this path and method
-            if(hasPermission(wsRole.role, req.path, req.method)) {
+            if(hasPermission(wsRole.role, `/space${path}`, req.method)) {
                 return next();
             }
 
@@ -117,7 +135,7 @@ const requireSpacePermission = () => {
 };
 
 // Require specific space permission
-const requireSpaceSpecificPermission = () => {
+const requireSpaceSpecificPermission = (path = '') => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
@@ -152,7 +170,7 @@ const requireSpaceSpecificPermission = () => {
             }
 
             // Check if user has permission for this path and method
-            if(hasPermission(wsRole.role, req.path, req.method)) {
+            if(hasPermission(wsRole.role, `/space${path}`, req.method)) {
                 return next();
             }
 
@@ -165,7 +183,7 @@ const requireSpaceSpecificPermission = () => {
 };
 
 // Require board permission
-const requireBoardPermission = () => {
+const requireBoardPermission = (path = '') => {
     return async (req, res, next) => {
         try {
             const userId = req.user.id;
@@ -199,7 +217,7 @@ const requireBoardPermission = () => {
             }
 
             // Check if user has permission for this path and method
-            if(hasPermission(wsRole.role, req.path, req.method)) {
+            if(hasPermission(wsRole.role, `/board${path}`, req.method)) {
                 return next();
             }
 
@@ -435,10 +453,10 @@ const requireWhitelistedIP = (whitelist = []) => {
 };
 
 // Combined middleware for common permission patterns
-const requireSpaceMember = requireSpacePermission();
-const requireSpaceAdmin = requireSpacePermission();
-const requireWorkspaceMember = requireWorkspacePermission();
-const requireWorkspaceAdmin = requireWorkspacePermission();
+const requireSpaceMember = requireSpacePermission('/:id');
+const requireSpaceAdmin = requireSpacePermission('/:id');
+const requireWorkspaceMember = requireWorkspacePermission('');
+const requireWorkspaceAdmin = requireWorkspacePermission('');
 
 module.exports = {
     requireSystemAdmin,

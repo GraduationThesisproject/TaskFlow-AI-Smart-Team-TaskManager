@@ -1,40 +1,43 @@
-import React from "react";
-import { DashboardShell } from "./DashboardShell";
-import { useTasks } from "../../hooks";
-import { useAppSelector } from "../../store";
+import React from 'react';
+import { useTasks } from '../../hooks/useTasks';
+import { WelcomeHeader } from '../../components/dashboard/home/WelcomeHeader';
+import { StatsCards } from '../../components/dashboard/home/StatsCards';
+import { WorkspacesSection } from '../../components/dashboard/home/WorkspacesSection';
+import { UpcomingDeadlines } from '../../components/dashboard/home/UpcomingDeadlines';
 
-import { WelcomeHeader } from "../../components/dashboard/home/WelcomeHeader";
-import { StatsCards } from "../../components/dashboard/home/StatsCards";
-import { WorkspacesSection } from "../../components/dashboard/home/WorkspacesSection";
-import { UpcomingDeadlines } from "../../components/dashboard/home/UpcomingDeadlines";
+const Home: React.FC = () => {
+  const { loading, error } = useTasks();
 
-const HomeLayout: React.FC = () => {
-  const { user } = useAppSelector(state => state.auth);
-  const { loading: tasksLoading, error: tasksError } = useTasks();
-  const isLoading = tasksLoading;
-  const hasError = tasksError;
-
-  const displayName = user?.user?.name || "User";
-
-  if (isLoading) return <DashboardShell title="Dashboard">Loading...</DashboardShell>;
-  if (hasError) return <DashboardShell title="Dashboard">Error loading dashboard</DashboardShell>;
-
-  return (
-    <DashboardShell title="Dashboard">
-      <WelcomeHeader displayName={displayName} />
-      <StatsCards />
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 space-y-6">
-          <WorkspacesSection />
-        </div>
-
-        <div className="lg:col-span-4 space-y-6">
-          <UpcomingDeadlines />
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
-    </DashboardShell>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-destructive text-xl mb-2">Error Loading Dashboard</div>
+          <p className="text-muted-foreground mb-4">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <WelcomeHeader title="Welcome to TaskFlow AI" />
+      <StatsCards />
+      <WorkspacesSection />
+      <UpcomingDeadlines />
+    </div>
   );
 };
 
-export default HomeLayout;
+export default Home;

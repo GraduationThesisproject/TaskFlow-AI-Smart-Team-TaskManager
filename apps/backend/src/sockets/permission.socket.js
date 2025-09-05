@@ -4,8 +4,6 @@
  */
 
 const User = require('../models/User');
-const Workspace = require('../models/Workspace');
-const { hasPermission } = require('../config/pathPermissions');
 const logger = require('../config/logger');
 
 class PermissionSocket {
@@ -350,16 +348,13 @@ class PermissionSocket {
     }
 
     /**
-     * Verify JWT token (implement based on your auth system)
+     * Verify JWT token
      */
     async verifyToken(token) {
-        // TODO: Implement JWT verification
-        // This should use your existing auth middleware logic
         try {
-            // Example implementation - replace with your actual JWT verification
-            const jwt = require('jsonwebtoken');
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            return await User.findById(decoded.userId);
+            const jwt = require('../utils/jwt');
+            const decoded = jwt.verifyToken(token);
+            return await User.findById(decoded.id);
         } catch (error) {
             logger.error('Token verification error:', error);
             return null;
