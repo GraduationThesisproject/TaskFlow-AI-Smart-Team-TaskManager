@@ -2,6 +2,7 @@ import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { env } from './env';
+import { Platform } from 'react-native';
 
 // Create axios instance
 // Normalize base URL to ensure it targets the backend API prefix
@@ -16,6 +17,20 @@ if (env.IS_ANDROID && __DEV__) {
 
 const trimmed = rawBase.replace(/\/$/, '');
 const baseURL = /\/api$/.test(trimmed) ? trimmed : `${trimmed}/api`;
+
+// Ensure we have a stable device id for session tracking
+async function getOrCreateDeviceId(): Promise<string> {
+  try {
+    const saved = await AsyncStorage.getItem('deviceId');
+    if (saved) return saved;
+    const generated = `rn-${Platform.OS}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    await AsyncStorage.setItem('deviceId', generated);
+    return generated;
+  } catch {
+    // Fallback if storage fails
+    return `rn-${Platform.OS}-${Date.now().toString(36)}`;
+  }
+}
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL,
@@ -40,7 +55,7 @@ axiosInstance.interceptors.request.use(
         console.warn('⚠️ Using DEV_TOKEN from env for Authorization (development only).');
       }
     }
-    
+
     if (env.ENABLE_DEBUG) {
       console.log('🔍 Axios Request:', {
         method: config.method?.toUpperCase(),
@@ -50,31 +65,34 @@ axiosInstance.interceptors.request.use(
         hasToken: !!token
       });
     }
-    
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       if (env.ENABLE_DEBUG) {
         console.log('🔑 Token added to request headers');
       }
     }
-    
+
     // Add device info headers for mobile
+    const deviceId = env.DEVICE_ID || await getOrCreateDeviceId();
     config.headers['X-Platform'] = env.PLATFORM;
     config.headers['X-App-Version'] = env.APP_VERSION;
-    config.headers['X-Device-Id'] = env.DEVICE_ID || 'unknown';
-    
+    // Set both header variants to satisfy different middlewares
+    config.headers['X-Device-Id'] = deviceId; // existing
+    config.headers['X-Device-ID'] = deviceId; // backend expects capital ID
+
     // If sending FormData, let React Native set the multipart Content-Type with boundary
     if (config.data instanceof FormData) {
       if (config.headers) {
         delete (config.headers as any)['Content-Type'];
       }
     }
-    
+
     // Optional extra request log in debug mode
     if (env.ENABLE_DEBUG) {
       console.log('📡 Making request to:', `${config.baseURL}${config.url}`);
     }
-    
+
     return config;
   },
   (error) => {
@@ -94,7 +112,7 @@ axiosInstance.interceptors.response.use(
         data: response.data
       });
     }
-    
+
     return response;
   },
   async (error) => {
@@ -103,7 +121,7 @@ axiosInstance.interceptors.response.use(
     // Handle common errors
     if (error.response) {
       const { status, data } = error.response;
-      
+
       switch (status) {
         case 401: {
           // Attempt a single refresh+retry if we have a refresh token and haven't retried yet
@@ -163,7 +181,7 @@ axiosInstance.interceptors.response.use(
       // Other error
       console.error('Error:', error.message);
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -178,6 +196,11 @@ export async function setAuthToken(token: string): Promise<void> {
 export async function clearAuthToken(): Promise<void> {
   await AsyncStorage.removeItem('token');
   delete axiosInstance.defaults.headers.common['Authorization'];
+}
+
+// Set auth header for current process only (no persistence)
+export function setAuthHeaderOnly(token: string): void {
+  axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
 
 // Helper function to get auth token
@@ -198,11 +221,11 @@ export async function refreshToken(): Promise<boolean> {
     if (!refreshToken) {
       return false;
     }
-    
+
     const response = await axiosInstance.post('/auth/refresh', {
       refreshToken,
     });
-    
+
     const { accessToken } = response.data;
     await setAuthToken(accessToken);
     return true;

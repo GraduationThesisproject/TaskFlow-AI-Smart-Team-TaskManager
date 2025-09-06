@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
@@ -49,11 +49,18 @@ export default function WorkspaceScreen() {
   const dispatch = useAppDispatch();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [spaceSearch, setSpaceSearch] = useState('');
+  const [showCreateSpace, setShowCreateSpace] = useState(false);
+  const [newSpaceName, setNewSpaceName] = useState('');
+  const [newSpaceDescription, setNewSpaceDescription] = useState('');
+  const [newSpaceVisibility, setNewSpaceVisibility] = useState<'private' | 'public'>('private');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member');
 
   const { currentWorkspaceId, workspaces } = useAppSelector((s: any) => s.workspace);
   const selectedWorkspaceId = (params.workspaceId as string) || (params.id as string) || currentWorkspaceId || TEMP_WORKSPACE_ID;
 
-  const { workspaces: wsList, currentWorkspace, spaces, loading, error, refetchWorkspaces, loadSpaces } = useWorkspaces({ autoFetch: true, workspaceId: selectedWorkspaceId });
+  const { workspaces: wsList, currentWorkspace, spaces, loading, error, refetchWorkspaces, loadSpaces, inviteNewMember, createNewWorkspace } = useWorkspaces({ autoFetch: true, workspaceId: selectedWorkspaceId });
 
   const realWorkspaceId = (currentWorkspace as any)?._id || (currentWorkspace as any)?.id || null;
   const effectiveWorkspace = realWorkspaceId ? currentWorkspace : (USE_MOCK ? (MOCK_WORKSPACE as any) : null);
@@ -63,6 +70,11 @@ export default function WorkspaceScreen() {
     return Array.isArray(spaces) ? spaces.filter((s: any) => s?.status !== 'archived') : [];
   }, [spaces]);
   const effectiveSpaces = activeSpaces.length > 0 ? activeSpaces : (USE_MOCK ? MOCK_SPACES : activeSpaces);
+  const filteredSpaces = useMemo(() => {
+    const q = spaceSearch.trim().toLowerCase();
+    if (!q) return effectiveSpaces;
+    return (effectiveSpaces || []).filter((s: any) => (s?.name || '').toLowerCase().includes(q) || (s?.description || '').toLowerCase().includes(q));
+  }, [spaceSearch, effectiveSpaces]);
 
   const membersCount = (effectiveWorkspace as any)?.members?.length || (effectiveWorkspace as any)?.memberCount || 0;
 
@@ -109,6 +121,27 @@ export default function WorkspaceScreen() {
   const goToReports = () => router.push('/(tabs)/workspace/reports');
   const goToWorkspaceSettings = () => router.push('/(tabs)/workspace/settings');
 
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) return;
+    try {
+      await inviteNewMember(inviteEmail.trim(), inviteRole);
+      setInviteEmail('');
+    } catch (e: any) {
+      // surfaced via console
+    }
+  };
+
+  const handleCreateSpace = async () => {
+    if (!newSpaceName.trim()) return;
+    try {
+      await createNewWorkspace({ name: newSpaceName.trim(), description: newSpaceDescription.trim() || undefined, visibility: newSpaceVisibility });
+      setNewSpaceName('');
+      setNewSpaceDescription('');
+      setNewSpaceVisibility('private');
+      setShowCreateSpace(false);
+    } catch (e) {}
+  };
+
   // Loading state
   if (!USE_MOCK && loading && !refreshing) {
     return (
@@ -148,6 +181,76 @@ export default function WorkspaceScreen() {
             <Text style={[TextStyles.body.medium, { color: colors['destructive-foreground'] }]}>Failed to load workspace data. Pull to refresh.</Text>
           </Card>
         )}
+
+        {/* Invite & Quick actions */}
+        {workspaceId && effectiveWorkspace && (
+          <Card style={styles.sectionCard}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Invite Members</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TextInput
+                value={inviteEmail}
+                onChangeText={setInviteEmail}
+                placeholder="email@example.com"
+                placeholderTextColor={colors['muted-foreground']}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                style={[styles.input, { flex: 1, color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
+              />
+              <TouchableOpacity onPress={() => setInviteRole(inviteRole === 'member' ? 'admin' : 'member')} style={[styles.pill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>{inviteRole}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleInvite} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}>
+                <Text style={{ color: colors['primary-foreground'] }}>Invite</Text>
+              </TouchableOpacity>
+            </View>
+          </Card>
+        )}
+
+        {/* Spaces toolbar: Search + Create */}
+        <Card style={styles.sectionCard}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TextInput
+              value={spaceSearch}
+              onChangeText={setSpaceSearch}
+              placeholder="Search spaces..."
+              placeholderTextColor={colors['muted-foreground']}
+              style={[styles.input, { flex: 1, color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
+            />
+            <TouchableOpacity onPress={() => setShowCreateSpace((v) => !v)} style={[styles.secondaryBtn, { backgroundColor: colors.secondary }]}>
+              <Text style={{ color: colors['secondary-foreground'] }}>{showCreateSpace ? 'Close' : 'Create Space'}</Text>
+            </TouchableOpacity>
+          </View>
+          {showCreateSpace && (
+            <View style={{ marginTop: 12, gap: 8 }}>
+              <TextInput
+                value={newSpaceName}
+                onChangeText={setNewSpaceName}
+                placeholder="Space name"
+                placeholderTextColor={colors['muted-foreground']}
+                style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
+              />
+              <TextInput
+                value={newSpaceDescription}
+                onChangeText={setNewSpaceDescription}
+                placeholder="Description (optional)"
+                placeholderTextColor={colors['muted-foreground']}
+                style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
+              />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity onPress={() => setNewSpaceVisibility('private')} style={[styles.pill, { backgroundColor: newSpaceVisibility === 'private' ? colors.primary : colors.card, borderColor: colors.border }]}>
+                  <Text style={{ color: newSpaceVisibility === 'private' ? colors['primary-foreground'] : colors.foreground }}>Private</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setNewSpaceVisibility('public')} style={[styles.pill, { backgroundColor: newSpaceVisibility === 'public' ? colors.primary : colors.card, borderColor: colors.border }]}>
+                  <Text style={{ color: newSpaceVisibility === 'public' ? colors['primary-foreground'] : colors.foreground }}>Public</Text>
+                </TouchableOpacity>
+                <View style={{ flex: 1 }} />
+                <TouchableOpacity onPress={handleCreateSpace} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}>
+                  <Text style={{ color: colors['primary-foreground'] }}>Create</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </Card>
 
         {/* Show selector ONLY if no selected id and no current workspace, and multiple workspaces exist */}
         {!USE_MOCK && !workspaceId && Array.isArray(wsList) && wsList.length > 1 && (
@@ -212,14 +315,14 @@ export default function WorkspaceScreen() {
             {/* Spaces List */}
             <Card style={styles.sectionCard}>
               <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Workspace Spaces</Text>
-              {effectiveSpaces.length === 0 ? (
+              {filteredSpaces.length === 0 ? (
                 <View style={[styles.emptyBox, { backgroundColor: colors.card }]}>
                   <FontAwesome name="inbox" size={24} color={colors['muted-foreground']} />
                   <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], marginTop: 8 }]}>No spaces yet</Text>
                 </View>
               ) : (
                 <View style={styles.spaceList}>
-                  {effectiveSpaces.map((space: any) => (
+                  {filteredSpaces.map((space: any) => (
                     <TouchableOpacity key={space._id} style={[styles.spaceItem, { backgroundColor: colors.card }]} onPress={() => handleOpenSpace(space)}>
                       <View style={styles.spaceHeader}>
                         <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{space.name}</Text>
@@ -231,11 +334,11 @@ export default function WorkspaceScreen() {
                         </Text>
                       ) : null}
                       <View style={styles.spaceStats}>
-                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> 
                           {(space.members?.length || 0)} members
                         </Text>
                         <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> 
                           {(space.stats?.totalBoards || 0)} boards
                         </Text>
                       </View>
@@ -287,4 +390,8 @@ const styles = StyleSheet.create({
   spaceStats: { flexDirection: 'row', gap: 8, marginTop: 8 },
   actionsContainer: { flexDirection: 'row', gap: 12 },
   actionButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12, gap: 8 },
+  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
+  pill: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 999, borderWidth: 1 },
+  primaryBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10 },
+  secondaryBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10 },
 });

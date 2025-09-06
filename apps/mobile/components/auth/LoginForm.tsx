@@ -4,29 +4,27 @@ import { Text, Card, View } from '../Themed';
 import InputField from '../forms/InputField';
 import { useThemeColors } from '../ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
+import { useAuth } from '../../hooks/useAuth';
 
 interface LoginFormProps {
-  onSubmit: (email: string, password: string) => void;
   onForgotPassword?: () => void;
   onSignup?: () => void;
-  onOAuthLogin?: (provider: 'google' | 'github') => void;
-  loading?: boolean;
-  error?: string;
+  onSuccess?: () => void;
 }
 
 export default function LoginForm({
-  onSubmit,
   onForgotPassword,
   onSignup,
-  onOAuthLogin,
-  loading = false,
-  error
+  onSuccess
 }: LoginFormProps) {
   const colors = useThemeColors();
+  const { login, isLoading, error, clearAuthError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -49,8 +47,8 @@ export default function LoginForm({
     if (!password) {
       setPasswordError('Password is required');
       isValid = false;
-    } else if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
+    } else if (password.length < 8) {
+      setPasswordError('Password must be at least 8 characters');
       isValid = false;
     } else {
       setPasswordError('');
@@ -59,9 +57,20 @@ export default function LoginForm({
     return isValid;
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      onSubmit(email, password);
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+    try {
+      // Clear any general auth error before attempting login
+      clearAuthError();
+      setSubmitting(true);
+      const result = await login({ email, password, rememberMe });
+      if ((result as any)?.meta?.requestStatus === 'fulfilled') {
+        onSuccess?.();
+      }
+    } catch (_) {
+      // Error is handled in the auth slice; local UI will display via `error`
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -87,7 +96,11 @@ export default function LoginForm({
         <InputField
           label="Email"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(val) => {
+            if (error) clearAuthError();
+            setEmail(val);
+            if (emailError) setEmailError('');
+          }}
           placeholder="Enter your email"
           keyboardType="email-address"
           autoCapitalize="none"
@@ -99,12 +112,42 @@ export default function LoginForm({
         <InputField
           label="Password"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(val) => {
+            if (error) clearAuthError();
+            setPassword(val);
+            if (passwordError) setPasswordError('');
+          }}
           placeholder="Enter your password"
           secureTextEntry
           error={passwordError}
           required
         />
+
+        {/* Remember me toggle */}
+        <TouchableOpacity
+          onPress={() => setRememberMe((v) => !v)}
+          style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}
+        >
+          <View
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: 4,
+              marginRight: 8,
+              borderWidth: 1,
+              borderColor: colors.border,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: rememberMe ? colors.primary : 'transparent',
+            }}
+          >
+            {/* simple check indicator */}
+            {rememberMe ? (
+              <Text style={{ color: colors['primary-foreground'], fontSize: 12 }}>✓</Text>
+            ) : null}
+          </View>
+          <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Remember me</Text>
+        </TouchableOpacity>
 
         {onForgotPassword && (
           <TouchableOpacity onPress={onForgotPassword} style={styles.forgotPassword}>
@@ -116,46 +159,14 @@ export default function LoginForm({
 
         <TouchableOpacity 
           onPress={handleSubmit} 
-          disabled={loading} 
-          style={[styles.submitButton, { backgroundColor: colors.primary, opacity: loading ? 0.6 : 1 }]}
+          disabled={submitting}
+          style={[styles.submitButton, { backgroundColor: colors.primary, opacity: submitting ? 0.6 : 1 }]}
         >
           <Text style={{ color: colors['primary-foreground'], textAlign: 'center' }}>
-            {loading ? 'Signing In...' : 'Sign In'}
+            {submitting ? 'Signing In...' : 'Sign In'}
           </Text>
         </TouchableOpacity>
       </View>
-
-      {onOAuthLogin && (
-        <View style={styles.oauthContainer}>
-          <View style={styles.divider}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-              or continue with
-            </Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
-
-          <View style={styles.oauthButtons}>
-            <TouchableOpacity
-              onPress={() => onOAuthLogin('google')}
-              style={[styles.oauthButton, { borderColor: colors.border }]}
-            >
-              <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-                Google
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => onOAuthLogin('github')}
-              style={[styles.oauthButton, { borderColor: colors.border }]}
-            >
-              <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-                GitHub
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
 
       {onSignup && (
         <View style={styles.signupContainer}>
@@ -198,30 +209,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  oauthContainer: {
-    marginTop: 32,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  oauthButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  oauthButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
   },
   signupContainer: {
     flexDirection: 'row',

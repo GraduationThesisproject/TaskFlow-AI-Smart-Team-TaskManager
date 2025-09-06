@@ -82,6 +82,17 @@ export class SpaceService {
     }
   }
 
+  // Get boards for a space
+  static async getSpaceBoards(id: string): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await axiosInstance.get(`/spaces/${id}/boards`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching space boards:', error);
+      throw error;
+    }
+  }
+
   // Add member to space
   static async addSpaceMember(spaceId: string, userId: string, role: string): Promise<ApiResponse<any>> {
     try {
