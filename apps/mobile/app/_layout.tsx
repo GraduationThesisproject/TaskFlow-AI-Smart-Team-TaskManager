@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -98,6 +99,7 @@ function AuthGate() {
     return (
       <Stack>
         <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="register" options={{ headerShown: false }} />
       </Stack>
     );
   }

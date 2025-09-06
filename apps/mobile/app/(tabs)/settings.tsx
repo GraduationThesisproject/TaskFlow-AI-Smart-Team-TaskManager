@@ -8,8 +8,6 @@ import { useAppSelector, useAppDispatch } from '@/store';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MockAuthService, TEST_ACCOUNT } from '@/services/mockAuthService';
-import { loginUser } from '@/store/slices/authSlice';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function SettingsScreen() {
@@ -137,34 +135,6 @@ export default function SettingsScreen() {
     }
   };
 
-  const quickLogin = async () => {
-    try {
-      setTokenStatus('Logging in...');
-      console.log('🔐 Attempting quick login with test account...');
-      
-      // Use Redux action to ensure state is updated properly
-      const result = await dispatch(loginUser({
-        email: TEST_ACCOUNT.email,
-        password: TEST_ACCOUNT.password
-      }));
-      
-      if (result.type.endsWith('/fulfilled')) {
-        const payload = result.payload as any;
-        setTokenStatus('✅ Login successful: ' + payload.token.substring(0, 20) + '...');
-        console.log('✅ Quick login successful:', payload);
-        Alert.alert('Login Successful', 'You are now logged in with the test account!');
-      } else {
-        const payload = result.payload as string;
-        setTokenStatus('❌ Login failed: ' + payload);
-        console.log('❌ Quick login failed:', payload);
-        Alert.alert('Login Failed', 'Failed to login: ' + payload);
-      }
-    } catch (error: any) {
-      setTokenStatus('❌ Login error: ' + error.message);
-      console.error('❌ Quick login error:', error);
-      Alert.alert('Login Error', 'Failed to login: ' + error.message);
-    }
-  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -407,26 +377,6 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Quick Login */}
-          <TouchableOpacity 
-            style={[styles.quickLoginButton, { backgroundColor: colors.accent, marginTop: 12 }]}
-            onPress={quickLogin}
-          >
-            <FontAwesome name="sign-in" size={16} color={colors['accent-foreground']} />
-            <Text style={[TextStyles.body.medium, { color: colors['accent-foreground'] }]}>
-              Quick Login (Test Account)
-            </Text>
-          </TouchableOpacity>
-
-          {/* Test Account Info */}
-          <View style={[styles.testAccountInfo, { backgroundColor: colors.card, marginTop: 12 }]}>
-            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-              Test Account: {TEST_ACCOUNT.email}
-            </Text>
-            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-              Password: {TEST_ACCOUNT.password}
-            </Text>
-          </View>
         </Card>
 
         {/* Danger Zone */}
@@ -594,17 +544,5 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     gap: 8,
-  },
-  quickLoginButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-    borderRadius: 8,
-    gap: 8,
-  },
-  testAccountInfo: {
-    padding: 12,
-    borderRadius: 8,
   },
 });

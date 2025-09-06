@@ -116,7 +116,7 @@ axiosInstance.interceptors.response.use(
           break;
         case 500:
           // Server error
-          console.error('Server error');
+          console.error('Server error:', data?.message || 'Internal server error');
           break;
         case 503:
           // Service unavailable

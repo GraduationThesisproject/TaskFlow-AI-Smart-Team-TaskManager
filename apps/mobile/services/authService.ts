@@ -5,7 +5,7 @@
 import axiosInstance, { setAuthToken } from '../config/axios';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MockAuthService } from './mockAuthService';
+// Removed MockAuthService import - using real API only
 import { env } from '../config/env';
 import type { ApiResponse } from '../types/task.types';
 import type {

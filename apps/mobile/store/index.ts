@@ -7,15 +7,9 @@ import { env } from '../config/env';
 import { persistEncryptTransform } from './encryptionTransform';
 import { PERSIST_VERSION, persistMigrations } from './persistMigrations';
 
-// Conditionally import socket middleware only when not in mock mode
+// Temporarily disable socket middleware to prevent connection errors
 let notificationsSocketMiddleware: any = null;
-if (!(env.IS_DEV && env.ENABLE_API_MOCKING)) {
-  console.log('🔧 [store] Loading socket middleware - not in mock mode');
-  const middlewareModule = require('./middleware/notificationsSocketMiddleware');
-  notificationsSocketMiddleware = middlewareModule.notificationsSocketMiddleware;
-} else {
-  console.log('🔧 [store] Skipping socket middleware import - using mock authentication');
-}
+console.log('🔧 [store] Socket middleware disabled temporarily to prevent connection errors');
 
 // Import reducers here
 import appReducer from './slices/appSlice.ts';
@@ -30,7 +24,6 @@ import notificationReducer from './slices/notificationSlice';
 import templatesReducer from './slices/templatesSlice.ts';
 import analyticsReducer from './slices/analyticsSlice.ts';
 import permissionReducer from './slices/permissionSlice.ts';
-import testReducer from './slices/testSlice.ts';
 
 const rootReducer = combineReducers({
   app: appReducer,
@@ -45,7 +38,6 @@ const rootReducer = combineReducers({
   templates: templatesReducer,
   analytics: analyticsReducer,
   permissions: permissionReducer,
-  test: testReducer,
 });
 
 const persistConfig = {
@@ -54,7 +46,7 @@ const persistConfig = {
   version: PERSIST_VERSION,
   migrate: createMigrate(persistMigrations, { debug: false }),
   whitelist: ['auth', 'workspace', 'boards', 'spaces'],
-  transforms: [persistEncryptTransform],
+  transforms: persistEncryptTransform ? [persistEncryptTransform] : [],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
