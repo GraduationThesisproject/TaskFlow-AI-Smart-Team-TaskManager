@@ -149,13 +149,14 @@ export default function LoginForm({
           <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Remember me</Text>
         </TouchableOpacity>
 
-        {onForgotPassword && (
-          <TouchableOpacity onPress={onForgotPassword} style={styles.forgotPassword}>
-            <Text style={[TextStyles.body.small, { color: colors.primary }]}>
-              Forgot your password?
-            </Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity 
+          onPress={() => onForgotPassword?.()} 
+          style={styles.forgotPassword}
+        >
+          <Text style={[TextStyles.body.small, { color: colors.primary }]}>
+            Forgot your password?
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity 
           onPress={handleSubmit} 
