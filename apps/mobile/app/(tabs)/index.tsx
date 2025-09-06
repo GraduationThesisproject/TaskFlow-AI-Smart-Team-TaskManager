@@ -9,10 +9,13 @@ import { fetchAnalytics } from '@/store/slices/analyticsSlice';
 import { listTemplates } from '@/store/slices/templatesSlice';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
+import { router } from 'expo-router';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function DashboardScreen() {
   const colors = useThemeColors();
   const dispatch = useAppDispatch();
+  const { logout } = useAuth();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -262,6 +265,21 @@ export default function DashboardScreen() {
               <FontAwesome name="plus" size={16} color={colors['secondary-foreground']} />
               <Text style={[TextStyles.body.small, { color: colors['secondary-foreground'] }]}>
                 New Workspace
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: colors.destructive }]}
+              onPress={async () => {
+                try {
+                  await logout();
+                } catch (e) {
+                  console.warn('Logout failed:', (e as Error).message);
+                }
+              }}
+            >
+              <FontAwesome name="sign-out" size={16} color={colors['destructive-foreground']} />
+              <Text style={[TextStyles.body.small, { color: colors['destructive-foreground'] }]}>
+                Logout
               </Text>
             </TouchableOpacity>
           </View>

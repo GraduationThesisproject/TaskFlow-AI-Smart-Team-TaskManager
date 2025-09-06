@@ -4,6 +4,8 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router } from 'expo-router';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { setSelectedSpace } from '@/store/slices/workspaceSlice';
 
 interface SidebarProps {
   isVisible: boolean;
@@ -38,6 +40,8 @@ const workspaceItems: NavItem[] = [
 export default function Sidebar({ isVisible, onClose, currentSection }: SidebarProps) {
   const colors = useThemeColors();
   const slideAnim = React.useRef(new Animated.Value(-300)).current;
+  const dispatch = useAppDispatch();
+  const { spaces, currentWorkspace } = useAppSelector((s: any) => s.workspace);
 
   React.useEffect(() => {
     if (isVisible) {
@@ -60,6 +64,13 @@ export default function Sidebar({ isVisible, onClose, currentSection }: SidebarP
     if (route.startsWith('/')) {
       router.push(route as any);
     }
+  };
+
+  const handleOpenSpace = (space: any) => {
+    if (!space) return;
+    dispatch(setSelectedSpace(space));
+    onClose();
+    router.push('/(tabs)/workspace/space');
   };
 
   const getCurrentItems = () => {
@@ -153,6 +164,37 @@ export default function Sidebar({ isVisible, onClose, currentSection }: SidebarP
               />
             </TouchableOpacity>
           ))}
+          {currentSection === 'workspace' && (
+            <>
+              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginHorizontal: 16, marginTop: 16, marginBottom: 8 }]}>Spaces</Text>
+              {Array.isArray(spaces) && spaces.length > 0 ? (
+                spaces
+                  .filter((sp: any) => sp?.status !== 'archived')
+                  .map((sp: any) => (
+                    <TouchableOpacity
+                      key={sp._id || sp.id}
+                      style={[
+                        styles.navItem,
+                        { backgroundColor: colors.card, borderBottomColor: colors.border },
+                      ]}
+                      onPress={() => handleOpenSpace(sp)}
+                    >
+                      <View style={styles.navItemContent}>
+                        <FontAwesome name="folder" size={18} color={colors.accent} style={styles.navIcon} />
+                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>
+                          {sp.name}
+                        </Text>
+                      </View>
+                      <FontAwesome name="chevron-right" size={14} color={colors['muted-foreground']} />
+                    </TouchableOpacity>
+                  ))
+              ) : (
+                <View style={{ paddingHorizontal: 16, paddingVertical: 4 }}>
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>No spaces</Text>
+                </View>
+              )}
+            </>
+          )}
         </View>
 
         {/* Footer */}

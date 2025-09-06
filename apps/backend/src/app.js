@@ -76,7 +76,18 @@ const corsOptions = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Socket-ID', 'x-debug'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'X-Socket-ID',
+      'x-debug',
+      // Mobile client custom headers
+      'X-Platform',
+      'X-App-Version',
+      'X-Device-ID',
+      'X-Device-Id'
+    ],
     exposedHeaders: ['X-Socket-ID']
 };
 
@@ -196,7 +207,7 @@ app.options('/uploads/avatars/:filename', (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Platform, X-App-Version, X-Device-ID, X-Device-Id');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
   res.status(200).end();
@@ -209,7 +220,7 @@ app.options('/api/avatars/:filename', (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Platform, X-App-Version, X-Device-ID, X-Device-Id');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
   res.status(200).end();
