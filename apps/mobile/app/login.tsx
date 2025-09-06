@@ -9,13 +9,20 @@ import { router } from 'expo-router';
 export default function LoginScreen() {
   const colors = useThemeColors();
 
+  const handleForgotPassword = () => {
+    router.push('/forgot-password');
+  };
+
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flex: 1, padding: 16, justifyContent: 'center' }}>
         <Card style={{ padding: 16, marginBottom: 16 }}>
           <Text style={[TextStyles.heading.h1, { color: colors.foreground, textAlign: 'center' }]}>Login</Text>
         </Card>
-        <LoginForm onSignup={() => router.replace('/register')} />
+        <LoginForm 
+          onSignup={() => router.replace('/register')} 
+          onForgotPassword={handleForgotPassword}
+        />
       </View>
     </ScrollView>
   );

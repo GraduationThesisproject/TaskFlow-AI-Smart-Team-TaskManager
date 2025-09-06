@@ -43,6 +43,22 @@ router.put('/password-reset/confirm',
     authController.resetPassword
 );
 
+// 4-Digit Code Password Reset Flow
+router.post('/forgot-password/send-code',
+    validateMiddleware.validateBody(authSchemas.forgotPasswordSendCodeSchema),
+    authController.sendForgotPasswordCode
+);
+
+router.post('/forgot-password/verify-code',
+    validateMiddleware.validateBody(authSchemas.forgotPasswordVerifyCodeSchema),
+    authController.verifyForgotPasswordCode
+);
+
+router.post('/forgot-password/reset',
+    validateMiddleware.validateBody(authSchemas.forgotPasswordResetSchema),
+    authController.resetPasswordWithCode
+);
+
 // Email Verification
 router.get('/verify-email/:token',
     authController.verifyEmail

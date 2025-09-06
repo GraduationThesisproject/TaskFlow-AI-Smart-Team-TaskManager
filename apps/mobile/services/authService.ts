@@ -13,7 +13,10 @@ import type {
   EmailVerificationData,
   ResendVerificationData,
   PasswordResetRequestData,
-  PasswordResetData
+  PasswordResetData,
+  ForgotPasswordSendCodeData,
+  ForgotPasswordVerifyCodeData,
+  ForgotPasswordResetData
 } from '../types/auth.types';
 
 //------------------- AuthService Class -------------------
@@ -237,6 +240,37 @@ static async updateProfile({
       return response.data;
     } catch (error) {
       console.error('Error fetching activity:', error);
+      throw error;
+    }
+  }
+
+  //------------------- 4-Digit Code Password Reset Flow -------------------
+  static async sendForgotPasswordCode(data: ForgotPasswordSendCodeData): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await axiosInstance.post('/auth/forgot-password/send-code', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error sending forgot password code:', error);
+      throw error;
+    }
+  }
+
+  static async verifyForgotPasswordCode(data: ForgotPasswordVerifyCodeData): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await axiosInstance.post('/auth/forgot-password/verify-code', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error verifying forgot password code:', error);
+      throw error;
+    }
+  }
+
+  static async resetPasswordWithCode(data: ForgotPasswordResetData): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await axiosInstance.post('/auth/forgot-password/reset', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error resetting password with code:', error);
       throw error;
     }
   }
