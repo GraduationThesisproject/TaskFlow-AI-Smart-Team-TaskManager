@@ -35,8 +35,9 @@ export function ThemeProvider({
   const [theme, setThemeState] = useState<Theme>(defaultTheme);
   const [userPrimaryColor, setUserPrimaryColorState] = useState<string | null>(initialUserColor || null);
   const [isSystemTheme, setIsSystemThemeState] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Get the current theme colors
+  // Get the current theme colors - always provide colors even if not initialized
   const colors = theme === 'light' ? lightTheme : darkTheme;
 
   useEffect(() => {
@@ -69,8 +70,11 @@ export function ThemeProvider({
       if (savedUserColor) {
         setUserPrimaryColorState(savedUserColor);
       }
+      
+      setIsInitialized(true);
     } catch (error) {
       console.warn('Failed to load theme preferences:', error);
+      setIsInitialized(true);
     }
   };
 
@@ -131,7 +135,18 @@ export function ThemeProvider({
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    // Return default theme instead of throwing error
+    console.warn('useTheme called outside ThemeProvider, using default theme');
+    return {
+      theme: 'dark' as Theme,
+      colors: darkTheme,
+      setTheme: () => {},
+      toggleTheme: () => {},
+      setUserPrimaryColor: () => {},
+      userPrimaryColor: null,
+      isSystemTheme: false,
+      setIsSystemTheme: () => {},
+    };
   }
   return context;
 }
@@ -140,6 +155,17 @@ export function useTheme() {
 export function useThemeColors() {
   const { colors } = useTheme();
   return colors;
+}
+
+// Safe hook that provides default colors if theme is not available
+export function useSafeThemeColors() {
+  try {
+    const { colors } = useTheme();
+    return colors;
+  } catch (error) {
+    // Return default dark theme colors if theme is not available
+    return darkTheme;
+  }
 }
 
 // Hook to get a specific color

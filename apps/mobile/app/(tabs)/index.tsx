@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
@@ -257,13 +257,23 @@ const WorkspacesSection: React.FC = () => {
 // Upcoming Deadlines Component
 const UpcomingDeadlines: React.FC = () => {
   const colors = useThemeColors();
+  const { tasks } = useAppSelector(state => state.tasks);
   
-  // Mock upcoming deadlines data - in real app this would come from tasks
-  const upcomingDeadlines = [
-    { id: '1', title: 'Review Design Mockups', dueDate: '2024-01-15', priority: 'high' },
-    { id: '2', title: 'Submit Project Report', dueDate: '2024-01-18', priority: 'medium' },
-    { id: '3', title: 'Client Meeting Preparation', dueDate: '2024-01-20', priority: 'low' },
-  ];
+  // Get upcoming deadlines from real tasks data
+  const upcomingDeadlines = useMemo(() => {
+    if (!tasks || tasks.length === 0) return [];
+    
+    return tasks
+      .filter(task => task.dueDate && new Date(task.dueDate) > new Date())
+      .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+      .slice(0, 5)
+      .map(task => ({
+        id: task._id,
+        title: task.title,
+        dueDate: task.dueDate!,
+        priority: task.priority
+      }));
+  }, [tasks]);
 
   return (
     <Card style={[styles.deadlinesCard, { backgroundColor: colors.card }]}>
@@ -316,6 +326,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const { user, isAuthenticated, token } = useAppSelector(state => state.auth);
+  const { workspaces, currentWorkspaceId } = useAppSelector(state => state.workspace);
   const displayName = user?.user?.name || "User";
 
   useEffect(() => {
@@ -337,9 +348,20 @@ export default function DashboardScreen() {
       const workspacesResult = await dispatch(fetchWorkspaces());
       console.log('📁 Workspaces result:', workspacesResult);
       
-      console.log('📊 Fetching analytics...');
-      const analyticsResult = await dispatch(fetchAnalytics({ period: 'month', startDate: '2024-01-01', endDate: '2024-12-31' }));
-      console.log('📊 Analytics result:', analyticsResult);
+      // Only fetch analytics if we have a workspace ID
+      if (currentWorkspaceId || (workspaces && workspaces.length > 0)) {
+        const workspaceId = currentWorkspaceId || workspaces[0]?._id;
+        console.log('📊 Fetching analytics for workspace:', workspaceId);
+        const analyticsResult = await dispatch(fetchAnalytics({ 
+          period: 'month', 
+          startDate: '2024-01-01', 
+          endDate: '2024-12-31',
+          workspaceId: workspaceId
+        }));
+        console.log('📊 Analytics result:', analyticsResult);
+      } else {
+        console.log('📊 Skipping analytics - no workspace available');
+      }
       
       console.log('📋 Fetching templates...');
       const templatesResult = await dispatch(listTemplates({ status: 'active' }));
@@ -380,56 +402,6 @@ export default function DashboardScreen() {
       >
         <WelcomeHeader displayName={displayName} />
         
-        {/* Auth Status Debug */}
-        <Card style={[styles.authStatusCard, { backgroundColor: colors.card }]}>
-          <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 8 }]}>
-            Authentication Status
-          </Text>
-          <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-            Authenticated: {isAuthenticated ? '✅ Yes' : '❌ No'}
-          </Text>
-          <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-            Token: {token ? '✅ Present' : '❌ Missing'}
-          </Text>
-          <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-            User: {user ? '✅ Loaded' : '❌ Missing'}
-          </Text>
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: colors.primary }]}
-              onPress={() => {/* Navigate to create task */}}
-            >
-              <FontAwesome name="plus" size={16} color={colors['primary-foreground']} />
-              <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>
-                New Task
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: colors.secondary }]}
-              onPress={() => {/* Navigate to create workspace */}}
-            >
-              <FontAwesome name="plus" size={16} color={colors['secondary-foreground']} />
-              <Text style={[TextStyles.body.small, { color: colors['secondary-foreground'] }]}>
-                New Workspace
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: colors.destructive }]}
-              onPress={async () => {
-                try {
-                  await logout();
-                } catch (e) {
-                  console.warn('Logout failed:', (e as Error).message);
-                }
-              }}
-            >
-              <FontAwesome name="sign-out" size={16} color={colors['destructive-foreground']} />
-              <Text style={[TextStyles.body.small, { color: colors['destructive-foreground'] }]}>
-                Logout
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
         
         <StatsCards />
         
@@ -592,11 +564,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 8,
   },
-  authStatusCard: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
   deadlinesCard: {
     padding: 16,
     borderRadius: 12,
@@ -627,18 +594,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
   },
 });
