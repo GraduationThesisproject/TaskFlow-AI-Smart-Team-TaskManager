@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightTheme, darkTheme, ThemeColors } from '@/constants/Colors';
+import { ThemeUtils } from '@/utils/themeUtils';
 
 type Theme = 'light' | 'dark';
 
@@ -38,7 +39,16 @@ export function ThemeProvider({
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Get the current theme colors - always provide colors even if not initialized
-  const colors = theme === 'light' ? lightTheme : darkTheme;
+  const baseColors = theme === 'light' ? lightTheme : darkTheme;
+  
+  // Apply user's primary color if set
+  const colors = userPrimaryColor ? {
+    ...baseColors,
+    primary: userPrimaryColor,
+    'primary-foreground': ThemeUtils.getContrastColor(userPrimaryColor),
+    ring: userPrimaryColor,
+    'gradient-primary': userPrimaryColor,
+  } : baseColors;
 
   useEffect(() => {
     loadThemePreferences();
@@ -56,14 +66,20 @@ export function ThemeProvider({
       const savedUserColor = await AsyncStorage.getItem('taskflow-mobile-user-primary-color');
       const savedIsSystemTheme = await AsyncStorage.getItem('taskflow-mobile-system-theme');
       
+      let isSystem = true; // Default to system theme
       if (savedIsSystemTheme !== null) {
-        const isSystem = JSON.parse(savedIsSystemTheme);
+        isSystem = JSON.parse(savedIsSystemTheme);
         setIsSystemThemeState(isSystem);
       }
 
-      if (savedTheme && ['light', 'dark'].includes(savedTheme) && !isSystemTheme) {
+      if (isSystem && systemColorScheme) {
+        // Use system theme
+        setThemeState(systemColorScheme);
+      } else if (savedTheme && ['light', 'dark'].includes(savedTheme)) {
+        // Use saved theme
         setThemeState(savedTheme as Theme);
       } else if (systemColorScheme) {
+        // Fallback to system theme
         setThemeState(systemColorScheme);
       }
 
@@ -81,7 +97,9 @@ export function ThemeProvider({
   const setTheme = async (newTheme: Theme) => {
     try {
       setThemeState(newTheme);
+      setIsSystemThemeState(false); // Disable system theme when manually setting
       await AsyncStorage.setItem(storageKey, newTheme);
+      await AsyncStorage.setItem('taskflow-mobile-system-theme', JSON.stringify(false));
     } catch (error) {
       console.warn('Failed to save theme preference:', error);
     }
