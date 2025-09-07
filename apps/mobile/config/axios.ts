@@ -101,36 +101,52 @@ axiosInstance.interceptors.response.use(
       switch (status) {
         case 401:
           // Unauthorized - clear token and redirect to login
-          console.error('Unauthorized access - Token may be invalid or expired');
+          if (env.ENABLE_DEBUG) {
+            console.warn('🔐 Unauthorized access - Token may be invalid or expired');
+          }
           await AsyncStorage.removeItem('token');
           // In React Native, we need to handle navigation differently
           // This will be handled by the app's navigation system
           break;
         case 403:
-          // Forbidden
-          console.error('Access forbidden');
+          // Forbidden - user doesn't have permission for this resource
+          if (env.ENABLE_DEBUG) {
+            console.warn('🚫 Access forbidden - insufficient permissions for this resource');
+          }
           break;
         case 404:
           // Not found
-          console.error('Resource not found');
+          if (env.ENABLE_DEBUG) {
+            console.warn('🔍 Resource not found:', error.config?.url);
+          }
           break;
         case 500:
           // Server error
-          console.error('Server error:', data?.message || 'Internal server error');
+          if (env.ENABLE_DEBUG) {
+            console.error('🔥 Server error:', data?.message || 'Internal server error');
+          }
           break;
         case 503:
           // Service unavailable
-          console.error('Service temporarily unavailable');
+          if (env.ENABLE_DEBUG) {
+            console.warn('⏳ Service temporarily unavailable');
+          }
           break;
         default:
-          console.error('API Error:', status, data);
+          if (env.ENABLE_DEBUG) {
+            console.warn('⚠️ API Error:', status, data);
+          }
       }
     } else if (error.request) {
       // Network error
-      console.error('Network error:', error.request);
+      if (env.ENABLE_DEBUG) {
+        console.warn('🌐 Network error - check your internet connection');
+      }
     } else {
       // Other error
-      console.error('Error:', error.message);
+      if (env.ENABLE_DEBUG) {
+        console.warn('❓ Request setup error:', error.message);
+      }
     }
     
     return Promise.reject(error);

@@ -9,6 +9,18 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/hooks/useAuth';
+import { useLocalSearchParams } from 'expo-router';
+
+// Import new settings components
+import AccountSettings from '@/components/settings/AccountSettings';
+import AppearanceSettings from '@/components/settings/AppearanceSettings';
+import NotificationSettings from '@/components/settings/NotificationSettings';
+import AccountSummary from '@/components/settings/AccountSummary';
+import SubscriptionCard from '@/components/settings/SubscriptionCard';
+import ActivityPage from '@/components/settings/ActivityPage';
+import DangerZone from '@/components/settings/DangerZone';
+
+type SettingsTab = 'profile' | 'theme' | 'notifications' | 'activity' | 'upgrade';
 
 export default function SettingsScreen() {
   const colors = useThemeColors();
@@ -16,24 +28,44 @@ export default function SettingsScreen() {
   const dispatch = useAppDispatch();
   const { logout } = useAuth();
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
-  const [tokenStatus, setTokenStatus] = useState<string>('Not checked');
+  
+  // Get navigation parameters
+  const params = useLocalSearchParams();
+  const { section } = params;
 
   // Redux selectors
   const { user } = useAppSelector(state => state.auth);
-  
-  // Debug logging
-  console.log('🔧 [Settings] User data from Redux:', {
-    hasUser: !!user,
-    userEmail: user?.user?.email,
-    userName: user?.user?.name,
-    userStructure: user ? Object.keys(user) : 'No user',
-    fullUser: user
-  });
   const { workspaces } = useAppSelector(state => state.workspace);
   const { data: analytics } = useAppSelector(state => state.analytics);
+
+  // Handle navigation from sidebar
+  useEffect(() => {
+    if (section) {
+      switch (section) {
+        case 'profile':
+          setActiveTab('profile');
+          break;
+        case 'theme':
+          setActiveTab('theme');
+          break;
+        case 'notifications':
+          setActiveTab('notifications');
+          break;
+        case 'activity':
+          setActiveTab('activity');
+          break;
+        case 'upgrade':
+          setActiveTab('upgrade');
+          break;
+        default:
+          setActiveTab('profile');
+      }
+    }
+  }, [section]);
 
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
@@ -54,8 +86,8 @@ export default function SettingsScreen() {
 
   const accountSummary = getAccountSummary();
 
-  const handleThemeToggle = (value: boolean) => {
-    setTheme(value ? 'dark' : 'light');
+  const handleThemeToggle = async (value: boolean) => {
+    await setTheme(value ? 'dark' : 'light');
   };
 
   const handleLogout = () => {
@@ -69,12 +101,9 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('🚪 Logging out user...');
               await logout();
-              console.log('✅ Logout successful');
               Alert.alert('Logged Out', 'You have been successfully logged out.');
             } catch (error) {
-              console.error('❌ Logout failed:', error);
               Alert.alert('Logout Failed', 'Failed to logout. Please try again.');
             }
           }
@@ -93,7 +122,6 @@ export default function SettingsScreen() {
           text: 'Delete', 
           style: 'destructive',
           onPress: () => {
-            // Handle account deletion
             Alert.alert('Account Deletion', 'Account deletion feature will be implemented soon.');
           }
         },
@@ -101,40 +129,33 @@ export default function SettingsScreen() {
     );
   };
 
-  const checkToken = async () => {
-    try {
-      setTokenStatus('Checking...');
-      const token = await AsyncStorage.getItem('token');
-      if (token) {
-        setTokenStatus('✅ Token found: ' + token.substring(0, 20) + '...');
-        console.log('✅ Token found:', token);
-        Alert.alert('Token Status', 'Token found and stored correctly!');
-      } else {
-        setTokenStatus('❌ No token found');
-        console.log('❌ No token found');
-        Alert.alert('Token Status', 'No authentication token found. Please login first.');
-      }
-    } catch (error) {
-      setTokenStatus('❌ Error checking token: ' + error);
-      console.error('❌ Error checking token:', error);
-      Alert.alert('Error', 'Failed to check token: ' + error);
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'profile':
+        return (
+          <ScrollView style={styles.content}>
+            <AccountSettings />
+            <DangerZone />
+          </ScrollView>
+        );
+      case 'theme':
+        return <AppearanceSettings />;
+      case 'notifications':
+        return <NotificationSettings />;
+      case 'activity':
+        return <ActivityPage />;
+      case 'upgrade':
+        return <SubscriptionCard />;
+      default:
+        return (
+          <ScrollView style={styles.content}>
+            <AccountSummary />
+            <SubscriptionCard />
+          </ScrollView>
+        );
     }
   };
-
-  const clearToken = async () => {
-    try {
-      await AsyncStorage.removeItem('token');
-      await AsyncStorage.removeItem('refreshToken');
-      setTokenStatus('✅ Token cleared');
-      console.log('✅ Token cleared');
-      Alert.alert('Token Cleared', 'Authentication token has been cleared. You will need to login again.');
-    } catch (error) {
-      setTokenStatus('❌ Error clearing token: ' + error);
-      console.error('❌ Error clearing token:', error);
-      Alert.alert('Error', 'Failed to clear token: ' + error);
-    }
-  };
-
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -152,269 +173,15 @@ export default function SettingsScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView style={styles.content}>
-        {/* Profile Section */}
-        <Card style={styles.sectionCard}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
-            Profile
-          </Text>
-          <View style={[styles.profileInfo, { backgroundColor: colors.card }]}>
-            <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-              <FontAwesome name="user" size={24} color={colors['primary-foreground']} />
-            </View>
-            <View style={styles.profileDetails}>
-              <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-                {user?.user?.name || 'User'}
-              </Text>
-              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                {user?.user?.email || 'user@example.com'}
-              </Text>
-            </View>
-          </View>
-          
-          {/* Quick Logout Button */}
-          <TouchableOpacity 
-            style={[styles.quickLogoutButton, { backgroundColor: colors.secondary, marginTop: 16 }]}
-            onPress={handleLogout}
-          >
-            <FontAwesome name="sign-out" size={16} color={colors['secondary-foreground']} />
-            <Text style={[TextStyles.body.small, { color: colors['secondary-foreground'] }]}>
-              Logout
-            </Text>
-          </TouchableOpacity>
-        </Card>
 
-        {/* Account Summary */}
-        <Card style={styles.sectionCard}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
-            Account Summary
-          </Text>
-          <View style={styles.accountStats}>
-            <View style={[styles.statItem, { backgroundColor: colors.card }]}>
-              <Text style={[TextStyles.heading.h3, { color: colors.primary }]}>
-                {accountSummary.workspaces}
-              </Text>
-              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                Workspaces
-              </Text>
-            </View>
-            <View style={[styles.statItem, { backgroundColor: colors.card }]}>
-              <Text style={[TextStyles.heading.h3, { color: colors.accent }]}>
-                {accountSummary.tasks}
-              </Text>
-              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                Tasks
-              </Text>
-            </View>
-            <View style={[styles.statItem, { backgroundColor: colors.card }]}>
-              <Text style={[TextStyles.heading.h3, { color: colors.success }]}>
-                {accountSummary.completed}
-              </Text>
-              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                Completed
-              </Text>
-            </View>
-          </View>
-        </Card>
-
-        {/* Appearance Settings */}
-        <Card style={styles.sectionCard}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
-            Appearance
-          </Text>
-          <View style={[styles.settingItem, { backgroundColor: colors.card }]}>
-            <View style={styles.settingInfo}>
-              <FontAwesome name="moon-o" size={20} color={colors.primary} />
-              <View style={styles.settingText}>
-                <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-                  Dark Mode
-                </Text>
-                <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                  Switch between light and dark themes
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={theme === 'dark'}
-              onValueChange={handleThemeToggle}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={colors.background}
-            />
-          </View>
-        </Card>
-
-        {/* Notification Settings */}
-        <Card style={styles.sectionCard}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
-            Notifications
-          </Text>
-          <View style={styles.notificationSettings}>
-            <View style={[styles.settingItem, { backgroundColor: colors.card }]}>
-              <View style={styles.settingInfo}>
-                <FontAwesome name="bell" size={20} color={colors.primary} />
-                <View style={styles.settingText}>
-                  <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-                    Enable Notifications
-                  </Text>
-                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                    Receive push notifications
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={notificationsEnabled}
-                onValueChange={setNotificationsEnabled}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={colors.background}
-              />
-            </View>
-            <View style={[styles.settingItem, { backgroundColor: colors.card }]}>
-              <View style={styles.settingInfo}>
-                <FontAwesome name="envelope" size={20} color={colors.accent} />
-                <View style={styles.settingText}>
-                  <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-                    Email Notifications
-                  </Text>
-                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                    Receive email updates
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={emailNotifications}
-                onValueChange={setEmailNotifications}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={colors.background}
-              />
-            </View>
-            <View style={[styles.settingItem, { backgroundColor: colors.card }]}>
-              <View style={styles.settingInfo}>
-                <FontAwesome name="mobile" size={20} color={colors.warning} />
-                <View style={styles.settingText}>
-                  <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-                    Push Notifications
-                  </Text>
-                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                    Receive mobile push notifications
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={pushNotifications}
-                onValueChange={setPushNotifications}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={colors.background}
-              />
-            </View>
-          </View>
-        </Card>
-
-        {/* Upgrade Section */}
-        <Card style={styles.sectionCard}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
-            Upgrade
-          </Text>
-          <View style={[styles.upgradeCard, { backgroundColor: colors.primary }]}>
-            <FontAwesome name="star" size={32} color={colors['primary-foreground']} />
-            <Text style={[TextStyles.heading.h3, { color: colors['primary-foreground'], marginTop: 12 }]}>
-              Upgrade to Pro
-            </Text>
-            <Text style={[TextStyles.body.small, { color: colors['primary-foreground'], textAlign: 'center', marginTop: 8 }]}>
-              Get unlimited workspaces, advanced analytics, and priority support
-            </Text>
-            <TouchableOpacity 
-              style={[styles.upgradeButton, { backgroundColor: colors['primary-foreground'] }]}
-              onPress={() => Alert.alert('Upgrade', 'Upgrade feature will be implemented soon.')}
-            >
-              <Text style={[TextStyles.body.medium, { color: colors.primary }]}>
-                Upgrade Now
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
-
-        {/* Debug Section */}
-        <Card style={styles.sectionCard}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
-            Debug Tools
-          </Text>
-          
-          {/* Token Status */}
-          <View style={[styles.settingItem, { backgroundColor: colors.card, marginBottom: 12 }]}>
-            <View style={styles.settingInfo}>
-              <FontAwesome name="key" size={20} color={colors.primary} />
-              <View style={styles.settingText}>
-                <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-                  Authentication Token
-                </Text>
-                <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                  {tokenStatus}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Token Actions */}
-          <View style={styles.debugActions}>
-            <TouchableOpacity 
-              style={[styles.debugButton, { backgroundColor: colors.primary }]}
-              onPress={checkToken}
-            >
-              <FontAwesome name="search" size={16} color={colors['primary-foreground']} />
-              <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'] }]}>
-                Check Token
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.debugButton, { backgroundColor: colors.destructive }]}
-              onPress={clearToken}
-            >
-              <FontAwesome name="trash" size={16} color={colors['destructive-foreground']} />
-              <Text style={[TextStyles.body.medium, { color: colors['destructive-foreground'] }]}>
-                Clear Token
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-        </Card>
-
-        {/* Danger Zone */}
-        <Card style={styles.sectionCard}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>
-            Danger Zone
-          </Text>
-          
-          {/* Logout Button */}
-          <TouchableOpacity 
-            style={[styles.logoutButton, { backgroundColor: colors.warning }]}
-            onPress={handleLogout}
-          >
-            <FontAwesome name="sign-out" size={16} color={colors.foreground} />
-            <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-              Logout
-            </Text>
-          </TouchableOpacity>
-          
-          {/* Delete Account Button */}
-          <TouchableOpacity 
-            style={[styles.dangerButton, { backgroundColor: colors.destructive, marginTop: 12 }]}
-            onPress={handleDeleteAccount}
-          >
-            <FontAwesome name="trash" size={16} color={colors['destructive-foreground']} />
-            <Text style={[TextStyles.body.medium, { color: colors['destructive-foreground'] }]}>
-              Delete Account
-            </Text>
-          </TouchableOpacity>
-        </Card>
-      </ScrollView>
+      {/* Content */}
+      {renderContent()}
 
       {/* Sidebar */}
       <Sidebar
         isVisible={sidebarVisible}
         onClose={() => setSidebarVisible(false)}
         context="settings"
-        currentSectionId="settings"
       />
     </View>
   );
@@ -530,19 +297,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
     borderRadius: 12,
-    gap: 8,
-  },
-  debugActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  debugButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-    borderRadius: 8,
     gap: 8,
   },
 });

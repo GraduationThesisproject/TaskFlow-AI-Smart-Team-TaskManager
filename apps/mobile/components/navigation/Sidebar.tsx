@@ -48,16 +48,17 @@ export interface SidebarProps {
 // Navigation items for different sections
 const dashboardItems: NavItem[] = [
   { id: 'home', label: 'Home', icon: 'home', route: '/(tabs)', section: 'dashboard' },
-  { id: 'analytics', label: 'Analytics', icon: 'bar-chart', route: '/(tabs)/analytics', section: 'dashboard' },
-  { id: 'workspaces', label: 'Workspaces', icon: 'folder', route: '/(tabs)/workspaces', section: 'dashboard' },
-  { id: 'templates', label: 'Templates', icon: 'copy', route: '/(tabs)/templates', section: 'dashboard' },
+  { id: 'analytics', label: 'Analytics', icon: 'bar-chart', route: '/analytics', section: 'dashboard' },
+  { id: 'workspaces', label: 'Workspaces', icon: 'folder', route: '/workspaces', section: 'dashboard' },
+  { id: 'templates', label: 'Templates', icon: 'copy', route: '/templates', section: 'dashboard' },
 ];
 
 const settingsItems: NavItem[] = [
-  { id: 'profile', label: 'Profile', icon: 'user', route: '/(tabs)/settings', section: 'settings' },
-  { id: 'theme', label: 'Theme Settings', icon: 'paint-brush', route: '/(tabs)/settings', section: 'settings' },
-  { id: 'notifications', label: 'Notifications', icon: 'bell', route: '/(tabs)/settings', section: 'settings' },
-  { id: 'upgrade', label: 'Upgrade', icon: 'star', route: '/(tabs)/settings', section: 'settings' },
+  { id: 'profile', label: 'Profile', icon: 'user', route: '/(tabs)/settings?section=profile', section: 'settings' },
+  { id: 'theme', label: 'Theme', icon: 'paint-brush', route: '/(tabs)/settings?section=theme', section: 'settings' },
+  { id: 'notifications', label: 'Notifications', icon: 'bell', route: '/(tabs)/settings?section=notifications', section: 'settings' },
+  { id: 'activity', label: 'Activity', icon: 'clock-o', route: '/(tabs)/settings?section=activity', section: 'settings' },
+  { id: 'upgrade', label: 'Upgrade', icon: 'star', route: '/(tabs)/settings?section=upgrade', section: 'settings' },
 ];
 
 // Function to get appropriate sections based on context
