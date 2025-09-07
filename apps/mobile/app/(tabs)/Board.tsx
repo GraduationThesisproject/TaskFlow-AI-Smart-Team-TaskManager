@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   RefreshControl
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, LongPressGestureHandler, State } from 'react-native-gesture-handler';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -98,7 +98,8 @@ export default function TasksScreen() {
   const [newColumnName, setNewColumnName] = useState('');
   const [newColumnColor, setNewColumnColor] = useState('#F9FAFB');
   
-  // Drag and drop states
+  // Long press state for drag and drop
+  const [isDragging, setIsDragging] = useState(false);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [draggedColumn, setDraggedColumn] = useState<Column | null>(null);
   
@@ -348,15 +349,38 @@ export default function TasksScreen() {
     }));
   };
   
-  const handleTaskPress = (task: Task) => {
-    // Navigate to task details or quick move to next column
-    const currentColumnIndex = columns.findIndex(col => col._id === task.column);
-    const nextColumnIndex = (currentColumnIndex + 1) % columns.length;
-    const nextColumn = columns[nextColumnIndex];
+  const handleTaskLongPress = (task: Task) => {
+    setDraggedTask(task);
+    setIsDragging(true);
     
-    if (nextColumn) {
-      moveTask(task._id, task.column, nextColumn._id);
-    }
+    // Show available columns for dropping
+    Alert.alert(
+      'Move Task',
+      'Select a column to move this task to:',
+      [
+        ...columns.filter(col => col._id !== task.column).map(col => ({
+          text: col.name,
+          onPress: () => {
+            moveTask(task._id, task.column, col._id);
+            setIsDragging(false);
+            setDraggedTask(null);
+          }
+        })),
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => {
+            setIsDragging(false);
+            setDraggedTask(null);
+          }
+        }
+      ]
+    );
+  };
+  
+  const handleTaskPress = (task: Task) => {
+    // Simple tap does nothing - only long press moves tasks
+    return;
   };
   
   const handleAddTaskToColumn = (columnId: string) => {
@@ -433,7 +457,7 @@ export default function TasksScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
+      {/* Simplified Header */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <TouchableOpacity>
@@ -441,30 +465,12 @@ export default function TasksScreen() {
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-              {currentBoard?.name || 'Kanban Board'}
-            </Text>
-            <Text style={[styles.headerSubtitle, { color: colors['muted-foreground'] }]}>
-              {currentBoard?.description || 'Manage your tasks efficiently'}
+              Project Dashboard
             </Text>
           </View>
           <TouchableOpacity>
             <Bell color={colors.foreground} size={24} />
           </TouchableOpacity>
-        </View>
-        
-        {/* Task Stats */}
-        <View style={styles.statsContainer}>
-          <View style={[styles.statBadge, { backgroundColor: colors.success + '20' }]}>
-            <Text style={[styles.statText, { color: colors.success }]}>Done: {taskStats.completed}</Text>
-          </View>
-          <View style={[styles.statBadge, { backgroundColor: colors.warning + '20' }]}>
-            <Text style={[styles.statText, { color: colors.warning }]}>In Progress: {taskStats.inProgress}</Text>
-          </View>
-          {taskStats.overdue > 0 && (
-            <View style={[styles.statBadge, { backgroundColor: colors.destructive + '20' }]}>
-              <Text style={[styles.statText, { color: colors.destructive }]}>Overdue: {taskStats.overdue}</Text>
-            </View>
-          )}
         </View>
       </View>
 
@@ -509,8 +515,8 @@ export default function TasksScreen() {
               key={column._id}
               style={[{ width: columnWidth }, styles.column]}
             >
-              {/* Column Header */}
-              <View style={[styles.columnHeader, { backgroundColor: column.backgroundColor }]}>
+              {/* Column Header - No Background Color */}
+              <View style={[styles.columnHeader, { backgroundColor: 'transparent' }]}>
                 <View style={styles.columnTitleRow}>
                   <Text style={[styles.columnTitle, { color: colors.foreground }]}>{column.name}</Text>
                   {columnTasks.length > 0 && (
@@ -523,9 +529,6 @@ export default function TasksScreen() {
                   )}
                 </View>
                 <View style={styles.columnActions}>
-                  <TouchableOpacity onPress={() => handleAddTaskToColumn(column._id)}>
-                    <Plus color={colors.foreground} size={16} />
-                  </TouchableOpacity>
                   <TouchableOpacity onPress={() => handleEditColumn(column)}>
                     <MoreVertical color={colors.foreground} size={16} />
                   </TouchableOpacity>
@@ -538,11 +541,19 @@ export default function TasksScreen() {
                 style={styles.tasksContainer}
               >
                 {columnTasks.map((task) => (
-                  <TouchableOpacity
+                  <LongPressGestureHandler
                     key={task._id}
-                    style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                    onPress={() => handleTaskPress(task)}
+                    onHandlerStateChange={({ nativeEvent }) => {
+                      if (nativeEvent.state === State.ACTIVE) {
+                        handleTaskLongPress(task);
+                      }
+                    }}
+                    minDurationMs={2000}
                   >
+                    <TouchableOpacity
+                      style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                      onPress={() => handleTaskPress(task)}
+                    >
                     <View style={styles.taskHeader}>
                       <Text style={[styles.taskTitle, { color: colors.foreground }]}>
                         {task.title}
@@ -597,8 +608,20 @@ export default function TasksScreen() {
                         )}
                       </View>
                     </View>
-                  </TouchableOpacity>
+                    </TouchableOpacity>
+                  </LongPressGestureHandler>
                 ))}
+                
+                {/* Add Task Button at bottom of column */}
+                <TouchableOpacity 
+                  style={[styles.addTaskInColumn, { backgroundColor: colors.muted, borderColor: colors.border }]}
+                  onPress={() => handleAddTaskToColumn(column._id)}
+                >
+                  <View style={styles.addListContent}>
+                    <Plus color={colors['muted-foreground']} size={16} />
+                    <Text style={[styles.addListText, { color: colors['muted-foreground'] }]}>Add Task</Text>
+                  </View>
+                </TouchableOpacity>
               </ScrollView>
             </View>
           );
@@ -616,19 +639,6 @@ export default function TasksScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Add Task Button */}
-      <View style={styles.addTaskContainer}>
-        <TouchableOpacity 
-          style={[styles.addTaskButton, { backgroundColor: colors.primary }]}
-          onPress={() => {
-            setSelectedColumn(columns[0]?._id || '');
-            setIsAddTaskModalOpen(true);
-          }}
-        >
-          <Plus color={colors['primary-foreground']} size={20} />
-          <Text style={[styles.addTaskText, { color: colors['primary-foreground'] }]}>Add Task</Text>
-        </TouchableOpacity>
-      </View>
 
       {/* Add Task Modal */}
       <Modal
@@ -1182,5 +1192,15 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  addTaskInColumn: {
+    borderRadius: 12,
+    height: 48,
+    marginTop: 12,
+    marginBottom: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderStyle: 'dashed',
   },
 });
