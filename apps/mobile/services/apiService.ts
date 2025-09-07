@@ -1,4 +1,4 @@
-import { axiosInstance } from '@/config/axios';
+import axiosInstance from '@/config/axios';
 
 // Simple API service for testing
 export class ApiService {
