@@ -2,8 +2,11 @@
 
 //--------------------- Imports --------------------
 
-import axiosInstance from '../config/axios';
+import axiosInstance, { setAuthToken } from '../config/axios';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// Removed MockAuthService import - using real API only
+import { env } from '../config/env';
 import type { ApiResponse } from '../types/task.types';
 import type {
   LoginCredentials,
@@ -23,8 +26,11 @@ export class AuthService {
   // Login user
   static async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
     try {
+      console.log('🔧 AuthService.login called');
+      console.log('🔧 Using real authentication service');
+      
       const response = await axiosInstance.post('/auth/login', credentials);
-      if (response.data.data?.token) localStorage.setItem('token', response.data.data.token);
+      if (response.data.data?.token) await AsyncStorage.setItem('token', response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error logging in:', error);
@@ -35,7 +41,7 @@ export class AuthService {
   // Register user
   static async register(data: RegisterData): Promise<ApiResponse<AuthResponse>> {
     try {
-      const response = await axiosInstance.post('/auth/register', data);
+      const response = await axiosInstance.post('/auth/register', data, { timeout: 30000 });
       return response.data;
     } catch (error) {
       console.error('Error registering:', error);
@@ -76,6 +82,32 @@ export class AuthService {
     }
   }
 
+  // Delete user account
+  static async deleteAccount(password?: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.delete('/auth/account', {
+        data: {
+          password,
+          confirmDeletion: true
+        }
+      });
+      
+      // Clear all tokens and data after successful deletion
+      await AsyncStorage.multiRemove([
+        'token',
+        'accessToken', 
+        'refreshToken',
+        'tokenExpiry',
+        'persist:root'
+      ]);
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      throw error;
+    }
+  }
+
   // Test connection without auth
   static async testConnection(): Promise<ApiResponse<any>> {
     try {
@@ -92,7 +124,7 @@ export class AuthService {
   static async oauthLogin(oauthData: OAuthUserData): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await axiosInstance.post('/auth/oauth/login', oauthData);
-      if (response.data.data?.token) localStorage.setItem('token', response.data.data.token);
+      if (response.data.data?.token) await setAuthToken(response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error with OAuth login:', error);
@@ -103,7 +135,7 @@ export class AuthService {
   static async oauthRegister(oauthData: OAuthUserData): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await axiosInstance.post('/auth/oauth/register', oauthData);
-      if (response.data.data?.token) localStorage.setItem('token', response.data.data.token);
+      if (response.data.data?.token) await setAuthToken(response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error with OAuth registration:', error);
@@ -125,7 +157,7 @@ export class AuthService {
   static async verifyEmail(verificationData: EmailVerificationData): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await axiosInstance.post('/auth/verify-email', verificationData);
-      if (response.data.data?.token) localStorage.setItem('token', response.data.data.token);
+      if (response.data.data?.token) await setAuthToken(response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error verifying email:', error);

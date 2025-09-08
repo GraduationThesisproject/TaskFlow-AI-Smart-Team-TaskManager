@@ -2,13 +2,14 @@ import type { Middleware } from '@reduxjs/toolkit';
 import { io, Socket } from 'socket.io-client';
 import { env } from '../../config/env';
 import { addNotification, fetchNotifications } from '../slices/notificationSlice';
-import { removeWorkspaceById, upsertWorkspaceStatus } from '../slices/workspaceSlice';
+import { removeWorkspaceById, upsertWorkspaceStatus, createWorkspace } from '../slices/workspaceSlice';
 import { logoutUser } from '../slices/authSlice';
 import { addActivity } from '../slices/activitySlice';
 
 import type { RootState } from "../../store"
 
 export const notificationsSocketMiddleware: Middleware = (store) => {
+
   let socket: Socket | null = null;
   let prevToken: string | null | undefined;
   let prevRealTimeEnabled: boolean | undefined;
@@ -44,13 +45,14 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
   };
   const isMuted = () => {
     try {
-      if (typeof window === 'undefined') return false;
-      return localStorage.getItem('muteNotifications') === 'true';
+      // In React Native, we don't have localStorage, so we'll use a simple in-memory flag
+      // This could be enhanced to use AsyncStorage if needed
+      return false;
     } catch { return false; }
   };
 
-  // Safe browser notification helper
-  const notifyBrowser = (title: string, body?: string) => {
+  // Safe mobile notification helper (React Native doesn't have browser notifications)
+  const notifyMobile = (title: string, body?: string) => {
     try {
       // Respect RT preference at display time, too
       const state = (store.getState?.() as RootState);
@@ -60,31 +62,35 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       const now = Date.now();
       if (now - lastNotifyAt < NOTIFY_MIN_INTERVAL_MS) return;
 
-      if (typeof window === 'undefined' || !('Notification' in window)) return;
-      if (Notification.permission === 'granted') {
-        new Notification(title, { body });
-        lastNotifyAt = now;
-      } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission().then((perm) => {
-          if (perm === 'granted') {
-            new Notification(title, { body });
-            lastNotifyAt = Date.now();
-          }
-        }).catch(() => {});
-      }
+      // In React Native, we'll just log the notification for now
+      // This could be enhanced to use Expo Notifications or other push notification services
+      console.log('📱 [notificationsSocketMiddleware] Mobile notification:', { title, body });
+      lastNotifyAt = now;
     } catch {}
   };
 
   const connect = (token: string) => {
     // Don't reconnect if already connected or connecting
-    if (socket?.connected || isConnecting) return;
-    if (!token) return;
+    if (socket?.connected || isConnecting) {
+      console.log('🔧 [notificationsSocketMiddleware] Already connected or connecting, skipping');
+      return;
+    }
+    if (!token) {
+      console.log('🔧 [notificationsSocketMiddleware] No token provided, skipping connection');
+      return;
+    }
+
+    // Validate token format before attempting connection
+    const isValidJWT = token && typeof token === 'string' && token.split('.').length === 3;
+    if (!isValidJWT) {
+      console.log('🔧 [notificationsSocketMiddleware] Invalid token format, skipping connection:', token?.substring(0, 20) + '...');
+      return;
+    }
 
     isConnecting = true;
     
-    if (env.ENABLE_DEBUG) {
-      console.log('🔌 [notificationsSocketMiddleware] connecting to socket', env.SOCKET_URL);
-    }
+    console.log('🔌 [notificationsSocketMiddleware] connecting to socket', env.SOCKET_URL);
+    console.log('🔧 [notificationsSocketMiddleware] Token preview:', token.substring(0, 20) + '...');
 
     // Disconnect existing socket if any
     if (socket) {
@@ -92,20 +98,29 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       socket = null;
     }
 
-    // Connect to notifications namespace to match backend
-    socket = io(`${env.SOCKET_URL}/notifications`, {
-      auth: { token },
-      autoConnect: true,
-      transports: ['websocket', 'polling'],
-      upgrade: true,
-      rememberUpgrade: false,
-      forceNew: true,
-      reconnection: true,
-      reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000
-    });
+    try {
+      // Connect to notifications namespace to match backend
+      socket = io(`${env.SOCKET_URL}/notifications`, {
+        auth: { token },
+        autoConnect: true,
+        transports: ['websocket', 'polling'],
+        upgrade: true,
+        rememberUpgrade: false,
+        forceNew: true,
+        reconnection: true,
+        reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
+        reconnectionDelay: 2000,
+        reconnectionDelayMax: 10000,
+        timeout: 30000,
+        // Add additional options for better connection handling
+        withCredentials: true,
+        rejectUnauthorized: false, // For development only
+      });
+    } catch (error) {
+      console.error('❌ [notificationsSocketMiddleware] Failed to create socket connection:', error);
+      isConnecting = false;
+      return;
+    }
 
     socket.on('connect', () => {
       isConnecting = false;
@@ -119,7 +134,31 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     });
 
     socket.on('connect_error', (err) => {
-      console.error('❌ [notificationsSocketMiddleware] connect_error', err?.message || err);
+      console.error('❌ [notificationsSocketMiddleware] connect_error', {
+        message: err?.message || err,
+        description: err?.description,
+        context: err?.context,
+        type: err?.type,
+        url: env.SOCKET_URL,
+        attempt: reconnectAttempts + 1,
+        maxAttempts: MAX_RECONNECT_ATTEMPTS
+      });
+      isConnecting = false;
+      
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        const delay = Math.min(2000 * Math.pow(1.5, reconnectAttempts), 30000);
+        console.log(`⏳ [notificationsSocketMiddleware] will retry connection in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+        setTimeout(() => connect(token), delay);
+      } else {
+        console.error('❌ [notificationsSocketMiddleware] max reconnection attempts reached');
+        console.error('🔧 [notificationsSocketMiddleware] Final connection details:', {
+          url: env.SOCKET_URL,
+          tokenLength: token?.length,
+          tokenPreview: token?.substring(0, 20) + '...',
+          attempts: reconnectAttempts
+        });
+      }
     });
 
     socket.on('error', (err) => {
@@ -191,7 +230,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         const body = status === 'archived'
           ? (archiveExpiresAt ? `Will be permanently deleted at ${new Date(archiveExpiresAt).toLocaleString()}` : undefined)
           : undefined;
-        notifyBrowser(title, body);
+        notifyMobile(title, body);
 
         console.log('🔔 [notificationsSocketMiddleware] workspace:status-changed', data);
       } catch (e) {
@@ -206,7 +245,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         if (!isRealTimeEnabled(stateNow)) return;
         console.log('🗑️ [notificationsSocketMiddleware] workspace:deleted', { id });
         store.dispatch(removeWorkspaceById(id));
-        notifyBrowser('Workspace deleted', 'It was permanently removed');
+        notifyMobile('Workspace deleted', 'It was permanently removed');
       } catch (e) {
         console.warn('⚠️ Failed to process workspace:deleted', e);
       }
@@ -296,19 +335,6 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       }
     });
 
-    socket.on('connect_error', (error) => {
-      console.error('❌ [notificationsSocketMiddleware] connection error:', error.message);
-      isConnecting = false;
-      
-      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-        reconnectAttempts++;
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-        console.log(`⏳ [notificationsSocketMiddleware] will retry connection in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
-        setTimeout(() => connect(token), delay);
-      } else {
-        console.error('❌ [notificationsSocketMiddleware] max reconnection attempts reached');
-      }
-    });
   };
 
   const disconnect = () => {
@@ -341,12 +367,62 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       return result;
     }
 
+    // Handle workspace creation - emit socket event and create notification
+    if (action.type === createWorkspace.fulfilled.type && socket?.connected) {
+      const workspace = action.payload;
+      const currentUser = state.auth.user;
+      
+      if (workspace && currentUser) {
+        // Emit socket event for real-time updates
+        socket.emit('workspace:created', {
+          workspace,
+          userId: currentUser.user._id,
+          timestamp: new Date().toISOString()
+        });
+
+        // Create local notification
+        store.dispatch(addNotification({
+          _id: `workspace-created-${Date.now()}`,
+          title: 'Workspace Created',
+          message: `Successfully created workspace "${workspace.name}"`,
+          type: 'success',
+          recipientId: currentUser.user._id,
+          relatedEntity: {
+            type: 'workspace',
+            id: workspace._id || workspace.id,
+            name: workspace.name
+          },
+          priority: 'low',
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          clientOnly: true,
+        } as any));
+      }
+    }
+
     // Handle token or preference changes
     const tokenChanged = prevToken !== currentToken;
     const prefChanged = prevRealTimeEnabled !== realTimeEnabled;
     if (tokenChanged || prefChanged) {
       if (currentToken && realTimeEnabled) {
-        connect(currentToken);
+        // Validate token format before attempting connection
+        const isValidJWT = currentToken && typeof currentToken === 'string' && currentToken.split('.').length === 3;
+        if (!isValidJWT) {
+          console.log('🔧 [notificationsSocketMiddleware] Skipping connection - invalid token format:', currentToken?.substring(0, 20) + '...');
+          prevToken = currentToken;
+          prevRealTimeEnabled = realTimeEnabled;
+          return result;
+        }
+        
+        // Only connect if user is authenticated
+        const isAuthenticated = state.auth.isAuthenticated;
+        if (isAuthenticated) {
+          connect(currentToken);
+        } else {
+          console.log('🔧 [notificationsSocketMiddleware] Skipping connection - user not authenticated');
+          disconnect();
+        }
       } else {
         // Either token missing or RT disabled -> disconnect
         disconnect();

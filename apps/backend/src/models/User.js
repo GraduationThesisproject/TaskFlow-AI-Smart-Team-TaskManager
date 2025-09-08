@@ -506,6 +506,114 @@ userSchema.methods.removeAvatar = function() {
   return this.save();
 };
 
+// Method to permanently delete user account and all related data
+userSchema.methods.deleteAccount = async function() {
+  const userId = this._id;
+  
+  try {
+    // Require models locally to avoid circular dependencies
+    const Workspace = require('./Workspace');
+    const Space = require('./Space');
+    const Board = require('./Board');
+    const Task = require('./Task');
+    const File = require('./File');
+    const Notification = require('./Notification');
+    const Checklist = require('./Checklist');
+    const Reminder = require('./Reminder');
+    const Analytics = require('./Analytics');
+    const Tag = require('./Tag');
+    const ActivityLog = require('./ActivityLog');
+    const Invitation = require('./Invitation');
+    
+    // Get all workspaces owned by this user
+    const ownedWorkspaces = await Workspace.find({ owner: userId });
+    
+    // Delete all owned workspaces and their data
+    for (const workspace of ownedWorkspaces) {
+      await workspace.permanentDelete(userId);
+    }
+    
+    // Remove user from all workspaces where they are members
+    await Workspace.updateMany(
+      { members: userId },
+      { $pull: { members: userId } }
+    );
+    
+    // Delete all spaces owned by this user
+    const ownedSpaces = await Space.find({ owner: userId });
+    for (const space of ownedSpaces) {
+      await space.permanentDelete(userId);
+    }
+    
+    // Remove user from all spaces where they are members
+    await Space.updateMany(
+      { members: userId },
+      { $pull: { members: userId } }
+    );
+    
+    // Delete all boards owned by this user
+    await Board.deleteMany({ owner: userId });
+    
+    // Remove user from all boards where they are members
+    await Board.updateMany(
+      { members: userId },
+      { $pull: { members: userId } }
+    );
+    
+    // Delete all tasks created by this user
+    await Task.deleteMany({ createdBy: userId });
+    
+    // Remove user from all task assignments
+    await Task.updateMany(
+      { assignedTo: userId },
+      { $pull: { assignedTo: userId } }
+    );
+    
+    // Delete all files uploaded by this user
+    const userFiles = await File.find({ uploadedBy: userId });
+    for (const file of userFiles) {
+      try {
+        await file.deleteFromStorage();
+      } catch (error) {
+        console.warn(`Failed to delete file ${file._id}:`, error.message);
+      }
+    }
+    await File.deleteMany({ uploadedBy: userId });
+    
+    // Delete all notifications for this user
+    await Notification.deleteMany({ userId: userId });
+    
+    // Delete all checklists created by this user
+    await Checklist.deleteMany({ createdBy: userId });
+    
+    // Delete all reminders for this user
+    await Reminder.deleteMany({ userId: userId });
+    
+    // Delete all analytics for this user
+    await Analytics.deleteMany({ userId: userId });
+    
+    // Delete all tags created by this user
+    await Tag.deleteMany({ createdBy: userId });
+    
+    // Delete all activity logs for this user
+    await ActivityLog.deleteMany({ userId: userId });
+    
+    // Delete all invitations sent by this user
+    await Invitation.deleteMany({ invitedBy: userId });
+    
+    // Delete all invitations received by this user
+    await Invitation.deleteMany({ email: this.email });
+    
+    // Finally delete the user document (this will trigger the post-remove middleware)
+    await this.deleteOne();
+    
+    return { message: 'User account and all related data have been permanently deleted' };
+  } catch (error) {
+    console.error('Error deleting user account:', error);
+    throw new Error(`Failed to delete user account: ${error.message}`);
+  }
+};
+
 
 
 // Method to check if user has workspace role - delegate to UserRoles model

@@ -1,5 +1,5 @@
 import React from 'react';
-import { TextInput as RNTextInput, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { TextInput, Text, View } from '../Themed';
 import { useThemeColors } from '../ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
@@ -134,6 +134,8 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     minHeight: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   inputWithLeftIcon: {
     paddingLeft: 40,

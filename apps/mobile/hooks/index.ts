@@ -5,7 +5,7 @@ export * from './useLocalStorage';
 export * from './useTextDirection';
 export * from './useTasks';
 export * from './useTheme';
-export * from './useSpaceTasks';
+// Removed useSpaceTasks - was using mock data and not being used
 export * from './useSpaceManager';
 export * from './useUserTheme';
 export * from './useWorkspaces';

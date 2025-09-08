@@ -5,7 +5,7 @@ module.exports = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: parseInt(process.env.PORT || '3001', 10),
   // Frontend URL
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173'||'http://192.168.217.1:8081',
   // Database Configuration
   DATABASE_URL: process.env.DATABASE_URL || 'mongodb://localhost:27017/taskflow',
 
@@ -18,7 +18,15 @@ module.exports = {
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',
-    'http://localhost:5176'
+    'http://localhost:5176',
+    'http://192.168.217.1:8081', // Expo dev server
+    'http://192.168.217.1:3001', // Mobile app direct connection
+    'http://192.168.1.142:3001', // Alternative network IP
+    'http://192.168.1.142:8081', // Alternative Expo dev server
+    'exp://192.168.217.1:8081', // Expo protocol
+    'exp://192.168.1.142:8081', // Alternative Expo protocol
+    // Allow all origins in development (be careful in production)
+    ...(process.env.NODE_ENV === 'development' ? ['*'] : [])
   ],
 
   // Email Configuration

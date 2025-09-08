@@ -109,6 +109,14 @@ router.delete('/sessions/:sessionId',
     authController.endSession
 );
 
+// Account Management
+router.delete('/account',
+    authMiddleware,
+    rateLimitSensitiveOps(3, 60 * 60 * 1000), // 3 attempts per hour
+    validateMiddleware.validateBody(authSchemas.deleteAccountSchema),
+    authController.deleteAccount
+);
+
 // Activity Logging
 router.get('/activity',
     authMiddleware,

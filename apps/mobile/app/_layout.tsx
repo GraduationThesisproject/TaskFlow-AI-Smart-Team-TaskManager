@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -5,10 +6,14 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { FontConfig } from '@/constants/Fonts';
-import { store } from '@/store';
+import { store, persistor, useAppDispatch, useAppSelector } from '@/store';
+import { checkAuthStatus } from '@/store/slices/authSlice';
+import { SocketProvider } from '@/contexts/SocketContext';
+import { ToastProvider } from '@/components/common/ToastProvider';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -68,12 +73,48 @@ export default function RootLayout() {
 function RootLayoutNav() {
   return (
     <Provider store={store}>
-      <ThemeProvider>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
-      </ThemeProvider>
+      <PersistGate loading={null} persistor={persistor}>
+        <SocketProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <AuthGate />
+            </ToastProvider>
+          </ThemeProvider>
+        </SocketProvider>
+      </PersistGate>
     </Provider>
+  );
+}
+
+function AuthGate() {
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+
+  // On app start, check auth status (reads token from storage and fetches profile with timeout)
+  useEffect(() => {
+    dispatch(checkAuthStatus());
+  }, [dispatch]);
+
+  // Optional: show splash/blank while determining auth
+  if (isLoading) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    // Unauthenticated: expose only login screen to prevent access to other screens
+    return (
+      <Stack>
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="register" options={{ headerShown: false }} />
+      </Stack>
+    );
+  }
+
+  // Authenticated: show main tabs (workspace section lives under tabs/index)
+  return (
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+    </Stack>
   );
 }

@@ -27,7 +27,12 @@ export const useTaskSocket = (options: UseTaskSocketOptions = {}) => {
   const currentBoard = useSelector(selectCurrentBoard);
 
   // Use the centralized board socket from SocketContext
-  const { socket, isConnected: socketConnected, emit, on, off } = useBoardSocket();
+  const boardSocket = useBoardSocket();
+  const socket = boardSocket;
+  const socketConnected = socket?.connected || false;
+  const emit = (event: string, data?: any) => socket?.emit(event, data);
+  const on = (event: string, callback: (data?: any) => void) => socket?.on(event, callback);
+  const off = (event: string) => socket?.off(event);
 
   // Update Redux state when socket connection changes
   useEffect(() => {
