@@ -191,6 +191,22 @@ const sessionIdSchema = {
 };
 
 // ============================================================================
+// ACCOUNT MANAGEMENT
+// ============================================================================
+
+const deleteAccountSchema = {
+    password: { 
+        string: true,
+        minLength: 1
+    },
+    confirmDeletion: {
+        required: true,
+        boolean: true,
+        custom: (value) => value === true ? true : 'Account deletion must be confirmed'
+    }
+};
+
+// ============================================================================
 // ACTIVITY LOGGING
 // ============================================================================
 
@@ -237,6 +253,9 @@ module.exports = {
     
     // Session Management
     sessionIdSchema,
+    
+    // Account Management
+    deleteAccountSchema,
     
     // Activity Logging
     activityLogSchema

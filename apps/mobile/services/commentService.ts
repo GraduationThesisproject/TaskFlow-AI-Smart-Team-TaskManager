@@ -4,12 +4,10 @@ import type {
   ApiResponse 
 } from '../types/task.types';
 import { env } from '../config/env';
+import axiosInstance from '../config/axios';
 
 // API base URL from environment configuration
 const API_BASE_URL = env.API_URL;
-
-// Helper function to simulate API delay
-const simulateApiDelay = (ms: number = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Helper function to create API response
 const createApiResponse = <T>(data: T, message: string = 'Success'): ApiResponse<T> => ({
@@ -19,235 +17,154 @@ const createApiResponse = <T>(data: T, message: string = 'Success'): ApiResponse
   timestamp: new Date().toISOString()
 });
 
-// Mock comments data for development
-const mockComments: Comment[] = [
-  {
-    _id: '1',
-    content: 'Updated the wireframes based on client feedback. Ready for review.',
-    author: 'user_1',
-    taskId: 'task_1',
-    mentions: ['user_2'],
-    attachments: [],
-    reactions: [
-      { user: 'user_2', emoji: '👍', createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString() },
-      { user: 'user_3', emoji: '❤️', createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString() }
-    ],
-    isPinned: true,
-    isResolved: false,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: '2',
-    content: 'Looks great! Just need to adjust the spacing on mobile.',
-    author: 'user_2',
-    taskId: 'task_1',
-    mentions: [],
-    attachments: [],
-    reactions: [
-      { user: 'user_1', emoji: '👍', createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString() }
-    ],
-    isPinned: false,
-    isResolved: false,
-    createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: '3',
-    content: 'I agree with the mobile spacing comment. Should we create a separate mobile mockup?',
-    author: 'user_3',
-    taskId: 'task_1',
-    mentions: ['user_1', 'user_2'],
-    attachments: [],
-    reactions: [],
-    isPinned: false,
-    isResolved: false,
-    createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  }
-];
-
 export class CommentService {
   // Get comments for a task
-  static async getTaskComments(taskId: string): Promise<ApiResponse<Comment[]>> {
-    await simulateApiDelay();
-    
-    const comments = mockComments.filter(comment => comment.taskId === taskId);
-    return createApiResponse(comments);
+  static async getComments(taskId: string): Promise<ApiResponse<Comment[]>> {
+    try {
+      const response = await axiosInstance.get(`/tasks/${taskId}/comments`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching comments:', error);
+      throw error;
+    }
   }
 
-  // Add a new comment
-  static async addComment(taskId: string, commentData: {
+  // Create a new comment
+  static async createComment(commentData: {
     content: string;
+    taskId: string;
     mentions?: string[];
+    attachments?: string[];
     parentCommentId?: string;
   }): Promise<ApiResponse<Comment>> {
-    await simulateApiDelay(800);
-    
-    const newComment: Comment = {
-      _id: `comment_${Date.now()}`,
-      content: commentData.content,
-      author: 'user_1', // Current user
-      taskId,
-      mentions: commentData.mentions || [],
-      attachments: [],
-      reactions: [],
-      isPinned: false,
-      isResolved: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    // Add to mock data
-    mockComments.unshift(newComment);
-    
-    return createApiResponse(newComment, 'Comment added successfully');
+    try {
+      const response = await axiosInstance.post('/comments', commentData);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error creating comment:', error);
+      throw error;
+    }
   }
 
   // Update a comment
-  static async updateComment(commentId: string, content: string): Promise<ApiResponse<Comment>> {
-    await simulateApiDelay(600);
-    
-    const commentIndex = mockComments.findIndex(c => c._id === commentId);
-    if (commentIndex === -1) {
-      throw new Error('Comment not found');
+  static async updateComment(commentId: string, updates: {
+    content?: string;
+    mentions?: string[];
+    attachments?: string[];
+  }): Promise<ApiResponse<Comment>> {
+    try {
+      const response = await axiosInstance.put(`/comments/${commentId}`, updates);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error updating comment:', error);
+      throw error;
     }
-    
-    const updatedComment: Comment = {
-      ...mockComments[commentIndex],
-      content,
-      updatedAt: new Date().toISOString(),
-    };
-    
-    mockComments[commentIndex] = updatedComment;
-    
-    return createApiResponse(updatedComment, 'Comment updated successfully');
   }
 
   // Delete a comment
-  static async deleteComment(commentId: string): Promise<ApiResponse<{ deleted: boolean }>> {
-    await simulateApiDelay(500);
-    
-    const commentIndex = mockComments.findIndex(c => c._id === commentId);
-    if (commentIndex === -1) {
-      throw new Error('Comment not found');
+  static async deleteComment(commentId: string): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await axiosInstance.delete(`/comments/${commentId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error deleting comment:', error);
+      throw error;
     }
-    
-    mockComments.splice(commentIndex, 1);
-    
-    return createApiResponse({ deleted: true }, 'Comment deleted successfully');
   }
 
-  // Add reaction to comment
-  static async addReaction(commentId: string, emoji: string): Promise<ApiResponse<CommentReaction[]>> {
-    await simulateApiDelay(300);
-    
-    const comment = mockComments.find(c => c._id === commentId);
-    if (!comment) {
-      throw new Error('Comment not found');
+  // Get a specific comment
+  static async getComment(commentId: string): Promise<ApiResponse<Comment>> {
+    try {
+      const response = await axiosInstance.get(`/comments/${commentId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching comment:', error);
+      throw error;
     }
-    
-    const existingReaction = comment.reactions.find(
-      r => r.user === 'user_1' && r.emoji === emoji
-    );
-    
-    if (!existingReaction) {
-      const newReaction: CommentReaction = {
-        user: 'user_1',
-        emoji,
-        createdAt: new Date().toISOString(),
-      };
-      
-      comment.reactions.push(newReaction);
-    }
-    
-    return createApiResponse(comment.reactions, 'Reaction added successfully');
   }
 
-  // Remove reaction from comment
-  static async removeReaction(commentId: string, emoji: string): Promise<ApiResponse<CommentReaction[]>> {
-    await simulateApiDelay(300);
-    
-    const comment = mockComments.find(c => c._id === commentId);
-    if (!comment) {
-      throw new Error('Comment not found');
+  // Add reaction to a comment
+  static async addReaction(commentId: string, reaction: CommentReaction): Promise<ApiResponse<Comment>> {
+    try {
+      const response = await axiosInstance.post(`/comments/${commentId}/reactions`, reaction);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error adding reaction:', error);
+      throw error;
     }
-    
-    comment.reactions = comment.reactions.filter(
-      r => !(r.user === 'user_1' && r.emoji === emoji)
-    );
-    
-    return createApiResponse(comment.reactions, 'Reaction removed successfully');
   }
 
-  // Toggle comment pin
-  static async togglePin(commentId: string): Promise<ApiResponse<{ isPinned: boolean }>> {
-    await simulateApiDelay(400);
-    
-    const comment = mockComments.find(c => c._id === commentId);
-    if (!comment) {
-      throw new Error('Comment not found');
+  // Remove reaction from a comment
+  static async removeReaction(commentId: string, userId: string, reactionType: string): Promise<ApiResponse<Comment>> {
+    try {
+      const response = await axiosInstance.delete(`/comments/${commentId}/reactions`, {
+        data: { userId, reactionType }
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error removing reaction:', error);
+      throw error;
     }
-    
-    comment.isPinned = !comment.isPinned;
-    
-    return createApiResponse(
-      { isPinned: comment.isPinned },
-      comment.isPinned ? 'Comment pinned successfully' : 'Comment unpinned successfully'
-    );
-  }
-
-  // Toggle comment resolve
-  static async toggleResolve(commentId: string): Promise<ApiResponse<{ isResolved: boolean }>> {
-    await simulateApiDelay(400);
-    
-    const comment = mockComments.find(c => c._id === commentId);
-    if (!comment) {
-      throw new Error('Comment not found');
-    }
-    
-    comment.isResolved = !comment.isResolved;
-    
-    return createApiResponse(
-      { isResolved: comment.isResolved },
-      comment.isResolved ? 'Comment resolved successfully' : 'Comment unresolved successfully'
-    );
   }
 
   // Get comment replies
-  static async getReplies(commentId: string): Promise<ApiResponse<Comment[]>> {
-    await simulateApiDelay();
-    
-    const replies = mockComments.filter(comment => 
-      comment.parentCommentId === commentId
-    );
-    
-    return createApiResponse(replies);
+  static async getReplies(parentCommentId: string): Promise<ApiResponse<Comment[]>> {
+    try {
+      const response = await axiosInstance.get(`/comments/${parentCommentId}/replies`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching replies:', error);
+      throw error;
+    }
   }
 
-  // Add reply to comment
-  static async addReply(parentCommentId: string, content: string): Promise<ApiResponse<Comment>> {
-    await simulateApiDelay(800);
-    
-    const newReply: Comment = {
-      _id: `comment_${Date.now()}`,
-      content,
-      author: 'user_1', // Current user
-      taskId: mockComments.find(c => c._id === parentCommentId)?.taskId || '',
-      mentions: [],
-      attachments: [],
-      reactions: [],
-      isPinned: false,
-      isResolved: false,
-      parentCommentId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    mockComments.push(newReply);
-    
-    return createApiResponse(newReply, 'Reply added successfully');
+  // Create a reply to a comment
+  static async createReply(parentCommentId: string, replyData: {
+    content: string;
+    mentions?: string[];
+    attachments?: string[];
+  }): Promise<ApiResponse<Comment>> {
+    try {
+      const response = await axiosInstance.post(`/comments/${parentCommentId}/replies`, replyData);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error creating reply:', error);
+      throw error;
+    }
+  }
+
+  // Get comment mentions
+  static async getMentions(commentId: string): Promise<ApiResponse<string[]>> {
+    try {
+      const response = await axiosInstance.get(`/comments/${commentId}/mentions`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching mentions:', error);
+      throw error;
+    }
+  }
+
+  // Get comment attachments
+  static async getAttachments(commentId: string): Promise<ApiResponse<string[]>> {
+    try {
+      const response = await axiosInstance.get(`/comments/${commentId}/attachments`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching attachments:', error);
+      throw error;
+    }
   }
 }
 
-export default CommentService;
+// Export individual functions for backward compatibility
+export const getComments = CommentService.getComments;
+export const createComment = CommentService.createComment;
+export const updateComment = CommentService.updateComment;
+export const deleteComment = CommentService.deleteComment;
+export const getComment = CommentService.getComment;
+export const addReaction = CommentService.addReaction;
+export const removeReaction = CommentService.removeReaction;
+export const getReplies = CommentService.getReplies;
+export const createReply = CommentService.createReply;
+export const getMentions = CommentService.getMentions;
+export const getAttachments = CommentService.getAttachments;

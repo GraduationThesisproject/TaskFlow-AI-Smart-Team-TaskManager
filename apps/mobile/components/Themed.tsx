@@ -80,7 +80,9 @@ export function TextInput(props: TextInputProps) {
           borderWidth: 1,
           borderRadius: 8,
           paddingHorizontal: 12,
-          paddingVertical: 8,
+          paddingVertical: 12,
+          minHeight: 48,
+          fontSize: 16,
         }, 
         style
       ]} 
