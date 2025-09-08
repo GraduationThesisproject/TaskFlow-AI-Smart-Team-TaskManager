@@ -19,9 +19,8 @@ import AccountSummary from '@/components/settings/AccountSummary';
 import SubscriptionCard from '@/components/settings/SubscriptionCard';
 import ActivityPage from '@/components/settings/ActivityPage';
 import DangerZone from '@/components/settings/DangerZone';
-import NotificationTest from '@/components/debug/NotificationTest';
 
-type SettingsTab = 'profile' | 'theme' | 'notifications' | 'activity' | 'upgrade' | 'debug';
+type SettingsTab = 'profile' | 'theme' | 'notifications' | 'activity' | 'upgrade';
 
 export default function SettingsScreen() {
   const colors = useThemeColors();
@@ -153,12 +152,6 @@ export default function SettingsScreen() {
         return <ActivityPage />;
       case 'upgrade':
         return <SubscriptionCard />;
-      case 'debug':
-        return (
-          <ScrollView style={styles.content}>
-            <NotificationTest />
-          </ScrollView>
-        );
       default:
         return (
           <ScrollView style={styles.content}>
