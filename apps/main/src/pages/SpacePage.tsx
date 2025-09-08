@@ -126,21 +126,6 @@ const SpacePage: React.FC = React.memo(() => {
               } />
 
               {/* Placeholder routes for future features */}
-              <Route path="members" element={
-                <AnimatedPage 
-                  animationType="fade"
-                  onAnimationStart={handleAnimationStart}
-                  onAnimationComplete={handleAnimationComplete}
-                >
-                  <div className="min-h-screen bg-background flex items-center justify-center">
-                    <div className="text-center">
-                      <h2 className="text-xl font-semibold text-foreground mb-2">Members</h2>
-                      <p className="text-muted-foreground">Space members management coming soon...</p>
-                    </div>
-                  </div>
-                </AnimatedPage>
-              } />
-
               <Route path="analytics" element={
                 <AnimatedPage 
                   animationType="fade"
@@ -151,21 +136,6 @@ const SpacePage: React.FC = React.memo(() => {
                     <div className="text-center">
                       <h2 className="text-xl font-semibold text-foreground mb-2">Analytics</h2>
                       <p className="text-muted-foreground">Space analytics coming soon...</p>
-                    </div>
-                  </div>
-                </AnimatedPage>
-              } />
-
-              <Route path="archive" element={
-                <AnimatedPage 
-                  animationType="fade"
-                  onAnimationStart={handleAnimationStart}
-                  onAnimationComplete={handleAnimationComplete}
-                >
-                  <div className="min-h-screen bg-background flex items-center justify-center">
-                    <div className="text-center">
-                      <h2 className="text-xl font-semibold text-foreground mb-2">Archive</h2>
-                      <p className="text-muted-foreground">Space archive coming soon...</p>
                     </div>
                   </div>
                 </AnimatedPage>

@@ -36,6 +36,7 @@ export interface SpaceTableProps {
   onPermanentDelete?: (spaceId: string) => Promise<void>;
   showArchiveActions?: boolean;
   onSpaceClick?: (space: Space) => void;
+  viewMode?: 'cards' | 'list' | 'list-detail';
 }
 
 export interface CreateSpaceModalProps {
