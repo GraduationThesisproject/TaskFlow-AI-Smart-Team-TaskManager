@@ -38,10 +38,10 @@ const authenticateSocket = async (socket, next) => {
 
 // Handle workspace socket events with dedicated namespace
 const handleWorkspaceSocket = (io) => {
-    // Create dedicated namespace for workspace operations
+    // Create workspace namespace
     const workspaceNamespace = io.of('/workspace');
     
-    // Apply authentication middleware to namespace
+    // Apply authentication middleware
     workspaceNamespace.use(authenticateSocket);
     
     workspaceNamespace.on('connection', (socket) => {
@@ -106,7 +106,7 @@ const handleWorkspaceSocket = (io) => {
                 }
 
                 // Broadcast member update
-                io.to(`workspace:${workspaceId}`).emit('workspace:member-updated', {
+                workspaceNamespace.to(`workspace:${workspaceId}`).emit('workspace:member-updated', {
                     memberId,
                     updates,
                     updatedBy: socket.user,
@@ -134,7 +134,7 @@ const handleWorkspaceSocket = (io) => {
                 }
 
                 // Broadcast settings update
-                io.to(`workspace:${workspaceId}`).emit('workspace:settings-updated', {
+                workspaceNamespace.to(`workspace:${workspaceId}`).emit('workspace:settings-updated', {
                     settings,
                     updatedBy: socket.user,
                     timestamp: new Date()

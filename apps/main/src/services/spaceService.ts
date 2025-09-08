@@ -72,7 +72,7 @@ export class SpaceService {
   }
 
   // Get space members
-  static async getSpaceMembers(id: string): Promise<ApiResponse<any[]>> {
+  static async getSpaceMembers(id: string): Promise<ApiResponse<{ members: any[], count: number }>> {
     try {
       const response = await axiosInstance.get(`/spaces/${id}/members`);
       return response.data;
