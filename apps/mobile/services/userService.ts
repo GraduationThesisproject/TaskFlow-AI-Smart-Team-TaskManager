@@ -38,7 +38,7 @@ export class UserService {
   // Get current user profile
   static async getCurrentUser(): Promise<ApiResponse<User>> {
     try {
-      const response = await axiosInstance.get('/users/profile');
+      const response = await axiosInstance.get('/auth/me');
       return response.data;
     } catch (error) {
       console.error('Error fetching current user:', error);
@@ -49,11 +49,10 @@ export class UserService {
   // Update user profile
   static async updateProfile(data: Partial<User>): Promise<ApiResponse<User>> {
     try {
-      const response = await axiosInstance.put('/users/profile', data);
+      const response = await axiosInstance.put('/auth/me', data);
       return response.data;
     } catch (error) {
       console.error('Error updating user profile:', error);
-      throw error;
       throw error;
     }
   }

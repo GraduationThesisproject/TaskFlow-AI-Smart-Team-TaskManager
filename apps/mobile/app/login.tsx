@@ -14,16 +14,20 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ flex: 1, padding: 16, justifyContent: 'center' }}>
-        <Card style={{ padding: 16, marginBottom: 16 }}>
-          <Text style={[TextStyles.heading.h1, { color: colors.foreground, textAlign: 'center' }]}>Login</Text>
-        </Card>
-        <LoginForm 
-          onSignup={() => router.replace('/register')} 
-          onForgotPassword={handleForgotPassword}
-        />
-      </View>
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1 }} 
+        style={{ flex: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ flex: 1, padding: 16, justifyContent: 'center' }}>
+          <Card style={{ padding: 16, marginBottom: 16 }}>
+            <Text style={[TextStyles.heading.h1, { color: colors.foreground, textAlign: 'center' }]}>Login</Text>
+          </Card>
+          <LoginForm onSignup={() => router.replace('/register')} />
+        </View>
+      </ScrollView>
+    </View>
   );
 }

@@ -27,23 +27,31 @@ export const formatDateTime = (date: Date | string | undefined): string => {
   return dateObj.toLocaleString();
 };
 
-// Device management utilities
-export const getDeviceId = (): string => {
-  let deviceId = localStorage.getItem('deviceId');
-  if (!deviceId) {
-    deviceId = `web-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem('deviceId', deviceId);
+// Device management utilities for React Native
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform, Dimensions } from 'react-native';
+
+export const getDeviceId = async (): Promise<string> => {
+  try {
+    let deviceId = await AsyncStorage.getItem('deviceId');
+    if (!deviceId) {
+      deviceId = `mobile-${Platform.OS}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      await AsyncStorage.setItem('deviceId', deviceId);
+    }
+    return deviceId;
+  } catch (error) {
+    console.error('Error getting device ID:', error);
+    return `mobile-${Platform.OS}-${Date.now()}-fallback`;
   }
-  return deviceId;
 };
 
 export const getDeviceInfo = () => {
+  const { width, height } = Dimensions.get('window');
   return {
-    type: 'web',
-    userAgent: navigator.userAgent,
-    platform: navigator.platform,
-    language: navigator.language,
-    screenSize: `${screen.width}x${screen.height}`,
+    type: 'mobile',
+    platform: Platform.OS,
+    version: Platform.Version,
+    screenSize: `${width}x${height}`,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
   };
 };

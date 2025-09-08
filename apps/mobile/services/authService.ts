@@ -4,6 +4,9 @@
 
 import axiosInstance, { setAuthToken } from '../config/axios';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// Removed MockAuthService import - using real API only
+import { env } from '../config/env';
 import type { ApiResponse } from '../types/task.types';
 import type {
   LoginCredentials,
@@ -26,7 +29,11 @@ export class AuthService {
   // Login user
   static async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
     try {
+      console.log('🔧 AuthService.login called');
+      console.log('🔧 Using real authentication service');
+      
       const response = await axiosInstance.post('/auth/login', credentials);
+      if (response.data.data?.token) await AsyncStorage.setItem('token', response.data.data.token);
       return response.data;
     } catch (error) {
       console.error('Error logging in:', error);
@@ -74,6 +81,32 @@ export class AuthService {
       return response.data;
     } catch (error) {
       console.error('Error logging out:', error);
+      throw error;
+    }
+  }
+
+  // Delete user account
+  static async deleteAccount(password?: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.delete('/auth/account', {
+        data: {
+          password,
+          confirmDeletion: true
+        }
+      });
+      
+      // Clear all tokens and data after successful deletion
+      await AsyncStorage.multiRemove([
+        'token',
+        'accessToken', 
+        'refreshToken',
+        'tokenExpiry',
+        'persist:root'
+      ]);
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting account:', error);
       throw error;
     }
   }

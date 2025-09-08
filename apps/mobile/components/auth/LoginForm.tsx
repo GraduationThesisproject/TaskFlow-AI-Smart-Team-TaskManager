@@ -126,24 +126,21 @@ export default function LoginForm({
         {/* Remember me toggle */}
         <TouchableOpacity
           onPress={() => setRememberMe((v) => !v)}
-          style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}
+          style={styles.rememberMeContainer}
+          activeOpacity={0.7}
         >
           <View
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: 4,
-              marginRight: 8,
-              borderWidth: 1,
-              borderColor: colors.border,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: rememberMe ? colors.primary : 'transparent',
-            }}
+            style={[
+              styles.checkbox,
+              {
+                borderColor: colors.border,
+                backgroundColor: rememberMe ? colors.primary : 'transparent',
+              }
+            ]}
           >
             {/* simple check indicator */}
             {rememberMe ? (
-              <Text style={{ color: colors['primary-foreground'], fontSize: 12 }}>✓</Text>
+              <Text style={[styles.checkmark, { color: colors['primary-foreground'] }]}>✓</Text>
             ) : null}
           </View>
           <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Remember me</Text>
@@ -157,14 +154,32 @@ export default function LoginForm({
             Forgot your password?
           </Text>
         </TouchableOpacity>
+        {onForgotPassword && (
+          <TouchableOpacity 
+            onPress={onForgotPassword} 
+            style={styles.forgotPassword}
+            activeOpacity={0.7}
+          >
+            <Text style={[TextStyles.body.small, { color: colors.primary }]}>
+              Forgot your password?
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity 
           onPress={handleSubmit} 
-          disabled={submitting}
-          style={[styles.submitButton, { backgroundColor: colors.primary, opacity: submitting ? 0.6 : 1 }]}
+          disabled={submitting || isLoading}
+          style={[
+            styles.submitButton, 
+            { 
+              backgroundColor: colors.primary, 
+              opacity: (submitting || isLoading) ? 0.6 : 1 
+            }
+          ]}
+          activeOpacity={0.8}
         >
-          <Text style={{ color: colors['primary-foreground'], textAlign: 'center' }}>
-            {submitting ? 'Signing In...' : 'Sign In'}
+          <Text style={[TextStyles.button, { color: colors['primary-foreground'], textAlign: 'center' }]}>
+            {submitting || isLoading ? 'Signing In...' : 'Sign In'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -174,7 +189,11 @@ export default function LoginForm({
           <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
             Don't have an account?{' '}
           </Text>
-          <TouchableOpacity onPress={onSignup}>
+          <TouchableOpacity 
+            onPress={onSignup}
+            activeOpacity={0.7}
+            style={styles.signupLink}
+          >
             <Text style={[TextStyles.body.medium, { color: colors.primary }]}>
               Sign up
             </Text>
@@ -204,16 +223,41 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   submitButton: {
-    marginTop: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    marginTop: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 48,
   },
   signupContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 24,
+  },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    marginRight: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkmark: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  signupLink: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
 });
