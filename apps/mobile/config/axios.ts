@@ -1,12 +1,16 @@
 import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { env } from './env';
+import { env, getEnvVar } from './env';
 import { Platform } from 'react-native';
 
 // Create axios instance
 // Normalize base URL to ensure it targets the backend API prefix
-let rawBase = (env.API_BASE_URL || env.API_URL || '').trim();
+let rawBase = (
+  getEnvVar('API_BASE_URL') ||
+  getEnvVar('API_URL') ||
+  `${getEnvVar('BASE_URL')}/api`
+).trim();
 
 // On Android emulator, localhost should point to the host machine via 10.0.2.2
 if (env.IS_ANDROID && __DEV__) {

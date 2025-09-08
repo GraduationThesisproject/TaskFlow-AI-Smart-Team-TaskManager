@@ -33,6 +33,8 @@ const settingsItems: NavItem[] = [
 ];
 
 const workspaceItems: NavItem[] = [
+  { id: 'ws-spaces', label: 'Spaces', icon: 'folder-open', route: '/(tabs)/workspace/spaces', section: 'workspace' },
+  { id: 'ws-rules', label: 'Rules', icon: 'book', route: '/(tabs)/workspace/rules', section: 'workspace' },
   { id: 'ws-reports', label: 'Reports', icon: 'line-chart', route: '/(tabs)/workspace/reports', section: 'workspace' },
   { id: 'ws-settings', label: 'Settings', icon: 'cog', route: '/(tabs)/workspace/settings', section: 'workspace' },
 ];
@@ -164,37 +166,7 @@ export default function Sidebar({ isVisible, onClose, currentSection }: SidebarP
               />
             </TouchableOpacity>
           ))}
-          {currentSection === 'workspace' && (
-            <>
-              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginHorizontal: 16, marginTop: 16, marginBottom: 8 }]}>Spaces</Text>
-              {Array.isArray(spaces) && spaces.length > 0 ? (
-                spaces
-                  .filter((sp: any) => sp?.status !== 'archived')
-                  .map((sp: any) => (
-                    <TouchableOpacity
-                      key={sp._id || sp.id}
-                      style={[
-                        styles.navItem,
-                        { backgroundColor: colors.card, borderBottomColor: colors.border },
-                      ]}
-                      onPress={() => handleOpenSpace(sp)}
-                    >
-                      <View style={styles.navItemContent}>
-                        <FontAwesome name="folder" size={18} color={colors.accent} style={styles.navIcon} />
-                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>
-                          {sp.name}
-                        </Text>
-                      </View>
-                      <FontAwesome name="chevron-right" size={14} color={colors['muted-foreground']} />
-                    </TouchableOpacity>
-                  ))
-              ) : (
-                <View style={{ paddingHorizontal: 16, paddingVertical: 4 }}>
-                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>No spaces</Text>
-                </View>
-              )}
-            </>
-          )}
+          {/* No individual spaces listed in the sidebar. Use the 'Spaces' nav item above to view all spaces. */}
         </View>
 
         {/* Footer */}

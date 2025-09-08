@@ -10,12 +10,10 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { setCurrentWorkspaceId, setSelectedSpace } from '@/store/slices/workspaceSlice';
 import Sidebar from '@/components/navigation/Sidebar';
+import { SpaceService } from '@/services/spaceService';
 
 // Toggle this to quickly demo with mock data
 const USE_MOCK = false;
-
-// TEMP: default workspace id until dashboard selection is fixed
-const TEMP_WORKSPACE_ID = '68b06f8102fea373776954ee';
 
 const MOCK_WORKSPACE = {
   _id: 'mock-ws-1',
@@ -58,13 +56,20 @@ export default function WorkspaceScreen() {
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member');
 
   const { currentWorkspaceId, workspaces } = useAppSelector((s: any) => s.workspace);
-  const selectedWorkspaceId = (params.workspaceId as string) || (params.id as string) || currentWorkspaceId || TEMP_WORKSPACE_ID;
+  const selectedWorkspaceId = (params.workspaceId as string) || (params.id as string) || currentWorkspaceId || null;
 
-  const { workspaces: wsList, currentWorkspace, spaces, loading, error, refetchWorkspaces, loadSpaces, inviteNewMember, createNewWorkspace } = useWorkspaces({ autoFetch: true, workspaceId: selectedWorkspaceId });
+  const { workspaces: wsList, currentWorkspace, spaces, loading, error, refetchWorkspaces, loadSpaces, inviteNewMember } = useWorkspaces({ autoFetch: true, workspaceId: selectedWorkspaceId });
 
   const realWorkspaceId = (currentWorkspace as any)?._id || (currentWorkspace as any)?.id || null;
   const effectiveWorkspace = realWorkspaceId ? currentWorkspace : (USE_MOCK ? (MOCK_WORKSPACE as any) : null);
   const workspaceId = realWorkspaceId || (selectedWorkspaceId || null);
+
+  // Always fetch spaces when we have a selected workspaceId
+  useEffect(() => {
+    if (!USE_MOCK && workspaceId) {
+      loadSpaces(workspaceId);
+    }
+  }, [workspaceId, loadSpaces]);
 
   const activeSpaces = useMemo(() => {
     return Array.isArray(spaces) ? spaces.filter((s: any) => s?.status !== 'archived') : [];
@@ -132,14 +137,24 @@ export default function WorkspaceScreen() {
   };
 
   const handleCreateSpace = async () => {
-    if (!newSpaceName.trim()) return;
+    if (!newSpaceName.trim() || !workspaceId) return;
     try {
-      await createNewWorkspace({ name: newSpaceName.trim(), description: newSpaceDescription.trim() || undefined, visibility: newSpaceVisibility });
+      await SpaceService.createSpace({
+        name: newSpaceName.trim(),
+        description: newSpaceDescription.trim() || undefined,
+        workspaceId,
+        settings: { isPrivate: newSpaceVisibility === 'private' },
+      });
+      // Refresh spaces to show the newly created space
+      loadSpaces(workspaceId);
+      // Reset form
       setNewSpaceName('');
       setNewSpaceDescription('');
       setNewSpaceVisibility('private');
       setShowCreateSpace(false);
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Failed to create space', e);
+    }
   };
 
   // Loading state
@@ -150,7 +165,9 @@ export default function WorkspaceScreen() {
           <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: colors.primary }]} onPress={toggleSidebar}>
             <FontAwesome name="bars" size={20} color={colors['primary-foreground']} />
           </TouchableOpacity>
-          <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>Workspace</Text>
+          <Text style={[TextStyles.heading.h1, { color: colors.foreground }]} numberOfLines={1}>
+            {(effectiveWorkspace as any)?.name || 'Workspace'}
+          </Text>
           <View style={styles.headerSpacer} />
         </View>
         <View style={styles.loadingContainer}>
@@ -167,7 +184,9 @@ export default function WorkspaceScreen() {
         <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: colors.primary }]} onPress={toggleSidebar}>
           <FontAwesome name="bars" size={20} color={colors['primary-foreground']} />
         </TouchableOpacity>
-        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>Workspace</Text>
+        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]} numberOfLines={1}>
+          {(effectiveWorkspace as any)?.name || 'Workspace'}
+        </Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -273,19 +292,9 @@ export default function WorkspaceScreen() {
           </Card>
         )}
 
-        {/* Current Workspace Overview */}
+        {/* Overview + Actions only when workspace details are loaded */}
         {workspaceId && effectiveWorkspace && (
           <>
-            <Card style={styles.sectionCard}>
-              <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{(effectiveWorkspace as any)?.name}</Text>
-              {(effectiveWorkspace as any)?.description ? (
-                <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], marginTop: 6 }]}>
-                  {(effectiveWorkspace as any).description}
-                </Text>
-              ) : null}
-            </Card>
-
-            {/* Quick Stats */}
             <View style={styles.statsContainer}>
               <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
                 <Text style={[TextStyles.heading.h3, { color: colors.primary }]}>{membersCount}</Text>
@@ -297,7 +306,6 @@ export default function WorkspaceScreen() {
               </Card>
             </View>
 
-            {/* Workspace Actions */}
             <Card style={styles.sectionCard}>
               <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Workspace Actions</Text>
               <View style={styles.actionsContainer}>
@@ -311,44 +319,10 @@ export default function WorkspaceScreen() {
                 </TouchableOpacity>
               </View>
             </Card>
-
-            {/* Spaces List */}
-            <Card style={styles.sectionCard}>
-              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Workspace Spaces</Text>
-              {filteredSpaces.length === 0 ? (
-                <View style={[styles.emptyBox, { backgroundColor: colors.card }]}>
-                  <FontAwesome name="inbox" size={24} color={colors['muted-foreground']} />
-                  <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], marginTop: 8 }]}>No spaces yet</Text>
-                </View>
-              ) : (
-                <View style={styles.spaceList}>
-                  {filteredSpaces.map((space: any) => (
-                    <TouchableOpacity key={space._id} style={[styles.spaceItem, { backgroundColor: colors.card }]} onPress={() => handleOpenSpace(space)}>
-                      <View style={styles.spaceHeader}>
-                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{space.name}</Text>
-                        <FontAwesome name="chevron-right" size={14} color={colors['muted-foreground']} />
-                      </View>
-                      {space.description ? (
-                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 6 }]} numberOfLines={2}>
-                          {space.description}
-                        </Text>
-                      ) : null}
-                      <View style={styles.spaceStats}>
-                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> 
-                          {(space.members?.length || 0)} members
-                        </Text>
-                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> 
-                          {(space.stats?.totalBoards || 0)} boards
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </Card>
           </>
         )}
+
+        
       </ScrollView>
 
       {/* Sidebar */}

@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Space } from '../../types/space.types';
-import { WorkspaceService, type InviteLinkInfo } from "../../services/D_workspaceService.ts";
+import { WorkspaceService, type InviteLinkInfo } from "../../services/D_workspaceService";
 import { SpaceService } from '../../services/spaceService';
 
 import type { Workspace, WorkspaceMember, WorkspaceState as BaseWorkspaceState } from '../../types/workspace.types';
@@ -75,8 +75,16 @@ export const fetchSpacesByWorkspace = createAsyncThunk(
   'workspace/fetchSpacesByWorkspace',
   async (workspaceId: string) => {
     const response = await SpaceService.getSpacesByWorkspace(workspaceId);
-    // Backend returns { spaces: [...], count: number }
-    return (response as any).spaces;
+    // Backend returns { success, message, data: { spaces: [...], count } }
+    const raw: any = response as any;
+    const list = Array.isArray(raw?.data?.spaces)
+      ? raw.data.spaces
+      : Array.isArray(raw?.spaces)
+      ? raw.spaces
+      : Array.isArray(raw)
+      ? raw
+      : [];
+    return list;
   }
 );
 
@@ -110,10 +118,20 @@ export const updateWorkspaceSettings = createAsyncThunk(
     updates: any 
   }, { rejectWithValue }) => {
     try {
-      const response = await WorkspaceService.updateWorkspace(id, {
-        settings: updates
-      });
-      
+      // Build payload shape based on section
+      let payload: any = updates;
+      if (section === 'settings') {
+        payload = { settings: updates };
+      } else if (section === 'visibility') {
+        // visibility toggles like isPublic should be top-level
+        payload = { isPublic: updates?.isPublic };
+      } else if (section === 'general') {
+        // name/description already at top-level
+        payload = updates;
+      }
+
+      const response = await WorkspaceService.updateWorkspace(id, payload);
+       
       // The service returns the workspace directly, not wrapped in response.data
       if (!response) {
         throw new Error('Invalid response from server');
@@ -426,6 +444,21 @@ const workspaceSlice = createSlice({
       .addCase(permanentDeleteWorkspace.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to permanently delete workspace';
+      })
+      // Fetch spaces by workspace
+      .addCase(fetchSpacesByWorkspace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchSpacesByWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        state.spaces = Array.isArray(action.payload) ? action.payload : [];
+        state.error = null;
+      })
+      .addCase(fetchSpacesByWorkspace.rejected, (state, action) => {
+        state.loading = false;
+        state.error = (action as any)?.payload || action.error.message || 'Failed to fetch spaces';
+        state.spaces = [];
       })
       // Restore workspace
       .addCase(restoreWorkspace.pending, (state) => {
