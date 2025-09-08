@@ -18,120 +18,135 @@ class PermissionSocket {
 
     /**
      * Setup socket middleware for authentication and permission checking
+     * Only applies to authenticated namespaces (not /test)
      */
     setupMiddleware() {
-        this.io.use(async (socket, next) => {
-            try {
-                // Get token from handshake auth
-                const token = socket.handshake.auth.token || socket.handshake.headers.authorization;
-                
-                if (!token) {
-                    return next(new Error('Authentication token required'));
-                }
+        // Only apply authentication middleware to specific namespaces
+        const authenticatedNamespaces = ['/notifications', '/board', '/workspace', '/chat'];
+        
+        authenticatedNamespaces.forEach(namespace => {
+            const nsp = this.io.of(namespace);
+            nsp.use(async (socket, next) => {
+                try {
+                    // Get token from handshake auth
+                    const token = socket.handshake.auth.token || socket.handshake.headers.authorization;
+                    
+                    if (!token) {
+                        logger.warn(`Socket authentication failed: No token provided for namespace ${namespace}`);
+                        return next(new Error('Authentication token required'));
+                    }
 
-                // Verify token and get user (you'll need to implement this)
-                const user = await this.verifyToken(token);
-                if (!user) {
-                    return next(new Error('Invalid authentication token'));
-                }
+                    // Verify token and get user
+                    const user = await this.verifyToken(token);
+                    if (!user) {
+                        logger.warn(`Socket authentication failed: Invalid token for namespace ${namespace}`);
+                        return next(new Error('Invalid authentication token'));
+                    }
 
-                // Attach user to socket
-                socket.user = user;
-                socket.userId = user.id;
-                
-                next();
-            } catch (error) {
-                logger.error('Socket authentication error:', error);
-                next(new Error('Authentication failed'));
-            }
+                    // Attach user to socket
+                    socket.user = user;
+                    socket.userId = user.id;
+                    
+                    logger.info(`Socket authenticated for namespace ${namespace}: ${socket.userId}`);
+                    next();
+                } catch (error) {
+                    logger.error(`Socket authentication error for namespace ${namespace}:`, error);
+                    next(new Error('Authentication failed'));
+                }
+            });
         });
     }
 
     /**
-     * Setup socket event handlers
+     * Setup socket event handlers for authenticated namespaces
      */
     setupEventHandlers() {
-        this.io.on('connection', async (socket) => {
-            logger.info(`Socket connected: ${socket.id} for user: ${socket.userId}`);
-            
-            // Handle workspace join
-            socket.on('join-workspace', async (workspaceId) => {
-                try {
-                    const canJoin = await this.checkWorkspaceAccess(socket.userId, workspaceId);
-                    
-                    if (canJoin) {
-                        await this.joinWorkspace(socket, workspaceId);
-                        socket.emit('workspace-joined', { workspaceId, success: true });
-                    } else {
+        const authenticatedNamespaces = ['/notifications', '/board', '/workspace', '/chat'];
+        
+        authenticatedNamespaces.forEach(namespace => {
+            const nsp = this.io.of(namespace);
+            nsp.on('connection', async (socket) => {
+                logger.info(`Socket connected to ${namespace}: ${socket.id} for user: ${socket.userId}`);
+                
+                // Handle workspace join
+                socket.on('join-workspace', async (workspaceId) => {
+                    try {
+                        const canJoin = await this.checkWorkspaceAccess(socket.userId, workspaceId);
+                        
+                        if (canJoin) {
+                            await this.joinWorkspace(socket, workspaceId);
+                            socket.emit('workspace-joined', { workspaceId, success: true });
+                        } else {
+                            socket.emit('workspace-join-error', { 
+                                workspaceId, 
+                                error: 'Access denied to workspace' 
+                            });
+                        }
+                    } catch (error) {
+                        logger.error('Workspace join error:', error);
                         socket.emit('workspace-join-error', { 
                             workspaceId, 
-                            error: 'Access denied to workspace' 
+                            error: 'Failed to join workspace' 
                         });
                     }
-                } catch (error) {
-                    logger.error('Workspace join error:', error);
-                    socket.emit('workspace-join-error', { 
-                        workspaceId, 
-                        error: 'Failed to join workspace' 
-                    });
-                }
-            });
+                });
 
-            // Handle workspace leave
-            socket.on('leave-workspace', async (workspaceId) => {
-                await this.leaveWorkspace(socket, workspaceId);
-                socket.emit('workspace-left', { workspaceId });
-            });
+                // Handle workspace leave
+                socket.on('leave-workspace', async (workspaceId) => {
+                    await this.leaveWorkspace(socket, workspaceId);
+                    socket.emit('workspace-left', { workspaceId });
+                });
 
-            // Handle space join
-            socket.on('join-space', async (spaceId) => {
-                try {
-                    const canJoin = await this.checkSpaceAccess(socket.userId, spaceId);
-                    
-                    if (canJoin) {
-                        await this.joinSpace(socket, spaceId);
-                        socket.emit('space-joined', { spaceId, success: true });
-                    } else {
+                // Handle space join
+                socket.on('join-space', async (spaceId) => {
+                    try {
+                        const canJoin = await this.checkSpaceAccess(socket.userId, spaceId);
+                        
+                        if (canJoin) {
+                            await this.joinSpace(socket, spaceId);
+                            socket.emit('space-joined', { spaceId, success: true });
+                        } else {
+                            socket.emit('space-join-error', { 
+                                spaceId, 
+                                error: 'Access denied to space' 
+                            });
+                        }
+                    } catch (error) {
+                        logger.error('Space join error:', error);
                         socket.emit('space-join-error', { 
                             spaceId, 
-                            error: 'Access denied to space' 
+                            error: 'Failed to join space' 
                         });
                     }
-                } catch (error) {
-                    logger.error('Space join error:', error);
-                    socket.emit('space-join-error', { 
-                        spaceId, 
-                        error: 'Failed to join space' 
-                    });
-                }
-            });
+                });
 
-            // Handle board join
-            socket.on('join-board', async (boardId) => {
-                try {
-                    const canJoin = await this.checkBoardAccess(socket.userId, boardId);
-                    
-                    if (canJoin) {
-                        await this.joinBoard(socket, boardId);
-                        socket.emit('board-joined', { boardId, success: true });
-                    } else {
+                // Handle board join
+                socket.on('join-board', async (boardId) => {
+                    try {
+                        const canJoin = await this.checkBoardAccess(socket.userId, boardId);
+                        
+                        if (canJoin) {
+                            await this.joinBoard(socket, boardId);
+                            socket.emit('board-joined', { boardId, success: true });
+                        } else {
+                            socket.emit('board-join-error', { 
+                                boardId, 
+                                error: 'Access denied to board' 
+                            });
+                        }
+                    } catch (error) {
+                        logger.error('Board join error:', error);
                         socket.emit('board-join-error', { 
                             boardId, 
-                            error: 'Access denied to board' 
+                            error: 'Failed to join board' 
                         });
                     }
-                } catch (error) {
-                    logger.error('Board join error:', error);
-                    socket.emit('board-join-error', { 
-                        boardId, 
-                        error: 'Failed to join board' 
-                    });
-                }
-            });
+                });
 
-            // Handle disconnect
-            socket.on('disconnect', () => {
-                this.handleDisconnect(socket);
+                // Handle disconnect
+                socket.on('disconnect', () => {
+                    this.handleDisconnect(socket);
+                });
             });
         });
     }
