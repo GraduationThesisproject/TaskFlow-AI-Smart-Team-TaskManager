@@ -165,8 +165,8 @@ export default function WorkspaceScreen() {
           <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: colors.primary }]} onPress={toggleSidebar}>
             <FontAwesome name="bars" size={20} color={colors['primary-foreground']} />
           </TouchableOpacity>
-          <Text style={[TextStyles.heading.h1, { color: colors.foreground }]} numberOfLines={1}>
-            {(effectiveWorkspace as any)?.name || 'Workspace'}
+          <Text style={[TextStyles.heading.h1, { color: colors.foreground }]} >
+            Workspace
           </Text>
           <View style={styles.headerSpacer} />
         </View>
@@ -179,13 +179,13 @@ export default function WorkspaceScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
+      {/* Header with Sidebar Toggle */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: colors.primary }]} onPress={toggleSidebar}>
           <FontAwesome name="bars" size={20} color={colors['primary-foreground']} />
         </TouchableOpacity>
-        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]} numberOfLines={1}>
-          {(effectiveWorkspace as any)?.name || 'Workspace'}
+        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
+          Workspace
         </Text>
         <View style={styles.headerSpacer} />
       </View>
