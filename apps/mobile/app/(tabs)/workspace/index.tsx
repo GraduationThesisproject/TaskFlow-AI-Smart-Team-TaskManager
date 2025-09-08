@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
@@ -8,7 +8,7 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
-import { setCurrentWorkspaceId, setSelectedSpace } from '@/store/slices/workspaceSlice';
+import { setCurrentWorkspaceId, setSelectedSpace, fetchMembers, removeMember } from '@/store/slices/workspaceSlice';
 import { SpaceService } from '@/services/spaceService';
 import CreateSpaceModal from '@/components/common/CreateSpaceModal';
 
@@ -53,6 +53,7 @@ export default function WorkspaceScreen() {
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member');
 
   const { currentWorkspaceId, workspaces } = useAppSelector((s: any) => s.workspace);
+  const { members, isLoading: membersLoading, error: membersError } = useAppSelector((s: any) => s.workspace);
   const selectedWorkspaceId = (params.workspaceId as string) || (params.id as string) || currentWorkspaceId || null;
 
   const { workspaces: wsList, currentWorkspace, spaces, loading, error, refetchWorkspaces, loadSpaces, inviteNewMember } = useWorkspaces({ autoFetch: true, workspaceId: selectedWorkspaceId });
@@ -67,6 +68,13 @@ export default function WorkspaceScreen() {
       loadSpaces(workspaceId);
     }
   }, [workspaceId, loadSpaces]);
+
+  // Load members when workspace changes
+  useEffect(() => {
+    if (!USE_MOCK && workspaceId) {
+      dispatch(fetchMembers({ id: workspaceId }));
+    }
+  }, [workspaceId, dispatch]);
 
   const activeSpaces = useMemo(() => {
     return Array.isArray(spaces) ? spaces.filter((s: any) => s?.status !== 'archived') : [];
@@ -128,6 +136,17 @@ export default function WorkspaceScreen() {
       setInviteEmail('');
     } catch (e: any) {
       // surfaced via console
+    }
+  };
+
+  const handleRemoveMember = async (member: any) => {
+    if (!workspaceId) return;
+    // Prevent removing the owner
+    if (member?.role === 'owner') return;
+    try {
+      await dispatch(removeMember({ workspaceId, memberId: member._id || member.id })).unwrap();
+    } catch (e) {
+      console.warn('Failed to remove member', e);
     }
   };
 
@@ -211,6 +230,53 @@ export default function WorkspaceScreen() {
                 <Text style={{ color: colors['primary-foreground'] }}>Invite</Text>
               </TouchableOpacity>
             </View>
+          </Card>
+        )}
+
+        {/* Members List */}
+        {workspaceId && (
+          <Card style={styles.sectionCard}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({members?.length || 0})</Text>
+            {membersLoading ? (
+              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading members...</Text>
+            ) : membersError ? (
+              <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>{membersError}</Text>
+            ) : (Array.isArray(members) && members.length > 0 ? (
+              <View style={{ gap: 8 }}>
+                {members.map((m: any) => (
+                  <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    {/* Avatar */}
+                    {(() => {
+                      const avatarUrl = m.avatar || m.profile?.avatar || m.user?.avatar;
+                      return avatarUrl ? (
+                        <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
+                      ) : (
+                        <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
+                          <FontAwesome name="user" size={16} color={colors['muted-foreground']} />
+                        </View>
+                      );
+                    })()}
+                    {/* Name and meta */}
+                    <View style={{ flex: 1 }}>
+                      <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{m.name || m.displayName || m.email}</Text>
+                      <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{m.email}</Text>
+                      <View style={styles.memberMetaRow}>
+                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                      </View>
+                    </View>
+                    {m.role !== 'owner' && (
+                      <TouchableOpacity onPress={() => handleRemoveMember(m)} style={[styles.destructiveBtn, { backgroundColor: colors.destructive }]}>
+                        <Text style={{ color: colors['destructive-foreground'] }}>Remove</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No members yet.</Text>
+            ))}
           </Card>
         )}
 
@@ -354,4 +420,9 @@ const styles = StyleSheet.create({
   pill: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 999, borderWidth: 1 },
   primaryBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10 },
   secondaryBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10 },
+  memberItem: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 10, borderWidth: 1 },
+  memberMetaRow: { flexDirection: 'row', gap: 6, marginTop: 4 },
+  destructiveBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+  memberAvatar: { width: 36, height: 36, borderRadius: 18 },
+  memberAvatarPlaceholder: { alignItems: 'center', justifyContent: 'center' },
 });

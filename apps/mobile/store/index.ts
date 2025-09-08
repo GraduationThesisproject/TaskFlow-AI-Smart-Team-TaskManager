@@ -7,9 +7,8 @@ import { env } from '../config/env';
 import { persistEncryptTransform } from './encryptionTransform';
 import { PERSIST_VERSION, persistMigrations } from './persistMigrations';
 
-// Temporarily disable socket middleware to prevent connection errors
-let notificationsSocketMiddleware: any = null;
-console.log('🔧 [store] Socket middleware disabled temporarily to prevent connection errors');
+// Import socket middleware
+import { notificationsSocketMiddleware } from './middleware/notificationsSocketMiddleware';
 
 // Import reducers here
 import appReducer from './slices/appSlice';
@@ -79,20 +78,9 @@ export const store = configureStore({
       },
     });
 
-    // Only add socket middleware if not in mock mode
-    console.log('🔧 [store] Configuring middleware...');
-    console.log('🔧 [store] env.IS_DEV:', env.IS_DEV);
-    console.log('🔧 [store] env.ENABLE_API_MOCKING:', env.ENABLE_API_MOCKING);
-    console.log('🔧 [store] Should skip socket middleware:', env.IS_DEV && env.ENABLE_API_MOCKING);
-    console.log('🔧 [store] Socket middleware available:', !!notificationsSocketMiddleware);
-    
-    if (notificationsSocketMiddleware) {
-      console.log('🔧 [store] Adding socket middleware - not in mock mode');
-      return middleware.concat(notificationsSocketMiddleware);
-    } else {
-      console.log('🔧 [store] Socket middleware not available - using mock authentication');
-      return middleware;
-    }
+    // Add socket middleware for real-time notifications
+    console.log('🔧 [store] Adding socket middleware for real-time notifications');
+    return middleware.concat(notificationsSocketMiddleware);
   },
   devTools: true,
 });
