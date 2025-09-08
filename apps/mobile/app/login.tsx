@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollView } from 'react-native';
-import { Text, View, Card } from '@/components/Themed';
+import { Text, View, Card, Button, ButtonText } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import LoginForm from '@/components/auth/LoginForm';
