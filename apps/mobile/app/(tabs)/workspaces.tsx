@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, TextInput } from 'react-native';
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
@@ -16,8 +16,8 @@ export default function WorkspacesScreen() {
   const router = useRouter();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [showCreateWs, setShowCreateWs] = useState(false);
-  const [creatingWs, setCreatingWs] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState('');
 
   const { workspaces, loading, error } = useAppSelector(state => state.workspace);
 
@@ -39,25 +39,26 @@ export default function WorkspacesScreen() {
     setRefreshing(false);
   };
 
-  const handleCreateWorkspace = () => setShowCreateWs(true);
-
-  const handleSubmitCreateWorkspace = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+  const handleCreateWorkspace = async () => {
+    if (!newWorkspaceName.trim()) return;
+    
     try {
-      setCreatingWs(true);
-      const action: any = await dispatch(createWorkspace({ name, description, visibility } as any));
-      const payload = action?.payload as any;
-      const id = payload?._id || payload?.id;
-      if (id) {
-        dispatch(setCurrentWorkspaceId(id));
-        router.push(`/(tabs)/workspace?workspaceId=${id}`);
-      }
-      await dispatch(fetchWorkspaces());
-      setShowCreateWs(false);
-    } catch (e) {
-      Alert.alert('Error', 'Failed to create workspace');
-    } finally {
-      setCreatingWs(false);
+      await dispatch(createWorkspace({
+        name: newWorkspaceName.trim(),
+        description: '',
+        visibility: 'private'
+      }));
+      setNewWorkspaceName('');
+      setIsCreating(false);
+    } catch (error: any) {
+      console.error('Failed to create workspace:', error);
+      Alert.alert('Error', error?.message || 'Failed to create workspace');
     }
+  };
+
+  const handleCancelCreate = () => {
+    setNewWorkspaceName('');
+    setIsCreating(false);
   };
 
   const handleDeleteWorkspace = (workspaceId: string, workspaceName: string) => {
@@ -71,7 +72,7 @@ export default function WorkspacesScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await dispatch(deleteWorkspace(workspaceId));
+              await dispatch(deleteWorkspace({ id: workspaceId }));
               Alert.alert('Success', 'Workspace deleted successfully!');
             } catch (error) {
               Alert.alert('Error', 'Failed to delete workspace');
@@ -89,10 +90,43 @@ export default function WorkspacesScreen() {
         <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuButton}>
           <FontAwesome name="bars" size={24} color={colors.foreground} />
         </TouchableOpacity>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Workspaces</Text>
-        <TouchableOpacity onPress={handleCreateWorkspace} style={styles.addButton}>
-          <FontAwesome name="plus" size={20} color={colors.primary} />
-        </TouchableOpacity>
+        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Your Workspaces</Text>
+        {!isCreating ? (
+          <TouchableOpacity onPress={() => setIsCreating(true)} style={styles.addButton}>
+            <FontAwesome name="plus" size={16} color={colors.foreground} />
+            <Text style={[TextStyles.body.small, { color: colors.foreground, marginLeft: 4 }]}>New</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.createRow}>
+            <TextInput
+              style={[styles.inlineInput, { 
+                backgroundColor: colors.background, 
+                color: colors.foreground,
+                borderColor: colors.border 
+              }]}
+              value={newWorkspaceName}
+              onChangeText={setNewWorkspaceName}
+              placeholder="Enter workspace name..."
+              placeholderTextColor={colors['muted-foreground']}
+              autoFocus
+              onSubmitEditing={handleCreateWorkspace}
+              returnKeyType="done"
+            />
+            <TouchableOpacity 
+              onPress={handleCreateWorkspace}
+              style={[styles.createButton, { backgroundColor: colors.success }]}
+              disabled={!newWorkspaceName.trim()}
+            >
+              <FontAwesome name="check" size={14} color={colors.foreground} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={handleCancelCreate}
+              style={[styles.cancelButton, { backgroundColor: colors.muted }]}
+            >
+              <FontAwesome name="times" size={14} color={colors.foreground} />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       <ScrollView 
@@ -175,13 +209,13 @@ export default function WorkspacesScreen() {
           <View style={styles.emptyState}>
             <FontAwesome name="folder-open" size={64} color={colors['muted-foreground']} />
             <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>
-              No Workspaces Yet
+              No workspaces yet
             </Text>
             <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'], textAlign: 'center' }]}>
-              Create your first workspace to start collaborating with your team.
+              Create your first workspace to get started with team collaboration.
             </Text>
             <TouchableOpacity 
-              onPress={handleCreateWorkspace}
+              onPress={() => setIsCreating(true)}
               style={[styles.createButton, { backgroundColor: colors.primary }]}
             >
               <FontAwesome name="plus" size={16} color={colors['primary-foreground']} />
@@ -194,10 +228,10 @@ export default function WorkspacesScreen() {
       </ScrollView>
 
       <CreateWorkspaceModal
-        visible={showCreateWs}
-        onClose={() => setShowCreateWs(false)}
-        onSubmit={handleSubmitCreateWorkspace}
-        submitting={creatingWs}
+        visible={isCreating}
+        onClose={() => setIsCreating(false)}
+        onSubmit={handleCreateWorkspace}
+        submitting={isCreating}
       />
 
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="dashboard" />
@@ -220,7 +254,23 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 8,
+  },
+  createRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  inlineInput: {
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    minWidth: 120,
+    maxWidth: 200,
   },
   content: {
     flex: 1,
@@ -280,12 +330,17 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   createButton: {
-    flexDirection: 'row',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 16,
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

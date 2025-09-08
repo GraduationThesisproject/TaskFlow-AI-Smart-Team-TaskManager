@@ -43,9 +43,17 @@ const socketCorsOptions = {
             allowedOrigins = [];
         }
         
+        // Check for wildcard in development
+        if (allowedOrigins.includes('*') && env.NODE_ENV === 'development') {
+            return callback(null, true);
+        }
+        
+        // Check if origin is in allowed list
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            // Log the rejected origin for debugging
+            console.log(`Socket.IO CORS: Origin ${origin} not allowed. Allowed origins:`, allowedOrigins);
             callback(new Error(`Origin ${origin} not allowed by Socket.IO CORS. Allowed: ${allowedOrigins.join(', ')}`));
         }
     },
@@ -58,6 +66,34 @@ const socketCorsOptions = {
 const io = socketIo(server, {
     path: '/socket.io',
     cors: socketCorsOptions,
+    // Add additional options for better React Native compatibility
+    allowEIO3: true,
+    transports: ['websocket', 'polling'],
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    // Add React Native specific options
+    upgrade: true,
+    rememberUpgrade: false,
+    // Ensure proper WebSocket handling
+    serveClient: true,
+    // Add connection state recovery
+    connectionStateRecovery: {
+        maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+        skipMiddlewares: true,
+    },
+    // Additional mobile-friendly options
+    allowUpgrades: true,
+    perMessageDeflate: false, // Disable compression for better mobile compatibility
+    httpCompression: false,   // Disable HTTP compression
+    // Better error handling
+    connectTimeout: 30000,
+    // Enable debugging in development
+    ...(env.NODE_ENV === 'development' && { 
+        logger: {
+            level: 'debug',
+            type: 'default'
+        }
+    })
 });
 
 // Make io available globally for notifications

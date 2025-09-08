@@ -42,7 +42,7 @@ export class WorkspaceService {
       if (env.ENABLE_DEBUG) {
         console.debug('[WorkspaceService.createWorkspace] response:', response.data);
       }
-      return response.data.data?.workspace;
+      return response.data.data?.workspace || response.data.workspace;
     } catch (error: any) {
       console.error('Error creating workspace:', error);
       const message = error?.response?.data?.message || error?.response?.data?.error || error?.message || 'Failed to create workspace';

@@ -12,6 +12,8 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { FontConfig } from '@/constants/Fonts';
 import { store, persistor, useAppDispatch, useAppSelector } from '@/store';
 import { checkAuthStatus } from '@/store/slices/authSlice';
+import { SocketProvider } from '@/contexts/SocketContext';
+import { ToastProvider } from '@/components/common/ToastProvider';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -81,9 +83,13 @@ function RootLayoutNav() {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <ThemeProvider>
-          <AuthGate />
-        </ThemeProvider>
+        <SocketProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <AuthGate />
+            </ToastProvider>
+          </ThemeProvider>
+        </SocketProvider>
       </PersistGate>
     </Provider>
   );
