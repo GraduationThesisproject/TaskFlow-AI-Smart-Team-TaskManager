@@ -29,12 +29,13 @@ export default function WorkspaceSettingsScreen() {
   const [wsSlackRestricted, setWsSlackRestricted] = useState<boolean>(!!(currentWorkspace as any)?.settings?.slackRestricted);
 
   useEffect(() => {
+    // Only resync toggle state when switching to a different workspace
     setWsIsPublic(!!(currentWorkspace as any)?.isPublic);
     setWsAllowGuestAccess(!!(currentWorkspace as any)?.settings?.allowGuestAccess);
     setWsRestrictBoardCreation(!!(currentWorkspace as any)?.settings?.restrictBoardCreation);
     setWsRestrictBoardDeletion(!!(currentWorkspace as any)?.settings?.restrictBoardDeletion);
     setWsSlackRestricted(!!(currentWorkspace as any)?.settings?.slackRestricted);
-  }, [currentWorkspace]);
+  }, [workspaceId]);
 
   const safeUpdateWorkspace = async (updates: any, revert: () => void, section: 'settings' | 'visibility' | 'general' = 'settings') => {
     if (!workspaceId) return;
@@ -62,7 +63,7 @@ export default function WorkspaceSettingsScreen() {
         <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.primary }]} onPress={() => router.back()}>
           <FontAwesome name="chevron-left" size={18} color={colors['primary-foreground']} />
         </TouchableOpacity>
-        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>Workspace Settings</Text>
+        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Workspace Settings</Text>
         <View style={styles.headerSpacer} />
       </View>
 

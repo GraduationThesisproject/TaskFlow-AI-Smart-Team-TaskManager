@@ -40,7 +40,7 @@ export default function WorkspaceReportsScreen() {
   const [period, setPeriod] = useState<TimePeriod>('month');
   const [data, setData] = useState<WorkspaceAnalyticsUI | null>(null);
 
-  const title = useMemo(() => (currentWorkspace as any)?.name || 'Workspace Reports', [currentWorkspace]);
+  const title = 'Reports';
 
   const fetchAnalytics = useCallback(async (params?: AnalyticsParams) => {
     if (!workspaceId) return;

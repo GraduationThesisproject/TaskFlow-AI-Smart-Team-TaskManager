@@ -479,8 +479,8 @@ exports.inviteMember = async (req, res) => {
                 role,
                 message,
                 invitationUrl: invitation.inviteUrl,
-                supportUrl: `${env.FRONTEND_URL || 'http://localhost:5173'}/support`,
-                docsUrl: `${env.FRONTEND_URL || 'http://localhost:5173'}/docs`
+                supportUrl: `${env.FRONTEND_URL}/support`,
+                docsUrl: `${env.FRONTEND_URL}/docs`
             }
         });
 

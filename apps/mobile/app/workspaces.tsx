@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector, useAppDispatch } from '@/store';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
-import { fetchWorkspaces, createWorkspace, deleteWorkspace } from '@/store/slices/workspaceSlice';
+import { fetchWorkspaces, createWorkspace, deleteWorkspace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
+import CreateWorkspaceModal from '@/components/common/CreateWorkspaceModal';
+import { useRouter } from 'expo-router';
 
 export default function WorkspacesScreen() {
   const colors = useThemeColors();
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showCreateWs, setShowCreateWs] = useState(false);
+  const [creatingWs, setCreatingWs] = useState(false);
 
   const { workspaces, loading, error } = useAppSelector(state => state.workspace);
 
@@ -34,30 +39,25 @@ export default function WorkspacesScreen() {
     setRefreshing(false);
   };
 
-  const handleCreateWorkspace = () => {
-    Alert.alert(
-      'Create Workspace',
-      'Enter workspace details',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Create',
-          onPress: async () => {
-            try {
-              await dispatch(createWorkspace({
-                name: 'New Workspace',
-                description: 'A new workspace for collaboration',
-                isPublic: false,
-                isActive: true
-              }));
-              Alert.alert('Success', 'Workspace created successfully!');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to create workspace');
-            }
-          }
-        }
-      ]
-    );
+  const handleCreateWorkspace = () => setShowCreateWs(true);
+
+  const handleSubmitCreateWorkspace = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+    try {
+      setCreatingWs(true);
+      const action: any = await dispatch(createWorkspace({ name, description, visibility } as any));
+      const payload = action?.payload as any;
+      const id = payload?._id || payload?.id;
+      if (id) {
+        dispatch(setCurrentWorkspaceId(id));
+        router.push(`/(tabs)/workspace?workspaceId=${id}`);
+      }
+      await dispatch(fetchWorkspaces());
+      setShowCreateWs(false);
+    } catch (e) {
+      Alert.alert('Error', 'Failed to create workspace');
+    } finally {
+      setCreatingWs(false);
+    }
   };
 
   const handleDeleteWorkspace = (workspaceId: string, workspaceName: string) => {
@@ -192,6 +192,13 @@ export default function WorkspacesScreen() {
           </View>
         )}
       </ScrollView>
+
+      <CreateWorkspaceModal
+        visible={showCreateWs}
+        onClose={() => setShowCreateWs(false)}
+        onSubmit={handleSubmitCreateWorkspace}
+        submitting={creatingWs}
+      />
 
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="dashboard" />
     </View>

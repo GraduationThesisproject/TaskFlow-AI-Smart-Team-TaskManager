@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { setCurrentWorkspaceId, setSelectedSpace } from '@/store/slices/workspaceSlice';
 import { SpaceService } from '@/services/spaceService';
+import CreateSpaceModal from '@/components/common/CreateSpaceModal';
 
 // Toggle this to quickly demo with mock data
 const USE_MOCK = false;
@@ -47,9 +48,7 @@ export default function WorkspaceScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [spaceSearch, setSpaceSearch] = useState('');
   const [showCreateSpace, setShowCreateSpace] = useState(false);
-  const [newSpaceName, setNewSpaceName] = useState('');
-  const [newSpaceDescription, setNewSpaceDescription] = useState('');
-  const [newSpaceVisibility, setNewSpaceVisibility] = useState<'private' | 'public'>('private');
+  const [creatingSpace, setCreatingSpace] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member');
 
@@ -132,24 +131,22 @@ export default function WorkspaceScreen() {
     }
   };
 
-  const handleCreateSpace = async () => {
-    if (!newSpaceName.trim() || !workspaceId) return;
+  const handleSubmitCreate = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+    if (!workspaceId) return;
     try {
+      setCreatingSpace(true);
       await SpaceService.createSpace({
-        name: newSpaceName.trim(),
-        description: newSpaceDescription.trim() || undefined,
+        name,
+        description,
         workspaceId,
-        settings: { isPrivate: newSpaceVisibility === 'private' },
+        settings: { isPrivate: visibility === 'private' },
       });
-      // Refresh spaces to show the newly created space
-      loadSpaces(workspaceId);
-      // Reset form
-      setNewSpaceName('');
-      setNewSpaceDescription('');
-      setNewSpaceVisibility('private');
+      await loadSpaces(workspaceId);
       setShowCreateSpace(false);
     } catch (e) {
       console.warn('Failed to create space', e);
+    } finally {
+      setCreatingSpace(false);
     }
   };
 
@@ -159,7 +156,7 @@ export default function WorkspaceScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
           <View style={styles.headerSpacer} />
-          <Text style={[TextStyles.heading.h1, { color: colors.foreground }]} >
+          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]} >
             Workspace
           </Text>
           <View style={styles.headerSpacer} />
@@ -176,7 +173,7 @@ export default function WorkspaceScreen() {
       {/* Header with Sidebar Toggle */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View style={styles.headerSpacer} />
-        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
+        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
           Workspace
         </Text>
         <View style={styles.headerSpacer} />
@@ -227,40 +224,10 @@ export default function WorkspaceScreen() {
               placeholderTextColor={colors['muted-foreground']}
               style={[styles.input, { flex: 1, color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
             />
-            <TouchableOpacity onPress={() => setShowCreateSpace((v) => !v)} style={[styles.secondaryBtn, { backgroundColor: colors.secondary }]}>
-              <Text style={{ color: colors['secondary-foreground'] }}>{showCreateSpace ? 'Close' : 'Create Space'}</Text>
+            <TouchableOpacity onPress={() => setShowCreateSpace(true)} style={[styles.secondaryBtn, { backgroundColor: colors.secondary }]}>
+              <Text style={{ color: colors['secondary-foreground'] }}>Create Space</Text>
             </TouchableOpacity>
           </View>
-          {showCreateSpace && (
-            <View style={{ marginTop: 12, gap: 8 }}>
-              <TextInput
-                value={newSpaceName}
-                onChangeText={setNewSpaceName}
-                placeholder="Space name"
-                placeholderTextColor={colors['muted-foreground']}
-                style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
-              />
-              <TextInput
-                value={newSpaceDescription}
-                onChangeText={setNewSpaceDescription}
-                placeholder="Description (optional)"
-                placeholderTextColor={colors['muted-foreground']}
-                style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
-              />
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TouchableOpacity onPress={() => setNewSpaceVisibility('private')} style={[styles.pill, { backgroundColor: newSpaceVisibility === 'private' ? colors.primary : colors.card, borderColor: colors.border }]}>
-                  <Text style={{ color: newSpaceVisibility === 'private' ? colors['primary-foreground'] : colors.foreground }}>Private</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setNewSpaceVisibility('public')} style={[styles.pill, { backgroundColor: newSpaceVisibility === 'public' ? colors.primary : colors.card, borderColor: colors.border }]}>
-                  <Text style={{ color: newSpaceVisibility === 'public' ? colors['primary-foreground'] : colors.foreground }}>Public</Text>
-                </TouchableOpacity>
-                <View style={{ flex: 1 }} />
-                <TouchableOpacity onPress={handleCreateSpace} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}>
-                  <Text style={{ color: colors['primary-foreground'] }}>Create</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
         </Card>
 
         {/* Show selector ONLY if no selected id and no current workspace, and multiple workspaces exist */}
@@ -346,6 +313,14 @@ export default function WorkspaceScreen() {
           </Card>
         )}
       </ScrollView>
+
+      {/* Create Space Modal */}
+      <CreateSpaceModal
+        visible={!!workspaceId && showCreateSpace}
+        onClose={() => setShowCreateSpace(false)}
+        onSubmit={handleSubmitCreate}
+        submitting={creatingSpace}
+      />
     </View>
   );
 }
