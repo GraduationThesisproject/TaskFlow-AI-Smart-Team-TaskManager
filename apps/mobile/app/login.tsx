@@ -25,7 +25,7 @@ export default function LoginScreen() {
           <Card style={{ padding: 16, marginBottom: 16 }}>
             <Text style={[TextStyles.heading.h1, { color: colors.foreground, textAlign: 'center' }]}>Login</Text>
           </Card>
-          <LoginForm onSignup={() => router.replace('/register')} />
+          <LoginForm onSignup={() => router.replace('/register')} onForgotPassword={handleForgotPassword}/>
         </View>
       </ScrollView>
     </View>

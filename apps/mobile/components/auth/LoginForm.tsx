@@ -178,7 +178,7 @@ export default function LoginForm({
           ]}
           activeOpacity={0.8}
         >
-          <Text style={[TextStyles.button, { color: colors['primary-foreground'], textAlign: 'center' }]}>
+          <Text style={[TextStyles.button.medium, { color: colors['primary-foreground'], textAlign: 'center' }]}>
             {submitting || isLoading ? 'Signing In...' : 'Sign In'}
           </Text>
         </TouchableOpacity>
