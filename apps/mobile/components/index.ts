@@ -25,5 +25,3 @@ export { default as TaskCard } from './cards/TaskCard';
 // Auth Components
 export { default as LoginForm } from './auth/LoginForm';
 
-// Debug Components
-export { default as SocketStatus } from './debug/SocketStatus';
