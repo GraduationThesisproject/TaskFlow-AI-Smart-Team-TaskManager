@@ -59,7 +59,6 @@ const settingsItems: NavItem[] = [
   { id: 'notifications', label: 'Notifications', icon: 'bell', route: '/(tabs)/settings?section=notifications', section: 'settings' },
   { id: 'activity', label: 'Activity', icon: 'clock-o', route: '/(tabs)/settings?section=activity', section: 'settings' },
   { id: 'upgrade', label: 'Upgrade', icon: 'star', route: '/(tabs)/settings?section=upgrade', section: 'settings' },
-  { id: 'debug', label: 'Debug', icon: 'bug', route: '/(tabs)/settings?section=debug', section: 'settings' },
 ];
 
 // Function to get appropriate sections based on context
