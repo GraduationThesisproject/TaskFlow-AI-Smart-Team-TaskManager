@@ -12,6 +12,7 @@ import Sidebar from '@/components/navigation/Sidebar';
 import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import StatsCards from '@/components/cards/StatsCards';
+import NotificationBell from '@/components/common/NotificationBell';
 
 // Welcome Header Component
 const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
@@ -391,7 +392,9 @@ export default function DashboardScreen() {
           <FontAwesome name="bars" size={24} color={colors.foreground} />
         </TouchableOpacity>
         <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Dashboard</Text>
-        <View style={styles.headerRight} />
+        <View style={styles.headerRight}>
+          <NotificationBell size={24} />
+        </View>
       </View>
 
       <ScrollView 
@@ -431,6 +434,9 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
     width: 40,
   },
   content: {

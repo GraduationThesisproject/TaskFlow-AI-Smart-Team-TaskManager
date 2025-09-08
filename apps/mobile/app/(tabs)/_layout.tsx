@@ -48,6 +48,24 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="workspaces"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="templates"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
     </Tabs>
   );
 }
