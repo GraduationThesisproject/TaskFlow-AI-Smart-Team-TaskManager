@@ -10,7 +10,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PersistGate } from 'redux-persist/integration/react';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { store, useAppDispatch, useAppSelector } from '@/store';
 import { FontConfig } from '@/constants/Fonts';
 import { store, persistor, useAppDispatch, useAppSelector } from '@/store';
 import { checkAuthStatus } from '@/store/slices/authSlice';
@@ -61,26 +60,6 @@ export default function RootLayout() {
 
   return <RootLayoutNav />;
 }
-
-function RootLayoutNav() {
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Provider store={store}>
-        <ThemeProvider>
-          <AuthGate />
-        </ThemeProvider>
-      </Provider>
-    </GestureHandlerRootView>
-    <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <ThemeProvider>
-          <AuthGate />
-        </ThemeProvider>
-      </PersistGate>
-    </Provider>
-  );
-}
-
 function AuthGate() {
   // const dispatch = useAppDispatch();
   // const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
@@ -97,24 +76,35 @@ function AuthGate() {
 
   // if (!isAuthenticated) {
   //   // Unauthenticated: expose only login screen to prevent access to other screens
-    return (
-      <Stack>
-        {/* <Stack.Screen name="taskcard" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }} /> */}
-      {/* </Stack>
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
-      </Stack>
-    );
-  }
+  //   return (
+  //     <Stack>
+  //       <Stack.Screen name="login" options={{ headerShown: false }} />
+  //       <Stack.Screen name="register" options={{ headerShown: false }} />
+  //     </Stack>
+  //   );
+  // }
 
   // Authenticated: show main tabs (workspace section lives under tabs/index)
   return (
-    <Stack>*/}
+    <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> 
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }
+function RootLayoutNav() {
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Provider store={store}>
+        <PersistGate loading={null} persistor={persistor}>
+          <ThemeProvider>
+            <AuthGate />
+          </ThemeProvider>
+        </PersistGate>
+      </Provider>
+    </GestureHandlerRootView>
+  );
+}
+
+
 

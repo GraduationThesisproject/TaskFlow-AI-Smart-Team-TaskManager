@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ScrollView, 
   Image, 
@@ -9,9 +9,11 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  PanResponder,
+  LayoutChangeEvent
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, LongPressGestureHandler, PanGestureHandler, State } from 'react-native-gesture-handler';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -19,7 +21,11 @@ import Animated, {
   runOnJS,
   useAnimatedGestureHandler,
   interpolate,
-  Extrapolate
+  Extrapolate,
+  withTiming,
+  useAnimatedReaction,
+  measure,
+  useAnimatedRef
 } from 'react-native-reanimated';
 import { 
   ArrowLeft, 
@@ -36,9 +42,6 @@ import {
 } from 'lucide-react-native';
 import { Text, View } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
-import TaskCard from '@/components/cards/TaskCard';
-import { TaskDragArea } from '@/components/cards/TaskDragContext';
-import DraggingTaskCard from '@/components/cards/DraggingTaskCard';
 
 // Types
 interface Task {
@@ -101,10 +104,25 @@ export default function TasksScreen() {
   const [newColumnName, setNewColumnName] = useState('');
   const [newColumnColor, setNewColumnColor] = useState('#F9FAFB');
   
-  // Long press state for drag and drop
+  // Enhanced drag and drop state
   const [isDragging, setIsDragging] = useState(false);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
-  const [draggedColumn, setDraggedColumn] = useState<Column | null>(null);
+  const [draggedTaskIndex, setDraggedTaskIndex] = useState<number>(-1);
+  const [draggedFromColumn, setDraggedFromColumn] = useState<string>('');
+  const [dropZoneColumn, setDropZoneColumn] = useState<string>('');
+  const [dropZoneIndex, setDropZoneIndex] = useState<number>(-1);
+  const [placeholderPosition, setPlaceholderPosition] = useState<{columnId: string, index: number} | null>(null);
+  
+  // Animated values for drag and drop
+  const dragX = useSharedValue(0);
+  const dragY = useSharedValue(0);
+  const dragScale = useSharedValue(1);
+  const dragOpacity = useSharedValue(1);
+  
+  // Refs for measuring column positions
+  const columnRefs = useRef<Record<string, any>>({});
+  const taskRefs = useRef<Record<string, any>>({});
+  const boardScrollRef = useRef<ScrollView>(null);
   
   // Mock board ID - in real app this would come from navigation params
   const boardId = 'mock-board-id';
@@ -338,51 +356,124 @@ export default function TasksScreen() {
     );
   };
   
-  const moveTask = async (taskId: string, fromColumnId: string, toColumnId: string, newPosition?: number) => {
-    setTasks(prev => prev.map(task => {
-      if (task._id === taskId) {
-        return {
-          ...task,
-          column: toColumnId,
-          position: newPosition ?? task.position,
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return task;
-    }));
+  // Stable drag and drop functions
+  const moveTaskToColumn = (taskId: string, fromColumnId: string, toColumnId: string, insertIndex?: number) => {
+    setTasks(prev => {
+      const task = prev.find(t => t._id === taskId);
+      if (!task || task.column === toColumnId) return prev;
+      
+      // Remove task from source column
+      const withoutTask = prev.filter(t => t._id !== taskId);
+      
+      // Get target column tasks and determine insertion point
+      const targetColumnTasks = withoutTask
+        .filter(t => t.column === toColumnId)
+        .sort((a, b) => a.position - b.position);
+      
+      const finalInsertIndex = insertIndex ?? targetColumnTasks.length;
+      
+      // Create updated task
+      const updatedTask = {
+        ...task,
+        column: toColumnId,
+        position: finalInsertIndex,
+        updatedAt: new Date().toISOString()
+      };
+      
+      // Reorder all tasks in target column
+      const reorderedTargetTasks = targetColumnTasks.map((t, idx) => ({
+        ...t,
+        position: idx >= finalInsertIndex ? idx + 1 : idx
+      }));
+      
+      // Combine all tasks
+      const otherTasks = withoutTask.filter(t => t.column !== toColumnId);
+      return [...otherTasks, ...reorderedTargetTasks, updatedTask];
+    });
   };
   
-  const handleTaskLongPress = (task: Task) => {
-    setDraggedTask(task);
-    setIsDragging(true);
-    
-    // Show available columns for dropping
-    Alert.alert(
-      'Move Task',
-      'Select a column to move this task to:',
-      [
-        ...columns.filter(col => col._id !== task.column).map(col => ({
-          text: col.name,
-          onPress: () => {
-            moveTask(task._id, task.column, col._id);
-            setIsDragging(false);
-            setDraggedTask(null);
-          }
-        })),
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => {
-            setIsDragging(false);
-            setDraggedTask(null);
+  const reorderTasksInColumn = (columnId: string, fromIndex: number, toIndex: number) => {
+    setTasks(prev => {
+      const columnTasks = prev.filter(t => t.column === columnId);
+      const otherTasks = prev.filter(t => t.column !== columnId);
+      
+      // Reorder within column
+      const [movedTask] = columnTasks.splice(fromIndex, 1);
+      columnTasks.splice(toIndex, 0, movedTask);
+      
+      // Update positions
+      const updatedColumnTasks = columnTasks.map((task, index) => ({
+        ...task,
+        position: index,
+        updatedAt: new Date().toISOString()
+      }));
+      
+      return [...otherTasks, ...updatedColumnTasks];
+    });
+  };
+  
+  const findDropZone = (x: number, y: number, taskCenterX: number) => {
+    // Simplified drop zone detection to prevent crashes
+    try {
+      const screenWidth = Dimensions.get('window').width;
+      const columnWidth = screenWidth - 32;
+      const columnSpacing = 16;
+      
+      const columnIndex = Math.floor(x / (columnWidth + columnSpacing));
+      
+      if (columnIndex >= 0 && columnIndex < columns.length) {
+        const targetColumn = columns[columnIndex];
+        setDropZoneColumn(targetColumn._id);
+        
+        // Simple insertion at end of column to avoid complex calculations
+        const columnTasks = tasks.filter(t => t.column === targetColumn._id && t._id !== draggedTask?._id);
+        const insertIndex = columnTasks.length;
+        
+        setDropZoneIndex(insertIndex);
+        setPlaceholderPosition({ columnId: targetColumn._id, index: insertIndex });
+      } else {
+        setDropZoneColumn('');
+        setDropZoneIndex(-1);
+        setPlaceholderPosition(null);
+      }
+    } catch (error) {
+      console.warn('Drop zone detection failed:', error);
+      setDropZoneColumn('');
+      setDropZoneIndex(-1);
+      setPlaceholderPosition(null);
+    }
+  };
+  
+  // Simplified drop handler to prevent crashes
+  const handleDrop = (finalX: number, finalY: number, sourceColumnId: string, sourceIndex: number) => {
+    setTimeout(() => {
+      try {
+        if (dropZoneColumn && dropZoneColumn !== '' && draggedTask) {
+          if (dropZoneColumn !== sourceColumnId) {
+            // Only handle cross-column moves for simplicity
+            moveTaskToColumn(draggedTask._id, sourceColumnId, dropZoneColumn, dropZoneIndex);
           }
         }
-      ]
-    );
+      } catch (error) {
+        console.warn('Drop failed:', error);
+      } finally {
+        resetDragState();
+      }
+    }, 100);
   };
-  
+
+  const resetDragState = () => {
+    setIsDragging(false);
+    setDraggedTask(null);
+    setDraggedTaskIndex(-1);
+    setDraggedFromColumn('');
+    setDropZoneColumn('');
+    setDropZoneIndex(-1);
+    setPlaceholderPosition(null);
+  };
+
   const handleTaskPress = (task: Task) => {
-    // Simple tap does nothing - only long press moves tasks
+    // Simple tap does nothing - only long press initiates drag
     return;
   };
   
@@ -391,10 +482,18 @@ export default function TasksScreen() {
     setIsAddTaskModalOpen(true);
   };
   
-  // Group tasks by column
+  // Group tasks by column with placeholder behavior
   const tasksByColumn = columns.reduce((acc, column) => {
-    acc[column._id] = tasks.filter(task => task.column === column._id)
+    let columnTasks = tasks
+      .filter(task => task.column === column._id)
       .sort((a, b) => a.position - b.position);
+    
+    // Remove dragged task from its original position to create gap
+    if (isDragging && draggedTask && draggedTask.column === column._id) {
+      columnTasks = columnTasks.filter(task => task._id !== draggedTask._id);
+    }
+    
+    acc[column._id] = columnTasks;
     return acc;
   }, {} as Record<string, Task[]>);
   
@@ -429,6 +528,190 @@ export default function TasksScreen() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  // Draggable Task Card Component
+  const DraggableTaskCard = ({ task, index, columnId }: { task: Task; index: number; columnId: string }) => {
+    const colors = useThemeColors();
+    const longPressRef = useRef<LongPressGestureHandler>(null);
+    const panRef = useRef<PanGestureHandler>(null);
+    
+    const translateX = useSharedValue(0);
+    const translateY = useSharedValue(0);
+    const scale = useSharedValue(1);
+    const opacity = useSharedValue(1);
+    const zIndex = useSharedValue(1);
+    
+    const longPressGesture = Gesture.LongPress()
+      .minDuration(300)
+      .onStart(() => {
+        'worklet';
+        scale.value = withSpring(1.05);
+        opacity.value = withTiming(0.9);
+        zIndex.value = 1000;
+        
+        runOnJS(() => {
+          setIsDragging(true);
+          setDraggedTask(task);
+          setDraggedTaskIndex(index);
+          setDraggedFromColumn(columnId);
+        })();
+      });
+    
+    const panGesture = Gesture.Pan()
+      .onUpdate((event) => {
+        'worklet';
+        translateX.value = event.translationX;
+        translateY.value = event.translationY;
+        
+        // Simplified drop zone detection - only call when needed
+        if (Math.abs(event.translationX) > 20 || Math.abs(event.translationY) > 20) {
+          runOnJS(findDropZone)(event.absoluteX, event.absoluteY, event.absoluteX);
+        }
+      })
+      .onEnd((event) => {
+        'worklet';
+        // Reset animations first
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+        scale.value = withSpring(1);
+        opacity.value = withTiming(1);
+        zIndex.value = 1;
+        
+        // Simplified drop handling
+        runOnJS(() => {
+          handleDrop(event.absoluteX, event.absoluteY, columnId, index);
+        })();
+      });
+    
+    const combinedGesture = Gesture.Race(longPressGesture, panGesture);
+    
+    const animatedStyle = useAnimatedStyle(() => {
+      return {
+        transform: [
+          { translateX: translateX.value },
+          { translateY: translateY.value },
+          { scale: scale.value }
+        ],
+        opacity: opacity.value,
+        zIndex: zIndex.value,
+      };
+    });
+    
+    const getPriorityColor = (priority: string) => {
+      switch (priority.toLowerCase()) {
+        case 'very high':
+          return '#ef4444';
+        case 'high':
+          return '#f97316';
+        case 'medium':
+          return '#eab308';
+        default:
+          return '#22c55e';
+      }
+    };
+    
+    return (
+      <GestureDetector gesture={combinedGesture}>
+        <Animated.View
+          ref={(ref) => {
+            taskRefs.current[task._id] = ref;
+          }}
+          style={[
+            styles.taskCard,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
+            animatedStyle
+          ]}
+        >
+          <View style={styles.taskHeader}>
+            <Text style={[styles.taskTitle, { color: colors.foreground }]} numberOfLines={2}>
+              {task.title}
+            </Text>
+            <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(task.priority) }]}>
+              <Text style={styles.priorityText}>
+                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+              </Text>
+            </View>
+          </View>
+          
+          {task.description && (
+            <Text style={[styles.taskDescription, { color: colors['muted-foreground'] }]} numberOfLines={2}>
+              {task.description}
+            </Text>
+          )}
+          
+          {task.category && (
+            <Text style={[styles.taskCategory, { color: colors['muted-foreground'] }]}>
+              {task.category}
+            </Text>
+          )}
+          
+          {task.progress !== undefined && (
+            <View style={styles.progressContainer}>
+              <View style={[styles.progressBar, { backgroundColor: colors.muted }]}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { 
+                      backgroundColor: colors.primary,
+                      width: `${task.progress}%`
+                    }
+                  ]} 
+                />
+              </View>
+              <Text style={[styles.progressText, { color: colors['muted-foreground'] }]}>
+                {task.progress}%
+              </Text>
+            </View>
+          )}
+          
+          <View style={styles.taskFooter}>
+            <View style={styles.assigneesContainer}>
+              {task.assignees.slice(0, 3).map((assignee, idx) => (
+                <Image
+                  key={assignee.id}
+                  source={{ uri: assignee.avatar || 'https://via.placeholder.com/24' }}
+                  style={[
+                    styles.assigneeAvatar,
+                    { 
+                      borderColor: colors.background,
+                      marginLeft: idx > 0 ? -8 : 0 
+                    }
+                  ]}
+                />
+              ))}
+              {task.assignees.length > 3 && (
+                <View style={[
+                  styles.moreAssignees,
+                  { 
+                    backgroundColor: colors.muted,
+                    borderColor: colors.background 
+                  }
+                ]}>
+                  <Text style={[styles.moreAssigneesText, { color: colors.foreground }]}>
+                    +{task.assignees.length - 3}
+                  </Text>
+                </View>
+              )}
+            </View>
+            
+            <View style={styles.taskMeta}>
+              {task.dueDate && (
+                <View style={styles.dueDateContainer}>
+                  <Calendar color={colors['muted-foreground']} size={12} />
+                  <Text style={[styles.dueDate, { color: colors['muted-foreground'] }]}>
+                    {formatDate(task.dueDate)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </Animated.View>
+      </GestureDetector>
+    );
+  };
+
   const colors = useThemeColors();
   const screenWidth = Dimensions.get('window').width;
   const columnWidth = screenWidth - 32; // Full width minus padding
@@ -459,69 +742,17 @@ export default function TasksScreen() {
   }
 
   return (
-    <TaskDragArea 
-      updateItemPosition={(taskId, yPosition) => {
-        console.log('Update item position:', taskId, yPosition);
-        const task = tasks.find(t => t._id === taskId);
-        if (task) {
-          handleTaskLongPress(task);
-        }
-      }}
-      renderDraggingItem={(taskId) => {
-        const task = tasks.find(t => t._id === taskId);
-        if (!task) return null;
-        return (
-          <DraggingTaskCard
-            id={task._id}
-            title={task.title}
-            description={task.description}
-            status={task.status as 'todo' | 'in-progress' | 'done' | 'archived'}
-            priority={task.priority as 'low' | 'medium' | 'high' | 'urgent'}
-          />
-        );
-      }}
-    >
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Simplified Header */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity>
-            <ArrowLeft color={colors.foreground} size={24} />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-              Project Dashboard
-            </Text>
-          </View>
-          <TouchableOpacity>
-            <Bell color={colors.foreground} size={24} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={[styles.searchBar, { backgroundColor: colors.input, borderColor: colors.border }]}>
-          <Search color={colors['muted-foreground']} size={20} />
-          <Text style={[styles.searchText, { color: colors['muted-foreground'] }]}>Search tasks...</Text>
-        </View>
-      </View>
-
-      {/* View Tabs */}
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity style={[styles.activeTab, { backgroundColor: colors.primary }]}>
-          <Text style={[styles.activeTabText, { color: colors['primary-foreground'] }]}>Kanban</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.inactiveTab}>
-          <Text style={[styles.inactiveTabText, { color: colors['muted-foreground'] }]}>List</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.inactiveTab}>
-          <Text style={[styles.inactiveTabText, { color: colors['muted-foreground'] }]}>Timeline</Text>
-        </TouchableOpacity>
+      {/* Minimal Header */}
+      <View style={styles.minimalHeader}>
+        <Text style={[styles.boardTitle, { color: colors.foreground }]}>
+          Task Board
+        </Text>
       </View>
 
       {/* Board Columns */}
       <ScrollView
+        ref={boardScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.boardContainer}
@@ -538,6 +769,9 @@ export default function TasksScreen() {
           return (
             <View
               key={column._id}
+              ref={(ref) => {
+                columnRefs.current[column._id] = ref;
+              }}
               style={[{ width: columnWidth }, styles.column]}
             >
               {/* Column Header - No Background Color */}
@@ -565,41 +799,36 @@ export default function TasksScreen() {
                 showsVerticalScrollIndicator={false}
                 style={styles.tasksContainer}
               >
-                {columnTasks.map((task, taskIndex) => (
-                  <TaskCard
-                    key={task._id}
-                    id={task._id}
-                    title={task.title}
-                    description={task.description}
-                    status={task.status as 'todo' | 'in-progress' | 'done' | 'archived'}
-                    priority={task.priority as 'low' | 'medium' | 'high' | 'urgent'}
-                    assignee={task.assignees[0] ? {
-                      id: task.assignees[0].id,
-                      name: task.assignees[0].name,
-                      avatar: task.assignees[0].avatar
-                    } : undefined}
-                    dueDate={task.dueDate}
-                    tags={task.category ? [task.category] : []}
-                    isDraggable={true}
-                    index={taskIndex}
-                    onPress={() => handleTaskPress(task)}
-                    onLongPress={() => console.log('Long press detected on task:', task._id)}
-                    onDragStart={(id) => {
-                      console.log('Drag started for task:', id);
-                      const dragTask = tasks.find(t => t._id === id);
-                      if (dragTask) {
-                        setDraggedTask(dragTask);
-                        setIsDragging(true);
-                      }
-                    }}
-                    onDragEnd={(id) => {
-                      console.log('Drag ended for task:', id);
-                      setIsDragging(false);
-                      setDraggedTask(null);
-                    }}
-                    selected={draggedTask?._id === task._id}
-                  />
-                ))}
+                {columnTasks.map((task, taskIndex) => {
+                  // Insert placeholder before this task if needed
+                  const shouldShowPlaceholder = placeholderPosition && 
+                    placeholderPosition.columnId === column._id && 
+                    placeholderPosition.index === taskIndex;
+                  
+                  return (
+                    <React.Fragment key={task._id}>
+                      {shouldShowPlaceholder && (
+                        <View style={styles.placeholder}>
+                          <Text style={styles.placeholderText}>Drop here</Text>
+                        </View>
+                      )}
+                      <DraggableTaskCard
+                        task={task}
+                        index={taskIndex}
+                        columnId={column._id}
+                      />
+                    </React.Fragment>
+                  );
+                })}
+                
+                {/* Show placeholder at end of column if needed */}
+                {placeholderPosition && 
+                  placeholderPosition.columnId === column._id && 
+                  placeholderPosition.index >= columnTasks.length && (
+                  <View style={styles.placeholder}>
+                    <Text style={styles.placeholderText}>Drop here</Text>
+                  </View>
+                )}
                 
                 {/* Add Task Button at bottom of column */}
                 <TouchableOpacity 
@@ -811,7 +1040,6 @@ export default function TasksScreen() {
         </View>
       </Modal>
       </View>
-    </TaskDragArea>
   );
 }
 
@@ -1192,5 +1420,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderStyle: 'dashed',
+  },
+  minimalHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 48,
+    paddingBottom: 16,
+    alignItems: 'center',
+  },
+  boardTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  placeholder: {
+    height: 100,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#3b82f6',
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderText: {
+    color: '#3b82f6',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
