@@ -1,29 +1,56 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSpaceManager } from '../../hooks/useSpaceManager';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
-import { Button, Card, CardContent, CardHeader, CardTitle, AvatarWithFallback } from '@taskflow/ui';
+import { useWorkspace } from '../../hooks/useWorkspace';
+import { useBoard } from '../../hooks/useBoard';
+import { Button, Card, CardContent } from '@taskflow/ui';
 import { 
   Users, 
-  Calendar, 
   BarChart3, 
   Clock, 
   Plus, 
-  Search, 
-  Filter,
-  TrendingUp,
-  Activity,
-  Star,
-  Eye,
-  Settings,
-  MoreHorizontal
+  Check,
+  X,
+  Lock,
+  Globe,
+  Building2,
+  UserPlus,
+  Search
 } from 'lucide-react';
 import type { Space } from '../../types/space.types';
+import { SpaceService } from '../../services/spaceService';
 
 interface MainPageProps {
   currentSpace: Space;
 }
+
+// Utility function to format time ago
+const formatTimeAgo = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (diffInSeconds < 60) return 'now';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+  if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d`;
+  if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)}mo`;
+  return `${Math.floor(diffInSeconds / 31536000)}y`;
+};
+
+// Get visibility icon and label
+const getVisibilityInfo = (visibility: string) => {
+  switch (visibility) {
+    case 'public':
+      return { icon: Globe, label: 'Public', color: 'text-green-600' };
+    case 'workspace':
+      return { icon: Building2, label: 'Workspace', color: 'text-blue-600' };
+    default:
+      return { icon: Lock, label: 'Private', color: 'text-gray-600' };
+  }
+};
 
 const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
   const spaceId = currentSpace?._id;
@@ -40,13 +67,25 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
     addBoard,
     getActiveBoardsBySpace
   } = useSpaceManager();
-
+  
+  // Workspace data
+  const { currentWorkspace, members: workspaceMembers, loadWorkspaceMembers } = useWorkspace();
+  
+  // Board data
+  const { selectBoard } = useBoard();
   // Local UI state
-  const [search, setSearch] = useState('');
-  const [isCreatingBoard, setIsCreatingBoard] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
   const [isCreatingBoardLoading, setIsCreatingBoardLoading] = useState(false);
-
+  const [isCreatingBoard, setIsCreatingBoard] = useState(false);
+  
+  // Add member sidebar state
+  const [isAddMemberSidebarOpen, setIsAddMemberSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  
+  // Member data
+  const [spaceMembers, setSpaceMembers] = useState<any[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
   // Get active boards for this space
   const activeBoards = useMemo(() => {
     if (!spaceId) return [];
@@ -54,12 +93,37 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
   }, [spaceId, getActiveBoardsBySpace, boards]);
 
   const filteredBoards = useMemo(() => {
-    if (!search) return activeBoards;
-    return activeBoards.filter(board => 
-      board.name.toLowerCase().includes(search.toLowerCase()) ||
-      (board.description?.toLowerCase() || '').includes(search.toLowerCase())
-    );
-  }, [activeBoards, search]);
+    return activeBoards;
+  }, [activeBoards]);
+
+  // Load space members
+  const loadSpaceMembers = useCallback(async () => {
+    if (!spaceId) return;
+    
+    setLoadingMembers(true);
+    try {
+      const response = await SpaceService.getSpaceMembers(spaceId);
+      setSpaceMembers(response.data?.members || []);
+    } catch (error) {
+      console.error('Error loading space members:', error);
+      showError('Failed to load space members');
+      setSpaceMembers([]); // Ensure it's always an array
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, [spaceId, showError]);
+
+  // Load workspace members
+  const loadWorkspaceMembersData = useCallback(async () => {
+    if (!currentWorkspace?._id) return;
+    
+    try {
+      await loadWorkspaceMembers(currentWorkspace._id);
+    } catch (error) {
+      console.error('Error loading workspace members:', error);
+      showError('Failed to load workspace members');
+    }
+  }, [currentWorkspace?._id, loadWorkspaceMembers, showError]);
 
   // Load boards when space changes
   React.useEffect(() => {
@@ -68,36 +132,122 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
     }
   }, [spaceId, loadBoardsBySpace]);
 
+  // Load members when sidebar opens
+  useEffect(() => {
+    if (isAddMemberSidebarOpen) {
+      loadSpaceMembers();
+      loadWorkspaceMembersData();
+    }
+  }, [isAddMemberSidebarOpen, loadSpaceMembers, loadWorkspaceMembersData]);
+
   const handleCreateBoard = useCallback(async () => {
-    if (!newBoardName.trim() || !spaceId) return;
+    console.log('Creating board with:', { newBoardName, spaceId });
+    
+    if (!newBoardName.trim() || !spaceId) {
+      console.log('Validation failed:', { hasName: !!newBoardName.trim(), hasSpaceId: !!spaceId });
+      return;
+    }
     
     setIsCreatingBoardLoading(true);
     try {
-      await addBoard({
+      // Random theme colors for variety
+      const themeColors = [
+        '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+        '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
+      ];
+      const randomColor = themeColors[Math.floor(Math.random() * themeColors.length)];
+      
+      const boardData = {
         name: newBoardName,
         description: '',
         type: 'kanban',
         spaceId: spaceId,
         visibility: 'public',
-        settings: { color: '#3B82F6' }
-      });
+        settings: { color: randomColor },
+        theme: {
+          color: randomColor,
+          opacity: 1.0
+        }
+      };
+      
+      console.log('Sending board data:', boardData);
+      await addBoard(boardData);
       
       setNewBoardName('');
       setIsCreatingBoard(false);
       success('Board created successfully!');
       
-      // Reload boards
       loadBoardsBySpace(spaceId);
     } catch (error) {
       console.error('Failed to create board:', error);
-      showError('Failed to create board');
+      showError(`Failed to create board: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsCreatingBoardLoading(false);
     }
   }, [newBoardName, spaceId, addBoard, success, showError, loadBoardsBySpace]);
 
-  const handleBoardClick = (boardId: string) => {
-    navigate(`/board/${boardId}`);
+  const handleBoardClick = (board: any) => {
+    // Set the selected board in Redux state
+    selectBoard(board);
+    // Navigate to board page without boardId in path
+    navigate('/board');
+  };
+
+  const handleAddMemberClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent any parent clicks
+    setIsAddMemberSidebarOpen(true);
+  };
+
+  const handleCloseAddMemberSidebar = () => {
+    setIsAddMemberSidebarOpen(false);
+    setSearchQuery('');
+  };
+
+  // Get available members (workspace members not in space)
+  const availableMembers = useMemo(() => {
+    if (!workspaceMembers || !spaceMembers || !Array.isArray(spaceMembers)) return [];
+    
+    const spaceMemberIds = spaceMembers.map(member => 
+      typeof member.user === 'string' ? member.user : member.user?._id || member.user?.id
+    );
+    
+    return workspaceMembers.filter(workspaceMember => 
+      !spaceMemberIds.includes(workspaceMember.userId || workspaceMember.id)
+    );
+  }, [workspaceMembers, spaceMembers]);
+
+  // Filter available members based on search query
+  const filteredAvailableMembers = useMemo(() => {
+    if (!searchQuery) return availableMembers;
+    
+    return availableMembers.filter(member => {
+      const name = member.user?.name || '';
+      const email = member.user?.email || '';
+      const searchLower = searchQuery.toLowerCase();
+      
+      return name.toLowerCase().includes(searchLower) || 
+             email.toLowerCase().includes(searchLower);
+    });
+  }, [availableMembers, searchQuery]);
+
+  const handleAddMember = async (userId: string) => {
+    if (!currentSpace) return;
+    
+    setIsAddingMember(true);
+    try {
+      // Add member to space with default role
+      await SpaceService.addSpaceMember(currentSpace._id, userId, 'member');
+      success('Member added to space successfully!');
+      
+      // Reload space members
+      await loadSpaceMembers();
+      
+      handleCloseAddMemberSidebar();
+    } catch (error) {
+      showError(error instanceof Error ? error.message : 'Failed to add member to space');
+    } finally {
+      setIsAddingMember(false);
+    }
   };
 
   // Authentication check
@@ -198,394 +348,362 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
                   {currentSpace.description}
                 </p>
               )}
+              
+              {/* Members List */}
+              <div className="mt-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <div className="flex items-center gap-1">
+                    {currentSpace.members && currentSpace.members.length > 0 ? (
+                      <>
+                        {currentSpace.members.slice(0, 4).map((member, index) => {
+                          const userName = typeof member.user === 'object' 
+                            ? ((member.user as any).name || (member.user as any).displayName || (member.user as any).email || 'Member')
+                            : (member.user || 'Member');
+                          const userInitials = typeof member.user === 'object'
+                            ? ((member.user as any).initials || ((member.user as any).name || (member.user as any).displayName || 'M').charAt(0).toUpperCase())
+                            : (member.user || 'M').charAt(0).toUpperCase();
+                          const userAvatar = typeof member.user === 'object' 
+                            ? ((member.user as any).avatar || (member.user as any).profilePicture)
+                            : null;
+                          
+                          return (
+                            <div key={index} className="relative group">
+                              <div className="w-8 h-8 bg-primary/20 rounded-full border border-background flex items-center justify-center text-sm font-medium text-primary cursor-pointer hover:scale-110 transition-transform overflow-hidden">
+                                {userAvatar ? (
+                                  <img 
+                                    src={userAvatar} 
+                                    alt={userName}
+                                    className="w-full h-full object-cover rounded-full"
+                                  />
+                                ) : (
+                                  userInitials
+                                )}
+                              </div>
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                {userName}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {currentSpace.members.length > 4 && (
+                          <div className="w-8 h-8 bg-muted rounded-full border border-background flex items-center justify-center">
+                            <span className="text-xs text-muted-foreground font-medium">+{currentSpace.members.length - 4}</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No members yet</span>
+                    )}
+                  </div>
+                  {/* Add Member Button */}
+                  <button
+                    onClick={handleAddMemberClick}
+                    className="ml-2 w-8 h-8 bg-primary/10 hover:bg-primary/20 rounded-full flex items-center justify-center transition-colors"
+                    title="Add member to space"
+                  >
+                    <UserPlus className="w-4 h-4 text-primary" />
+                  </button>
+                </div>
+              </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={() => navigate('/space/settings')}
-                variant="outline"
-                size="sm"
-                className="h-9 px-4"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </Button>
+          </div>
+        </div>
+      </div>
+
+
+      {/* Main Content */}
+      <div className="container mx-auto px-6 pb-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground mb-1">Boards</h2>
+            <p className="text-sm text-muted-foreground">Your project boards</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {!isCreatingBoard ? (
               <Button
                 onClick={() => setIsCreatingBoard(true)}
-                className="h-9 px-4 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg"
+                variant="default"
+                size="sm"
+                className="bg-primary hover:bg-primary/90"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create Board
+                New Board
               </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Overview */}
-      <div className="container mx-auto px-6 -mt-4 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/30">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Boards</p>
-                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{activeBoards.length}</p>
-                </div>
-                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/30">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-600 dark:text-green-400">Active Members</p>
-                  <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-                    {currentSpace.members?.length || 0}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                  <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/30">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Total Tasks</p>
-                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                    {activeBoards.reduce((total, board) => total + (board.taskCount || 0), 0)}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/50 dark:to-orange-900/30">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-orange-600 dark:text-orange-400">Created</p>
-                  <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-                    {new Date(currentSpace.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="container mx-auto px-6 pb-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Boards Section */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground mb-1">Recent Boards</h2>
-                <p className="text-sm text-muted-foreground">Your most active project boards</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Search boards..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-64"
-                  />
-                </div>
-                <Button variant="outline" size="sm" className="h-9 px-3">
-                  <Filter className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            {filteredBoards.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredBoards.slice(0, 6).map((board) => (
-                  <Card 
-                    key={board._id}
-                    className="group hover:shadow-xl transition-all duration-300 border-border hover:border-primary/30 cursor-pointer hover:-translate-y-1"
-                    onClick={() => handleBoardClick(board._id)}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg flex items-center justify-center">
-                              <BarChart3 className="w-4 h-4 text-primary" />
-                            </div>
-                            <h4 className="font-semibold text-foreground truncate">{board.name}</h4>
-                          </div>
-                          {board.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                              {board.description}
-                            </p>
-                          )}
-                        </div>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Eye className="w-4 h-4" />
-                            {board.visibility || 'Private'}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            {board.updatedAt ? new Date(board.updatedAt).toLocaleDateString() : 'Recently'}
-                          </span>
-                        </div>
-                        
-                        <div className="flex -space-x-2">
-                          {board.members && board.members.length > 0 ? (
-                            <>
-                              {board.members.slice(0, 2).map((member, idx) => (
-                                <AvatarWithFallback 
-                                  key={idx}
-                                  className="w-6 h-6 border-2 border-background"
-                                  fallback={member.name?.charAt(0)?.toUpperCase() || 'U'}
-                                />
-                              ))}
-                              {board.members.length > 2 && (
-                                <div className="w-6 h-6 bg-muted rounded-full border-2 border-background flex items-center justify-center">
-                                  <span className="text-xs text-muted-foreground">+{board.members.length - 2}</span>
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <div className="w-6 h-6 bg-muted rounded-full border-2 border-background flex items-center justify-center">
-                              <span className="text-xs text-muted-foreground">0</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
             ) : (
-              <Card className="border-dashed border-2 border-border">
-                <CardContent className="p-12 text-center">
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                    <BarChart3 className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No boards found</h3>
-                  <p className="text-muted-foreground mb-6">
-                    {search ? 'Try adjusting your search' : 'Create your first board to get started with your space'}
-                  </p>
-                  {!search && (
-                    <Button onClick={() => setIsCreatingBoard(true)} className="bg-gradient-to-r from-primary to-primary/90">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Board
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Team Members */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="w-5 h-5 text-primary" />
-                  Team Members
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {currentSpace.members && currentSpace.members.length > 0 ? (
-                  <>
-                    {currentSpace.members.slice(0, 4).map((member, index) => (
-                      <div key={index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="relative">
-                          <AvatarWithFallback 
-                            className="w-10 h-10"
-                            fallback={member.name?.charAt(0)?.toUpperCase() || 'U'}
-                          />
-                          <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background bg-green-500"></div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate">{member.name || 'Unknown User'}</p>
-                          <p className="text-sm text-muted-foreground truncate">{member.role || 'Member'}</p>
-                        </div>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    {currentSpace.members.length > 4 && (
-                      <div className="text-center py-2">
-                        <p className="text-sm text-muted-foreground">
-                          +{currentSpace.members.length - 4} more members
-                        </p>
-                      </div>
-                    )}
-                    <Button variant="outline" className="w-full mt-4" onClick={() => navigate('/space/members')}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Invite Members
-                    </Button>
-                  </>
-                ) : (
-                  <div className="text-center py-6">
-                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Users className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4">No members yet</p>
-                    <Button variant="outline" className="w-full" onClick={() => navigate('/space/members')}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Invite Members
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Recent Activity */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-primary" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {currentSpace.recentActivity && currentSpace.recentActivity.length > 0 ? (
-                  currentSpace.recentActivity.slice(0, 4).map((activity, index) => (
-                    <div key={index} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mt-0.5">
-                        <Activity className="w-4 h-4 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground">
-                          <span className="font-medium">{activity.user}</span> {activity.action} <span className="font-medium">{activity.target}</span>
-                        </p>
-                        <p className="text-xs text-muted-foreground">{activity.time}</p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-6">
-                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Activity className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm text-muted-foreground">No recent activity</p>
-                    <p className="text-xs text-muted-foreground mt-1">Activity will appear here as team members work</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Star className="w-5 h-5 text-primary" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/space/boards')}>
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  View All Boards
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/space/members')}>
-                  <Users className="w-4 h-4 mr-2" />
-                  Manage Members
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/space/analytics')}>
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  View Analytics
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/space/settings')}>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Space Settings
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-
-      {/* Create Board Modal */}
-      {isCreatingBoard && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-background border border-border rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg flex items-center justify-center">
-                <Plus className="w-5 h-5 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground">Create New Board</h3>
-            </div>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-3">
-                  Board Name
-                </label>
+              <div className="flex items-center gap-2">
                 <input
                   type="text"
+                  placeholder="Enter board name..."
                   value={newBoardName}
                   onChange={(e) => setNewBoardName(e.target.value)}
-                  placeholder="Enter board name..."
-                  className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  onKeyPress={(e) => e.key === 'Enter' && handleCreateBoard()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCreateBoard();
+                    if (e.key === 'Escape') {
+                      setIsCreatingBoard(false);
+                      setNewBoardName('');
+                    }
+                  }}
+                  disabled={isCreatingBoardLoading}
+                  className="h-8 w-48 text-sm border border-slate-200 rounded-md px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  autoFocus
                 />
-              </div>
-              <div className="flex justify-end gap-3">
                 <Button
-                  variant="outline"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCreateBoard}
+                  disabled={!newBoardName.trim() || isCreatingBoardLoading}
+                  className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 transition-all duration-200"
+                  title="Create board"
+                >
+                  {isCreatingBoardLoading ? (
+                    <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Check className="w-4 h-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setIsCreatingBoard(false);
                     setNewBoardName('');
                   }}
                   disabled={isCreatingBoardLoading}
-                  className="px-6"
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Cancel"
                 >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreateBoard}
-                  disabled={!newBoardName.trim() || isCreatingBoardLoading}
-                  className="px-6 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
-                >
-                  {isCreatingBoardLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2"></div>
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Board
-                    </>
-                  )}
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
+            )}
+          </div>
+        </div>
+
+
+        {filteredBoards.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredBoards.map((board) => {
+              // Get theme color or fallback to primary color
+              const themeColor = board.theme?.color || '#3B82F6';
+              const backgroundImage = board.theme?.background?.url;
+              const opacity = board.theme?.opacity || 1;
+              const visibilityInfo = getVisibilityInfo(board.visibility || 'private');
+              const VisibilityIcon = visibilityInfo.icon;
+              return (
+                <Card 
+                  key={board._id}
+                  className="group hover:shadow-lg transition-all duration-300 border-border hover:border-primary/30 cursor-pointer hover:-translate-y-1 overflow-hidden bg-white/50 backdrop-blur-sm"
+                  onClick={() => handleBoardClick(board)}
+                >
+                  {/* Theme Header */}
+                  <div 
+                    className="h-12 relative overflow-hidden"
+                    style={{
+                      backgroundColor: themeColor,
+                      backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      opacity: opacity
+                    }}
+                  >
+                    {/* Gradient overlay for better text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-black/20 to-black/30"></div>
+                    
+                    {/* Board Icon */}
+                    <div className="absolute top-1.5 left-1.5 w-6 h-6 bg-white/25 backdrop-blur-sm rounded-md flex items-center justify-center">
+                      <BarChart3 className="w-3 h-3 text-white" />
+                    </div>
+                    
+                    {/* Visibility Icon - Top Right */}
+                    <div className="absolute top-1.5 right-1.5">
+                      <div className="w-6 h-6 bg-white/25 backdrop-blur-sm rounded-md flex items-center justify-center">
+                        <VisibilityIcon className="w-3 h-3 text-white" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <CardContent className="p-3">
+                    <div className="space-y-2">
+                      {/* Board Title */}
+                      <div>
+                        <h4 className="font-semibold text-foreground truncate text-sm mb-1">{board.name}</h4>
+                        {board.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed">
+                            {board.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Board Members */}
+                      {board.members && board.members.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <div className="flex -space-x-1">
+                            {board.members.slice(0, 3).map((_, index) => {
+                              // Simple fallback for member display
+                              const memberInitial = `M${index + 1}`;
+                              
+                              return (
+                                <div key={index} className="w-4 h-4 bg-primary/20 rounded-full border border-background flex items-center justify-center text-xs font-medium text-primary">
+                                  {memberInitial}
+                                </div>
+                              );
+                            })}
+                            {board.members.length > 3 && (
+                              <div className="w-4 h-4 bg-muted rounded-full border border-background flex items-center justify-center">
+                                <span className="text-xs text-muted-foreground font-medium">+{board.members.length - 3}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Board Stats - Only time */}
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {board.updatedAt ? formatTimeAgo(board.updatedAt) : 'now'}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="border-dashed border-2 border-border">
+            <CardContent className="p-12 text-center">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No boards found</h3>
+              <p className="text-muted-foreground mb-6">
+                Create your first board to get started with your space
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Add Member Sidebar */}
+      {isAddMemberSidebarOpen && currentSpace && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div 
+            className="flex-1 bg-black/50 backdrop-blur-sm"
+            onClick={handleCloseAddMemberSidebar}
+          />
+          
+          {/* Sidebar */}
+          <div className="w-96 bg-background border-l border-border shadow-xl">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Add Member</h3>
+                  <p className="text-sm text-muted-foreground">to {currentSpace.name}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCloseAddMemberSidebar}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+                              {/* Current Space Members */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-foreground mb-3">Current Members ({Array.isArray(spaceMembers) ? spaceMembers.length : 0})</h4>
+                  <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto">
+                    {Array.isArray(spaceMembers) && spaceMembers.map((member, index) => {
+                      const user = member.user || member;
+                      const name = user?.name || 'Unknown User';
+                      const email = user?.email || '';
+                      
+                      return (
+                        <div
+                          key={member._id || index}
+                          className="flex items-center gap-2 px-2 py-1 bg-muted rounded-md text-xs"
+                          title={`${name}${email ? ` (${email})` : ''}`}
+                        >
+                          <div className="w-5 h-5 bg-primary/20 rounded-full flex items-center justify-center text-xs font-medium text-primary">
+                            {name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-foreground truncate max-w-20">{name}</span>
+                        </div>
+                      );
+                    })}
+                    {Array.isArray(spaceMembers) && spaceMembers.length === 0 && (
+                      <p className="text-xs text-muted-foreground">No members yet</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Search */}
+                <div className="relative mb-6">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search workspace members..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+
+              {/* Available Members List */}
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {loadingMembers ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-sm text-muted-foreground">Loading members...</div>
+                  </div>
+                ) : filteredAvailableMembers.length > 0 ? (
+                  filteredAvailableMembers.map((member) => {
+                    const name = member.user?.name || 'Unknown User';
+                    const email = member.user?.email || '';
+                    const userId = member.userId || member.id;
+                    
+                    return (
+                      <div
+                        key={userId}
+                        className="flex items-center gap-3 p-3 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => handleAddMember(userId)}
+                      >
+                        <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-sm font-medium text-primary">
+                          {name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{email}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={isAddingMember}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">
+                      {searchQuery ? 'No members found' : 'All workspace members are already in this space'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 });

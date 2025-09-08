@@ -158,7 +158,7 @@ function App() {
           />
 
           <Route 
-            path="/board/:boardId/*" 
+            path="/board/*" 
             element={
               <ProtectedRoute>
                 <BoardPage />

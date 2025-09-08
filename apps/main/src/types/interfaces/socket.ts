@@ -79,6 +79,20 @@ export interface SocketContextType {
   // Room management
   joinRoom(room: string, namespace?: string): void;
   leaveRoom(room: string, namespace?: string): void;
+  joinBoardRoom(boardId: string): void;
+  leaveBoardRoom(boardId: string): void;
+  
+  // Socket-based task operations
+  createTask(boardId: string, taskData: any): void;
+  updateTask(taskId: string, taskData: any, boardId: string): void;
+  deleteTask(taskId: string, boardId: string): void;
+  moveTask(taskId: string, sourceColumnId: string, targetColumnId: string, targetPosition: number, boardId: string): void;
+  
+  // Socket-based column operations
+  createColumn(boardId: string, columnData: { name: string; position: number; settings?: any }): void;
+  updateColumn(columnId: string, columnData: { name: string; color?: string; settings?: any }): void;
+  deleteColumn(columnId: string, boardId: string): void;
+  reorderColumns(boardId: string, columnIds: string[]): void;
   
   // Namespace management
   getNamespace(name: string): SocketNamespace | null;
