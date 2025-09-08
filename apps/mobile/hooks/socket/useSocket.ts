@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { Socket, io } from 'socket.io-client';
+import { env } from '../../config/env';
 
 interface UseSocketOptions {
   url: string;

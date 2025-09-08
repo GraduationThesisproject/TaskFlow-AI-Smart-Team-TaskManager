@@ -76,6 +76,30 @@ export class AuthService {
     }
   }
 
+  // Delete user account
+  static async deleteAccount(password?: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await axiosInstance.delete('/auth/account', {
+        data: {
+          password,
+          confirmDeletion: true
+        }
+      });
+      
+      // Clear all tokens and data after successful deletion
+      localStorage.removeItem('token');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('tokenExpiry');
+      localStorage.removeItem('persist:root');
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      throw error;
+    }
+  }
+
   // Test connection without auth
   static async testConnection(): Promise<ApiResponse<any>> {
     try {

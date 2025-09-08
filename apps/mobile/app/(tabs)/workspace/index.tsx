@@ -9,7 +9,6 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { setCurrentWorkspaceId, setSelectedSpace } from '@/store/slices/workspaceSlice';
-import Sidebar from '@/components/navigation/Sidebar';
 import { SpaceService } from '@/services/spaceService';
 
 // Toggle this to quickly demo with mock data
@@ -45,7 +44,6 @@ export default function WorkspaceScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; workspaceId?: string }>();
   const dispatch = useAppDispatch();
-  const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [spaceSearch, setSpaceSearch] = useState('');
   const [showCreateSpace, setShowCreateSpace] = useState(false);
@@ -82,8 +80,6 @@ export default function WorkspaceScreen() {
   }, [spaceSearch, effectiveSpaces]);
 
   const membersCount = (effectiveWorkspace as any)?.members?.length || (effectiveWorkspace as any)?.memberCount || 0;
-
-  const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -162,9 +158,7 @@ export default function WorkspaceScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: colors.primary }]} onPress={toggleSidebar}>
-            <FontAwesome name="bars" size={20} color={colors['primary-foreground']} />
-          </TouchableOpacity>
+          <View style={styles.headerSpacer} />
           <Text style={[TextStyles.heading.h1, { color: colors.foreground }]} >
             Workspace
           </Text>
@@ -181,9 +175,7 @@ export default function WorkspaceScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header with Sidebar Toggle */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: colors.primary }]} onPress={toggleSidebar}>
-          <FontAwesome name="bars" size={20} color={colors['primary-foreground']} />
-        </TouchableOpacity>
+        <View style={styles.headerSpacer} />
         <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
           Workspace
         </Text>
@@ -322,11 +314,38 @@ export default function WorkspaceScreen() {
           </>
         )}
 
-        
+        {/* Spaces Preview: show only first 4, with View more */}
+        {!!(effectiveSpaces && effectiveSpaces.length) && (
+          <Card style={styles.sectionCard}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Spaces</Text>
+            <View style={styles.spaceList}>
+              {filteredSpaces.slice(0, 4).map((space: any) => (
+                <TouchableOpacity key={space._id || space.id} style={[styles.spaceItem, { backgroundColor: colors.card }]} onPress={() => handleOpenSpace(space)}>
+                  <View style={styles.spaceHeader}>
+                    <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{space.name}</Text>
+                    <FontAwesome name="chevron-right" size={14} color={colors['muted-foreground']} />
+                  </View>
+                  {space.description ? (
+                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 6 }]} numberOfLines={2}>
+                      {space.description}
+                    </Text>
+                  ) : null}
+                  <View style={styles.spaceStats}>
+                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.members?.length || 0)} members</Text>
+                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.stats?.totalBoards || 0)} boards</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+              {effectiveSpaces.length > 4 && (
+                <TouchableOpacity style={{ paddingVertical: 8, alignItems: 'center' }} onPress={() => router.push('/(tabs)/workspace/spaces')}>
+                  <Text style={[TextStyles.body.small, { color: colors.primary }]}>View more spaces →</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </Card>
+        )}
       </ScrollView>
-
-      {/* Sidebar */}
-      <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} currentSection="workspace" />
     </View>
   );
 }
@@ -338,14 +357,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-  },
-  sidebarButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
   },
   headerSpacer: { width: 40 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },

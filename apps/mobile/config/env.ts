@@ -29,7 +29,7 @@ export const env = {
   // App Configuration
   APP_NAME: Constants.expoConfig?.name || 'TaskFlow',
   APP_VERSION: Constants.expoConfig?.version || '1.0.0',
-  BASE_URL: process.env.EXPO_PUBLIC_BASE_URL || Constants.expoConfig?.extra?.baseUrl || (undefined as any),
+  BASE_URL: process.env.EXPO_PUBLIC_BASE_URL || Constants.expoConfig?.extra?.baseUrl || 'http://192.168.217.1:3001',
   
   // Feature Flags
   ENABLE_ANALYTICS: process.env.EXPO_PUBLIC_ENABLE_ANALYTICS === 'true' || Constants.expoConfig?.extra?.enableAnalytics === true,
@@ -51,7 +51,7 @@ export const env = {
   IS_DEV: __DEV__,
   IS_PRODUCTION: !__DEV__,
   ENABLE_DEVTOOLS: __DEV__,
-  ENABLE_API_MOCKING: __DEV__ && (process.env.EXPO_PUBLIC_ENABLE_API_MOCKING === 'true' || Constants.expoConfig?.extra?.enableApiMocking === true),
+  ENABLE_API_MOCKING: false, // Disabled to use real authentication from team
   
   // Build Info
   BUILD_TIME: process.env.EXPO_PUBLIC_BUILD_TIME || Constants.expoConfig?.extra?.buildTime,
@@ -87,7 +87,7 @@ export const env = {
   PERFORMANCE_MONITORING_ENABLED: process.env.EXPO_PUBLIC_PERFORMANCE_MONITORING_ENABLED === 'true' || Constants.expoConfig?.extra?.performanceMonitoringEnabled === true,
   
   // Environment specific URLs
-  DEVELOPMENT_API_URL: process.env.EXPO_PUBLIC_DEV_API_URL || (undefined as any),
+  DEVELOPMENT_API_URL: process.env.EXPO_PUBLIC_DEV_API_URL || 'http://localhost:3001/api',
   STAGING_API_URL: process.env.EXPO_PUBLIC_STAGING_API_URL || 'https://staging-api.taskflow.com/api',
   PRODUCTION_API_URL: process.env.EXPO_PUBLIC_PROD_API_URL || 'https://api.taskflow.com/api',
   
