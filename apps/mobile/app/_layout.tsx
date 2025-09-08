@@ -101,11 +101,14 @@ function AuthGate() {
   }
 
   if (!isAuthenticated) {
-    // Unauthenticated: expose only login screen to prevent access to other screens
+    // Unauthenticated: expose auth screens
     return (
       <Stack>
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
+        <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+        <Stack.Screen name="verify-code" options={{ headerShown: false }} />
+        <Stack.Screen name="reset-password" options={{ headerShown: false }} />
       </Stack>
     );
   }
