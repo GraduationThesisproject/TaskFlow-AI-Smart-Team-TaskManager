@@ -45,7 +45,6 @@ const handleWorkspaceSocket = (io) => {
     workspaceNamespace.use(authenticateSocket);
     
     workspaceNamespace.on('connection', (socket) => {
-    workspaceNamespace.on('connection', (socket) => {
         logger.info(`User connected: ${socket.user.name} (${socket.id})`);
 
         // Join user's personal room for notifications
@@ -193,11 +192,8 @@ const handleWorkspaceSocket = (io) => {
     // Global workspace utilities
     workspaceNamespace.notifyWorkspace = (workspaceId, event, data) => {
         workspaceNamespace.to(`workspace:${workspaceId}`).emit(event, data);
-    workspaceNamespace.notifyWorkspace = (workspaceId, event, data) => {
-        workspaceNamespace.to(`workspace:${workspaceId}`).emit(event, data);
     };
 
-    workspaceNamespace.notifyWorkspaceAdmins = async (workspaceId, event, data) => {
     workspaceNamespace.notifyWorkspaceAdmins = async (workspaceId, event, data) => {
         try {
             const workspace = await Workspace.findById(workspaceId)
@@ -206,12 +202,10 @@ const handleWorkspaceSocket = (io) => {
 
             // Notify owner
             workspaceNamespace.to(`notifications:${workspace.owner._id}`).emit(event, data);
-            workspaceNamespace.to(`notifications:${workspace.owner._id}`).emit(event, data);
 
             // Notify admin members
             const adminMembers = workspace.members.filter(member => member.role === 'admin');
             adminMembers.forEach(member => {
-                workspaceNamespace.to(`notifications:${member.user._id}`).emit(event, data);
                 workspaceNamespace.to(`notifications:${member.user._id}`).emit(event, data);
             });
 
@@ -220,7 +214,6 @@ const handleWorkspaceSocket = (io) => {
         }
     };
 
-    return workspaceNamespace;
     return workspaceNamespace;
 };
 
