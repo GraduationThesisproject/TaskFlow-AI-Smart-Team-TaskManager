@@ -379,6 +379,53 @@ exports.logout = async (req, res) => {
     }
 };
 
+exports.deleteAccount = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { password } = req.body;
+        
+        // Verify password before deletion
+        const user = await User.findById(userId);
+        if (!user) {
+            return sendResponse(res, 404, false, 'User not found');
+        }
+
+        // Check password if user has password authentication
+        if (user.password && !password) {
+            return sendResponse(res, 400, false, 'Password required for account deletion');
+        }
+
+        if (user.password && password) {
+            const isPasswordValid = await user.comparePassword(password);
+            if (!isPasswordValid) {
+                return sendResponse(res, 400, false, 'Invalid password');
+            }
+        }
+
+        // Log the deletion activity before deleting
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'account_deleted',
+            description: 'User permanently deleted their account',
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: {
+                email: user.email,
+                ipAddress: req.ip,
+                userAgent: req.get('User-Agent')
+            }
+        });
+
+        // Delete all user data using the User model's deleteAccount method
+        await user.deleteAccount();
+
+        logger.info(`User account deleted: ${userId}`);
+        sendResponse(res, 200, true, 'Account successfully deleted');
+    } catch (error) {
+        logger.error('Delete account error:', error);
+        sendResponse(res, 500, false, 'Server error during account deletion');
+    }
+};
+
 // ============================================================================
 // USER PROFILE MANAGEMENT
 // ============================================================================

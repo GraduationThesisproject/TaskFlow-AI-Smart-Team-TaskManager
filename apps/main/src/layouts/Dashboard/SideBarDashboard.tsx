@@ -47,9 +47,6 @@ export function SideBarDashboard({
     return 'dashboard' as const;
   }, [locationPath]);
 
-  // Debug logging
-  console.log('SideBarDashboard - locationPath:', locationPath);
-  console.log('SideBarDashboard - section:', section);
 
   // Universal config per section (memoized)
   const { title, items, backLink } = useMemo(() => {
@@ -65,7 +62,6 @@ export function SideBarDashboard({
       };
     }
     if (section === 'settings') {
-      console.log('SideBarDashboard - Generating settings navigation items');
       return {
         title: 'Profile & Settings',
         items: [

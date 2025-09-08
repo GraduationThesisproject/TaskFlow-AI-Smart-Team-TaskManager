@@ -5,6 +5,7 @@ import {
   loginUser, 
   registerUser, 
   logoutUser, 
+  deleteUserAccount,
   clearError,
   oauthLogin,
   oauthRegister,
@@ -58,6 +59,11 @@ export const useAuth = () => {
   const logoutUserHandler = useCallback(async (params: { allDevices?: boolean, navigate?: (path: string) => void } = {}) => {
     const { allDevices = false, navigate } = params;
     await dispatch(logoutUser({ allDevices, navigate }));
+  }, [dispatch]);
+
+  const deleteAccountHandler = useCallback(async (params: { password?: string, navigate?: (path: string) => void } = {}) => {
+    const { password, navigate } = params;
+    await dispatch(deleteUserAccount({ password, navigate }));
   }, [dispatch]);
 
   const clearAuthError = useCallback(() => {
@@ -190,6 +196,7 @@ export const useAuth = () => {
     login,
     register,
     logout: logoutUserHandler,
+    deleteAccount: deleteAccountHandler,
     clearAuthError,
     clearError: clearAuthError,
     updateUser: updateUserData,

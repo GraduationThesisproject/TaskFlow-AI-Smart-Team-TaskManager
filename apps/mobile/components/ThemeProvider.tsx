@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightTheme, darkTheme, ThemeColors } from '@/constants/Colors';
+import { ThemeUtils } from '@/utils/themeUtils';
 
 type Theme = 'light' | 'dark';
 
@@ -35,9 +36,19 @@ export function ThemeProvider({
   const [theme, setThemeState] = useState<Theme>(defaultTheme);
   const [userPrimaryColor, setUserPrimaryColorState] = useState<string | null>(initialUserColor || null);
   const [isSystemTheme, setIsSystemThemeState] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Get the current theme colors
-  const colors = theme === 'light' ? lightTheme : darkTheme;
+  // Get the current theme colors - always provide colors even if not initialized
+  const baseColors = theme === 'light' ? lightTheme : darkTheme;
+  
+  // Apply user's primary color if set
+  const colors = userPrimaryColor ? {
+    ...baseColors,
+    primary: userPrimaryColor,
+    'primary-foreground': ThemeUtils.getContrastColor(userPrimaryColor),
+    ring: userPrimaryColor,
+    'gradient-primary': userPrimaryColor,
+  } : baseColors;
 
   useEffect(() => {
     loadThemePreferences();
@@ -55,29 +66,40 @@ export function ThemeProvider({
       const savedUserColor = await AsyncStorage.getItem('taskflow-mobile-user-primary-color');
       const savedIsSystemTheme = await AsyncStorage.getItem('taskflow-mobile-system-theme');
       
+      let isSystem = true; // Default to system theme
       if (savedIsSystemTheme !== null) {
-        const isSystem = JSON.parse(savedIsSystemTheme);
+        isSystem = JSON.parse(savedIsSystemTheme);
         setIsSystemThemeState(isSystem);
       }
 
-      if (savedTheme && ['light', 'dark'].includes(savedTheme) && !isSystemTheme) {
+      if (isSystem && systemColorScheme) {
+        // Use system theme
+        setThemeState(systemColorScheme);
+      } else if (savedTheme && ['light', 'dark'].includes(savedTheme)) {
+        // Use saved theme
         setThemeState(savedTheme as Theme);
       } else if (systemColorScheme) {
+        // Fallback to system theme
         setThemeState(systemColorScheme);
       }
 
       if (savedUserColor) {
         setUserPrimaryColorState(savedUserColor);
       }
+      
+      setIsInitialized(true);
     } catch (error) {
       console.warn('Failed to load theme preferences:', error);
+      setIsInitialized(true);
     }
   };
 
   const setTheme = async (newTheme: Theme) => {
     try {
       setThemeState(newTheme);
+      setIsSystemThemeState(false); // Disable system theme when manually setting
       await AsyncStorage.setItem(storageKey, newTheme);
+      await AsyncStorage.setItem('taskflow-mobile-system-theme', JSON.stringify(false));
     } catch (error) {
       console.warn('Failed to save theme preference:', error);
     }
@@ -131,7 +153,18 @@ export function ThemeProvider({
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    // Return default theme instead of throwing error
+    console.warn('useTheme called outside ThemeProvider, using default theme');
+    return {
+      theme: 'dark' as Theme,
+      colors: darkTheme,
+      setTheme: () => {},
+      toggleTheme: () => {},
+      setUserPrimaryColor: () => {},
+      userPrimaryColor: null,
+      isSystemTheme: false,
+      setIsSystemTheme: () => {},
+    };
   }
   return context;
 }
@@ -140,6 +173,17 @@ export function useTheme() {
 export function useThemeColors() {
   const { colors } = useTheme();
   return colors;
+}
+
+// Safe hook that provides default colors if theme is not available
+export function useSafeThemeColors() {
+  try {
+    const { colors } = useTheme();
+    return colors;
+  } catch (error) {
+    // Return default dark theme colors if theme is not available
+    return darkTheme;
+  }
 }
 
 // Hook to get a specific color

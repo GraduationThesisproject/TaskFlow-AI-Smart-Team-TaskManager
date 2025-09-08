@@ -15,7 +15,12 @@ interface WorkspaceUpdate {
 }
 
 export const useWorkspaceSocketOperations = () => {
-  const { socket, isConnected, emit, on, off } = useWorkspaceSocket();
+  const workspaceSocket = useWorkspaceSocket();
+  const socket = workspaceSocket;
+  const isConnected = socket?.connected || false;
+  const emit = (event: string, data?: any) => socket?.emit(event, data);
+  const on = (event: string, callback: (data?: any) => void) => socket?.on(event, callback);
+  const off = (event: string) => socket?.off(event);
 
   // Join workspace
   const joinWorkspace = useCallback((workspaceId: string) => {

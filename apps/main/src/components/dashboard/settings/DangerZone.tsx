@@ -2,24 +2,29 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Button, Typography, Badge, Separator } from '@taskflow/ui';
 import { Trash2, AlertTriangle, Shield, Lock, AlertCircle } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
+import { useAuth } from '../../../hooks/useAuth';
 
 const DangerZone: React.FC = () => {
   const [showConfirm, setShowConfirm] = useState(false);
-  const { warning } = useToast();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { warning, success, error } = useToast();
+  const { deleteAccount } = useAuth();
 
   const onDeleteAccount = () => {
     setShowConfirm(true);
   };
 
-  const confirmDelete = () => {
-    warning(
-      'Are you absolutely sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.',
-      'Delete Account',
-      { duration: 0, dismissible: true }
-    );
-    // TODO: call delete account API and handle sign out/navigation
-    console.log('Account deletion confirmed');
-    setShowConfirm(false);
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteAccount();
+      success('Account successfully deleted. You will be redirected to the landing page.');
+      setShowConfirm(false);
+    } catch (err: any) {
+      error(err.message || 'Failed to delete account. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const cancelDelete = () => {
@@ -140,9 +145,9 @@ const DangerZone: React.FC = () => {
                 <Button variant="outline" onClick={cancelDelete} className="flex-1">
                   Cancel
                 </Button>
-                <Button variant="destructive" onClick={confirmDelete} className="flex-1 gap-2">
+                <Button variant="destructive" onClick={confirmDelete} className="flex-1 gap-2" disabled={isDeleting}>
                   <Trash2 className="h-4 w-4" />
-                  Delete Account
+                  {isDeleting ? 'Deleting...' : 'Delete Account'}
                 </Button>
               </div>
             </div>
