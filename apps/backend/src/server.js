@@ -90,10 +90,11 @@ testNamespace.on('connection', (socket) => {
 });
 
 // Start server
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     logger.info(`🚀 TaskFlow API server running on port ${PORT}`);
     logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
     logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
+    logger.info(`🌐 Network access: http://192.168.1.142:${PORT}/health`);
 });
 
 // Periodic cleanup: permanently delete archived workspaces whose countdown reached 0

@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -6,9 +7,12 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { PersistGate } from 'redux-persist/integration/react';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { store, useAppDispatch, useAppSelector } from '@/store';
+import { FontConfig } from '@/constants/Fonts';
+import { store, persistor, useAppDispatch, useAppSelector } from '@/store';
 import { checkAuthStatus } from '@/store/slices/authSlice';
 
 export {
@@ -67,6 +71,13 @@ function RootLayoutNav() {
         </ThemeProvider>
       </Provider>
     </GestureHandlerRootView>
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <ThemeProvider>
+          <AuthGate />
+        </ThemeProvider>
+      </PersistGate>
+    </Provider>
   );
 }
 
@@ -92,6 +103,9 @@ function AuthGate() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} /> */}
       {/* </Stack>
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="register" options={{ headerShown: false }} />
+      </Stack>
     );
   }
 

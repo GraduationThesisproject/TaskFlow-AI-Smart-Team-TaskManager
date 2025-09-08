@@ -41,7 +41,12 @@ export const useSystemMonitoring = () => {
   const [health, setHealth] = useState<SystemHealth | null>(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
   
-  const { socket, isConnected, emit, on, off } = useSystemSocket();
+  const systemSocket = useSystemSocket();
+  const socket = systemSocket;
+  const isConnected = socket?.connected || false;
+  const emit = (event: string, data?: any) => socket?.emit(event, data);
+  const on = (event: string, callback: (data?: any) => void) => socket?.on(event, callback);
+  const off = (event: string) => socket?.off(event);
 
   // Request system health check
   const requestHealthCheck = useCallback(() => {
