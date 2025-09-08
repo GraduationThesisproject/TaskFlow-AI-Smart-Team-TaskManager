@@ -13,8 +13,10 @@ import type {
   PasswordResetData
 } from '../../types/auth.types';
 import { AuthService } from '../../services/authService';
+import { setAuthToken, clearAuthToken, getAuthToken, setAuthHeaderOnly } from '../../config/axios';
 import { oauthService } from '../../services/oauthService';
 import { getDeviceId } from '../../utils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const serializeUser = (userData: any): User => {
   if (userData.user) {
@@ -81,26 +83,43 @@ const serializeUser = (userData: any): User => {
   }
 };
 
+// Safely serialize user-like payloads that may be undefined/null
+const safeSerializeUser = (userData: any | null | undefined): User | null => {
+  if (!userData) return null as any;
+  return serializeUser(userData);
+};
+
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
+      console.log('🔧 authSlice.loginUser called with:', credentials);
       const response = await AuthService.login(credentials);
-      
-      if (!response.data.token) {
+      console.log('---------------------------------------------------',response);
+      const token = (response as any)?.data?.token || (response as any)?.data?.data?.token;
+      if (!token) {
         throw new Error('No token received from server');
       }
+      // Persist or session-only based on rememberMe
+      if (credentials.rememberMe) {
+        await setAuthToken(token);
+      } else {
+        setAuthHeaderOnly(token);
+      }
       
-      localStorage.setItem('token', response.data.token);
-      
+      // Get complete user profile data (same as main app)
       const profileResponse = await AuthService.getProfile();
       
-      return {
-        ...response.data,
+      const result = {
+        ...(response as any).data,
         user: serializeUser(profileResponse.data),
-        token: response.data.token
+        token
       };
+      
+      console.log('✅ Login result:', result);
+      return result;
     } catch (error: any) {
+      console.error('❌ Login error in authSlice:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Login failed';
       return rejectWithValue(errorMessage);
     }
@@ -112,17 +131,17 @@ export const registerUser = createAsyncThunk(
   async (userData: RegisterData, { rejectWithValue }) => {
     try {
       const response = await AuthService.register(userData);
-      
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
       }
-      
       const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: safeSerializeUser(profileData),
+        token
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
@@ -136,14 +155,14 @@ export const refreshToken = createAsyncThunk(
   async (refreshToken: string, { rejectWithValue }) => {
     try {
       const response = await AuthService.refreshToken(refreshToken);
-      
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
       }
-      
+      const newRefreshToken = (response as any)?.data?.data?.refreshToken;
       return {
-        token: response.data.token,
-        refreshToken: response.data.refreshToken
+        token,
+        refreshToken: newRefreshToken
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Token refresh failed';
@@ -169,7 +188,7 @@ export const checkAuthStatus = createAsyncThunk(
   'auth/checkStatus',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = await getAuthToken();
       
       if (!token) {
         return { isAuthenticated: false, user: null, token: null };
@@ -186,11 +205,11 @@ export const checkAuthStatus = createAsyncThunk(
       
       return {
         isAuthenticated: true,
-        user: serializeUser((response as any).data),
+        user: safeSerializeUser((response as any)?.data?.data),
         token
       };
     } catch (error: any) {
-      localStorage.removeItem('token');
+      await clearAuthToken();
       const errorMessage = error.response?.data?.message || error.message || 'Authentication check failed';
       return rejectWithValue(errorMessage);
     }
@@ -202,11 +221,11 @@ export const logoutUser = createAsyncThunk(
   async (params: { allDevices?: boolean, navigate?: (path: string) => void } = {}, { rejectWithValue }) => {
     try {
       const { allDevices = false, navigate } = params;
-      const deviceId = getDeviceId();
+      const deviceId = await getDeviceId();
       
       await AuthService.logout(deviceId, allDevices);
       
-      localStorage.removeItem('token');
+      await clearAuthToken();
       
       // Redirect to landing page after successful logout
       if (navigate) {
@@ -217,12 +236,37 @@ export const logoutUser = createAsyncThunk(
       
       return true;
     } catch (error: any) {
-      localStorage.removeItem('token');
+      await clearAuthToken();
       // Still redirect even if there's an error with the API call
       if (typeof window !== 'undefined') {
         window.location.href = '/';
       }
       const errorMessage = error.response?.data?.message || error.message || 'Logout failed';
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+export const deleteUserAccount = createAsyncThunk(
+  'auth/deleteAccount',
+  async (params: { password?: string, navigate?: (path: string) => void } = {}, { rejectWithValue }) => {
+    try {
+      const { password, navigate } = params;
+      
+      await AuthService.deleteAccount(password);
+      
+      await clearAuthToken();
+      
+      // Redirect to landing page after successful deletion
+      if (navigate) {
+        navigate('/');
+      } else if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+      
+      return true;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Account deletion failed';
       return rejectWithValue(errorMessage);
     }
   }
@@ -254,21 +298,21 @@ export const oauthLogin = createAsyncThunk(
         avatar: userInfo.avatar
       });
       
-      if (!response.data.token) {
+      const token = (response as any)?.data?.data?.token;
+      if (!token) {
         throw new Error('No token received from server');
       }
-      
-      localStorage.setItem('token', response.data.token);
-      
+      await setAuthToken(token);
       const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
       
       // Clear OAuth session data
       oauthService.clearOAuthSession();
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: safeSerializeUser(profileData),
+        token
       };
     } catch (error: any) {
       oauthService.clearOAuthSession();
@@ -304,19 +348,20 @@ export const oauthRegister = createAsyncThunk(
         avatar: userInfo.avatar
       });
       
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
       }
-      
       const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
       
       // Clear OAuth session data
       oauthService.clearOAuthSession();
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: safeSerializeUser(profileData),
+        token
       };
     } catch (error: any) {
       oauthService.clearOAuthSession();
@@ -332,17 +377,17 @@ export const verifyEmail = createAsyncThunk(
   async (verificationData: EmailVerificationData, { rejectWithValue }) => {
     try {
       const response = await AuthService.verifyEmail(verificationData);
-      
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
       }
-      
       const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
       
       return {
-        ...response.data,
-        user: serializeUser(profileResponse.data),
-        token: response.data.token
+        ...(response as any).data,
+        user: safeSerializeUser(profileData),
+        token
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Email verification failed';
@@ -450,7 +495,7 @@ const initialState: AuthState = {
   user: null,
   token: null,
   isAuthenticated: false,
-  isLoading: true, // Start with loading true to check auth status
+  isLoading: false,
   error: null,
 };
 
@@ -497,6 +542,14 @@ const authSlice = createSlice({
       })
       .addCase(checkAuthStatus.fulfilled, (state, action) => {
         state.isLoading = false;
+        console.log('🔧 [authSlice] checkAuthStatus.fulfilled - Setting user data:', {
+          hasUser: !!action.payload.user,
+          userEmail: action.payload.user?.user?.email,
+          userName: action.payload.user?.user?.name,
+          isAuthenticated: action.payload.isAuthenticated,
+          userStructure: action.payload.user ? Object.keys(action.payload.user) : 'No user',
+          fullPayload: action.payload
+        });
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = action.payload.isAuthenticated;
@@ -517,6 +570,13 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
         // User data is already serialized in the thunk
+        console.log('🔧 [authSlice] loginUser.fulfilled - Setting user data:', {
+          hasUser: !!action.payload.user,
+          userEmail: action.payload.user?.user?.email,
+          userName: action.payload.user?.user?.name,
+          userStructure: action.payload.user ? Object.keys(action.payload.user) : 'No user',
+          fullPayload: action.payload
+        });
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
@@ -544,6 +604,22 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
+        state.error = action.payload as string;
+      })
+      // Delete Account
+      .addCase(deleteUserAccount.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteUserAccount.fulfilled, (state) => {
+        state.isLoading = false;
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.error = null;
+      })
+      .addCase(deleteUserAccount.rejected, (state, action) => {
+        state.isLoading = false;
         state.error = action.payload as string;
       })
       // Register
@@ -625,7 +701,7 @@ const authSlice = createSlice({
       })
       .addCase(updateProfileSecure.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = serializeUser(action.payload);
+        state.user = safeSerializeUser(action.payload) as any;
         state.error = null;
       })
       .addCase(updateProfileSecure.rejected, (state, action) => {

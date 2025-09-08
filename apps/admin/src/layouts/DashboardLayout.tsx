@@ -42,11 +42,9 @@ const DashboardLayout: React.FC = () => {
         // Check if token is available
         const token = localStorage.getItem('adminToken');
         if (!token) {
-          console.log('❌ No token available, waiting...');
           return;
         }
         
-        console.log('✅ Token available, fetching analytics...');
         setIsLoading(true);
         setError(null);
         const data = await adminService.getAnalytics('6-months');

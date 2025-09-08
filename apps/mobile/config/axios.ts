@@ -7,7 +7,19 @@ import { env } from './env';
 // Normalize base URL to ensure it targets the backend API prefix
 const rawBase = (env.API_BASE_URL || env.API_URL || '').trim();
 const trimmed = rawBase.replace(/\/$/, '');
+// Ensure the URL has a proper scheme (http:// or https://)
 const baseURL = /\/api$/.test(trimmed) ? trimmed : `${trimmed}/api`;
+
+// Debug logging to see what URL is being used
+if (env.ENABLE_DEBUG) {
+  console.log('🔧 Axios Base URL Configuration:', {
+    rawBase,
+    trimmed,
+    baseURL,
+    envAPI_BASE_URL: env.API_BASE_URL,
+    envAPI_URL: env.API_URL
+  });
+}
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL,
@@ -30,7 +42,8 @@ axiosInstance.interceptors.request.use(
         url: config.url,
         baseURL: config.baseURL,
         fullURL: `${config.baseURL}${config.url}`,
-        hasToken: !!token
+        hasToken: !!token,
+        tokenPreview: token ? token.substring(0, 20) + '...' : 'none'
       });
     }
     
@@ -88,36 +101,52 @@ axiosInstance.interceptors.response.use(
       switch (status) {
         case 401:
           // Unauthorized - clear token and redirect to login
-          console.error('Unauthorized access - Token may be invalid or expired');
+          if (env.ENABLE_DEBUG) {
+            console.warn('🔐 Unauthorized access - Token may be invalid or expired');
+          }
           await AsyncStorage.removeItem('token');
           // In React Native, we need to handle navigation differently
           // This will be handled by the app's navigation system
           break;
         case 403:
-          // Forbidden
-          console.error('Access forbidden');
+          // Forbidden - user doesn't have permission for this resource
+          if (env.ENABLE_DEBUG) {
+            console.warn('🚫 Access forbidden - insufficient permissions for this resource');
+          }
           break;
         case 404:
           // Not found
-          console.error('Resource not found');
+          if (env.ENABLE_DEBUG) {
+            console.warn('🔍 Resource not found:', error.config?.url);
+          }
           break;
         case 500:
           // Server error
-          console.error('Server error');
+          if (env.ENABLE_DEBUG) {
+            console.error('🔥 Server error:', data?.message || 'Internal server error');
+          }
           break;
         case 503:
           // Service unavailable
-          console.error('Service temporarily unavailable');
+          if (env.ENABLE_DEBUG) {
+            console.warn('⏳ Service temporarily unavailable');
+          }
           break;
         default:
-          console.error('API Error:', status, data);
+          if (env.ENABLE_DEBUG) {
+            console.warn('⚠️ API Error:', status, data);
+          }
       }
     } else if (error.request) {
       // Network error
-      console.error('Network error:', error.request);
+      if (env.ENABLE_DEBUG) {
+        console.warn('🌐 Network error - check your internet connection');
+      }
     } else {
       // Other error
-      console.error('Error:', error.message);
+      if (env.ENABLE_DEBUG) {
+        console.warn('❓ Request setup error:', error.message);
+      }
     }
     
     return Promise.reject(error);
@@ -134,6 +163,11 @@ export async function setAuthToken(token: string): Promise<void> {
 export async function clearAuthToken(): Promise<void> {
   await AsyncStorage.removeItem('token');
   delete axiosInstance.defaults.headers.common['Authorization'];
+}
+
+// Set auth header for current process only (no persistence)
+export function setAuthHeaderOnly(token: string): void {
+  axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
 
 // Helper function to get auth token
