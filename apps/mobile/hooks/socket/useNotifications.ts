@@ -9,7 +9,12 @@ export const useNotifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Use the centralized notification socket from SocketContext
-  const { socket, emit, on, off, isConnected } = useNotificationSocket();
+  const notificationSocket = useNotificationSocket();
+  const socket = notificationSocket;
+  const isConnected = socket?.connected || false;
+  const emit = (event: string, data?: any) => socket?.emit(event, data);
+  const on = (event: string, callback: (data?: any) => void) => socket?.on(event, callback);
+  const off = (event: string) => socket?.off(event);
 
   useEffect(() => {
     if (!socket || !isConnected) return;

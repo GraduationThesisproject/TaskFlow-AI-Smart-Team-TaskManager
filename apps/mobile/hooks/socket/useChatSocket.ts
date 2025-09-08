@@ -34,7 +34,12 @@ export const useChatSocketOperations = () => {
   const [currentChat, setCurrentChat] = useState<ChatRoom | null>(null);
   const [isTyping, setIsTyping] = useState<Record<string, boolean>>({});
   
-  const { socket, isConnected, emit, on, off } = useChatSocket();
+  const chatSocket = useChatSocket();
+  const socket = chatSocket;
+  const isConnected = socket?.connected || false;
+  const emit = (event: string, data?: any) => socket?.emit(event, data);
+  const on = (event: string, callback: (data?: any) => void) => socket?.on(event, callback);
+  const off = (event: string) => socket?.off(event);
 
   // Join chat rooms
   const joinChatRooms = useCallback(() => {

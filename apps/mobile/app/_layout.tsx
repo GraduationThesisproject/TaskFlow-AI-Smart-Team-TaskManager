@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -5,10 +6,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { FontConfig } from '@/constants/Fonts';
-import { store, useAppDispatch, useAppSelector } from '@/store';
+import { store, persistor, useAppDispatch, useAppSelector } from '@/store';
 import { checkAuthStatus } from '@/store/slices/authSlice';
 
 export {
@@ -69,9 +71,11 @@ export default function RootLayout() {
 function RootLayoutNav() {
   return (
     <Provider store={store}>
-      <ThemeProvider>
-        <AuthGate />
-      </ThemeProvider>
+      <PersistGate loading={null} persistor={persistor}>
+        <ThemeProvider>
+          <AuthGate />
+        </ThemeProvider>
+      </PersistGate>
     </Provider>
   );
 }
@@ -95,6 +99,7 @@ function AuthGate() {
     return (
       <Stack>
         <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="register" options={{ headerShown: false }} />
       </Stack>
     );
   }
