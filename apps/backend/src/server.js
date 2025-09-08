@@ -14,6 +14,7 @@ const WorkspaceService = require('./services/workspace.service');
 
 
 const logger = require('./config/logger');
+const os = require('os');
 const { ensureDirectoriesExist } = require('./config/multer');
 const { initializeSockets } = require('./sockets');
 
@@ -90,10 +91,21 @@ testNamespace.on('connection', (socket) => {
 });
 
 // Start server
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     logger.info(`🚀 TaskFlow API server running on port ${PORT}`);
     logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
+    logger.info(`🔗 Health check (local): http://localhost:${PORT}/health`);
+
+    // Log LAN URLs to help mobile devices connect
+    const ifaces = os.networkInterfaces();
+    const lanAddrs = Object.values(ifaces)
+      .flat()
+      .filter((i) => i && i.family === 'IPv4' && !i.internal)
+      .map((i) => i.address);
+    lanAddrs.forEach((addr) => {
+      logger.info(`🔗 Health check (LAN): http://${addr}:${PORT}/health`);
+      logger.info(`🔌 Socket.IO (LAN):   http://${addr}:${PORT}/socket.io`);
+    });
 });
 
 // Periodic cleanup: permanently delete archived workspaces whose countdown reached 0
