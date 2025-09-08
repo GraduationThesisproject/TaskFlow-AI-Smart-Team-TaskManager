@@ -259,6 +259,38 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = React.memo(({ currentSpace
             </CardContent>
           </Card>
 
+          {/* Members Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Space Members</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-medium text-foreground mb-2">Member Management</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Manage who has access to this space and their permissions.
+                </p>
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Members Management</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Invite team members, manage permissions, and control access to this space.
+                  </p>
+                  <Button variant="outline" size="sm">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Invite Members
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Danger Zone */}
           <Card className="border-destructive/20">
             <CardHeader>

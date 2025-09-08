@@ -16,12 +16,12 @@ import {
 } from '../store/slices/spaceSlice';
 import {
   fetchBoardsBySpace,
+  fetchBoard,
   createBoard,
   updateBoard,
   deleteBoard,
   setCurrentBoard
 } from '../store/slices/boardSlice';
-import { fetchBoard } from '../store/slices/taskSlice';
 
 export const useSpaceManager = () => {
   const dispatch = useDispatch();
@@ -34,7 +34,6 @@ export const useSpaceManager = () => {
     error: spaceError
   } = useSelector((state: RootState) => state.spaces);
 
-  console.log('useSpaceManager - spaceError:', spaceError);
   const {
     boards,
     currentBoard,
@@ -44,7 +43,6 @@ export const useSpaceManager = () => {
 
   // Space API actions
   const loadSpace = useCallback((spaceId: string) => {
-    console.log('loadSpace called with spaceId:', spaceId);
     dispatch(fetchSpace(spaceId) as any);
   }, [dispatch]);
 
@@ -80,7 +78,6 @@ export const useSpaceManager = () => {
   };
 
   const loadSpaceMembers = async (spaceId: string) => {
-    console.log('loadSpaceMembers called with spaceId:', spaceId);
     try {
       await dispatch(getSpaceMembers(spaceId) as any).unwrap();
     } catch (error) {
@@ -113,7 +110,6 @@ export const useSpaceManager = () => {
 
   // Board API actions
   const loadBoard = useCallback((boardId: string) => {
-    console.log('loadBoard called with boardId:', boardId);
     dispatch(fetchBoard(boardId) as any).then((result: any) => {
       // If the fetch was successful, also update the board slice's currentBoard
       if (result.meta.requestStatus === 'fulfilled' && result.payload) {
@@ -174,14 +170,35 @@ export const useSpaceManager = () => {
   };
 
   const getBoardsBySpace = (spaceId: string) => {
-    return boards.filter(board => board.space === spaceId);
+    const result = boards.filter(board => {
+      // Handle both string and object space references
+      let boardSpaceId: string;
+      if (typeof board.space === 'string') {
+        boardSpaceId = board.space;
+      } else if (board.space && typeof board.space === 'object' && 'name' in board.space) {
+        boardSpaceId = (board.space as { _id: string; name: string })._id;
+      } else {
+        boardSpaceId = '';
+      }
+      
+      return boardSpaceId === spaceId;
+    });
+    
+    return result;
   };
 
   const getActiveBoardsBySpace = (spaceId: string) => {
-    return getBoardsBySpace(spaceId).filter(board => board.isActive && !board.archived);
+    const spaceBoards = getBoardsBySpace(spaceId);
+    const activeBoards = spaceBoards.filter(board => {
+      const isActive = board.isActive !== false; // Default to true if undefined
+      const notArchived = board.archived !== true; // Default to false if undefined
+      
+      return isActive && notArchived;
+    });
+    
+    return activeBoards;
   };
 
-console.log('useSpaceManager - spaceError:', spaceError);
   return {
     // State
     spaces,

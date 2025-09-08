@@ -18,8 +18,17 @@ import { SpaceService } from '../../services/spaceService';
 export const fetchTasks = createAsyncThunk(
   'tasks/fetchTasks',
   async (boardId: string) => {
-    const response = await TaskService.getTasks({ boardId });
-    return response.data?.items || response.data || [];
+    try {
+      const response = await TaskService.getTasks({ boardId });
+      // Backend returns { data: [...tasks...], total, page, limit, totalPages }
+      const tasks = response.data?.data || response.data?.tasks || response.data?.items || response.data || [];
+      // Ensure we always return an array
+      return Array.isArray(tasks) ? tasks : [];
+    } catch (error) {
+      console.error('Error in fetchTasks:', error);
+      // Return empty array on error to prevent crashes
+      return [];
+    }
   }
 );
 
@@ -95,50 +104,10 @@ export const fetchBoardsBySpace = createAsyncThunk(
   }
 );
 
-export const fetchColumnsByBoard = createAsyncThunk(
-  'tasks/fetchColumnsByBoard',
-  async (boardId: string) => {
-    const response = await BoardService.getColumnsByBoard(boardId);
-    return response.data || [];
-  }
-);
 
-export const createColumn = createAsyncThunk(
-  'tasks/createColumn',
-  async ({ boardId, columnData }: { boardId: string; columnData: { name: string; position: number; settings?: any } }) => {
-    const response = await BoardService.createColumn({ 
-      name: columnData.name, 
-      boardId, 
-      position: columnData.position,
-      settings: columnData.settings 
-    });
-    return (response.data as any).column;
-  }
-);
+// Column operations are now handled via sockets - only keeping fetch operations here
 
-export const updateColumn = createAsyncThunk(
-  'tasks/updateColumn',
-  async ({ columnId, columnData }: { columnId: string; columnData: { name: string; color: string; settings?: any; boardId: string } }) => {
-    const response = await BoardService.updateColumn(columnId, columnData);
-    return response.data;
-  }
-);
-
-export const deleteColumn = createAsyncThunk(
-  'tasks/deleteColumn',
-  async ({ columnId, boardId }: { columnId: string; boardId: string }) => {
-    await BoardService.deleteColumn(columnId, boardId);
-    return columnId; // Return the columnId so we can remove it from state
-  }
-);
-
-export const reorderColumns = createAsyncThunk(
-  'tasks/reorderColumns',
-  async ({ boardId, columnOrder }: { boardId: string; columnOrder: string[] }) => {
-    const response = await BoardService.reorderColumns(boardId, columnOrder);
-    return response.data;
-  }
-);
+// All column operations (create, update, delete, reorder) are now handled via sockets
 
 export const fetchOverdueTasks = createAsyncThunk(
   'tasks/fetchOverdueTasks',
@@ -255,7 +224,7 @@ export const toggleCommentResolve = createAsyncThunk(
 
 // Initial state
 const initialState: TaskState = {
-  tasks: [],
+  tasks: [], // Always initialize as empty array
 
   currentTask: null,
   currentBoard: null,
@@ -388,22 +357,67 @@ const taskSlice = createSlice({
       }
     },
     
+    // Move task in real-time (for socket events)
+    moveTaskRealTime: (state, action: PayloadAction<{ taskId: string; sourceColumnId: string; targetColumnId: string; targetPosition: number }>) => {
+      const { taskId, targetColumnId, targetPosition } = action.payload;
+      const taskIndex = state.tasks.findIndex(task => task._id === taskId);
+      if (taskIndex !== -1) {
+        state.tasks[taskIndex].column = targetColumnId;
+        state.tasks[taskIndex].position = targetPosition;
+      }
+    },
+    
     // Update column in real-time (for socket events)
     updateColumnRealTime: (state, action: PayloadAction<Column>) => {
-      const index = state.columns.findIndex(col => col._id === action.payload._id);
-      if (index !== -1) {
-        state.columns[index] = action.payload;
+      if (Array.isArray(state.columns)) {
+        const index = state.columns.findIndex(col => col._id === action.payload._id);
+        if (index !== -1) {
+          state.columns[index] = action.payload;
+        }
+      } else {
+        state.columns = [];
       }
     },
     
     // Add column in real-time (for socket events)
     addColumnRealTime: (state, action: PayloadAction<Column>) => {
+      if (!Array.isArray(state.columns)) {
+        state.columns = [];
+      }
       state.columns.push(action.payload);
     },
     
     // Remove column in real-time (for socket events)
     removeColumnRealTime: (state, action: PayloadAction<string>) => {
-      state.columns = state.columns.filter(col => col._id !== action.payload);
+      if (Array.isArray(state.columns)) {
+        state.columns = state.columns.filter(col => col._id !== action.payload);
+      } else {
+        state.columns = [];
+      }
+    },
+
+    // Reorder columns in real-time (for socket events)
+    reorderColumnsRealTime: (state, action: PayloadAction<Column[]>) => {
+      if (Array.isArray(action.payload)) {
+        state.columns = action.payload;
+      } else {
+        state.columns = [];
+      }
+    },
+
+    // Update column positions in real-time (for socket events)
+    updateColumnPositionsRealTime: (state, action: PayloadAction<Array<{ columnId: string; position: number }>>) => {
+      if (Array.isArray(state.columns) && Array.isArray(action.payload)) {
+        // Update positions for each column
+        action.payload.forEach(({ columnId, position }) => {
+          const column = state.columns.find(col => col._id === columnId);
+          if (column) {
+            column.position = position;
+          }
+        });
+        // Sort columns by position to maintain order
+        state.columns.sort((a, b) => (a.position || 0) - (b.position || 0));
+      }
     }
   },
   extraReducers: (builder) => {
@@ -415,11 +429,14 @@ const taskSlice = createSlice({
       })
       .addCase(fetchTasks.fulfilled, (state, action) => {
         state.loading = false;
-        state.tasks = action.payload;
+        // Ensure tasks is always an array
+        state.tasks = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(fetchTasks.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch tasks';
+        // Ensure tasks remains an array even on error
+        state.tasks = Array.isArray(state.tasks) ? state.tasks : [];
       });
     
     // Fetch board
@@ -432,19 +449,15 @@ const taskSlice = createSlice({
         state.loading = false;
         // The API returns { board, columns, tasks } structure
         const response = action.payload as any;
-        console.log('fetchBoard.fulfilled - Full response:', response);
-        console.log('fetchBoard.fulfilled - Columns:', response.columns);
-        console.log('fetchBoard.fulfilled - Tasks:', response.tasks);
         
         state.currentBoard = response.board || response;
         // Extract columns and tasks from the response
         if (response.columns) {
-          state.columns = response.columns;
-          console.log('fetchBoard.fulfilled - Updated state.columns:', state.columns);
+          state.columns = Array.isArray(response.columns) ? response.columns : [];
         }
         if (response.tasks) {
-          state.tasks = response.tasks;
-          console.log('fetchBoard.fulfilled - Updated state.tasks:', state.tasks);
+          // Ensure tasks is always an array
+          state.tasks = Array.isArray(response.tasks) ? response.tasks : [];
         }
       })
       .addCase(fetchBoard.rejected, (state, action) => {
@@ -483,77 +496,8 @@ const taskSlice = createSlice({
         state.error = action.error.message || 'Failed to create task';
       });
 
-    // Create column
-    builder
-      .addCase(createColumn.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(createColumn.fulfilled, (state, action) => {
-        state.loading = false;
-        console.log('createColumn.fulfilled - Adding column to state:', action.payload);
-        console.log('createColumn.fulfilled - Current state.columns before:', state.columns);
-        state.columns.push(action.payload);
-        console.log('createColumn.fulfilled - Current state.columns after:', state.columns);
-      })
-      .addCase(createColumn.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to create column';
-      });
 
-    // Update column
-    builder
-      .addCase(updateColumn.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(updateColumn.fulfilled, (state, action) => {
-        state.loading = false;
-        const index = state.columns.findIndex(column => column._id === action.payload._id);
-        if (index !== -1) {
-          state.columns[index] = action.payload;
-        }
-      })
-      .addCase(updateColumn.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to update column';
-      });
-
-    // Delete column
-    builder
-      .addCase(deleteColumn.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(deleteColumn.fulfilled, (state, action) => {
-        state.loading = false;
-        console.log('deleteColumn.fulfilled - Removing column with ID:', action.payload);
-        console.log('deleteColumn.fulfilled - Columns before deletion:', state.columns.length);
-        state.columns = state.columns.filter(column => column._id !== action.payload);
-        console.log('deleteColumn.fulfilled - Columns after deletion:', state.columns.length);
-      })
-      .addCase(deleteColumn.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to delete column';
-      });
-
-    // Reorder columns
-    builder
-      .addCase(reorderColumns.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(reorderColumns.fulfilled, (state, action) => {
-        state.loading = false;
-        // The backend should return the updated columns in the correct order
-        if (action.payload && Array.isArray(action.payload)) {
-          state.columns = action.payload;
-        }
-      })
-      .addCase(reorderColumns.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to reorder columns';
-      });
+    // Column operations are now handled via socket events and real-time reducers
     
     // Update task
     builder
@@ -742,9 +686,12 @@ export const {
   updateTaskRealTime,
   addTaskRealTime,
   removeTaskRealTime,
+  moveTaskRealTime,
   updateColumnRealTime,
   addColumnRealTime,
-  removeColumnRealTime
+  removeColumnRealTime,
+  reorderColumnsRealTime,
+  updateColumnPositionsRealTime
 } = taskSlice.actions;
 
 // Export reducer

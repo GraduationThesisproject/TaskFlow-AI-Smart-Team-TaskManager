@@ -1,7 +1,8 @@
+import { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { Task } from '../types/task.types';
-import type { Column, Board } from '../types/board.types';
 import type { RootState } from '../store';
+import { useSocketContext } from '../contexts/SocketContext';
 import {
   fetchTasks,
   fetchBoard,
@@ -9,15 +10,9 @@ import {
   createTask,
   updateTask,
   deleteTask,
-  moveTask,
   fetchTasksByColumn,
   fetchTasksBySpace,
   fetchBoardsBySpace,
-  fetchColumnsByBoard,
-  createColumn,
-  updateColumn,
-  deleteColumn,
-  reorderColumns,
   setCurrentTask,
   updateFilters,
   updateSort,
@@ -27,6 +22,7 @@ import {
 
 export const useTasks = () => {
   const dispatch = useDispatch();
+  const { createTask: createTaskSocket, updateTask: updateTaskSocket, deleteTask: deleteTaskSocket, moveTask: moveTaskSocket } = useSocketContext();
   
   // Select state from Redux store
   const {
@@ -45,46 +41,57 @@ export const useTasks = () => {
     comments,
   } = useSelector((state: RootState) => state.tasks);
 
-  // Compute derived state
+  // Compute derived state - Fixed at 2025-01-05
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  
+  
+  // Safety check ensures tasks is always an array
   const tasksByStatus = {
-    'col1': tasks.filter(t => t.status === 'todo'),
-    'col2': tasks.filter(t => t.status === 'in_progress'),
-    'col3': tasks.filter(t => t.status === 'review'),
-    'col4': tasks.filter(t => t.status === 'done'),
+    'col1': safeTasks.filter(t => t.status === 'todo'),
+    'col2': safeTasks.filter(t => t.status === 'in_progress'),
+    'col3': safeTasks.filter(t => t.status === 'review'),
+    'col4': safeTasks.filter(t => t.status === 'done'),
   };
 
   const taskStats = {
-    total: tasks.length,
-    completed: tasks.filter(t => t.status === 'done').length,
-    inProgress: tasks.filter(t => t.status === 'in_progress').length,
-    inReview: tasks.filter(t => t.status === 'review').length,
-    toDo: tasks.filter(t => t.status === 'todo').length,
-    completionRate: tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'done').length / tasks.length) * 100) : 0,
+    total: safeTasks.length,
+    completed: safeTasks.filter(t => t.status === 'done').length,
+    inProgress: safeTasks.filter(t => t.status === 'in_progress').length,
+    inReview: safeTasks.filter(t => t.status === 'review').length,
+    toDo: safeTasks.filter(t => t.status === 'todo').length,
+    completionRate: safeTasks.length > 0 ? Math.round((safeTasks.filter(t => t.status === 'done').length / safeTasks.length) * 100) : 0,
   };
 
-  const uniqueCategories = Array.from(new Set(tasks.flatMap(t => t.tags || [])));
-  const uniqueAssignees = Array.from(new Set(tasks.flatMap(t => t.assignees || [])));
-  const uniquePriorities = Array.from(new Set(tasks.map(t => t.priority)));
-  const timelineTasks = tasks.filter(t => t.dueDate);
-  const highPriorityTasks = tasks.filter(t => t.priority === 'high' || t.priority === 'critical');
-  const overdueTasks = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date());
+  const uniqueCategories = Array.from(new Set(safeTasks.flatMap(t => t.tags || [])));
+  const uniqueAssignees = Array.from(new Set(safeTasks.flatMap(t => t.assignees || [])));
+  const uniquePriorities = Array.from(new Set(safeTasks.map(t => t.priority)));
+  const timelineTasks = safeTasks.filter(t => t.dueDate);
+  const highPriorityTasks = safeTasks.filter(t => t.priority === 'high' || t.priority === 'critical');
+  const overdueTasks = safeTasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date());
 
   // API actions
-  const loadTasks = (boardId: string) => {
+  const loadTasks = useCallback((boardId: string) => {
     dispatch(fetchTasks(boardId) as any);
-  };
+  }, [dispatch]);
 
-  const loadTaskById = (taskId: string) => {
+  const loadTaskById = useCallback((taskId: string) => {
     // Find task in current tasks array
     const task = tasks.find(t => t._id === taskId);
     if (task) {
       dispatch(setCurrentTask(task));
     }
-  };
+  }, [tasks, dispatch]);
 
   const addTask = async (taskData: Partial<Task>) => {
     try {
-      await dispatch(createTask(taskData as any) as any).unwrap();
+      // Use socket for task creation
+      const boardId = (taskData as any).boardId || taskData.board;
+      if (boardId) {
+        createTaskSocket(boardId, taskData);
+      } else {
+        // Fallback to HTTP if no boardId
+        await dispatch(createTask(taskData as any) as any).unwrap();
+      }
     } catch (error) {
       console.error('Failed to create task:', error);
       throw error;
@@ -93,16 +100,29 @@ export const useTasks = () => {
 
   const editTask = async (taskId: string, taskData: Partial<Task>) => {
     try {
-      await dispatch(updateTask({ id: taskId, taskData: taskData as any }) as any).unwrap();
+      // Use socket for task updates
+      const boardId = (taskData as any).boardId || taskData.board;
+      if (boardId) {
+        updateTaskSocket(taskId, taskData, boardId);
+      } else {
+        // Fallback to HTTP if no boardId
+        await dispatch(updateTask({ id: taskId, taskData: taskData as any }) as any).unwrap();
+      }
     } catch (error) {
       console.error('Failed to update task:', error);
       throw error;
     }
   };
 
-  const removeTask = async (taskId: string) => {
+  const removeTask = async (taskId: string, boardId?: string) => {
     try {
-      await dispatch(deleteTask(taskId) as any).unwrap();
+      // Use socket for task deletion
+      if (boardId) {
+        deleteTaskSocket(taskId, boardId);
+      } else {
+        // Fallback to HTTP if no boardId
+        await dispatch(deleteTask(taskId) as any).unwrap();
+      }
     } catch (error) {
       console.error('Failed to delete task:', error);
       throw error;
@@ -111,6 +131,16 @@ export const useTasks = () => {
 
   const selectTask = (task: Task | null) => {
     dispatch(setCurrentTask(task));
+  };
+
+  const moveTask = async (taskId: string, sourceColumnId: string, targetColumnId: string, targetPosition: number, boardId: string) => {
+    try {
+      // Use socket for task movement
+      moveTaskSocket(taskId, sourceColumnId, targetColumnId, targetPosition, boardId);
+    } catch (error) {
+      console.error('Failed to move task:', error);
+      throw error;
+    }
   };
 
   const updateFiltersLocal = (newFilters: Partial<typeof filters>) => {
@@ -150,77 +180,10 @@ export const useTasks = () => {
     dispatch(fetchBoardsBySpace(spaceId) as any);
   };
 
-  const loadColumnsByBoard = (boardId: string) => {
-    dispatch(fetchColumnsByBoard(boardId) as any);
-  };
 
-  const createColumnLocal = async (boardId: string, columnData: { 
-    name: string; 
-    position: number; 
-    color?: string;
-    settings?: any;
-  }) => {
-    try {
-      await dispatch(createColumn({ boardId, columnData }) as any).unwrap();
-    } catch (error) {
-      console.error('Failed to create column:', error);
-      throw error;
-    }
-  };
-
-  const updateColumnLocal = async (columnId: string, columnData: Partial<Column>) => {
-    console.log('updateColumnLocal called with columnId:', columnId, 'columnData:', columnData);
-    try {
-      // We need to get the boardId from the current board or from the column data
-      const boardId = currentBoard?._id;
-      console.log('Current board ID:', boardId);
-      if (!boardId) {
-        throw new Error('No board ID available for column update');
-      }
-      const payload = { 
-        columnId, 
-        columnData: { ...columnData, boardId } as any 
-      };
-      console.log('Dispatching updateColumn with payload:', payload);
-      await dispatch(updateColumn(payload) as any).unwrap();
-      console.log('updateColumn dispatch completed successfully');
-    } catch (error) {
-      console.error('Failed to update column:', error);
-      throw error;
-    }
-  };
-
-  const deleteColumnLocal = async (columnId: string) => {
-    console.log('deleteColumnLocal called with columnId:', columnId);
-    try {
-      const boardId = currentBoard?._id;
-      console.log('Current board ID for deletion:', boardId);
-      if (!boardId) {
-        throw new Error('No board ID available for column deletion');
-      }
-      const payload = { columnId, boardId };
-      console.log('Dispatching deleteColumn with payload:', payload);
-      await dispatch(deleteColumn(payload) as any).unwrap();
-      console.log('deleteColumn dispatch completed successfully');
-    } catch (error) {
-      console.error('Failed to delete column:', error);
-      throw error;
-    }
-  };
-
-  const reorderColumnsLocal = async (boardId: string, columnIds: string[]) => {
-    try {
-      await dispatch(reorderColumns({ boardId, columnOrder: columnIds }) as any).unwrap();
-    } catch (error) {
-      console.error('Failed to reorder columns:', error);
-      throw error;
-    }
-  };
-
-  const safeTasks = tasks;
-  const safeColumns = columns;
-  const safeBoards = boards;
-  const safeSpaces = spaces;
+  const safeColumns = columns || [];
+  const safeBoards = boards || [];
+  const safeSpaces = spaces || [];
 
   return {
     // State
@@ -254,16 +217,11 @@ export const useTasks = () => {
     loadTasksByColumn,
     loadTasksBySpace,
     loadBoardsBySpace,
-    loadColumnsByBoard,
     addTask,
     editTask,
     removeTask,
     selectTask,
     moveTask,
-    createColumn: createColumnLocal,
-    updateColumn: updateColumnLocal,
-    deleteColumn: deleteColumnLocal,
-    reorderColumns: reorderColumnsLocal,
     updateFilters: updateFiltersLocal,
     updateSortBy,
     updateSearchQuery: updateSearchQueryLocal,
