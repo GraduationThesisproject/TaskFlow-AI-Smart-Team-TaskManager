@@ -71,7 +71,10 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
 
   const connect = (token: string) => {
     // Don't reconnect if already connected or connecting
-    if (socket?.connected || isConnecting) return;
+    if (socket?.connected || isConnecting) {
+      console.log('🔧 [notificationsSocketMiddleware] Already connected or connecting, skipping');
+      return;
+    }
     if (!token) {
       console.log('🔧 [notificationsSocketMiddleware] No token provided, skipping connection');
       return;
@@ -86,9 +89,8 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
 
     isConnecting = true;
     
-    if (env.ENABLE_DEBUG) {
-      console.log('🔌 [notificationsSocketMiddleware] connecting to socket', env.SOCKET_URL);
-    }
+    console.log('🔌 [notificationsSocketMiddleware] connecting to socket', env.SOCKET_URL);
+    console.log('🔧 [notificationsSocketMiddleware] Token preview:', token.substring(0, 20) + '...');
 
     // Disconnect existing socket if any
     if (socket) {
@@ -107,9 +109,12 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         forceNew: true,
         reconnection: true,
         reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 20000
+        reconnectionDelay: 2000,
+        reconnectionDelayMax: 10000,
+        timeout: 30000,
+        // Add additional options for better connection handling
+        withCredentials: true,
+        rejectUnauthorized: false, // For development only
       });
     } catch (error) {
       console.error('❌ [notificationsSocketMiddleware] Failed to create socket connection:', error);
@@ -129,16 +134,30 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     });
 
     socket.on('connect_error', (err) => {
-      console.error('❌ [notificationsSocketMiddleware] connect_error', err?.message || err);
+      console.error('❌ [notificationsSocketMiddleware] connect_error', {
+        message: err?.message || err,
+        description: err?.description,
+        context: err?.context,
+        type: err?.type,
+        url: env.SOCKET_URL,
+        attempt: reconnectAttempts + 1,
+        maxAttempts: MAX_RECONNECT_ATTEMPTS
+      });
       isConnecting = false;
       
       if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttempts++;
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+        const delay = Math.min(2000 * Math.pow(1.5, reconnectAttempts), 30000);
         console.log(`⏳ [notificationsSocketMiddleware] will retry connection in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
         setTimeout(() => connect(token), delay);
       } else {
         console.error('❌ [notificationsSocketMiddleware] max reconnection attempts reached');
+        console.error('🔧 [notificationsSocketMiddleware] Final connection details:', {
+          url: env.SOCKET_URL,
+          tokenLength: token?.length,
+          tokenPreview: token?.substring(0, 20) + '...',
+          attempts: reconnectAttempts
+        });
       }
     });
 

@@ -132,7 +132,7 @@ export const createWorkspace = createAsyncThunk(
   async (workspaceData: {
     name: string;
     description?: string;
-    visibility: 'private' | 'public';
+    visibility?: 'private' | 'public';
     isPublic?: boolean;
   }) => {
     const response = await WorkspaceService.createWorkspace({
