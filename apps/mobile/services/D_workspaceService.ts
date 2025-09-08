@@ -54,7 +54,16 @@ export class WorkspaceService {
   static async updateWorkspace(id: string, data: UpdateWorkspaceData): Promise<Workspace> {
     try {
       const response = await axiosInstance.put(`/workspaces/${id}`, data);
-      return response.data.data?.workspace;
+      // Be resilient to various backend shapes
+      const ws =
+        response?.data?.data?.workspace ??
+        response?.data?.workspace ??
+        response?.data?.data ??
+        response?.data;
+      if (!ws) {
+        throw new Error('Invalid response from server');
+      }
+      return ws as Workspace;
     } catch (error) {
       console.error('Error updating workspace:', error);
       throw error;
@@ -94,6 +103,52 @@ export class WorkspaceService {
     } catch (error: any) {
       console.error('Error restoring workspace:', error);
       throw new Error(error.response?.data?.message || error.message || 'Failed to restore workspace');
+    }
+  }
+
+  // Workspace Rules APIs
+  static async getWorkspaceRules(id: string): Promise<{ content: string; version?: number; updatedAt?: string } | null> {
+    try {
+      const response = await axiosInstance.get(`/workspaces/${id}/rules`);
+      // backend shape: { success, message, data: { rules } }
+      return response.data?.data?.rules || null;
+    } catch (error: any) {
+      console.error('Error fetching workspace rules:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to fetch workspace rules');
+    }
+  }
+
+  static async updateWorkspaceRules(id: string, data: { content: string }): Promise<{ content: string; version?: number; updatedAt?: string }> {
+    try {
+      const response = await axiosInstance.put(`/workspaces/${id}/rules`, { content: data.content });
+      return response.data?.data?.rules || { content: data.content };
+    } catch (error: any) {
+      console.error('Error updating workspace rules:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to update workspace rules');
+    }
+  }
+
+  static async deleteWorkspaceRules(id: string): Promise<{ message: string }> {
+    try {
+      const response = await axiosInstance.delete(`/workspaces/${id}/rules`);
+      return { message: response.data?.message || 'Rules deleted' };
+    } catch (error: any) {
+      console.error('Error deleting workspace rules:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to delete workspace rules');
+    }
+  }
+
+  static async uploadWorkspaceRules(id: string, file: any): Promise<{ content: string; version?: number; updatedAt?: string }> {
+    try {
+      const formData = new FormData();
+      formData.append('rulesFile', file);
+      const response = await axiosInstance.post(`/workspaces/${id}/rules/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data?.data?.rules || null;
+    } catch (error: any) {
+      console.error('Error uploading workspace rules:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to upload workspace rules');
     }
   }
 

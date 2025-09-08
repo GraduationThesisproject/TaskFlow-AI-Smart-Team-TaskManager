@@ -36,10 +36,10 @@ export default function WorkspaceSettingsScreen() {
     setWsSlackRestricted(!!(currentWorkspace as any)?.settings?.slackRestricted);
   }, [currentWorkspace]);
 
-  const safeUpdateWorkspace = async (updates: any, revert: () => void) => {
+  const safeUpdateWorkspace = async (updates: any, revert: () => void, section: 'settings' | 'visibility' | 'general' = 'settings') => {
     if (!workspaceId) return;
     try {
-      await dispatch(updateWorkspaceSettings({ id: workspaceId, section: 'settings', updates }) as any).unwrap();
+      await dispatch(updateWorkspaceSettings({ id: workspaceId, section, updates }) as any).unwrap();
     } catch (e: any) {
       revert();
       Alert.alert('Workspace Settings', e?.message || 'Failed to update workspace settings');
@@ -124,7 +124,7 @@ export default function WorkspaceSettingsScreen() {
                   value={wsIsPublic}
                   onValueChange={(val) => {
                     const prev = wsIsPublic; setWsIsPublic(val);
-                    safeUpdateWorkspace({ isPublic: val }, () => setWsIsPublic(prev));
+                    safeUpdateWorkspace({ isPublic: val }, () => setWsIsPublic(prev), 'visibility');
                   }}
                   trackColor={{ false: colors.border, true: colors.primary }}
                   thumbColor={colors.background}
@@ -145,7 +145,7 @@ export default function WorkspaceSettingsScreen() {
                   value={wsAllowGuestAccess}
                   onValueChange={(val) => {
                     const prev = wsAllowGuestAccess; setWsAllowGuestAccess(val);
-                    safeUpdateWorkspace({ allowGuestAccess: val }, () => setWsAllowGuestAccess(prev));
+                    safeUpdateWorkspace({ allowGuestAccess: val }, () => setWsAllowGuestAccess(prev), 'settings');
                   }}
                   trackColor={{ false: colors.border, true: colors.primary }}
                   thumbColor={colors.background}
@@ -166,7 +166,7 @@ export default function WorkspaceSettingsScreen() {
                   value={wsRestrictBoardCreation}
                   onValueChange={(val) => {
                     const prev = wsRestrictBoardCreation; setWsRestrictBoardCreation(val);
-                    safeUpdateWorkspace({ restrictBoardCreation: val }, () => setWsRestrictBoardCreation(prev));
+                    safeUpdateWorkspace({ restrictBoardCreation: val }, () => setWsRestrictBoardCreation(prev), 'settings');
                   }}
                   trackColor={{ false: colors.border, true: colors.primary }}
                   thumbColor={colors.background}
@@ -187,7 +187,7 @@ export default function WorkspaceSettingsScreen() {
                   value={wsRestrictBoardDeletion}
                   onValueChange={(val) => {
                     const prev = wsRestrictBoardDeletion; setWsRestrictBoardDeletion(val);
-                    safeUpdateWorkspace({ restrictBoardDeletion: val }, () => setWsRestrictBoardDeletion(prev));
+                    safeUpdateWorkspace({ restrictBoardDeletion: val }, () => setWsRestrictBoardDeletion(prev), 'settings');
                   }}
                   trackColor={{ false: colors.border, true: colors.primary }}
                   thumbColor={colors.background}
@@ -208,7 +208,7 @@ export default function WorkspaceSettingsScreen() {
                   value={wsSlackRestricted}
                   onValueChange={(val) => {
                     const prev = wsSlackRestricted; setWsSlackRestricted(val);
-                    safeUpdateWorkspace({ slackRestricted: val }, () => setWsSlackRestricted(prev));
+                    safeUpdateWorkspace({ slackRestricted: val }, () => setWsSlackRestricted(prev), 'settings');
                   }}
                   trackColor={{ false: colors.border, true: colors.primary }}
                   thumbColor={colors.background}
