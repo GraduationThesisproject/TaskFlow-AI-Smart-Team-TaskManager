@@ -225,6 +225,28 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
+export const deleteUserAccount = createAsyncThunk(
+  'auth/deleteAccount',
+  async (params: { password?: string, navigate?: (path: string) => void } = {}, { rejectWithValue }) => {
+    try {
+      const { password, navigate } = params;
+      
+      await AuthService.deleteAccount(password);
+      
+      // Use comprehensive logout helper to clear all data
+      if (typeof window !== 'undefined') {
+        const { logoutHelper } = await import('../../utils/logoutHelper');
+        logoutHelper();
+      }
+      
+      return true;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Account deletion failed';
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 export const oauthLogin = createAsyncThunk(
   'auth/oauthLogin',
   async (oauthData: OAuthCallbackData, { rejectWithValue }) => {
@@ -548,6 +570,22 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
+        state.error = action.payload as string;
+      })
+      // Delete Account
+      .addCase(deleteUserAccount.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteUserAccount.fulfilled, (state) => {
+        state.isLoading = false;
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.error = null;
+      })
+      .addCase(deleteUserAccount.rejected, (state, action) => {
+        state.isLoading = false;
         state.error = action.payload as string;
       })
       // Register

@@ -26,7 +26,7 @@ export default function SettingsScreen() {
   const colors = useThemeColors();
   const { theme, setTheme } = useTheme();
   const dispatch = useAppDispatch();
-  const { logout } = useAuth();
+  const { logout, deleteAccount } = useAuth();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -121,8 +121,13 @@ export default function SettingsScreen() {
         { 
           text: 'Delete', 
           style: 'destructive',
-          onPress: () => {
-            Alert.alert('Account Deletion', 'Account deletion feature will be implemented soon.');
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              Alert.alert('Account Deleted', 'Your account has been successfully deleted.');
+            } catch (error) {
+              Alert.alert('Deletion Failed', 'Failed to delete account. Please try again.');
+            }
           }
         },
       ]

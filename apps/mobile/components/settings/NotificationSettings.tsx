@@ -197,7 +197,7 @@ const NotificationSettings: React.FC = () => {
   const getCategoryActiveCount = (category: string) => {
     return notificationOptions
       .filter(opt => opt.category === category)
-      .filter(opt => settings[opt.key as keyof NotificationSettingsState]).length;
+      .filter(opt => settings[opt.key as keyof NotificationSettingsState] === true).length;
   };
 
   return (

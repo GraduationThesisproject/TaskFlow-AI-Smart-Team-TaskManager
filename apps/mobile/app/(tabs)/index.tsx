@@ -526,19 +526,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   workspaceItemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: 'column',
+    gap: 8,
     marginBottom: 8,
   },
   workspaceBadges: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 4,
   },
   badge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
+    alignSelf: 'flex-start',
   },
   viewAllButton: {
     alignItems: 'center',
