@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 
 // Base socket interface
 export interface Socket {
-  id: string;
+  id?: string;
   connected: boolean;
   disconnected: boolean;
   connect(): void;
@@ -87,6 +87,12 @@ export interface SocketContextType {
   // Utility methods
   isConnectedTo(namespace: string): boolean;
   getConnectionStatus(namespace: string): 'connected' | 'connecting' | 'disconnected' | 'error';
+  
+  // Notification-specific methods
+  markNotificationAsRead(notificationId: string): void;
+  markAllNotificationsAsRead(): void;
+  getUnreadCount(): void;
+  getRecentNotifications(limit?: number): void;
 }
 
 // Socket provider props

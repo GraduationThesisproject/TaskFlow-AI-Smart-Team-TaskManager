@@ -68,9 +68,17 @@ const corsOptions = {
             allowedOrigins = [];
         }
         
+        // Check for wildcard in development
+        if (allowedOrigins.includes('*') && env.NODE_ENV === 'development') {
+            return callback(null, true);
+        }
+        
+        // Check if origin is in allowed list
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            // Log the rejected origin for debugging
+            console.log(`CORS: Origin ${origin} not allowed. Allowed origins:`, allowedOrigins);
             callback(new Error(`Origin ${origin} not allowed by CORS. Allowed: ${allowedOrigins.join(', ')}`));
         }
     },
