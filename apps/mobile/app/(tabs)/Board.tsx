@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   RefreshControl
 } from 'react-native';
-import { Gesture, GestureDetector, LongPressGestureHandler, State } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -36,6 +36,9 @@ import {
 } from 'lucide-react-native';
 import { Text, View } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
+import TaskCard from '@/components/cards/TaskCard';
+import { TaskDragArea } from '@/components/cards/TaskDragContext';
+import DraggingTaskCard from '@/components/cards/DraggingTaskCard';
 
 // Types
 interface Task {
@@ -456,7 +459,29 @@ export default function TasksScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <TaskDragArea 
+      updateItemPosition={(taskId, yPosition) => {
+        console.log('Update item position:', taskId, yPosition);
+        const task = tasks.find(t => t._id === taskId);
+        if (task) {
+          handleTaskLongPress(task);
+        }
+      }}
+      renderDraggingItem={(taskId) => {
+        const task = tasks.find(t => t._id === taskId);
+        if (!task) return null;
+        return (
+          <DraggingTaskCard
+            id={task._id}
+            title={task.title}
+            description={task.description}
+            status={task.status as 'todo' | 'in-progress' | 'done' | 'archived'}
+            priority={task.priority as 'low' | 'medium' | 'high' | 'urgent'}
+          />
+        );
+      }}
+    >
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Simplified Header */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
@@ -540,76 +565,40 @@ export default function TasksScreen() {
                 showsVerticalScrollIndicator={false}
                 style={styles.tasksContainer}
               >
-                {columnTasks.map((task) => (
-                  <LongPressGestureHandler
+                {columnTasks.map((task, taskIndex) => (
+                  <TaskCard
                     key={task._id}
-                    onHandlerStateChange={({ nativeEvent }) => {
-                      if (nativeEvent.state === State.ACTIVE) {
-                        handleTaskLongPress(task);
+                    id={task._id}
+                    title={task.title}
+                    description={task.description}
+                    status={task.status as 'todo' | 'in-progress' | 'done' | 'archived'}
+                    priority={task.priority as 'low' | 'medium' | 'high' | 'urgent'}
+                    assignee={task.assignees[0] ? {
+                      id: task.assignees[0].id,
+                      name: task.assignees[0].name,
+                      avatar: task.assignees[0].avatar
+                    } : undefined}
+                    dueDate={task.dueDate}
+                    tags={task.category ? [task.category] : []}
+                    isDraggable={true}
+                    index={taskIndex}
+                    onPress={() => handleTaskPress(task)}
+                    onLongPress={() => console.log('Long press detected on task:', task._id)}
+                    onDragStart={(id) => {
+                      console.log('Drag started for task:', id);
+                      const dragTask = tasks.find(t => t._id === id);
+                      if (dragTask) {
+                        setDraggedTask(dragTask);
+                        setIsDragging(true);
                       }
                     }}
-                    minDurationMs={2000}
-                  >
-                    <TouchableOpacity
-                      style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                      onPress={() => handleTaskPress(task)}
-                    >
-                    <View style={styles.taskHeader}>
-                      <Text style={[styles.taskTitle, { color: colors.foreground }]}>
-                        {task.title}
-                      </Text>
-                      <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(task.priority) }]}>
-                        <Text style={styles.priorityText}>{task.priority}</Text>
-                      </View>
-                    </View>
-                    
-                    {task.description && (
-                      <Text style={[styles.taskDescription, { color: colors['muted-foreground'] }]} numberOfLines={2}>
-                        {task.description}
-                      </Text>
-                    )}
-                    
-                    {task.category && (
-                      <Text style={[styles.taskCategory, { color: colors['muted-foreground'] }]}>{task.category}</Text>
-                    )}
-                    
-                    {task.progress !== undefined && (
-                      <View style={styles.progressContainer}>
-                        <View style={[styles.progressBar, { backgroundColor: colors.muted }]}>
-                          <View 
-                            style={[styles.progressFill, { backgroundColor: colors.primary, width: `${task.progress}%` }]}
-                          />
-                        </View>
-                        <Text style={[styles.progressText, { color: colors['muted-foreground'] }]}>{task.progress}%</Text>
-                      </View>
-                    )}
-
-                    <View style={styles.taskFooter}>
-                      <View style={styles.assigneesContainer}>
-                        {task.assignees.slice(0, 3).map((assignee, index) => (
-                          <Image
-                            key={assignee.id}
-                            source={{ uri: assignee.avatar || 'https://via.placeholder.com/32' }}
-                            style={[styles.assigneeAvatar, { marginLeft: index > 0 ? -8 : 0, borderColor: colors.card }]}
-                          />
-                        ))}
-                        {task.assignees.length > 3 && (
-                          <View style={[styles.moreAssignees, { backgroundColor: colors.muted, borderColor: colors.card }]}>
-                            <Text style={[styles.moreAssigneesText, { color: colors.foreground }]}>+{task.assignees.length - 3}</Text>
-                          </View>
-                        )}
-                      </View>
-                      <View style={styles.taskMeta}>
-                        {task.dueDate && (
-                          <View style={styles.dueDateContainer}>
-                            <Calendar color={colors['muted-foreground']} size={12} />
-                            <Text style={[styles.dueDate, { color: colors['muted-foreground'] }]}>{formatDate(task.dueDate)}</Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                    </TouchableOpacity>
-                  </LongPressGestureHandler>
+                    onDragEnd={(id) => {
+                      console.log('Drag ended for task:', id);
+                      setIsDragging(false);
+                      setDraggedTask(null);
+                    }}
+                    selected={draggedTask?._id === task._id}
+                  />
                 ))}
                 
                 {/* Add Task Button at bottom of column */}
@@ -821,7 +810,8 @@ export default function TasksScreen() {
           </ScrollView>
         </View>
       </Modal>
-    </View>
+      </View>
+    </TaskDragArea>
   );
 }
 

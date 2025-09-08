@@ -18,7 +18,11 @@ module.exports = {
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',
-    'http://localhost:5176'
+    'http://localhost:5176',
+    'http://192.168.1.101:3000',
+    'http://192.168.1.101:8081',
+    'exp://192.168.1.101:8081',
+    'exp://z4eqyc4-anonymous-8081.exp.direct'
   ],
 
   // Email Configuration
