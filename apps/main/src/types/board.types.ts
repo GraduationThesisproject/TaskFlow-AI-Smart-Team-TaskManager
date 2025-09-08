@@ -5,12 +5,13 @@ export interface Board {
   description?: string;
   type: 'kanban' | 'list' | 'calendar' | 'timeline';
   visibility: 'private' | 'workspace' | 'public';
-  space: string;
+  space: string | { _id: string; name: string };
   owner: string;
   members: BoardMember[];
-  columns: Column[];
+  columns?: Column[]; // Optional since columns are managed separately in columnSlice
   settings: BoardSettings;
   tags: BoardTag[];
+  theme?: BoardTheme;
   archived: boolean;
   isActive: boolean;
   isTemplate: boolean;
@@ -37,6 +38,19 @@ export interface BoardSettings {
 export interface BoardTag {
   name: string;
   color: string;
+}
+
+export interface BoardTheme {
+  background?: {
+    _id: string;
+    filename: string;
+    url: string;
+    originalName: string;
+    mimeType: string;
+    size: number;
+  } | null;
+  color: string;
+  opacity: number;
 }
 
 export interface Column {

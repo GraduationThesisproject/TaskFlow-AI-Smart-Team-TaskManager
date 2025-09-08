@@ -13,6 +13,7 @@ export * from './useWorkspaces';
 export * from './useCreateWorkspaceModal';
 export * from './useColumns';
 export * from './useBoards';
+export * from './useBoard';
 export * from './useSpaces';
 export * from './useActivity';
 export * from './useNotifications';

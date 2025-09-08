@@ -234,6 +234,40 @@ exports.updateSpace = async (req, res) => {
     }
 };
 
+// Get space members
+exports.getSpaceMembers = async (req, res) => {
+    try {
+        const { id: spaceId } = req.params;
+        const userId = req.user.id;
+
+        const space = await Space.findById(spaceId)
+            .populate('members.user', 'name email avatar')
+            .populate('members.addedBy', 'name email');
+
+        if (!space) {
+            return sendResponse(res, 404, false, 'Space not found');
+        }
+
+        // Format member data
+        const members = space.members.map(member => ({
+            _id: member._id,
+            user: member.user,
+            role: member.role,
+            joinedAt: member.joinedAt,
+            addedBy: member.addedBy,
+            permissions: member.permissions
+        }));
+
+        sendResponse(res, 200, true, 'Space members retrieved successfully', {
+            members: members,
+            count: members.length
+        });
+    } catch (error) {
+        logger.error('Get space members error:', error);
+        sendResponse(res, 500, false, 'Server error retrieving space members');
+    }
+};
+
 // Add member to space
 exports.addMember = async (req, res) => {
     try {
@@ -259,6 +293,9 @@ exports.addMember = async (req, res) => {
             // return sendResponse(res, 403, false, 'User must be a member of the workspace to join space');
         }
 
+        // Get new member info for logging
+        const newMember = await User.findById(newMemberId);
+
         // Add member to space
         await space.addMember(newMemberId, role, currentUserId);
 
@@ -268,7 +305,7 @@ exports.addMember = async (req, res) => {
             action: 'space_member_add',
             description: `Added member to space: ${space.name}`,
             entity: { type: 'Space', id: spaceId, name: space.name },
-            relatedEntities: [{ type: 'User', id: newMemberId, name: newMember.name }],
+            relatedEntities: [{ type: 'User', id: newMemberId, name: newMember?.name || 'Unknown User' }],
             workspaceId: space.workspace,
             spaceId,
             metadata: {

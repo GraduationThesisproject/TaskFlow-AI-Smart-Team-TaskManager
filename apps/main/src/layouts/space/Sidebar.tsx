@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Home, Grid, BarChart3, Settings, ArrowLeft, X, Users, Archive } from 'lucide-react';
+import { Home, Grid, BarChart3, Settings, ArrowLeft, X } from 'lucide-react';
 import {
   Sidebar,
   SidebarHeader,
@@ -58,9 +58,7 @@ const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
       items: [
         { icon: Home, label: 'Overview', href: '/space' },
         { icon: Grid, label: 'Boards', href: '/space/boards' },
-        { icon: Users, label: 'Members', href: '/space/members' },
         { icon: BarChart3, label: 'Analytics', href: '/space/analytics' },
-        { icon: Archive, label: 'Archive', href: '/space/archive' },
         { icon: Settings, label: 'Settings', href: '/space/settings' },
       ],
       backLink: { href: '/workspace', label: 'Workspace' },

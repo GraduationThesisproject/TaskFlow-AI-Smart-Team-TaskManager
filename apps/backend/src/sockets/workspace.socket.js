@@ -38,10 +38,13 @@ const authenticateSocket = async (socket, next) => {
 
 // Handle workspace socket events
 const handleWorkspaceSocket = (io) => {
-    // Apply authentication middleware
-    io.use(authenticateSocket);
+    // Create workspace namespace
+    const workspaceNamespace = io.of('/workspace');
     
-    io.on('connection', (socket) => {
+    // Apply authentication middleware
+    workspaceNamespace.use(authenticateSocket);
+    
+    workspaceNamespace.on('connection', (socket) => {
         logger.info(`User connected: ${socket.user.name} (${socket.id})`);
 
         // Join user's personal room for notifications
@@ -103,7 +106,7 @@ const handleWorkspaceSocket = (io) => {
                 }
 
                 // Broadcast member update
-                io.to(`workspace:${workspaceId}`).emit('workspace:member-updated', {
+                workspaceNamespace.to(`workspace:${workspaceId}`).emit('workspace:member-updated', {
                     memberId,
                     updates,
                     updatedBy: socket.user,
@@ -131,7 +134,7 @@ const handleWorkspaceSocket = (io) => {
                 }
 
                 // Broadcast settings update
-                io.to(`workspace:${workspaceId}`).emit('workspace:settings-updated', {
+                workspaceNamespace.to(`workspace:${workspaceId}`).emit('workspace:settings-updated', {
                     settings,
                     updatedBy: socket.user,
                     timestamp: new Date()
@@ -187,23 +190,23 @@ const handleWorkspaceSocket = (io) => {
     });
 
     // Global workspace utilities
-    io.notifyWorkspace = (workspaceId, event, data) => {
-        io.to(`workspace:${workspaceId}`).emit(event, data);
+    workspaceNamespace.notifyWorkspace = (workspaceId, event, data) => {
+        workspaceNamespace.to(`workspace:${workspaceId}`).emit(event, data);
     };
 
-    io.notifyWorkspaceAdmins = async (workspaceId, event, data) => {
+    workspaceNamespace.notifyWorkspaceAdmins = async (workspaceId, event, data) => {
         try {
             const workspace = await Workspace.findById(workspaceId)
                 .populate('owner', '_id')
                 .populate('members.user', '_id');
 
             // Notify owner
-            io.to(`notifications:${workspace.owner._id}`).emit(event, data);
+            workspaceNamespace.to(`notifications:${workspace.owner._id}`).emit(event, data);
 
             // Notify admin members
             const adminMembers = workspace.members.filter(member => member.role === 'admin');
             adminMembers.forEach(member => {
-                io.to(`notifications:${member.user._id}`).emit(event, data);
+                workspaceNamespace.to(`notifications:${member.user._id}`).emit(event, data);
             });
 
         } catch (error) {
@@ -211,7 +214,7 @@ const handleWorkspaceSocket = (io) => {
         }
     };
 
-    return io;
+    return workspaceNamespace;
 };
 
 module.exports = handleWorkspaceSocket;

@@ -35,6 +35,11 @@ router.put('/:id',
     spaceController.updateSpace
 );
 
+router.get('/:id/members',
+    requireSpacePermission('/:id/members'),
+    spaceController.getSpaceMembers
+);
+
 router.post('/:id/members',
     requireSpacePermission('/:id/members'),
     validateMiddleware.validateBody(spaceSchemas.addMemberSchema),
