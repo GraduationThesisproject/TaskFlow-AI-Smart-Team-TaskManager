@@ -8,14 +8,14 @@ export const env = {
   PORT: 3001,
   
   // API Configuration
-  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || Constants.expoConfig?.extra?.apiBaseUrl || 'http://192.168.1.13:3001/api',
-  API_URL: process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl || 'http://192.168.1.13:3001/api',
-  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || Constants.expoConfig?.extra?.socketUrl || 'http://192.168.1.13:3001',
+  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || Constants.expoConfig?.extra?.apiBaseUrl || 'http://192.168.1.101:3001/api',
+  API_URL: process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl || 'http://192.168.1.101:3001/api',
+  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || Constants.expoConfig?.extra?.socketUrl || 'http://192.168.1.101:3001',
   
   // App Configuration
   APP_NAME: Constants.expoConfig?.name || 'TaskFlow',
   APP_VERSION: Constants.expoConfig?.version || '1.0.0',
-  BASE_URL: process.env.EXPO_PUBLIC_BASE_URL || Constants.expoConfig?.extra?.baseUrl || 'http://192.168.1.13:3001',
+  BASE_URL: process.env.EXPO_PUBLIC_BASE_URL || Constants.expoConfig?.extra?.baseUrl || 'http://192.168.1.101:3001',
   
   // Feature Flags
   ENABLE_ANALYTICS: process.env.EXPO_PUBLIC_ENABLE_ANALYTICS === 'true' || Constants.expoConfig?.extra?.enableAnalytics === true,
@@ -73,7 +73,7 @@ export const env = {
   PERFORMANCE_MONITORING_ENABLED: process.env.EXPO_PUBLIC_PERFORMANCE_MONITORING_ENABLED === 'true' || Constants.expoConfig?.extra?.performanceMonitoringEnabled === true,
   
   // Environment specific URLs
-  DEVELOPMENT_API_URL: process.env.EXPO_PUBLIC_DEV_API_URL || 'http://192.168.1.13:3001/api',
+  DEVELOPMENT_API_URL: process.env.EXPO_PUBLIC_DEV_API_URL || 'http://192.168.1.101:3001/api',
   STAGING_API_URL: process.env.EXPO_PUBLIC_STAGING_API_URL || 'https://staging-api.taskflow.com/api',
   PRODUCTION_API_URL: process.env.EXPO_PUBLIC_PROD_API_URL || 'https://api.taskflow.com/api',
   
