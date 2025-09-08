@@ -95,26 +95,26 @@ cursorRules.json
 
 
 ###########################################"
-apps/my-expo-app/node_modules/
-apps/my-expo-app/.expo/
-apps/my-expo-app/dist/
+apps/mobile/node_modules/
+apps/mobile/.expo/
+apps/mobile/dist/
 npm-debug.*
-apps/my-expo-app/*.jks
-apps/my-expo-app/*.p8
-apps/my-expo-app/*.p12
-apps/my-expo-app/*.key
-apps/my-expo-app/*.mobileprovision
-apps/my-expo-app/*.orig.*
-apps/my-expo-app/web-build/
+apps/mobile/*.jks
+apps/mobile/*.p8
+apps/mobile/*.p12
+apps/mobile/*.key
+apps/mobile/*.mobileprovision
+apps/mobile/*.orig.*
+apps/mobile/web-build/
 
 
 
 
-apps/my-expo-app/ios
-apps/my-expo-app/android
+apps/mobile/ios
+apps/mobile/android
 
 # macOS
-apps/my-expo-app/.DS_Store
+apps/mobile/.DS_Store
 
 # Temporary files created by Metro to check the health of the file watcher
-apps/my-expo-app/.metro-health-check*
+apps/mobile/.metro-health-check*

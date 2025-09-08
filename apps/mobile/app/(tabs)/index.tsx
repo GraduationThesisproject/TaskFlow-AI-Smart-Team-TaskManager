@@ -4,14 +4,16 @@ import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector, useAppDispatch } from '@/store';
-import { fetchWorkspaces } from '@/store/slices/workspaceSlice';
+import { fetchWorkspaces, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
 import { fetchAnalytics } from '@/store/slices/analyticsSlice';
 import { listTemplates } from '@/store/slices/templatesSlice';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
-import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import StatsCards from '@/components/cards/StatsCards';
+import { router } from 'expo-router';
+import CreateWorkspaceModal from '@/components/common/CreateWorkspaceModal';
+import { createWorkspace } from '@/store/slices/workspaceSlice';
 
 // Welcome Header Component
 const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
@@ -143,15 +145,43 @@ const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
 const WorkspacesSection: React.FC = () => {
   const colors = useThemeColors();
   const { workspaces, loading: workspacesLoading, error: workspacesError } = useAppSelector(state => state.workspace);
+  const dispatch = useAppDispatch();
 
   const recentWorkspaces = workspaces?.slice(0, 3) || [];
+
+  const handleOpenWorkspace = (workspaceId?: string) => {
+    if (!workspaceId) return;
+    dispatch(setCurrentWorkspaceId(workspaceId));
+    router.push(`/(tabs)/workspace?workspaceId=${workspaceId}`);
+  };
+
+  const [showCreateWs, setShowCreateWs] = useState(false);
+  const [creatingWs, setCreatingWs] = useState(false);
+
+  const handleSubmitCreateWorkspace = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+    try {
+      setCreatingWs(true);
+      const action: any = await dispatch(createWorkspace({ name, description, visibility } as any));
+      const payload = action?.payload as any;
+      const id = payload?._id || payload?.id;
+      if (id) {
+        dispatch(setCurrentWorkspaceId(id));
+        router.push(`/(tabs)/workspace?workspaceId=${id}`);
+      }
+      // refresh the dashboard list
+      await dispatch(fetchWorkspaces());
+      setShowCreateWs(false);
+    } finally {
+      setCreatingWs(false);
+    }
+  };
 
   if (workspacesLoading) {
     return (
       <Card style={[styles.workspacesCard, { backgroundColor: colors.card }]}>
         <View style={styles.workspacesCardHeader}>
           <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Your Workspaces</Text>
-          <TouchableOpacity style={[styles.addButton, { borderColor: colors.border }]}>
+          <TouchableOpacity style={[styles.addButton, { borderColor: colors.border }]} onPress={() => setShowCreateWs(true)}>
             <FontAwesome name="plus" size={16} color={colors['muted-foreground']} />
             <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>New Workspace</Text>
           </TouchableOpacity>
@@ -161,6 +191,12 @@ const WorkspacesSection: React.FC = () => {
             <View key={i} style={[styles.workspaceSkeleton, { backgroundColor: colors.border }]} />
           ))}
         </View>
+        <CreateWorkspaceModal
+          visible={showCreateWs}
+          onClose={() => setShowCreateWs(false)}
+          onSubmit={handleSubmitCreateWorkspace}
+          submitting={creatingWs}
+        />
       </Card>
     );
   }
@@ -186,7 +222,7 @@ const WorkspacesSection: React.FC = () => {
     <Card style={[styles.workspacesCard, { backgroundColor: colors.card }]}>
       <View style={styles.workspacesCardHeader}>
         <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Your Workspaces</Text>
-        <TouchableOpacity style={[styles.addButton, { borderColor: colors.border }]}>
+        <TouchableOpacity style={[styles.addButton, { borderColor: colors.border }]} onPress={() => setShowCreateWs(true)}>
           <FontAwesome name="plus" size={16} color={colors['muted-foreground']} />
           <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>New Workspace</Text>
         </TouchableOpacity>
@@ -198,6 +234,7 @@ const WorkspacesSection: React.FC = () => {
               <TouchableOpacity
                 key={workspace._id}
                 style={[styles.workspaceItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => handleOpenWorkspace(workspace._id)}
               >
                 <View style={styles.workspaceItemHeader}>
                   <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>
@@ -244,12 +281,18 @@ const WorkspacesSection: React.FC = () => {
             <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], textAlign: 'center' }]}>
               Create your first workspace to get started with team collaboration.
             </Text>
-            <TouchableOpacity style={[styles.createButton, { backgroundColor: colors.primary }]}>
+            <TouchableOpacity style={[styles.createButton, { backgroundColor: colors.primary }]} onPress={() => setShowCreateWs(true)}>
               <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>Create Workspace</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
+      <CreateWorkspaceModal
+        visible={showCreateWs}
+        onClose={() => setShowCreateWs(false)}
+        onSubmit={handleSubmitCreateWorkspace}
+        submitting={creatingWs}
+      />
     </Card>
   );
 };

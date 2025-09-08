@@ -122,7 +122,7 @@ export default function WorkspaceRulesScreen() {
           <TouchableOpacity style={[styles.headerBtn, { backgroundColor: colors.primary }]} onPress={goBack}>
             <FontAwesome name="chevron-left" size={18} color={colors['primary-foreground']} />
           </TouchableOpacity>
-          <Text style={[TextStyles.heading.h1, { color: colors.foreground }]} numberOfLines={1}>Workspace Rules</Text>
+          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]} numberOfLines={1}>Workspace Rules</Text>
           <View style={styles.headerSpacer} />
         </View>
         <View style={styles.emptyBox}>
@@ -139,7 +139,7 @@ export default function WorkspaceRulesScreen() {
         <TouchableOpacity style={[styles.headerBtn, { backgroundColor: colors.primary }]} onPress={goBack}>
           <FontAwesome name="chevron-left" size={18} color={colors['primary-foreground']} />
         </TouchableOpacity>
-        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]} numberOfLines={1}>Workspace Rules</Text>
+        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]} numberOfLines={1}>Workspace Rules</Text>
         <View style={styles.headerSpacer} />
       </View>
 
