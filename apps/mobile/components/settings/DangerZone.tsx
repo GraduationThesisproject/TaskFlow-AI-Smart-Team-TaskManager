@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Alert } from 'react-native';
+import { StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const DangerZone: React.FC = () => {
   const colors = useThemeColors();
-  const { logout } = useAuth();
+  const { logout, deleteAccount } = useAuth();
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDeleteAccount = () => {
@@ -20,9 +20,13 @@ const DangerZone: React.FC = () => {
         {
           text: 'Delete Account',
           style: 'destructive',
-          onPress: () => {
-            // TODO: Implement account deletion API call
-            Alert.alert('Account Deletion', 'Account deletion feature will be implemented soon.');
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              Alert.alert('Account Deleted', 'Your account has been successfully deleted.');
+            } catch (error) {
+              Alert.alert('Deletion Failed', 'Failed to delete account. Please try again.');
+            }
           }
         }
       ]
@@ -94,12 +98,15 @@ const DangerZone: React.FC = () => {
             <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
               Sign out of your account on this device
             </Text>
-            <View style={styles.actionButton}>
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={handleLogout}
+            >
               <FontAwesome name="sign-out" size={14} color={colors.destructive} />
               <Text style={[TextStyles.body.small, { color: colors.destructive }]}>
                 Logout
               </Text>
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* Delete Account Action */}
@@ -113,12 +120,15 @@ const DangerZone: React.FC = () => {
             <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
               Permanently delete your account and all associated data
             </Text>
-            <View style={styles.actionButton}>
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={handleDeleteAccount}
+            >
               <FontAwesome name="trash" size={14} color={colors.destructive} />
               <Text style={[TextStyles.body.small, { color: colors.destructive }]}>
                 Delete Account
               </Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
