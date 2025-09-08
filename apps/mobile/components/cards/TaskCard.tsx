@@ -1,8 +1,20 @@
-import React from 'react';
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { StyleSheet } from 'react-native';
 import { Text, Card, View } from '../Themed';
 import { useThemeColors } from '../ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  runOnJS,
+  useAnimatedReaction,
+} from 'react-native-reanimated';
+import { useDraggingContext } from './TaskDragContext';
+
+export const TASK_CARD_HEIGHT = 120;
 
 interface TaskCardProps {
   id: string;
@@ -19,7 +31,11 @@ interface TaskCardProps {
   tags?: string[];
   onPress?: () => void;
   onLongPress?: () => void;
+  onDragStart?: (id: string) => void;
+  onDragEnd?: (id: string) => void;
   selected?: boolean;
+  isDraggable?: boolean;
+  index?: number;
 }
 
 export default function TaskCard({
@@ -33,9 +49,22 @@ export default function TaskCard({
   tags = [],
   onPress,
   onLongPress,
-  selected = false
+  onDragStart,
+  onDragEnd,
+  selected = false,
+  isDraggable = false,
+  index = 0
 }: TaskCardProps) {
   const colors = useThemeColors();
+  
+  // Get dragging context
+  const { setDraggingTask, dragY, draggingTaskId, dragOffsetY } = useDraggingContext();
+  
+  // Animation values for drag feedback
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  const marginTop = useSharedValue(0);
+  const isDragging = useRef(false);
 
   const getStatusColor = () => {
     switch (status) {
@@ -97,17 +126,100 @@ export default function TaskCard({
     }
   };
 
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      onLongPress={onLongPress}
-      activeOpacity={0.7}
-      style={[
-        styles.container,
-        selected && { borderColor: colors.primary, borderWidth: 2 }
-      ]}
-    >
-      <Card style={styles.card}>
+  // Handle drag start
+  const handleDragStart = () => {
+    isDragging.current = true;
+    scale.value = withSpring(1.05);
+    opacity.value = withSpring(0.8);
+    onDragStart?.(id);
+  };
+
+  // Handle drag end
+  const handleDragEnd = () => {
+    isDragging.current = false;
+    scale.value = withSpring(1);
+    opacity.value = withSpring(1);
+    onDragEnd?.(id);
+  };
+
+  // Handle tap
+  const handleTap = () => {
+    if (!isDragging.current) {
+      onPress?.();
+    }
+  };
+
+  // Handle long press with drag context
+  const handleLongPress = () => {
+    onLongPress?.();
+    if (isDraggable && setDraggingTask) {
+      const yPosition = index * TASK_CARD_HEIGHT + 100; // Approximate header offset
+      setDraggingTask(id, yPosition);
+      handleDragStart();
+    }
+  };
+
+  // Animated reactions for drop zone detection
+  useAnimatedReaction(
+    () => dragY?.value,
+    (newDragY) => {
+      if (!newDragY || !dragOffsetY) {
+        marginTop.value = withTiming(0);
+        return;
+      }
+      
+      const itemY = index * TASK_CARD_HEIGHT + 100 - dragOffsetY.value;
+      
+      // If dragging above first item
+      if (index === 0 && newDragY < itemY + TASK_CARD_HEIGHT) {
+        marginTop.value = withTiming(TASK_CARD_HEIGHT);
+        return;
+      }
+      
+      // If dragging over current item
+      const isOverItem = newDragY >= itemY && newDragY < itemY + TASK_CARD_HEIGHT;
+      marginTop.value = withTiming(isOverItem ? TASK_CARD_HEIGHT : 0);
+    },
+    [index]
+  );
+
+  // Reset margins when drag ends
+  useEffect(() => {
+    if (!draggingTaskId) {
+      marginTop.value = withTiming(0);
+    }
+  }, [draggingTaskId]);
+
+  // Gesture configuration
+  const longPressGesture = Gesture.LongPress()
+    .minDuration(500)
+    .onStart(() => {
+      runOnJS(handleLongPress)();
+    });
+
+  const tapGesture = Gesture.Tap()
+    .onEnd(() => {
+      runOnJS(handleTap)();
+    });
+
+  const composedGesture = Gesture.Race(longPressGesture, tapGesture);
+
+  // Animated styles
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+      opacity: opacity.value,
+      marginTop: marginTop.value,
+    };
+  });
+
+  // Hide the original card when it's being dragged
+  if (draggingTaskId === id) {
+    return <Animated.View style={[styles.container, { height: TASK_CARD_HEIGHT, marginTop: marginTop }]} />;
+  }
+
+  const CardContent = () => (
+    <Card style={styles.card}>
         <View style={styles.header}>
           <View style={styles.statusContainer}>
             <View style={[styles.statusDot, { backgroundColor: getStatusColor() }]} />
@@ -175,7 +287,37 @@ export default function TaskCard({
           )}
         </View>
       </Card>
-    </TouchableOpacity>
+  );
+
+  if (isDraggable) {
+    return (
+      <GestureDetector gesture={composedGesture}>
+        <Animated.View
+          style={[
+            styles.container,
+            { minHeight: TASK_CARD_HEIGHT },
+            selected && { borderColor: colors.primary, borderWidth: 2 },
+            animatedStyle
+          ]}
+        >
+          <CardContent />
+        </Animated.View>
+      </GestureDetector>
+    );
+  }
+
+  return (
+    <Animated.View
+      style={[
+        styles.container,
+        { minHeight: TASK_CARD_HEIGHT },
+        selected && { borderColor: colors.primary, borderWidth: 2 },
+        animatedStyle
+      ]}
+      onTouchEnd={handleTap}
+    >
+      <CardContent />
+    </Animated.View>
   );
 }
 
