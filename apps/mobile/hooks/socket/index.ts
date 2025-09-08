@@ -14,6 +14,7 @@ export { useWorkspaceSocket } from '../../contexts/SocketContext';
 // Business logic hooks
 export { useTaskSocket } from './useTaskSocket';
 export { useNotifications } from './useNotifications';
+export { useRealTimeNotifications } from './useRealTimeNotifications';
 export { useSystemMonitoring } from './useSystemSocket';
 export { useWorkspaceSocketOperations } from './useWorkspaceSocket';
 export { useChatSocketOperations } from './useChatSocket';
