@@ -5,7 +5,7 @@ module.exports = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: parseInt(process.env.PORT || '3001', 10),
   // Frontend URL
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173'||'http://192.168.1.142:8081',
   // Database Configuration
   DATABASE_URL: process.env.DATABASE_URL || 'mongodb://localhost:27017/taskflow',
 
@@ -16,6 +16,7 @@ module.exports = {
   // CORS Configuration
   CORS_ORIGIN: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()) : [
     'http://localhost:5173',
+    'http://192.168.1.142:8081',
     'http://localhost:5174',
     'http://localhost:5175',
     'http://localhost:5176',
