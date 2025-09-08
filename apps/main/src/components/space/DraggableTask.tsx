@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Draggable } from 'react-beautiful-dnd';
+import { Draggable } from '@hello-pangea/dnd';
 import {
   Card,
   CardContent,
@@ -29,26 +29,7 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
     columnId 
   });
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'text-red-500';
-      case 'high': return 'text-orange-500';
-      case 'medium': return 'text-yellow-500';
-      case 'low': return 'text-green-500';
-      default: return 'text-gray-500';
-    }
-  };
 
-  const getPriorityBars = (priority: string) => {
-    const bars = [];
-    const count = priority === 'critical' ? 5 : priority === 'high' ? 4 : priority === 'medium' ? 3 : 2;
-    for (let i = 0; i < count; i++) {
-      bars.push(
-        <div key={i} className={`w-1 h-4 rounded-full ${getPriorityColor(priority).replace('text-', 'bg-')}`} />
-      );
-    }
-    return bars;
-  };
 
   const getLabelColor = (tag: string) => {
     const colors = ['bg-blue-100 text-blue-800', 'bg-green-100 text-green-800', 'bg-orange-100 text-orange-800', 'bg-red-100 text-red-800', 'bg-purple-100 text-purple-800'];
@@ -68,7 +49,6 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
     return `${Math.floor(diffInDays / 30)} months`;
   };
 
-  const progressPercentage = (task.estimatedHours || 0) > 0 ? (task.actualHours / (task.estimatedHours || 1)) * 100 : 0;
 
   const handleClick = (e: React.MouseEvent) => {
     if (!isDragging) {
@@ -89,80 +69,70 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
             ref={provided.innerRef}
             {...provided.draggableProps}
             {...provided.dragHandleProps}
-            className={`mb-3 transition-all duration-200 ${
-              snapshot.isDragging ? 'opacity-50 scale-95 rotate-2' : ''
+            className={`mb-2 transition-all duration-200 ${
+              snapshot.isDragging ? 'opacity-50 scale-95 rotate-1' : ''
             }`}
             onClick={handleClick}
           >
-            <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200 border border-gray-200 dark:border-gray-700">
-              <CardContent className="p-4">
-                {/* Header with Label and Priority */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex flex-wrap gap-1">
-                    {task.tags && task.tags.slice(0, 2).map((tag, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className={`text-xs px-2 py-1 ${getLabelColor(tag)}`}
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
+            <Card className="cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-200 border border-border/20 bg-card/95 backdrop-blur-sm rounded-xl overflow-hidden group">
+              <CardContent className="p-3">
+                {/* Compact Header with Priority and Status */}
+                <div className="flex items-center justify-between mb-2">
+                  {/* Priority Indicator */}
+                  <div className="flex items-center gap-1">
+                    <div className={`w-2 h-2 rounded-full ${
+                      task.priority === 'critical' ? 'bg-red-500' :
+                      task.priority === 'high' ? 'bg-orange-500' :
+                      task.priority === 'medium' ? 'bg-yellow-500' :
+                      'bg-green-500'
+                    }`} />
+                    {task.tags && task.tags.length > 0 && (
+                      <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                    )}
                   </div>
-                  <div className="flex gap-1">
-                    {getPriorityBars(task.priority)}
-                  </div>
+                  
+                  {/* Status Indicator */}
+                  {task.status === 'done' && (
+                    <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
+                      <span className="text-green-600 text-xs">✓</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Task Title */}
-                <Typography variant="body-medium" className="font-semibold mb-2 line-clamp-2">
+                <Typography variant="body-small" className="font-medium mb-2 line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-200">
                   {task.title}
                 </Typography>
 
-                {/* Progress Bar */}
-                {(task.estimatedHours || 0) > 0 && (
-                  <div className="mb-3">
-                    <div className="flex justify-between items-center mb-1">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Progress
-                      </Typography>
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        {Math.round(progressPercentage)}%
-                      </Typography>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(progressPercentage, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Task Details */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                {/* Compact Footer with Icons and Assignees */}
+                <div className="flex items-center justify-between">
+                  {/* Left side - Icons */}
+                  <div className="flex items-center gap-2">
                     {task.attachments && task.attachments.length > 0 && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-lg">📎</span>
-                        <span>{task.attachments.length}</span>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <span className="text-xs">📎</span>
+                        <span className="text-xs">{task.attachments.length}</span>
                       </div>
                     )}
                     {task.dueDate && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-lg">⏰</span>
-                        <span>{formatTimeAgo(task.dueDate)}</span>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <span className="text-xs">⏰</span>
+                        <span className="text-xs">{formatTimeAgo(task.dueDate)}</span>
+                      </div>
+                    )}
+                    {task.estimatedHours && task.estimatedHours > 0 && (
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <span className="text-xs">⏱️</span>
+                        <span className="text-xs">{task.estimatedHours}h</span>
                       </div>
                     )}
                   </div>
-                </div>
 
-                {/* Assignees */}
-                {task.assignees && task.assignees.length > 0 && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      {task.assignees.slice(0, 3).map((assignee, index) => (
-                        <Avatar key={index} size="sm" className="border-2 border-white dark:border-gray-800">
+                  {/* Right side - Assignees */}
+                  {task.assignees && task.assignees.length > 0 && (
+                    <div className="flex items-center -space-x-1">
+                      {task.assignees.slice(0, 2).map((assignee, index) => (
+                        <Avatar key={index} size="xs" className="border-2 border-background">
                           <AvatarFallback
                             className={`text-xs ${getAvatarColor(assignee)}`}
                           >
@@ -170,20 +140,33 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
                           </AvatarFallback>
                         </Avatar>
                       ))}
-                      {task.assignees.length > 3 && (
-                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-white dark:border-gray-800">
-                          <Typography variant="body-small" className="text-muted-foreground">
-                            +{task.assignees.length - 3}
+                      {task.assignees.length > 2 && (
+                        <div className="w-6 h-6 rounded-full bg-muted/80 flex items-center justify-center border-2 border-background">
+                          <Typography variant="body-small" className="text-muted-foreground text-xs">
+                            +{task.assignees.length - 2}
                           </Typography>
                         </div>
                       )}
                     </div>
-                    
-                    {/* Completion Status */}
-                    {task.status === 'done' && (
-                      <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-                        <span className="text-white text-sm">✓</span>
-                      </div>
+                  )}
+                </div>
+
+                {/* Tags (if any) */}
+                {task.tags && task.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {task.tags.slice(0, 2).map((tag, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className={`text-xs px-1.5 py-0.5 ${getLabelColor(tag)}`}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                    {task.tags.length > 2 && (
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-muted/60 text-muted-foreground">
+                        +{task.tags.length - 2}
+                      </Badge>
                     )}
                   </div>
                 )}

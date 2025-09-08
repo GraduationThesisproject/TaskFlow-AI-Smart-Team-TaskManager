@@ -5,7 +5,11 @@ import { useMemo, useState, useEffect } from "react";
 import { DeleteWorkspaceModal } from "../../../components/dashboard/home/modals/DeleteWorkspaceModal";
 import { useWorkspace } from "../../../hooks/useWorkspace";
 
-export const WorkspacesSection = () => {
+interface WorkspacesSectionProps {
+  viewMode?: 'cards' | 'list' | 'list-detail';
+}
+
+export const WorkspacesSection = ({ viewMode = 'cards' }: WorkspacesSectionProps) => {
   const navigate = useNavigate();
   const { 
     workspaces, 
@@ -163,8 +167,9 @@ export const WorkspacesSection = () => {
             />
           ) : sortedWorkspaces.length > 0 ? (
             <div className="space-y-2">
-              <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
-                {sortedWorkspaces.slice(0, 3).map((ws: any) => (
+              {viewMode === 'cards' && (
+                <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
+                  {sortedWorkspaces.slice(0, 3).map((ws: any) => (
                 <div
                   key={ws._id}
                   className="relative overflow-hidden group border rounded-md p-3 cursor-pointer flex flex-col ring-1 ring-accent/10 border-[hsl(var(--accent))]/20 shadow-[0_0_8px_hsl(var(--accent)/0.06)] hover:shadow-[0_0_16px_hsl(var(--accent)/0.12)] transition-all"
@@ -241,8 +246,154 @@ export const WorkspacesSection = () => {
                     </Typography>
                   </div>
                 </div>
-              ))}
-              </div>
+                  ))}
+                </div>
+              )}
+
+              {viewMode === 'list' && (
+                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                  <div className="divide-y divide-slate-200 dark:divide-slate-700">
+                    {sortedWorkspaces.slice(0, 3).map((ws: any) => (
+                      <div
+                        key={ws._id}
+                        className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-200 cursor-pointer"
+                        onClick={() => handleWorkspaceClick(ws._id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <AvatarWithFallback
+                              src={ws.avatar}
+                              alt={ws.name}
+                              size="sm"
+                              variant="rounded"
+                              className="border border-border/50 flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <Typography variant="body-medium" className="font-medium text-sm text-foreground truncate" title={ws.name}>
+                                {ws.name}
+                              </Typography>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge
+                                  variant="secondary"
+                                  className={ws?.isPublic === true
+                                    ? 'bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-1'
+                                    : 'bg-muted text-foreground/80 border border-border text-xs px-2 py-1'}
+                                >
+                                  {ws?.isPublic === true ? 'Public' : 'Private'}
+                                </Badge>
+                                <Badge
+                                  variant="secondary"
+                                  className={(ws?.status ?? (ws?.isActive === false ? 'archived' : 'active')) === 'archived'
+                                    ? 'bg-red-700 text-red-50 border border-red-700 text-xs px-2 py-1'
+                                    : 'bg-green-700 text-green-50 border border-green-700 text-xs px-2 py-1'}
+                                >
+                                  {ws?.status ?? (ws?.isActive === false ? 'archived' : 'active')}
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200">
+                                  {ws.members?.length || 0} members
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="text-sm text-slate-500 dark:text-slate-400">
+                              Created {new Date(ws.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10 h-6 w-6 p-0"
+                              onClick={(e) => { e.stopPropagation(); setToDelete({ id: ws._id, name: ws.name }); setIsDeleteOpen(true);  }}
+                              title="Delete workspace"
+                              aria-label="Delete workspace"
+                            >
+                              <Trash className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {viewMode === 'list-detail' && (
+                <div className="space-y-4">
+                  {sortedWorkspaces.slice(0, 3).map((ws: any) => (
+                    <div
+                      key={ws._id}
+                      className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+                      onClick={() => handleWorkspaceClick(ws._id)}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-3">
+                            <AvatarWithFallback
+                              src={ws.avatar}
+                              alt={ws.name}
+                              size="md"
+                              variant="rounded"
+                              className="border border-border/50 flex-shrink-0"
+                            />
+                            <div>
+                              <Typography variant="body-large" className="font-semibold text-foreground text-lg">
+                                {ws.name}
+                              </Typography>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge
+                                  variant="secondary"
+                                  className={ws?.isPublic === true
+                                    ? 'bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-1'
+                                    : 'bg-muted text-foreground/80 border border-border text-xs px-2 py-1'}
+                                >
+                                  {ws?.isPublic === true ? 'Public' : 'Private'}
+                                </Badge>
+                                <Badge
+                                  variant="secondary"
+                                  className={(ws?.status ?? (ws?.isActive === false ? 'archived' : 'active')) === 'archived'
+                                    ? 'bg-red-700 text-red-50 border border-red-700 text-xs px-2 py-1'
+                                    : 'bg-green-700 text-green-50 border border-green-700 text-xs px-2 py-1'}
+                                >
+                                  {ws?.status ?? (ws?.isActive === false ? 'archived' : 'active')}
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200">
+                                  {ws.members?.length || 0} members
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                            <div className="flex items-center gap-1">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              Created {new Date(ws.createdAt).toLocaleDateString()}
+                            </div>
+                            {ws?.status === 'archived' && ws?.archiveExpiresAt && (
+                              <div className="flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                Deletes in {formatRemaining(ws.archiveExpiresAt)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10 h-6 w-6 p-0"
+                            onClick={(e) => { e.stopPropagation(); setToDelete({ id: ws._id, name: ws.name }); setIsDeleteOpen(true);  }}
+                            title="Delete workspace"
+                            aria-label="Delete workspace"
+                          >
+                            <Trash className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
             </div>
           ) : (

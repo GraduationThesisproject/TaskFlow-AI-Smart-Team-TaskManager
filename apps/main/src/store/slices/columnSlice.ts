@@ -110,6 +110,21 @@ const columnSlice = createSlice({
     // Remove column in real-time (for socket events)
     removeColumnRealTime: (state, action: PayloadAction<string>) => {
       state.columns = state.columns.filter(col => col._id !== action.payload);
+    },
+
+    // Update column positions in real-time (for socket events)
+    updateColumnPositionsRealTime: (state, action: PayloadAction<Array<{ columnId: string; position: number }>>) => {
+      if (Array.isArray(action.payload)) {
+        // Update positions for each column
+        action.payload.forEach(({ columnId, position }) => {
+          const column = state.columns.find(col => col._id === columnId);
+          if (column) {
+            column.position = position;
+          }
+        });
+        // Sort columns by position to maintain order
+        state.columns.sort((a, b) => (a.position || 0) - (b.position || 0));
+      }
     }
   },
   extraReducers: (builder) => {
@@ -121,7 +136,9 @@ const columnSlice = createSlice({
       })
       .addCase(fetchColumnsByBoard.fulfilled, (state, action) => {
         state.loading = false;
-        state.columns = action.payload;
+        // Handle nested columns structure from API response
+        const responseData = action.payload as any;
+        state.columns = responseData.columns || responseData || [];
       })
       .addCase(fetchColumnsByBoard.rejected, (state, action) => {
         state.loading = false;
@@ -136,7 +153,10 @@ const columnSlice = createSlice({
       })
       .addCase(createColumn.fulfilled, (state, action) => {
         state.loading = false;
-        state.columns.push(action.payload);
+        // Handle nested column structure from API response
+        const responseData = action.payload as any;
+        const column = responseData.column || responseData;
+        state.columns.push(column);
       })
       .addCase(createColumn.rejected, (state, action) => {
         state.loading = false;
@@ -151,9 +171,12 @@ const columnSlice = createSlice({
       })
       .addCase(updateColumn.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.columns.findIndex(col => col._id === action.payload._id);
+        // Handle nested column structure from API response
+        const responseData = action.payload as any;
+        const column = responseData.column || responseData;
+        const index = state.columns.findIndex(col => col._id === column._id);
         if (index !== -1) {
-          state.columns[index] = action.payload;
+          state.columns[index] = column;
         }
       })
       .addCase(updateColumn.rejected, (state, action) => {
@@ -186,11 +209,16 @@ const columnSlice = createSlice({
         state.loading = false;
         // Update column positions based on the new order
         const { columnIds } = action.payload;
-        state.columns = state.columns.sort((a, b) => {
-          const aIndex = columnIds.indexOf(a._id);
-          const bIndex = columnIds.indexOf(b._id);
-          return aIndex - bIndex;
-        });
+        state.columns = state.columns
+          .sort((a, b) => {
+            const aIndex = columnIds.indexOf(a._id);
+            const bIndex = columnIds.indexOf(b._id);
+            return aIndex - bIndex;
+          })
+          .map((column, index) => ({
+            ...column,
+            position: index
+          }));
       })
       .addCase(reorderColumns.rejected, (state, action) => {
         state.loading = false;
@@ -207,7 +235,8 @@ export const {
   stopDraggingColumn,
   updateColumnRealTime,
   addColumnRealTime,
-  removeColumnRealTime
+  removeColumnRealTime,
+  updateColumnPositionsRealTime
 } = columnSlice.actions;
 
 // Export reducer

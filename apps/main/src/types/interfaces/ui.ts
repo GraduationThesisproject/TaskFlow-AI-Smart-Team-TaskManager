@@ -471,8 +471,9 @@ export interface DraggableColumnProps extends BaseUIProps {
   column: any;
   tasks: any[];
   index: number;
+  boardId: string;
   onTaskClick: (task: any) => void;
-  onAddTask: (columnId: string) => void;
+  onAddTask: (taskData: any) => Promise<void>;
   onEditColumn: (columnId: string) => void;
   onDeleteColumn: (columnId: string) => void;
 }
@@ -499,6 +500,8 @@ export interface AddColumnModalProps extends BaseUIProps {
 export interface DraggableTaskProps extends BaseUIProps {
   task: any;
   index: number;
+  columnId: string;
+  onClick: (task: any) => void;
   onDragStart?: (e: any) => void;
   onDragEnd?: (e: any) => void;
   onDrop?: (e: any) => void;
@@ -515,7 +518,7 @@ export interface EditColumnModalProps extends BaseUIProps {
   column: any;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (column: any) => void;
+  onSave: (columnId: string, data: any) => void;
 }
 
 export interface BoardDeletionSettingsModalProps extends BaseUIProps {
