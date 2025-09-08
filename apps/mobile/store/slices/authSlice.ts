@@ -16,6 +16,7 @@ import { AuthService } from '../../services/authService';
 import { setAuthToken, clearAuthToken, getAuthToken, setAuthHeaderOnly } from '../../config/axios';
 import { oauthService } from '../../services/oauthService';
 import { getDeviceId } from '../../utils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const serializeUser = (userData: any): User => {
   if (userData.user) {
@@ -92,6 +93,7 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
+      console.log('🔧 authSlice.loginUser called with:', credentials);
       const response = await AuthService.login(credentials);
       console.log('---------------------------------------------------',response);
       const token = (response as any)?.data?.token || (response as any)?.data?.data?.token;
@@ -104,31 +106,20 @@ export const loginUser = createAsyncThunk(
       } else {
         setAuthHeaderOnly(token);
       }
-      // Protect against a hanging profile request by adding a timeout
-      const profileTimeoutMs = 8000;
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Profile fetch timeout')), profileTimeoutMs);
-      });
-      let userData: any = null;
-      try {
-        const profileResponse = await Promise.race([AuthService.getProfile(), timeoutPromise]);
-        userData = (profileResponse as any)?.data?.data;
-        if (userData) {
-          console.log('[Auth] Authenticated user:', userData);
-        } else {
-          console.log('[Auth] Login succeeded but profile payload missing');
-        }
-      } catch (e) {
-        // Proceed without profile to avoid blocking login; reducers will set isAuthenticated
-        console.warn('Proceeding without profile after login:', (e as Error).message);
-      }
       
-      return {
+      // Get complete user profile data (same as main app)
+      const profileResponse = await AuthService.getProfile();
+      
+      const result = {
         ...(response as any).data,
-        user: userData ? serializeUser(userData) : null,
+        user: serializeUser(profileResponse.data),
         token
       };
+      
+      console.log('✅ Login result:', result);
+      return result;
     } catch (error: any) {
+      console.error('❌ Login error in authSlice:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Login failed';
       return rejectWithValue(errorMessage);
     }
@@ -230,7 +221,7 @@ export const logoutUser = createAsyncThunk(
   async (params: { allDevices?: boolean, navigate?: (path: string) => void } = {}, { rejectWithValue }) => {
     try {
       const { allDevices = false, navigate } = params;
-      const deviceId = getDeviceId();
+      const deviceId = await getDeviceId();
       
       await AuthService.logout(deviceId, allDevices);
       
@@ -251,6 +242,31 @@ export const logoutUser = createAsyncThunk(
         window.location.href = '/';
       }
       const errorMessage = error.response?.data?.message || error.message || 'Logout failed';
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+export const deleteUserAccount = createAsyncThunk(
+  'auth/deleteAccount',
+  async (params: { password?: string, navigate?: (path: string) => void } = {}, { rejectWithValue }) => {
+    try {
+      const { password, navigate } = params;
+      
+      await AuthService.deleteAccount(password);
+      
+      await clearAuthToken();
+      
+      // Redirect to landing page after successful deletion
+      if (navigate) {
+        navigate('/');
+      } else if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+      
+      return true;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Account deletion failed';
       return rejectWithValue(errorMessage);
     }
   }
@@ -526,6 +542,14 @@ const authSlice = createSlice({
       })
       .addCase(checkAuthStatus.fulfilled, (state, action) => {
         state.isLoading = false;
+        console.log('🔧 [authSlice] checkAuthStatus.fulfilled - Setting user data:', {
+          hasUser: !!action.payload.user,
+          userEmail: action.payload.user?.user?.email,
+          userName: action.payload.user?.user?.name,
+          isAuthenticated: action.payload.isAuthenticated,
+          userStructure: action.payload.user ? Object.keys(action.payload.user) : 'No user',
+          fullPayload: action.payload
+        });
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = action.payload.isAuthenticated;
@@ -546,6 +570,13 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
         // User data is already serialized in the thunk
+        console.log('🔧 [authSlice] loginUser.fulfilled - Setting user data:', {
+          hasUser: !!action.payload.user,
+          userEmail: action.payload.user?.user?.email,
+          userName: action.payload.user?.user?.name,
+          userStructure: action.payload.user ? Object.keys(action.payload.user) : 'No user',
+          fullPayload: action.payload
+        });
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
@@ -573,6 +604,22 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
+        state.error = action.payload as string;
+      })
+      // Delete Account
+      .addCase(deleteUserAccount.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteUserAccount.fulfilled, (state) => {
+        state.isLoading = false;
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.error = null;
+      })
+      .addCase(deleteUserAccount.rejected, (state, action) => {
+        state.isLoading = false;
         state.error = action.payload as string;
       })
       // Register

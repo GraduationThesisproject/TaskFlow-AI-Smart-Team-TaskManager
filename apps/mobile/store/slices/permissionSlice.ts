@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { WorkspaceRole } from '../../types/workspace.types';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import { axiosInstance } from '../../config/axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface PermissionState {
   currentUserRole: WorkspaceRole | null;
@@ -21,22 +23,11 @@ export const fetchUserPermissions = createAsyncThunk(
   'permissions/fetchUserPermissions',
   async (workspaceId: string, { rejectWithValue }) => {
     try {
-      // This would typically call an API to get user permissions
-      // For now, we'll return a mock response
-      const response = await fetch(`/api/workspaces/${workspaceId}/permissions`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch permissions');
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch permissions');
+      // Use axiosInstance which has the proper base URL configured
+      const response = await axiosInstance.get(`/workspaces/${workspaceId}/permissions`);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error?.response?.data?.message || error?.message || 'Failed to fetch permissions');
     }
   }
 );

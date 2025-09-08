@@ -30,7 +30,7 @@ const userPreferencesSchema = new mongoose.Schema({
       taskOverdue: { type: Boolean, default: true },
       commentAdded: { type: Boolean, default: true },
       mentionReceived: { type: Boolean, default: true },
-                  spaceUpdates: { type: Boolean, default: false },
+      spaceUpdates: { type: Boolean, default: false },
       weeklyDigest: { type: Boolean, default: true }
     },
     push: {
@@ -39,7 +39,7 @@ const userPreferencesSchema = new mongoose.Schema({
       taskOverdue: { type: Boolean, default: true },
       commentAdded: { type: Boolean, default: false },
       mentionReceived: { type: Boolean, default: true },
-                  spaceUpdates: { type: Boolean, default: false }
+      spaceUpdates: { type: Boolean, default: false }
     },
     realTime: {
       taskAssigned: { type: Boolean, default: true },
@@ -60,8 +60,9 @@ const userPreferencesSchema = new mongoose.Schema({
       taskOverdue: { type: Boolean, default: true },
       commentAdded: { type: Boolean, default: true },
       mentionReceived: { type: Boolean, default: true },
-                  spaceUpdates: { type: Boolean, default: true }
-    }
+      spaceUpdates: { type: Boolean, default: true }
+    },
+    marketing: { type: Boolean, default: false }
   },
   ai: {
     enableSuggestions: { type: Boolean, default: true },
