@@ -189,7 +189,7 @@ const requireBoardPermission = (path = '') => {
             const userId = req.user.id;
             const user = await User.findById(userId);
             const userRoles = await user.getRoles();
-            const boardId = req.params.boardId || req.body.boardId;
+            const boardId = req.params.id || req.params.boardId || req.body.boardId;
 
             if (!boardId) {
                 return sendResponse(res, 400, false, 'Board ID required');
@@ -207,7 +207,13 @@ const requireBoardPermission = (path = '') => {
             }
 
             // Get user's role in the workspace that contains this board
-            const workspaceId = board.workspace;
+            // First, we need to get the space to find the workspace
+            const space = await Space.findById(board.space);
+            if (!space) {
+                return sendResponse(res, 404, false, 'Space not found');
+            }
+            
+            const workspaceId = space.workspace;
             const wsRole = userRoles.workspaces.find(ws => 
                 ws.workspace.toString() === workspaceId.toString()
             );
@@ -331,7 +337,13 @@ const requireTaskAccess = async (req, res, next) => {
             return sendResponse(res, 404, false, 'Board not found');
         }
 
-        const workspaceId = board.workspace;
+        // Get the space to find the workspace
+        const space = await Space.findById(board.space);
+        if (!space) {
+            return sendResponse(res, 404, false, 'Space not found');
+        }
+
+        const workspaceId = space.workspace;
         const wsRole = userRoles.workspaces.find(ws => 
             ws.workspace.toString() === workspaceId.toString()
         );
@@ -382,7 +394,13 @@ const requireTaskEditPermission = async (req, res, next) => {
             return sendResponse(res, 404, false, 'Board not found');
         }
 
-        const workspaceId = board.workspace;
+        // Get the space to find the workspace
+        const space = await Space.findById(board.space);
+        if (!space) {
+            return sendResponse(res, 404, false, 'Space not found');
+        }
+
+        const workspaceId = space.workspace;
         const wsRole = userRoles.workspaces.find(ws => 
             ws.workspace.toString() === workspaceId.toString()
         );

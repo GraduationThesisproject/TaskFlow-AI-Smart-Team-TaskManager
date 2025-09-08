@@ -304,7 +304,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     placeholder="Enter task description"
                     rows={3}
-                    className="w-full p-3 border border-border rounded-lg bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="w-full p-3 border border-border rounded-lg bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 caret-foreground"
                   />
                 </div>
               </Stack>

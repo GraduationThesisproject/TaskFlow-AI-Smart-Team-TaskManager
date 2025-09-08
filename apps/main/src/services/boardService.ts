@@ -63,6 +63,7 @@ export class BoardService {
   // Create new board
   static async createBoard(data: CreateBoardData): Promise<ApiResponse<Board>> {
     try {
+      console.log('Creating board with data in service:', data);
       const response = await axiosInstance.post('/boards', data);
       return response.data;
     } catch (error) {
