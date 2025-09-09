@@ -32,35 +32,10 @@ const server = http.createServer(app);
 
 // Setup Socket.IO with CORS for WebSocket requests only
 const socketCorsOptions = {
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        // CORS_ORIGIN is already processed as an array in env.js
-        let allowedOrigins = env.CORS_ORIGIN || [];
-        
-        // Ensure allowedOrigins is always an array
-        if (!Array.isArray(allowedOrigins)) {
-            allowedOrigins = [];
-        }
-        
-        // Check for wildcard in development
-        if (allowedOrigins.includes('*') && env.NODE_ENV === 'development') {
-            return callback(null, true);
-        }
-        
-        // Check if origin is in allowed list
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            // Log the rejected origin for debugging
-            console.log(`Socket.IO CORS: Origin ${origin} not allowed. Allowed origins:`, allowedOrigins);
-            callback(new Error(`Origin ${origin} not allowed by Socket.IO CORS. Allowed: ${allowedOrigins.join(', ')}`));
-        }
-    },
+    origin: true, // Allow all origins in development
     methods: ['GET', 'POST'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Socket-ID']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Socket-ID', 'X-Platform', 'X-App-Version', 'X-Device-ID', 'X-Device-Id']
 };
 
 
