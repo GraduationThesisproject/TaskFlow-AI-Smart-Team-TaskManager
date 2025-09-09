@@ -64,7 +64,6 @@ const corsOptions = {
       'Authorization',
       'X-Requested-With',
       'X-Socket-ID',
-      'x-debug',
       // Mobile client custom headers
       'X-Platform',
       'X-App-Version',
@@ -88,14 +87,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// CORS test endpoint
-app.get('/cors-test', (req, res) => {
-    res.status(200).json({ 
-        message: 'CORS is working!',
-        origin: req.headers.origin,
-        timestamp: new Date().toISOString()
-    });
-});
+
 
 // Static file serving for uploads - handle subdirectories properly
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
@@ -216,6 +208,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Initialize passport middleware
 app.use(passport.initialize());
+
 
 // API Routes
 app.use('/api/auth', authRoutes);
