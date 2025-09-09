@@ -6,10 +6,10 @@ async function testCors() {
     const baseUrl = 'http://localhost:3001';
     const testOrigins = [
         'http://localhost:5173',
-        'http://10.208.47.13:8081',
-        'http://10.208.47.13:3001',
-        'http://10.208.47.13:3001',
-        'exp://10.208.47.13:8081'
+        'http://192.168.1.64:8081',
+        'http://192.168.1.64:3001',
+        'http://192.168.1.64:3001',
+        'exp://192.168.1.64:8081'
     ];
 
     console.log('🧪 Testing CORS configuration...\n');

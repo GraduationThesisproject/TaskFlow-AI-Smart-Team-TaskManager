@@ -1,6 +1,7 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, Image, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { Text, View, Card } from '@/components/Themed';
@@ -11,6 +12,8 @@ import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { setCurrentWorkspaceId, setSelectedSpace, fetchMembers, removeMember } from '@/store/slices/workspaceSlice';
 import { SpaceService } from '@/services/spaceService';
 import CreateSpaceModal from '@/components/common/CreateSpaceModal';
+import MobileAlert from '@/components/common/Alert';
+import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 
 // Toggle this to quickly demo with mock data
 const USE_MOCK = false;
@@ -76,6 +79,17 @@ export default function WorkspaceScreen() {
     }
   }, [workspaceId, dispatch]);
 
+  // Also refresh members when this screen gains focus (helps after invite acceptance)
+  useFocusEffect(
+    useCallback(() => {
+      if (!USE_MOCK && workspaceId) {
+        dispatch(fetchMembers({ id: workspaceId }));
+      }
+      // No cleanup needed
+      return undefined;
+    }, [workspaceId, dispatch])
+  );
+
   const activeSpaces = useMemo(() => {
     return Array.isArray(spaces) ? spaces.filter((s: any) => s?.status !== 'archived') : [];
   }, [spaces]);
@@ -140,6 +154,16 @@ export default function WorkspaceScreen() {
     }
   };
 
+  // Banner alert state
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState<string | undefined>(undefined);
+  const [alertDescription, setAlertDescription] = useState<string | undefined>(undefined);
+  const [alertVariant, setAlertVariant] = useState<'success' | 'error' | 'warning' | 'info'>('info');
+
+  // Confirm removal dialog state
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<any | null>(null);
+
   const handleRemoveMember = async (member: any) => {
     if (!workspaceId) return;
     // Prevent removing the owner
@@ -155,9 +179,19 @@ export default function WorkspaceScreen() {
       await dispatch(removeMember({ workspaceId, memberId })).unwrap();
       // Ensure local state matches backend by refetching members
       await dispatch(fetchMembers({ id: workspaceId }));
+      // Show success banner alert
+      setAlertVariant('success');
+      setAlertTitle('Member removed');
+      setAlertDescription('The member was removed successfully.');
+      setAlertVisible(true);
     } catch (e: any) {
       console.warn('Failed to remove member', e);
       Alert.alert('Failed to remove member', e?.message || 'Unknown error');
+      // Also show an error banner for visibility
+      setAlertVariant('error');
+      setAlertTitle('Failed to remove member');
+      setAlertDescription(e?.message || 'Unknown error');
+      setAlertVisible(true);
     }
   };
 
@@ -207,6 +241,17 @@ export default function WorkspaceScreen() {
           Workspace
         </Text>
         <View style={styles.headerSpacer} />
+      </View>
+
+      {/* Inline banner alert */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+        <MobileAlert
+          variant={alertVariant}
+          title={alertTitle}
+          description={alertDescription}
+          visible={alertVisible}
+          onClose={() => setAlertVisible(false)}
+        />
       </View>
 
       <ScrollView
@@ -283,7 +328,10 @@ export default function WorkspaceScreen() {
                       </View>
                       {m.role !== 'owner' && (
                         <TouchableOpacity
-                          onPress={() => handleRemoveMember(m)}
+                          onPress={() => {
+                            setMemberToRemove(m);
+                            setConfirmVisible(true);
+                          }}
                           disabled={!!membersLoading}
                           style={[
                             styles.destructiveBtn,
@@ -412,6 +460,32 @@ export default function WorkspaceScreen() {
         onClose={() => setShowCreateSpace(false)}
         onSubmit={handleSubmitCreate}
         submitting={creatingSpace}
+      />
+
+      {/* Confirm remove member */}
+      <ConfirmationDialog
+        visible={confirmVisible}
+        title="Remove member?"
+        message={
+          memberToRemove
+            ? `Are you sure you want to remove ${memberToRemove?.user?.name || memberToRemove?.name || 'this member'} from the workspace?`
+            : 'Are you sure you want to remove this member from the workspace?'
+        }
+        confirmText="Remove"
+        cancelText="Cancel"
+        onConfirm={async () => {
+          const target = memberToRemove;
+          setConfirmVisible(false);
+          setMemberToRemove(null);
+          if (target) {
+            await handleRemoveMember(target);
+          }
+        }}
+        onCancel={() => {
+          setConfirmVisible(false);
+          setMemberToRemove(null);
+        }}
+        variant="danger"
       />
     </View>
   );
