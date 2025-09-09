@@ -122,7 +122,7 @@ export default function NotificationBell({
         <FontAwesome 
           name="bell" 
           size={size} 
-          color={colors.foreground} 
+          color={colors.primary} 
         />
         {showBadge && unreadCount > 0 && (
           <View style={[styles.badge, { backgroundColor: colors.destructive }]}>
@@ -161,7 +161,7 @@ export default function NotificationBell({
                     disabled={unreadCount === 0}
                   >
                     <FontAwesome 
-                      name="check-double" 
+                      name="check" 
                       size={16} 
                       color={unreadCount === 0 ? colors['muted-foreground'] : colors.foreground} 
                     />

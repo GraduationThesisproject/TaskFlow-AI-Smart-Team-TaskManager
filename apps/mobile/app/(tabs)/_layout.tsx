@@ -38,6 +38,8 @@ export default function TabLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          headerShown: false, // Remove redundant header
+          href: null, // Hide from tab bar
         }}
       />
       <Tabs.Screen
@@ -51,24 +53,29 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
+          href: null, // Hide from tab bar
+          headerShown: false, // Remove redundant header
         }}
       />
       <Tabs.Screen
         name="analytics"
         options={{
           href: null, // Hide from tab bar
+          headerShown: false, // Remove redundant header
         }}
       />
       <Tabs.Screen
         name="workspaces"
         options={{
           href: null, // Hide from tab bar
+          headerShown: false, // Remove redundant header
         }}
       />
       <Tabs.Screen
         name="templates"
         options={{
           href: null, // Hide from tab bar
+          headerShown: false, // Remove redundant header
         }}
       />
     </Tabs>
