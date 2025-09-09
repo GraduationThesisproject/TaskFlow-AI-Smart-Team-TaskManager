@@ -4,6 +4,8 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router } from 'expo-router';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { setSelectedSpace } from '@/store/slices/workspaceSlice';
 
 // Types for better reusability
 export interface NavItem {
@@ -28,9 +30,10 @@ export interface SidebarProps {
   onClose: () => void;
   sections?: SidebarSection[];
   currentSectionId?: string;
+  currentSection?: SidebarSection;
   onSectionChange?: (sectionId: string) => void;
   onItemPress?: (item: NavItem) => void;
-  context?: 'dashboard' | 'settings';
+  context?: 'dashboard' | 'settings' | 'workspace';
   showBackdrop?: boolean;
   width?: number;
   animationDuration?: number;
@@ -61,43 +64,26 @@ const settingsItems: NavItem[] = [
   { id: 'upgrade', label: 'Upgrade', icon: 'star', route: '/(tabs)/settings?section=upgrade', section: 'settings' },
 ];
 
-// Function to get appropriate sections based on context
-const getSectionsForContext = (context?: string): SidebarSection[] => {
-  if (context === 'settings') {
-    return [
-      {
-        id: 'settings',
-        title: 'Settings',
-        items: settingsItems,
-      },
-    ];
-  }
-  
-  // Default to dashboard only
-  return [
-    {
-      id: 'dashboard',
-      title: 'Dashboard',
-      items: dashboardItems,
-    },
-  ];
-};
-
-const defaultSections = getSectionsForContext();
+const workspaceItems: NavItem[] = [
+  { id: 'ws-spaces', label: 'Spaces', icon: 'folder-open', route: '/(tabs)/workspace/spaces', section: 'workspace' },
+  { id: 'ws-rules', label: 'Rules', icon: 'book', route: '/(tabs)/workspace/rules', section: 'workspace' },
+  { id: 'ws-reports', label: 'Reports', icon: 'line-chart', route: '/(tabs)/workspace/reports', section: 'workspace' },
+  { id: 'ws-settings', label: 'Settings', icon: 'cog', route: '/(tabs)/workspace/settings', section: 'workspace' },
+];
 
 export default function Sidebar({
   isVisible,
   onClose,
   sections,
-  currentSectionId,
+  currentSection,
   onSectionChange,
   onItemPress,
-  context,
+  context = 'dashboard',
   showBackdrop = true,
   width = 300,
-  animationDuration = 300,
+  animationDuration = 250,
   headerTitle,
-  footerText = 'TaskFlow Mobile v1.0.0',
+  footerText,
   showFooter = true,
   customHeader,
   customFooter,
@@ -106,15 +92,10 @@ export default function Sidebar({
   headerStyle,
   footerStyle,
 }: SidebarProps) {
-  // Use provided sections or get sections based on context
-  const finalSections = sections || getSectionsForContext(context);
   const colors = useThemeColors();
-  const slideAnim = React.useRef(new Animated.Value(-width)).current;
-
-  // Determine current section (default to dashboard)
-  const currentSection = currentSectionId 
-    ? finalSections.find(section => section.id === currentSectionId) || finalSections[0]
-    : finalSections[0];
+  const slideAnim = React.useRef(new Animated.Value(-300)).current;
+  const dispatch = useAppDispatch();
+  const { spaces, currentWorkspace } = useAppSelector((s: any) => s.workspace);
 
   React.useEffect(() => {
     if (isVisible) {
@@ -201,8 +182,24 @@ export default function Sidebar({
     </TouchableOpacity>
   );
 
+  // Build default sections based on context when explicit sections are not provided
+  const defaultSections: SidebarSection[] = React.useMemo(() => {
+    switch (context) {
+      case 'settings':
+        return [{ id: 'settings', title: 'Settings', items: settingsItems }];
+      case 'workspace':
+        return [{ id: 'workspace', title: 'Workspace', items: workspaceItems }];
+      case 'dashboard':
+      default:
+        return [{ id: 'dashboard', title: 'Dashboard', items: dashboardItems }];
+    }
+  }, [context]);
+
+  const finalSections = (sections && sections.length ? sections : defaultSections);
+  const activeSection = currentSection ?? finalSections[0];
+
   const renderSectionTabs = () => {
-    if (finalSections.length <= 1) return null;
+    if (!finalSections || finalSections.length <= 1 || !activeSection) return null;
 
     return (
       <View style={[styles.sectionTabs, { borderBottomColor: colors.border }]}>
@@ -212,8 +209,8 @@ export default function Sidebar({
             style={[
               styles.sectionTab,
               {
-                backgroundColor: currentSection.id === section.id ? colors.primary : colors.card,
-                borderBottomColor: currentSection.id === section.id ? colors.primary : 'transparent',
+                backgroundColor: activeSection.id === section.id ? colors.primary : colors.card,
+                borderBottomColor: activeSection.id === section.id ? colors.primary : 'transparent',
               }
             ]}
             onPress={() => handleSectionChange(section.id)}
@@ -221,7 +218,7 @@ export default function Sidebar({
             <Text style={[
               TextStyles.body.medium,
               {
-                color: currentSection.id === section.id ? colors.background : colors.foreground,
+                color: activeSection.id === section.id ? colors.background : colors.foreground,
               }
             ]}>
               {section.title}
@@ -262,7 +259,7 @@ export default function Sidebar({
         {customHeader || (
           <View style={[styles.header, { borderBottomColor: colors.border }, headerStyle]}>
             <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
-              {headerTitle || currentSection.title}
+              {headerTitle || activeSection?.title}
             </Text>
             <TouchableOpacity
               style={[styles.closeButton, { backgroundColor: colors.card }]}
@@ -278,7 +275,7 @@ export default function Sidebar({
 
         {/* Navigation Items */}
         <View style={styles.navContainer}>
-          {currentSection.items.map(renderNavItem)}
+          {activeSection?.items?.map(renderNavItem)}
         </View>
 
         {/* Footer */}

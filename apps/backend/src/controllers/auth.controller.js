@@ -84,7 +84,19 @@ exports.register = async (req, res) => {
         });
     } catch (error) {
         logger.error('Register error:', error);
-        sendResponse(res, 500, false, 'Server error during registration');
+        // Map validation-like errors to 400 for clearer client feedback
+        const msg = (error && error.message) ? error.message : 'Server error during registration';
+        const isValidationError =
+            typeof msg === 'string' && (
+                msg.includes('Validation failed') ||
+                msg.includes('already registered') ||
+                msg.includes('already exists') ||
+                msg.includes('Password must') ||
+                msg.includes('Name must') ||
+                msg.toLowerCase().includes('email')
+            );
+
+        sendResponse(res, isValidationError ? 400 : 500, false, isValidationError ? msg : 'Server error during registration');
     }
 };
 
