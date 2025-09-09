@@ -44,7 +44,7 @@ const requireWorkspacePermission = (path) => {
             // Allow users and admins to access workspace analytics
             // Handle users without system roles (default to 'user' role)
             const systemRole = userRoles.systemRole || 'user';
-            if(!['user', 'admin', 'super_admin'].includes(systemRole)) {
+            if(!['user', 'moderator', 'admin', 'super_admin'].includes(systemRole)) {
                 return sendResponse(res, 403, false, 'Insufficient permissions');
             }
 

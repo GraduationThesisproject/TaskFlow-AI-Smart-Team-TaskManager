@@ -115,6 +115,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         // Add additional options for better connection handling
         withCredentials: true,
         rejectUnauthorized: false, // For development only
+        path: '/socket.io'
       });
     } catch (error) {
       console.error('❌ [notificationsSocketMiddleware] Failed to create socket connection:', error);
