@@ -2,23 +2,13 @@ const Board = require('../models/Board');
 const Column = require('../models/Column');
 const Task = require('../models/Task');
 const Space = require('../models/Space');
-const User = require('../models/User');
 const { sendResponse } = require('../utils/response');
 const logger = require('../config/logger');
 
 // Get all boards for space
 exports.getBoards = async (req, res) => {
     try {
-        const { spaceId } = req.params;
-        const userId = req.user.id;
-
-        // Check space access
-        const user = await User.findById(userId);
-        // const userRoles = await user.getRoles();
-        
-        // if (!userRoles.hasSpaceRole(spaceId)) {
-        //     return sendResponse(res, 403, false, 'Access denied to this space');
-        // }
+        const { id: spaceId } = req.params;
 
         const boards = await Board.find({ 
             space: spaceId,
@@ -26,6 +16,29 @@ exports.getBoards = async (req, res) => {
         })
         .populate('space', 'name')
         .sort({ updatedAt: -1 });
+
+        // Ensure all boards have a theme and populate theme.background for boards that have it
+        const themeColors = [
+            '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+            '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
+        ];
+        
+        for (let board of boards) {
+            // Add default theme if it doesn't exist or if it's the default white
+            if (!board.theme || (board.theme.color === '#FFFFFF' && !board.theme.background)) {
+                const randomColor = themeColors[Math.floor(Math.random() * themeColors.length)];
+                board.theme = {
+                    color: randomColor,
+                    opacity: 1.0
+                };
+                await board.save();
+            }
+            
+            // Populate theme.background if it exists
+            if (board.theme && board.theme.background) {
+                await board.populate('theme.background', 'filename url originalName mimeType size');
+            }
+        }
 
         sendResponse(res, 200, true, 'Boards retrieved successfully', {
             boards
@@ -42,18 +55,28 @@ exports.getBoard = async (req, res) => {
         const board = await Board.findById(req.params.id)
             .populate('space', 'name');
 
+        // Add default theme if it doesn't exist or if it's the default white
+        if (board && (!board.theme || (board.theme.color === '#FFFFFF' && !board.theme.background))) {
+            const themeColors = [
+                '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+                '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
+            ];
+            const randomColor = themeColors[Math.floor(Math.random() * themeColors.length)];
+            board.theme = {
+                color: randomColor,
+                opacity: 1.0
+            };
+            await board.save();
+        }
+
+        // Populate theme.background if it exists
+        if (board && board.theme && board.theme.background) {
+            await board.populate('theme.background', 'filename url originalName mimeType size');
+        }
+
         if (!board) {
             return sendResponse(res, 404, false, 'Board not found');
         }
-
-        // Check space access
-        const userId = req.user.id;
-        const user = await User.findById(userId);
-        // const userRoles = await user.getRoles();
-        
-        // if (!userRoles.hasSpaceRole(board.space._id)) {
-        //     return sendResponse(res, 403, false, 'Access denied to this board');
-        // }
 
         // Get columns with tasks
         const columns = await Column.find({ board: board._id })
@@ -90,16 +113,8 @@ exports.getBoard = async (req, res) => {
 // Create new board
 exports.createBoard = async (req, res) => {
     try {
-        const { name, description, type = 'kanban', spaceId } = req.body;
+        const { name, description, type = 'kanban', spaceId, theme } = req.body;
         const userId = req.user.id;
-
-        // Check space access and permissions
-        const user = await User.findById(userId);
-        // const userRoles = await user.getRoles();
-        
-        // if (!userRoles.hasSpaceRole(spaceId, 'contributor')) {
-        //     return sendResponse(res, 403, false, 'Access denied to this space');
-        // }
 
         const space = await Space.findById(spaceId);
         if (!space) {
@@ -113,6 +128,10 @@ exports.createBoard = async (req, res) => {
             type,
             space: spaceId,
             owner: userId,
+            theme: theme || {
+                color: '#3B82F6',
+                opacity: 1.0
+            },
             members: [{
                 user: userId,
                 role: 'owner',
@@ -146,29 +165,17 @@ exports.createBoard = async (req, res) => {
 exports.updateBoard = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, type, settings } = req.body;
-        const userId = req.user.id;
+        const { name, description, type, settings, archived } = req.body;
 
         const board = await Board.findById(id);
         if (!board) {
             return sendResponse(res, 404, false, 'Board not found');
         }
 
-        // Check permissions
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        const isBoardOwner = board.owner.toString() === userId;
-        const hasSpacePermission = userRoles.hasSpaceRole(board.space, 'admin');
-        
-        // if (!isBoardOwner && !hasSpacePermission) {
-        //     return sendResponse(res, 403, false, 'Access denied to this board');
-        // }
-
         // Update board
         const updatedBoard = await Board.findByIdAndUpdate(
             id,
-            { name, description, type, settings },
+            { name, description, type, settings, archived },
             { new: true }
         ).populate('space', 'name');
 
@@ -185,23 +192,11 @@ exports.updateBoard = async (req, res) => {
 exports.deleteBoard = async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.user.id;
 
         const board = await Board.findById(id);
         if (!board) {
             return sendResponse(res, 404, false, 'Board not found');
         }
-
-        // Check permissions
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        const isBoardOwner = board.owner.toString() === userId;
-        const hasSpacePermission = userRoles.hasSpaceRole(board.space, 'admin');
-        
-        // if (!isBoardOwner && !hasSpacePermission) {
-        //     return sendResponse(res, 403, false, 'Access denied to this board');
-        // }
 
         // Delete board and related data
         await Promise.all([
@@ -365,9 +360,8 @@ exports.deleteColumn = async (req, res) => {
 exports.getColumns = async (req, res) => {
     try {
         const { id: boardId } = req.params;
-        const userId = req.user.id;
 
-        // Verify board exists and user has access
+        // Verify board exists
         const board = await Board.findById(boardId);
         if (!board) {
             return sendResponse(res, 404, false, 'Board not found');
@@ -391,9 +385,8 @@ exports.reorderColumns = async (req, res) => {
     try {
         const { id: boardId } = req.params;
         const { columnIds } = req.body;
-        const userId = req.user.id;
 
-        // Verify board exists and user has access
+        // Verify board exists
         const board = await Board.findById(boardId);
         if (!board) {
             return sendResponse(res, 404, false, 'Board not found');

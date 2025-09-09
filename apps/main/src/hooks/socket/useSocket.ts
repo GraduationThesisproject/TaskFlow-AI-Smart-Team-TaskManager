@@ -45,8 +45,9 @@ export function useSocket(options: UseSocketOptions) {
         socketRef.current = null;
       }
 
-      // console.log('🔌 Creating socket connection to:', options.url);
-      // console.log('🔑 Authentication token:', options.auth?.token ? 'Present' : 'Missing');
+      console.log('🔌 Creating socket connection to:', options.url);
+      console.log('🔑 Authentication token:', options.auth?.token ? 'Present' : 'Missing');
+      console.log('📡 Namespace:', options.namespace);
 
       // Create socket with namespace if specified
       const socketUrl = options.namespace ? `${options.url}${options.namespace}` : options.url;
@@ -70,7 +71,7 @@ export function useSocket(options: UseSocketOptions) {
 
       // Set up event listeners
       socketRef.current.on('connect', () => {
-        // console.log('🔌 Socket connected successfully');
+        console.log('🔌 Socket connected successfully to:', socketUrl);
         setIsConnected(true);
         setIsConnecting(false);
         setError(null);
@@ -106,16 +107,18 @@ export function useSocket(options: UseSocketOptions) {
       });
 
       socketRef.current.on('connect_error', (err) => {
-        //console.error('❌ Socket connection error:', err);
+        console.error('❌ Socket connection error:', err);
+        console.error('❌ Connection URL:', socketUrl);
+        console.error('❌ Auth token present:', !!options.auth?.token);
         setIsConnecting(false);
         
         let errorMessage = err.message || 'Connection failed';
         
         // Handle specific error types
         if (err.message?.includes('Authentication')) {
-          // errorMessage = 'Authentication failed - please log in again';
+          errorMessage = 'Authentication failed - please log in again';
         } else if (err.message?.includes('CORS')) {
-          // errorMessage = 'CORS error - check server configuration';
+          errorMessage = 'CORS error - check server configuration';
         } else if (err.message?.includes('timeout')) {
           errorMessage = 'Connection timeout - server may be unavailable';
         }
@@ -125,14 +128,14 @@ export function useSocket(options: UseSocketOptions) {
         // Attempt reconnection if we haven't exceeded max attempts
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
-          //console.log(`🔄 Attempting reconnection in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
+          console.log(`🔄 Attempting reconnection in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttemptsRef.current++;
             connect();
           }, delay);
         } else {
-          // setError(`Failed to connect after ${maxReconnectAttempts} attempts. Please check your connection and try again.`);
+          setError(`Failed to connect after ${maxReconnectAttempts} attempts. Please check your connection and try again.`);
         }
       });
 
@@ -152,7 +155,7 @@ export function useSocket(options: UseSocketOptions) {
       }, 30000); // 30 second timeout
 
       // Now manually connect
-      // console.log('🚀 Attempting to connect...');
+      console.log('🚀 Attempting to connect to:', socketUrl);
       socketRef.current.connect();
 
     } catch (err) {
@@ -160,7 +163,7 @@ export function useSocket(options: UseSocketOptions) {
       setIsConnecting(false);
       setError('Failed to create socket connection');
     }
-  }, [options.url, options.auth]);
+  }, [options.url, options.namespace, options.auth?.token]);
 
   const disconnect = useCallback(() => {
     // Clear reconnection timeout

@@ -30,6 +30,11 @@ const WORKSPACE_PERMISSIONS = {
         PUT: ['owner', 'admin'],
         DELETE: ['owner', 'admin']
     },
+    '/workspace/:id/members/:memberId': {
+        GET: ['owner', 'admin'],
+        PUT: ['owner', 'admin'],
+        DELETE: ['owner', 'admin']
+ },
     '/workspace/:id/billing': {
         GET: ['owner', 'admin'],
         PUT: ['owner', 'admin']
@@ -129,6 +134,9 @@ const BOARD_PERMISSIONS = {
         PUT: ['owner', 'admin', 'member'],
         DELETE: ['owner', 'admin']
     },
+    '/board/space/:spaceId': {
+        GET: ['owner', 'admin', 'member', 'viewer']
+    },
     '/board/:id/settings': {
         GET: ['owner', 'admin', 'member'],
         PUT: ['owner', 'admin', 'member']
@@ -145,6 +153,13 @@ const BOARD_PERMISSIONS = {
         PUT: ['owner', 'admin', 'member'],
         DELETE: ['owner', 'admin']
     },
+    '/board/:id/columns/:columnId': {
+        PUT: ['owner', 'admin', 'member'],
+        DELETE: ['owner', 'admin']
+    },
+    '/board/:id/columns/reorder': {
+        PATCH: ['owner', 'admin', 'member']
+    },
     '/board/:id/tasks': {
         GET: ['owner', 'admin', 'member', 'viewer'],
         POST: ['owner', 'admin', 'member']
@@ -159,6 +174,9 @@ const BOARD_PERMISSIONS = {
 
 // Task permissions
 const TASK_PERMISSIONS = {
+    '/task': {
+        POST: ['owner', 'admin', 'member']
+    },
     '/task/:id': {
         GET: ['owner', 'admin', 'member', 'viewer'],
         PUT: ['owner', 'admin', 'member'],

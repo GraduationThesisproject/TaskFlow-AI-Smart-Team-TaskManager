@@ -104,13 +104,15 @@ const boardSlice = createSlice({
       })
       .addCase(fetchBoard.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentBoard = action.payload;
+        // Remove columns from board data since they're managed separately in columnSlice
+        const { columns, ...boardWithoutColumns } = action.payload;
+        state.currentBoard = boardWithoutColumns;
         // Also add to boards array if not already present
         const existingIndex = state.boards.findIndex(board => board._id === action.payload._id);
         if (existingIndex === -1) {
-          state.boards.push(action.payload);
+          state.boards.push(boardWithoutColumns);
         } else {
-          state.boards[existingIndex] = action.payload;
+          state.boards[existingIndex] = boardWithoutColumns;
         }
       })
       .addCase(fetchBoard.rejected, (state, action) => {
@@ -127,7 +129,12 @@ const boardSlice = createSlice({
       .addCase(fetchBoardsBySpace.fulfilled, (state, action) => {
         state.loading = false;
         const responseData = action.payload as any;
-        state.boards = responseData.boards || [];
+        // Remove columns from each board since they're managed separately in columnSlice
+        const boardsWithoutColumns = (responseData.boards || []).map((board: any) => {
+          const { columns, ...boardWithoutColumns } = board;
+          return boardWithoutColumns;
+        });
+        state.boards = boardsWithoutColumns;
       })
       .addCase(fetchBoardsBySpace.rejected, (state, action) => {
         state.loading = false;
@@ -146,7 +153,9 @@ const boardSlice = createSlice({
         const responseData = action.payload as any;
         const board = responseData.board || responseData;
         if (board) {
-          state.boards.push(board);
+          // Remove columns from board since they're managed separately in columnSlice
+          const { columns, ...boardWithoutColumns } = board;
+          state.boards.push(boardWithoutColumns);
         }
       })
       .addCase(createBoard.rejected, (state, action) => {
@@ -162,12 +171,14 @@ const boardSlice = createSlice({
       })
       .addCase(updateBoard.fulfilled, (state, action) => {
         state.loading = false;
+        // Remove columns from board since they're managed separately in columnSlice
+        const { columns, ...boardWithoutColumns } = action.payload;
         const index = state.boards.findIndex(board => board._id === action.payload._id);
         if (index !== -1) {
-          state.boards[index] = action.payload;
+          state.boards[index] = boardWithoutColumns;
         }
         if (state.currentBoard?._id === action.payload._id) {
-          state.currentBoard = action.payload;
+          state.currentBoard = boardWithoutColumns;
         }
       })
       .addCase(updateBoard.rejected, (state, action) => {

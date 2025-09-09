@@ -279,6 +279,70 @@ textarea,
   user-select: text !important;
 }
 
+/* Cursor visibility for light theme */
+input,
+textarea,
+[contenteditable] {
+  caret-color: hsl(var(--foreground));
+}
+
+/* Ensure cursor is visible on buttons and interactive elements */
+button,
+[role="button"],
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Dark cursor for light backgrounds */
+[data-theme="light"] input,
+[data-theme="light"] textarea,
+[data-theme="light"] [contenteditable],
+.light input,
+.light textarea,
+.light [contenteditable] {
+  caret-color: hsl(var(--foreground));
+}
+
+/* Light cursor for dark backgrounds */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] [contenteditable],
+.dark input,
+.dark textarea,
+.dark [contenteditable] {
+  caret-color: hsl(var(--foreground));
+}
+
+/* Global cursor visibility for all input and textarea elements */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="number"],
+textarea,
+[contenteditable] {
+  caret-color: hsl(var(--foreground)) !important;
+}
+
+/* Ensure cursor is visible on all interactive elements */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+.cursor-pointer,
+[onclick],
+[onClick] {
+  cursor: pointer;
+}
+
+/* Disabled elements should show not-allowed cursor */
+button:disabled,
+[role="button"]:disabled,
+input:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
 :root {
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;

@@ -2,6 +2,7 @@ import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer, createMigrate } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { notificationsSocketMiddleware } from './middleware/notificationsSocketMiddleware';
+import { columnSocketMiddleware } from './middleware/columnSocketMiddleware';
 import { useDispatch, useSelector } from 'react-redux';
 import type { TypedUseSelectorHook} from 'react-redux';
 import { env } from '../config/env';
@@ -41,9 +42,10 @@ const persistConfig = {
   key: 'root',
   storage,
   version: PERSIST_VERSION,
-  migrate: createMigrate(persistMigrations, { debug: false }),
+  migrate: createMigrate(persistMigrations, { debug: process.env.NODE_ENV === 'development' }),
   whitelist: ['auth', 'workspace', 'boards', 'spaces'],
   transforms: [persistEncryptTransform],
+  debug: process.env.NODE_ENV === 'development',
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -74,8 +76,43 @@ export const store = configureStore({
         // Warn about non-serializable values in development
         warnAfter: 128,
       },
-    }).concat(notificationsSocketMiddleware),
-  devTools: true,
+    }).concat(notificationsSocketMiddleware, columnSocketMiddleware),
+  devTools: process.env.NODE_ENV !== 'production' ? {
+    name: 'TaskFlow Store',
+    trace: true,
+    traceLimit: 25,
+    // This helps Redux DevTools properly handle the persist store
+    serialize: {
+      options: {
+        map: true,
+      },
+    },
+    // This ensures DevTools shows the actual application state, not persist internal state
+    actionSanitizer: (action: any) => {
+      if (action.type && action.type.startsWith('persist/')) {
+        return { ...action, type: `[PERSIST] ${action.type}` };
+      }
+      return action;
+    },
+    stateSanitizer: (state: any) => {
+      // Return the actual application state, not the persist wrapper
+      if (state && typeof state === 'object' && 'phase' in state && 'completed' in state && 'shouldFlush' in state) {
+        // This is the persist internal state, we need to extract the actual state
+        if (state._persist && state._persist.rehydrated) {
+          // If rehydrated, return the actual state
+          return state;
+        } else {
+          // If not rehydrated, return a placeholder
+          return { 
+            _persist: state._persist,
+            message: 'Redux Persist is rehydrating...',
+            ...state 
+          };
+        }
+      }
+      return state;
+    },
+  } : false,
 });
 
 export const persistor = persistStore(store);

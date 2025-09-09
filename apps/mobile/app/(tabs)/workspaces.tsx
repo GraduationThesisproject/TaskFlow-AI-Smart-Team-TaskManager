@@ -6,11 +6,14 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector, useAppDispatch } from '@/store';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
-import { fetchWorkspaces, createWorkspace, deleteWorkspace } from '@/store/slices/workspaceSlice';
+import { fetchWorkspaces, createWorkspace, deleteWorkspace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
+import CreateWorkspaceModal from '@/components/common/CreateWorkspaceModal';
+import { useRouter } from 'expo-router';
 
 export default function WorkspacesScreen() {
   const colors = useThemeColors();
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -69,7 +72,7 @@ export default function WorkspacesScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await dispatch(deleteWorkspace(workspaceId));
+              await dispatch(deleteWorkspace({ id: workspaceId }));
               Alert.alert('Success', 'Workspace deleted successfully!');
             } catch (error) {
               Alert.alert('Error', 'Failed to delete workspace');
@@ -167,9 +170,16 @@ export default function WorkspacesScreen() {
                 <View style={styles.workspaceInfo}>
                   <View style={styles.infoRow}>
                     <FontAwesome name="users" size={14} color={colors['muted-foreground']} />
-                    <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                      {workspace.members?.length || 0} members
-                    </Text>
+                    {(() => {
+                      const memberLen = Array.isArray(workspace.members) ? workspace.members.length : 0;
+                      const ownerIncluded = workspace.owner ? 1 : 0;
+                      const totalMembers = memberLen + ownerIncluded;
+                      return (
+                        <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+                          {totalMembers} members
+                        </Text>
+                      );
+                    })()}
                   </View>
                   
                   <View style={styles.infoRow}>
@@ -223,6 +233,13 @@ export default function WorkspacesScreen() {
           </View>
         )}
       </ScrollView>
+
+      <CreateWorkspaceModal
+        visible={isCreating}
+        onClose={() => setIsCreating(false)}
+        onSubmit={handleCreateWorkspace}
+        submitting={isCreating}
+      />
 
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="dashboard" />
     </View>

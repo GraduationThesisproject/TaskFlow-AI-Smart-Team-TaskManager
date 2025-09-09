@@ -140,12 +140,12 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
     }
   }, [dispatch]);
 
-  // Auto-fetch all workspaces on mount
+  // Auto-fetch all workspaces on mount ONLY when no specific workspaceId is provided
   useEffect(() => {
-    if (autoFetch) {
+    if (autoFetch && !workspaceId) {
       refetchWorkspaces();
     }
-  }, [autoFetch, refetchWorkspaces]);
+  }, [autoFetch, workspaceId, refetchWorkspaces]);
 
   // Load workspace data when workspaceId changes
   useEffect(() => {
