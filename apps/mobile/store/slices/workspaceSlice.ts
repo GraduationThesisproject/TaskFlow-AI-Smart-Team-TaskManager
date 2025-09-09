@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Space } from '../../types/space.types';
-import { WorkspaceService, type InviteLinkInfo } from "../../services/D_workspaceService.ts";
+import { WorkspaceService, type InviteLinkInfo } from "../../services/D_workspaceService";
 import { SpaceService } from '../../services/spaceService';
 
 import type { Workspace, WorkspaceMember, WorkspaceState as BaseWorkspaceState } from '../../types/workspace.types';
@@ -75,8 +75,16 @@ export const fetchSpacesByWorkspace = createAsyncThunk(
   'workspace/fetchSpacesByWorkspace',
   async (workspaceId: string) => {
     const response = await SpaceService.getSpacesByWorkspace(workspaceId);
-    // Backend returns { spaces: [...], count: number }
-    return (response as any).spaces;
+    // Backend returns { success, message, data: { spaces: [...], count } }
+    const raw: any = response as any;
+    const list = Array.isArray(raw?.data?.spaces)
+      ? raw.data.spaces
+      : Array.isArray(raw?.spaces)
+      ? raw.spaces
+      : Array.isArray(raw)
+      ? raw
+      : [];
+    return list;
   }
 );
 
@@ -101,6 +109,35 @@ export const inviteMember = createAsyncThunk<WorkspaceMember, { id: string; emai
     }
   }
 );
+
+// Fetch workspace members
+export const fetchMembers = createAsyncThunk<WorkspaceMember[], { id: string }>(
+  'workspace/fetchMembers',
+  async ({ id }, { rejectWithValue }) => {
+    try {
+      const members = await WorkspaceService.getWorkspaceMembers(id);
+      return members as unknown as WorkspaceMember[];
+    } catch (error: any) {
+      return rejectWithValue(error?.message || 'Failed to fetch members');
+    }
+  }
+);
+
+// Remove a member from workspace
+export const removeMember = createAsyncThunk<{ memberId: string; members?: WorkspaceMember[] }, { workspaceId: string; memberId: string }>(
+  'workspace/removeMember',
+  async ({ workspaceId, memberId }, { rejectWithValue }) => {
+    try {
+      const resp: any = await WorkspaceService.removeMember(workspaceId, memberId);
+      // If backend returns updated members list, pass it through
+      const members = Array.isArray(resp?.members) ? resp.members : undefined;
+      return { memberId, members };
+    } catch (error: any) {
+      return rejectWithValue(error?.message || 'Failed to remove member');
+    }
+  }
+);
+
 // Update workspace settings
 export const updateWorkspaceSettings = createAsyncThunk(
   'workspace/updateSettings',
@@ -110,10 +147,20 @@ export const updateWorkspaceSettings = createAsyncThunk(
     updates: any 
   }, { rejectWithValue }) => {
     try {
-      const response = await WorkspaceService.updateWorkspace(id, {
-        settings: updates
-      });
-      
+      // Build payload shape based on section
+      let payload: any = updates;
+      if (section === 'settings') {
+        payload = { settings: updates };
+      } else if (section === 'visibility') {
+        // visibility toggles like isPublic should be top-level
+        payload = { isPublic: updates?.isPublic };
+      } else if (section === 'general') {
+        // name/description already at top-level
+        payload = updates;
+      }
+
+      const response = await WorkspaceService.updateWorkspace(id, payload);
+       
       // The service returns the workspace directly, not wrapped in response.data
       if (!response) {
         throw new Error('Invalid response from server');
@@ -276,6 +323,27 @@ const workspaceSlice = createSlice({
         } as any;
       }
     },
+    // Update a member's presence (online/offline or lastActive)
+    upsertMemberPresence(state, action: PayloadAction<{ memberId: string; isOnline?: boolean; lastActive?: string | number | Date }>) {
+      const { memberId, isOnline, lastActive } = action.payload;
+      const idx = (state.members || []).findIndex((m: any) => {
+        const ids = [m?._id, m?.id, m?.userId, m?.user?._id, m?.user?.id];
+        return ids.includes(memberId);
+      });
+      if (idx >= 0) {
+        const prev = (state.members as any)[idx] || {};
+        (state.members as any)[idx] = {
+          ...prev,
+          ...(typeof isOnline === 'boolean' ? { isOnline } : {}),
+          ...(lastActive ? { lastActive: typeof lastActive === 'string' ? lastActive : new Date(lastActive).toISOString() } : {}),
+          user: {
+            ...(prev as any).user,
+            ...(typeof isOnline === 'boolean' ? { isOnline } : {}),
+            ...(lastActive ? { lastActive: typeof lastActive === 'string' ? lastActive : new Date(lastActive).toISOString() } : {}),
+          },
+        } as any;
+      }
+    },
     resetWorkspaceState: () => initialState,
   },
   extraReducers: (builder) => {
@@ -308,7 +376,21 @@ const workspaceSlice = createSlice({
       })
       .addCase(inviteMember.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message || 'Failed to invite member';
+        state.error = (action as any)?.payload || action.error.message || 'Failed to invite member';
+      })
+      // Fetch members
+      .addCase(fetchMembers.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchMembers.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.members = Array.isArray(action.payload) ? action.payload : [];
+        state.error = null;
+      })
+      .addCase(fetchMembers.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to fetch members';
       })
       // Fetch single workspace
       .addCase(fetchWorkspace.pending, (state) => {
@@ -390,7 +472,7 @@ const workspaceSlice = createSlice({
             }
           }
           // If current workspace is the one archived, keep it but update status
-          if (state.currentWorkspace && ((state.currentWorkspace as any)._id === id || (state.currentWorkspace as any).id === id)) {
+          if (state.currentWorkspace && (((state.currentWorkspace as any)._id === id) || ((state.currentWorkspace as any).id === id))) {
             state.currentWorkspace = {
               ...(state.currentWorkspace as any),
               ...(archived || {}),
@@ -427,6 +509,21 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to permanently delete workspace';
       })
+      // Fetch spaces by workspace
+      .addCase(fetchSpacesByWorkspace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchSpacesByWorkspace.fulfilled, (state, action) => {
+        state.loading = false;
+        state.spaces = Array.isArray(action.payload) ? action.payload : [];
+        state.error = null;
+      })
+      .addCase(fetchSpacesByWorkspace.rejected, (state, action) => {
+        state.loading = false;
+        state.error = (action as any)?.payload || action.error.message || 'Failed to fetch spaces';
+        state.spaces = [];
+      })
       // Restore workspace
       .addCase(restoreWorkspace.pending, (state) => {
         state.loading = true;
@@ -452,6 +549,36 @@ const workspaceSlice = createSlice({
         state.loading = false;
         state.error = action.payload || action.error?.message || 'Failed to restore workspace';
       })
+      // Remove member
+      .addCase(removeMember.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(removeMember.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const memberId = action.payload.memberId;
+        // Prefer backend-provided members list if available
+        if (Array.isArray((action.payload as any)?.members)) {
+          state.members = (action.payload as any).members as any;
+          state.error = null;
+          return;
+        }
+        state.members = (state.members || []).filter((m: any) => {
+          const ids = [
+            m?._id,
+            m?.id,
+            (m as any)?.userId,
+            (m as any)?.user?._id,
+            (m as any)?.user?.id,
+          ];
+          return !ids.includes(memberId);
+        });
+        state.error = null;
+      })
+      .addCase(removeMember.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = (action as any)?.payload || action.error.message || 'Failed to remove member';
+      })
        
        }})
     
@@ -468,6 +595,7 @@ export const {
   setCurrentWorkspaceId,
   removeWorkspaceById,
   upsertWorkspaceStatus,
+  upsertMemberPresence,
   resetWorkspaceState,
 } = workspaceSlice.actions;
 

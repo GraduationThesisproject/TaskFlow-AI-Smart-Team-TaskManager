@@ -25,7 +25,7 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
-  const validateEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  const validateEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim().toLowerCase());
   const validatePasswordComplexity = (val: string) =>
     /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(val);
 
@@ -44,7 +44,7 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
     }
 
     // Email
-    if (!email) {
+    if (!email.trim()) {
       setEmailError('Email is required');
       isValid = false;
     } else if (!validateEmail(email)) {
@@ -92,9 +92,16 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
     try {
       const result = await register({
         name: name.trim(),
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
+      if ((result as any)?.meta?.requestStatus === 'rejected') {
+        const backendMessage: string | undefined = (result as any)?.payload;
+        if (backendMessage && /user already exists/i.test(backendMessage)) {
+          setEmailError('An account with this email already exists');
+        }
+        return;
+      }
       if ((result as any)?.meta?.requestStatus === 'fulfilled') {
         onSuccess?.();
       }

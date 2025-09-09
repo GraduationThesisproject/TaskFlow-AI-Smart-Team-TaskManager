@@ -1,5 +1,4 @@
 import React from 'react';
-import { createPortal } from 'react-dom';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import {
   Card,
@@ -13,12 +12,6 @@ import { DraggableTask } from './DraggableTask';
 import { useTheme } from '../../hooks';
 import type { DraggableColumnProps } from '../../types/interfaces/ui';
 
-// Portal component for dragging
-const Portal = ({ children }: { children: React.ReactNode }) => {
-  if (typeof window === "undefined") return null;
-  const portalRoot = document.body;
-  return createPortal(children, portalRoot);
-};
 
 export const DraggableColumn: React.FC<DraggableColumnProps> = ({
   column,
@@ -48,19 +41,14 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
 
     return (
     <Draggable draggableId={column._id} index={index}>
-      {(provided, snapshot) => {
-        const child = (
-          <div
-            ref={provided.innerRef}
-            {...provided.draggableProps}
-            className={`flex-shrink-0 w-80 transition-all duration-200 ${
-              snapshot.isDragging ? 'opacity-50 rotate-2' : ''
-            }`}
-            style={{
-              ...provided.draggableProps.style,
-              userSelect: 'none',
-            }}
-          >
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          className={`flex-shrink-0 w-80 ${
+            snapshot.isDragging ? 'opacity-50 rotate-1' : ''
+          }`}
+        >
             <Card 
               className="h-fit border-0 shadow-xl backdrop-blur-sm rounded-2xl transition-all duration-300 hover:shadow-2xl"
               style={{
@@ -227,14 +215,7 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
               </CardContent>
             </Card>
           </div>
-        );
-
-        // 🚀 Move dragging item to body to avoid weird positioning
-        if (snapshot.isDragging) {
-          return <Portal>{child}</Portal>;
-        }
-        return child;
-      }}
+        )}
     </Draggable>
   );
 };

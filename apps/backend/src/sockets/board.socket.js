@@ -5,6 +5,57 @@ const Task = require('../models/Task');
 const User = require('../models/User');
 const Comment = require('../models/Comment');
 const logger = require('../config/logger');
+const { hasPermission, getRoleLevel } = require('../config/pathPermissions');
+
+// Helper function to check socket permissions
+const checkSocketPermission = async (socket, path, method, boardId = null) => {
+    try {
+        const user = await User.findById(socket.userId);
+        if (!user) {
+            return { hasAccess: false, error: 'User not found' };
+        }
+
+        // Get user's role for the board
+        let userRole = 'viewer'; // default role
+        
+        if (boardId) {
+            const board = await Board.findById(boardId);
+            if (board) {
+                // Check if user is owner
+                if (board.owner && board.owner.toString() === socket.userId) {
+                    userRole = 'owner';
+                } else {
+                    // Check if user is admin or member
+                    const userRoles = await user.getRoles();
+                    if (userRoles.hasBoardPermission(boardId, 'canEdit')) {
+                        userRole = 'admin';
+                    } else if (userRoles.hasBoardPermission(boardId, 'canView')) {
+                        userRole = 'member';
+                    }
+                }
+            }
+        } else {
+            // For non-board specific operations, get user's general role
+            const userRoles = await user.getRoles();
+            if (userRoles.isAdmin) {
+                userRole = 'admin';
+            } else {
+                userRole = 'member';
+            }
+        }
+
+        const hasAccess = hasPermission(userRole, path, method);
+        
+        return { 
+            hasAccess, 
+            userRole,
+            error: hasAccess ? null : 'Insufficient permissions'
+        };
+    } catch (error) {
+        logger.error('Socket permission check error:', error);
+        return { hasAccess: false, error: 'Permission check failed' };
+    }
+};
 
 // Socket authentication middleware
 const authenticateSocket = async (socket, next) => {
@@ -41,10 +92,13 @@ const authenticateSocket = async (socket, next) => {
 
 // Handle unified board and task socket events
 const handleBoardSocket = (io) => {
-    // Apply authentication middleware
-    io.use(authenticateSocket);
+    // Create board namespace
+    const boardNamespace = io.of('/board');
     
-    io.on('connection', (socket) => {
+    // Apply authentication middleware
+    boardNamespace.use(authenticateSocket);
+    
+    boardNamespace.on('connection', (socket) => {
         logger.info(`User connected: ${socket.user.name} (${socket.id})`);
 
         // Join user's personal room for notifications
@@ -124,12 +178,19 @@ const handleBoardSocket = (io) => {
             try {
                 const { boardId, columnData } = data;
                 
-                // Verify permissions
-                const user = await User.findById(socket.userId);
-                const userRoles = await user.getRoles();
+                // Check permissions using pathPermissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/board/:id/columns', 
+                    'POST', 
+                    boardId
+                );
                 
-                if (!userRoles.hasBoardPermission(boardId, 'canEdit')) {
-                    socket.emit('error', { message: 'Insufficient permissions to create columns' });
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
                     return;
                 }
 
@@ -140,7 +201,7 @@ const handleBoardSocket = (io) => {
                 });
 
                 // Broadcast to board
-                io.to(`board:${boardId}`).emit('column:created', {
+                boardNamespace.to(`board:${boardId}`).emit('column:created', {
                     column: column.toObject(),
                     createdBy: socket.user,
                     timestamp: new Date()
@@ -162,12 +223,19 @@ const handleBoardSocket = (io) => {
                     return;
                 }
 
-                // Verify permissions
-                const user = await User.findById(socket.userId);
-                const userRoles = await user.getRoles();
+                // Check permissions using pathPermissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/board/:id/columns/:columnId', 
+                    'PUT', 
+                    column.board
+                );
                 
-                if (!userRoles.hasBoardPermission(column.board, 'canEdit')) {
-                    socket.emit('error', { message: 'Insufficient permissions to update columns' });
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
                     return;
                 }
 
@@ -176,7 +244,7 @@ const handleBoardSocket = (io) => {
                 await column.save();
 
                 // Broadcast to board
-                io.to(`board:${column.board}`).emit('column:updated', {
+                boardNamespace.to(`board:${column.board}`).emit('column:updated', {
                     column: column.toObject(),
                     updatedBy: socket.user,
                     timestamp: new Date()
@@ -198,12 +266,19 @@ const handleBoardSocket = (io) => {
                     return;
                 }
 
-                // Verify permissions
-                const user = await User.findById(socket.userId);
-                const userRoles = await user.getRoles();
+                // Check permissions using pathPermissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/board/:id/columns/:columnId', 
+                    'DELETE', 
+                    column.board
+                );
                 
-                if (!userRoles.hasBoardPermission(column.board, 'canEdit')) {
-                    socket.emit('error', { message: 'Insufficient permissions to delete columns' });
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
                     return;
                 }
 
@@ -218,7 +293,7 @@ const handleBoardSocket = (io) => {
                 await Column.findByIdAndDelete(columnId);
 
                 // Broadcast to board
-                io.to(`board:${boardId}`).emit('column:deleted', {
+                boardNamespace.to(`board:${boardId}`).emit('column:deleted', {
                     columnId,
                     deletedBy: socket.user,
                     timestamp: new Date()
@@ -232,15 +307,23 @@ const handleBoardSocket = (io) => {
 
         // Column reordering
         socket.on('columns:reorder', async (data) => {
+           logger.info('columns:reorder', data);
             try {
                 const { boardId, columnOrder } = data;
                 
-                // Verify permissions
-                const user = await User.findById(socket.userId);
-                const userRoles = await user.getRoles();
+                // Check permissions using pathPermissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/board/:id/columns/reorder', 
+                    'PATCH', 
+                    boardId
+                );
                 
-                if (!userRoles.hasBoardPermission(boardId, 'canEdit')) {
-                    socket.emit('error', { message: 'Insufficient permissions to reorder columns' });
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
                     return;
                 }
 
@@ -252,7 +335,7 @@ const handleBoardSocket = (io) => {
                 await Promise.all(updatePromises);
 
                 // Broadcast to board
-                io.to(`board:${boardId}`).emit('columns:reordered', {
+                boardNamespace.to(`board:${boardId}`).emit('columns:reordered', {
                     columnOrder,
                     reorderedBy: socket.user,
                     timestamp: new Date()
@@ -266,6 +349,68 @@ const handleBoardSocket = (io) => {
 
         // ===== TASK OPERATIONS =====
         
+        // Handle task creation
+        socket.on('task:create', async (data) => {
+            try {
+                const { taskData, boardId } = data;
+                logger.info(`Task creation request received:`, { taskData, boardId, userId: socket.userId });
+                
+                // Check permissions using pathPermissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/task', 
+                    'POST', 
+                    boardId
+                );
+                
+                logger.info(`Permission check result:`, permissionCheck);
+                
+                if (!permissionCheck.hasAccess) {
+                    logger.error(`Permission denied for task creation:`, permissionCheck);
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
+                    return;
+                }
+
+                // Get board to get space ID
+                const board = await Board.findById(boardId);
+                if (!board) {
+                    socket.emit('error', { message: 'Board not found' });
+                    return;
+                }
+
+                // Create task
+                const task = new Task({
+                    ...taskData,
+                    board: boardId,
+                    space: board.space, // Get space from board
+                    reporter: socket.userId,
+                    lastActivity: new Date()
+                });
+                
+                logger.info(`Creating task with data:`, task.toObject());
+                await task.save();
+                logger.info(`Task saved successfully: ${task._id}`);
+                await task.populate('assignees', 'name email avatar');
+                await task.populate('reporter', 'name email avatar');
+
+                // Broadcast to all users in the board
+                boardNamespace.to(`board:${boardId}`).emit('task:created', {
+                    task: task.toObject(),
+                    createdBy: socket.user,
+                    timestamp: new Date()
+                });
+
+                logger.info(`Task ${task._id} created by ${socket.user.name}`);
+
+            } catch (error) {
+                logger.error('Task creation error:', error);
+                socket.emit('error', { message: 'Failed to create task' });
+            }
+        });
+        
         // Handle task updates
         socket.on('task:update', async (data) => {
             try {
@@ -274,6 +419,22 @@ const handleBoardSocket = (io) => {
                 const task = await Task.findById(taskId);
                 if (!task) {
                     socket.emit('error', { message: 'Task not found' });
+                    return;
+                }
+
+                // Check permissions using pathPermissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/task/:id', 
+                    'PUT', 
+                    boardId
+                );
+                
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
                     return;
                 }
 
@@ -286,7 +447,7 @@ const handleBoardSocket = (io) => {
                 await task.populate('reporter', 'name email avatar');
 
                 // Broadcast to all users in the board
-                io.to(`board:${boardId}`).emit('task:updated', {
+                boardNamespace.to(`board:${boardId}`).emit('task:updated', {
                     task: task.toObject(),
                     updatedBy: socket.user,
                     timestamp: new Date()
@@ -311,13 +472,29 @@ const handleBoardSocket = (io) => {
                     return;
                 }
 
+                // Check permissions using pathPermissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/task/:id/move', 
+                    'POST', 
+                    boardId
+                );
+                
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
+                    return;
+                }
+
                 // Update task position and column
                 task.column = targetColumnId;
                 task.position = targetPosition;
                 await task.save();
 
                 // Broadcast task movement to board
-                io.to(`board:${boardId}`).emit('task:moved', {
+                boardNamespace.to(`board:${boardId}`).emit('task:moved', {
                     taskId,
                     sourceColumnId,
                     targetColumnId,
@@ -334,10 +511,77 @@ const handleBoardSocket = (io) => {
             }
         });
 
+        // Handle task deletion
+        socket.on('task:delete', async (data) => {
+            try {
+                const { taskId, boardId } = data;
+                
+                const task = await Task.findById(taskId);
+                if (!task) {
+                    socket.emit('error', { message: 'Task not found' });
+                    return;
+                }
+
+                // Check permissions using pathPermissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/task/:id', 
+                    'DELETE', 
+                    boardId
+                );
+                
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
+                    return;
+                }
+
+                // Delete task
+                await Task.findByIdAndDelete(taskId);
+
+                // Broadcast to all users in the board
+                boardNamespace.to(`board:${boardId}`).emit('task:deleted', {
+                    taskId,
+                    deletedBy: socket.user,
+                    timestamp: new Date()
+                });
+
+                logger.info(`Task ${taskId} deleted by ${socket.user.name}`);
+
+            } catch (error) {
+                logger.error('Task deletion error:', error);
+                socket.emit('error', { message: 'Failed to delete task' });
+            }
+        });
+
         // Handle real-time comments
         socket.on('comment:add', async (data) => {
             try {
                 const { taskId, content, mentions = [] } = data;
+                
+                const task = await Task.findById(taskId);
+                if (!task) {
+                    socket.emit('error', { message: 'Task not found' });
+                    return;
+                }
+
+                // Check permissions using pathPermissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/task/:id/comments', 
+                    'POST', 
+                    task.board
+                );
+                
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
+                    return;
+                }
                 
                 const comment = await Comment.create({
                     content,
@@ -348,11 +592,9 @@ const handleBoardSocket = (io) => {
 
                 await comment.populate('author', 'name email avatar');
                 await comment.populate('mentions', 'name email avatar');
-
-                const task = await Task.findById(taskId);
                 
                 // Broadcast to board and mentioned users
-                io.to(`board:${task.board}`).emit('comment:added', {
+                boardNamespace.to(`board:${task.board}`).emit('comment:added', {
                     comment: comment.toObject(),
                     taskId,
                     timestamp: new Date()
@@ -360,7 +602,7 @@ const handleBoardSocket = (io) => {
 
                 // Send notifications to mentioned users
                 for (const mentionId of mentions) {
-                    io.to(`user:${mentionId}`).emit('notification', {
+                    boardNamespace.to(`user:${mentionId}`).emit('notification', {
                         type: 'mention',
                         message: `${socket.user.name} mentioned you in a comment`,
                         taskId,
@@ -383,12 +625,19 @@ const handleBoardSocket = (io) => {
             try {
                 const { boardId, settings } = data;
                 
-                // Verify permissions
-                const user = await User.findById(socket.userId);
-                const userRoles = await user.getRoles();
+                // Check permissions using pathPermissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/board/:id/settings', 
+                    'PUT', 
+                    boardId
+                );
                 
-                if (!userRoles.hasBoardPermission(boardId, 'canEdit')) {
-                    socket.emit('error', { message: 'Insufficient permissions to update board settings' });
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
                     return;
                 }
 
@@ -403,7 +652,7 @@ const handleBoardSocket = (io) => {
                 await board.save();
 
                 // Broadcast to board
-                io.to(`board:${boardId}`).emit('board:settings-updated', {
+                boardNamespace.to(`board:${boardId}`).emit('board:settings-updated', {
                     settings: board.settings,
                     updatedBy: socket.user,
                     timestamp: new Date()
@@ -453,12 +702,19 @@ const handleBoardSocket = (io) => {
             try {
                 const { boardId, operation, targets, options } = data;
                 
-                // Verify permissions
-                const user = await User.findById(socket.userId);
-                const userRoles = await user.getRoles();
+                // Check permissions using pathPermissions - using board edit permission
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/board/:id', 
+                    'PUT', 
+                    boardId
+                );
                 
-                if (!userRoles.hasBoardPermission(boardId, 'canEdit')) {
-                    socket.emit('error', { message: 'Insufficient permissions for bulk operations' });
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
                     return;
                 }
 
@@ -485,7 +741,7 @@ const handleBoardSocket = (io) => {
                 }
 
                 // Broadcast bulk operation result
-                io.to(`board:${boardId}`).emit('board:bulk-operation-completed', {
+                boardNamespace.to(`board:${boardId}`).emit('board:bulk-operation-completed', {
                     operation,
                     targets,
                     result,
@@ -556,11 +812,11 @@ const handleBoardSocket = (io) => {
 
     // ===== GLOBAL BOARD UTILITIES =====
     
-    io.notifyBoard = (boardId, event, data) => {
-        io.to(`board:${boardId}`).emit(event, data);
+    boardNamespace.notifyBoard = (boardId, event, data) => {
+        boardNamespace.to(`board:${boardId}`).emit(event, data);
     };
 
-    io.notifyBoardAdmins = async (boardId, event, data) => {
+    boardNamespace.notifyBoardAdmins = async (boardId, event, data) => {
         try {
             // Find users with admin permissions for this board
             const users = await User.find({ isActive: true });
@@ -568,7 +824,7 @@ const handleBoardSocket = (io) => {
             for (const user of users) {
                 const userRoles = await user.getRoles();
                 if (userRoles.hasBoardPermission(boardId, 'canEdit')) {
-                    io.to(`notifications:${user._id}`).emit(event, data);
+                    boardNamespace.to(`notifications:${user._id}`).emit(event, data);
                 }
             }
         } catch (error) {
@@ -577,15 +833,15 @@ const handleBoardSocket = (io) => {
     };
 
     // Global socket utilities
-    io.notifyUser = (userId, event, data) => {
-        io.to(`user:${userId}`).emit(event, data);
+    boardNamespace.notifyUser = (userId, event, data) => {
+        boardNamespace.to(`user:${userId}`).emit(event, data);
     };
 
-    io.notifyProject = (projectId, event, data) => {
-        io.to(`project:${projectId}`).emit(event, data);
+    boardNamespace.notifyProject = (projectId, event, data) => {
+        boardNamespace.to(`project:${projectId}`).emit(event, data);
     };
 
-    return io;
+    return boardNamespace;
 };
 
 module.exports = handleBoardSocket;

@@ -8,7 +8,7 @@ import {
   updateColumn,
   deleteColumn,
   reorderColumns
-} from '../store/slices/taskSlice';
+} from '../store/slices/columnSlice';
 import {
   startDraggingColumn,
   stopDraggingColumn
@@ -16,19 +16,20 @@ import {
 
 export const useColumns = () => {
   const dispatch = useDispatch();
-  
-  // Select state from Redux store - Use task slice since it contains the columns data
+
+  // Select state from Redux store - Use column slice for column data
   const {
     columns,
     loading,
     error
-  } = useSelector((state: RootState) => state.tasks);
-  
+  } = useSelector((state: RootState) => state.columns);
+
   // Get drag state from column slice
   const { dragState } = useSelector((state: RootState) => state.columns);
 
   // API actions
   const loadColumnsByBoard = useCallback((boardId: string) => {
+    console.log('loadColumnsByBoard called with boardId:', boardId);
     dispatch(fetchColumnsByBoard(boardId) as any);
   }, [dispatch]);
 
@@ -89,9 +90,10 @@ export const useColumns = () => {
 
   // Computed values - Add defensive programming to handle null/undefined columns
   const columnsArray = Array.isArray(columns) ? columns : [];
-  const sortedColumns = [...columnsArray].sort((a, b) => a.position - b.position);
+  const sortedColumns = [...columnsArray].sort((a, b) => (a.position || 0) - (b.position || 0));
   const activeColumns = columnsArray.filter(col => !col.isArchived);
   const archivedColumns = columnsArray.filter(col => col.isArchived);
+
 
   const getColumnsByBoard = useCallback((boardId: string) => {
     return columnsArray.filter(col => col.board === boardId);
