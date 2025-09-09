@@ -426,6 +426,7 @@ export default function DashboardScreen() {
     }
   };
 
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadDashboardData();
@@ -489,7 +490,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    width: 40,
+    gap: 8,
   },
   content: {
     flex: 1,
