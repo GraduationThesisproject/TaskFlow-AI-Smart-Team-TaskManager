@@ -168,6 +168,22 @@ export interface PasswordResetData {
   newPassword: string;
 }
 
+// 4-Digit Code Password Reset Flow
+export interface ForgotPasswordSendCodeData {
+  email: string;
+}
+
+export interface ForgotPasswordVerifyCodeData {
+  email: string;
+  code: string;
+}
+
+export interface ForgotPasswordResetData {
+  email: string;
+  code: string;
+  newPassword: string;
+}
+
 // Extended register data for OAuth
 export interface OAuthRegisterData extends OAuthUserData {
   // Additional fields can be added here if needed

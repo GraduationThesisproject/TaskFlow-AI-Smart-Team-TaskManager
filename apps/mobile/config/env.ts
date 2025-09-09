@@ -8,14 +8,28 @@ export const env = {
   PORT: 3001,
   
   // API Configuration
-  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || Constants.expoConfig?.extra?.apiBaseUrl || 'http://192.168.217.1:3001/api',
-  API_URL: process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl || 'http://192.168.217.1:3001/api',
-  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || Constants.expoConfig?.extra?.socketUrl || 'http://192.168.217.1:3001',
+  // Prefer EXPO_PUBLIC_* when provided. Otherwise choose sensible defaults:
+  // - Android emulator: 10.0.2.2
+  // - iOS simulator / Web: localhost
+  // For physical devices, override via apps/mobile/.env -> EXPO_PUBLIC_API_BASE_URL
+  get DEFAULT_HOST() {
+    if (__DEV__ && Platform.OS === 'android') return '10.0.2.2';
+    return '192.168.1.142'; // Use your computer's actual IP address
+  },
+  get DEFAULT_API() {
+    return `http://${this.DEFAULT_HOST}:3001/api`;
+  },
+  get DEFAULT_BASE() {
+    return `http://${this.DEFAULT_HOST}:3001`;
+  },
+  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || Constants.expoConfig?.extra?.apiBaseUrl || 'http://192.168.1.142:3001/api',
+  API_URL: process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl || 'http://192.168.1.142:3001/api',
+  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || Constants.expoConfig?.extra?.socketUrl || 'http://192.168.1.142:3001',
   
   // App Configuration
   APP_NAME: Constants.expoConfig?.name || 'TaskFlow',
   APP_VERSION: Constants.expoConfig?.version || '1.0.0',
-  BASE_URL: process.env.EXPO_PUBLIC_BASE_URL || Constants.expoConfig?.extra?.baseUrl || 'http://192.168.217.1:3001',
+  BASE_URL: process.env.EXPO_PUBLIC_BASE_URL || Constants.expoConfig?.extra?.baseUrl || 'http://192.168.1.142:3001',
   
   // Feature Flags
   ENABLE_ANALYTICS: process.env.EXPO_PUBLIC_ENABLE_ANALYTICS === 'true' || Constants.expoConfig?.extra?.enableAnalytics === true,
@@ -99,7 +113,20 @@ export type Env = typeof env;
 
 // Helper function to get environment variable with type safety and fallback
 export function getEnvVar<T extends keyof Env>(key: T, fallback?: Env[T]): Env[T] {
-  return env[key] ?? fallback ?? ('' as Env[T]);
+  // Provide smart fallbacks for base URLs at runtime
+  if ((key === 'API_BASE_URL' || key === 'API_URL') && (env[key] as any) == null) {
+    return env.DEFAULT_API as any;
+  }
+  if (key === 'SOCKET_URL' && (env[key] as any) == null) {
+    return env.DEFAULT_BASE as any;
+  }
+  if (key === 'BASE_URL' && (env[key] as any) == null) {
+    return env.DEFAULT_BASE as any;
+  }
+  if (key === 'DEVELOPMENT_API_URL' && (env[key] as any) == null) {
+    return env.DEFAULT_API as any;
+  }
+  return (env[key] ?? fallback ?? ('' as Env[T]));
 }
 
 // Helper function to check if feature is enabled
@@ -119,9 +146,9 @@ export function isFeatureEnabled(feature: keyof Pick<Env,
 
 // Helper function to get API URLs based on environment
 export function getApiUrl(path: string = ''): string {
-  const baseUrl = env.IS_DEV ? env.DEVELOPMENT_API_URL : 
-                 env.IS_PRODUCTION ? env.PRODUCTION_API_URL : 
-                 env.STAGING_API_URL;
+  const baseUrl = env.IS_DEV ? getEnvVar('DEVELOPMENT_API_URL') : 
+                 env.IS_PRODUCTION ? getEnvVar('PRODUCTION_API_URL') : 
+                 getEnvVar('STAGING_API_URL');
   return `${baseUrl}${path}`;
 }
 
@@ -173,7 +200,7 @@ export function getEnvironmentConfig() {
     isProduction: env.IS_PRODUCTION,
     isStaging: !env.IS_DEV && !env.IS_PRODUCTION,
     apiUrl: getApiUrl(),
-    socketUrl: env.SOCKET_URL,
+    socketUrl: getEnvVar('SOCKET_URL'),
     enableDebug: env.ENABLE_DEBUG,
     enableAnalytics: env.ENABLE_ANALYTICS,
   };
@@ -184,7 +211,7 @@ export function validateEnvironment(): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
   
   // Check required API URLs
-  if (!env.API_BASE_URL) {
+  if (!getEnvVar('API_BASE_URL')) {
     errors.push('API_BASE_URL is required');
   }
   
@@ -215,5 +242,3 @@ if (__DEV__) {
     console.warn('⚠️ Environment configuration issues:', validation.errors);
   }
 }
-
-

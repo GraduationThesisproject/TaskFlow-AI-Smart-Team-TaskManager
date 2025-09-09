@@ -19,7 +19,10 @@ const registerSchema = {
     },
     password: { 
         required: true, 
-        minLength: 8 
+        minLength: 8,
+        // At least one letter, one number, and one special character
+        pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/,
+        patternMessage: 'Password must contain at least one letter, one number, and one special character'
     },
     inviteToken: { 
         string: true 
@@ -166,6 +169,44 @@ const passwordResetSchema = {
     }
 };
 
+// 4-Digit Code Password Reset Flow
+const forgotPasswordSendCodeSchema = {
+    email: { 
+        required: true, 
+        email: true 
+    }
+};
+
+const forgotPasswordVerifyCodeSchema = {
+    email: { 
+        required: true, 
+        email: true 
+    },
+    code: { 
+        required: true, 
+        string: true,
+        pattern: /^\d{4}$/,
+        message: 'Code must be exactly 4 digits'
+    }
+};
+
+const forgotPasswordResetSchema = {
+    email: { 
+        required: true, 
+        email: true 
+    },
+    code: { 
+        required: true, 
+        string: true,
+        pattern: /^\d{4}$/,
+        message: 'Code must be exactly 4 digits'
+    },
+    newPassword: { 
+        required: true, 
+        minLength: 8 
+    }
+};
+
 // ============================================================================
 // USER PREFERENCES & SETTINGS
 // ============================================================================
@@ -247,6 +288,11 @@ module.exports = {
     changePasswordSchema,
     passwordResetRequestSchema,
     passwordResetSchema,
+    
+    // 4-Digit Code Password Reset Flow
+    forgotPasswordSendCodeSchema,
+    forgotPasswordVerifyCodeSchema,
+    forgotPasswordResetSchema,
     
     // Preferences & Settings
     updatePreferencesSchema,

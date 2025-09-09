@@ -50,7 +50,7 @@ const validateField = (fieldName, value, rules) => {
                 errors.push(`${fieldName} must be no more than ${rules.maxLength} characters long`);
             }
             if (rules.pattern && !rules.pattern.test(value)) {
-                errors.push(`${fieldName} format is invalid`);
+                errors.push(rules.patternMessage || `${fieldName} format is invalid`);
             }
         }
     }

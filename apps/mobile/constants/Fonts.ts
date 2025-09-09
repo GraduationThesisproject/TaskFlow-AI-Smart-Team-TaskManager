@@ -5,11 +5,11 @@ export const Fonts = {
   // Primary font family - Inter (using variable font)
   primary: {
     // Using Inter variable font for all weights
-    regular: 'Inter-VariableFont_opsz,wght',
-    medium: 'Inter-VariableFont_opsz,wght',
-    semiBold: 'Inter-VariableFont_opsz,wght',
-    bold: 'Inter-VariableFont_opsz,wght',
-    light: 'Inter-VariableFont_opsz,wght',
+    regular: 'Inter',
+    medium: 'Inter',
+    semiBold: 'Inter',
+    bold: 'Inter',
+    light: 'Inter',
   },
   
   // Secondary font family - Poppins (using specific weight files)
@@ -23,9 +23,9 @@ export const Fonts = {
   
   // Monospace font - JetBrains Mono (using variable font)
   mono: {
-    regular: 'JetBrainsMono-VariableFont_wght',
-    medium: 'JetBrainsMono-VariableFont_wght',
-    bold: 'JetBrainsMono-VariableFont_wght',
+    regular: 'JetBrainsMono',
+    medium: 'JetBrainsMono',
+    bold: 'JetBrainsMono',
   },
   
   // System fallbacks
