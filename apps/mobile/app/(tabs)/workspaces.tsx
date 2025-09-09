@@ -170,9 +170,16 @@ export default function WorkspacesScreen() {
                 <View style={styles.workspaceInfo}>
                   <View style={styles.infoRow}>
                     <FontAwesome name="users" size={14} color={colors['muted-foreground']} />
-                    <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                      {workspace.members?.length || 0} members
-                    </Text>
+                    {(() => {
+                      const memberLen = Array.isArray(workspace.members) ? workspace.members.length : 0;
+                      const ownerIncluded = workspace.owner ? 1 : 0;
+                      const totalMembers = memberLen + ownerIncluded;
+                      return (
+                        <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+                          {totalMembers} members
+                        </Text>
+                      );
+                    })()}
                   </View>
                   
                   <View style={styles.infoRow}>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, Image } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, Image, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
@@ -86,7 +86,8 @@ export default function WorkspaceScreen() {
     return (effectiveSpaces || []).filter((s: any) => (s?.name || '').toLowerCase().includes(q) || (s?.description || '').toLowerCase().includes(q));
   }, [spaceSearch, effectiveSpaces]);
 
-  const membersCount = (effectiveWorkspace as any)?.members?.length || (effectiveWorkspace as any)?.memberCount || 0;
+  // Workspace should count owner as a member
+  const membersCount = Array.isArray(members) ? members.length : 0;
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -115,7 +116,7 @@ export default function WorkspaceScreen() {
   }, [selectedWorkspaceId, workspaces, dispatch, loadSpaces]);
 
   const handleSelectWorkspace = (ws: any) => {
-    const id = ws?._id || ws?.id;
+    const id = ws?._id
     if (!id) return;
     dispatch(setCurrentWorkspaceId(id));
     loadSpaces(id);
@@ -123,7 +124,7 @@ export default function WorkspaceScreen() {
 
   const handleOpenSpace = (space: any) => {
     dispatch(setSelectedSpace(space));
-    router.push('/(tabs)/workspace/space');
+    router.push('/(tabs)/workspace/space/boards');
   };
 
   const goToReports = () => router.push('/(tabs)/workspace/reports');
@@ -144,9 +145,19 @@ export default function WorkspaceScreen() {
     // Prevent removing the owner
     if (member?.role === 'owner') return;
     try {
-      await dispatch(removeMember({ workspaceId, memberId: member._id || member.id })).unwrap();
-    } catch (e) {
+      const memberId = member?.user?._id || member?.userId || member?._id || member?.id;
+      console.log('[Workspace] Removing member', {
+        workspaceId,
+        rawMember: member,
+        resolvedMemberId: memberId,
+      });
+      if (!memberId) throw new Error('Could not determine member id');
+      await dispatch(removeMember({ workspaceId, memberId })).unwrap();
+      // Ensure local state matches backend by refetching members
+      await dispatch(fetchMembers({ id: workspaceId }));
+    } catch (e: any) {
       console.warn('Failed to remove member', e);
+      Alert.alert('Failed to remove member', e?.message || 'Unknown error');
     }
   };
 
@@ -243,36 +254,51 @@ export default function WorkspaceScreen() {
               <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>{membersError}</Text>
             ) : (Array.isArray(members) && members.length > 0 ? (
               <View style={{ gap: 8 }}>
-                {members.map((m: any) => (
-                  <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    {/* Avatar */}
-                    {(() => {
-                      const avatarUrl = m.avatar || m.profile?.avatar || m.user?.avatar;
-                      return avatarUrl ? (
+                {members.map((m: any) => {
+                  const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
+                  const email = m?.user?.email || m?.email || '';
+                  const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
+                  const letter = String(displayName).charAt(0).toUpperCase();
+                  return (
+                    <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                      {/* Avatar */}
+                      {avatarUrl ? (
                         <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
                       ) : (
                         <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
-                          <FontAwesome name="user" size={16} color={colors['muted-foreground']} />
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
                         </View>
-                      );
-                    })()}
-                    {/* Name and meta */}
-                    <View style={{ flex: 1 }}>
-                      <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{m.name || m.displayName || m.email}</Text>
-                      <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{m.email}</Text>
-                      <View style={styles.memberMetaRow}>
-                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                      )}
+                      {/* Name and meta */}
+                      <View style={{ flex: 1 }}>
+                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
+                        {!!email && (
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
+                        )}
+                        <View style={styles.memberMetaRow}>
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                        </View>
                       </View>
+                      {m.role !== 'owner' && (
+                        <TouchableOpacity
+                          onPress={() => handleRemoveMember(m)}
+                          disabled={!!membersLoading}
+                          style={[
+                            styles.destructiveBtn,
+                            { backgroundColor: colors.destructive },
+                            membersLoading ? { opacity: 0.6 } : null,
+                          ]}
+                        >
+                          <Text style={{ color: colors['destructive-foreground'] }}>
+                            {membersLoading ? 'Removing…' : 'Remove'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
-                    {m.role !== 'owner' && (
-                      <TouchableOpacity onPress={() => handleRemoveMember(m)} style={[styles.destructiveBtn, { backgroundColor: colors.destructive }]}>
-                        <Text style={{ color: colors['destructive-foreground'] }}>Remove</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             ) : (
               <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No members yet.</Text>

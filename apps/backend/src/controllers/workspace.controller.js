@@ -778,6 +778,11 @@ exports.removeMember = async (req, res) => {
 
         // Remove workspace roles from user
         const member = await User.findById(memberId);
+        if (!member) {
+            // Member user record not found; membership was removed from workspace above
+            // Return success to keep the operation idempotent and avoid leaking existence
+            return sendResponse(res, 200, true, 'Member removed successfully');
+        }
         const memberRoles = await member.getRoles();
         await memberRoles.removeWorkspaceRole(workspaceId);
 

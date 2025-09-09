@@ -167,19 +167,23 @@ export class WorkspaceService {
     try {
       const response = await axiosInstance.post(`/workspaces/${workspaceId}/invite`, data);
       return response.data.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error inviting member:', error);
-      throw error;
+      const message = error?.response?.data?.message || error?.response?.data?.error || error?.message || 'Failed to invite member';
+      throw new Error(message);
     }
   }
 
   static async removeMember(workspaceId: string, memberId: string): Promise<any> {
     try {
-      const response = await axiosInstance.delete(`/workspaces/${workspaceId}/members/${memberId}`);
+      const wid = encodeURIComponent(workspaceId);
+      const mid = encodeURIComponent(memberId);
+      const response = await axiosInstance.delete(`/workspaces/${wid}/members/${mid}`);
       return response.data.data;
-    } catch (error) {
-      console.error('Error removing member:', error);
-      throw error;
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.response?.data?.error || error?.message || 'Failed to remove member';
+      console.error('Error removing member:', message);
+      throw new Error(message);
     }
   }
 

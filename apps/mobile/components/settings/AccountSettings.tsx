@@ -6,8 +6,7 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAuth } from '@/hooks/useAuth';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
+  
 const AccountSettings: React.FC = () => {
   const colors = useThemeColors();
   const { user, updateProfileSecure, changePassword } = useAuth();
