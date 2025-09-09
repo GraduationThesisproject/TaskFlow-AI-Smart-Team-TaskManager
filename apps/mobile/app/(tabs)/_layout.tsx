@@ -43,9 +43,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="workspace"
         options={{
-          title: 'Workspace',
-          tabBarIcon: ({ color }) => <TabBarIcon name="folder" color={color} />,
-          headerShown: false,
+          href: null, // Hide from tab bar
         }}
       />
       <Tabs.Screen

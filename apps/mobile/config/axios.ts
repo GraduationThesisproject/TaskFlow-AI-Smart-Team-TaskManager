@@ -61,21 +61,9 @@ axiosInstance.interceptors.request.use(
       }
     }
 
-    if (env.ENABLE_DEBUG) {
-      console.log('🔍 Axios Request:', {
-        method: config.method?.toUpperCase(),
-        url: config.url,
-        baseURL: config.baseURL,
-        fullURL: `${config.baseURL}${config.url}`,
-        hasToken: !!token
-      });
-    }
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      if (env.ENABLE_DEBUG) {
-        console.log('🔑 Token added to request headers');
-      }
     }
 
     // Add device info headers for mobile
@@ -93,10 +81,6 @@ axiosInstance.interceptors.request.use(
       }
     }
 
-    // Optional extra request log in debug mode
-    if (env.ENABLE_DEBUG) {
-      console.log('📡 Making request to:', `${config.baseURL}${config.url}`);
-    }
 
     return config;
   },
@@ -109,14 +93,6 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
-    // Add debug logging when explicitly enabled
-    if (env.ENABLE_DEBUG) {
-      console.log('✅ Axios Response:', {
-        status: response.status,
-        url: response.config.url,
-        data: response.data
-      });
-    }
 
     return response;
   },
