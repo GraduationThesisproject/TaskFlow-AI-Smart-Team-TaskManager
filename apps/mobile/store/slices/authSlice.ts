@@ -446,9 +446,11 @@ export const updateProfileSecure = createAsyncThunk(
     thunkAPI
   ) => {
     try {
-      const response = await AuthService.updateProfile(payload);
-      console.log("data", response);
-      return response.data;
+      const resp = await AuthService.updateProfile(payload);
+      // AuthService.updateProfile returns the parsed API payload (sendResponse):
+      // { success, message, data: { user: PublicUser } }
+      const user = (resp as any)?.data?.user || (resp as any)?.user;
+      return user;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response?.data || { message: error.message });
     }
@@ -701,6 +703,7 @@ const authSlice = createSlice({
       })
       .addCase(updateProfileSecure.fulfilled, (state, action) => {
         state.isLoading = false;
+        // payload is the updated basic user object; wrap/serialize to state shape
         state.user = safeSerializeUser(action.payload) as any;
         state.error = null;
       })

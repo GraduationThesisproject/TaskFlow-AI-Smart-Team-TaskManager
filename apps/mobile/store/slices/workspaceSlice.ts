@@ -124,12 +124,14 @@ export const fetchMembers = createAsyncThunk<WorkspaceMember[], { id: string }>(
 );
 
 // Remove a member from workspace
-export const removeMember = createAsyncThunk<{ memberId: string }, { workspaceId: string; memberId: string }>(
+export const removeMember = createAsyncThunk<{ memberId: string; members?: WorkspaceMember[] }, { workspaceId: string; memberId: string }>(
   'workspace/removeMember',
   async ({ workspaceId, memberId }, { rejectWithValue }) => {
     try {
-      await WorkspaceService.removeMember(workspaceId, memberId);
-      return { memberId };
+      const resp: any = await WorkspaceService.removeMember(workspaceId, memberId);
+      // If backend returns updated members list, pass it through
+      const members = Array.isArray(resp?.members) ? resp.members : undefined;
+      return { memberId, members };
     } catch (error: any) {
       return rejectWithValue(error?.message || 'Failed to remove member');
     }
@@ -374,7 +376,7 @@ const workspaceSlice = createSlice({
       })
       .addCase(inviteMember.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message || 'Failed to invite member';
+        state.error = (action as any)?.payload || action.error.message || 'Failed to invite member';
       })
       // Fetch members
       .addCase(fetchMembers.pending, (state) => {
@@ -470,7 +472,7 @@ const workspaceSlice = createSlice({
             }
           }
           // If current workspace is the one archived, keep it but update status
-          if (state.currentWorkspace && ((state.currentWorkspace as any)._id === id || (state.currentWorkspace as any).id === id)) {
+          if (state.currentWorkspace && (((state.currentWorkspace as any)._id === id) || ((state.currentWorkspace as any).id === id))) {
             state.currentWorkspace = {
               ...(state.currentWorkspace as any),
               ...(archived || {}),
@@ -555,7 +557,22 @@ const workspaceSlice = createSlice({
       .addCase(removeMember.fulfilled, (state, action) => {
         state.isLoading = false;
         const memberId = action.payload.memberId;
-        state.members = (state.members || []).filter((m: any) => (m?._id !== memberId && m?.id !== memberId));
+        // Prefer backend-provided members list if available
+        if (Array.isArray((action.payload as any)?.members)) {
+          state.members = (action.payload as any).members as any;
+          state.error = null;
+          return;
+        }
+        state.members = (state.members || []).filter((m: any) => {
+          const ids = [
+            m?._id,
+            m?.id,
+            (m as any)?.userId,
+            (m as any)?.user?._id,
+            (m as any)?.user?.id,
+          ];
+          return !ids.includes(memberId);
+        });
         state.error = null;
       })
       .addCase(removeMember.rejected, (state, action) => {

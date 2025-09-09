@@ -77,7 +77,7 @@ const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
     return (
       <Card style={[styles.errorCard, { backgroundColor: colors.card }]}>
         <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>
-          Error loading statistics: {analyticsError}
+          Error loading statistics: {typeof analyticsError === 'string' ? analyticsError : JSON.stringify(analyticsError)}
         </Text>
       </Card>
     );
@@ -212,7 +212,9 @@ const WorkspacesSection: React.FC = () => {
           <View style={styles.errorState}>
             <FontAwesome name="users" size={32} color={colors.destructive} />
             <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Error loading workspaces</Text>
-            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>{workspacesError}</Text>
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+              {typeof workspacesError === 'string' ? workspacesError : JSON.stringify(workspacesError)}
+            </Text>
           </View>
         </View>
       </Card>
@@ -253,9 +255,16 @@ const WorkspacesSection: React.FC = () => {
                       </Text>
                     </View>
                     <View style={[styles.badge, { backgroundColor: colors.muted }]}>
-                      <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>
-                        {workspace.members?.length || 0} members
-                      </Text>
+                      {(() => {
+                        const memberLen = Array.isArray(workspace.members) ? workspace.members.length : 0;
+                        const ownerIncluded = workspace.owner ? 1 : 0;
+                        const totalMembers = memberLen + ownerIncluded;
+                        return (
+                          <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>
+                            {totalMembers} members
+                          </Text>
+                        );
+                      })()}
                     </View>
                   </View>
                 </View>

@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 
 // Create axios instance
 // Normalize base URL to ensure it targets the backend API prefix
-let rawBase = (env.API_BASE_URL || env.API_URL || '').trim();
+let rawBase = (env.API_BASE_URL || env.API_URL || env.BASE_URL || '').trim();
 
 // On Android emulator, localhost should point to the host machine via 10.0.2.2
 if (env.IS_ANDROID && __DEV__) {
@@ -17,6 +17,11 @@ if (env.IS_ANDROID && __DEV__) {
 
 const trimmed = rawBase.replace(/\/$/, '');
 const baseURL = /\/api$/.test(trimmed) ? trimmed : `${trimmed}/api`;
+
+// In development, log the resolved base URL to catch stale configs
+if (__DEV__) {
+  console.log('🛠️ Axios base URL resolved to:', baseURL);
+}
 
 // Ensure we have a stable device id for session tracking
 async function getOrCreateDeviceId(): Promise<string> {
