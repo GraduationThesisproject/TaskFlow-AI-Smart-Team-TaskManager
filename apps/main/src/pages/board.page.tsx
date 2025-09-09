@@ -5,6 +5,7 @@ import { TimelineViewLayout } from "../layouts/board/TimelineViewLayout";
 import { KanbanViewLayout } from "../layouts/board/KanbanViewLayout";
 import { SubNavigationTest as SubNavigation } from "../components/board/SubNavigationTest";
 import { BoardHeader } from "../components/board/BoardHeader";
+import { TaskDetailModal } from "../components/board/TaskDetailModal";
 import { useBoard, useTasks, useColumns, useSpaceManager } from "../hooks";
 import { useSocketContext } from '../contexts/SocketContext';
 import type { Task } from "../types/task.types";
@@ -26,12 +27,10 @@ export const BoardPage = () => {
     
     // Tasks data
     const {
-        tasks,
         loading: tasksLoading,
         error: tasksError,
         addTask,
-        moveTask,
-        loadTasks
+        moveTask
     } = useTasks();
 
     // Columns data
@@ -39,6 +38,8 @@ export const BoardPage = () => {
         sortedColumns,
         loadColumnsByBoard
     } = useColumns();
+
+    // Note: Task management is now handled in the column slice
 
     // Space manager data
     const {
@@ -66,22 +67,42 @@ export const BoardPage = () => {
     const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
     const [selectedColumn, setSelectedColumn] = useState<string>('');
     const [editingColumn, setEditingColumn] = useState<Column | null>(null);
+    
+    // Task detail modal state
+    const [isTaskDetailModalOpen, setIsTaskDetailModalOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
     // Track previous boardId to prevent unnecessary re-loads
     const prevBoardIdRef = useRef<string | null>(null);
 
     // Load data when component mounts (only if we have a board but no data)
     useEffect(() => {
-        if (!boardId) return;
+        console.log('🔄 Board page useEffect triggered:', { boardId, prevBoardId: prevBoardIdRef.current, loadedBoards: Array.from(loadedBoards) });
+        
+        if (!boardId) {
+            console.log('❌ No boardId, skipping load');
+            return;
+        }
         
         // Only load if boardId has actually changed and we haven't loaded it yet
         if (boardId !== prevBoardIdRef.current && !loadedBoards.has(boardId)) {
+            console.log('✅ Loading columns for board:', boardId);
             prevBoardIdRef.current = boardId;
             loadedBoards.add(boardId);
             loadColumnsByBoard(boardId);
-            loadTasks(boardId);
+            // Tasks will be loaded into columns via socket events or separate API calls
+        } else {
+            console.log('⏭️ Skipping load - already loaded or same boardId');
         }
-    }, [boardId, loadColumnsByBoard, loadTasks]);
+    }, [boardId, loadColumnsByBoard]);
+
+    // Note: Tasks are now loaded automatically with columns in fetchColumnsByBoard
+
+    // Get all tasks from all columns for stats calculation
+    const allTasks = (sortedColumns as Column[]).flatMap(column => column.tasks || []);
+
+    // Note: Tasks will be loaded into columns via socket events or API calls
+    // No need for this useEffect as it was causing infinite loops
 
     // Join board room when board changes and socket is connected
     useEffect(() => {
@@ -176,10 +197,13 @@ export const BoardPage = () => {
         try {
             if (!boardId) return;
             
+            console.log('🎯 handleAddTask - Received taskData:', taskData);
+            console.log('🎯 handleAddTask - Using column from taskData:', taskData.column);
+            
             await addTask({
                 ...taskData,
                 board: boardId,
-                column: selectedColumn || sortedColumns[0]?._id
+                column: taskData.column // Use the column from taskData, not selectedColumn
             });
             
             setIsAddTaskModalOpen(false);
@@ -275,10 +299,8 @@ export const BoardPage = () => {
             if (!boardId) return;
             
             // Check if column has tasks
-            const columnTasks = tasks.filter(task => {
-                const taskColumnId = typeof task.column === 'string' ? task.column : (task.column as any)?._id;
-                return taskColumnId === columnId;
-            });
+            const column = sortedColumns.find(col => col._id === columnId);
+            const columnTasks = column?.tasks || [];
             
             if (columnTasks.length > 0) {
                 // Find another column to move tasks to
@@ -335,27 +357,52 @@ export const BoardPage = () => {
 
     // Task click handler
     const handleTaskClick = (task: Task) => {
-        // Navigate to task details
-        window.location.href = `/board/task/${task._id}`;
+        setSelectedTask(task);
+        setIsTaskDetailModalOpen(true);
     };
 
-    // Group tasks by column
+    // Task modal handlers
+    const handleTaskSave = async (taskData: Partial<Task>) => {
+        try {
+            // Update task logic here
+            console.log('Saving task:', taskData);
+            // You can implement the actual save logic here
+        } catch (error) {
+            console.error('Failed to save task:', error);
+        }
+    };
+
+    const handleTaskDelete = async () => {
+        try {
+            if (selectedTask) {
+                // Delete task logic here
+                console.log('Deleting task:', selectedTask._id);
+                // You can implement the actual delete logic here
+                setIsTaskDetailModalOpen(false);
+                setSelectedTask(null);
+            }
+        } catch (error) {
+            console.error('Failed to delete task:', error);
+        }
+    };
+
+    const handleTaskModalClose = () => {
+        setIsTaskDetailModalOpen(false);
+        setSelectedTask(null);
+    };
+
+    // Get tasks from columns (tasks are now stored within columns)
     const tasksByColumn = (sortedColumns as Column[]).reduce((acc: Record<string, Task[]>, column: Column) => {
-        const columnTasks = tasks.filter((task: Task) => {
-            // Handle both string and object column references
-            const taskColumnId = typeof task.column === 'string' ? task.column : (task.column as any)?._id;
-            return taskColumnId === column._id;
-        });
-        acc[column._id] = columnTasks;
+        acc[column._id] = column.tasks || [];
         return acc;
     }, {} as Record<string, Task[]>);
 
     // Calculate task stats
     const taskStats = {
-        total: tasks.length,
-        completed: tasks.filter(task => task.status === 'done').length,
-        inProgress: tasks.filter(task => task.status === 'in_progress').length,
-        todo: tasks.filter(task => task.status === 'todo').length,
+        total: allTasks.length,
+        completed: allTasks.filter(task => task.status === 'done').length,
+        inProgress: allTasks.filter(task => task.status === 'in_progress').length,
+        todo: allTasks.filter(task => task.status === 'todo').length,
     };
 
     // Loading state
@@ -424,7 +471,7 @@ export const BoardPage = () => {
     // Common props for all layouts
     const commonLayoutProps = {
         currentBoard,
-        tasks,
+        tasks: allTasks,
         columns: sortedColumns,
         tasksByColumn,
         taskStats,
@@ -511,6 +558,15 @@ export const BoardPage = () => {
                     />
                 </div>
             </div>
+
+            {/* Task Detail Modal */}
+            <TaskDetailModal
+                isOpen={isTaskDetailModalOpen}
+                onClose={handleTaskModalClose}
+                task={selectedTask}
+                onSave={handleTaskSave}
+                onDelete={handleTaskDelete}
+            />
 
         </div>
     );

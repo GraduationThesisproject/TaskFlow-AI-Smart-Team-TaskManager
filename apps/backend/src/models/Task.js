@@ -37,6 +37,11 @@ const taskSchema = new mongoose.Schema({
     enum: ['low', 'medium', 'high', 'critical'],
     default: 'medium'
   },
+  color: {
+    type: String,
+    default: '#6B7280',
+    match: [/^#[0-9A-F]{6}$/i, 'Color must be a valid hex color']
+  },
   assignees: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -106,6 +111,11 @@ const taskSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'File'
   }],
+  checklist: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Checklist',
+    default: null
+  },
   dependencies: [{
     task: {
       type: mongoose.Schema.Types.ObjectId,
@@ -147,8 +157,6 @@ const taskSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
-  
-  // Data retention policy
   retentionPolicy: {
     deleteAfterDays: { type: Number, default: 365 },
     autoArchive: { type: Boolean, default: true }

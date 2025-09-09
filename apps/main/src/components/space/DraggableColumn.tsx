@@ -23,13 +23,7 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
-  // Debug logging
-  console.log('DraggableColumn render:', { 
-    columnId: column._id, 
-    columnName: column.name, 
-    index,
-    tasksCount: tasks.length 
-  });
+  // Debug logging removed to prevent infinite render loop
 
   const handleAddTask = () => {
     setIsAddingTask(true);
@@ -44,6 +38,9 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
   const handleConfirmAddTask = async () => {
     if (newTaskTitle.trim()) {
       try {
+        console.log('🎯 DraggableColumn - Creating task with column._id:', column._id);
+        console.log('🎯 DraggableColumn - Column name:', column.name);
+        console.log('🎯 DraggableColumn - Full column object:', column);
         await onAddTask({
           title: newTaskTitle.trim(),
           column: column._id,
@@ -101,13 +98,13 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`flex-shrink-0 w-72 ${
+          className={`flex-shrink-0 w-80 ${
             snapshot.isDragging ? 'opacity-90' : ''
           }`}
           style={provided.draggableProps.style}
         >
           <Card 
-            className="h-fit border border-border/20 shadow-lg backdrop-blur-sm rounded-2xl transition-all duration-300 hover:shadow-xl hover:border-border/40 bg-card/95 overflow-hidden group"
+            className="h-fit border border-border/20 backdrop-blur-sm rounded-2xl transition-all duration-300 hover:border-border/40 bg-card/95 overflow-hidden group hover:scale-[1.02]"
             style={{
               backgroundColor: column.style?.backgroundColor || undefined,
               borderColor: column.style?.backgroundColor ? `${column.style.backgroundColor}20` : undefined
@@ -125,7 +122,7 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                 >
                   <div className="flex items-center gap-3">
                     <div 
-                      className={`w-3 h-3 rounded-full ${getColumnColor(column.style?.color || column.color)} shadow-sm`}
+                      className={`w-3 h-3 rounded-full ${getColumnColor(column.style?.color || column.color)}`}
                       style={column.style?.color?.startsWith('#') ? { backgroundColor: column.style.color } : {}}
                     />
                     <Typography variant="h4" className="font-semibold text-foreground">
@@ -139,6 +136,22 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
+                    {/* Add Task Button */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddTask();
+                      }}
+                      className="w-7 h-7 p-0 hover:bg-primary/10 rounded-full text-primary hover:text-primary"
+                      title="Add Task"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                    </Button>
+                    
                     <Button
                       variant="ghost"
                       size="sm"
@@ -175,8 +188,28 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                 <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent"></div>
               </div>
 
+              {/* Add Task Input Field */}
+              {isAddingTask && (
+                <div className="px-4 py-3 border-b border-border/20">
+                  <div className="h-8 border-2 border-primary/60 rounded-lg bg-card backdrop-blur-md overflow-hidden">
+                    <div className="h-full flex items-center px-3">
+                      <input
+                        type="text"
+                        value={newTaskTitle}
+                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                        onKeyDown={handleKeyPress}
+                        onBlur={handleCancelAddTask}
+                        placeholder="Enter task title..."
+                        className="w-full text-sm font-medium text-foreground placeholder-muted-foreground bg-transparent border-0 outline-none focus:outline-none"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Elegant Progress Bar */}
-              <div className="mb-3">
+              <div className="mb-2">
                 <div className="flex justify-between items-center mb-2">
                   <Typography variant="body-small" className="text-muted-foreground text-xs font-medium">
                     Progress
@@ -215,19 +248,19 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`min-h-[150px] transition-all duration-200 ${
+                    className={`max-h-[300px] overflow-y-auto column-task-scroll transition-all duration-200 ${
                       snapshot.isDraggingOver ? 'bg-primary/10 rounded-lg' : ''
                     }`}
                   >
                     {/* Tasks */}
-                    <div>
+                    <div className="pr-2">
                       {tasks.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-24 text-center">
-                          <div className="w-8 h-8 bg-muted/30 rounded-full flex items-center justify-center mb-2">
-                            <span className="text-lg">📋</span>
+                        <div className="flex flex-col items-center justify-center h-20 text-center">
+                          <div className="w-8 h-8 bg-gradient-to-br from-muted/40 to-muted/20 rounded-lg flex items-center justify-center mb-2">
+                            <span className="text-sm">📋</span>
                           </div>
-                          <Typography variant="body-small" className="text-muted-foreground text-xs mb-1">
-                            No tasks
+                          <Typography variant="body-small" className="text-muted-foreground text-xs mb-1 font-medium">
+                            No tasks yet
                           </Typography>
                           <Typography variant="body-small" className="text-muted-foreground text-xs">
                             Add one below
@@ -246,37 +279,6 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                       )}
                     </div>
                     {provided.placeholder}
-
-                    {/* Add Task Button/Input */}
-                    <div className="mt-3">
-                      {!isAddingTask ? (
-                        <Button
-                          variant="outline"
-                          onClick={handleAddTask}
-                          className="w-full h-8 border-2 border-dashed border-border/40 hover:border-primary/60 hover:text-primary transition-all duration-300 bg-muted/10 hover:bg-muted/30 rounded-lg flex items-center justify-center gap-2"
-                        >
-                          <span className="text-sm">+</span>
-                          <Typography variant="body-small" className="font-medium text-xs">
-                            Add Task
-                          </Typography>
-                        </Button>
-                      ) : (
-                        <div className="h-8 border-2 border-primary/60 rounded-lg bg-card backdrop-blur-md shadow-sm overflow-hidden">
-                          <div className="h-full flex items-center px-3">
-                            <input
-                              type="text"
-                              value={newTaskTitle}
-                              onChange={(e) => setNewTaskTitle(e.target.value)}
-                              onKeyDown={handleKeyPress}
-                              onBlur={handleCancelAddTask}
-                              placeholder="Task title..."
-                              className="w-full text-xs font-medium text-foreground placeholder-muted-foreground bg-transparent border-0 outline-none focus:outline-none"
-                              autoFocus
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
               </Droppable>

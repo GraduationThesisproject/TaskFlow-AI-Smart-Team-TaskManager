@@ -1,4 +1,5 @@
 // Board-related types extracted from task.types.ts
+import type { Task } from './task.types';
 export interface Board {
   _id: string;
   name: string;
@@ -59,6 +60,7 @@ export interface Column {
   board: string;
   position: number;
   taskIds: ColumnTask[];
+  tasks?: Task[]; // Add tasks array to store actual task objects
   limit?: number;
   settings: ColumnSettings;
   statusMapping?: 'todo' | 'in_progress' | 'review' | 'done' | 'archived';

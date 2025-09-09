@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import type { Task } from '../../types/task.types';
@@ -77,33 +77,153 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
   const [newColumnIds, setNewColumnIds] = useState<Set<string>>(new Set());
   const [deletingColumnIds, setDeletingColumnIds] = useState<Set<string>>(new Set());
   const previousColumnsRef = useRef<Column[]>([]);
+  
+  // Scroll synchronization
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const mainScrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const [contentWidth, setContentWidth] = useState(0);
   const animationTimeoutsRef = useRef<Map<string, number>>(new Map());
 
-  // Add CSS to move scrollbar to top and style it elegantly
+
+  // Enhanced CSS for better scrolling and design
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
-      .scrollbar-top {
-        transform: rotateX(180deg);
+      /* Column Task List Scrollbar Design */
+      .column-task-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted) / 0.1);
+        scroll-behavior: smooth;
       }
-      .scrollbar-top > * {
-        transform: rotateX(180deg);
+      
+      .column-task-scroll::-webkit-scrollbar {
+        width: 8px;
       }
-      .scrollbar-top::-webkit-scrollbar {
+      
+      .column-task-scroll::-webkit-scrollbar-track {
+        background: hsl(var(--muted) / 0.05);
+        border-radius: 4px;
+        margin: 4px 0;
+      }
+      
+      .column-task-scroll::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, hsl(var(--primary) / 0.4), hsl(var(--primary) / 0.6));
+        border-radius: 4px;
+        border: 1px solid hsl(var(--background));
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      
+      .column-task-scroll::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, hsl(var(--primary) / 0.6), hsl(var(--primary) / 0.8));
+        transform: scaleX(1.1);
+      }
+      
+      .column-task-scroll::-webkit-scrollbar-thumb:active {
+        background: hsl(var(--primary) / 0.8);
+        transform: scaleX(1.2);
+      }
+
+      /* Professional Horizontal Scrollbar Design */
+      .kanban-horizontal-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: hsl(var(--primary) / 0.3) transparent;
+        scroll-behavior: smooth;
+      }
+      
+      .kanban-horizontal-scroll::-webkit-scrollbar {
         height: 8px;
       }
-      .scrollbar-top::-webkit-scrollbar-track {
-        background: hsl(var(--muted) / 0.3);
+      
+      .kanban-horizontal-scroll::-webkit-scrollbar-track {
+        background: hsl(var(--muted) / 0.1);
         border-radius: 4px;
+        margin: 0 4px;
       }
-      .scrollbar-top::-webkit-scrollbar-thumb {
-        background: hsl(var(--primary) / 0.6);
+      
+      .kanban-horizontal-scroll::-webkit-scrollbar-thumb {
+        background: linear-gradient(90deg, hsl(var(--primary) / 0.3), hsl(var(--primary) / 0.5));
         border-radius: 4px;
-        transition: all 0.2s ease;
+        border: 1px solid hsl(var(--background));
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       }
-      .scrollbar-top::-webkit-scrollbar-thumb:hover {
-        background: hsl(var(--primary) / 0.8);
+      
+      .kanban-horizontal-scroll::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(90deg, hsl(var(--primary) / 0.5), hsl(var(--primary) / 0.7));
+        transform: scaleY(1.1);
       }
+      
+      .kanban-horizontal-scroll::-webkit-scrollbar-thumb:active {
+        background: hsl(var(--primary) / 0.7);
+        transform: scaleY(1.2);
+      }
+
+      /* Top Scrollbar Indicator */
+      .top-scroll-indicator {
+        background: linear-gradient(90deg, 
+          hsl(var(--primary) / 0.1) 0%, 
+          hsl(var(--primary) / 0.2) 50%, 
+          hsl(var(--primary) / 0.1) 100%);
+        border-radius: 2px;
+        transition: all 0.3s ease;
+      }
+      
+      .top-scroll-indicator:hover {
+        background: linear-gradient(90deg, 
+          hsl(var(--primary) / 0.2) 0%, 
+          hsl(var(--primary) / 0.3) 50%, 
+          hsl(var(--primary) / 0.2) 100%);
+      }
+
+      /* Professional Column Animations */
+      .column-container {
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      
+      .column-container:hover {
+        transform: translateY(-2px);
+      }
+      
+      .column-enter {
+        animation: columnEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      
+      .column-deleting {
+        animation: columnDelete 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      
+      @keyframes columnEnter {
+        0% {
+          opacity: 0;
+          transform: translateX(-20px) scale(0.95);
+        }
+        100% {
+          opacity: 1;
+          transform: translateX(0) scale(1);
+        }
+      }
+      
+      @keyframes columnDelete {
+        0% {
+          opacity: 1;
+          transform: translateX(0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(20px) scale(0.95);
+        }
+      }
+
+      /* Add Column Button Animations */
+      .add-column-button {
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      
+      .add-column-button:hover {
+        transform: translateY(-1px);
+      }
+      
       
       /* Fix drag preview positioning */
       [data-rbd-draggable-id] {
@@ -264,6 +384,58 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
     };
   }, []);
 
+  // Scroll synchronization functions
+  const syncScrollFromTop = useCallback((event: Event) => {
+    if (isScrolling) return;
+    setIsScrolling(true);
+    
+    const target = event.target as HTMLDivElement;
+    if (mainScrollRef.current && target.scrollLeft !== undefined) {
+      mainScrollRef.current.scrollLeft = target.scrollLeft;
+    }
+    
+    setTimeout(() => setIsScrolling(false), 10);
+  }, [isScrolling]);
+
+  const syncScrollFromMain = useCallback((event: Event) => {
+    if (isScrolling) return;
+    setIsScrolling(true);
+    
+    const target = event.target as HTMLDivElement;
+    if (topScrollRef.current && target.scrollLeft !== undefined) {
+      topScrollRef.current.scrollLeft = target.scrollLeft;
+    }
+    
+    setTimeout(() => setIsScrolling(false), 10);
+  }, [isScrolling]);
+
+  // Setup scroll synchronization and content width tracking
+  useEffect(() => {
+    const topScroll = topScrollRef.current;
+    const mainScroll = mainScrollRef.current;
+    const content = contentRef.current;
+
+    if (topScroll && mainScroll && content) {
+      // Setup scroll synchronization
+      topScroll.addEventListener('scroll', syncScrollFromTop, { passive: true });
+      mainScroll.addEventListener('scroll', syncScrollFromMain, { passive: true });
+
+      // Setup ResizeObserver to track content width
+      const resizeObserver = new ResizeObserver(() => {
+        const width = content.scrollWidth;
+        setContentWidth(width);
+      });
+
+      resizeObserver.observe(content);
+
+      return () => {
+        topScroll.removeEventListener('scroll', syncScrollFromTop);
+        mainScroll.removeEventListener('scroll', syncScrollFromMain);
+        resizeObserver.disconnect();
+      };
+    }
+  }, [syncScrollFromTop, syncScrollFromMain]);
+
   // Handle column animation detection
   useEffect(() => {
     const previousColumns = previousColumnsRef.current;
@@ -335,30 +507,7 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
     }, 300); // Slightly less than animation duration
   };
 
-  // // Handle column creation
-  // const handleAddColumn = async (columnData: { name?: string; backgroundColor?: string; icon?: string | null; wipLimit?: number; isDefault?: boolean }) => {
-  //   try {
-  //     if (!boardId) return;
-      
-  //     console.log('Creating column:', columnData);
-      
-  //     try {
-  //       await addColumn({
-  //         name: columnData.name || 'New Column',
-  //         boardId: boardId,
-  //         position: columns.length,
-  //         backgroundColor: columnData.backgroundColor || '#F9FAFB',
-  //         icon: columnData.icon || null,
-  //         settings: {}
-  //       });
-  //       console.log('Column created successfully!');
-  //     } catch (error) {
-  //       console.error('Column creation failed:', error);
-  //     }
-  //   } catch (error) {
-  //     console.error('Failed to add column:', error);
-  //   }
-  // };
+
 
 
 
@@ -424,10 +573,10 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
         }}
       >
         <div className="min-h-screen bg-background/60 text-foreground w-full pb-20 rounded-2xl border border-border/50">
-          <div className="w-full px-6 sm:px-8 lg:px-12 py-8">
+          <div className="w-full ">
             {/* Compact Stats */}
             <ErrorBoundaryWrapper>
-              <div className="mb-4">
+              <div className="mt-2 mb-2">
                 <div className="flex justify-end">
                   <div className="flex items-center gap-2">
                     {/* Done */}
@@ -475,16 +624,37 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
 
             {/* Modern Kanban Board */}
             <ErrorBoundaryWrapper>
-              <div className="relative bg-card backdrop-blur-md rounded-2xl border border-border shadow-xl p-8">
-                <Droppable droppableId="board" type="COLUMN" direction="horizontal">
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`flex gap-12 py-2 overflow-x-auto ${
-                        snapshot.isDraggingOver ? 'bg-primary/10 rounded-xl' : ''
-                      }`}
-                    >
+              <div className="relative p-2">
+                {/* Professional Horizontal Scroll Container */}
+                <div className="relative">
+                  {/* Top Scrollbar Indicator */}
+                  <div 
+                    ref={topScrollRef}
+                    className="kanban-horizontal-scroll overflow-x-auto mb-2"
+                    style={{ height: '10px' }}
+                  >
+                    <div className="h-2 bg-transparent" style={{ width: contentWidth || '100%' }}>
+                      <div className="top-scroll-indicator h-full" style={{ width: '100%' }}></div>
+                    </div>
+                  </div>
+                  
+                  {/* Main Scrollable Content */}
+                  <div 
+                    ref={mainScrollRef}
+                    className="kanban-horizontal-scroll overflow-x-auto"
+                  >
+              <Droppable droppableId="board" type="COLUMN" direction="horizontal">
+                {(provided, snapshot) => (
+                  <div
+                          ref={(el) => {
+                            provided.innerRef(el);
+                            contentRef.current = el;
+                          }}
+                    {...provided.droppableProps}
+                          className={`flex gap-6 py-4 min-w-max ${
+                            snapshot.isDraggingOver ? 'bg-primary/10 rounded-xl' : ''
+                          }`}
+                        >
                     {columns.map((column: Column, index: number) => {
                       const isNewColumn = newColumnIds.has(column._id);
                       const isDeletingColumn = deletingColumnIds.has(column._id);
@@ -492,44 +662,44 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                       return (
                         <div 
                           key={column._id} 
-                          className={`flex-shrink-0 w-72 column-container ${
+                          className={`flex-shrink-0 w-80 column-container transition-all duration-300 ${
                             isNewColumn ? 'column-enter' : ''
                           } ${
                             isDeletingColumn ? 'column-deleting' : ''
                           }`}
                         >
                           <ErrorBoundaryWrapper>
-                            <DraggableColumn
-                              column={column}
-                              tasks={tasksByColumn[column._id] || []}
-                              index={index}
+                        <DraggableColumn
+                          column={column}
+                          tasks={tasksByColumn[column._id] || []}
+                          index={index}
                               boardId={currentBoard?._id || ''}
-                              onTaskClick={onTaskClick}
+                          onTaskClick={onTaskClick}
                               onAddTask={onAddTask as any}
-                              onEditColumn={onEditColumn}
+                          onEditColumn={onEditColumn}
                               onDeleteColumn={handleDeleteColumn}
-                            />
-                          </ErrorBoundaryWrapper>
+                        />
+                      </ErrorBoundaryWrapper>
                         </div>
                       );
                     })}
                     
-                    {/* Modern Add Column Button/Input */}
-                    <div className="flex-shrink-0 w-72">
+                    {/* Professional Add Column Button/Input */}
+                    <div className="flex-shrink-0 w-80">
                       {!isAddingColumn ? (
                         <div 
                           onClick={() => setIsAddingColumn(true)}
-                          className="h-24 border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-all duration-300 rounded-xl group cursor-pointer bg-muted/20 hover:bg-muted/40 backdrop-blur-sm hover:shadow-md add-column-button"
+                          className="h-32 border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 transition-all duration-300 rounded-2xl group cursor-pointer bg-gradient-to-br from-muted/10 to-muted/20 hover:from-primary/5 hover:to-primary/10 backdrop-blur-sm hover:shadow-lg add-column-button"
                         >
-                          <div className="h-full flex flex-col items-center justify-center gap-4 px-6">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-all duration-300 shadow-sm group-hover:shadow-md">
-                              <svg className="w-5 h-5 text-primary group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="h-full flex flex-col items-center justify-center gap-3 px-6">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/10 to-primary/20 group-hover:from-primary/20 group-hover:to-primary/30 flex items-center justify-center transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:scale-105">
+                              <svg className="w-6 h-6 text-primary group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                               </svg>
                             </div>
                             <div className="text-center">
                               <div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                                Add Column
+                              Add Column
                               </div>
                               <div className="text-xs text-muted-foreground group-hover:text-primary/80 transition-colors">
                                 Create a new column
@@ -538,7 +708,7 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                           </div>
                         </div>
                       ) : (
-                        <div className="h-16 border-2 border-primary/60 rounded-xl bg-card backdrop-blur-md shadow-lg overflow-hidden">
+                        <div className="h-20 border-2 border-primary/60 rounded-2xl bg-card backdrop-blur-md shadow-lg overflow-hidden">
                           <div className="h-full flex items-center px-6">
                             <input
                               type="text"
@@ -554,10 +724,12 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                         </div>
                       )}
                     </div>
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+                  </div>
+                </div>
               </div>
             </ErrorBoundaryWrapper>
 

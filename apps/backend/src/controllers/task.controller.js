@@ -131,7 +131,8 @@ exports.createTask = async (req, res) => {
             estimatedHours,
             position,
             tags,
-            dependencies
+            dependencies,
+            color
         } = req.body;
         const userId = req.user.id;
 
@@ -184,8 +185,27 @@ exports.createTask = async (req, res) => {
             dependencies: dependencies ? dependencies.map(dep => ({
                 task: dep,
                 type: 'blocks'
-            })) : []
+            })) : [],
+            color: color || '#6B7280'
         });
+
+        // Handle checklist creation if provided
+        if (req.body.checklist && req.body.checklist.items && req.body.checklist.items.length > 0) {
+            const Checklist = require('../models/Checklist');
+            const checklist = await Checklist.create({
+                taskId: task._id,
+                title: req.body.checklist.title || 'Checklist',
+                items: req.body.checklist.items.map(item => ({
+                    text: item.text,
+                    completed: item.completed || false
+                })),
+                createdBy: userId
+            });
+            
+            // Link checklist to task
+            task.checklist = checklist._id;
+            await task.save();
+        }
 
         // Handle file attachments if present
         if (req.uploadedFiles && req.uploadedFiles.length > 0) {
@@ -288,7 +308,8 @@ exports.updateTask = async (req, res) => {
             startDate,
             labels,
             estimatedHours,
-            actualHours 
+            actualHours,
+            color
         } = req.body;
         const userId = req.user.id;
 
@@ -338,6 +359,7 @@ exports.updateTask = async (req, res) => {
         if (labels) task.labels = labels;
         if (estimatedHours !== undefined) task.estimatedHours = estimatedHours;
         if (actualHours !== undefined) task.actualHours = actualHours;
+        if (color) task.color = color;
 
         await task.save();
 
@@ -1273,7 +1295,8 @@ exports.duplicateTask = async (req, res) => {
           })) : [],
           position: originalTask.position,
           assignees: originalTask.assignees,
-          watchers: originalTask.watchers
+          watchers: originalTask.watchers,
+          color: originalTask.color
         });
 
         await duplicatedTask.save();
