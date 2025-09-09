@@ -65,6 +65,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <SocketProvider>
@@ -76,6 +77,7 @@ function RootLayoutNav() {
         </SocketProvider>
       </PersistGate>
     </Provider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -111,19 +113,8 @@ function AuthGate() {
     </Stack>
   );
 }
-function RootLayoutNav() {
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <ThemeProvider>
-            <AuthGate />
-          </ThemeProvider>
-        </PersistGate>
-      </Provider>
-    </GestureHandlerRootView>
-  );
-}
+
+
 
 
 
