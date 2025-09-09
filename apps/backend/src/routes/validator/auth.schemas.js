@@ -19,7 +19,10 @@ const registerSchema = {
     },
     password: { 
         required: true, 
-        minLength: 8 
+        minLength: 8,
+        // At least one letter, one number, and one special character
+        pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/,
+        patternMessage: 'Password must contain at least one letter, one number, and one special character'
     },
     inviteToken: { 
         string: true 

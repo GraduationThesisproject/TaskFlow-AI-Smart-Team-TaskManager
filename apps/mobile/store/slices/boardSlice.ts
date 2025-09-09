@@ -127,7 +127,16 @@ const boardSlice = createSlice({
       .addCase(fetchBoardsBySpace.fulfilled, (state, action) => {
         state.loading = false;
         const responseData = action.payload as any;
-        state.boards = responseData.boards || [];
+        // Support both shapes: array or { boards: [...] } or { data: [...] }
+        if (Array.isArray(responseData)) {
+          state.boards = responseData;
+        } else if (responseData && Array.isArray(responseData.boards)) {
+          state.boards = responseData.boards;
+        } else if (responseData && Array.isArray(responseData.data)) {
+          state.boards = responseData.data;
+        } else {
+          state.boards = [];
+        }
       })
       .addCase(fetchBoardsBySpace.rejected, (state, action) => {
         state.loading = false;

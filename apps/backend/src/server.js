@@ -3,17 +3,19 @@ require('dotenv').config();
 //👉 dotenv allows you to use a .env file to store secret information (like database passwords, API keys, JWT secrets).
 const http = require('http');
 const socketIo = require('socket.io');
+const mongoose = require('mongoose');
 const env = require('./config/env');
 const app = require('./app');
 const connectDB = require('./config/db');
 const config = require('./config/env');
 const Workspace = require('./models/Workspace');
 const WorkspaceService = require('./services/workspace.service');
-//for authentication i use (mongoose ) from connectDB/db.js
+//for authentication i use (mongoose ) from connectDB/db.js)
 
 
 
 const logger = require('./config/logger');
+const os = require('os');
 const { ensureDirectoriesExist } = require('./config/multer');
 const { initializeSockets } = require('./sockets');
 
@@ -130,7 +132,7 @@ server.listen(PORT, '0.0.0.0', () => {
     logger.info(`🚀 TaskFlow API server running on port ${PORT}`);
     logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
     logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
-    logger.info(`🌐 Network access: http://192.168.1.142:${PORT}/health`);
+    logger.info(`🌐 Network access: http://10.208.47.13:${PORT}/health`);
 });
 
 // Periodic cleanup: permanently delete archived workspaces whose countdown reached 0
@@ -164,18 +166,61 @@ async function cleanupArchivedWorkspaces() {
 }
 
 // Kick off periodic cleanup
-setInterval(cleanupArchivedWorkspaces, CLEANUP_INTERVAL_MS);
+const cleanupInterval = setInterval(cleanupArchivedWorkspaces, CLEANUP_INTERVAL_MS);
 // Also run once on startup
 cleanupArchivedWorkspaces();
 
 // Graceful shutdown
-process.on('SIGINT', () => {
-    logger.info('SIGINT received, shutting down gracefully...');
-    server.close(() => {
-        logger.info('Server closed');
-        process.exit(0);
-    });
-});
+let isShuttingDown = false;
+async function gracefulShutdown(signal = 'SIGTERM') {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    logger.info(`${signal} received, shutting down gracefully...`);
+
+    try {
+        // Stop periodic timers
+        if (cleanupInterval) clearInterval(cleanupInterval);
+    } catch (e) {
+        logger.warn('Error clearing cleanup interval', { error: e?.message });
+    }
+
+    const forceTimeout = setTimeout(() => {
+        logger.error('Forced shutdown after timeout');
+        process.exit(1);
+    }, 10000);
+
+    // Close HTTP server (stops accepting new connections)
+    try {
+        await new Promise((resolve) => server.close(resolve));
+        logger.info('HTTP server closed');
+    } catch (e) {
+        logger.warn('Error closing HTTP server', { error: e?.message });
+    }
+
+    // Close Socket.IO connections
+    try {
+        await new Promise((resolve) => io.close(resolve));
+        logger.info('Socket.IO server closed');
+    } catch (e) {
+        logger.warn('Error closing Socket.IO', { error: e?.message });
+    }
+
+    // Close MongoDB connection
+    try {
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.connection.close(false);
+            logger.info('MongoDB connection closed');
+        }
+    } catch (e) {
+        logger.warn('Error closing MongoDB connection', { error: e?.message });
+    }
+
+    clearTimeout(forceTimeout);
+    process.exit(0);
+}
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 // Handle unhandled promise rejections without crashing
 process.on('unhandledRejection', (err, promise) => {

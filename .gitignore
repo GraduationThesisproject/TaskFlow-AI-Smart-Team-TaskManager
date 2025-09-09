@@ -88,3 +88,33 @@ temp/
 .eslintcache
 
 cursorRules.json
+
+
+
+
+
+
+###########################################"
+apps/mobile/node_modules/
+apps/mobile/.expo/
+apps/mobile/dist/
+npm-debug.*
+apps/mobile/*.jks
+apps/mobile/*.p8
+apps/mobile/*.p12
+apps/mobile/*.key
+apps/mobile/*.mobileprovision
+apps/mobile/*.orig.*
+apps/mobile/web-build/
+
+
+
+
+apps/mobile/ios
+apps/mobile/android
+
+# macOS
+apps/mobile/.DS_Store
+
+# Temporary files created by Metro to check the health of the file watcher
+apps/mobile/.metro-health-check*

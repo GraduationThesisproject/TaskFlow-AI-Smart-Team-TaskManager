@@ -114,8 +114,8 @@ export class AuthService {
   // Test connection without auth
   static async testConnection(): Promise<ApiResponse<any>> {
     try {
-      const tempAxios = axios.create({ baseURL: 'http://localhost:3001', timeout: 5000 });
-      const response = await tempAxios.get('/health');
+      // Reuse shared axios instance and baseURL so this works on emulator/physical device
+      const response = await axiosInstance.get('/health');
       return response.data;
     } catch (error) {
       console.error('Error testing connection:', error);
