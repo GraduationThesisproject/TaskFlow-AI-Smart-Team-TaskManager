@@ -14,7 +14,8 @@ const createTaskSchema = {
     estimatedHours: { number: true, min: 0 },
     dueDate: { date: true },
     startDate: { date: true },
-    position: { number: true, min: 0 }
+    position: { number: true, min: 0 },
+    color: { string: true, pattern: /^#[0-9A-F]{6}$/i }
 };
 
 const updateTaskSchema = {
@@ -27,7 +28,8 @@ const updateTaskSchema = {
     estimatedHours: { number: true, min: 0 },
     actualHours: { number: true, min: 0 },
     dueDate: { date: true },
-    startDate: { date: true }
+    startDate: { date: true },
+    color: { string: true, pattern: /^#[0-9A-F]{6}$/i }
 };
 
 const moveTaskSchema = {

@@ -133,6 +133,7 @@ class TaskSeeder extends BaseSeeder {
       checklists: this.generateTaskChecklists(),
       comments: [],
       activity: [],
+      color: this.generateTaskColor(),
       metadata: {
         createdBy: reporter,
         lastModifiedBy: assignee,
@@ -261,6 +262,32 @@ class TaskSeeder extends BaseSeeder {
 
     const numLabels = faker.number.int({ min: 0, max: 3 });
     return this.getRandomItems(labels, { min: numLabels, max: numLabels });
+  }
+
+  /**
+   * Generate task color
+   */
+  generateTaskColor() {
+    const colors = [
+      '#6B7280', // Gray (default)
+      '#EF4444', // Red
+      '#F97316', // Orange
+      '#EAB308', // Yellow
+      '#22C55E', // Green
+      '#06B6D4', // Cyan
+      '#3B82F6', // Blue
+      '#8B5CF6', // Purple
+      '#EC4899', // Pink
+      '#84CC16', // Lime
+      '#F59E0B', // Amber
+      '#10B981', // Emerald
+      '#14B8A6', // Teal
+      '#6366F1', // Indigo
+      '#A855F7', // Violet
+      '#F43F5E'  // Rose
+    ];
+
+    return this.getRandomItem(colors);
   }
 
   /**

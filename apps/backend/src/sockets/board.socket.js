@@ -353,6 +353,7 @@ const handleBoardSocket = (io) => {
         socket.on('task:create', async (data) => {
             try {
                 const { taskData, boardId } = data;
+                console.log('🔍 BACKEND DEBUG - Task creation request received:', { taskData, boardId, userId: socket.userId });
                 logger.info(`Task creation request received:`, { taskData, boardId, userId: socket.userId });
                 
                 // Check permissions using pathPermissions
@@ -382,6 +383,11 @@ const handleBoardSocket = (io) => {
                 }
 
                 // Create task
+                console.log('🔍 BACKEND DEBUG - Original taskData:', taskData);
+                console.log('🔍 BACKEND DEBUG - Column from taskData:', taskData.column);
+                logger.info(`Original taskData:`, taskData);
+                logger.info(`Column from taskData:`, taskData.column);
+                
                 const task = new Task({
                     ...taskData,
                     board: boardId,
@@ -390,15 +396,25 @@ const handleBoardSocket = (io) => {
                     lastActivity: new Date()
                 });
                 
+                console.log('🔍 BACKEND DEBUG - Creating task with data:', task.toObject());
+                console.log('🔍 BACKEND DEBUG - Task column field:', task.column);
                 logger.info(`Creating task with data:`, task.toObject());
+                logger.info(`Task column field:`, task.column);
                 await task.save();
+                console.log('🔍 BACKEND DEBUG - Task saved successfully:', task._id);
+                console.log('🔍 BACKEND DEBUG - Task column after save:', task.column);
                 logger.info(`Task saved successfully: ${task._id}`);
+                logger.info(`Task column after save:`, task.column);
                 await task.populate('assignees', 'name email avatar');
                 await task.populate('reporter', 'name email avatar');
+                logger.info(`Task column after populate:`, task.column);
 
                 // Broadcast to all users in the board
+                const finalTaskData = task.toObject();
+                console.log('🔍 BACKEND DEBUG - Final task data being sent:', finalTaskData);
+                console.log('🔍 BACKEND DEBUG - Final task column:', finalTaskData.column);
                 boardNamespace.to(`board:${boardId}`).emit('task:created', {
-                    task: task.toObject(),
+                    task: finalTaskData,
                     createdBy: socket.user,
                     timestamp: new Date()
                 });
@@ -538,12 +554,16 @@ const handleBoardSocket = (io) => {
                     return;
                 }
 
+                // Get columnId before deleting
+                const columnId = task.column;
+
                 // Delete task
                 await Task.findByIdAndDelete(taskId);
 
                 // Broadcast to all users in the board
                 boardNamespace.to(`board:${boardId}`).emit('task:deleted', {
                     taskId,
+                    columnId,
                     deletedBy: socket.user,
                     timestamp: new Date()
                 });

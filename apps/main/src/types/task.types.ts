@@ -56,6 +56,7 @@ export interface Task {
   column: string;
   status: TaskStatus;
   priority: TaskPriority;
+  color: string;
   assignees: string[];
   reporter: string;
   watchers: string[];
@@ -67,6 +68,7 @@ export interface Task {
   movedAt?: string;
   timeEntries: TimeEntry[];
   attachments: string[];
+  checklist?: string;
   dependencies: TaskDependency[];
   aiGenerated: boolean;
   aiSuggestions?: AISuggestions;
@@ -286,11 +288,19 @@ export interface CreateTaskForm {
   boardId: string;
   columnId: string;
   priority: TaskPriority;
+  color?: string;
   assignees: string[];
   tags: string[];
   estimatedHours?: number;
   dueDate?: string;
   position?: number;
+  checklist?: {
+    title: string;
+    items: {
+      text: string;
+      completed?: boolean;
+    }[];
+  };
 }
 
 export interface UpdateTaskForm {
@@ -298,6 +308,7 @@ export interface UpdateTaskForm {
   description?: string;
   status?: TaskStatus;
   priority?: TaskPriority;
+  color?: string;
   assignees?: string[];
   tags?: string[];
   estimatedHours?: number;

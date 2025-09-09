@@ -451,9 +451,12 @@ export interface AddTaskModalProps extends BaseUIProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (task: any) => void;
+  selectedColumn?: string;
+  columns?: any[];
   boardId?: string;
   spaceId?: string;
   workspaceId?: string;
+  currentUser?: any;
   initialData?: any;
 }
 

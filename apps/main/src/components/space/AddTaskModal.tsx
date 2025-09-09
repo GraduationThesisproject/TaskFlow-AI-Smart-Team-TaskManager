@@ -45,6 +45,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
     description: '',
     priority: 'medium',
     status: 'todo',
+    color: '#6B7280',
     board: selectedBoard || '',
     column: selectedColumn || '',
     estimatedHours: 0,
@@ -210,6 +211,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
         boardId: formData.board || '',
         columnId: formData.column || '',
         priority: formData.priority || 'medium',
+        color: formData.color || '#6B7280',
         assignees: formData.assignees || [],
         tags: formData.tags || [],
         estimatedHours: formData.estimatedHours || 0,
@@ -234,6 +236,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       description: '',
       priority: 'medium',
       status: 'todo',
+      color: '#6B7280',
       column: selectedColumn || '',
       estimatedHours: 0,
       dueDate: '',
@@ -347,6 +350,40 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                         </SelectOption>
                       ))}
                     </Select>
+                  </div>
+                </div>
+
+                {/* Color Picker */}
+                <div>
+                  <Typography variant="body-small" className="mb-1 text-muted-foreground">
+                    Color
+                  </Typography>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={formData.color || '#6B7280'}
+                      onChange={(e) => handleInputChange('color', e.target.value)}
+                      className="w-12 h-10 border border-border rounded-lg cursor-pointer bg-background"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        '#6B7280', '#EF4444', '#F97316', '#EAB308', '#22C55E',
+                        '#06B6D4', '#3B82F6', '#8B5CF6', '#EC4899', '#84CC16'
+                      ].map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handleInputChange('color', color)}
+                          className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 ${
+                            formData.color === color 
+                              ? 'border-foreground scale-110 shadow-md' 
+                              : 'border-border hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
 

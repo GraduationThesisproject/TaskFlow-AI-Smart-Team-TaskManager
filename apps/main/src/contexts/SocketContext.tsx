@@ -184,29 +184,42 @@ export function SocketProvider({ children }: SocketProviderProps) {
       boardSocket.socket.on('task:created', (data: { task: any; createdBy: any; timestamp: Date }) => {
         console.log('📡 Received task:created event:', data);
         console.log('📡 Task data:', data.task);
-        // Dispatch Redux action to add new task
-        dispatch({ type: 'tasks/addTaskRealTime', payload: data.task });
+        // Add task to the appropriate column
+        const columnId = typeof data.task.column === 'string' ? data.task.column : data.task.column?._id;
+        console.log('📡 Extracted columnId:', columnId);
+        console.log('📡 Task column field:', data.task.column);
+        if (columnId) {
+          console.log('📡 Dispatching addTaskToColumn with:', { columnId, taskId: data.task._id });
+          dispatch({ type: 'columns/addTaskToColumn', payload: { columnId, task: data.task } });
+        } else {
+          console.error('❌ No columnId found for task:', data.task);
+        }
       });
 
       // Listen for task update updates
       boardSocket.socket.on('task:updated', (data: { task: any; updatedBy: any; timestamp: Date }) => {
         console.log('📡 Received task:updated event:', data);
-        // Dispatch Redux action to update task
-        dispatch({ type: 'tasks/updateTaskRealTime', payload: data.task });
+        // Update task in the appropriate column
+        const columnId = typeof data.task.column === 'string' ? data.task.column : data.task.column?._id;
+        if (columnId) {
+          dispatch({ type: 'columns/updateTaskInColumn', payload: { columnId, taskId: data.task._id, taskData: data.task } });
+        }
       });
 
       // Listen for task deletion updates
-      boardSocket.socket.on('task:deleted', (data: { taskId: string; deletedBy: any; timestamp: Date }) => {
+      boardSocket.socket.on('task:deleted', (data: { taskId: string; columnId: string; deletedBy: any; timestamp: Date }) => {
         console.log('📡 Received task:deleted event:', data);
-        // Dispatch Redux action to remove task
-        dispatch({ type: 'tasks/removeTaskRealTime', payload: data.taskId });
+        // Remove task from the appropriate column
+        if (data.columnId) {
+          dispatch({ type: 'columns/removeTaskFromColumn', payload: { columnId: data.columnId, taskId: data.taskId } });
+        }
       });
 
       // Listen for task movement updates
       boardSocket.socket.on('task:moved', (data: { taskId: string; sourceColumnId: string; targetColumnId: string; targetPosition: number; movedBy: any; timestamp: Date }) => {
         console.log('📡 Received task:moved event:', data);
-        // Dispatch Redux action to move task
-        dispatch({ type: 'tasks/moveTaskRealTime', payload: data });
+        // Move task between columns
+        dispatch({ type: 'columns/moveTaskBetweenColumns', payload: data });
       });
 
       // Cleanup function
