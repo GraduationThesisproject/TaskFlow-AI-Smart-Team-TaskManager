@@ -3,16 +3,14 @@ const User = require('../models/User');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
 const config = require('../config/env');
+const { sendNotification: socketSendNotification } = require('../sockets');
 
 class NotificationService {
     
     // Helper method to safely send socket notifications
     static async sendSocketNotification(recipientId, notificationData) {
         try {
-            if (global.notificationNamespace && global.notificationNamespace.sendNotification) {
-                return await global.notificationNamespace.sendNotification(recipientId, notificationData);
-            }
-            return null;
+            return await socketSendNotification(recipientId, notificationData);
         } catch (error) {
             logger.warn('Socket notification delivery failed:', error.message);
             return null;
@@ -55,14 +53,14 @@ class NotificationService {
             
             // Email notification
             if (notification.deliveryMethods?.email && 
-                userPrefs.shouldReceiveNotification('general', notificationType, 'email')) {
+                userPrefs.shouldReceiveNotification(notificationType, 'email')) {
                 
                 await this.sendEmailNotification(notification);
             }
             
             // Push notification
             if (notification.deliveryMethods?.push && 
-                userPrefs.shouldReceiveNotification('general', notificationType, 'push')) {
+                userPrefs.shouldReceiveNotification(notificationType, 'push')) {
                 
                 await this.sendPushNotification(notification);
             }
@@ -332,17 +330,22 @@ class NotificationService {
 
     static mapNotificationTypeToPreference(notificationType) {
         const typeMap = {
-            'task_assigned': 'taskAssignments',
-            'task_completed': 'taskUpdates',
-            'comment_added': 'comments',
-            'due_date_reminder': 'dueDateReminders',
+            'task_assigned': 'taskAssigned',
+            'task_completed': 'taskCompleted',
+            'task_updated': 'taskCompleted',
+            'comment_added': 'commentAdded',
+            'due_date_reminder': 'taskOverdue',
             'space_update': 'spaceUpdates',
-            'mention': 'mentions',
-            'template_liked': 'general',
-            'template_unliked': 'general'
+            'mention': 'mentionReceived',
+            'system_alert': 'taskAssigned', // Use taskAssigned as default for system alerts
+            'workspace_created': 'workspaceCreated',
+            'workspace_archived': 'workspaceArchived',
+            'workspace_restored': 'workspaceRestored',
+            'workspace_deleted': 'workspaceDeleted',
+            'template_created': 'templateCreated'
         };
         
-        return typeMap[notificationType] || 'general';
+        return typeMap[notificationType] || 'taskAssigned';
     }
 
     static getEmailTemplate(notificationType) {

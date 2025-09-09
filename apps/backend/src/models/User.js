@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
 
+// Import UserPreferences model to ensure it's registered
+require('./UserPreferences');
+
 const userSchema = new mongoose.Schema({
   // Core user information
   name: {
