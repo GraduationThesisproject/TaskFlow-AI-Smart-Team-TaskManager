@@ -68,7 +68,7 @@ const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
           {...props}
         />
         {showCharacterCount && maxLength && (
-          <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
+          <div className="absolute bottom-2 right-2 text-xs text-muted-foreground caret-foreground">
             {charCount}/{maxLength}
           </div>
         )}
