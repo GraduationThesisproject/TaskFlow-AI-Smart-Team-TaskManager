@@ -61,18 +61,21 @@ export default function TabLayout() {
         name="analytics"
         options={{
           href: null, // Hide from tab bar
+          headerShown: false, // Remove redundant header
         }}
       />
       <Tabs.Screen
         name="workspaces"
         options={{
           href: null, // Hide from tab bar
+          headerShown: false, // Remove redundant header
         }}
       />
       <Tabs.Screen
         name="templates"
         options={{
           href: null, // Hide from tab bar
+          headerShown: false, // Remove redundant header
         }}
       />
     </Tabs>
