@@ -146,6 +146,14 @@ export default function LoginForm({
           <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Remember me</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity 
+          onPress={() => onForgotPassword?.()} 
+          style={styles.forgotPassword}
+        >
+          <Text style={[TextStyles.body.small, { color: colors.primary }]}>
+            Forgot your password?
+          </Text>
+        </TouchableOpacity>
         {onForgotPassword && (
           <TouchableOpacity 
             onPress={onForgotPassword} 
@@ -170,12 +178,11 @@ export default function LoginForm({
           ]}
           activeOpacity={0.8}
         >
-          <Text style={[TextStyles.button, { color: colors['primary-foreground'], textAlign: 'center' }]}>
+          <Text style={[TextStyles.button.medium, { color: colors['primary-foreground'], textAlign: 'center' }]}>
             {submitting || isLoading ? 'Signing In...' : 'Sign In'}
           </Text>
         </TouchableOpacity>
       </View>
-
       {onSignup && (
         <View style={styles.signupContainer}>
           <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>

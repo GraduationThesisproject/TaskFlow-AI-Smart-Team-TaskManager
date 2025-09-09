@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { Board } from '../types/board.types';
 import type { RootState } from '../store';
@@ -22,44 +23,44 @@ export const useBoards = () => {
   } = useSelector((state: RootState) => state.boards);
 
   // API actions
-  const loadBoard = (boardId: string) => {
+  const loadBoard = useCallback((boardId: string) => {
     dispatch(fetchBoard(boardId) as any);
-  };
+  }, [dispatch]);
 
-  const loadBoardsBySpace = (spaceId: string) => {
+  const loadBoardsBySpace = useCallback((spaceId: string) => {
     dispatch(fetchBoardsBySpace(spaceId) as any);
-  };
+  }, [dispatch]);
 
-  const addBoard = async (boardData: any) => {
+  const addBoard = useCallback(async (boardData: any) => {
     try {
       await dispatch(createBoard(boardData) as any).unwrap();
     } catch (error) {
       console.error('Failed to create board:', error);
       throw error;
     }
-  };
+  }, [dispatch]);
 
-  const editBoard = async (boardId: string, boardData: any) => {
+  const editBoard = useCallback(async (boardId: string, boardData: any) => {
     try {
       await dispatch(updateBoard({ id: boardId, boardData }) as any).unwrap();
     } catch (error) {
       console.error('Failed to update board:', error);
       throw error;
     }
-  };
+  }, [dispatch]);
 
-  const removeBoard = async (boardId: string) => {
+  const removeBoard = useCallback(async (boardId: string) => {
     try {
       await dispatch(deleteBoard(boardId) as any).unwrap();
     } catch (error) {
       console.error('Failed to delete board:', error);
       throw error;
     }
-  };
+  }, [dispatch]);
 
-  const selectBoard = (board: Board | null) => {
+  const selectBoard = useCallback((board: Board | null) => {
     dispatch(setCurrentBoard(board));
-  };
+  }, [dispatch]);
 
   // Computed values
   const activeBoards = boards.filter(board => board.isActive && !board.archived);

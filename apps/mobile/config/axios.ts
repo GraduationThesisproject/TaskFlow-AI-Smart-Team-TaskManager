@@ -2,23 +2,39 @@ import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { env } from './env';
+import { Platform } from 'react-native';
 
 // Create axios instance
 // Normalize base URL to ensure it targets the backend API prefix
-const rawBase = (env.API_BASE_URL || env.API_URL || '').trim();
+let rawBase = (env.API_BASE_URL || env.API_URL || env.BASE_URL || 'http://192.168.1.142:3001').trim();
+
+// On Android emulator, localhost should point to the host machine via 10.0.2.2
+if (env.IS_ANDROID && __DEV__) {
+  rawBase = rawBase
+    .replace('http://localhost', 'http://10.0.2.2')
+    .replace('http://127.0.0.1', 'http://10.0.2.2');
+}
+
 const trimmed = rawBase.replace(/\/$/, '');
-// Ensure the URL has a proper scheme (http:// or https://)
 const baseURL = /\/api$/.test(trimmed) ? trimmed : `${trimmed}/api`;
 
-// Debug logging to see what URL is being used
-if (env.ENABLE_DEBUG) {
-  console.log('🔧 Axios Base URL Configuration:', {
-    rawBase,
-    trimmed,
-    baseURL,
-    envAPI_BASE_URL: env.API_BASE_URL,
-    envAPI_URL: env.API_URL
-  });
+// In development, log the resolved base URL to catch stale configs
+if (__DEV__) {
+  console.log('🛠️ Axios base URL resolved to:', baseURL);
+}
+
+// Ensure we have a stable device id for session tracking
+async function getOrCreateDeviceId(): Promise<string> {
+  try {
+    const saved = await AsyncStorage.getItem('deviceId');
+    if (saved) return saved;
+    const generated = `rn-${Platform.OS}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    await AsyncStorage.setItem('deviceId', generated);
+    return generated;
+  } catch {
+    // Fallback if storage fails
+    return `rn-${Platform.OS}-${Date.now().toString(36)}`;
+  }
 }
 
 const axiosInstance: AxiosInstance = axios.create({
@@ -34,43 +50,38 @@ const axiosInstance: AxiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     // Get token from AsyncStorage for each request
-    const token = await AsyncStorage.getItem('token');
-    
-    if (env.ENABLE_DEBUG) {
-      console.log('🔍 Axios Request:', {
-        method: config.method?.toUpperCase(),
-        url: config.url,
-        baseURL: config.baseURL,
-        fullURL: `${config.baseURL}${config.url}`,
-        hasToken: !!token,
-        tokenPreview: token ? token.substring(0, 20) + '...' : 'none'
-      });
-    }
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    let token = await AsyncStorage.getItem('token');
+
+    // DEV fallback token: allows testing protected endpoints before login
+    const DEV_TOKEN = (env as any).DEV_TOKEN || (env as any).DEV_AUTH_TOKEN || (env as any).API_DEV_TOKEN;
+    if (!token && __DEV__ && DEV_TOKEN) {
+      token = DEV_TOKEN as string;
       if (env.ENABLE_DEBUG) {
-        console.log('🔑 Token added to request headers');
+        console.warn('⚠️ Using DEV_TOKEN from env for Authorization (development only).');
       }
     }
-    
+
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     // Add device info headers for mobile
+    const deviceId = env.DEVICE_ID || await getOrCreateDeviceId();
     config.headers['X-Platform'] = env.PLATFORM;
     config.headers['X-App-Version'] = env.APP_VERSION;
-    config.headers['X-Device-Id'] = env.DEVICE_ID || 'unknown';
-    
+    // Set both header variants to satisfy different middlewares
+    config.headers['X-Device-Id'] = deviceId; // existing
+    config.headers['X-Device-ID'] = deviceId; // backend expects capital ID
+
     // If sending FormData, let React Native set the multipart Content-Type with boundary
     if (config.data instanceof FormData) {
       if (config.headers) {
         delete (config.headers as any)['Content-Type'];
       }
     }
-    
-    // Optional extra request log in debug mode
-    if (env.ENABLE_DEBUG) {
-      console.log('📡 Making request to:', `${config.baseURL}${config.url}`);
-    }
-    
+
+
     return config;
   },
   (error) => {
@@ -82,73 +93,76 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
-    // Add debug logging when explicitly enabled
-    if (env.ENABLE_DEBUG) {
-      console.log('✅ Axios Response:', {
-        status: response.status,
-        url: response.config.url,
-        data: response.data
-      });
-    }
-    
+
     return response;
   },
   async (error) => {
+    const originalRequest = error?.config;
+
     // Handle common errors
     if (error.response) {
       const { status, data } = error.response;
-      
+
       switch (status) {
-        case 401:
-          // Unauthorized - clear token and redirect to login
-          if (env.ENABLE_DEBUG) {
-            console.warn('🔐 Unauthorized access - Token may be invalid or expired');
+        case 401: {
+          // Attempt a single refresh+retry if we have a refresh token and haven't retried yet
+          if (!originalRequest?._retry) {
+            originalRequest._retry = true;
+            try {
+              const refreshToken = await AsyncStorage.getItem('refreshToken');
+              if (refreshToken) {
+                if (env.ENABLE_DEBUG) console.log('🔁 Attempting token refresh...');
+                const refreshResp = await axiosInstance.post('/auth/refresh', { refreshToken });
+                const accessToken = refreshResp?.data?.data?.token || refreshResp?.data?.accessToken;
+                const newRefresh = refreshResp?.data?.data?.refreshToken || refreshResp?.data?.refreshToken;
+                if (accessToken) {
+                  await AsyncStorage.setItem('token', accessToken);
+                  axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+                  originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+                }
+                if (newRefresh) {
+                  await AsyncStorage.setItem('refreshToken', newRefresh);
+                }
+                if (env.ENABLE_DEBUG) console.log('🔁 Refresh successful. Retrying original request...');
+                return axiosInstance(originalRequest);
+              }
+            } catch (refreshErr) {
+              console.error('🔁 Refresh failed:', refreshErr);
+            }
           }
+          // Unauthorized - clear token; navigation handled elsewhere
+          console.error('Unauthorized access - Token may be invalid or expired');
           await AsyncStorage.removeItem('token');
-          // In React Native, we need to handle navigation differently
-          // This will be handled by the app's navigation system
+          await AsyncStorage.removeItem('refreshToken');
           break;
+        }
         case 403:
-          // Forbidden - user doesn't have permission for this resource
-          if (env.ENABLE_DEBUG) {
-            console.warn('🚫 Access forbidden - insufficient permissions for this resource');
-          }
+          // Forbidden
+          console.error('Access forbidden');
           break;
         case 404:
           // Not found
-          if (env.ENABLE_DEBUG) {
-            console.warn('🔍 Resource not found:', error.config?.url);
-          }
+          console.error('Resource not found');
           break;
         case 500:
           // Server error
-          if (env.ENABLE_DEBUG) {
-            console.error('🔥 Server error:', data?.message || 'Internal server error');
-          }
+          console.error('Server error');
           break;
         case 503:
           // Service unavailable
-          if (env.ENABLE_DEBUG) {
-            console.warn('⏳ Service temporarily unavailable');
-          }
+          console.error('Service temporarily unavailable');
           break;
         default:
-          if (env.ENABLE_DEBUG) {
-            console.warn('⚠️ API Error:', status, data);
-          }
+          console.error('API Error:', status, data);
       }
     } else if (error.request) {
       // Network error
-      if (env.ENABLE_DEBUG) {
-        console.warn('🌐 Network error - check your internet connection');
-      }
+      console.error('Network error:', error.request);
     } else {
       // Other error
-      if (env.ENABLE_DEBUG) {
-        console.warn('❓ Request setup error:', error.message);
-      }
+      console.error('Error:', error.message);
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -188,11 +202,11 @@ export async function refreshToken(): Promise<boolean> {
     if (!refreshToken) {
       return false;
     }
-    
+
     const response = await axiosInstance.post('/auth/refresh', {
       refreshToken,
     });
-    
+
     const { accessToken } = response.data;
     await setAuthToken(accessToken);
     return true;

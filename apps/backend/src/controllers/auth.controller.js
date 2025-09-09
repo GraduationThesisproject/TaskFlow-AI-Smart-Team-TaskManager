@@ -84,7 +84,19 @@ exports.register = async (req, res) => {
         });
     } catch (error) {
         logger.error('Register error:', error);
-        sendResponse(res, 500, false, 'Server error during registration');
+        // Map validation-like errors to 400 for clearer client feedback
+        const msg = (error && error.message) ? error.message : 'Server error during registration';
+        const isValidationError =
+            typeof msg === 'string' && (
+                msg.includes('Validation failed') ||
+                msg.includes('already registered') ||
+                msg.includes('already exists') ||
+                msg.includes('Password must') ||
+                msg.includes('Name must') ||
+                msg.toLowerCase().includes('email')
+            );
+
+        sendResponse(res, isValidationError ? 400 : 500, false, isValidationError ? msg : 'Server error during registration');
     }
 };
 
@@ -801,6 +813,166 @@ exports.resetPassword = async (req, res) => {
         sendResponse(res, 200, true, 'Password reset successful. Please log in with your new password.');
     } catch (error) {
         logger.error('Reset password error:', error);
+        sendResponse(res, 500, false, 'Server error resetting password');
+    }
+};
+
+// ============================================================================
+// 4-DIGIT CODE PASSWORD RESET FLOW
+// ============================================================================
+
+// In-memory store for reset codes (in production, use Redis or database)
+const resetCodes = new Map();
+
+// Clean up expired codes every 5 minutes
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, data] of resetCodes.entries()) {
+        if (now > data.expiresAt) {
+            resetCodes.delete(key);
+        }
+    }
+}, 5 * 60 * 1000);
+
+exports.sendForgotPasswordCode = async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        const user = await User.findOne({ email, isActive: true });
+        if (!user) {
+            // Don't reveal if user exists for security
+            return sendResponse(res, 200, true, 'If an account with that email exists, a reset code has been sent');
+        }
+
+        // Generate 4-digit code
+        const code = Math.floor(1000 + Math.random() * 9000).toString();
+        const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
+
+        // Store code in memory with email as key
+        resetCodes.set(email, {
+            code,
+            expiresAt,
+            attempts: 0
+        });
+
+        // Send email with code
+        await sendEmail({
+            to: user.email,
+            template: 'forgot-password-code',
+            data: {
+                name: user.name,
+                code: code,
+                expiresIn: '10 minutes'
+            }
+        });
+
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'profile_update',
+            description: 'Password reset code requested',
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: { ipAddress: req.ip, email }
+        });
+
+        sendResponse(res, 200, true, 'If an account with that email exists, a reset code has been sent');
+    } catch (error) {
+        logger.error('Send forgot password code error:', error);
+        sendResponse(res, 500, false, 'Server error sending reset code');
+    }
+};
+
+exports.verifyForgotPasswordCode = async (req, res) => {
+    try {
+        const { email, code } = req.body;
+        
+        const resetData = resetCodes.get(email);
+        if (!resetData) {
+            return sendResponse(res, 400, false, 'Invalid or expired reset code');
+        }
+
+        // Check if code has expired
+        if (Date.now() > resetData.expiresAt) {
+            resetCodes.delete(email);
+            return sendResponse(res, 400, false, 'Reset code has expired');
+        }
+
+        // Check attempts limit
+        if (resetData.attempts >= 3) {
+            resetCodes.delete(email);
+            return sendResponse(res, 400, false, 'Too many failed attempts. Please request a new code.');
+        }
+
+        // Verify code
+        if (resetData.code !== code) {
+            resetData.attempts += 1;
+            resetCodes.set(email, resetData);
+            return sendResponse(res, 400, false, 'Invalid reset code');
+        }
+
+        // Code is valid, keep it for password reset
+        sendResponse(res, 200, true, 'Reset code verified successfully');
+    } catch (error) {
+        logger.error('Verify forgot password code error:', error);
+        sendResponse(res, 500, false, 'Server error verifying reset code');
+    }
+};
+
+exports.resetPasswordWithCode = async (req, res) => {
+    try {
+        const { email, code, newPassword } = req.body;
+        
+        const resetData = resetCodes.get(email);
+        if (!resetData) {
+            return sendResponse(res, 400, false, 'Invalid or expired reset code');
+        }
+
+        // Check if code has expired
+        if (Date.now() > resetData.expiresAt) {
+            resetCodes.delete(email);
+            return sendResponse(res, 400, false, 'Reset code has expired');
+        }
+
+        // Verify code one more time
+        if (resetData.code !== code) {
+            resetCodes.delete(email);
+            return sendResponse(res, 400, false, 'Invalid reset code');
+        }
+
+        // Find user and update password
+        const user = await User.findOne({ email, isActive: true });
+        if (!user) {
+            resetCodes.delete(email);
+            return sendResponse(res, 400, false, 'User not found');
+        }
+
+        // Update password
+        user.password = newPassword;
+        await user.save();
+
+        // End all user sessions
+        const userSessions = await user.getSessions();
+        await userSessions.endAllSessions();
+
+        // Clean up reset code
+        resetCodes.delete(email);
+
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'profile_update',
+            description: 'Password reset completed with code',
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: { 
+                ipAddress: req.ip,
+                endedAllSessions: true 
+            },
+            severity: 'warning'
+        });
+
+        logger.info(`Password reset with code: ${user.email}`);
+
+        sendResponse(res, 200, true, 'Password reset successful. Please log in with your new password.');
+    } catch (error) {
+        logger.error('Reset password with code error:', error);
         sendResponse(res, 500, false, 'Server error resetting password');
     }
 };

@@ -130,6 +130,76 @@ const templates = {
             </html>
         `
     },
+    'forgot-password-code': {
+        subject: '🔐 Your TaskFlow Password Reset Code',
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Password Reset Code</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🔐 Password Reset Code</h1>
+                        <p style="color: #dbeafe; margin: 10px 0 0 0; font-size: 16px;">Enter this code to reset your password</p>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div style="padding: 40px 30px;">
+                        <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hello {{name}},</h2>
+                        
+                        <p style="color: #475569; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                            We received a request to reset your TaskFlow password. Use the code below to complete your password reset.
+                        </p>
+                        
+                        <!-- Code Display -->
+                        <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 16px; padding: 32px; margin: 30px 0; text-align: center;">
+                            <div style="background-color: #ffffff; border-radius: 12px; padding: 24px; margin-bottom: 16px;">
+                                <p style="color: #64748b; margin: 0 0 8px 0; font-size: 14px; font-weight: 500;">Your reset code is:</p>
+                                <div style="background-color: #f8fafc; border: 2px dashed #3b82f6; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                                    <span style="color: #1e293b; font-size: 32px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;">{{code}}</span>
+                                </div>
+                            </div>
+                            <p style="color: #dbeafe; margin: 0; font-size: 14px; font-weight: 500;">
+                                This code expires in {{expiresIn}}
+                            </p>
+                        </div>
+                        
+                        <div style="background-color: #fef3c7; border: 1px solid #fbbf24; border-radius: 12px; padding: 24px; margin: 30px 0;">
+                            <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                                <div style="background-color: #f59e0b; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                                    <span style="color: #ffffff; font-size: 12px;">⚠️</span>
+                                </div>
+                                <h3 style="color: #92400e; margin: 0; font-size: 16px;">Security Notice</h3>
+                            </div>
+                            <ul style="color: #92400e; margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+                                <li>This code is valid for {{expiresIn}} only</li>
+                                <li>Do not share this code with anyone</li>
+                                <li>If you didn't request this reset, please ignore this email</li>
+                                <li>After 3 failed attempts, you'll need to request a new code</li>
+                            </ul>
+                        </div>
+                        
+                        <p style="color: #64748b; line-height: 1.6; margin: 0; font-size: 14px;">
+                            If you have any questions or need assistance, our support team is here to help.
+                        </p>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                        <p style="color: #64748b; margin: 0 0 10px 0; font-size: 14px;">Best regards,</p>
+                        <p style="color: #1e293b; margin: 0; font-weight: 600; font-size: 16px;">The TaskFlow Team</p>
+                        <p style="color: #94a3b8; margin: 10px 0 0 0; font-size: 12px;">This is an automated message, please do not reply.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    },
     'email-verification': {
         subject: '✅ Verify Your TaskFlow Email',
         html: `
