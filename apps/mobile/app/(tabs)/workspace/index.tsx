@@ -138,11 +138,11 @@ export default function WorkspaceScreen() {
 
   const handleOpenSpace = (space: any) => {
     dispatch(setSelectedSpace(space));
-    router.push('/(tabs)/workspace/space/boards');
+    router.push('/workspace/space/boards');
   };
 
-  const goToReports = () => router.push('/(tabs)/workspace/reports');
-  const goToWorkspaceSettings = () => router.push('/(tabs)/workspace/settings');
+  const goToReports = () => router.push('/workspace/reports');
+  const goToWorkspaceSettings = () => router.push('/workspace/settings');
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
@@ -445,7 +445,7 @@ export default function WorkspaceScreen() {
                 </TouchableOpacity>
               ))}
               {effectiveSpaces.length > 4 && (
-                <TouchableOpacity style={{ paddingVertical: 8, alignItems: 'center' }} onPress={() => router.push('/(tabs)/workspace/spaces')}>
+                <TouchableOpacity style={{ paddingVertical: 8, alignItems: 'center' }} onPress={() => router.push('/workspace/spaces')}>
                   <Text style={[TextStyles.body.small, { color: colors.primary }]}>View more spaces →</Text>
                 </TouchableOpacity>
               )}
