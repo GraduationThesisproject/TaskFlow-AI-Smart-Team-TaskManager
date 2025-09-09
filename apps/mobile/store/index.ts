@@ -11,18 +11,18 @@ import { PERSIST_VERSION, persistMigrations } from './persistMigrations';
 import { notificationsSocketMiddleware } from './middleware/notificationsSocketMiddleware';
 
 // Import reducers here
-import appReducer from './slices/appSlice.ts';
-import taskReducer from './slices/taskSlice.ts';
-import workspaceReducer from './slices/workspaceSlice.ts';
-import spaceReducer from './slices/spaceSlice.ts';
-import boardReducer from './slices/boardSlice.ts';
-import columnReducer from './slices/columnSlice.ts';
-import authReducer from './slices/authSlice.ts';
+import appReducer from './slices/appSlice';
+import taskReducer from './slices/taskSlice';
+import workspaceReducer from './slices/workspaceSlice';
+import spaceReducer from './slices/spaceSlice';
+import boardReducer from './slices/boardSlice';
+import columnReducer from './slices/columnSlice';
+import authReducer from './slices/authSlice';
 import activityReducer from './slices/activitySlice';
 import notificationReducer from './slices/notificationSlice';
-import templatesReducer from './slices/templatesSlice.ts';
-import analyticsReducer from './slices/analyticsSlice.ts';
-import permissionReducer from './slices/permissionSlice.ts';
+import templatesReducer from './slices/templatesSlice';
+import analyticsReducer from './slices/analyticsSlice';
+import permissionReducer from './slices/permissionSlice';
 
 const rootReducer = combineReducers({
   app: appReducer,

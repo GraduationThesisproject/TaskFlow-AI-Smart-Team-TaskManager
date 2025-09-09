@@ -143,12 +143,14 @@ class PowerBIService {
       );
     };
 
+    const hasPlaceholders = isPlaceholder(this.clientId) || isPlaceholder(this.clientSecret) || isPlaceholder(this.tenantId);
+
     return {
       isConfigured: this.isConfigured,
       hasClientId,
       hasClientSecret,
       hasTenantId,
-      hasPlaceholders: isPlaceholder(this.clientId) || isPlaceholder(this.clientSecret) || isPlaceholder(this.tenantId),
+      hasPlaceholders,
       message: this.isConfigured 
         ? 'Power BI is properly configured'
         : hasPlaceholders

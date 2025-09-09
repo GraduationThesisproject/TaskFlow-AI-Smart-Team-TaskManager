@@ -26,7 +26,7 @@ export default function FontTest() {
         Poppins Regular - Secondary Font
       </Text>
       
-      <Text style={[styles.mono, { fontFamily: 'JetBrainsMono-VariableFont_wght' }]}>
+      <Text style={[styles.mono, { fontFamily: 'JetBrainsMono' }]}>
         JetBrains Mono - Monospace Font
       </Text>
       

@@ -183,7 +183,6 @@ export default function LoginForm({
           </Text>
         </TouchableOpacity>
       </View>
-
       {onSignup && (
         <View style={styles.signupContainer}>
           <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
