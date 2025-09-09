@@ -56,32 +56,7 @@ app.use(helmet({
 
 // CORS configuration for HTTP requests (Socket.IO handles WebSocket CORS)
 const corsOptions = {
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        // Use the processed CORS_ORIGIN from env.js
-        let allowedOrigins = env.CORS_ORIGIN || [];
-        
-        // Ensure allowedOrigins is always an array
-        if (!Array.isArray(allowedOrigins)) {
-            allowedOrigins = [];
-        }
-        
-        // Check for wildcard in development
-        if (allowedOrigins.includes('*') && env.NODE_ENV === 'development') {
-            return callback(null, true);
-        }
-        
-        // Check if origin is in allowed list
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            // Log the rejected origin for debugging
-            console.log(`CORS: Origin ${origin} not allowed. Allowed origins:`, allowedOrigins);
-            callback(new Error(`Origin ${origin} not allowed by CORS. Allowed: ${allowedOrigins.join(', ')}`));
-        }
-    },
+    origin: true, // Allow all origins in development
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
@@ -89,7 +64,6 @@ const corsOptions = {
       'Authorization',
       'X-Requested-With',
       'X-Socket-ID',
-      'x-debug',
       // Mobile client custom headers
       'X-Platform',
       'X-App-Version',
@@ -113,14 +87,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// CORS test endpoint
-app.get('/cors-test', (req, res) => {
-    res.status(200).json({ 
-        message: 'CORS is working!',
-        origin: req.headers.origin,
-        timestamp: new Date().toISOString()
-    });
-});
+
 
 // Static file serving for uploads - handle subdirectories properly
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
@@ -241,6 +208,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Initialize passport middleware
 app.use(passport.initialize());
+
 
 // API Routes
 app.use('/api/auth', authRoutes);
