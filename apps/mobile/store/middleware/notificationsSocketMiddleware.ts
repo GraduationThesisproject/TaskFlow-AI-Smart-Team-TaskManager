@@ -2,7 +2,7 @@ import type { Middleware } from '@reduxjs/toolkit';
 import { io, Socket } from 'socket.io-client';
 import { env } from '../../config/env';
 import { addNotification, fetchNotifications } from '../slices/notificationSlice';
-import { removeWorkspaceById, upsertWorkspaceStatus, createWorkspace } from '../slices/workspaceSlice';
+import { removeWorkspaceById, upsertWorkspaceStatus, createWorkspace, fetchMembers } from '../slices/workspaceSlice';
 import { logoutUser } from '../slices/authSlice';
 import { addActivity } from '../slices/activitySlice';
 
@@ -316,6 +316,45 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       }
     });
 
+    // Member joined/accepted invitation: refresh members list
+    socket.on('workspace:member-added', ({ workspaceId, member }) => {
+      try {
+        const stateNow = store.getState() as RootState;
+        if (!isRealTimeEnabled(stateNow)) return;
+        if (workspaceId) {
+          console.log('👤 [notificationsSocketMiddleware] workspace:member-added', { workspaceId, memberId: member?._id || member?.id });
+          store.dispatch(fetchMembers({ id: workspaceId }) as any);
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to process workspace:member-added', e);
+      }
+    });
+
+    // Some backends emit a generic members-updated event
+    socket.on('workspace:members-updated', ({ workspaceId }) => {
+      try {
+        const stateNow = store.getState() as RootState;
+        if (!isRealTimeEnabled(stateNow)) return;
+        if (workspaceId) {
+          console.log('👥 [notificationsSocketMiddleware] workspace:members-updated', { workspaceId });
+          store.dispatch(fetchMembers({ id: workspaceId }) as any);
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to process workspace:members-updated', e);
+      }
+    });
+
+    // Invitation accepted alias (if backend uses invitation namespace)
+    socket.on('invitation:accepted', ({ workspaceId, userId }) => {
+      try {
+        const stateNow = store.getState() as RootState;
+        if (!isRealTimeEnabled(stateNow)) return;
+        if (workspaceId) {
+          console.log('✅ [notificationsSocketMiddleware] invitation:accepted', { workspaceId, userId });
+          store.dispatch(fetchMembers({ id: workspaceId }) as any);
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to process invitation:accepted', e);
     socket.on('notifications:deleted', ({ notificationId }) => {
       const stateNow = store.getState() as RootState;
       if (!isRealTimeEnabled(stateNow)) return;
@@ -334,6 +373,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         console.log('🗑️ [notificationsSocketMiddleware] Removed notification from local state:', notificationId);
       } else {
         console.log('🗑️ [notificationsSocketMiddleware] Notification not found in local state:', notificationId);
+
       }
     });
 

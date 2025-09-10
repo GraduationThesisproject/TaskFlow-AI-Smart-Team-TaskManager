@@ -174,8 +174,8 @@ export const useAuth = () => {
   );
 
   const updateProfileSecureHandler = useCallback(
-    async (payload: { name?: string; currentPassword: string; avatar?: File | null }) => {
-      return await dispatch(updateProfileSecure(payload)).unwrap();
+    async (payload: { name?: string; avatar?: string | null; currentPassword?: string }) => {
+      return await dispatch(updateProfileSecure(payload as any)).unwrap();
     },
     [dispatch]
   );
