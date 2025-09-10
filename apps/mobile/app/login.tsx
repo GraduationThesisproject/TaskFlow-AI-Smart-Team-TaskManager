@@ -5,6 +5,7 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import LoginForm from '@/components/auth/LoginForm';
 import { router } from 'expo-router';
+ 
 
 export default function LoginScreen() {
   const colors = useThemeColors();
@@ -12,6 +13,8 @@ export default function LoginScreen() {
   const handleForgotPassword = () => {
     router.push('/forgot-password');
   };
+
+ 
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
