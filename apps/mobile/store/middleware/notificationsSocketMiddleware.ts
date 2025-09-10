@@ -316,6 +316,27 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       }
     });
 
+    socket.on('notifications:deleted', ({ notificationId }) => {
+      const stateNow = store.getState() as RootState;
+      if (!isRealTimeEnabled(stateNow)) return;
+      console.log('🗑️ [notificationsSocketMiddleware] notifications:deleted received', { notificationId });
+      
+      // Remove the notification from local state
+      const currentNotifications = stateNow.notifications.notifications;
+      const notificationExists = currentNotifications.find(n => n._id === notificationId);
+      
+      if (notificationExists) {
+        // Dispatch a local action to remove the notification
+        store.dispatch({
+          type: 'notifications/removeNotification',
+          payload: notificationId
+        });
+        console.log('🗑️ [notificationsSocketMiddleware] Removed notification from local state:', notificationId);
+      } else {
+        console.log('🗑️ [notificationsSocketMiddleware] Notification not found in local state:', notificationId);
+      }
+    });
+
     socket.on('notifications:unreadCount', () => {
       const stateNow = store.getState() as RootState;
       if (!isRealTimeEnabled(stateNow)) return;

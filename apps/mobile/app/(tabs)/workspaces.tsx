@@ -6,9 +6,10 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector, useAppDispatch } from '@/store';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
-import { fetchWorkspaces, createWorkspace, deleteWorkspace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
+import { fetchWorkspaces, createWorkspace, deleteWorkspace, restoreWorkspace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
 import CreateWorkspaceModal from '@/components/common/CreateWorkspaceModal';
 import { useRouter } from 'expo-router';
+import { formatArchiveCountdown, getArchiveCountdownStyle, getArchiveStatusMessage } from '@/utils/archiveTimeUtils';
 
 export default function WorkspacesScreen() {
   const colors = useThemeColors();
@@ -73,9 +74,38 @@ export default function WorkspacesScreen() {
           onPress: async () => {
             try {
               await dispatch(deleteWorkspace({ id: workspaceId }));
-              Alert.alert('Success', 'Workspace deleted successfully!');
+              Alert.alert('Success', 'Workspace archived successfully!');
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete workspace');
+              Alert.alert('Error', 'Failed to archive workspace');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleArchiveWorkspace = (workspaceId: string, workspaceName: string, isArchived: boolean) => {
+    const action = isArchived ? 'restore' : 'archive';
+    const actionText = isArchived ? 'restore' : 'archive';
+    
+    Alert.alert(
+      `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} Workspace`,
+      `Are you sure you want to ${actionText} "${workspaceName}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: actionText.charAt(0).toUpperCase() + actionText.slice(1),
+          onPress: async () => {
+            try {
+              if (isArchived) {
+                await dispatch(restoreWorkspace({ id: workspaceId }));
+                Alert.alert('Success', 'Workspace restored successfully!');
+              } else {
+                await dispatch(deleteWorkspace({ id: workspaceId }));
+                Alert.alert('Success', 'Workspace archived successfully!');
+              }
+            } catch (error) {
+              Alert.alert('Error', `Failed to ${actionText} workspace`);
             }
           }
         }
@@ -155,12 +185,24 @@ export default function WorkspacesScreen() {
                   <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>
                     {workspace.name}
                   </Text>
-                  <TouchableOpacity 
-                    onPress={() => handleDeleteWorkspace(workspace._id, workspace.name)}
-                    style={styles.deleteButton}
-                  >
-                    <FontAwesome name="trash" size={16} color={colors.destructive} />
-                  </TouchableOpacity>
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity 
+                      onPress={() => handleArchiveWorkspace(workspace._id, workspace.name, workspace.status === 'archived')}
+                      style={styles.archiveButton}
+                    >
+                      <FontAwesome 
+                        name={workspace.status === 'archived' ? 'undo' : 'archive'} 
+                        size={16} 
+                        color={workspace.status === 'archived' ? colors.success : colors.warning} 
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      onPress={() => handleDeleteWorkspace(workspace._id, workspace.name)}
+                      style={styles.deleteButton}
+                    >
+                      <FontAwesome name="trash" size={16} color={colors.destructive} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 
                 <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
@@ -208,6 +250,32 @@ export default function WorkspacesScreen() {
                       </Text>
                     </View>
                   </View>
+                  
+                  {/* Archive countdown for archived workspaces */}
+                  {workspace.status === 'archived' && workspace.archiveExpiresAt && (
+                    <View style={styles.archiveCountdown}>
+                      <View style={[
+                        styles.countdownBadge,
+                        { 
+                          backgroundColor: getArchiveCountdownStyle(workspace.archiveExpiresAt).backgroundColor,
+                          borderColor: getArchiveCountdownStyle(workspace.archiveExpiresAt).borderColor,
+                          borderWidth: 1
+                        }
+                      ]}>
+                        <FontAwesome 
+                          name="clock-o" 
+                          size={12} 
+                          color={getArchiveCountdownStyle(workspace.archiveExpiresAt).color} 
+                        />
+                        <Text style={[
+                          TextStyles.caption.small, 
+                          { color: getArchiveCountdownStyle(workspace.archiveExpiresAt).color }
+                        ]}>
+                          {getArchiveStatusMessage(workspace.archiveExpiresAt)}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
                 </View>
               </Card>
             ))}
@@ -307,6 +375,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  archiveButton: {
+    padding: 8,
+  },
   deleteButton: {
     padding: 8,
   },
@@ -329,6 +405,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  archiveCountdown: {
+    marginTop: 8,
+  },
+  countdownBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
     alignSelf: 'flex-start',
   },
   emptyState: {
