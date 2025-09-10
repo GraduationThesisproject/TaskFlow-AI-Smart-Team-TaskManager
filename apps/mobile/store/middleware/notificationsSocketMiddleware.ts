@@ -134,7 +134,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       }
     });
 
-    socket.on('connect_error', (err) => {
+    socket.on('connect_error', (err : any) => {
       console.error('❌ [notificationsSocketMiddleware] connect_error', {
         message: err?.message || err,
         description: err?.description,
@@ -165,7 +165,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     socket.on('error', (err) => {
       console.error('❗ [notificationsSocketMiddleware] socket error', err);
     });
-
+  
     socket.on('notification:new', ({ notification }) => {
       // Gate by preference
       const stateNow = store.getState() as RootState;
@@ -355,6 +355,8 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         }
       } catch (e) {
         console.warn('⚠️ Failed to process invitation:accepted', e);
+      }
+    });
     socket.on('notifications:deleted', ({ notificationId }) => {
       const stateNow = store.getState() as RootState;
       if (!isRealTimeEnabled(stateNow)) return;
@@ -415,7 +417,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     }
   };
 
-  return (next) => (action) => {
+  return (next) => (action : any) => {
     // Let the action update the state first
     const result = next(action);
 
