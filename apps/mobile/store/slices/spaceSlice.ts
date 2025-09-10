@@ -71,6 +71,22 @@ export const removeSpaceMember = createAsyncThunk(
   }
 );
 
+export const archiveSpace = createAsyncThunk(
+  'spaces/archiveSpace',
+  async (spaceId: string) => {
+    const response = await SpaceService.archiveSpace(spaceId);
+    return response.data;
+  }
+);
+
+export const unarchiveSpace = createAsyncThunk(
+  'spaces/unarchiveSpace',
+  async (spaceId: string) => {
+    const response = await SpaceService.unarchiveSpace(spaceId);
+    return response.data;
+  }
+);
+
 // Initial state
 const initialState: SpaceState = {
   spaces: [],
@@ -205,6 +221,48 @@ const spaceSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to delete space';
       });
+    
+    // Archive space
+    builder
+      .addCase(archiveSpace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(archiveSpace.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.spaces.findIndex(space => space._id === action.payload._id);
+        if (index !== -1) {
+          state.spaces[index] = { ...state.spaces[index], ...action.payload };
+        }
+        if (state.currentSpace?._id === action.payload._id) {
+          state.currentSpace = { ...state.currentSpace, ...action.payload };
+        }
+      })
+      .addCase(archiveSpace.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to archive space';
+      });
+    
+    // Unarchive space
+    builder
+      .addCase(unarchiveSpace.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(unarchiveSpace.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.spaces.findIndex(space => space._id === action.payload._id);
+        if (index !== -1) {
+          state.spaces[index] = { ...state.spaces[index], ...action.payload };
+        }
+        if (state.currentSpace?._id === action.payload._id) {
+          state.currentSpace = { ...state.currentSpace, ...action.payload };
+        }
+      })
+      .addCase(unarchiveSpace.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to unarchive space';
+      });
   }
 });
 
@@ -234,4 +292,15 @@ export const selectSpacesByWorkspace = (state: { spaces: SpaceState }, workspace
 
 export const selectActiveSpaces = (state: { spaces: SpaceState }) => {
   return state.spaces.spaces.filter(space => space.isActive && !space.isArchived);
+};
+
+export const selectArchivedSpaces = (state: { spaces: SpaceState }) => {
+  return state.spaces.spaces.filter(space => space.isArchived);
+};
+
+export const selectSpacesByWorkspaceAndStatus = (state: { spaces: SpaceState }, workspaceId: string, status: 'active' | 'archived') => {
+  return state.spaces.spaces.filter(space => 
+    space.workspace === workspaceId && 
+    (status === 'active' ? !space.isArchived : space.isArchived)
+  );
 };
