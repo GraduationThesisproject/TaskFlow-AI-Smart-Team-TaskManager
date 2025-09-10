@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -20,9 +20,12 @@ export default function SpaceOverviewScreen() {
   const [boards, setBoards] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
 
-  const loadData = useCallback(async () => {
-    if (!space?._id && !space?.id) return;
-    const id = space._id || space.id;
+  const lastLoadedSpaceId = useRef<string | null>(null);
+  const loadData = useCallback(async (force = false) => {
+    const id = space?._id || space?.id;
+    if (!id) return;
+    if (!force && lastLoadedSpaceId.current === String(id)) return;
+    lastLoadedSpaceId.current = String(id);
     try {
       const [b, m] = await Promise.all([
         BoardService.getBoardsBySpace(id),
@@ -35,13 +38,13 @@ export default function SpaceOverviewScreen() {
     } catch (e) {
       // allow silent fail; detailed states shown in boards/members tabs
     }
-  }, [space]);
+  }, [space?._id, space?.id]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadData(false); }, [loadData]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    try { await loadData(); } finally { setRefreshing(false); }
+    try { await loadData(true); } finally { setRefreshing(false); }
   };
 
   const goBoards = () => router.push('/(tabs)/workspace/space/boards');
@@ -70,7 +73,9 @@ export default function SpaceOverviewScreen() {
         onCreateBoard={goBoards}
         onMembers={() => router.push('/(tabs)/workspace')}
         onSettings={goSettings}
+        onBackToWorkspace={() => router.push('/(tabs)/workspace')}
       />
+ 
       <ScrollView
         style={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}

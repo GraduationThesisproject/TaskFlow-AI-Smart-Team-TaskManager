@@ -8,7 +8,6 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { SpaceService } from '@/services/spaceService';
 import { setSelectedSpace } from '@/store/slices/workspaceSlice';
-import SpaceRightSidebar from '@/components/space/SpaceRightSidebar';
 
 export default function SpaceSettingsScreen() {
   const colors = useThemeColors();
@@ -21,6 +20,8 @@ export default function SpaceSettingsScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveOk, setSaveOk] = useState(false);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -62,26 +63,51 @@ export default function SpaceSettingsScreen() {
 
     try {
       setSaving(true);
+      setSaveError(null);
+      setSaveOk(false);
+      console.log('[SpaceSettings] Submitting payload:', payload);
+
+      // Perform update
       const resp = await SpaceService.updateSpace(id, payload);
-      const updatedFromUpdate = (resp as any)?.data || (resp as any);
+      // Normalize possible API response shapes: {data: Space}, Space, or wrapper
+      const updatedCandidate: any = (resp as any)?.data ?? resp;
 
-      // Fetch authoritative server state after update to ensure fresh values
-      const fresh = await SpaceService.getSpace(id);
-      const serverSpace = (fresh as any)?.data || (fresh as any) || updatedFromUpdate;
-
-      if (!serverSpace) {
-        // Fallback to merging locally if server didn't return payload
-        dispatch(setSelectedSpace({ ...(space as any), ...payload }));
-      } else {
-        dispatch(setSelectedSpace(serverSpace));
+      // Try to fetch fresh entity from server to avoid stale/partial merges
+      let nextSelected: any = null;
+      try {
+        const fresh = await SpaceService.getSpace(id);
+        const freshEntity: any = (fresh as any)?.data ?? fresh;
+        if (freshEntity && (freshEntity._id || freshEntity.id)) {
+          nextSelected = freshEntity;
+        }
+      } catch (fetchErr) {
+        console.log('[SpaceSettings] Fetch after update failed, falling back to merge:', fetchErr);
       }
 
+      // Fallbacks: prefer full entity, otherwise merge only known changed fields
+      if (!nextSelected) {
+        if (updatedCandidate && (updatedCandidate._id || updatedCandidate.id)) {
+          nextSelected = { ...(space as any), ...updatedCandidate };
+        } else {
+          nextSelected = { ...(space as any), ...payload };
+        }
+      }
+
+      // Never let required identifiers be lost
+      if (!nextSelected._id && space._id) nextSelected._id = space._id;
+      if (!nextSelected.id && space.id) nextSelected.id = space.id;
+
+      dispatch(setSelectedSpace(nextSelected));
       setIsEditing(false);
+      setSaveOk(true);
       Alert.alert('Saved', 'Space settings have been updated.');
     } catch (e: any) {
-      // Provide detailed diagnostics to console and user
-      console.log('Save space failed:', e?.response?.status, e?.response?.data || e?.message);
-      Alert.alert('Failed to save', e?.response?.data?.message || e?.message || 'Unknown error');
+      const status = e?.response?.status;
+      const data = e?.response?.data;
+      console.log('Save space failed:', status, data || e?.message);
+      const msg = (typeof data === 'string' ? data : data?.message) || e?.message || 'Unknown error';
+      setSaveError(`${status || ''} ${msg}`.trim());
+      Alert.alert('Failed to save', msg);
     } finally {
       setSaving(false);
     }
@@ -130,6 +156,17 @@ export default function SpaceSettingsScreen() {
       </View>
 
       <ScrollView style={styles.content}>
+        {!!saveError && (
+          <Card style={[styles.sectionCard, { backgroundColor: colors.destructive + '22' }]}>
+            <Text style={[TextStyles.body.small, { color: colors.destructive }]}>Save failed: {saveError}</Text>
+          </Card>
+        )}
+        {saveOk && (
+          <Card style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Saved successfully.</Text>
+          </Card>
+        )}
+
         {/* General Settings */}
         <Card style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 10 }]}>General Settings</Text>
@@ -178,7 +215,13 @@ export default function SpaceSettingsScreen() {
           <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14 }}>
             {isEditing ? (
               <>
-                <TouchableOpacity onPress={handleSave} disabled={saving} style={[styles.primaryBtn, { backgroundColor: colors.primary, opacity: saving ? 0.7 : 1 }]}>
+                <TouchableOpacity
+                  onPress={handleSave}
+                  accessibilityRole="button"
+                  testID="save-space-settings"
+                  disabled={saving}
+                  style={[styles.primaryBtn, { backgroundColor: colors.primary, opacity: saving ? 0.7 : 1 }]}
+                >
                   <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>{saving ? 'Saving…' : 'Save Changes'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
