@@ -85,10 +85,10 @@ const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
 
   return (
     <View style={styles.statsGrid}>
-      <Card style={[styles.statsCard, { backgroundColor: colors.card }]}>
+      <Card style={styles.statsCard}>
         <View style={styles.statsCardHeader}>
           <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Total Tasks</Text>
-          <FontAwesome name="users" size={16} color={colors['muted-foreground']} />
+          <FontAwesome name="users" size={16} color={colors.primary} />
         </View>
         <View style={styles.statsCardContent}>
           <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{taskStats.total}</Text>
@@ -98,10 +98,10 @@ const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
         </View>
       </Card>
 
-      <Card style={[styles.statsCard, { backgroundColor: colors.card }]}>
+      <Card style={styles.statsCard}>
         <View style={styles.statsCardHeader}>
           <Text style={[TextStyles.body.small, { color: colors.foreground }]}>In Progress</Text>
-          <FontAwesome name="clock-o" size={16} color={colors['muted-foreground']} />
+          <FontAwesome name="clock-o" size={16} color={colors.accent} />
         </View>
         <View style={styles.statsCardContent}>
           <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{taskStats.inProgress}</Text>
@@ -111,10 +111,10 @@ const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
         </View>
       </Card>
 
-      <Card style={[styles.statsCard, { backgroundColor: colors.card }]}>
+      <Card style={styles.statsCard}>
         <View style={styles.statsCardHeader}>
           <Text style={[TextStyles.body.small, { color: colors.foreground }]}>High Priority</Text>
-          <FontAwesome name="exclamation-triangle" size={16} color={colors['muted-foreground']} />
+          <FontAwesome name="exclamation-triangle" size={16} color={colors.warning} />
         </View>
         <View style={styles.statsCardContent}>
           <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
@@ -126,10 +126,10 @@ const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
         </View>
       </Card>
 
-      <Card style={[styles.statsCard, { backgroundColor: colors.card }]}>
+      <Card style={styles.statsCard}>
         <View style={styles.statsCardHeader}>
           <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Overdue</Text>
-          <FontAwesome name="calendar" size={16} color={colors['muted-foreground']} />
+          <FontAwesome name="calendar" size={16} color={colors.destructive} />
         </View>
         <View style={styles.statsCardContent}>
           <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{taskStats.overdue}</Text>
@@ -179,11 +179,11 @@ const WorkspacesSection: React.FC = () => {
 
   if (workspacesLoading) {
     return (
-      <Card style={[styles.workspacesCard, { backgroundColor: colors.card }]}>
+      <Card style={styles.workspacesCard}>
         <View style={styles.workspacesCardHeader}>
           <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Your Workspaces</Text>
           <TouchableOpacity style={[styles.addButton, { borderColor: colors.border }]} onPress={() => setShowCreateWs(true)}>
-            <FontAwesome name="plus" size={16} color={colors['muted-foreground']} />
+            <FontAwesome name="plus" size={16} color={colors.primary} />
             <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>New Workspace</Text>
           </TouchableOpacity>
         </View>
@@ -204,13 +204,13 @@ const WorkspacesSection: React.FC = () => {
 
   if (workspacesError) {
     return (
-      <Card style={[styles.workspacesCard, { backgroundColor: colors.card }]}>
+      <Card style={styles.workspacesCard}>
         <View style={styles.workspacesCardHeader}>
           <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Your Workspaces</Text>
         </View>
         <View style={styles.workspacesCardContent}>
           <View style={styles.errorState}>
-            <FontAwesome name="users" size={32} color={colors.destructive} />
+            <FontAwesome name="users" size={32} color={colors.primary} />
             <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Error loading workspaces</Text>
             <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
               {typeof workspacesError === 'string' ? workspacesError : JSON.stringify(workspacesError)}
@@ -222,11 +222,11 @@ const WorkspacesSection: React.FC = () => {
   }
 
   return (
-    <Card style={[styles.workspacesCard, { backgroundColor: colors.card }]}>
+    <Card style={styles.workspacesCard}>
       <View style={styles.workspacesCardHeader}>
         <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Your Workspaces</Text>
         <TouchableOpacity style={[styles.addButton, { borderColor: colors.border }]} onPress={() => setShowCreateWs(true)}>
-          <FontAwesome name="plus" size={16} color={colors['muted-foreground']} />
+          <FontAwesome name="plus" size={16} color={colors.primary} />
           <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>New Workspace</Text>
         </TouchableOpacity>
       </View>
@@ -286,7 +286,7 @@ const WorkspacesSection: React.FC = () => {
           </View>
         ) : (
           <View style={styles.emptyState}>
-            <FontAwesome name="users" size={32} color={colors['muted-foreground']} />
+            <FontAwesome name="users" size={32} color={colors.primary} />
             <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>No workspaces yet</Text>
             <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], textAlign: 'center' }]}>
               Create your first workspace to get started with team collaboration.
@@ -329,7 +329,7 @@ const UpcomingDeadlines: React.FC = () => {
   }, [tasks]);
 
   return (
-    <Card style={[styles.deadlinesCard, { backgroundColor: colors.card }]}>
+    <Card style={styles.deadlinesCard}>
       <View style={styles.deadlinesCardHeader}>
         <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Upcoming Deadlines</Text>
       </View>
@@ -337,7 +337,7 @@ const UpcomingDeadlines: React.FC = () => {
         {upcomingDeadlines.length > 0 ? (
           <View style={styles.deadlinesList}>
             {upcomingDeadlines.map((task) => (
-              <View key={task.id} style={[styles.deadlineItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View key={task.id} style={styles.deadlineItem}>
                 <View style={styles.deadlineItemContent}>
                   <Text style={[TextStyles.body.small, { color: colors.foreground }]} numberOfLines={1}>
                     {task.title}
@@ -359,7 +359,7 @@ const UpcomingDeadlines: React.FC = () => {
           </View>
         ) : (
           <View style={styles.emptyState}>
-            <FontAwesome name="calendar" size={32} color={colors['muted-foreground']} />
+            <FontAwesome name="calendar" size={32} color={colors.accent} />
             <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>No upcoming deadlines</Text>
             <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], textAlign: 'center' }]}>
               You're all caught up! No tasks are due in the next 7 days.
@@ -377,6 +377,7 @@ export default function DashboardScreen() {
   const { logout } = useAuth();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
 
   const { user, isAuthenticated, token } = useAppSelector(state => state.auth);
   const { workspaces, currentWorkspaceId } = useAppSelector(state => state.workspace);
@@ -426,6 +427,7 @@ export default function DashboardScreen() {
     }
   };
 
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadDashboardData();
@@ -441,18 +443,31 @@ export default function DashboardScreen() {
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton}>
-          <FontAwesome name="bars" size={24} color={colors.foreground} />
+          <FontAwesome name="bars" size={24} color={colors.primary} />
         </TouchableOpacity>
         <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Dashboard</Text>
         <View style={styles.headerRight}>
           <NotificationBell size={24} />
+        <TouchableOpacity
+          onPress={() => {
+            router.push('/(tabs)/settings');
+          }}
+          style={styles.settingsButton}
+        >
+          <FontAwesome name="cog" size={24} color={colors.primary} />
+        </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView 
-        style={styles.content}
+        style={[styles.content, { backgroundColor: colors.background }]}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
         }
       >
         <WelcomeHeader displayName={displayName} />
@@ -489,7 +504,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    width: 40,
+    gap: 8,
+  },
+  settingsButton: {
+    padding: 8,
   },
   content: {
     flex: 1,
@@ -507,9 +525,6 @@ const styles = StyleSheet.create({
   statsCard: {
     flex: 1,
     minWidth: '45%',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
   },
   statsCardHeader: {
     flexDirection: 'row',
@@ -551,9 +566,6 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   workspacesCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
     marginBottom: 16,
   },
   workspacesCardHeader: {
@@ -624,9 +636,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   deadlinesCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    // Card component handles styling
   },
   deadlinesCardHeader: {
     marginBottom: 16,
@@ -643,7 +653,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     borderRadius: 8,
-    borderWidth: 1,
   },
   deadlineItemContent: {
     flex: 1,

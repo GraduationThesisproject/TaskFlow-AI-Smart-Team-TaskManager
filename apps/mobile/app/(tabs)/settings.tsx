@@ -6,9 +6,9 @@ import { TextStyles } from '@/constants/Fonts';
 import { useTheme } from '@/components/ThemeProvider';
 import { useAppSelector, useAppDispatch } from '@/store';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Sidebar from '@/components/navigation/Sidebar';
 import { useAuth } from '@/hooks/useAuth';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
+import Sidebar from '@/components/navigation/Sidebar';
 
 // Import new settings components
 import AccountSettings from '@/components/settings/AccountSettings';
@@ -163,18 +163,28 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header with Sidebar Toggle */}
+      {/* Header with Back Arrow and Sidebar */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          style={[styles.sidebarButton, { backgroundColor: colors.primary }]}
-          onPress={toggleSidebar}
-        >
-          <FontAwesome name="bars" size={20} color={colors['primary-foreground']} />
-        </TouchableOpacity>
-        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
-          Settings
-        </Text>
-        <View style={styles.headerSpacer} />
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.push('/(tabs)')}
+          >
+            <FontAwesome name="arrow-left" size={24} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.sidebarButton}
+            onPress={toggleSidebar}
+          >
+            <FontAwesome name="bars" size={24} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.headerCenter}>
+          <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
+            Settings
+          </Text>
+        </View>
+        <View style={styles.headerRight} />
       </View>
 
 
@@ -201,13 +211,30 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
   },
-  sidebarButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  backButton: {
+    padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+  },
+  sidebarButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerSpacer: {
     width: 40,

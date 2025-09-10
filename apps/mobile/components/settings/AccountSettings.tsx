@@ -5,29 +5,20 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAuth } from '@/hooks/useAuth';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import SecuritySettingsPopup from './SecuritySettingsPopup';
 import * as ImagePicker from 'expo-image-picker';
   
 const AccountSettings: React.FC = () => {
   const colors = useThemeColors();
-  const { user, updateProfileSecure, changePassword } = useAuth();
+  const { user, updateProfileSecure } = useAuth();
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({ name: '', email: '' });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   
-  // Password form state
-  const [showPassword, setShowPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [securityForm, setSecurityForm] = useState({ 
-    currentPassword: '', 
-    newPassword: '', 
-    confirmPassword: '' 
-  });
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [securityError, setSecurityError] = useState<string | null>(null);
-  const [securitySuccess, setSecuritySuccess] = useState<string | null>(null);
+  // Security popup state
+  const [securityPopupVisible, setSecurityPopupVisible] = useState(false);
 
   // Initialize form once user loads
   useEffect(() => {
@@ -82,30 +73,6 @@ const AccountSettings: React.FC = () => {
     }
   };
 
-  const onSecurityChange = (field: 'currentPassword' | 'newPassword' | 'confirmPassword', value: string) => {
-    setSecurityForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleChangePassword = async () => {
-    setSecurityError(null);
-    setSecuritySuccess(null);
-    const { currentPassword, newPassword, confirmPassword } = securityForm;
-    
-    if (!currentPassword) return setSecurityError('Enter current password');
-    if (!newPassword || newPassword.length < 8) return setSecurityError('New password must be 8+ chars');
-    if (newPassword !== confirmPassword) return setSecurityError('New password mismatch');
-
-    setIsChangingPassword(true);
-    try {
-      await changePassword({ currentPassword, newPassword });
-      setSecuritySuccess('Password changed successfully');
-      setSecurityForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    } catch (error: any) {
-      setSecurityError(error.message || 'Failed to change password');
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
 
   const currentAvatarSrc = selectedAvatar || user?.user?.avatar;
   const originalName = user?.user?.name || '';
@@ -212,124 +179,27 @@ const AccountSettings: React.FC = () => {
           </Text>
         </View>
 
-        <View style={styles.formSection}>
-          <View style={styles.inputGroup}>
-            <Text style={[TextStyles.body.medium, { color: colors.foreground, marginBottom: 8 }]}>
-              Current Password
-            </Text>
-            <View style={styles.passwordInputContainer}>
-              <TextInput
-                style={[styles.passwordInput, { 
-                  backgroundColor: colors.card, 
-                  color: colors.foreground, 
-                  borderColor: colors.border 
-                }]}
-                value={securityForm.currentPassword}
-                onChangeText={(value) => onSecurityChange('currentPassword', value)}
-                placeholder="Enter current password"
-                placeholderTextColor={colors['muted-foreground']}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity 
-                style={styles.passwordToggle}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <FontAwesome 
-                  name={showPassword ? "eye-slash" : "eye"} 
-                  size={16} 
-                  color={colors['muted-foreground']} 
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
+        <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], marginBottom: 16 }]}>
+          Manage your password and security preferences
+        </Text>
 
-          <View style={styles.inputGroup}>
-            <Text style={[TextStyles.body.medium, { color: colors.foreground, marginBottom: 8 }]}>
-              New Password
-            </Text>
-            <View style={styles.passwordInputContainer}>
-              <TextInput
-                style={[styles.passwordInput, { 
-                  backgroundColor: colors.card, 
-                  color: colors.foreground, 
-                  borderColor: colors.border 
-                }]}
-                value={securityForm.newPassword}
-                onChangeText={(value) => onSecurityChange('newPassword', value)}
-                placeholder="Enter new password"
-                placeholderTextColor={colors['muted-foreground']}
-                secureTextEntry={!showNewPassword}
-              />
-              <TouchableOpacity 
-                style={styles.passwordToggle}
-                onPress={() => setShowNewPassword(!showNewPassword)}
-              >
-                <FontAwesome 
-                  name={showNewPassword ? "eye-slash" : "eye"} 
-                  size={16} 
-                  color={colors['muted-foreground']} 
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[TextStyles.body.medium, { color: colors.foreground, marginBottom: 8 }]}>
-              Confirm New Password
-            </Text>
-            <View style={styles.passwordInputContainer}>
-              <TextInput
-                style={[styles.passwordInput, { 
-                  backgroundColor: colors.card, 
-                  color: colors.foreground, 
-                  borderColor: colors.border 
-                }]}
-                value={securityForm.confirmPassword}
-                onChangeText={(value) => onSecurityChange('confirmPassword', value)}
-                placeholder="Confirm new password"
-                placeholderTextColor={colors['muted-foreground']}
-                secureTextEntry={!showConfirmPassword}
-              />
-              <TouchableOpacity 
-                style={styles.passwordToggle}
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                <FontAwesome 
-                  name={showConfirmPassword ? "eye-slash" : "eye"} 
-                  size={16} 
-                  color={colors['muted-foreground']} 
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {/* Error/Success Messages */}
-        {securityError && (
-          <View style={[styles.messageContainer, { backgroundColor: colors.destructive + '20', borderColor: colors.destructive }]}>
-            <FontAwesome name="exclamation-circle" size={16} color={colors.destructive} />
-            <Text style={[TextStyles.body.small, { color: colors.destructive }]}>{securityError}</Text>
-          </View>
-        )}
-        {securitySuccess && (
-          <View style={[styles.messageContainer, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
-            <FontAwesome name="check-circle" size={16} color={colors.success} />
-            <Text style={[TextStyles.body.small, { color: colors.success }]}>{securitySuccess}</Text>
-          </View>
-        )}
-
-        {/* Change Password Button */}
         <TouchableOpacity 
-          style={[styles.changePasswordButton, { borderColor: colors.border }]}
-          onPress={handleChangePassword}
-          disabled={isChangingPassword}
+          style={[styles.securityButton, { backgroundColor: colors.primary }]}
+          onPress={() => setSecurityPopupVisible(true)}
         >
-          <FontAwesome name="key" size={16} color={colors.foreground} />
-          <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-            {isChangingPassword ? 'Changing Password...' : 'Change Password'}
+          <FontAwesome name="key" size={16} color={colors['primary-foreground']} />
+          <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'] }]}>
+            Change Password
           </Text>
+          <FontAwesome name="chevron-right" size={14} color={colors['primary-foreground']} />
         </TouchableOpacity>
       </Card>
+
+      {/* Security Settings Popup */}
+      <SecuritySettingsPopup
+        visible={securityPopupVisible}
+        onClose={() => setSecurityPopupVisible(false)}
+      />
     </ScrollView>
   );
 };
@@ -412,22 +282,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 8,
   },
-  changePasswordButton: {
+  securityButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
+    justifyContent: 'space-between',
+    padding: 16,
     borderRadius: 8,
-    borderWidth: 1,
-    gap: 8,
-  },
-  messageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 16,
     gap: 8,
   },
 });

@@ -115,6 +115,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         // Add additional options for better connection handling
         withCredentials: true,
         rejectUnauthorized: false, // For development only
+        path: '/socket.io'
       });
     } catch (error) {
       console.error('❌ [notificationsSocketMiddleware] Failed to create socket connection:', error);
@@ -312,6 +313,27 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         }
       } catch (e) {
         console.warn('⚠️ [notificationsSocketMiddleware] failed to process activity:new', e);
+      }
+    });
+
+    socket.on('notifications:deleted', ({ notificationId }) => {
+      const stateNow = store.getState() as RootState;
+      if (!isRealTimeEnabled(stateNow)) return;
+      console.log('🗑️ [notificationsSocketMiddleware] notifications:deleted received', { notificationId });
+      
+      // Remove the notification from local state
+      const currentNotifications = stateNow.notifications.notifications;
+      const notificationExists = currentNotifications.find(n => n._id === notificationId);
+      
+      if (notificationExists) {
+        // Dispatch a local action to remove the notification
+        store.dispatch({
+          type: 'notifications/removeNotification',
+          payload: notificationId
+        });
+        console.log('🗑️ [notificationsSocketMiddleware] Removed notification from local state:', notificationId);
+      } else {
+        console.log('🗑️ [notificationsSocketMiddleware] Notification not found in local state:', notificationId);
       }
     });
 

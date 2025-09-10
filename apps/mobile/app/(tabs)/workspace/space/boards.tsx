@@ -7,7 +7,9 @@ import { TextStyles } from '@/constants/Fonts';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useBoards } from '@/hooks/useBoards';
 import { fetchMembers } from '@/store/slices/workspaceSlice';
+import { archiveBoard, unarchiveBoard } from '@/store/slices/boardSlice';
 import { SpaceService } from '@/services/spaceService';
+import { formatArchiveCountdown, getArchiveCountdownStyle, getArchiveStatusMessage } from '@/utils/archiveTimeUtils';
 
 export default function SpaceBoards() {
   const router = useRouter();
@@ -168,6 +170,39 @@ export default function SpaceBoards() {
       },
     ]);
   }, [removeBoard, loadBoardsBySpace, selectedSpace?._id]);
+
+  const handleArchiveBoard = useCallback(async (boardId: string, boardName: string, isArchived: boolean) => {
+    const action = isArchived ? 'restore' : 'archive';
+    const actionText = isArchived ? 'restore' : 'archive';
+    
+    Alert.alert(
+      `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} Board`,
+      `Are you sure you want to ${actionText} "${boardName}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: actionText.charAt(0).toUpperCase() + actionText.slice(1),
+          onPress: async () => {
+            try {
+              if (isArchived) {
+                await dispatch(unarchiveBoard(boardId));
+                Alert.alert('Success', 'Board restored successfully!');
+              } else {
+                await dispatch(archiveBoard(boardId));
+                Alert.alert('Success', 'Board archived successfully!');
+              }
+              // Refresh boards after archiving/unarchiving
+              if (selectedSpace?._id) {
+                await loadBoardsBySpace(selectedSpace._id);
+              }
+            } catch (error) {
+              Alert.alert('Error', `Failed to ${actionText} board`);
+            }
+          }
+        }
+      ]
+    );
+  }, [dispatch, loadBoardsBySpace, selectedSpace?._id]);
 
   if (!selectedSpace) {
     return (
@@ -359,10 +394,48 @@ export default function SpaceBoards() {
                     <Text style={TextStyles.caption.small} numberOfLines={1}>
                       Members: {uniqueSpaceMembers.length}
                     </Text>
+                    
+                    {/* Archive countdown for archived boards */}
+                    {b.archived && b.archiveExpiresAt && (
+                      <View style={styles.archiveCountdown}>
+                        <View style={[
+                          styles.countdownBadge,
+                          { 
+                            backgroundColor: getArchiveCountdownStyle(b.archiveExpiresAt).backgroundColor,
+                            borderColor: getArchiveCountdownStyle(b.archiveExpiresAt).borderColor,
+                            borderWidth: 1
+                          }
+                        ]}>
+                          <FontAwesome 
+                            name="clock-o" 
+                            size={10} 
+                            color={getArchiveCountdownStyle(b.archiveExpiresAt).color} 
+                          />
+                          <Text style={[
+                            TextStyles.caption.small, 
+                            { color: getArchiveCountdownStyle(b.archiveExpiresAt).color }
+                          ]}>
+                            {getArchiveStatusMessage(b.archiveExpiresAt)}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
                   </View>
-                  <TouchableOpacity onPress={() => confirmDelete(b._id || b.id)} style={styles.destructiveBtn}>
-                    <Text style={[TextStyles.caption.small, { color: '#fff' }]}>Delete</Text>
-                  </TouchableOpacity>
+                  <View style={styles.boardActions}>
+                    <TouchableOpacity 
+                      onPress={() => handleArchiveBoard(b._id || b.id, b.name || 'Board', b.archived)}
+                      style={styles.archiveBtn}
+                    >
+                      <FontAwesome 
+                        name={b.archived ? 'undo' : 'archive'} 
+                        size={16} 
+                        color={b.archived ? '#10b981' : '#f59e0b'} 
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => confirmDelete(b._id || b.id)} style={styles.destructiveBtn}>
+                      <Text style={[TextStyles.caption.small, { color: '#fff' }]}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               ))
             ) : (
@@ -384,6 +457,20 @@ const styles = StyleSheet.create({
   backBtn: { padding: 8, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   centerBox: { alignItems: 'center', justifyContent: 'center', padding: 16 },
   boardItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth },
+  boardActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  archiveBtn: { padding: 8, borderRadius: 8, backgroundColor: '#f3f4f6' },
+  archiveCountdown: {
+    marginTop: 4,
+  },
+  countdownBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
   primaryBtn: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, backgroundColor: '#e5e7eb' },
   secondaryBtn: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, backgroundColor: '#f3f4f6', flexDirection: 'row', alignItems: 'center' },
   ghostBtn: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, backgroundColor: 'transparent' },
