@@ -69,7 +69,7 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
   } = useSpaceManager();
   
   // Workspace data
-  const { currentWorkspace, members: workspaceMembers, loadWorkspaceMembers } = useWorkspace();
+  const { currentWorkspace, members: workspaceMembers, loadWorkspaceMembers } = useWorkspace({ autoFetch: false });
   
   // Board data
   const { selectBoard } = useBoard();
