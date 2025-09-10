@@ -9,21 +9,19 @@ import {
   SelectOption,
   Badge,
   Typography,
-  Stack,
   Avatar,
   AvatarImage,
   AvatarFallback,
-  Checkbox,
-  Progress,
   TextArea,
   Card,
   getInitials,
   getAvatarColor
 } from '@taskflow/ui';
-import type { Task, File, Comment } from '../../types/task.types';
+import type { Task, Comment } from '../../types/task.types';
 import { CommentItem } from './CommentItem';
 import { CommentService } from '../../services/commentService';
-import type { TaskDetailModalProps, Subtask } from '../../types/interfaces/ui';
+import type { TaskDetailModalProps } from '../../types/interfaces/ui';
+import { useBoard } from '../../hooks';
 
 const STATUS_OPTIONS = [
   { value: 'todo', label: 'To Do' },
@@ -66,13 +64,49 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleInput, setTitleInput] = useState('');
+  const [showAssigneesPanel, setShowAssigneesPanel] = useState(false);
+  const assigneesPanelRef = React.useRef<HTMLDivElement | null>(null);
+  const [tagInput, setTagInput] = useState('');
+  const [showTagInput, setShowTagInput] = useState(false);
+  const [checklistItems, setChecklistItems] = useState<Array<{ text: string; completed: boolean }>>([]);
 
-  // Mock users for demonstration - moved outside component to prevent recreation
-  const users = React.useMemo(() => [
-    { _id: '1', name: 'John Doe', email: 'john@example.com', avatar: '' },
-    { _id: '2', name: 'Jane Smith', email: 'jane@example.com', avatar: '' },
-    { _id: '3', name: 'Bob Johnson', email: 'bob@example.com', avatar: '' },
-  ], []);
+  const { currentBoard } = useBoard();
+  // Build users list from current board members
+  const users = React.useMemo<{ _id: string; name: string; email?: string; avatar?: string }[]>(() => {
+    const rawMembers = (currentBoard as any)?.members || [];
+    return rawMembers.map((member: any) => {
+      const user = member?.user || member;
+      return {
+        _id: user?._id || user?.id || member?._id || member?.id || '',
+        name: user?.name || user?.fullName || user?.username || user?.email || 'Member',
+        email: user?.email,
+        avatar: user?.avatar || user?.photo || user?.imageUrl,
+      };
+    }).filter((u: any) => !!u._id);
+  }, [currentBoard?.members]);
+
+  // Close assignees dropdown when clicking outside or pressing Escape
+  useEffect(() => {
+    if (!showAssigneesPanel) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!assigneesPanelRef.current) return;
+      const target = e.target as Node;
+      if (!assigneesPanelRef.current.contains(target)) {
+        setShowAssigneesPanel(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowAssigneesPanel(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showAssigneesPanel]);
 
   useEffect(() => {
     if (task) {
@@ -86,6 +120,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         tags: task.tags,
         assignees: task.assignees,
       });
+      setTitleInput(task.title || '');
+      setChecklistItems([]);
     }
   }, [task, users]);
 
@@ -149,15 +185,60 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     }
   };
 
+  const handleTitleConfirm = () => {
+    const value = titleInput.trim();
+    if (!value) return;
+    setFormData(prev => ({ ...prev, title: value }));
+    setIsEditingTitle(false);
+  };
+
+  const handleAddTag = () => {
+    const value = tagInput.trim();
+    if (!value) return;
+    setFormData(prev => ({ ...prev, tags: [...(prev.tags || []), value] }));
+    setTagInput('');
+    setShowTagInput(false);
+  };
+
+  const handleRemoveTag = (value: string) => {
+    setFormData(prev => ({ ...prev, tags: (prev.tags || []).filter(t => t !== value) }));
+  };
+
+  const handleAssignUser = (userId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      assignees: prev.assignees?.includes(userId)
+        ? prev.assignees
+        : [...(prev.assignees || []), userId]
+    }));
+  };
+
+  const handleUnassignUser = (userId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      assignees: (prev.assignees || []).filter(id => id !== userId)
+    }));
+  };
+
+  const handleAddChecklistItem = (text: string) => {
+    const value = text.trim();
+    if (!value) return;
+    setChecklistItems(prev => [{ text: value, completed: false }, ...prev]);
+  };
+
+  const handleToggleChecklistItem = (index: number) => {
+    setChecklistItems(prev => prev.map((item, i) => i === index ? { ...item, completed: !item.completed } : item));
+  };
+
+  const handleRemoveChecklistItem = (index: number) => {
+    setChecklistItems(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleAddComment = async () => {
     if (!newComment.trim() || !task) return;
     
     try {
-      const response = await CommentService.createComment({
-        taskId: task._id,
-        content: newComment,
-        author: 'user_1', // This should come from auth context
-      });
+      const response = await CommentService.addComment(task._id, { content: newComment });
       
       setComments(prev => [...prev, response.data]);
       setNewComment('');
@@ -168,7 +249,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
   const handleCommentUpdate = async (commentId: string, content: string) => {
     try {
-      const response = await CommentService.updateComment(commentId, { content });
+      const response = await CommentService.updateComment(commentId, content);
       setComments(prev => prev.map(comment => 
         comment._id === commentId ? response.data : comment
       ));
@@ -188,16 +269,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
   const handleReplyAdd = async (commentId: string, content: string) => {
     try {
-      const response = await CommentService.createReply(commentId, {
-        content,
-        author: 'user_1', // This should come from auth context
-      });
-      
-      setComments(prev => prev.map(comment => 
-        comment._id === commentId 
-          ? { ...comment, replies: [...(comment.replies || []), response.data] }
-          : comment
-      ));
+      const response = await CommentService.addReply(commentId, content);
+      setComments(prev => prev.map(comment => {
+        if (comment._id !== commentId) return comment;
+        const next = { ...comment } as any;
+        next.replies = [...(next.replies || []), response.data];
+        return next as Comment;
+      }));
     } catch (error) {
       console.error('Failed to add reply:', error);
     }
@@ -230,7 +308,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        size="lg"
+        size="6xl"
         className={`transition-all duration-300 ${
           isAnimating 
             ? 'opacity-100 scale-100 translate-y-0' 
@@ -247,10 +325,29 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 style={{ backgroundColor: task.color }}
               />
             )}
-            <div>
-              <Typography variant="h4" className="font-semibold text-foreground">
-                {task.title}
-              </Typography>
+            <div className="min-w-0">
+              {isEditingTitle ? (
+                <Input
+                  value={titleInput}
+                  onChange={(e) => setTitleInput(e.target.value)}
+                  onBlur={handleTitleConfirm}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleTitleConfirm();
+                    if (e.key === 'Escape') { setTitleInput(formData.title || task.title || ''); setIsEditingTitle(false); }
+                  }}
+                  autoFocus
+                  className="h-8 text-sm font-semibold border-transparent focus:border-transparent focus:ring-0 shadow-none bg-transparent"
+                />
+              ) : (
+                <Typography
+                  variant="h4"
+                  className="font-semibold text-foreground truncate cursor-text"
+                  onDoubleClick={() => setIsEditingTitle(true)}
+                  title="Double-click to edit title"
+                >
+                  {formData.title || task.title}
+                </Typography>
+              )}
               <div className="flex items-center gap-1.5 mt-0.5">
                 <Badge 
                   variant="outline" 
@@ -270,36 +367,86 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
             </div>
           </div>
           
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
+            {/* Assign Button / Avatars */}
+            <div className="relative" ref={assigneesPanelRef}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAssigneesPanel((s) => !s)}
+                className="w-8 h-8 p-0 rounded-full border border-border hover:bg-muted/50"
+                title="Assign user"
+              >
+                <span className="text-lg leading-none">+</span>
+              </Button>
+              {showAssigneesPanel && (
+                <div className="absolute right-0 mt-1 w-56 bg-background border border-border rounded-lg shadow-lg p-2 z-50">
+                  <div className="max-h-48 overflow-auto space-y-1">
+                    {(users || []).map(u => (
+                      <div key={u._id} className="flex items-center justify-between p-2 rounded hover:bg-muted/30">
+                        <div className="flex items-center gap-2">
+                          <Avatar size="xs">
+                            {u.avatar ? <AvatarImage src={u.avatar} alt={u.name} /> : null}
+                            <AvatarFallback variant={getAvatarColor(u.name)} className="text-[10px]">
+                              {getInitials(u.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Typography variant="body-small" className="text-xs">{u.name}</Typography>
+                        </div>
+                        {(formData.assignees || []).includes(u._id) ? (
+                          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => handleUnassignUser(u._id)}>Remove</Button>
+                        ) : (
+                          <Button variant="outline" size="sm" className="h-6 px-2 text-xs" onClick={() => handleAssignUser(u._id)}>Add</Button>
+                        )}
+                      </div>
+                    ))}
+                    {(users || []).length === 0 && (
+                      <Typography variant="body-small" className="text-xs text-muted-foreground p-2">No users available</Typography>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+              title="Cancel"
+              className="w-8 h-8 p-0 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             >
-              Cancel
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleDelete}
-              className="px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-all duration-200"
+              title="Delete"
+              className="w-8 h-8 p-0 rounded-full text-red-600 hover:text-red-700 hover:bg-red-50"
             >
-              Delete
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+              </svg>
             </Button>
             <Button
               size="sm"
               onClick={handleSave}
               disabled={isSubmitting}
-              className="px-4 py-1.5 text-xs font-medium bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Save"
+              className="w-9 h-9 p-0 rounded-full bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Saving...
-                </div>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                'Save Changes'
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
               )}
             </Button>
           </div>
@@ -308,23 +455,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
       <ModalBody className="p-0">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
-          {/* Main Content */}
+          {/* Left: Description + Checklist */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Task Details */}
             <Card className="p-3 border border-border/20">
               <div className="space-y-3">
-                <div>
-                  <Typography variant="body-small" className="text-muted-foreground mb-1.5 text-xs font-medium">
-                    Title
-                  </Typography>
-                  <Input
-                    value={formData.title || ''}
-                    onChange={(e) => handleInputChange('title', e.target.value)}
-                    placeholder="Enter task title..."
-                    className="text-sm font-medium h-8"
-                  />
-                </div>
-
                 <div>
                   <Typography variant="body-small" className="text-muted-foreground mb-1.5 text-xs font-medium">
                     Description
@@ -385,20 +519,69 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 </div>
               </div>
             </Card>
-
-            {/* Comments Section */}
+            {/* Checklist */}
             <Card className="p-3 border border-border/20">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Typography variant="h5" className="font-semibold text-sm">
+                  <Typography variant="h4" className="font-semibold text-sm">Checklist</Typography>
+                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => handleAddChecklistItem('New item')}>+ Add item</Button>
+                </div>
+                <div className="space-y-2 max-h-56 overflow-y-auto">
+                  {checklistItems.length === 0 ? (
+                    <Typography variant="body-small" className="text-muted-foreground text-xs">No items</Typography>
+                  ) : (
+                    checklistItems.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 rounded-md border border-border/20">
+                        <input type="checkbox" className="w-4 h-4" checked={item.completed} onChange={() => handleToggleChecklistItem(index)} />
+                        <Typography variant="body-small" className={`text-sm flex-1 ${item.completed ? 'line-through text-muted-foreground' : ''}`}>{item.text}</Typography>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleRemoveChecklistItem(index)}>×</Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Right: Tags + Comments */}
+          <div className="space-y-3">
+            {/* Tags */}
+            <Card className="p-3 border border-border/20">
+              <div className="flex items-center justify-between mb-2">
+                <Typography variant="h4" className="font-semibold text-sm">Tags</Typography>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setShowTagInput(s => !s)}>＋</Button>
+              </div>
+              {showTagInput && (
+                <div className="flex gap-2 mb-2">
+                  <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} placeholder="New tag" className="h-8 text-sm" onKeyDown={(e) => { if (e.key==='Enter') handleAddTag(); }} />
+                  <Button size="sm" variant="outline" className="h-8" onClick={handleAddTag} disabled={!tagInput.trim()}>Add</Button>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-1.5">
+                {(formData.tags || []).length === 0 ? (
+                  <Typography variant="body-small" className="text-muted-foreground text-xs">No tags</Typography>
+                ) : (
+                  (formData.tags || []).map((tag, index) => (
+                    <Badge key={index} variant="outline" size="sm" className="text-xs px-2 py-0.5 cursor-pointer" onClick={() => handleRemoveTag(tag)}>
+                      {tag} ×
+                    </Badge>
+                  ))
+                )}
+              </div>
+            </Card>
+
+            {/* Comments */}
+            <Card className="p-3 border border-border/20">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Typography variant="h4" className="font-semibold text-sm">
                     Comments
                   </Typography>
                   <Badge variant="outline" size="sm" className="text-xs px-2 py-0.5">
                     {comments.length}
                   </Badge>
                 </div>
-                
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div className="space-y-2 max-h-64 overflow-y-auto">
                   {isLoadingComments ? (
                     <div className="text-center py-3">
                       <Typography variant="body-small" className="text-muted-foreground text-xs">
@@ -427,7 +610,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                       ))
                   )}
                 </div>
-                
                 <div className="border-t border-border/30 pt-3">
                   <div className="flex gap-2">
                     <Avatar size="sm" className="ring-1 ring-border flex-shrink-0 w-6 h-6">
@@ -461,13 +643,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 </div>
               </div>
             </Card>
-          </div>
 
-          {/* Sidebar */}
-          <div className="space-y-3">
-            {/* Task Info */}
+            {/* Task Info (moved below) */}
             <Card className="p-3 border border-border/20">
-              <Typography variant="h5" className="font-semibold mb-3 text-sm">
+              <Typography variant="h4" className="font-semibold mb-3 text-sm">
                 Task Info
               </Typography>
               <div className="space-y-2">
@@ -504,12 +683,12 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
             {/* Assignees */}
             <Card className="p-3 border border-border/20">
-              <Typography variant="h5" className="font-semibold mb-3 text-sm">
+              <Typography variant="h4" className="font-semibold mb-3 text-sm">
                 Assignees
               </Typography>
               <div className="space-y-1.5">
                 {task.assignees && task.assignees.length > 0 ? (
-                  task.assignees.map((assigneeId) => {
+                  task.assignees.map((assigneeId: string) => {
                     const user = users.find(u => u._id === assigneeId);
                     return user ? (
                       <div key={assigneeId} className="flex items-center gap-2">
@@ -538,11 +717,11 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
             {/* Tags */}
             {task.tags && task.tags.length > 0 && (
               <Card className="p-3 border border-border/20">
-                <Typography variant="h5" className="font-semibold mb-3 text-sm">
+                <Typography variant="h4" className="font-semibold mb-3 text-sm">
                   Tags
                 </Typography>
                 <div className="flex flex-wrap gap-1.5">
-                  {task.tags.map((tag, index) => (
+                  {task.tags.map((tag: string, index: number) => (
                     <Badge key={index} variant="outline" size="sm" className="text-xs px-2 py-0.5">
                       {tag}
                     </Badge>
