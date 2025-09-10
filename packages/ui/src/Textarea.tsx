@@ -11,6 +11,7 @@ export interface TextAreaProps
    * Whether to show a character count
    */
   showCharacterCount?: boolean;
+  
   /**
    * Maximum number of characters allowed
    */

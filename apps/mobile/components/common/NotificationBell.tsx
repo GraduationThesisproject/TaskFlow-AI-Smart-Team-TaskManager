@@ -50,6 +50,13 @@ export default function NotificationBell({
   }, [markAsRead]);
 
   const handleDeleteNotification = useCallback((notificationId: string) => {
+    console.log('🗑️ [NotificationBell] Delete button pressed for notification:', {
+      notificationId,
+      isValidMongoId: /^[a-f0-9]{24}$/i.test(notificationId),
+      notificationIdLength: notificationId?.length,
+      notificationIdType: typeof notificationId
+    });
+    
     Alert.alert(
       'Delete Notification',
       'Are you sure you want to delete this notification?',
@@ -58,7 +65,38 @@ export default function NotificationBell({
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => deleteNotification(notificationId),
+          onPress: async () => {
+            console.log('🗑️ [NotificationBell] User confirmed deletion for:', notificationId);
+            try {
+              await deleteNotification(notificationId);
+              console.log('✅ [NotificationBell] Notification deleted successfully:', notificationId);
+            } catch (error: any) {
+              console.error('❌ [NotificationBell] Failed to delete notification:', {
+                notificationId,
+                error: error?.message,
+                status: error?.response?.status,
+                data: error?.response?.data,
+                url: error?.config?.url
+              });
+              
+              let errorMessage = 'Unknown error';
+              if (error?.response?.status === 404) {
+                errorMessage = 'Notification not found on server';
+              } else if (error?.response?.status === 403) {
+                errorMessage = 'Permission denied to delete this notification';
+              } else if (error?.response?.status === 500) {
+                errorMessage = 'Server error occurred';
+              } else if (error?.message) {
+                errorMessage = error.message;
+              }
+              
+              Alert.alert(
+                'Delete Failed',
+                `Failed to delete notification: ${errorMessage}`,
+                [{ text: 'OK' }]
+              );
+            }
+          },
         },
       ]
     );
@@ -69,6 +107,8 @@ export default function NotificationBell({
   }, [markAllAsRead]);
 
   const handleClearAll = useCallback(() => {
+    console.log('🗑️ [NotificationBell] Clear all button pressed');
+    
     Alert.alert(
       'Clear All Notifications',
       'Are you sure you want to clear all notifications?',
@@ -77,7 +117,37 @@ export default function NotificationBell({
         {
           text: 'Clear All',
           style: 'destructive',
-          onPress: () => clearAllNotifications(),
+          onPress: async () => {
+            console.log('🗑️ [NotificationBell] User confirmed clear all');
+            try {
+              await clearAllNotifications();
+              console.log('✅ [NotificationBell] All notifications cleared successfully');
+            } catch (error: any) {
+              console.error('❌ [NotificationBell] Failed to clear all notifications:', {
+                error: error?.message,
+                status: error?.response?.status,
+                data: error?.response?.data,
+                url: error?.config?.url
+              });
+              
+              let errorMessage = 'Unknown error';
+              if (error?.response?.status === 404) {
+                errorMessage = 'No notifications found to clear';
+              } else if (error?.response?.status === 403) {
+                errorMessage = 'Permission denied to clear notifications';
+              } else if (error?.response?.status === 500) {
+                errorMessage = 'Server error occurred';
+              } else if (error?.message) {
+                errorMessage = error.message;
+              }
+              
+              Alert.alert(
+                'Clear All Failed',
+                `Failed to clear all notifications: ${errorMessage}`,
+                [{ text: 'OK' }]
+              );
+            }
+          },
         },
       ]
     );
@@ -122,7 +192,7 @@ export default function NotificationBell({
         <FontAwesome 
           name="bell" 
           size={size} 
-          color={colors.foreground} 
+          color={colors.primary} 
         />
         {showBadge && unreadCount > 0 && (
           <View style={[styles.badge, { backgroundColor: colors.destructive }]}>
@@ -161,7 +231,7 @@ export default function NotificationBell({
                     disabled={unreadCount === 0}
                   >
                     <FontAwesome 
-                      name="check-double" 
+                      name="check" 
                       size={16} 
                       color={unreadCount === 0 ? colors['muted-foreground'] : colors.foreground} 
                     />
@@ -226,22 +296,32 @@ export default function NotificationBell({
               </View>
             ) : (
               <View style={styles.notificationsList}>
-                {notifications.slice(0, 50).map((notification) => (
-                  <Card
-                    key={notification._id}
-                    style={[
-                      styles.notificationItem,
-                      { 
-                        backgroundColor: notification.isRead 
-                          ? colors.card 
-                          : colors.primary + '10',
-                        borderLeftColor: notification.isRead 
-                          ? colors.border 
-                          : colors.primary,
-                        borderLeftWidth: notification.isRead ? 1 : 4,
-                      }
-                    ]}
-                  >
+                {notifications.slice(0, 50).map((notification) => {
+                  // Debug notification structure
+                  console.log('📋 [NotificationBell] Rendering notification:', {
+                    _id: notification._id,
+                    id: notification.id,
+                    title: notification.title,
+                    isValidMongoId: /^[a-f0-9]{24}$/i.test(notification._id || notification.id || ''),
+                    clientOnly: notification.clientOnly
+                  });
+                  
+                  return (
+                    <Card
+                      key={notification._id || notification.id}
+                      style={[
+                        styles.notificationItem,
+                        { 
+                          backgroundColor: notification.isRead 
+                            ? colors.card 
+                            : colors.primary + '10',
+                          borderLeftColor: notification.isRead 
+                            ? colors.border 
+                            : colors.primary,
+                          borderLeftWidth: notification.isRead ? 1 : 4,
+                        }
+                      ]}
+                    >
                     <View style={styles.notificationContent}>
                       <View style={styles.notificationHeader}>
                         <View style={styles.notificationIcon}>
@@ -287,7 +367,7 @@ export default function NotificationBell({
                         )}
                         <TouchableOpacity
                           style={[styles.actionButton, { backgroundColor: colors.destructive + '20' }]}
-                          onPress={() => handleDeleteNotification(notification._id)}
+                          onPress={() => handleDeleteNotification(notification._id || notification.id)}
                         >
                           <FontAwesome name="trash" size={12} color={colors.destructive} />
                           <Text style={[TextStyles.caption.small, { color: colors.destructive }]}>
@@ -297,7 +377,8 @@ export default function NotificationBell({
                       </View>
                     </View>
                   </Card>
-                ))}
+                  );
+                })}
               </View>
             )}
           </ScrollView>
