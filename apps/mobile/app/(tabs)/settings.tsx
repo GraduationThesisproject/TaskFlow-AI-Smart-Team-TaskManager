@@ -179,10 +179,12 @@ export default function SettingsScreen() {
             <FontAwesome name="bars" size={24} color={colors.primary} />
           </TouchableOpacity>
         </View>
-        <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
-          Settings
-        </Text>
-        <View style={styles.headerSpacer} />
+        <View style={styles.headerCenter}>
+          <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>
+            Settings
+          </Text>
+        </View>
+        <View style={styles.headerRight} />
       </View>
 
 
@@ -213,6 +215,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
   },
   backButton: {
     padding: 8,

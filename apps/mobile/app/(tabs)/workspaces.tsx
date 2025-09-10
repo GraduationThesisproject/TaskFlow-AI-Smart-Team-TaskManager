@@ -73,9 +73,38 @@ export default function WorkspacesScreen() {
           onPress: async () => {
             try {
               await dispatch(deleteWorkspace({ id: workspaceId }));
-              Alert.alert('Success', 'Workspace deleted successfully!');
+              Alert.alert('Success', 'Workspace archived successfully!');
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete workspace');
+              Alert.alert('Error', 'Failed to archive workspace');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleArchiveWorkspace = (workspaceId: string, workspaceName: string, isArchived: boolean) => {
+    const action = isArchived ? 'restore' : 'archive';
+    const actionText = isArchived ? 'restore' : 'archive';
+    
+    Alert.alert(
+      `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} Workspace`,
+      `Are you sure you want to ${actionText} "${workspaceName}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: actionText.charAt(0).toUpperCase() + actionText.slice(1),
+          onPress: async () => {
+            try {
+              if (isArchived) {
+                // TODO: Implement restore workspace action
+                Alert.alert('Info', 'Restore functionality will be implemented soon');
+              } else {
+                await dispatch(deleteWorkspace({ id: workspaceId }));
+                Alert.alert('Success', 'Workspace archived successfully!');
+              }
+            } catch (error) {
+              Alert.alert('Error', `Failed to ${actionText} workspace`);
             }
           }
         }
@@ -155,12 +184,24 @@ export default function WorkspacesScreen() {
                   <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>
                     {workspace.name}
                   </Text>
-                  <TouchableOpacity 
-                    onPress={() => handleDeleteWorkspace(workspace._id, workspace.name)}
-                    style={styles.deleteButton}
-                  >
-                    <FontAwesome name="trash" size={16} color={colors.destructive} />
-                  </TouchableOpacity>
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity 
+                      onPress={() => handleArchiveWorkspace(workspace._id, workspace.name, workspace.status === 'archived')}
+                      style={styles.archiveButton}
+                    >
+                      <FontAwesome 
+                        name={workspace.status === 'archived' ? 'undo' : 'archive'} 
+                        size={16} 
+                        color={workspace.status === 'archived' ? colors.success : colors.warning} 
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      onPress={() => handleDeleteWorkspace(workspace._id, workspace.name)}
+                      style={styles.deleteButton}
+                    >
+                      <FontAwesome name="trash" size={16} color={colors.destructive} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 
                 <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
@@ -306,6 +347,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  archiveButton: {
+    padding: 8,
   },
   deleteButton: {
     padding: 8,

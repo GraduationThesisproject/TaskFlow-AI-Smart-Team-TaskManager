@@ -47,6 +47,22 @@ export const deleteBoard = createAsyncThunk(
   }
 );
 
+export const archiveBoard = createAsyncThunk(
+  'boards/archiveBoard',
+  async (boardId: string) => {
+    const response = await BoardService.archiveBoard(boardId);
+    return response.data;
+  }
+);
+
+export const unarchiveBoard = createAsyncThunk(
+  'boards/unarchiveBoard',
+  async (boardId: string) => {
+    const response = await BoardService.unarchiveBoard(boardId);
+    return response.data;
+  }
+);
+
 // Initial state
 const initialState: BoardState = {
   boards: [],
@@ -201,6 +217,48 @@ const boardSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to delete board';
       });
+    
+    // Archive board
+    builder
+      .addCase(archiveBoard.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(archiveBoard.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.boards.findIndex(board => board._id === action.payload._id);
+        if (index !== -1) {
+          state.boards[index] = { ...state.boards[index], ...action.payload };
+        }
+        if (state.currentBoard?._id === action.payload._id) {
+          state.currentBoard = { ...state.currentBoard, ...action.payload };
+        }
+      })
+      .addCase(archiveBoard.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to archive board';
+      });
+    
+    // Unarchive board
+    builder
+      .addCase(unarchiveBoard.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(unarchiveBoard.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.boards.findIndex(board => board._id === action.payload._id);
+        if (index !== -1) {
+          state.boards[index] = { ...state.boards[index], ...action.payload };
+        }
+        if (state.currentBoard?._id === action.payload._id) {
+          state.currentBoard = { ...state.currentBoard, ...action.payload };
+        }
+      })
+      .addCase(unarchiveBoard.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to unarchive board';
+      });
   }
 });
 
@@ -222,3 +280,19 @@ export const selectCurrentBoard = (state: { boards: BoardState }) => state.board
 export const selectBoardLoading = (state: { boards: BoardState }) => state.boards.loading;
 export const selectBoardError = (state: { boards: BoardState }) => state.boards.error;
 export const selectBoardSocketConnected = (state: { boards: BoardState }) => state.boards.socketConnected;
+
+// Computed selectors
+export const selectActiveBoards = (state: { boards: BoardState }) => {
+  return state.boards.boards.filter(board => board.isActive && !board.archived);
+};
+
+export const selectArchivedBoards = (state: { boards: BoardState }) => {
+  return state.boards.boards.filter(board => board.archived);
+};
+
+export const selectBoardsBySpaceAndStatus = (state: { boards: BoardState }, spaceId: string, status: 'active' | 'archived') => {
+  return state.boards.boards.filter(board => 
+    board.space === spaceId && 
+    (status === 'active' ? !board.archived : board.archived)
+  );
+};
