@@ -17,6 +17,7 @@ import MobileAlert from '@/components/common/Alert';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 import SpaceCard from '@/components/common/SpaceCard';
 
+
 // Toggle this to quickly demo with mock data
 const USE_MOCK = false;
 
@@ -272,7 +273,20 @@ export default function WorkspaceScreen() {
   // Loading state — only block the UI if we have no cached spaces yet
   if (!USE_MOCK && loading && !refreshing && (!Array.isArray(spaces) || spaces.length === 0)) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}> 
+
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <FontAwesome name="arrow-left" size={24} color={colors.primary} />
+          </TouchableOpacity>
+          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]} >
+            Workspace
+          </Text>
+          <View style={styles.headerSpacer} />
+        </View>
         <View style={styles.loadingContainer}>
           <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Loading workspace...</Text>
         </View>
@@ -294,6 +308,7 @@ export default function WorkspaceScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+
       {/* Inline banner alert */}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
         <MobileAlert
@@ -303,6 +318,7 @@ export default function WorkspaceScreen() {
           visible={alertVisible}
           onClose={() => setAlertVisible(false)}
         />
+
       </View>
 
       <ScrollView
@@ -408,6 +424,7 @@ export default function WorkspaceScreen() {
                   onPress={() => handleOpenSpace(space)}
                   onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, space.isArchived)}
                 />
+
               ))}
               {effectiveSpaces.length > 4 && (
                 <TouchableOpacity
@@ -654,6 +671,18 @@ const styles = StyleSheet.create({
   spaceActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   archiveButton: { padding: 4 },
   spaceStats: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  archiveCountdown: {
+    marginTop: 6,
+  },
+  countdownBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
   actionsContainer: { flexDirection: 'row', gap: 12 },
   actionButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12, gap: 8 },
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },

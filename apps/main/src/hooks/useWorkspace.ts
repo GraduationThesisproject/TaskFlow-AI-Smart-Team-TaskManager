@@ -480,9 +480,13 @@ export const useWorkspace = (params?: UseWorkspaceParams | string): UseWorkspace
   // Auto-fetch on mount - only run once
   useEffect(() => {
     if (autoFetch && workspaces.length === 0 && !loading && !isLoading) {
-      refetchWorkspaces();
+      if (global) {
+        loadGlobalWorkspaces();
+      } else {
+        loadWorkspaces();
+      }
     }
-  }, [autoFetch, workspaces.length, loading, isLoading]); // Add loading states to prevent unnecessary refetches
+  }, [autoFetch, workspaces.length, loading, isLoading, global, loadGlobalWorkspaces, loadWorkspaces]); // Add loading states to prevent unnecessary refetches
 
   // Load workspace data when workspaceId changes - only if we have a workspaceId
   useEffect(() => {
@@ -490,7 +494,7 @@ export const useWorkspace = (params?: UseWorkspaceParams | string): UseWorkspace
       loadWorkspace(workspaceId);
       // Remove loadWorkspaceMembers call since members are already included in workspace data
     }
-  }, [autoFetch, workspaceId, currentWorkspace?._id, loading, isLoading]); // Remove rules dependency to prevent infinite loop
+  }, [autoFetch, workspaceId, currentWorkspace?._id, loading, isLoading, loadWorkspace]); // Add loadWorkspace to dependencies
 
   return {
     // State

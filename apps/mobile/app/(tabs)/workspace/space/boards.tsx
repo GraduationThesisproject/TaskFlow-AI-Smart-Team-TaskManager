@@ -12,6 +12,7 @@ import { useWorkspaces } from '@/hooks/useWorkspaces';
 import SpaceHeader from '@/components/space/SpaceHeader';
 import SpaceRightSidebar from '@/components/space/SpaceRightSidebar';
 
+
 export default function SpaceBoardsScreen() {
   const colors = useThemeColors();
   const router = useRouter();
@@ -416,4 +417,5 @@ const styles = StyleSheet.create({
   previewCard: { height: 36, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth, marginBottom: 6 },
   viewMoreBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, marginTop: 8 },
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
+
 });
