@@ -20,11 +20,54 @@ export default function SpaceRightSidebar({ space, availableMembers = [], onInvi
     [space?.members]
   );
 
+  // derive available workspace member IDs for intersection
+  const availableIds = useMemo(
+    () => new Set(
+      (Array.isArray(availableMembers) ? availableMembers : [])
+        .filter(Boolean)
+        .map((m: any) => String(m?._id || m?.id || m?.user?._id || m?.user?.id))
+    ),
+    [availableMembers]
+  );
+
+  // derive owner ids (common shapes: space.owner{id,_id}, space.ownerId, space.createdBy{id,_id})
+  const ownerIds = useMemo(() => {
+    const ids: string[] = [];
+    const pushId = (val: any) => {
+      const s = String(val || '').trim();
+      if (s) ids.push(s);
+    };
+    if (space?.owner) {
+      pushId((space.owner as any)?._id || (space.owner as any)?.id);
+    }
+    if (space?.ownerId) pushId(space.ownerId);
+    if (space?.createdBy) {
+      pushId((space.createdBy as any)?._id || (space.createdBy as any)?.id || space.createdBy);
+    }
+    return new Set(ids.filter(Boolean));
+  }, [space?.owner, space?.ownerId, space?.createdBy]);
+
+  // only show members that are available in the workspace
+  const visibleMembers = useMemo(
+    () => members.filter((m: any) => {
+      const id = String(m?._id || m?.id || m?.user?._id || m?.user?.id);
+      return availableIds.has(id) && !ownerIds.has(id);
+    }),
+    [members, availableIds, ownerIds]
+  );
+
   // invite candidates (exclude already-in-space)
   const existingIds = useMemo(() => new Set(members.map((m: any) => String(m?._id || m?.id || m?.user?._id || m?.user?.id))), [members]);
   const candidates = useMemo(
-    () => (Array.isArray(availableMembers) ? availableMembers.filter(Boolean).filter((m: any) => !existingIds.has(String(m?._id || m?.id || m?.user?._id || m?.user?.id))) : []),
-    [availableMembers, existingIds]
+    () => (Array.isArray(availableMembers)
+      ? availableMembers
+          .filter(Boolean)
+          .filter((m: any) => {
+            const id = String(m?._id || m?.id || m?.user?._id || m?.user?.id);
+            return !existingIds.has(id) && !ownerIds.has(id);
+          })
+      : []),
+    [availableMembers, existingIds, ownerIds]
   );
 
   const [query, setQuery] = useState('');
@@ -65,10 +108,10 @@ export default function SpaceRightSidebar({ space, availableMembers = [], onInvi
         </RNView>
         <ScrollView style={{ maxHeight: 160 }}>
           <RNView style={{ gap: 8, marginTop: 10 }}>
-            {members.length === 0 ? (
-              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>No members yet.</Text>
+            {visibleMembers.length === 0 ? (
+              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>No available members.</Text>
             ) : (
-              members.map((m: any) => {
+              visibleMembers.map((m: any) => {
                 const id = String(m?._id || m?.id || m?.user?._id || m?.user?.id || Math.random());
                 const name = m?.name || m?.user?.name || 'User';
                 const avatar = m?.avatar || m?.profile?.avatar || m?.user?.avatar;

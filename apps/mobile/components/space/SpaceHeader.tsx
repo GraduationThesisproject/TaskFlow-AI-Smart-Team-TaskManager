@@ -9,13 +9,14 @@ export type SpaceHeaderProps = {
   onCreateBoard?: () => void;
   onSettings?: () => void;
   onMembers?: () => void;
+  onBackToWorkspace?: () => void;
 };
 
 const getProgressPercentage = (completed: number, total: number) => {
   return total > 0 ? Math.round((completed / total) * 100) : 0;
 };
 
-export default function SpaceHeader({ space, onCreateBoard, onSettings, onMembers }: SpaceHeaderProps) {
+export default function SpaceHeader({ space, onCreateBoard, onSettings, onMembers, onBackToWorkspace }: SpaceHeaderProps) {
   const colors = useThemeColors();
   const { width } = useWindowDimensions();
   const isWide = width >= 768; // tablet/landscape breakpoint to show right sidebar
@@ -40,6 +41,11 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
             {/* Left content */}
             <View style={{ flex: 1, paddingRight: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                {!!onBackToWorkspace && (
+                  <TouchableOpacity onPress={onBackToWorkspace} style={[styles.backIconBtn, { backgroundColor: colors.primary }]}> 
+                    <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>{'<'}</Text>
+                  </TouchableOpacity>
+                )}
                 <View style={[styles.iconBox, { backgroundColor: bgTint }]}>
                   <Text style={{ fontSize: 22 }}>{space.icon || '🏠'}</Text>
                 </View>
@@ -162,6 +168,11 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
           <>
             <View style={styles.rowBetween}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                {!!onBackToWorkspace && (
+                  <TouchableOpacity onPress={onBackToWorkspace} style={[styles.backIconBtn, { backgroundColor: colors.primary }]}> 
+                    <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>{'<'}</Text>
+                  </TouchableOpacity>
+                )}
                 <View style={[styles.iconBox, { backgroundColor: bgTint }]}>
                   <Text style={{ fontSize: 22 }}>{space.icon || '🏠'}</Text>
                 </View>
@@ -287,6 +298,7 @@ const styles = StyleSheet.create({
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBox: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   ghostBtn: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
+  backIconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   primaryBtn: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   statCard: { flexBasis: '48%', padding: 12, borderRadius: 12 },
