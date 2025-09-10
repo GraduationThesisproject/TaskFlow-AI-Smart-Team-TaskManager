@@ -9,6 +9,7 @@ import { useBoards } from '@/hooks/useBoards';
 import { fetchMembers } from '@/store/slices/workspaceSlice';
 import { archiveBoard, unarchiveBoard } from '@/store/slices/boardSlice';
 import { SpaceService } from '@/services/spaceService';
+import { formatArchiveCountdown, getArchiveCountdownStyle, getArchiveStatusMessage } from '@/utils/archiveTimeUtils';
 
 export default function SpaceBoards() {
   const router = useRouter();
@@ -393,6 +394,32 @@ export default function SpaceBoards() {
                     <Text style={TextStyles.caption.small} numberOfLines={1}>
                       Members: {uniqueSpaceMembers.length}
                     </Text>
+                    
+                    {/* Archive countdown for archived boards */}
+                    {b.archived && b.archiveExpiresAt && (
+                      <View style={styles.archiveCountdown}>
+                        <View style={[
+                          styles.countdownBadge,
+                          { 
+                            backgroundColor: getArchiveCountdownStyle(b.archiveExpiresAt).backgroundColor,
+                            borderColor: getArchiveCountdownStyle(b.archiveExpiresAt).borderColor,
+                            borderWidth: 1
+                          }
+                        ]}>
+                          <FontAwesome 
+                            name="clock-o" 
+                            size={10} 
+                            color={getArchiveCountdownStyle(b.archiveExpiresAt).color} 
+                          />
+                          <Text style={[
+                            TextStyles.caption.small, 
+                            { color: getArchiveCountdownStyle(b.archiveExpiresAt).color }
+                          ]}>
+                            {getArchiveStatusMessage(b.archiveExpiresAt)}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
                   </View>
                   <View style={styles.boardActions}>
                     <TouchableOpacity 
@@ -432,6 +459,18 @@ const styles = StyleSheet.create({
   boardItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth },
   boardActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   archiveBtn: { padding: 8, borderRadius: 8, backgroundColor: '#f3f4f6' },
+  archiveCountdown: {
+    marginTop: 4,
+  },
+  countdownBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
   primaryBtn: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, backgroundColor: '#e5e7eb' },
   secondaryBtn: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, backgroundColor: '#f3f4f6', flexDirection: 'row', alignItems: 'center' },
   ghostBtn: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, backgroundColor: 'transparent' },
