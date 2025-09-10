@@ -3,7 +3,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
@@ -14,6 +14,7 @@ import { store, persistor, useAppDispatch, useAppSelector } from '@/store';
 import { checkAuthStatus } from '@/store/slices/authSlice';
 import { SocketProvider } from '@/contexts/SocketContext';
 import { ToastProvider } from '@/components/common/ToastProvider';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -98,19 +99,42 @@ function RootLayoutNav() {
 function AuthGate() {
   const dispatch = useAppDispatch();
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const [hasOnboardingValue, setHasOnboardingValue] = useState<null | boolean>(null);
+  const devAlwaysShowOnboarding = true; // Force onboarding every launch for development testing
 
   // On app start, check auth status (reads token from storage and fetches profile with timeout)
   useEffect(() => {
     dispatch(checkAuthStatus());
   }, [dispatch]);
 
+  // Check onboarding flag
+  useEffect(() => {
+    (async () => {
+      try {
+        const v = await AsyncStorage.getItem('hasSeenOnboarding');
+        setHasOnboardingValue(v === 'true');
+      } catch {
+        setHasOnboardingValue(false);
+      }
+    })();
+  }, []);
+
   // Optional: show splash/blank while determining auth
-  if (isLoading) {
+  if (isLoading || hasOnboardingValue === null) {
     return null;
   }
 
   if (!isAuthenticated) {
-    // Unauthenticated: expose auth screens
+    // If onboarding not completed, only show onboarding route
+    if (devAlwaysShowOnboarding || !hasOnboardingValue) {
+      return (
+        <Stack>
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        </Stack>
+      );
+    }
+
+    // Otherwise, show auth routes
     return (
       <Stack>
         <Stack.Screen name="login" options={{ headerShown: false }} />
