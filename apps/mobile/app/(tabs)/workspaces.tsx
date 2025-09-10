@@ -6,7 +6,7 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector, useAppDispatch } from '@/store';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
-import { fetchWorkspaces, createWorkspace, deleteWorkspace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
+import { fetchWorkspaces, createWorkspace, deleteWorkspace, restoreWorkspace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
 import CreateWorkspaceModal from '@/components/common/CreateWorkspaceModal';
 import { useRouter } from 'expo-router';
 
@@ -97,8 +97,8 @@ export default function WorkspacesScreen() {
           onPress: async () => {
             try {
               if (isArchived) {
-                // TODO: Implement restore workspace action
-                Alert.alert('Info', 'Restore functionality will be implemented soon');
+                await dispatch(restoreWorkspace({ id: workspaceId }));
+                Alert.alert('Success', 'Workspace restored successfully!');
               } else {
                 await dispatch(deleteWorkspace({ id: workspaceId }));
                 Alert.alert('Success', 'Workspace archived successfully!');
