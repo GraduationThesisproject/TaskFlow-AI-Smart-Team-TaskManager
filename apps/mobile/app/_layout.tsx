@@ -31,27 +31,15 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    // Load fonts individually to avoid conflicts
+    // Load only essential fonts to avoid conflicts
     'SpaceMono-Regular': require('../assets/fonts/SpaceMono-Regular.ttf'),
-    // Register custom font family names WITHOUT commas (commas break CSS font-family on web)
-    // Inter variable fonts
-    Inter: require('../assets/fonts/Inter-VariableFont_opsz,wght.ttf'),
-    'Inter-Italic': require('../assets/fonts/Inter-Italic-VariableFont_opsz,wght.ttf'),
     
-    // Poppins fonts
+    // Poppins fonts (only load what exists)
     'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'),
     'Poppins-Medium': require('../assets/fonts/Poppins-Medium.ttf'),
     'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf'),
     'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'),
-    // FontAwesome icons - load separately to avoid conflicts
     'Poppins-Light': require('../assets/fonts/Poppins-Light.ttf'),
-    
-    // JetBrains Mono variable fonts
-    JetBrainsMono: require('../assets/fonts/JetBrainsMono-VariableFont_wght.ttf'),
-    'JetBrainsMono-Italic': require('../assets/fonts/JetBrainsMono-Italic-VariableFont_wght.ttf'),
-    
-    // Additional fonts
-    'SpaceMono-Regular': require('../assets/fonts/SpaceMono-Regular.ttf'),
     
     // FontAwesome icons
     ...FontAwesome.font,
@@ -109,12 +97,12 @@ function AuthGate() {
   // const dispatch = useAppDispatch();
   // const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
 
-  // // On app start, check auth status (reads token from storage and fetches profile with timeout)
+  // // // On app start, check auth status (reads token from storage and fetches profile with timeout)
   // useEffect(() => {
   //   dispatch(checkAuthStatus());
   // }, [dispatch]);
 
-  // // Optional: show splash/blank while determining auth
+  // // // Optional: show splash/blank while determining auth
   // if (isLoading) {
   //   return null;
   // }
@@ -128,18 +116,18 @@ function AuthGate() {
   //     </Stack>
   //   );
   // }
-  if (!isAuthenticated) {
-    // Unauthenticated: expose auth screens
-    return (
-      <Stack>
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
-        <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
-        <Stack.Screen name="verify-code" options={{ headerShown: false }} />
-        <Stack.Screen name="reset-password" options={{ headerShown: false }} />
-      </Stack>
-    );
-  }
+  // if (!isAuthenticated) {
+  //   // Unauthenticated: expose auth screens
+  //   return (
+  //     <Stack>
+  //       <Stack.Screen name="login" options={{ headerShown: false }} />
+  //       <Stack.Screen name="register" options={{ headerShown: false }} />
+  //       <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+  //       <Stack.Screen name="verify-code" options={{ headerShown: false }} />
+  //       <Stack.Screen name="reset-password" options={{ headerShown: false }} />
+  //     </Stack>
+  //   );
+  // }
 
   // Authenticated: show main tabs (workspace section lives under tabs/index)
   return (

@@ -38,7 +38,9 @@ import {
   Trash2,
   Calendar,
   User,
-  Clock
+  Clock,
+  List,
+  Grid3X3
 } from 'lucide-react-native';
 import { Text, View } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
@@ -89,13 +91,17 @@ export default function TasksScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   
   // Modal states
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
   const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
+  const [isTaskDetailsModalOpen, setIsTaskDetailsModalOpen] = useState(false);
+  const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState<string>('');
   const [editingColumn, setEditingColumn] = useState<Column | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
   // Form states
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -103,6 +109,12 @@ export default function TasksScreen() {
   const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high' | 'very high'>('medium');
   const [newColumnName, setNewColumnName] = useState('');
   const [newColumnColor, setNewColumnColor] = useState('#F9FAFB');
+  
+  // Edit task form states
+  const [editTaskTitle, setEditTaskTitle] = useState('');
+  const [editTaskDescription, setEditTaskDescription] = useState('');
+  const [editTaskPriority, setEditTaskPriority] = useState<'low' | 'medium' | 'high' | 'very high'>('medium');
+  const [editTaskDueDate, setEditTaskDueDate] = useState('');
   
   // Enhanced drag and drop state
   const [isDragging, setIsDragging] = useState(false);
@@ -473,13 +485,66 @@ export default function TasksScreen() {
   };
 
   const handleTaskPress = (task: Task) => {
-    // Simple tap does nothing - only long press initiates drag
-    return;
+    // Open task details modal on tap
+    setSelectedTask(task);
+    setIsTaskDetailsModalOpen(true);
+  };
+  
+  const handleEditTask = (task: Task) => {
+    setSelectedTask(task);
+    setEditTaskTitle(task.title);
+    setEditTaskDescription(task.description || '');
+    setEditTaskPriority(task.priority);
+    setEditTaskDueDate(task.dueDate || '');
+    setIsTaskDetailsModalOpen(false);
+    setIsEditTaskModalOpen(true);
+  };
+  
+  const handleUpdateTask = async () => {
+    if (!selectedTask || !editTaskTitle.trim()) {
+      Alert.alert('Error', 'Please enter a task title');
+      return;
+    }
+    
+    const updatedTask: Task = {
+      ...selectedTask,
+      title: editTaskTitle,
+      description: editTaskDescription,
+      priority: editTaskPriority,
+      dueDate: editTaskDueDate || undefined,
+      updatedAt: new Date().toISOString()
+    };
+    
+    setTasks(prev => prev.map(t => t._id === selectedTask._id ? updatedTask : t));
+    setEditTaskTitle('');
+    setEditTaskDescription('');
+    setEditTaskPriority('medium');
+    setEditTaskDueDate('');
+    setSelectedTask(null);
+    setIsEditTaskModalOpen(false);
+  };
+  
+  const closeTaskDetailsModal = () => {
+    setSelectedTask(null);
+    setIsTaskDetailsModalOpen(false);
+  };
+  
+  const closeEditTaskModal = () => {
+    setEditTaskTitle('');
+    setEditTaskDescription('');
+    setEditTaskPriority('medium');
+    setEditTaskDueDate('');
+    setSelectedTask(null);
+    setIsEditTaskModalOpen(false);
   };
   
   const handleAddTaskToColumn = (columnId: string) => {
     setSelectedColumn(columnId);
     setIsAddTaskModalOpen(true);
+  };
+
+  const toggleViewMode = () => {
+    setViewMode(prev => prev === 'kanban' ? 'list' : 'kanban');
   };
   
   // Group tasks by column with placeholder behavior
@@ -526,6 +591,122 @@ export default function TasksScreen() {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // List View Component
+  const ListView = () => {
+    const colors = useThemeColors();
+    
+    const getStatusDisplayName = (status: string) => {
+      switch (status) {
+        case 'todo': return 'To Do';
+        case 'in_progress': return 'In Progress';
+        case 'review': return 'Review';
+        case 'done': return 'Done';
+        default: return status;
+      }
+    };
+
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'todo': return '#f59e0b';
+        case 'in_progress': return '#3b82f6';
+        case 'review': return '#8b5cf6';
+        case 'done': return '#10b981';
+        default: return colors['muted-foreground'];
+      }
+    };
+
+    return (
+      <ScrollView
+        style={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {tasks.map((task) => (
+          <TouchableOpacity
+            key={task._id}
+            style={[styles.listItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => handleTaskPress(task)}
+          >
+            <View style={styles.listItemHeader}>
+              <Text style={[styles.listItemTitle, { color: colors.foreground }]} numberOfLines={1}>
+                {task.title}
+              </Text>
+              <View style={[styles.listStatusBadge, { backgroundColor: getStatusColor(task.status) }]}>
+                <Text style={styles.listStatusText}>
+                  {getStatusDisplayName(task.status)}
+                </Text>
+              </View>
+            </View>
+            
+            {task.description && (
+              <Text style={[styles.listItemDescription, { color: colors['muted-foreground'] }]} numberOfLines={2}>
+                {task.description}
+              </Text>
+            )}
+            
+            <View style={styles.listItemFooter}>
+              <View style={styles.listItemMeta}>
+                <View style={[styles.listPriorityBadge, { backgroundColor: getPriorityColor(task.priority) }]}>
+                  <Text style={styles.listPriorityText}>
+                    {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                  </Text>
+                </View>
+                
+                {task.dueDate && (
+                  <View style={styles.listDueDateContainer}>
+                    <Calendar color={colors['muted-foreground']} size={14} />
+                    <Text style={[styles.listDueDate, { color: colors['muted-foreground'] }]}>
+                      {formatDate(task.dueDate)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              
+              <View style={styles.listAssigneesContainer}>
+                {task.assignees.slice(0, 3).map((assignee, idx) => (
+                  <Image
+                    key={assignee.id}
+                    source={{ uri: assignee.avatar || 'https://via.placeholder.com/24' }}
+                    style={[
+                      styles.listAssigneeAvatar,
+                      { 
+                        borderColor: colors.background,
+                        marginLeft: idx > 0 ? -6 : 0 
+                      }
+                    ]}
+                  />
+                ))}
+                {task.assignees.length > 3 && (
+                  <View style={[
+                    styles.listMoreAssignees,
+                    { 
+                      backgroundColor: colors.muted,
+                      borderColor: colors.background 
+                    }
+                  ]}>
+                    <Text style={[styles.listMoreAssigneesText, { color: colors.foreground }]}>
+                      +{task.assignees.length - 3}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))}
+        
+        {tasks.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={[styles.emptyStateText, { color: colors['muted-foreground'] }]}>
+              No tasks found. Add your first task to get started!
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    );
   };
 
   // Draggable Task Card Component
@@ -582,7 +763,7 @@ export default function TasksScreen() {
         })();
       });
     
-    const combinedGesture = Gesture.Race(longPressGesture, panGesture);
+    const combinedGesture = Gesture.Simultaneous(longPressGesture, panGesture);
     
     const animatedStyle = useAnimatedStyle(() => {
       return {
@@ -624,10 +805,15 @@ export default function TasksScreen() {
             animatedStyle
           ]}
         >
-          <View style={styles.taskHeader}>
-            <Text style={[styles.taskTitle, { color: colors.foreground }]} numberOfLines={2}>
-              {task.title}
-            </Text>
+          <TouchableOpacity 
+            style={styles.taskContent}
+            onPress={() => handleTaskPress(task)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.taskHeader}>
+              <Text style={[styles.taskTitle, { color: colors.foreground }]} numberOfLines={2}>
+                {task.title}
+              </Text>
             <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(task.priority) }]}>
               <Text style={styles.priorityText}>
                 {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
@@ -707,6 +893,7 @@ export default function TasksScreen() {
               )}
             </View>
           </View>
+          </TouchableOpacity>
         </Animated.View>
       </GestureDetector>
     );
@@ -743,37 +930,51 @@ export default function TasksScreen() {
 
   return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Minimal Header */}
+      {/* Header with Toggle Button */}
       <View style={styles.minimalHeader}>
         <Text style={[styles.boardTitle, { color: colors.foreground }]}>
           Task Board
         </Text>
+        <TouchableOpacity 
+          style={[styles.toggleButton, { backgroundColor: colors.primary }]}
+          onPress={toggleViewMode}
+        >
+          {viewMode === 'kanban' ? (
+            <List color="white" size={16} />
+          ) : (
+            <Grid3X3 color="white" size={16} />
+          )}
+          <Text style={styles.toggleButtonText}>
+            {viewMode === 'kanban' ? 'List View' : 'Kanban View'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Board Columns */}
-      <ScrollView
-        ref={boardScrollRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.boardContainer}
-        contentContainerStyle={styles.boardContent}
-        pagingEnabled={true}
-        snapToInterval={columnWidth + 16}
-        decelerationRate="fast"
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {columns.map((column) => {
-          const columnTasks = tasksByColumn[column._id] || [];
-          return (
-            <View
-              key={column._id}
-              ref={(ref) => {
-                columnRefs.current[column._id] = ref;
-              }}
-              style={[{ width: columnWidth }, styles.column]}
-            >
+      {/* Conditional Rendering: Kanban or List View */}
+      {viewMode === 'kanban' ? (
+        <ScrollView
+          ref={boardScrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.boardContainer}
+          contentContainerStyle={styles.boardContent}
+          pagingEnabled={true}
+          snapToInterval={columnWidth + 16}
+          decelerationRate="fast"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {columns.map((column) => {
+            const columnTasks = tasksByColumn[column._id] || [];
+            return (
+              <View
+                key={column._id}
+                ref={(ref) => {
+                  columnRefs.current[column._id] = ref;
+                }}
+                style={[{ width: columnWidth }, styles.column]}
+              >
               {/* Column Header - No Background Color */}
               <View style={[styles.columnHeader, { backgroundColor: 'transparent' }]}>
                 <View style={styles.columnTitleRow}>
@@ -855,8 +1056,10 @@ export default function TasksScreen() {
             <Text style={[styles.addListText, { color: colors['muted-foreground'] }]}>Add Column</Text>
           </View>
         </TouchableOpacity>
-      </ScrollView>
-
+        </ScrollView>
+      ) : (
+        <ListView />
+      )}
 
       {/* Add Task Modal */}
       <Modal
@@ -1036,6 +1239,175 @@ export default function TasksScreen() {
                 </TouchableOpacity>
               </View>
             )}
+          </ScrollView>
+        </View>
+      </Modal>
+      
+      {/* Task Details Modal */}
+      <Modal
+        visible={isTaskDetailsModalOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={closeTaskDetailsModal}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={closeTaskDetailsModal}>
+              <Text style={[styles.modalCancelText, { color: colors['muted-foreground'] }]}>Close</Text>
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Task Details</Text>
+            <TouchableOpacity onPress={() => selectedTask && handleEditTask(selectedTask)}>
+              <Text style={[styles.modalSaveText, { color: colors.primary }]}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent}>
+            {selectedTask && (
+              <>
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.inputLabel, { color: colors.foreground }]}>Title</Text>
+                  <Text style={[styles.taskDetailText, { color: colors.foreground }]}>
+                    {selectedTask.title}
+                  </Text>
+                </View>
+                
+                {selectedTask.description && (
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: colors.foreground }]}>Description</Text>
+                    <Text style={[styles.taskDetailText, { color: colors.foreground }]}>
+                      {selectedTask.description}
+                    </Text>
+                  </View>
+                )}
+                
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.inputLabel, { color: colors.foreground }]}>Priority</Text>
+                  <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(selectedTask.priority) }]}>
+                    <Text style={styles.priorityText}>
+                      {selectedTask.priority.charAt(0).toUpperCase() + selectedTask.priority.slice(1)}
+                    </Text>
+                  </View>
+                </View>
+                
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.inputLabel, { color: colors.foreground }]}>Status</Text>
+                  <Text style={[styles.taskDetailText, { color: colors.foreground }]}>
+                    {selectedTask.status.replace('_', ' ').toUpperCase()}
+                  </Text>
+                </View>
+                
+                {selectedTask.dueDate && (
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: colors.foreground }]}>Due Date</Text>
+                    <View style={styles.dueDateContainer}>
+                      <Calendar color={colors['muted-foreground']} size={16} />
+                      <Text style={[styles.taskDetailText, { color: colors.foreground }]}>
+                        {formatDate(selectedTask.dueDate)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                
+                {selectedTask.assignees.length > 0 && (
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: colors.foreground }]}>Assignees</Text>
+                    <View style={styles.assigneesContainer}>
+                      {selectedTask.assignees.map((assignee) => (
+                        <View key={assignee.id} style={styles.assigneeItem}>
+                          <Image
+                            source={{ uri: assignee.avatar || 'https://via.placeholder.com/32' }}
+                            style={styles.assigneeAvatarLarge}
+                          />
+                          <Text style={[styles.assigneeName, { color: colors.foreground }]}>
+                            {assignee.name}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
+      
+      {/* Edit Task Modal */}
+      <Modal
+        visible={isEditTaskModalOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={closeEditTaskModal}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={closeEditTaskModal}>
+              <Text style={[styles.modalCancelText, { color: colors['muted-foreground'] }]}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Edit Task</Text>
+            <TouchableOpacity onPress={handleUpdateTask}>
+              <Text style={[styles.modalSaveText, { color: colors.primary }]}>Save</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: colors.foreground }]}>Title *</Text>
+              <TextInput
+                style={[styles.textInput, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
+                value={editTaskTitle}
+                onChangeText={setEditTaskTitle}
+                placeholder="Enter task title"
+                placeholderTextColor={colors['muted-foreground']}
+              />
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: colors.foreground }]}>Description</Text>
+              <TextInput
+                style={[styles.textAreaInput, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
+                value={editTaskDescription}
+                onChangeText={setEditTaskDescription}
+                placeholder="Enter task description"
+                placeholderTextColor={colors['muted-foreground']}
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: colors.foreground }]}>Priority</Text>
+              <View style={styles.prioritySelector}>
+                {(['low', 'medium', 'high', 'very high'] as const).map((priority) => (
+                  <TouchableOpacity
+                    key={priority}
+                    style={[
+                      styles.priorityOption,
+                      { backgroundColor: editTaskPriority === priority ? getPriorityColor(priority) : colors.muted }
+                    ]}
+                    onPress={() => setEditTaskPriority(priority)}
+                  >
+                    <Text style={[
+                      styles.priorityOptionText,
+                      { color: editTaskPriority === priority ? 'white' : colors.foreground }
+                    ]}>
+                      {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: colors.foreground }]}>Due Date</Text>
+              <TextInput
+                style={[styles.textInput, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
+                value={editTaskDueDate}
+                onChangeText={setEditTaskDueDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={colors['muted-foreground']}
+              />
+            </View>
           </ScrollView>
         </View>
       </Modal>
@@ -1290,24 +1662,6 @@ const styles = StyleSheet.create({
   },
   
   // Task card additional styles
-  taskDescription: {
-    fontSize: 14,
-    marginBottom: 8,
-    lineHeight: 20,
-  },
-  progressText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  moreAssignees: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: -8,
-  },
   moreAssigneesText: {
     fontSize: 10,
     fontWeight: '600',
@@ -1319,6 +1673,180 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  taskDescription: {
+    fontSize: 14,
+    marginTop: 4,
+    lineHeight: 20,
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  moreAssignees: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholder: {
+    height: 60,
+    marginVertical: 4,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0.5,
+  },
+  placeholderText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  addTaskInColumn: {
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  // Header styles
+  minimalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 48,
+    paddingBottom: 16,
+  },
+  boardTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  toggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  toggleButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  
+  // List View styles
+  listContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  listItem: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  listItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  listItemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 8,
+  },
+  listStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  listStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'white',
+  },
+  listItemDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  listItemFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  listItemMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  listPriorityBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  listPriorityText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: 'white',
+  },
+  listDueDateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  listDueDate: {
+    fontSize: 12,
+  },
+  listAssigneesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  listAssigneeAvatar: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    marginRight: -4,
+    borderWidth: 1,
+    borderColor: 'white',
+  },
+  listMoreAssignees: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  listMoreAssigneesText: {
+    fontSize: 8,
+    fontWeight: '600',
+    color: 'white',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    textAlign: 'center',
   },
   
   // Modal styles
@@ -1404,47 +1932,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     borderRadius: 8,
-    gap: 8,
   },
   deleteButtonText: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  addTaskInColumn: {
-    borderRadius: 12,
-    height: 48,
-    marginTop: 12,
-    marginBottom: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-  },
-  minimalHeader: {
-    paddingHorizontal: 16,
-    paddingTop: 48,
-    paddingBottom: 16,
-    alignItems: 'center',
-  },
-  boardTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  placeholder: {
-    height: 100,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: '#3b82f6',
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    marginBottom: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: {
-    color: '#3b82f6',
     fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  
+  // Task Details Modal styles
+  taskDetailText: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginTop: 4,
+  },
+  assigneeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12,
+  },
+  assigneeAvatarLarge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2,
+  },
+  assigneeName: {
+    fontSize: 16,
     fontWeight: '500',
   },
+  taskContent: {
+    flex: 1,
+  },
 });
+
+export default Board;
