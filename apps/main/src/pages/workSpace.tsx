@@ -25,7 +25,7 @@ const WorkSpace: React.FC = React.memo(() => {
     loading: workspaceLoading, 
     error: workspaceError,
     loadWorkspaces 
-  } = useWorkspace();
+  } = useWorkspace({ autoFetch: false });
 
   // Get space manager for handling space selection
   const { selectSpace } = useSpaceManager();

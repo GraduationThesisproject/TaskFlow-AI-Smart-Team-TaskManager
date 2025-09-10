@@ -9,6 +9,7 @@ import Sidebar from '@/components/navigation/Sidebar';
 import { fetchWorkspaces, createWorkspace, deleteWorkspace, restoreWorkspace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
 import CreateWorkspaceModal from '@/components/common/CreateWorkspaceModal';
 import { useRouter } from 'expo-router';
+import { formatArchiveCountdown, getArchiveCountdownStyle, getArchiveStatusMessage } from '@/utils/archiveTimeUtils';
 
 export default function WorkspacesScreen() {
   const colors = useThemeColors();
@@ -249,6 +250,32 @@ export default function WorkspacesScreen() {
                       </Text>
                     </View>
                   </View>
+                  
+                  {/* Archive countdown for archived workspaces */}
+                  {workspace.status === 'archived' && workspace.archiveExpiresAt && (
+                    <View style={styles.archiveCountdown}>
+                      <View style={[
+                        styles.countdownBadge,
+                        { 
+                          backgroundColor: getArchiveCountdownStyle(workspace.archiveExpiresAt).backgroundColor,
+                          borderColor: getArchiveCountdownStyle(workspace.archiveExpiresAt).borderColor,
+                          borderWidth: 1
+                        }
+                      ]}>
+                        <FontAwesome 
+                          name="clock-o" 
+                          size={12} 
+                          color={getArchiveCountdownStyle(workspace.archiveExpiresAt).color} 
+                        />
+                        <Text style={[
+                          TextStyles.caption.small, 
+                          { color: getArchiveCountdownStyle(workspace.archiveExpiresAt).color }
+                        ]}>
+                          {getArchiveStatusMessage(workspace.archiveExpiresAt)}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
                 </View>
               </Card>
             ))}
@@ -378,6 +405,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  archiveCountdown: {
+    marginTop: 8,
+  },
+  countdownBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
     alignSelf: 'flex-start',
   },
   emptyState: {

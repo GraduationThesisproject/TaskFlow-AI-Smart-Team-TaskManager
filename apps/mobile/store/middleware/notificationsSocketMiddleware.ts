@@ -355,6 +355,25 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         }
       } catch (e) {
         console.warn('⚠️ Failed to process invitation:accepted', e);
+    socket.on('notifications:deleted', ({ notificationId }) => {
+      const stateNow = store.getState() as RootState;
+      if (!isRealTimeEnabled(stateNow)) return;
+      console.log('🗑️ [notificationsSocketMiddleware] notifications:deleted received', { notificationId });
+      
+      // Remove the notification from local state
+      const currentNotifications = stateNow.notifications.notifications;
+      const notificationExists = currentNotifications.find(n => n._id === notificationId);
+      
+      if (notificationExists) {
+        // Dispatch a local action to remove the notification
+        store.dispatch({
+          type: 'notifications/removeNotification',
+          payload: notificationId
+        });
+        console.log('🗑️ [notificationsSocketMiddleware] Removed notification from local state:', notificationId);
+      } else {
+        console.log('🗑️ [notificationsSocketMiddleware] Notification not found in local state:', notificationId);
+
       }
     });
 

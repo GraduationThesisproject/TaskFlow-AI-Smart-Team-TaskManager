@@ -8,6 +8,7 @@ import {
   markAllNotificationsAsRead,
   deleteNotification as deleteNotificationAction,
   clearReadNotifications,
+  clearAllNotifications as clearAllNotificationsAction,
   clearError,
   addNotification,
   updateNotificationStatus,
@@ -135,9 +136,8 @@ export const useNotifications = (): UseNotificationsReturn => {
   const clearAllNotificationsHandler = useCallback(() => {
     if (!token || !realTimeEnabled) return;
     if (env.ENABLE_DEBUG) console.log('🧹 Clearing all notifications');
-    // Note: clearAllNotifications action doesn't exist in the slice
-    // This would need to be implemented in the notification slice if needed
-  }, [token, realTimeEnabled]);
+    dispatch(clearAllNotificationsAction());
+  }, [dispatch, token, realTimeEnabled]);
 
   const clearErrorHandler = useCallback(() => {
     dispatch(clearError());
@@ -160,6 +160,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     markAllAsRead,
     deleteNotification,
     clearReadNotifications: clearReadNotificationsHandler,
+    clearAllNotifications: clearAllNotificationsHandler,
     clearError: clearErrorHandler,
   };
 };

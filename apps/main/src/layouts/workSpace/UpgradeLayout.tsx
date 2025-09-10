@@ -45,7 +45,7 @@ const UpgradeContent: React.FC = () => (
 );
 
 const UpgradeLayout: React.FC = () => {
-  const { workspace, loading, error } = useWorkspace();
+  const { workspace, loading, error } = useWorkspace({ autoFetch: false });
 
   if (loading) return <div>Loading upgrade options...</div>;
   if (error) return <div>Error: {error}</div>;
