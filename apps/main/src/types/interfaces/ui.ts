@@ -462,12 +462,11 @@ export interface AddTaskModalProps extends BaseUIProps {
 
 export interface CommentItemProps extends BaseUIProps {
   comment: any;
-  onEdit?: (comment: any) => void;
-  onDelete?: (commentId: string) => void;
-  onReply?: (comment: any) => void;
-  canEdit?: boolean;
-  canDelete?: boolean;
-  canReply?: boolean;
+  users: { _id: string; name: string; email?: string; avatar?: string }[];
+  currentUserId: string;
+  onCommentUpdate: (commentId: string, updated: any) => void;
+  onCommentDelete: (commentId: string) => void;
+  onReplyAdd: (commentId: string, content: string) => void;
 }
 
 export interface DraggableColumnProps extends BaseUIProps {

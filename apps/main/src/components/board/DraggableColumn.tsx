@@ -1,181 +1,253 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import {
   Card,
   CardHeader,
   CardContent,
-  Badge,
   Typography,
-  Button,
+  Button
 } from '@taskflow/ui';
 import { DraggableTask } from './DraggableTask';
-import { useTheme } from '../../hooks';
 import type { DraggableColumnProps } from '../../types/interfaces/ui';
-
 
 export const DraggableColumn: React.FC<DraggableColumnProps> = ({
   column,
   tasks,
   index,
+  boardId,
   onTaskClick,
   onAddTask,
   onEditColumn,
+  onDeleteColumn,
 }) => {
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  const handleAddTask = () => {
+    setIsAddingTask(true);
+    setNewTaskTitle('');
+  };
+
+  const handleCancelAddTask = () => {
+    setIsAddingTask(false);
+    setNewTaskTitle('');
+  };
+
+  const handleConfirmAddTask = async () => {
+    if (newTaskTitle.trim()) {
+      try {
+        await onAddTask({
+          title: newTaskTitle.trim(),
+          column: column._id,
+          board: boardId,
+          boardId: boardId,
+          status: 'todo'
+        } as any);
+        setIsAddingTask(false);
+        setNewTaskTitle('');
+      } catch (error) {
+        console.error('Failed to add task:', error);
+      }
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleConfirmAddTask();
+    } else if (e.key === 'Escape') {
+      handleCancelAddTask();
+    }
+  };
 
   const getColumnColor = (color?: string) => {
     switch (color) {
-      case 'primary': return 'bg-blue-500';
-      case 'secondary': return 'bg-purple-500';
+      case 'primary': return 'bg-primary';
+      case 'secondary': return 'bg-secondary';
       case 'success': return 'bg-green-500';
       case 'warning': return 'bg-yellow-500';
       case 'error': return 'bg-red-500';
       case 'info': return 'bg-cyan-500';
-      default: return 'bg-gray-500';
+      default: return 'bg-muted-foreground';
     }
   };
 
-
+  const getColumnProgressColor = (color?: string) => {
+    switch (color) {
+      case 'primary': return 'bg-primary/20';
+      case 'secondary': return 'bg-secondary/20';
+      case 'success': return 'bg-green-500/20';
+      case 'warning': return 'bg-yellow-500/20';
+      case 'error': return 'bg-red-500/20';
+      case 'info': return 'bg-cyan-500/20';
+      default: return 'bg-muted/30';
+    }
+  };
 
   const completedTasks = tasks.filter(task => task.status === 'done').length;
   const progressPercentage = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
 
-    return (
+  return (
     <Draggable draggableId={column._id} index={index}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={`flex-shrink-0 w-80 ${
-            snapshot.isDragging ? 'opacity-50 rotate-1' : ''
+            snapshot.isDragging ? 'opacity-90' : ''
           }`}
+          style={provided.draggableProps.style}
         >
-            <Card 
-              className="h-fit border-0 shadow-xl backdrop-blur-sm rounded-2xl transition-all duration-300 hover:shadow-2xl"
-              style={{
-                backgroundColor: column.style?.backgroundColor || '#F9FAFB',
-                boxShadow: `0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)`,
-                border: `1px solid ${column.style?.backgroundColor ? `${column.style.backgroundColor}20` : 'rgba(255, 255, 255, 0.1)'}`
-              }}
-            >
-              <CardHeader className="p-6 pb-4">
+          <Card 
+            className="h-fit border border-border/20 backdrop-blur-sm rounded-2xl transition-all duration-300 hover:border-border/40 bg-card/95 overflow-hidden group hover:scale-[1.02]"
+            style={{
+              backgroundColor: column.style?.backgroundColor || undefined,
+              borderColor: column.style?.backgroundColor ? `${column.style.backgroundColor}20` : undefined
+            }}
+          >
+            <CardHeader className="p-4 pb-3 relative">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              
+              <div className="relative">
                 <div 
-                  className="flex items-center justify-between mb-3 cursor-move rounded-lg p-2 -m-2 transition-all duration-200"
-                  style={{
-                    background: column.style?.backgroundColor ? `${column.style.backgroundColor}15` : 'rgba(255, 255, 255, 0.05)'
-                  }}
+                  className="flex items-center justify-between mb-3 cursor-grab active:cursor-grabbing group"
                   {...provided.dragHandleProps}
                 >
                   <div className="flex items-center gap-3">
-                    {column.style?.icon && (
-                      <span className="text-2xl drop-shadow-sm">{column.style.icon}</span>
-                    )}
                     <div 
-                      className={`w-3 h-3 rounded-full shadow-sm ${getColumnColor(column.style?.color || column.color)}`}
+                      className={`w-3 h-3 rounded-full ${getColumnColor(column.style?.color || column.color)}`}
                       style={column.style?.color?.startsWith('#') ? { backgroundColor: column.style.color } : {}}
                     />
-                    <Typography variant="h4" className="font-bold drop-shadow-sm">
+                    <Typography variant="h4" className="font-semibold text-foreground">
                       {column.name}
                     </Typography>
-                    <span className="text-muted-foreground text-sm opacity-60">⋮⋮</span>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div className="w-1 h-1 bg-muted-foreground/40 rounded-full"></div>
+                      <div className="w-1 h-1 bg-muted-foreground/40 rounded-full"></div>
+                      <div className="w-1 h-1 bg-muted-foreground/40 rounded-full"></div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge 
-                      variant="secondary" 
-                      className="backdrop-blur-sm border-0 shadow-sm"
-                      style={{
-                        backgroundColor: column.style?.backgroundColor ? `${column.style.backgroundColor}25` : 'rgba(255, 255, 255, 0.1)',
-                        color: column.style?.backgroundColor ? '#374151' : 'inherit'
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddTask();
                       }}
+                      className="w-7 h-7 p-0 hover:bg-primary/10 rounded-full text-primary hover:text-primary"
+                      title="Add Task"
                     >
-                      {tasks.length} tasks
-                    </Badge>
-                    <div className="relative">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEditColumn(column._id)}
-                        className="w-8 h-8 p-0 hover:scale-110 transition-transform duration-200"
-                        style={{
-                          backgroundColor: column.style?.backgroundColor ? `${column.style.backgroundColor}20` : 'rgba(255, 255, 255, 0.05)'
-                        }}
-                      >
-                        ⚙️
-                      </Button>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditColumn(column._id);
+                      }}
+                      className="w-7 h-7 p-0 hover:bg-muted/50 rounded-full"
+                      title="Edit Column"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756.426-1.756 2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteColumn(column._id);
+                      }}
+                      className="w-7 h-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-500/10 rounded-full"
+                      title="Delete Column"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent"></div>
+              </div>
+
+              {isAddingTask && (
+                <div className="px-4 py-3 border-b border-border/20">
+                  <div className="h-8 border-2 border-primary/60 rounded-lg bg-card backdrop-blur-md overflow-hidden">
+                    <div className="h-full flex items-center px-3">
+                      <input
+                        type="text"
+                        value={newTaskTitle}
+                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                        onKeyDown={handleKeyPress}
+                        onBlur={handleCancelAddTask}
+                        placeholder="Enter task title..."
+                        className="w-full text-sm font-medium text-foreground placeholder-muted-foreground bg-transparent border-0 outline-none focus:outline-none"
+                        autoFocus
+                      />
                     </div>
                   </div>
                 </div>
+              )}
 
-                                {/* Progress Bar */}
-                <div className="mb-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <Typography variant="body-small" className="text-muted-foreground drop-shadow-sm">
-                      {Math.round(progressPercentage)}% Done
-                    </Typography>
-                    <Typography variant="body-small" className="text-muted-foreground drop-shadow-sm">
-                      {completedTasks}/{tasks.length}
-                    </Typography>
-                  </div>
-                  <div 
-                    className="w-full rounded-full h-2 shadow-inner"
-                    style={{
-                      backgroundColor: column.style?.backgroundColor ? `${column.style.backgroundColor}30` : 'rgba(0, 0, 0, 0.1)'
+              <div className="mb-2">
+                <div className="flex justify-between items-center mb-2">
+                  <Typography variant="body-small" className="text-muted-foreground text-xs font-medium">
+                    Progress
+                  </Typography>
+                  <Typography variant="body-small" className="text-muted-foreground text-xs">
+                    {completedTasks}/{tasks.length}
+                  </Typography>
+                </div>
+                <div className="relative w-full bg-muted/15 rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-500 ease-out ${getColumnProgressColor(column.style?.color || column.color)} relative overflow-hidden`}
+                    style={{ 
+                      width: `${progressPercentage}%`,
+                      backgroundColor: column.style?.color?.startsWith('#') ? column.style.color + '40' : undefined
                     }}
                   >
-                    <div
-                      className="h-2 rounded-full transition-all duration-300 shadow-sm"
-                      style={{ 
-                        width: `${progressPercentage}%`,
-                        backgroundColor: column.style?.color?.startsWith('#') ? column.style.color : undefined,
-                        backgroundImage: column.style?.color?.startsWith('#') ? `linear-gradient(90deg, ${column.style.color}, ${column.style.color}dd)` : undefined
-                      }}
-                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
                   </div>
                 </div>
+              </div>
 
-                {/* WIP Limit Warning */}
-                {column.wipLimit && tasks.length > column.wipLimit && (
-                  <div 
-                    className="mb-4 p-3 rounded-lg backdrop-blur-sm shadow-sm"
-                    style={{
-                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.2)'
-                    }}
+              {column.wipLimit && tasks.length > column.wipLimit && (
+                <div className="mb-3 p-2 bg-red-500/10 border border-red-500/20 rounded-md">
+                  <Typography variant="body-small" className="text-red-600 dark:text-red-400 text-xs">
+                    ⚠️ WIP exceeded ({tasks.length}/{column.wipLimit})
+                  </Typography>
+                </div>
+              )}
+            </CardHeader>
+
+            <CardContent className="p-4 pt-0">
+              <Droppable droppableId={column._id} type="TASK">
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`max-h-[300px] overflow-y-auto column-task-scroll transition-all duration-200 ${
+                      snapshot.isDraggingOver ? 'bg-primary/10 rounded-lg' : ''
+                    }`}
                   >
-                    <Typography variant="body-small" className="text-red-600 dark:text-red-400 drop-shadow-sm">
-                      ⚠️ WIP Limit exceeded ({tasks.length}/{column.wipLimit})
-                    </Typography>
-                  </div>
-                )}
-              </CardHeader>
-
-              <CardContent className="p-6 pt-0">
-                <Droppable droppableId={column._id} type="TASK">
-                  {(provided, snapshot) => (
-                                        <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`min-h-[200px] transition-all duration-200 rounded-lg ${
-                        snapshot.isDraggingOver 
-                          ? 'backdrop-blur-sm shadow-lg border-2 border-blue-400/50' 
-                          : ''
-                      }`}
-                      style={{
-                        backgroundColor: snapshot.isDraggingOver 
-                          ? 'rgba(59, 130, 246, 0.1)' 
-                          : 'transparent'
-                      }}
-                    >
-                      {/* Tasks */}
+                    <div className="pr-2">
                       {tasks.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-32 text-center">
-                          <div className="w-12 h-12 bg-muted/30 rounded-full flex items-center justify-center mb-3">
-                            <span className="text-2xl">📋</span>
+                        <div className="flex flex-col items-center justify-center h-20 text-center">
+                          <div className="w-8 h-8 bg-gradient-to-br from-muted/40 to-muted/20 rounded-lg flex items-center justify-center mb-2">
+                            <span className="text-sm">📋</span>
                           </div>
-                          <Typography variant="body-small" className="text-muted-foreground mb-2">
+                          <Typography variant="body-small" className="text-muted-foreground text-xs mb-1 font-medium">
                             No tasks yet
                           </Typography>
-                          <Typography variant="body-small" className="text-muted-foreground">
-                            Add a task to get started
+                          <Typography variant="body-small" className="text-muted-foreground text-xs">
+                            Add one below
                           </Typography>
                         </div>
                       ) : (
@@ -185,37 +257,21 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                             task={task}
                             index={taskIndex}
                             columnId={column._id}
-                            onClick={onTaskClick}
+                            onClick={(task) => onTaskClick(task)}
                           />
                         ))
                       )}
-                      {provided.placeholder}
-
-                      {/* Add Task Button */}
-                      <div className="mt-4">
-                        <Button
-                          variant="outline"
-                          onClick={() => onAddTask(column._id)}
-                          className="w-full h-12 border-2 border-dashed hover:scale-[1.02] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 backdrop-blur-sm"
-                          style={{
-                            borderColor: column.style?.backgroundColor ? `${column.style.backgroundColor}40` : 'rgba(255, 255, 255, 0.2)',
-                            backgroundColor: column.style?.backgroundColor ? `${column.style.backgroundColor}10` : 'rgba(255, 255, 255, 0.05)',
-                            color: column.style?.backgroundColor ? '#374151' : 'inherit'
-                          }}
-                        >
-                          <span className="text-xl drop-shadow-sm">+</span>
-                          <Typography variant="body-medium" className="font-medium drop-shadow-sm">
-                            Add Task
-                          </Typography>
-                        </Button>
-                      </div>
                     </div>
-                  )}
-                </Droppable>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </Draggable>
   );
 };
+
+

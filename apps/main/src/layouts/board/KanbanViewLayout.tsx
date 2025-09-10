@@ -9,8 +9,8 @@ import {
   Loading,
   Button
 } from '@taskflow/ui';
-import { DraggableColumn } from '../../components/space/DraggableColumn';
-import { AddColumnModal } from '../../components/space';
+import { DraggableColumn } from '../../components/board/DraggableColumn';
+import { AddColumnModal } from '../../components/board/AddColumnModal';
 import { EditColumnModal } from '../../components/board/EditColumnModal';
 import { ErrorBoundaryWrapper } from '../../components';
 
