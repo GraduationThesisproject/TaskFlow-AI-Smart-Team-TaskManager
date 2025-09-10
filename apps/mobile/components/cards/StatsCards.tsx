@@ -68,7 +68,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({
       <View style={[styles.statsGrid, compact && styles.compactGrid]}>
         {statsData.map((stat, index) => (
           <Card key={index} style={[styles.statCard, compact && styles.compactCard]}>
-            <Text style={[TextStyles.body.small, { color: colors.mutedForeground }]}>
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
               {stat.title}
             </Text>
             <Text style={[

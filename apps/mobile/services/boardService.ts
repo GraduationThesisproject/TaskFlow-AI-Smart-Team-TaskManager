@@ -162,4 +162,26 @@ export class BoardService {
       throw error;
     }
   }
+
+  // Archive board
+  static async archiveBoard(id: string): Promise<ApiResponse<Board>> {
+    try {
+      const response = await axiosInstance.patch(`/boards/${id}`, { archived: true });
+      return response.data;
+    } catch (error) {
+      console.error('Error archiving board:', error);
+      throw error;
+    }
+  }
+
+  // Unarchive board
+  static async unarchiveBoard(id: string): Promise<ApiResponse<Board>> {
+    try {
+      const response = await axiosInstance.patch(`/boards/${id}`, { archived: false });
+      return response.data;
+    } catch (error) {
+      console.error('Error unarchiving board:', error);
+      throw error;
+    }
+  }
 }

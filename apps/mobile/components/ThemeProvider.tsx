@@ -50,6 +50,7 @@ export function ThemeProvider({
     'gradient-primary': userPrimaryColor,
   } : baseColors;
 
+
   useEffect(() => {
     loadThemePreferences();
   }, []);
