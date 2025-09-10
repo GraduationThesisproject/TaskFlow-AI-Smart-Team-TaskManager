@@ -1,20 +1,21 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, View as RNView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { View, Text, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';
+import { useWorkspaces } from '@/hooks/useWorkspaces';
 import BoardCard from '@/components/common/BoardCard';
 import { BoardService } from '@/services/boardService';
-// import { SpaceService } from '@/services/spaceService';
-// import { setSelectedSpace } from '@/store/slices/workspaceSlice';
 
 export default function AllBoardsScreen() {
   const colors = useThemeColors();
   const router = useRouter();
+  const params = useLocalSearchParams<{ id?: string }>();
   const dispatch = useAppDispatch();
+  const { loadSpaces } = useWorkspaces({ autoFetch: false });
 
   const { selectedSpace } = useAppSelector((s: any) => s.workspace);
   const space = selectedSpace;
@@ -37,12 +38,12 @@ export default function AllBoardsScreen() {
   }, [space]);
 
   const loadBoards = useCallback(async () => {
-    if (!space?._id && !space?.id) return;
+    const sid = String(space?._id || space?.id || params?.id || '').trim();
+    if (!sid) return;
     setLoading(true);
     setError(null);
     try {
-      const spaceId = space._id || space.id;
-      const resp = await BoardService.getBoardsBySpace(spaceId);
+      const resp = await BoardService.getBoardsBySpace(sid);
       const payload: any = resp;
       const list = Array.isArray(payload)
         ? payload
@@ -59,7 +60,7 @@ export default function AllBoardsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [space]);
+  }, [space?._id, space?.id, params?.id]);
 
   useEffect(() => {
     loadBoards();
@@ -138,3 +139,4 @@ const styles = StyleSheet.create({
   boardGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   gridItem: { marginBottom: 12 },
 });
+

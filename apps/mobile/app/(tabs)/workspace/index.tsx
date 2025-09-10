@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, Image, Alert } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, Image, Alert, useWindowDimensions, Modal, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -15,6 +15,7 @@ import { SpaceService } from '@/services/spaceService';
 import CreateSpaceModal from '@/components/common/CreateSpaceModal';
 import MobileAlert from '@/components/common/Alert';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog';
+import SpaceCard from '@/components/common/SpaceCard';
 
 // Toggle this to quickly demo with mock data
 const USE_MOCK = false;
@@ -66,29 +67,17 @@ export default function WorkspaceScreen() {
   const effectiveWorkspace = realWorkspaceId ? currentWorkspace : (USE_MOCK ? (MOCK_WORKSPACE as any) : null);
   const workspaceId = realWorkspaceId || (selectedWorkspaceId || null);
 
-  // Always fetch spaces when we have a selected workspaceId
-  useEffect(() => {
-    if (!USE_MOCK && workspaceId) {
-      loadSpaces(workspaceId);
-    }
-  }, [workspaceId, loadSpaces]);
-
-  // Load members when workspace changes
-  useEffect(() => {
-    if (!USE_MOCK && workspaceId) {
-      dispatch(fetchMembers({ id: workspaceId }));
-    }
-  }, [workspaceId, dispatch]);
-
   // Also refresh members when this screen gains focus (helps after invite acceptance)
   useFocusEffect(
     useCallback(() => {
       if (!USE_MOCK && workspaceId) {
+        // Refresh both members and spaces when screen focuses so counts stay current
         dispatch(fetchMembers({ id: workspaceId }));
+        loadSpaces(workspaceId);
       }
       // No cleanup needed
       return undefined;
-    }, [workspaceId, dispatch])
+    }, [workspaceId, dispatch, loadSpaces])
   );
 
   const activeSpaces = useMemo(() => {
@@ -107,12 +96,11 @@ export default function WorkspaceScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await refetchWorkspaces();
-      if (workspaceId && !realWorkspaceId) {
-        // In mock mode we don't refetch spaces
-      } else if (workspaceId) {
-        loadSpaces(workspaceId);
-      }
+      await Promise.all([
+        refetchWorkspaces(),
+        workspaceId && !USE_MOCK ? loadSpaces(workspaceId) : Promise.resolve(),
+        workspaceId && !USE_MOCK ? dispatch(fetchMembers({ id: workspaceId })) : Promise.resolve(),
+      ]);
     } finally {
       setRefreshing(false);
     }
@@ -131,7 +119,7 @@ export default function WorkspaceScreen() {
   }, [selectedWorkspaceId, workspaces, dispatch, loadSpaces]);
 
   const handleSelectWorkspace = (ws: any) => {
-    const id = ws?._id
+    const id = ws?._id || ws?.id;
     if (!id) return;
     dispatch(setCurrentWorkspaceId(id));
     loadSpaces(id);
@@ -149,9 +137,20 @@ export default function WorkspaceScreen() {
     if (!inviteEmail.trim()) return;
     try {
       await inviteNewMember(inviteEmail.trim(), inviteRole);
-      setInviteEmail('');
+     setInviteEmail('');
+     // Show success banner alert
+     setAlertVariant('success');
+     setAlertTitle('Invitation sent');
+     setAlertDescription(`We sent an invite to ${inviteEmail.trim()}.`);
+     setAlertVisible(true);
+     // Close the mobile sidebar modal after success (optional)
+     setMembersSidebarOpen(false);
     } catch (e: any) {
-      // surfaced via console
+      // Show an error banner for visibility
+      setAlertVariant('error');
+      setAlertTitle('Failed to send invite');
+      setAlertDescription(e?.message || 'Please try again.');
+      setAlertVisible(true);
     }
   };
 
@@ -248,17 +247,32 @@ export default function WorkspaceScreen() {
     }
   };
 
-  // Loading state
-  if (!USE_MOCK && loading && !refreshing) {
+  // Helpers to compute unique, non-owner member count per space
+  const getId = (m: any): string => String(m?._id || m?.id || m?.user?._id || m?.user?.id || m?.userId || '').trim();
+  const getOwnerIds = (space: any): Set<string> => {
+    const ids: string[] = [];
+    const push = (v: any) => { const s = String(v || '').trim(); if (s) ids.push(s); };
+    if (space?.owner) { const o = space.owner as any; push(o?._id || o?.id || o); }
+    if (space?.ownerId) push(space.ownerId);
+    if (space?.createdBy) { const c = space.createdBy as any; push(c?._id || c?.id || c); }
+    return new Set(ids);
+  };
+  const getUniqueNonOwnerMemberCount = (space: any): number => {
+    const ownerIds = getOwnerIds(space);
+    const list = Array.isArray(space?.members) ? space.members.filter(Boolean) : [];
+    const unique = new Set<string>();
+    for (const m of list) {
+      const id = getId(m);
+      if (!id || ownerIds.has(id)) continue;
+      unique.add(id);
+    }
+    return unique.size;
+  };
+
+  // Loading state — only block the UI if we have no cached spaces yet
+  if (!USE_MOCK && loading && !refreshing && (!Array.isArray(spaces) || spaces.length === 0)) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <View style={styles.headerSpacer} />
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]} >
-            Workspace
-          </Text>
-          <View style={styles.headerSpacer} />
-        </View>
+      <View style={[styles.container, { backgroundColor: colors.background }]}> 
         <View style={styles.loadingContainer}>
           <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Loading workspace...</Text>
         </View>
@@ -266,17 +280,20 @@ export default function WorkspaceScreen() {
     );
   }
 
+  // Grid sizing for 3 columns in Spaces preview
+  const [previewGridW, setPreviewGridW] = useState(0);
+  const PREVIEW_COLS = 3;
+  const PREVIEW_GAP = 12;
+  const previewTile = previewGridW > 0
+    ? Math.floor((previewGridW - PREVIEW_GAP * (PREVIEW_COLS - 1)) / PREVIEW_COLS)
+    : undefined;
+
+  const { width } = useWindowDimensions();
+  const isWide = width >= 768;
+  const [membersSidebarOpen, setMembersSidebarOpen] = useState(false);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header with Sidebar Toggle */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.headerSpacer} />
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-          Workspace
-        </Text>
-        <View style={styles.headerSpacer} />
-      </View>
-
       {/* Inline banner alert */}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
         <MobileAlert
@@ -299,95 +316,6 @@ export default function WorkspaceScreen() {
           </Card>
         )}
 
-        {/* Invite & Quick actions */}
-        {workspaceId && effectiveWorkspace && (
-          <Card style={styles.sectionCard}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Invite Members</Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TextInput
-                value={inviteEmail}
-                onChangeText={setInviteEmail}
-                placeholder="email@example.com"
-                placeholderTextColor={colors['muted-foreground']}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                style={[styles.input, { flex: 1, color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
-              />
-              <TouchableOpacity onPress={() => setInviteRole(inviteRole === 'member' ? 'admin' : 'member')} style={[styles.pill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>{inviteRole}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleInvite} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}>
-                <Text style={{ color: colors['primary-foreground'] }}>Invite</Text>
-              </TouchableOpacity>
-            </View>
-          </Card>
-        )}
-
-        {/* Members List */}
-        {workspaceId && (
-          <Card style={styles.sectionCard}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({members?.length || 0})</Text>
-            {membersLoading ? (
-              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading members...</Text>
-            ) : membersError ? (
-              <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>{membersError}</Text>
-            ) : (Array.isArray(members) && members.length > 0 ? (
-              <View style={{ gap: 8 }}>
-                {members.map((m: any) => {
-                  const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
-                  const email = m?.user?.email || m?.email || '';
-                  const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
-                  const letter = String(displayName).charAt(0).toUpperCase();
-                  return (
-                    <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                      {/* Avatar */}
-                      {avatarUrl ? (
-                        <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
-                      ) : (
-                        <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
-                        </View>
-                      )}
-                      {/* Name and meta */}
-                      <View style={{ flex: 1 }}>
-                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
-                        {!!email && (
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
-                        )}
-                        <View style={styles.memberMetaRow}>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
-                        </View>
-                      </View>
-                      {m.role !== 'owner' && (
-                        <TouchableOpacity
-                          onPress={() => {
-                            setMemberToRemove(m);
-                            setConfirmVisible(true);
-                          }}
-                          disabled={!!membersLoading}
-                          style={[
-                            styles.destructiveBtn,
-                            { backgroundColor: colors.destructive },
-                            membersLoading ? { opacity: 0.6 } : null,
-                          ]}
-                        >
-                          <Text style={{ color: colors['destructive-foreground'] }}>
-                            {membersLoading ? 'Removing…' : 'Remove'}
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  );
-                })}
-              </View>
-            ) : (
-              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No members yet.</Text>
-            ))}
-          </Card>
-        )}
-
         {/* Spaces toolbar: Search + Create */}
         <Card style={styles.sectionCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -401,6 +329,11 @@ export default function WorkspaceScreen() {
             <TouchableOpacity onPress={() => setShowCreateSpace(true)} style={[styles.secondaryBtn, { backgroundColor: colors.secondary }]}>
               <Text style={{ color: colors['secondary-foreground'] }}>Create Space</Text>
             </TouchableOpacity>
+            {!isWide && (
+              <TouchableOpacity onPress={() => setMembersSidebarOpen(true)} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}>
+                <Text style={{ color: colors['primary-foreground'] }}>Members</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </Card>
 
@@ -454,47 +387,33 @@ export default function WorkspaceScreen() {
             </Card>
           </>
         )}
-
         {/* Spaces Preview: show only first 4, with View more */}
         {!!(effectiveSpaces && effectiveSpaces.length) && (
           <Card style={styles.sectionCard}>
             <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Spaces</Text>
-            <View style={styles.spaceList}>
-              {filteredSpaces.slice(0, 4).map((space: any) => (
-                <TouchableOpacity key={space._id || space.id} style={[styles.spaceItem, { backgroundColor: colors.card }]} onPress={() => handleOpenSpace(space)}>
-                  <View style={styles.spaceHeader}>
-                    <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{space.name}</Text>
-                    <View style={styles.spaceActions}>
-                      <TouchableOpacity 
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleArchiveSpace(space._id || space.id, space.name, space.isArchived);
-                        }}
-                        style={styles.archiveButton}
-                      >
-                        <FontAwesome 
-                          name={space.isArchived ? 'undo' : 'archive'} 
-                          size={14} 
-                          color={space.isArchived ? colors.success : colors.warning} 
-                        />
-                      </TouchableOpacity>
-                      <FontAwesome name="chevron-right" size={14} color={colors['muted-foreground']} />
-                    </View>
-                  </View>
-                  {space.description ? (
-                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 6 }]} numberOfLines={2}>
-                      {space.description}
-                    </Text>
-                  ) : null}
-                  <View style={styles.spaceStats}>
-                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.members?.length || 0)} members</Text>
-                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.stats?.totalBoards || 0)} boards</Text>
-                  </View>
-                </TouchableOpacity>
+            <View
+              style={[styles.spaceList, { flexDirection: 'row', flexWrap: 'wrap', gap: PREVIEW_GAP, backgroundColor: colors.background }]}
+              onLayout={(e) => setPreviewGridW(e.nativeEvent.layout.width)}
+            >
+              {filteredSpaces.slice(0, 3).map((space: any) => (
+                <SpaceCard
+                  key={space._id || space.id}
+                  name={space.name}
+                  description={space.description}
+                  membersCount={membersCount}
+                  icon={space.icon || '📂'}
+                  isArchived={!!space.isArchived}
+                  createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
+                  tileSize={previewTile}
+                  onPress={() => handleOpenSpace(space)}
+                  onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, space.isArchived)}
+                />
               ))}
               {effectiveSpaces.length > 4 && (
-                <TouchableOpacity style={{ paddingVertical: 8, alignItems: 'center' }} onPress={() => router.push('/workspace/spaces')}>
+                <TouchableOpacity
+                  style={{ paddingVertical: 8, alignItems: 'center' }}
+                  onPress={() => router.push({ pathname: '/workspace/spaces', params: { workspaceId } })}
+                >
                   <Text style={[TextStyles.body.small, { color: colors.primary }]}>View more spaces →</Text>
                 </TouchableOpacity>
               )}
@@ -536,19 +455,189 @@ export default function WorkspaceScreen() {
         }}
         variant="danger"
       />
+
+      {isWide && (
+        <View style={{ width: 320, padding: 16 }}>
+          {/* Sidebar: Invite */}
+          {workspaceId && effectiveWorkspace && (
+            <Card style={styles.sectionCard}>
+              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Invite Members</Text>
+              <View style={{ gap: 8 }}>
+                <TextInput
+                  value={inviteEmail}
+                  onChangeText={setInviteEmail}
+                  placeholder="email@example.com"
+                  placeholderTextColor={colors['muted-foreground']}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  textContentType="emailAddress"
+                  keyboardType="email-address"
+                  style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
+                />
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TouchableOpacity onPress={() => setInviteRole(inviteRole === 'member' ? 'admin' : 'member')} style={[styles.pill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>{inviteRole}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handleInvite} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}> 
+                    <Text style={{ color: colors['primary-foreground'] }}>Invite</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Card>
+          )}
+          {/* Sidebar: Members */}
+          {workspaceId && (
+            <Card style={styles.sectionCard}>
+              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({members?.length || 0})</Text>
+              {membersLoading ? (
+                <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading members...</Text>
+              ) : membersError ? (
+                <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>{membersError}</Text>
+              ) : (Array.isArray(members) && members.length > 0 ? (
+                <View style={{ gap: 8 }}>
+                  {members.map((m: any) => {
+                    const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
+                    const email = m?.user?.email || m?.email || '';
+                    const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
+                    const letter = String(displayName).charAt(0).toUpperCase();
+                    return (
+                      <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        {avatarUrl ? (
+                          <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
+                        ) : (
+                          <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
+                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
+                          </View>
+                        )}
+                        <View style={{ flex: 1 }}>
+                          <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
+                          {!!email && (
+                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
+                          )}
+                          <View style={styles.memberMetaRow}>
+                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                          </View>
+                        </View>
+                        {m.role !== 'owner' && (
+                          <TouchableOpacity
+                            onPress={() => { setMemberToRemove(m); setConfirmVisible(true); }}
+                            disabled={!!membersLoading}
+                            style={[styles.destructiveBtn, { backgroundColor: colors.destructive }, membersLoading ? { opacity: 0.6 } : null]}
+                          >
+                            <Text style={{ color: colors['destructive-foreground'] }}>
+                              {membersLoading ? 'Removing…' : 'Remove'}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : (
+                <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No members yet.</Text>
+              ))}
+            </Card>
+          )}
+        </View>
+      )}
+      {/* Sidebar modal on phones */}
+      {!isWide && (
+        <Modal animationType="slide" transparent visible={membersSidebarOpen} onRequestClose={() => setMembersSidebarOpen(false)}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setMembersSidebarOpen(false)} />
+          <View style={[styles.modalPanel, { backgroundColor: colors.background, borderLeftColor: colors.border }]}> 
+            {/* Invite */}
+            {workspaceId && effectiveWorkspace && (
+              <Card style={styles.sectionCard}>
+                <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Invite Members</Text>
+                <View style={{ gap: 8 }}>
+                  <TextInput
+                    value={inviteEmail}
+                    onChangeText={setInviteEmail}
+                    placeholder="email@example.com"
+                    placeholderTextColor={colors['muted-foreground']}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="emailAddress"
+                    keyboardType="email-address"
+                    style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
+                  />
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TouchableOpacity onPress={() => setInviteRole(inviteRole === 'member' ? 'admin' : 'member')} style={[styles.pill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                      <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>{inviteRole}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleInvite} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}> 
+                      <Text style={{ color: colors['primary-foreground'] }}>Invite</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Card>
+            )}
+            {/* Members */}
+            {workspaceId && (
+              <Card style={styles.sectionCard}>
+                <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({members?.length || 0})</Text>
+                {membersLoading ? (
+                  <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading members...</Text>
+                ) : membersError ? (
+                  <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>{membersError}</Text>
+                ) : (Array.isArray(members) && members.length > 0 ? (
+                  <View style={{ gap: 8 }}>
+                    {members.map((m: any) => {
+                      const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
+                      const email = m?.user?.email || m?.email || '';
+                      const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
+                      const letter = String(displayName).charAt(0).toUpperCase();
+                      return (
+                        <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                          {avatarUrl ? (
+                            <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
+                          ) : (
+                            <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}> 
+                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
+                            </View>
+                          )}
+                          <View style={{ flex: 1 }}>
+                            <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
+                            {!!email && (
+                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
+                            )}
+                            <View style={styles.memberMetaRow}>
+                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                            </View>
+                          </View>
+                          {m.role !== 'owner' && (
+                            <TouchableOpacity
+                              onPress={() => { setMemberToRemove(m); setConfirmVisible(true); }}
+                              disabled={!!membersLoading}
+                              style={[styles.destructiveBtn, { backgroundColor: colors.destructive }, membersLoading ? { opacity: 0.6 } : null]}
+                            >
+                              <Text style={{ color: colors['destructive-foreground'] }}>
+                                {membersLoading ? 'Removing…' : 'Remove'}
+                              </Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : (
+                  <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No members yet.</Text>
+                ))}
+              </Card>
+            )}
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  headerSpacer: { width: 40 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { flex: 1, padding: 16 },
   errorCard: { padding: 16, marginBottom: 16, borderRadius: 12 },
@@ -576,4 +665,6 @@ const styles = StyleSheet.create({
   destructiveBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   memberAvatar: { width: 36, height: 36, borderRadius: 18 },
   memberAvatarPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  modalBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#00000088' },
+  modalPanel: { position: 'absolute', top: 0, right: 0, bottom: 0, width: 320, borderLeftWidth: StyleSheet.hairlineWidth, padding: 16 },
 });

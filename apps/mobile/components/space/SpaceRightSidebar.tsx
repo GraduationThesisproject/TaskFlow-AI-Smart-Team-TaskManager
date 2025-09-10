@@ -50,11 +50,24 @@ export default function SpaceRightSidebar({ space, availableMembers = [], onInvi
   // only show members that are available in the workspace
   const visibleMembers = useMemo(
     () => members.filter((m: any) => {
-      const id = String(m?._id || m?.id || m?.user?._id || m?.user?.id);
-      return availableIds.has(id) && !ownerIds.has(id);
+      const id = getMemberId(m);
+      return availableIds.has(id || '') && !isOwnerMember(m);
     }),
     [members, availableIds, ownerIds]
   );
+
+  // dedupe by member id so the same person doesn't appear twice
+  const visibleMembersUnique = useMemo(() => {
+    const seen = new Set<string>();
+    const out: any[] = [];
+    for (const m of visibleMembers) {
+      const id = getMemberId(m);
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      out.push(m);
+    }
+    return out;
+  }, [visibleMembers]);
 
   // invite candidates (exclude already-in-space)
   const existingIds = useMemo(() => new Set(members.map((m: any) => String(m?._id || m?.id || m?.user?._id || m?.user?.id))), [members]);
@@ -108,11 +121,11 @@ export default function SpaceRightSidebar({ space, availableMembers = [], onInvi
         </RNView>
         <ScrollView style={{ maxHeight: 160 }}>
           <RNView style={{ gap: 8, marginTop: 10 }}>
-            {visibleMembers.length === 0 ? (
+            {visibleMembersUnique.length === 0 ? (
               <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>No available members.</Text>
             ) : (
-              visibleMembers.map((m: any) => {
-                const id = String(m?._id || m?.id || m?.user?._id || m?.user?.id || Math.random());
+              visibleMembersUnique.map((m: any) => {
+                const id = getMemberId(m);
                 const name = m?.name || m?.user?.name || 'User';
                 const avatar = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
                 const role = m?.role || '';
@@ -122,7 +135,7 @@ export default function SpaceRightSidebar({ space, availableMembers = [], onInvi
                     <RNView style={{ flex: 1 }}>
                       <Text style={[TextStyles.caption.small, { color: colors.foreground }]} numberOfLines={1}>{name}</Text>
                       {!!role && (
-                        <Text style={[TextStyles.caption.tiny, { color: colors['muted-foreground'] }]} numberOfLines={1}>{role}</Text>
+                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{role}</Text>
                       )}
                     </RNView>
                   </RNView>
@@ -183,3 +196,12 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
   primaryBtn: { paddingHorizontal: 14, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
 });
+
+function getMemberId(m: any): string | undefined {
+  return String(m?._id || m?.id || m?.user?._id || m?.user?.id);
+}
+
+function isOwnerMember(m: any): boolean {
+  const id = getMemberId(m);
+  return id && ownerIds.has(id);
+}
