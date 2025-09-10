@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
@@ -18,7 +19,7 @@ export default function SpacesScreen() {
   const dispatch = useAppDispatch();
 
   const params = useLocalSearchParams<{ id?: string; workspaceId?: string }>();
-  const { currentWorkspaceId } = useAppSelector((s: any) => s.workspace);
+  const { currentWorkspaceId, selectedSpace } = useAppSelector((s: any) => s.workspace);
 
   // Prefer an id from route params, fallback to Redux
   const selectedWorkspaceId = (params.workspaceId as string) || (params.id as string) || currentWorkspaceId || undefined;
@@ -30,6 +31,12 @@ export default function SpacesScreen() {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return spaces || [];
+    return (spaces || []).filter((s: any) => (s?.name || '').toLowerCase().includes(q) || (s?.description || '').toLowerCase().includes(q));
+  }, [query, spaces]);
+
   useEffect(() => {
     // Sync route-provided id into Redux to keep state consistent
     if (selectedWorkspaceId && selectedWorkspaceId !== currentWorkspaceId) {
@@ -40,11 +47,15 @@ export default function SpacesScreen() {
     }
   }, [selectedWorkspaceId, currentWorkspaceId, dispatch, loadSpaces]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return spaces || [];
-    return (spaces || []).filter((s: any) => (s?.name || '').toLowerCase().includes(q) || (s?.description || '').toLowerCase().includes(q));
-  }, [query, spaces]);
+  // Refresh spaces data whenever this screen gains focus (ensures boards count stays fresh)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (selectedWorkspaceId) {
+        loadSpaces(selectedWorkspaceId);
+      }
+      return undefined;
+    }, [selectedWorkspaceId, loadSpaces])
+  );
 
   const onRefresh = async () => {
     if (!selectedWorkspaceId) return;
@@ -85,6 +96,39 @@ export default function SpacesScreen() {
     } finally {
       setCreating(false);
     }
+  };
+
+  // Helpers to compute unique, non-owner member count per space
+  const normalizeId = (m: any): string => String(
+    m?._id || m?.id || m?.user?._id || m?.user?.id || m?.userId || m?.memberId || ''
+  ).trim();
+  const normalizeEmail = (m: any): string => String(m?.user?.email || m?.email || '').trim().toLowerCase();
+  const normalizeName = (m: any): string => String(m?.user?.name || m?.name || '').trim().toLowerCase();
+  const collectOwnerIds = (space: any): Set<string> => {
+    const ids: string[] = [];
+    const push = (v: any) => { const s = String(v || '').trim(); if (s) ids.push(s); };
+    // common owner fields across shapes
+    if (space?.owner) { const o = space.owner as any; push(o?._id || o?.id || o?.userId || o); }
+    if (space?.ownerId) push(space.ownerId);
+    if (space?.owner_id) push(space.owner_id);
+    if (space?.ownerUserId) push(space.ownerUserId);
+    if (space?.createdBy) { const c = space.createdBy as any; push(c?._id || c?.id || c?.userId || c); }
+    if (space?.createdById) push(space.createdById);
+    return new Set(ids);
+  };
+  const getUniqueNonOwnerMemberCount = (space: any): number => {
+    const ownerIds = collectOwnerIds(space);
+    const list = Array.isArray(space?.members) ? space.members.filter(Boolean) : [];
+    const unique = new Set<string>();
+    for (const m of list) {
+      const id = normalizeId(m);
+      if (id && ownerIds.has(id)) continue; // exclude owner by id
+      // build a stable composite key when id is missing or unreliable
+      const key = id || `${normalizeEmail(m)}|${normalizeName(m)}`;
+      if (!key) continue;
+      unique.add(key);
+    }
+    return unique.size;
   };
 
   return (
@@ -144,9 +188,7 @@ export default function SpacesScreen() {
                       </Text>
                     ) : null}
                     <View style={styles.spaceStats}>
-                      <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.members?.length || 0)} members</Text>
-                      <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                      <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.stats?.totalBoards || 0)} boards</Text>
+                      <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {getUniqueNonOwnerMemberCount(space)} members</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
