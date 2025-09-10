@@ -248,6 +248,7 @@ interface WorkspaceState extends BaseWorkspaceState {
   selectedSpace: Space | null;
   currentWorkspaceId: string | null;
   members: WorkspaceMember[];
+  pendingInvitations: any[];
   loading: boolean;
 }
 
@@ -260,6 +261,7 @@ const initialState: WorkspaceState = {
   selectedSpace: null,
   currentWorkspaceId:null,
   members: [],
+  pendingInvitations: [],
   loading: false,
   isLoading: false,
   error: null,
@@ -344,6 +346,18 @@ const workspaceSlice = createSlice({
         } as any;
       }
     },
+    // Clear all pending invitations (client-side list)
+    clearPendingInvitations(state) {
+      state.pendingInvitations = [];
+    },
+    // Remove a single pending invitation by email (case-insensitive)
+    removePendingInvitationByEmail(state, action: PayloadAction<string>) {
+      const email = (action.payload || '').toLowerCase();
+      state.pendingInvitations = (state.pendingInvitations || []).filter((inv: any) => {
+        const e = (inv?.invitedUser?.email || inv?.email || '').toLowerCase();
+        return e !== email;
+      });
+    },
     resetWorkspaceState: () => initialState,
   },
   extraReducers: (builder) => {
@@ -369,9 +383,28 @@ const workspaceSlice = createSlice({
       })
       .addCase(inviteMember.fulfilled, (state, action) => {
         state.isLoading = false;
-        if (action.payload) {
-          state.members = [...state.members, action.payload];
-        }
+        // Do NOT add to members here. The invite API returns invitation info,
+        // not an accepted membership. Members should only appear after acceptance
+        // and a subsequent fetchMembers call.
+       // Store a normalized pending entry using the invite args for reliable pruning later
+        try {
+            const { id, email, role } = (action as any)?.meta?.arg || {};
+            if (email && id) {
+              const pending = {
+                email,
+                role: role || 'member',
+                workspaceId: id,
+                // Optional fields for display
+                invitedUser: { email },
+              };
+              state.pendingInvitations = [
+                ...(state.pendingInvitations || []),
+                pending,
+              ];
+            }
+          } catch {
+            // ignore
+          }
         state.error = null;
       })
       .addCase(inviteMember.rejected, (state, action) => {
@@ -385,8 +418,33 @@ const workspaceSlice = createSlice({
       })
       .addCase(fetchMembers.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.members = Array.isArray(action.payload) ? action.payload : [];
-        state.error = null;
+                state.members = Array.isArray(action.payload) ? action.payload : [];
+                // Prune pending invitations that have now become members.
+                try {
+                  const membersList = Array.isArray(state.members) ? state.members : [];
+                  const memberEmails = new Set(
+                    membersList
+                      .map((m: any) => m?.user?.email || m?.email)
+                      .filter(Boolean)
+                  );
+                  const memberIds = new Set(
+                    membersList
+                      .map((m: any) => m?.user?._id || m?.user?.id || m?._id || m?.id)
+                      .filter(Boolean)
+                      .map(String)
+                  );
+                  if (Array.isArray(state.pendingInvitations) && state.pendingInvitations.length > 0) {
+                    state.pendingInvitations = state.pendingInvitations.filter((inv: any) => {
+                      const invitedEmail = inv?.invitedUser?.email || inv?.email || null;
+                      const invitedUserId = inv?.invitedUser?.userId ? String(inv.invitedUser.userId) : null;
+                      if (invitedUserId && memberIds.has(invitedUserId)) return false;
+                      if (invitedEmail && memberEmails.has(invitedEmail)) return false;
+                      return true;
+                    });
+                  }
+                } catch {
+                  
+                }        state.error = null;
       })
       .addCase(fetchMembers.rejected, (state, action) => {
         state.isLoading = false;
@@ -596,6 +654,8 @@ export const {
   removeWorkspaceById,
   upsertWorkspaceStatus,
   upsertMemberPresence,
+  clearPendingInvitations,
+  removePendingInvitationByEmail,
   resetWorkspaceState,
 } = workspaceSlice.actions;
 
