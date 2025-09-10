@@ -9,8 +9,10 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { setCurrentWorkspaceId, setSelectedSpace, fetchMembers, removeMember } from '@/store/slices/workspaceSlice';
+import { archiveSpace, unarchiveSpace } from '@/store/slices/spaceSlice';
 import { SpaceService } from '@/services/spaceService';
 import CreateSpaceModal from '@/components/common/CreateSpaceModal';
+import { formatArchiveCountdown, getArchiveCountdownStyle, getArchiveStatusMessage } from '@/utils/archiveTimeUtils';
 
 // Toggle this to quickly demo with mock data
 const USE_MOCK = false;
@@ -161,6 +163,39 @@ export default function WorkspaceScreen() {
     }
   };
 
+  const handleArchiveSpace = async (spaceId: string, spaceName: string, isArchived: boolean) => {
+    const action = isArchived ? 'restore' : 'archive';
+    const actionText = isArchived ? 'restore' : 'archive';
+    
+    Alert.alert(
+      `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} Space`,
+      `Are you sure you want to ${actionText} "${spaceName}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: actionText.charAt(0).toUpperCase() + actionText.slice(1),
+          onPress: async () => {
+            try {
+              if (isArchived) {
+                await dispatch(unarchiveSpace(spaceId));
+                Alert.alert('Success', 'Space restored successfully!');
+              } else {
+                await dispatch(archiveSpace(spaceId));
+                Alert.alert('Success', 'Space archived successfully!');
+              }
+              // Refresh spaces after archiving/unarchiving
+              if (workspaceId) {
+                loadSpaces(workspaceId);
+              }
+            } catch (error) {
+              Alert.alert('Error', `Failed to ${actionText} space`);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleSubmitCreate = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
     if (!workspaceId) return;
     try {
@@ -185,7 +220,12 @@ export default function WorkspaceScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <View style={styles.headerSpacer} />
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <FontAwesome name="arrow-left" size={24} color={colors.primary} />
+          </TouchableOpacity>
           <Text style={[TextStyles.heading.h2, { color: colors.foreground }]} >
             Workspace
           </Text>
@@ -200,9 +240,14 @@ export default function WorkspaceScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header with Sidebar Toggle */}
+      {/* Header with Back Button */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.headerSpacer} />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <FontAwesome name="arrow-left" size={24} color={colors.primary} />
+        </TouchableOpacity>
         <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
           Workspace
         </Text>
@@ -382,7 +427,22 @@ export default function WorkspaceScreen() {
                 <TouchableOpacity key={space._id || space.id} style={[styles.spaceItem, { backgroundColor: colors.card }]} onPress={() => handleOpenSpace(space)}>
                   <View style={styles.spaceHeader}>
                     <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{space.name}</Text>
-                    <FontAwesome name="chevron-right" size={14} color={colors['muted-foreground']} />
+                    <View style={styles.spaceActions}>
+                      <TouchableOpacity 
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleArchiveSpace(space._id || space.id, space.name, space.isArchived);
+                        }}
+                        style={styles.archiveButton}
+                      >
+                        <FontAwesome 
+                          name={space.isArchived ? 'undo' : 'archive'} 
+                          size={14} 
+                          color={space.isArchived ? colors.success : colors.warning} 
+                        />
+                      </TouchableOpacity>
+                      <FontAwesome name="chevron-right" size={14} color={colors['muted-foreground']} />
+                    </View>
                   </View>
                   {space.description ? (
                     <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 6 }]} numberOfLines={2}>
@@ -394,6 +454,32 @@ export default function WorkspaceScreen() {
                     <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
                     <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.stats?.totalBoards || 0)} boards</Text>
                   </View>
+                  
+                  {/* Archive countdown for archived spaces */}
+                  {space.isArchived && space.archiveExpiresAt && (
+                    <View style={styles.archiveCountdown}>
+                      <View style={[
+                        styles.countdownBadge,
+                        { 
+                          backgroundColor: getArchiveCountdownStyle(space.archiveExpiresAt).backgroundColor,
+                          borderColor: getArchiveCountdownStyle(space.archiveExpiresAt).borderColor,
+                          borderWidth: 1
+                        }
+                      ]}>
+                        <FontAwesome 
+                          name="clock-o" 
+                          size={10} 
+                          color={getArchiveCountdownStyle(space.archiveExpiresAt).color} 
+                        />
+                        <Text style={[
+                          TextStyles.caption.small, 
+                          { color: getArchiveCountdownStyle(space.archiveExpiresAt).color }
+                        ]}>
+                          {getArchiveStatusMessage(space.archiveExpiresAt)}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
                 </TouchableOpacity>
               ))}
               {effectiveSpaces.length > 4 && (
@@ -426,6 +512,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerSpacer: { width: 40 },
+  backButton: {
+    padding: 8,
+    marginRight: 8,
+  },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { flex: 1, padding: 16 },
   errorCard: { padding: 16, marginBottom: 16, borderRadius: 12 },
@@ -439,7 +529,21 @@ const styles = StyleSheet.create({
   spaceList: { gap: 12 },
   spaceItem: { padding: 16, borderRadius: 12 },
   spaceHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  spaceActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  archiveButton: { padding: 4 },
   spaceStats: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  archiveCountdown: {
+    marginTop: 6,
+  },
+  countdownBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
   actionsContainer: { flexDirection: 'row', gap: 12 },
   actionButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12, gap: 8 },
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },

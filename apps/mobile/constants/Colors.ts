@@ -94,7 +94,7 @@ export const darkTheme = {
   'destructive-foreground': '#ffffff',
   
   // Border and input colors
-  border: '#262626', // hsl(0 0% 16%)
+  border: '#404040', // hsl(0 0% 25%) - lighter border for better visibility
   input: '#262626', // hsl(0 0% 16%)
   ring: '#007ADF',
   

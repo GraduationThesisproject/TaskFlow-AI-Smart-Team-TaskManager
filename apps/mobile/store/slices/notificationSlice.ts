@@ -128,24 +128,54 @@ export const markNotificationsAsReadBulk = createAsyncThunk(
 
 export const deleteNotification = createAsyncThunk(
   'notifications/deleteNotification',
-  async (notificationId: string, { getState }) => {
+  async (notificationId: string, { getState, rejectWithValue }) => {
     const state = getState() as RootState;
     const n = state.notifications.notifications.find(n => n._id === notificationId) as any;
+    
+    console.log('🗑️ Deleting notification:', { notificationId, isClientOnly: n?.clientOnly, isValidMongoId: /^[a-f0-9]{24}$/i.test(notificationId) });
+    
     if (n?.clientOnly) {
       // Locally generated notification: update state only
+      console.log('🗑️ Deleting client-only notification locally');
       return notificationId;
     }
+    
     const isMongoId = /^[a-f0-9]{24}$/i.test(notificationId);
     if (!isMongoId) {
+      console.warn('🗑️ Invalid MongoDB ObjectId format, treating as client-only');
       return notificationId;
     }
+    
     try {
+      console.log('🗑️ Making API call to delete notification:', notificationId);
       await axiosInstance.delete(`/notifications/${notificationId}`);
+      console.log('🗑️ Successfully deleted notification from server:', notificationId);
+      return notificationId;
     } catch (err: any) {
-      // Treat 404 as non-fatal (already deleted or non-existent)
-      if (err?.response?.status !== 404) throw err;
+      console.error('🗑️ Delete notification error:', { 
+        notificationId, 
+        status: err?.response?.status, 
+        message: err?.response?.data?.message || err?.message,
+        data: err?.response?.data,
+        url: err?.config?.url,
+        method: err?.config?.method
+      });
+      
+      // If 404, the notification doesn't exist on server, so we should still remove it locally
+      if (err?.response?.status === 404) {
+        console.warn(`🗑️ Notification ${notificationId} not found on server (404), removing locally`);
+        return notificationId;
+      }
+      
+      // If 403, user doesn't have permission to delete this notification
+      if (err?.response?.status === 403) {
+        console.warn(`🗑️ Permission denied to delete notification ${notificationId} (403), removing locally`);
+        return notificationId;
+      }
+      
+      // For other errors, throw them
+      throw err;
     }
-    return notificationId;
   }
 );
 
@@ -154,6 +184,41 @@ export const clearReadNotifications = createAsyncThunk(
   async () => {
     await axiosInstance.post('/notifications/clear-read');
     return true;
+  }
+);
+
+export const clearAllNotifications = createAsyncThunk(
+  'notifications/clearAllNotifications',
+  async () => {
+    console.log('🗑️ [clearAllNotifications] Making API call to clear all notifications');
+    try {
+      await axiosInstance.delete('/notifications/clear-all');
+      console.log('🗑️ [clearAllNotifications] Successfully cleared all notifications from server');
+      return true;
+    } catch (err: any) {
+      console.error('🗑️ [clearAllNotifications] Clear all notifications error:', { 
+        status: err?.response?.status, 
+        message: err?.response?.data?.message || err?.message,
+        data: err?.response?.data,
+        url: err?.config?.url,
+        method: err?.config?.method
+      });
+      
+      // If 404, no notifications to clear, so we should still clear locally
+      if (err?.response?.status === 404) {
+        console.warn(`🗑️ No notifications found to clear (404), clearing locally`);
+        return true;
+      }
+      
+      // If 403, user doesn't have permission to clear notifications
+      if (err?.response?.status === 403) {
+        console.warn(`🗑️ Permission denied to clear notifications (403), clearing locally`);
+        return true;
+      }
+      
+      // For other errors, throw them
+      throw err;
+    }
   }
 );
 
@@ -189,6 +254,24 @@ const notificationSlice = createSlice({
         state.stats.byType[action.payload.type] = 0 as any;
       }
       state.stats.byType[action.payload.type] += 1;
+    },
+    removeNotification: (state, action: PayloadAction<string>) => {
+      const notificationId = action.payload;
+      const deletedNotification = state.notifications.find(n => n._id === notificationId);
+      
+      if (deletedNotification) {
+        state.notifications = state.notifications.filter(n => n._id !== notificationId);
+        
+        if (state.stats) {
+          state.stats.total = Math.max(0, state.stats.total - 1);
+          if (!deletedNotification.isRead) {
+            state.stats.unread = Math.max(0, state.stats.unread - 1);
+          }
+          if (state.stats.byType[deletedNotification.type] !== undefined) {
+            state.stats.byType[deletedNotification.type] = Math.max(0, state.stats.byType[deletedNotification.type] - 1);
+          }
+        }
+      }
     },
     updateNotificationStatus: (state, action: PayloadAction<{ id: string; isRead: boolean }>) => {
       const notification = state.notifications.find(n => n._id === action.payload.id);
@@ -301,6 +384,7 @@ const notificationSlice = createSlice({
       })
       .addCase(deleteNotification.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to delete notification';
+        console.error('Delete notification failed:', action.error);
       })
       
       // Clear read notifications
@@ -317,9 +401,22 @@ const notificationSlice = createSlice({
       })
       .addCase(clearReadNotifications.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to clear read notifications';
+      })
+      
+      // Clear all notifications
+      .addCase(clearAllNotifications.fulfilled, (state) => {
+        state.notifications = [];
+        if (state.stats) {
+          state.stats.total = 0;
+          state.stats.unread = 0;
+          state.stats.byType = { info: 0, success: 0, warning: 0, error: 0, workspace_invitation: 0, space_invitation: 0, invitation_accepted: 0 };
+        }
+      })
+      .addCase(clearAllNotifications.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to clear all notifications';
       });
   },
 });
 
-export const { clearError, addNotification, updateNotificationStatus } = notificationSlice.actions;
+export const { clearError, addNotification, removeNotification, updateNotificationStatus } = notificationSlice.actions;
 export default notificationSlice.reducer;
