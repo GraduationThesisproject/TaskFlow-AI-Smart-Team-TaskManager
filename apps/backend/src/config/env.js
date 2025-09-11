@@ -19,9 +19,12 @@ module.exports = {
     'http://localhost:5174',
     'http://localhost:5175',
     'http://localhost:5176',
-    'http://192.168.1.142:8081', // Expo dev server
-    'http://192.168.1.142:3001', 
-    'exp://192.168.1.142:8081', // Alternative Expo protocol
+    // 'http://192.168.1.14:3001', // Mobile app direct connection
+    // 'http://192.168.1.14:8081', // Mobile app direct connection
+    // 'exp://192.168.1.14:8081', // Alternative Expo protocol
+    'http://192.168.1.64:8081', // Expo dev server
+    'http://192.168.1.64:3001', 
+    'exp://192.168.1.64:8081', // Alternative Expo protocol
     // Allow all origins in development (be careful in production)
     ...(process.env.NODE_ENV === 'development' ? ['*'] : [])
   ],

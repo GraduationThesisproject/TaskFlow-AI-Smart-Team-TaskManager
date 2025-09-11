@@ -32,5 +32,6 @@ module.exports = {
     reminder: reminderSchemas,
     ai: aiSchemas,
     analytics: analyticsSchemas,
-    github: githubSchemas
+    github: githubSchemas,
+    
 };

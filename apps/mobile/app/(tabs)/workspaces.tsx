@@ -7,7 +7,6 @@ import { useAppSelector, useAppDispatch } from '@/store';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
 import { fetchWorkspaces, createWorkspace, deleteWorkspace, restoreWorkspace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
-import CreateWorkspaceModal from '@/components/common/CreateWorkspaceModal';
 import { useRouter } from 'expo-router';
 import { formatArchiveCountdown, getArchiveCountdownStyle, getArchiveStatusMessage } from '@/utils/archiveTimeUtils';
 
@@ -40,6 +39,14 @@ export default function WorkspacesScreen() {
     setRefreshing(false);
   };
 
+  // Navigate to the main Workspace screen (where you can create spaces)
+  const goToWorkspace = (ws: any) => {
+    const id = ws?._id || ws?.id;
+    if (!id) return;
+    dispatch(setCurrentWorkspaceId(id));
+    router.push({ pathname: '/(tabs)/workspace', params: { workspaceId: id } });
+  };
+
   const handleCreateWorkspace = async () => {
     if (!newWorkspaceName.trim()) return;
     
@@ -47,7 +54,7 @@ export default function WorkspacesScreen() {
       await dispatch(createWorkspace({
         name: newWorkspaceName.trim(),
         description: '',
-        visibility: 'private'
+        isPublic: false
       }));
       setNewWorkspaceName('');
       setIsCreating(false);
@@ -144,16 +151,19 @@ export default function WorkspacesScreen() {
             />
             <TouchableOpacity 
               onPress={handleCreateWorkspace}
-              style={[styles.createButton, { backgroundColor: colors.success }]}
+              style={[styles.actionButton, { 
+                backgroundColor: newWorkspaceName.trim() ? colors.success : colors.muted,
+                opacity: newWorkspaceName.trim() ? 1 : 0.5
+              }]}
               disabled={!newWorkspaceName.trim()}
             >
-              <FontAwesome name="check" size={14} color={colors.foreground} />
+              <FontAwesome name="check" size={14} color={colors['primary-foreground']} />
             </TouchableOpacity>
             <TouchableOpacity 
               onPress={handleCancelCreate}
-              style={[styles.cancelButton, { backgroundColor: colors.muted }]}
+              style={[styles.actionButton, { backgroundColor: colors.muted }]}
             >
-              <FontAwesome name="times" size={14} color={colors.foreground} />
+              <FontAwesome name="times" size={14} color={colors['muted-foreground']} />
             </TouchableOpacity>
           </View>
         )}
@@ -180,104 +190,110 @@ export default function WorkspacesScreen() {
         ) : workspaces && workspaces.length > 0 ? (
           <View style={styles.workspacesList}>
             {workspaces.map((workspace) => (
-              <Card key={workspace._id} style={[styles.workspaceCard, { backgroundColor: colors.card }]}>
-                <View style={styles.workspaceHeader}>
-                  <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>
-                    {workspace.name}
-                  </Text>
-                  <View style={styles.actionButtons}>
-                    <TouchableOpacity 
-                      onPress={() => handleArchiveWorkspace(workspace._id, workspace.name, workspace.status === 'archived')}
-                      style={styles.archiveButton}
-                    >
-                      <FontAwesome 
-                        name={workspace.status === 'archived' ? 'undo' : 'archive'} 
-                        size={16} 
-                        color={workspace.status === 'archived' ? colors.success : colors.warning} 
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      onPress={() => handleDeleteWorkspace(workspace._id, workspace.name)}
-                      style={styles.deleteButton}
-                    >
-                      <FontAwesome name="trash" size={16} color={colors.destructive} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                
-                <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
-                  {workspace.description || 'No description'}
-                </Text>
-                
-                <View style={styles.workspaceInfo}>
-                  <View style={styles.infoRow}>
-                    <FontAwesome name="users" size={14} color={colors['muted-foreground']} />
-                    {(() => {
-                      const memberLen = Array.isArray(workspace.members) ? workspace.members.length : 0;
-                      const ownerIncluded = workspace.owner ? 1 : 0;
-                      const totalMembers = memberLen + ownerIncluded;
-                      return (
-                        <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                          {totalMembers} members
-                        </Text>
-                      );
-                    })()}
-                  </View>
-                  
-                  <View style={styles.infoRow}>
-                    <FontAwesome name="calendar" size={14} color={colors['muted-foreground']} />
-                    <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                      Created {new Date(workspace.createdAt).toLocaleDateString()}
+              <TouchableOpacity
+                key={workspace._id}
+                activeOpacity={0.85}
+                onPress={() => goToWorkspace(workspace)}
+              >
+                <Card style={[styles.workspaceCard, { backgroundColor: colors.card }]}>
+                  <View style={styles.workspaceHeader}>
+                    <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>
+                      {workspace.name}
                     </Text>
+                    <View style={styles.actionButtons}>
+                      <TouchableOpacity 
+                        onPress={() => handleArchiveWorkspace(workspace._id, workspace.name, workspace.status === 'archived')}
+                        style={styles.archiveButton}
+                      >
+                        <FontAwesome 
+                          name={workspace.status === 'archived' ? 'undo' : 'archive'} 
+                          size={16} 
+                          color={workspace.status === 'archived' ? colors.success : colors.warning} 
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        onPress={() => handleDeleteWorkspace(workspace._id, workspace.name)}
+                        style={styles.deleteButton}
+                      >
+                        <FontAwesome name="trash" size={16} color={colors.destructive} />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                   
-                  <View style={styles.badges}>
-                    <View style={[
-                      styles.badge, 
-                      { backgroundColor: workspace.isPublic ? colors.success : colors.muted }
-                    ]}>
-                      <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>
-                        {workspace.isPublic ? 'Public' : 'Private'}
+                  <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
+                    {workspace.description || 'No description'}
+                  </Text>
+                  
+                  <View style={styles.workspaceInfo}>
+                    <View style={styles.infoRow}>
+                      <FontAwesome name="users" size={14} color={colors['muted-foreground']} />
+                      {(() => {
+                        const memberLen = Array.isArray(workspace.members) ? workspace.members.length : 0;
+                        const ownerIncluded = workspace.owner ? 1 : 0;
+                        const totalMembers = memberLen + ownerIncluded;
+                        return (
+                          <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+                            {totalMembers} members
+                          </Text>
+                        );
+                      })()}
+                    </View>
+                    
+                    <View style={styles.infoRow}>
+                      <FontAwesome name="calendar" size={14} color={colors['muted-foreground']} />
+                      <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+                        Created {new Date(workspace.createdAt).toLocaleDateString()}
                       </Text>
                     </View>
                     
-                    <View style={[
-                      styles.badge, 
-                      { backgroundColor: workspace.isActive ? colors.success : colors.destructive }
-                    ]}>
-                      <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>
-                        {workspace.isActive ? 'Active' : 'Archived'}
-                      </Text>
-                    </View>
-                  </View>
-                  
-                  {/* Archive countdown for archived workspaces */}
-                  {workspace.status === 'archived' && workspace.archiveExpiresAt && (
-                    <View style={styles.archiveCountdown}>
+                    <View style={styles.badges}>
                       <View style={[
-                        styles.countdownBadge,
-                        { 
-                          backgroundColor: getArchiveCountdownStyle(workspace.archiveExpiresAt).backgroundColor,
-                          borderColor: getArchiveCountdownStyle(workspace.archiveExpiresAt).borderColor,
-                          borderWidth: 1
-                        }
+                        styles.badge, 
+                        { backgroundColor: workspace.isPublic ? colors.success : colors.muted }
                       ]}>
-                        <FontAwesome 
-                          name="clock-o" 
-                          size={12} 
-                          color={getArchiveCountdownStyle(workspace.archiveExpiresAt).color} 
-                        />
-                        <Text style={[
-                          TextStyles.caption.small, 
-                          { color: getArchiveCountdownStyle(workspace.archiveExpiresAt).color }
-                        ]}>
-                          {getArchiveStatusMessage(workspace.archiveExpiresAt)}
+                        <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>
+                          {workspace.isPublic ? 'Public' : 'Private'}
+                        </Text>
+                      </View>
+                      
+                      <View style={[
+                        styles.badge, 
+                        { backgroundColor: workspace.isActive ? colors.success : colors.destructive }
+                      ]}>
+                        <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>
+                          {workspace.isActive ? 'Active' : 'Archived'}
                         </Text>
                       </View>
                     </View>
-                  )}
-                </View>
-              </Card>
+                    
+                    {/* Archive countdown for archived workspaces */}
+                    {workspace.status === 'archived' && workspace.archiveExpiresAt && (
+                      <View style={styles.archiveCountdown}>
+                        <View style={[
+                          styles.countdownBadge,
+                          { 
+                            backgroundColor: getArchiveCountdownStyle(workspace.archiveExpiresAt).backgroundColor,
+                            borderColor: getArchiveCountdownStyle(workspace.archiveExpiresAt).borderColor,
+                            borderWidth: 1
+                          }
+                        ]}>
+                          <FontAwesome 
+                            name="clock-o" 
+                            size={12} 
+                            color={getArchiveCountdownStyle(workspace.archiveExpiresAt).color} 
+                          />
+                          <Text style={[
+                            TextStyles.caption.small, 
+                            { color: getArchiveCountdownStyle(workspace.archiveExpiresAt).color }
+                          ]}>
+                            {getArchiveStatusMessage(workspace.archiveExpiresAt)}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                </Card>
+              </TouchableOpacity>
             ))}
           </View>
         ) : (
@@ -291,7 +307,7 @@ export default function WorkspacesScreen() {
             </Text>
             <TouchableOpacity 
               onPress={() => setIsCreating(true)}
-              style={[styles.createButton, { backgroundColor: colors.primary }]}
+              style={[styles.emptyStateButton, { backgroundColor: colors.primary }]}
             >
               <FontAwesome name="plus" size={16} color={colors['primary-foreground']} />
               <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'] }]}>
@@ -302,12 +318,6 @@ export default function WorkspacesScreen() {
         )}
       </ScrollView>
 
-      <CreateWorkspaceModal
-        visible={isCreating}
-        onClose={() => setIsCreating(false)}
-        onSubmit={handleCreateWorkspace}
-        submitting={isCreating}
-      />
 
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="dashboard" />
     </View>
@@ -424,18 +434,20 @@ const styles = StyleSheet.create({
     paddingVertical: 64,
     gap: 16,
   },
-  createButton: {
+  actionButton: {
     width: 28,
     height: 28,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  emptyStateButton: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
   },
 });
