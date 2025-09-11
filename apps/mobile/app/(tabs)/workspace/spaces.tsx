@@ -1,10 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl, View, Alert } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 
-import { Text, View, Card } from '@/components/Themed';
+import { Text, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector, useAppDispatch } from '@/store';
@@ -12,6 +12,7 @@ import { setSelectedSpace, setCurrentWorkspaceId } from '@/store/slices/workspac
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import CreateSpaceModal from '@/components/common/CreateSpaceModal';
 import { SpaceService } from '@/services/spaceService';
+import SpaceCard from '@/components/common/SpaceCard';
 
 export default function SpacesScreen() {
   const colors = useThemeColors();
@@ -73,28 +74,54 @@ export default function SpacesScreen() {
     // Navigate to the space screen; also pass id as a param for deep-link robustness
     const id = space?._id || space?.id;
     if (id) {
-      router.push({ pathname: '/workspace/space/boards', params: { id } });
+      router.push({ pathname: '/workspace/space/main', params: { id } });
     } else {
-      router.push('/workspace/space/boards');
+      router.push('/workspace/space/main');
     }
   };
 
-  const handleSubmitCreate = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+  const handleSubmitCreate = async ({ name, description }: { name: string; description?: string }) => {
     if (!selectedWorkspaceId) return;
+    if (!name || !name.trim()) {
+      alert('Name is required.');
+      return;
+    }
     try {
       setCreating(true);
       await SpaceService.createSpace({
-        name,
-        description,
-        workspaceId: selectedWorkspaceId,
-        settings: { isPrivate: visibility === 'private' },
+        name: name.trim(),
+        description: description?.trim() || undefined,
+        workspaceId: String(selectedWorkspaceId),
       });
       await loadSpaces(selectedWorkspaceId);
       setShowCreate(false);
-    } catch (e) {
-      console.warn('Failed to create space', e);
+    } catch (e: any) {
+      console.warn('Failed to create space', e?.response?.data || e);
+      const msg = e?.response?.data?.message || e?.message || 'Failed to create space';
+      alert(msg);
     } finally {
       setCreating(false);
+    }
+  };
+
+  // Toggle archive/unarchive for a space
+  const handleToggleArchive = async (space: any) => {
+    if (!selectedWorkspaceId) return;
+    const spaceId = String(space?._id || space?.id || '').trim();
+    if (!spaceId) return;
+    try {
+      const isArchived = !!space?.isArchived;
+      if (isArchived) {
+        await SpaceService.unarchiveSpace(spaceId);
+        Alert.alert('Space restored', 'The space has been restored.');
+      } else {
+        await SpaceService.archiveSpace(spaceId);
+        Alert.alert('Space archived', 'The space has been archived.');
+      }
+      await loadSpaces(selectedWorkspaceId);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || 'Failed to toggle archive state';
+      Alert.alert('Action failed', msg);
     }
   };
 
@@ -130,6 +157,14 @@ export default function SpacesScreen() {
     }
     return unique.size;
   };
+
+  // Grid sizing to match Workspace index preview
+  const [gridW, setGridW] = useState(0);
+  const PREVIEW_COLS = 3;
+  const PREVIEW_GAP = 12;
+  const tileSize = gridW > 0
+    ? Math.floor((gridW - PREVIEW_GAP * (PREVIEW_COLS - 1)) / PREVIEW_COLS)
+    : undefined;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -175,22 +210,23 @@ export default function SpacesScreen() {
             </View>
           ) : (
             selectedWorkspaceId && (
-              <View style={styles.spaceList}>
+              <View
+                style={[styles.spaceList, { flexDirection: 'row', flexWrap: 'wrap', gap: PREVIEW_GAP, backgroundColor: colors.background }]}
+                onLayout={(e) => setGridW(e.nativeEvent.layout.width)}
+              >
                 {filtered.map((space: any) => (
-                  <TouchableOpacity key={space._id || space.id} style={[styles.spaceItem, { backgroundColor: colors.card }]} onPress={() => openSpace(space)}>
-                    <View style={styles.spaceHeader}>
-                      <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{space.name}</Text>
-                      <FontAwesome name="chevron-right" size={14} color={colors['muted-foreground']} />
-                    </View>
-                    {space.description ? (
-                      <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 6 }]} numberOfLines={2}>
-                        {space.description}
-                      </Text>
-                    ) : null}
-                    <View style={styles.spaceStats}>
-                      <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {getUniqueNonOwnerMemberCount(space)} members</Text>
-                    </View>
-                  </TouchableOpacity>
+                  <SpaceCard
+                    key={space._id || space.id}
+                    name={space.name}
+                    description={space.description}
+                    membersCount={getUniqueNonOwnerMemberCount(space)}
+                    icon={space.icon || '📂'}
+                    isArchived={!!space.isArchived}
+                    createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
+                    tileSize={tileSize}
+                    onPress={() => openSpace(space)}
+                    onToggleArchive={() => handleToggleArchive(space)}
+                  />
                 ))}
               </View>
             )
@@ -229,9 +265,6 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
   emptyBox: { alignItems: 'center', justifyContent: 'center', padding: 24, borderRadius: 12 },
   spaceList: { gap: 12 },
-  spaceItem: { padding: 16, borderRadius: 12 },
-  spaceHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  spaceStats: { flexDirection: 'row', gap: 8, marginTop: 8 },
   fabContainer: { position: 'absolute', right: 16, bottom: 24 },
   fab: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 4 },
-});
+})

@@ -25,6 +25,7 @@ export default function Alert({
 }: AlertProps) {
   const colors = useThemeColors();
 
+  // Early return after all hooks to avoid violating Rules of Hooks
   if (!visible) return null;
 
   const paletteByVariant = () => {
