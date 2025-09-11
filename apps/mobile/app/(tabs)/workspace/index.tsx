@@ -319,6 +319,47 @@ export default function WorkspaceScreen() {
   const isWide = width >= 768;
   const [membersSidebarOpen, setMembersSidebarOpen] = useState(false);
 
+  // Check if current user is owner of the workspace
+  const isOwner = useMemo(() => {
+    if (!effectiveWorkspace || !authUser) return false;
+    const workspaceOwnerId = effectiveWorkspace?.owner?._id || effectiveWorkspace?.ownerId || effectiveWorkspace?.createdBy?._id || effectiveWorkspace?.createdBy;
+    const currentUserId = authUser?._id || authUser?.id;
+    return workspaceOwnerId === currentUserId;
+  }, [effectiveWorkspace, authUser]);
+
+  // Helper functions for archive countdown styling
+  const getArchiveCountdownStyle = (archiveExpiresAt: string) => {
+    if (!archiveExpiresAt) return { backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e' };
+    
+    const expiresAt = new Date(archiveExpiresAt);
+    const now = new Date();
+    const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysLeft <= 3) {
+      return { backgroundColor: '#fee2e2', borderColor: '#ef4444', color: '#dc2626' };
+    } else if (daysLeft <= 7) {
+      return { backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e' };
+    } else {
+      return { backgroundColor: '#f0f9ff', borderColor: '#0ea5e9', color: '#0369a1' };
+    }
+  };
+
+  const getArchiveStatusMessage = (archiveExpiresAt: string) => {
+    if (!archiveExpiresAt) return 'Archived';
+    
+    const expiresAt = new Date(archiveExpiresAt);
+    const now = new Date();
+    const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysLeft <= 0) {
+      return 'Expires soon';
+    } else if (daysLeft === 1) {
+      return '1 day left';
+    } else {
+      return `${daysLeft} days left`;
+    }
+  };
+
   // Loading state — only block the UI if we have no cached spaces yet
   if (!USE_MOCK && loading && !refreshing && (!Array.isArray(spaces) || spaces.length === 0)) {
     return (
@@ -426,9 +467,9 @@ export default function WorkspaceScreen() {
                           <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
                         )}
                         <View style={styles.memberMetaRow}>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                          <Text key="role" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                          <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                          <Text key="status" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
                         </View>
                       </View>
                       {m.role !== 'owner' && (
@@ -575,9 +616,9 @@ export default function WorkspaceScreen() {
                     </Text>
                   ) : null}
                   <View style={styles.spaceStats}>
-                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.members?.length || 0)} members</Text>
-                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.stats?.totalBoards || 0)} boards</Text>
+                    <Text key="members" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.members?.length || 0)} members</Text>
+                    <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                    <Text key="boards" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.stats?.totalBoards || 0)} boards</Text>
                   </View>
                   
                   {/* Archive countdown for archived spaces */}
@@ -715,9 +756,9 @@ export default function WorkspaceScreen() {
                             <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
                           )}
                           <View style={styles.memberMetaRow}>
-                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                            <Text key="role" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                            <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                            <Text key="status" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
                           </View>
                         </View>
                         {m.role !== 'owner' && (
@@ -804,9 +845,9 @@ export default function WorkspaceScreen() {
                               <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
                             )}
                             <View style={styles.memberMetaRow}>
-                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                              <Text key="role" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                              <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                              <Text key="status" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
                             </View>
                           </View>
                           {m.role !== 'owner' && (
@@ -839,6 +880,16 @@ export default function WorkspaceScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  backButton: { padding: 8 },
+  headerSpacer: { width: 40 }, // Same width as backButton to center the title
   content: { flex: 1, padding: 16 },
   errorCard: { padding: 16, marginBottom: 16, borderRadius: 12 },
   sectionCard: { padding: 20, marginBottom: 20 },
