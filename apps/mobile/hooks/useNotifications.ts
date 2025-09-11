@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { env } from '../config/env';
-import { useAppDispatch, useAppSelector } from '../store';
+import { useAppDispatch, useAppSelector, store } from '../store';
 import type { RootState } from '../store';
 import {
   fetchNotifications,
@@ -55,12 +55,19 @@ export const useNotifications = (): UseNotificationsReturn => {
     return () => clearInterval(interval);
   }, []);
 
-  // Show toast notifications for new notifications
+  // Show toast notifications for new notifications (excluding workspace creation notifications)
   useEffect(() => {
     if (!notifications.length) return;
 
     const latestNotification = notifications[0];
     if (!latestNotification || processedNotifications.current.has(latestNotification._id)) return;
+
+    // Skip workspace creation notifications to prevent duplicate success messages
+    if (latestNotification.title === 'Workspace Created' || 
+        latestNotification.message?.includes('Successfully created workspace')) {
+      processedNotifications.current.add(latestNotification._id);
+      return;
+    }
 
     processedNotifications.current.add(latestNotification._id);
 
@@ -147,8 +154,24 @@ export const useNotifications = (): UseNotificationsReturn => {
   useEffect(() => {
     if (token && realTimeEnabled) {
       fetchNotificationsHandler();
+      
+      // Clear any existing workspace creation notifications to prevent them from showing on app start
+      setTimeout(() => {
+        const state = store.getState() as any;
+        const notifications = state.notifications.notifications || [];
+        const workspaceCreationNotifications = notifications.filter((n: any) => 
+          n.title === 'Workspace Created' || n.message?.includes('Successfully created workspace')
+        );
+        
+        if (workspaceCreationNotifications.length > 0) {
+          console.log('🗑️ Clearing workspace creation notifications on app start');
+          workspaceCreationNotifications.forEach((notification: any) => {
+            dispatch(deleteNotificationAction(notification._id));
+          });
+        }
+      }, 1000); // Small delay to ensure notifications are loaded
     }
-  }, [token, realTimeEnabled, fetchNotificationsHandler]);
+  }, [token, realTimeEnabled, fetchNotificationsHandler, dispatch]);
 
   return {
     notifications,

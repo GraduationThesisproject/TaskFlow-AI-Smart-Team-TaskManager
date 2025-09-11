@@ -178,24 +178,8 @@ exports.createWorkspace = async (req, res) => {
 
         logger.info(`Workspace created: ${name} by ${req.user.email}`);
 
-        // Create a system notification for the creator (non-blocking)
-        try {
-            await NotificationService.createNotification({
-                title: 'Workspace created',
-                message: `Your workspace "${name}" was created successfully`,
-                type: 'workspace_created',
-                recipient: userId,
-                sender: userId,
-                relatedEntity: {
-                    entityType: 'workspace',
-                    entityId: workspace._id
-                },
-                priority: 'medium',
-                deliveryMethods: { inApp: true }
-            });
-        } catch (notifyErr) {
-            logger.warn('Workspace create: notification not sent/saved', { error: notifyErr?.message });
-        }
+        // Don't create notification since workspace creation already shows local success messages
+        // This prevents duplicate success banners/toasts
 
         sendResponse(res, 201, true, 'Workspace created successfully', {
             workspace: workspace.toObject(),
