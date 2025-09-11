@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl, View } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl, View, Alert } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -104,6 +104,27 @@ export default function SpacesScreen() {
     }
   };
 
+  // Toggle archive/unarchive for a space
+  const handleToggleArchive = async (space: any) => {
+    if (!selectedWorkspaceId) return;
+    const spaceId = String(space?._id || space?.id || '').trim();
+    if (!spaceId) return;
+    try {
+      const isArchived = !!space?.isArchived;
+      if (isArchived) {
+        await SpaceService.unarchiveSpace(spaceId);
+        Alert.alert('Space restored', 'The space has been restored.');
+      } else {
+        await SpaceService.archiveSpace(spaceId);
+        Alert.alert('Space archived', 'The space has been archived.');
+      }
+      await loadSpaces(selectedWorkspaceId);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || 'Failed to toggle archive state';
+      Alert.alert('Action failed', msg);
+    }
+  };
+
   // Helpers to compute unique, non-owner member count per space
   const normalizeId = (m: any): string => String(
     m?._id || m?.id || m?.user?._id || m?.user?.id || m?.userId || m?.memberId || ''
@@ -204,7 +225,7 @@ export default function SpacesScreen() {
                     createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
                     tileSize={tileSize}
                     onPress={() => openSpace(space)}
-                    onToggleArchive={undefined}
+                    onToggleArchive={() => handleToggleArchive(space)}
                   />
                 ))}
               </View>
