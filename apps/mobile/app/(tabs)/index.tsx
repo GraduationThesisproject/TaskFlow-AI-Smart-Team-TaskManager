@@ -159,10 +159,10 @@ const WorkspacesSection: React.FC = () => {
   const [showCreateWs, setShowCreateWs] = useState(false);
   const [creatingWs, setCreatingWs] = useState(false);
 
-  const handleSubmitCreateWorkspace = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+  const handleSubmitCreateWorkspace = async ({ name, description }: { name: string; description?: string }) => {
     try {
       setCreatingWs(true);
-      const action: any = await dispatch(createWorkspace({ name, description, visibility } as any));
+      const action: any = await dispatch(createWorkspace({ name, description, isPublic: false } as any));
       const payload = action?.payload as any;
       const id = payload?._id || payload?.id;
       if (id) {
@@ -494,7 +494,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    paddingTop: 32,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
   },
   menuButton: {

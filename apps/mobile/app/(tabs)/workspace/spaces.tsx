@@ -74,13 +74,13 @@ export default function SpacesScreen() {
     // Navigate to the space screen; also pass id as a param for deep-link robustness
     const id = space?._id || space?.id;
     if (id) {
-      router.push({ pathname: '/workspace/space/boards', params: { id } });
+      router.push({ pathname: '/workspace/space/main', params: { id } });
     } else {
-      router.push('/workspace/space/boards');
+      router.push('/workspace/space/main');
     }
   };
 
-  const handleSubmitCreate = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+  const handleSubmitCreate = async ({ name, description }: { name: string; description?: string }) => {
     if (!selectedWorkspaceId) return;
     if (!name || !name.trim()) {
       alert('Name is required.');
@@ -90,7 +90,7 @@ export default function SpacesScreen() {
       setCreating(true);
       await SpaceService.createSpace({
         name: name.trim(),
-        description,
+        description: description?.trim() || undefined,
         workspaceId: String(selectedWorkspaceId),
       });
       await loadSpaces(selectedWorkspaceId);

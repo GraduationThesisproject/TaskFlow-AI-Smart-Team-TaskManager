@@ -113,6 +113,22 @@ export default function Sidebar({
     }
   }, [isVisible, slideAnim, width, animationDuration]);
 
+  // Build default sections based on context when explicit sections are not provided
+  const defaultSections: SidebarSection[] = React.useMemo(() => {
+    switch (context) {
+      case 'settings':
+        return [{ id: 'settings', title: 'Settings', items: settingsItems }];
+      case 'workspace':
+        return [{ id: 'workspace', title: 'Workspace', items: workspaceItems }];
+      case 'dashboard':
+      default:
+        return [{ id: 'dashboard', title: 'Dashboard', items: dashboardItems }];
+    }
+  }, [context]);
+
+  // Early return after all hooks to avoid violating Rules of Hooks
+  if (!isVisible) return null;
+
   const handleNavigation = (item: NavItem) => {
     // Call custom onItemPress if provided
     if (onItemPress) {
@@ -182,19 +198,6 @@ export default function Sidebar({
     </TouchableOpacity>
   );
 
-  // Build default sections based on context when explicit sections are not provided
-  const defaultSections: SidebarSection[] = React.useMemo(() => {
-    switch (context) {
-      case 'settings':
-        return [{ id: 'settings', title: 'Settings', items: settingsItems }];
-      case 'workspace':
-        return [{ id: 'workspace', title: 'Workspace', items: workspaceItems }];
-      case 'dashboard':
-      default:
-        return [{ id: 'dashboard', title: 'Dashboard', items: dashboardItems }];
-    }
-  }, [context]);
-
   const finalSections = (sections && sections.length ? sections : defaultSections);
   const activeSection = currentSection ?? finalSections[0];
 
@@ -228,8 +231,6 @@ export default function Sidebar({
       </View>
     );
   };
-
-  if (!isVisible) return null;
 
   return (
     <>
