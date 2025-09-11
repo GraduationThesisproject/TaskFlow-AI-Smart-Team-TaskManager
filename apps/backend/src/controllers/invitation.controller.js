@@ -6,6 +6,7 @@ const Notification = require('../models/Notification');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
+const { getNamespace } = require('../sockets');
 
 // Create invitation
 exports.createInvitation = async (req, res) => {
@@ -240,7 +241,8 @@ exports.acceptInvitation = async (req, res) => {
             const SpaceModel = require('../models/Space');
             const space = await SpaceModel.findById(invitation.targetEntity.id);
             if (space) {
-                const isMember = (space.members || []).some(m => m.user.toString() === userId.toString());
+                const isMember = (space.members || []).some(m => 
+                    m.user.toString() === userId.toString());
                 if (!isMember) {
                     space.members.push({ user: userId, role: invitation.role });
                     await space.save();
@@ -258,21 +260,63 @@ exports.acceptInvitation = async (req, res) => {
                 'invitedUser.userId': userId
             });
         }
-// create a new notification for the user
-const notification_receiver = new Notification({
-    userId: userId,
-    message: `You have been invited to ${invitation.targetEntity.name} by ${invitation.invitedBy.name}`,
-    type: 'invitation',
-    data: invitation
-});
-await notification_receiver.save();
-const notification_sender = new Notification({
-    userId: invitation.invitedBy,
-    message: `You have invited ${invitation.invitedUser.name} to ${invitation.targetEntity.name}`,
-    type: 'invitation',
-    data: invitation
-});
-await notification_sender.save();
+
+        // Emit real-time events so clients refresh immediately
+        try {
+            const notificationNS = getNamespace && getNamespace('notification');
+            if (notificationNS && invitation?.targetEntity?.type === 'Workspace') {
+                const workspaceId = invitation.targetEntity.id;
+                const memberPayload = { userId, role: invitation.role };
+                // Fire a few helpful events; frontend listens to any of these
+                notificationNS.emit('workspace:member-added', { workspaceId, member: memberPayload });
+                notificationNS.emit('workspace:members-updated', { workspaceId });
+                notificationNS.emit('invitation:accepted', { workspaceId, userId });
+            }
+        } catch (e) {
+            logger.warn('Socket emit failed on invitation accept', { error: e?.message, invitationId: invitation?._id?.toString?.() });
+        }
+
+        // Create notifications that comply with Notification schema
+        // 1) Notify inviter that their invitation was accepted
+        try {
+            const entityType = invitation.targetEntity.type === 'Workspace' ? 'workspace' : 'space';
+            const inviterNotification = new Notification({
+                recipient: invitation.invitedBy, // inviter gets notified
+                sender: userId,                  // accepting user is the sender
+                type: 'invitation_accepted',
+                title: 'Invitation accepted',
+                message: `${user?.name || 'A user'} accepted your invitation to ${invitation.targetEntity.name}`,
+                relatedEntity: {
+                    entityType,
+                    entityId: invitation.targetEntity.id
+                },
+                priority: 'low'
+            });
+            await inviterNotification.save();
+        } catch (e) {
+            logger.warn('Failed to create inviter notification on invitation accept', { error: e?.message, invitationId: invitation?._id?.toString?.() });
+        }
+
+        // 2) Optionally notify the accepting user that they joined (non-blocking)
+        try {
+            const entityType = invitation.targetEntity.type === 'Workspace' ? 'workspace' : 'space';
+            const accepterNotification = new Notification({
+                recipient: userId,
+                sender: invitation.invitedBy,
+                type: entityType === 'workspace' ? 'workspace_invitation' : 'space_invitation',
+                title: `Joined ${invitation.targetEntity.type}`,
+                message: `You have joined ${invitation.targetEntity.name} as ${invitation.role}`,
+                relatedEntity: {
+                    entityType,
+                    entityId: invitation.targetEntity.id
+                },
+                priority: 'low'
+            });
+            await accepterNotification.save();
+        } catch (e) {
+            logger.warn('Failed to create accepter notification on invitation accept', { error: e?.message, invitationId: invitation?._id?.toString?.() });
+        }
+
         sendResponse(res, 200, true, 'Invitation accepted successfully', {
             invitation: invitation
         });
@@ -298,6 +342,18 @@ exports.declineInvitation = async (req, res) => {
         }
 
         await invitation.decline();
+
+        // Emit real-time events so clients can refresh invite lists
+        try {
+            const notificationNS = getNamespace && getNamespace('notification');
+            if (notificationNS && invitation?.targetEntity?.type === 'Workspace') {
+                const workspaceId = invitation.targetEntity.id;
+                notificationNS.emit('invitation:declined', { workspaceId, invitationId: invitation._id });
+                notificationNS.emit('workspace:members-updated', { workspaceId });
+            }
+        } catch (e) {
+            logger.warn('Socket emit failed on invitation decline', { error: e?.message, invitationId: invitation?._id?.toString?.() });
+        }
 
         sendResponse(res, 200, true, 'Invitation declined successfully', {
             invitation: {
