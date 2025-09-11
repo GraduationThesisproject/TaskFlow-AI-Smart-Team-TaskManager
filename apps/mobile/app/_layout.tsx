@@ -94,40 +94,40 @@ function RootLayoutNav() {
 }
 
 function AuthGate() {
-  // const dispatch = useAppDispatch();
-  // const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
 
-  // // // On app start, check auth status (reads token from storage and fetches profile with timeout)
-  // useEffect(() => {
-  //   dispatch(checkAuthStatus());
-  // }, [dispatch]);
+  // // On app start, check auth status (reads token from storage and fetches profile with timeout)
+  useEffect(() => {
+    dispatch(checkAuthStatus());
+  }, [dispatch]);
 
-  // // // Optional: show splash/blank while determining auth
-  // if (isLoading) {
-  //   return null;
-  // }
+  // // Optional: show splash/blank while determining auth
+  if (isLoading) {
+    return null;
+  }
 
-  // if (!isAuthenticated) {
-  //   // Unauthenticated: expose only login screen to prevent access to other screens
-  //   return (
-  //     <Stack>
-  //       <Stack.Screen name="login" options={{ headerShown: false }} />
-  //       <Stack.Screen name="register" options={{ headerShown: false }} />
-  //     </Stack>
-  //   );
-  // }
-  // if (!isAuthenticated) {
-  //   // Unauthenticated: expose auth screens
-  //   return (
-  //     <Stack>
-  //       <Stack.Screen name="login" options={{ headerShown: false }} />
-  //       <Stack.Screen name="register" options={{ headerShown: false }} />
-  //       <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
-  //       <Stack.Screen name="verify-code" options={{ headerShown: false }} />
-  //       <Stack.Screen name="reset-password" options={{ headerShown: false }} />
-  //     </Stack>
-  //   );
-  // }
+  if (!isAuthenticated) {
+    // Unauthenticated: expose only login screen to prevent access to other screens
+    return (
+      <Stack>
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="register" options={{ headerShown: false }} />
+      </Stack>
+    );
+  }
+  if (!isAuthenticated) {
+    // Unauthenticated: expose auth screens
+    return (
+      <Stack>
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="register" options={{ headerShown: false }} />
+        <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+        <Stack.Screen name="verify-code" options={{ headerShown: false }} />
+        <Stack.Screen name="reset-password" options={{ headerShown: false }} />
+      </Stack>
+    );
+  }
 
   // Authenticated: show main tabs (workspace section lives under tabs/index)
   return (
