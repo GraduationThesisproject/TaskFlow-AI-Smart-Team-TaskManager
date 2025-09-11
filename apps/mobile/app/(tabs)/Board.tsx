@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   ScrollView, 
   Image, 
@@ -11,22 +11,31 @@ import {
   ActivityIndicator,
   RefreshControl,
   PanResponder,
-  LayoutChangeEvent
+  LayoutChangeEvent,
+  KeyboardAvoidingView,
+  Platform,
+  Vibration
 } from 'react-native';
-import { Gesture, GestureDetector, LongPressGestureHandler, PanGestureHandler, State } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
   withSpring, 
   runOnJS,
-  useAnimatedGestureHandler,
   interpolate,
   Extrapolate,
   withTiming,
   useAnimatedReaction,
   measure,
-  useAnimatedRef
+  useAnimatedRef,
+  withSequence,
+  withDelay,
+  Easing,
+  FadeIn,
+  FadeOut,
+  Layout
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { 
   ArrowLeft, 
   Bell, 
@@ -40,12 +49,56 @@ import {
   User,
   Clock,
   List,
-  Grid3X3
+  Grid3X3,
+  CheckSquare,
+  Paperclip,
+  Users,
+  MessageSquare,
+  Activity,
+  MapPin,
+  Tag,
+  FileText,
+  Send,
+  X,
+  Check,
+  CalendarDays,
+  AtSign
 } from 'lucide-react-native';
 import { Text, View } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 
 // Types
+interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
+interface Attachment {
+  id: string;
+  name: string;
+  size: string;
+  type: string;
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
+interface Comment {
+  id: string;
+  text: string;
+  author: { id: string; name: string; avatar?: string };
+  createdAt: string;
+  mentions?: string[];
+}
+
+interface ActivityLog {
+  id: string;
+  type: 'created' | 'updated' | 'moved' | 'commented' | 'assigned' | 'attachment' | 'checklist';
+  description: string;
+  user: { id: string; name: string; avatar?: string };
+  timestamp: string;
+}
+
 interface Task {
   _id: string;
   title: string;
@@ -53,12 +106,18 @@ interface Task {
   status: 'todo' | 'in_progress' | 'review' | 'done';
   priority: 'low' | 'medium' | 'high' | 'very high';
   dueDate?: string;
+  startDate?: string;
   assignees: Array<{ id: string; name: string; avatar?: string }>;
   column: string;
   board: string;
   position: number;
   progress?: number;
   category?: string;
+  coverColor?: string;
+  checklist?: ChecklistItem[];
+  attachments?: Attachment[];
+  comments?: Comment[];
+  activityLog?: ActivityLog[];
   createdAt: string;
   updatedAt: string;
 }
@@ -83,7 +142,7 @@ interface Board {
   spaceId: string;
 }
 
-export default function TasksScreen() {
+function TasksScreen() {
   // State management
   const [columns, setColumns] = useState<Column[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -102,6 +161,13 @@ export default function TasksScreen() {
   const [selectedColumn, setSelectedColumn] = useState<string>('');
   const [editingColumn, setEditingColumn] = useState<Column | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  
+  // Task details states
+  const [newComment, setNewComment] = useState('');
+  const [newChecklistItem, setNewChecklistItem] = useState('');
+  const [isAddingChecklist, setIsAddingChecklist] = useState(false);
+  const [selectedMoveColumn, setSelectedMoveColumn] = useState<string>('');
+  const [showMoveOptions, setShowMoveOptions] = useState(false);
   
   // Form states
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -124,6 +190,8 @@ export default function TasksScreen() {
   const [dropZoneColumn, setDropZoneColumn] = useState<string>('');
   const [dropZoneIndex, setDropZoneIndex] = useState<number>(-1);
   const [placeholderPosition, setPlaceholderPosition] = useState<{columnId: string, index: number} | null>(null);
+  const [hoveredColumn, setHoveredColumn] = useState<string>('');
+  const [columnPositions, setColumnPositions] = useState<Record<string, {x: number, y: number, width: number, height: number}>>({});
   
   // Animated values for drag and drop
   const dragX = useSharedValue(0);
@@ -135,6 +203,7 @@ export default function TasksScreen() {
   const columnRefs = useRef<Record<string, any>>({});
   const taskRefs = useRef<Record<string, any>>({});
   const boardScrollRef = useRef<ScrollView>(null);
+  const scrollOffset = useRef({ x: 0, y: 0 });
   
   // Mock board ID - in real app this would come from navigation params
   const boardId = 'mock-board-id';
@@ -195,26 +264,61 @@ export default function TasksScreen() {
       }
     ];
     
-    // Mock tasks
+    // Mock tasks with enhanced data
     const mockTasks: Task[] = [
       {
         _id: 'task-1',
-        title: 'Define KPI list for Q2',
+        title: 'Log of dynamic progress … Creation of Layouts',
         description: 'Create comprehensive KPI metrics for quarterly review',
         status: 'todo',
         priority: 'very high',
         progress: 25,
+        startDate: '2024-03-10',
         dueDate: '2024-03-15',
         category: 'Medium SaaS',
+        coverColor: '#8B5CF6',
         assignees: [
           { id: '1', name: 'Alice Johnson', avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0" },
           { id: '2', name: 'Bob Smith', avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0" },
+        ],
+        checklist: [
+          { id: 'check-1', text: 'Create wireframes', completed: true },
+          { id: 'check-2', text: 'Design mockups', completed: true },
+          { id: 'check-3', text: 'Get client approval', completed: false },
+          { id: 'check-4', text: 'Implement layouts', completed: false }
+        ],
+        attachments: [
+          { id: 'att-1', name: 'wireframes.fig', size: '2.4 MB', type: 'figma', uploadedAt: '2024-03-02T10:00:00Z', uploadedBy: 'Alice Johnson' },
+          { id: 'att-2', name: 'requirements.pdf', size: '156 KB', type: 'pdf', uploadedAt: '2024-03-01T10:00:00Z', uploadedBy: 'Bob Smith' }
+        ],
+        comments: [
+          { 
+            id: 'comm-1', 
+            text: 'Created 4/4 given pages @alice', 
+            author: { id: '2', name: 'Bob Smith', avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0" },
+            createdAt: '2024-03-03T14:30:00Z',
+            mentions: ['alice']
+          },
+          { 
+            id: 'comm-2', 
+            text: 'Great progress! Let\'s review tomorrow @bob', 
+            author: { id: '1', name: 'Alice Johnson', avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0" },
+            createdAt: '2024-03-03T15:00:00Z',
+            mentions: ['bob']
+          }
+        ],
+        activityLog: [
+          { id: 'act-1', type: 'created', description: 'Task created', user: { id: '1', name: 'Alice Johnson', avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0" }, timestamp: '2024-03-01T10:00:00Z' },
+          { id: 'act-2', type: 'assigned', description: 'Bob Smith assigned', user: { id: '1', name: 'Alice Johnson', avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0" }, timestamp: '2024-03-01T10:05:00Z' },
+          { id: 'act-3', type: 'attachment', description: 'Added wireframes.fig', user: { id: '1', name: 'Alice Johnson', avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0" }, timestamp: '2024-03-02T10:00:00Z' },
+          { id: 'act-4', type: 'checklist', description: 'Completed "Create wireframes"', user: { id: '2', name: 'Bob Smith', avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0" }, timestamp: '2024-03-03T09:00:00Z' },
+          { id: 'act-5', type: 'commented', description: 'Added a comment', user: { id: '2', name: 'Bob Smith', avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0" }, timestamp: '2024-03-03T14:30:00Z' }
         ],
         column: 'col-1',
         board: boardId,
         position: 0,
         createdAt: '2024-03-01T10:00:00Z',
-        updatedAt: '2024-03-01T10:00:00Z'
+        updatedAt: '2024-03-03T15:00:00Z'
       },
       {
         _id: 'task-2',
@@ -424,57 +528,82 @@ export default function TasksScreen() {
     });
   };
   
-  const findDropZone = (x: number, y: number, taskCenterX: number) => {
-    // Simplified drop zone detection to prevent crashes
+  const findDropZone = useCallback((absoluteX: number, absoluteY: number) => {
+    'worklet';
     try {
-      const screenWidth = Dimensions.get('window').width;
-      const columnWidth = screenWidth - 32;
-      const columnSpacing = 16;
+      // Find which column we're over
+      let targetColumnId = '';
+      let targetColumnIndex = -1;
       
-      const columnIndex = Math.floor(x / (columnWidth + columnSpacing));
+      // Account for scroll offset
+      const adjustedX = absoluteX + scrollOffset.current.x;
       
-      if (columnIndex >= 0 && columnIndex < columns.length) {
-        const targetColumn = columns[columnIndex];
-        setDropZoneColumn(targetColumn._id);
+      // Find the column based on position
+      Object.entries(columnPositions).forEach(([colId, pos], index) => {
+        if (adjustedX >= pos.x && adjustedX <= pos.x + pos.width &&
+            absoluteY >= pos.y && absoluteY <= pos.y + pos.height) {
+          targetColumnId = colId;
+          targetColumnIndex = index;
+        }
+      });
+      
+      if (targetColumnId) {
+        // Highlight the column
+        runOnJS(setHoveredColumn)(targetColumnId);
+        runOnJS(setDropZoneColumn)(targetColumnId);
         
-        // Simple insertion at end of column to avoid complex calculations
-        const columnTasks = tasks.filter(t => t.column === targetColumn._id && t._id !== draggedTask?._id);
-        const insertIndex = columnTasks.length;
+        // Calculate insertion index based on Y position within the column
+        const columnTasks = tasks.filter(t => t.column === targetColumnId && t._id !== draggedTask?._id);
+        const columnPos = columnPositions[targetColumnId];
         
-        setDropZoneIndex(insertIndex);
-        setPlaceholderPosition({ columnId: targetColumn._id, index: insertIndex });
+        if (columnPos) {
+          const relativeY = absoluteY - columnPos.y - 60; // Account for column header
+          const taskHeight = 120; // Approximate task card height
+          let insertIndex = Math.max(0, Math.floor(relativeY / taskHeight));
+          insertIndex = Math.min(insertIndex, columnTasks.length);
+          
+          runOnJS(setDropZoneIndex)(insertIndex);
+          runOnJS(setPlaceholderPosition)({ columnId: targetColumnId, index: insertIndex });
+        }
       } else {
-        setDropZoneColumn('');
-        setDropZoneIndex(-1);
-        setPlaceholderPosition(null);
+        runOnJS(setHoveredColumn)('');
+        runOnJS(setDropZoneColumn)('');
+        runOnJS(setDropZoneIndex)(-1);
+        runOnJS(setPlaceholderPosition)(null);
       }
     } catch (error) {
       console.warn('Drop zone detection failed:', error);
-      setDropZoneColumn('');
-      setDropZoneIndex(-1);
-      setPlaceholderPosition(null);
+      runOnJS(setHoveredColumn)('');
+      runOnJS(setDropZoneColumn)('');
+      runOnJS(setDropZoneIndex)(-1);
+      runOnJS(setPlaceholderPosition)(null);
     }
-  };
+  }, [columnPositions, tasks, draggedTask]);
   
-  // Simplified drop handler to prevent crashes
-  const handleDrop = (finalX: number, finalY: number, sourceColumnId: string, sourceIndex: number) => {
-    setTimeout(() => {
-      try {
-        if (dropZoneColumn && dropZoneColumn !== '' && draggedTask) {
-          if (dropZoneColumn !== sourceColumnId) {
-            // Only handle cross-column moves for simplicity
-            moveTaskToColumn(draggedTask._id, sourceColumnId, dropZoneColumn, dropZoneIndex);
+  const handleDrop = useCallback(async (sourceColumnId: string, sourceIndex: number) => {
+    try {
+      if (dropZoneColumn && draggedTask) {
+        // Haptic feedback on successful drop
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        
+        if (dropZoneColumn === sourceColumnId) {
+          // Same column reordering
+          if (dropZoneIndex !== sourceIndex) {
+            reorderTasksInColumn(sourceColumnId, sourceIndex, dropZoneIndex);
           }
+        } else {
+          // Cross-column move
+          moveTaskToColumn(draggedTask._id, sourceColumnId, dropZoneColumn, dropZoneIndex);
         }
-      } catch (error) {
-        console.warn('Drop failed:', error);
-      } finally {
-        resetDragState();
       }
-    }, 100);
-  };
+    } catch (error) {
+      console.warn('Drop failed:', error);
+    } finally {
+      resetDragState();
+    }
+  }, [dropZoneColumn, dropZoneIndex, draggedTask]);
 
-  const resetDragState = () => {
+  const resetDragState = useCallback(() => {
     setIsDragging(false);
     setDraggedTask(null);
     setDraggedTaskIndex(-1);
@@ -482,7 +611,8 @@ export default function TasksScreen() {
     setDropZoneColumn('');
     setDropZoneIndex(-1);
     setPlaceholderPosition(null);
-  };
+    setHoveredColumn('');
+  }, []);
 
   const handleTaskPress = (task: Task) => {
     // Open task details modal on tap
@@ -712,22 +842,34 @@ export default function TasksScreen() {
   // Draggable Task Card Component
   const DraggableTaskCard = ({ task, index, columnId }: { task: Task; index: number; columnId: string }) => {
     const colors = useThemeColors();
-    const longPressRef = useRef<LongPressGestureHandler>(null);
-    const panRef = useRef<PanGestureHandler>(null);
     
     const translateX = useSharedValue(0);
     const translateY = useSharedValue(0);
     const scale = useSharedValue(1);
     const opacity = useSharedValue(1);
     const zIndex = useSharedValue(1);
+    const shadowOpacity = useSharedValue(0.2);
+    const elevation = useSharedValue(2);
+    
+    // Track if this specific card is being dragged
+    const isThisCardDragging = draggedTask?._id === task._id;
     
     const longPressGesture = Gesture.LongPress()
-      .minDuration(300)
+      .minDuration(500) // 500ms for Trello-like feel
       .onStart(() => {
         'worklet';
-        scale.value = withSpring(1.05);
-        opacity.value = withTiming(0.9);
+        // Initial lift animation with shadow
+        scale.value = withSpring(1.08, {
+          damping: 15,
+          stiffness: 350,
+        });
+        shadowOpacity.value = withTiming(0.4, { duration: 200 });
+        elevation.value = withTiming(8, { duration: 200 });
+        opacity.value = withTiming(0.95);
         zIndex.value = 1000;
+        
+        // Haptic feedback on pickup
+        runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
         
         runOnJS(() => {
           setIsDragging(true);
@@ -743,37 +885,107 @@ export default function TasksScreen() {
         translateX.value = event.translationX;
         translateY.value = event.translationY;
         
-        // Simplified drop zone detection - only call when needed
-        if (Math.abs(event.translationX) > 20 || Math.abs(event.translationY) > 20) {
-          runOnJS(findDropZone)(event.absoluteX, event.absoluteY, event.absoluteX);
-        }
+        // Subtle rotation based on drag velocity
+        const rotation = interpolate(
+          event.velocityX,
+          [-500, 0, 500],
+          [-5, 0, 5],
+          Extrapolate.CLAMP
+        );
+        
+        // Update drop zone with debouncing
+        runOnJS(findDropZone)(event.absoluteX, event.absoluteY);
       })
-      .onEnd((event) => {
+      .onEnd(() => {
         'worklet';
-        // Reset animations first
+        // Smooth drop animation
+        translateX.value = withSpring(0, {
+          damping: 20,
+          stiffness: 300,
+        });
+        translateY.value = withSpring(0, {
+          damping: 20,
+          stiffness: 300,
+        });
+        scale.value = withSpring(1, {
+          damping: 15,
+          stiffness: 350,
+        });
+        shadowOpacity.value = withTiming(0.2, { duration: 200 });
+        elevation.value = withTiming(2, { duration: 200 });
+        opacity.value = withTiming(1);
+        zIndex.value = withTiming(1);
+        
+        runOnJS(handleDrop)(columnId, index);
+      })
+      .onFinalize(() => {
+        'worklet';
+        // Ensure everything is reset if gesture is cancelled
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
         scale.value = withSpring(1);
         opacity.value = withTiming(1);
         zIndex.value = 1;
-        
-        // Simplified drop handling
-        runOnJS(() => {
-          handleDrop(event.absoluteX, event.absoluteY, columnId, index);
-        })();
+        shadowOpacity.value = withTiming(0.2);
+        elevation.value = withTiming(2);
       });
     
     const combinedGesture = Gesture.Simultaneous(longPressGesture, panGesture);
     
     const animatedStyle = useAnimatedStyle(() => {
+      const shouldHide = isDragging && isThisCardDragging;
+      
       return {
         transform: [
           { translateX: translateX.value },
           { translateY: translateY.value },
-          { scale: scale.value }
+          { scale: scale.value },
+          { 
+            rotate: `${interpolate(
+              translateX.value,
+              [-100, 0, 100],
+              [-3, 0, 3],
+              Extrapolate.CLAMP
+            )}deg`
+          }
         ],
         opacity: opacity.value,
         zIndex: zIndex.value,
+        shadowOpacity: shadowOpacity.value,
+        shadowRadius: elevation.value * 2,
+        shadowOffset: {
+          width: 0,
+          height: elevation.value,
+        },
+        shadowColor: '#000',
+        elevation: Platform.OS === 'android' ? elevation.value : undefined,
+      };
+    });
+    
+    // Animation for other cards shifting
+    const shiftAnimatedStyle = useAnimatedStyle(() => {
+      if (!isDragging || isThisCardDragging) return {};
+      
+      // Check if we need to shift this card
+      if (placeholderPosition && 
+          placeholderPosition.columnId === columnId &&
+          index >= placeholderPosition.index) {
+        return {
+          transform: [
+            { 
+              translateY: withSpring(120, { // Height of a task card
+                damping: 15,
+                stiffness: 300,
+              })
+            }
+          ]
+        };
+      }
+      
+      return {
+        transform: [
+          { translateY: withSpring(0) }
+        ]
       };
     });
     
@@ -802,7 +1014,8 @@ export default function TasksScreen() {
               backgroundColor: colors.card,
               borderColor: colors.border,
             },
-            animatedStyle
+            animatedStyle,
+            shiftAnimatedStyle
           ]}
         >
           <TouchableOpacity 
@@ -929,6 +1142,7 @@ export default function TasksScreen() {
   }
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header with Toggle Button */}
       <View style={styles.minimalHeader}>
@@ -961,6 +1175,11 @@ export default function TasksScreen() {
           pagingEnabled={true}
           snapToInterval={columnWidth + 16}
           decelerationRate="fast"
+          onScroll={(event) => {
+            scrollOffset.current.x = event.nativeEvent.contentOffset.x;
+            scrollOffset.current.y = event.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
@@ -968,12 +1187,28 @@ export default function TasksScreen() {
           {columns.map((column) => {
             const columnTasks = tasksByColumn[column._id] || [];
             return (
-              <View
+              <Animated.View
                 key={column._id}
                 ref={(ref) => {
                   columnRefs.current[column._id] = ref;
                 }}
-                style={[{ width: columnWidth }, styles.column]}
+                style={[
+                  { width: columnWidth }, 
+                  styles.column,
+                  hoveredColumn === column._id && {
+                    backgroundColor: colors.primary + '10',
+                    borderColor: colors.primary,
+                    borderWidth: 2,
+                    borderRadius: 12,
+                  }
+                ]}
+                onLayout={(event) => {
+                  const { x, y, width, height } = event.nativeEvent.layout;
+                  setColumnPositions(prev => ({
+                    ...prev,
+                    [column._id]: { x, y, width, height }
+                  }));
+                }}
               >
               {/* Column Header - No Background Color */}
               <View style={[styles.columnHeader, { backgroundColor: 'transparent' }]}>
@@ -1009,9 +1244,23 @@ export default function TasksScreen() {
                   return (
                     <React.Fragment key={task._id}>
                       {shouldShowPlaceholder && (
-                        <View style={styles.placeholder}>
-                          <Text style={styles.placeholderText}>Drop here</Text>
-                        </View>
+                        <Animated.View 
+                          entering={FadeIn.duration(200)}
+                          exiting={FadeOut.duration(200)}
+                          style={[
+                            styles.placeholder,
+                            { 
+                              backgroundColor: colors.primary + '20',
+                              borderColor: colors.primary,
+                            }
+                          ]}
+                        >
+                          <View style={styles.placeholderInner}>
+                            <View style={[styles.placeholderDots, { backgroundColor: colors.primary }]} />
+                            <View style={[styles.placeholderDots, { backgroundColor: colors.primary }]} />
+                            <View style={[styles.placeholderDots, { backgroundColor: colors.primary }]} />
+                          </View>
+                        </Animated.View>
                       )}
                       <DraggableTaskCard
                         task={task}
@@ -1026,9 +1275,23 @@ export default function TasksScreen() {
                 {placeholderPosition && 
                   placeholderPosition.columnId === column._id && 
                   placeholderPosition.index >= columnTasks.length && (
-                  <View style={styles.placeholder}>
-                    <Text style={styles.placeholderText}>Drop here</Text>
-                  </View>
+                  <Animated.View 
+                    entering={FadeIn.duration(200)}
+                    exiting={FadeOut.duration(200)}
+                    style={[
+                      styles.placeholder,
+                      { 
+                        backgroundColor: colors.primary + '20',
+                        borderColor: colors.primary,
+                      }
+                    ]}
+                  >
+                    <View style={styles.placeholderInner}>
+                      <View style={[styles.placeholderDots, { backgroundColor: colors.primary }]} />
+                      <View style={[styles.placeholderDots, { backgroundColor: colors.primary }]} />
+                      <View style={[styles.placeholderDots, { backgroundColor: colors.primary }]} />
+                    </View>
+                  </Animated.View>
                 )}
                 
                 {/* Add Task Button at bottom of column */}
@@ -1042,7 +1305,7 @@ export default function TasksScreen() {
                   </View>
                 </TouchableOpacity>
               </ScrollView>
-            </View>
+            </Animated.View>
           );
         })}
 
@@ -1243,93 +1506,404 @@ export default function TasksScreen() {
         </View>
       </Modal>
       
-      {/* Task Details Modal */}
+      {/* Enhanced Task Details Modal */}
       <Modal
         visible={isTaskDetailsModalOpen}
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={closeTaskDetailsModal}
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={closeTaskDetailsModal}>
-              <Text style={[styles.modalCancelText, { color: colors['muted-foreground'] }]}>Close</Text>
-            </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Task Details</Text>
-            <TouchableOpacity onPress={() => selectedTask && handleEditTask(selectedTask)}>
-              <Text style={[styles.modalSaveText, { color: colors.primary }]}>Edit</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView style={styles.modalContent}>
-            {selectedTask && (
-              <>
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.foreground }]}>Title</Text>
-                  <Text style={[styles.taskDetailText, { color: colors.foreground }]}>
-                    {selectedTask.title}
-                  </Text>
-                </View>
-                
-                {selectedTask.description && (
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: colors.foreground }]}>Description</Text>
-                    <Text style={[styles.taskDetailText, { color: colors.foreground }]}>
-                      {selectedTask.description}
-                    </Text>
+        <KeyboardAvoidingView 
+          style={[styles.modalContainer, { backgroundColor: colors.background }]}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          {selectedTask && (
+            <>
+              {/* Task Cover */}
+              {selectedTask.coverColor && (
+                <View style={[styles.taskCover, { backgroundColor: selectedTask.coverColor }]} />
+              )}
+              
+              {/* Modal Header */}
+              <View style={[styles.modalHeader, { backgroundColor: colors.background }]}>
+                <TouchableOpacity onPress={closeTaskDetailsModal}>
+                  <X color={colors['muted-foreground']} size={24} />
+                </TouchableOpacity>
+                <Text style={[styles.modalTitle, { color: colors.foreground }]} numberOfLines={1}>
+                  {selectedTask.title}
+                </Text>
+                <TouchableOpacity onPress={() => handleEditTask(selectedTask)}>
+                  <Edit3 color={colors.primary} size={20} />
+                </TouchableOpacity>
+              </View>
+              
+              <ScrollView 
+                style={styles.modalContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* Board & Column Info */}
+                <View style={[styles.detailSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={styles.sectionHeader}>
+                    <MapPin color={colors.primary} size={18} />
+                    <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Location</Text>
                   </View>
-                )}
-                
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.foreground }]}>Priority</Text>
-                  <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(selectedTask.priority) }]}>
-                    <Text style={styles.priorityText}>
-                      {selectedTask.priority.charAt(0).toUpperCase() + selectedTask.priority.slice(1)}
+                  <View style={styles.locationInfo}>
+                    <Text style={[styles.boardName, { color: colors.foreground }]}>
+                      {currentBoard?.name || 'Project Board'}
                     </Text>
-                  </View>
-                </View>
-                
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.foreground }]}>Status</Text>
-                  <Text style={[styles.taskDetailText, { color: colors.foreground }]}>
-                    {selectedTask.status.replace('_', ' ').toUpperCase()}
-                  </Text>
-                </View>
-                
-                {selectedTask.dueDate && (
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: colors.foreground }]}>Due Date</Text>
-                    <View style={styles.dueDateContainer}>
-                      <Calendar color={colors['muted-foreground']} size={16} />
-                      <Text style={[styles.taskDetailText, { color: colors.foreground }]}>
-                        {formatDate(selectedTask.dueDate)}
+                    <Text style={[styles.columnIndicator, { color: colors['muted-foreground'] }]}>→</Text>
+                    <TouchableOpacity 
+                      style={[styles.columnBadge, { backgroundColor: colors.muted }]}
+                      onPress={() => setShowMoveOptions(!showMoveOptions)}
+                    >
+                      <Text style={[styles.columnName, { color: colors.foreground }]}>
+                        {columns.find(c => c._id === selectedTask.column)?.name || 'Unknown'}
                       </Text>
+                      <ChevronDown color={colors['muted-foreground']} size={14} />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {/* Move Options */}
+                  {showMoveOptions && (
+                    <View style={styles.moveOptions}>
+                      {columns.filter(c => c._id !== selectedTask.column).map(column => (
+                        <TouchableOpacity
+                          key={column._id}
+                          style={[styles.moveOption, { backgroundColor: colors.muted }]}
+                          onPress={() => {
+                            moveTaskToColumn(selectedTask._id, selectedTask.column, column._id);
+                            setSelectedTask({ ...selectedTask, column: column._id });
+                            setShowMoveOptions(false);
+                          }}
+                        >
+                          <Text style={[styles.moveOptionText, { color: colors.foreground }]}>
+                            Move to {column.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+                
+                {/* Quick Actions */}
+                <View style={styles.quickActions}>
+                  <TouchableOpacity 
+                    style={[styles.quickActionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => setIsAddingChecklist(true)}
+                  >
+                    <CheckSquare color={colors.primary} size={20} />
+                    <Text style={[styles.quickActionText, { color: colors.foreground }]}>Checklist</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.quickActionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  >
+                    <Paperclip color={colors.primary} size={20} />
+                    <Text style={[styles.quickActionText, { color: colors.foreground }]}>Attach</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.quickActionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  >
+                    <Users color={colors.primary} size={20} />
+                    <Text style={[styles.quickActionText, { color: colors.foreground }]}>Members</Text>
+                  </TouchableOpacity>
+                </View>
+                
+                {/* Members Assigned */}
+                <View style={[styles.detailSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={styles.sectionHeader}>
+                    <Users color={colors.primary} size={18} />
+                    <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Members</Text>
+                    <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]}>
+                      <Plus color="white" size={14} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.membersList}>
+                    {selectedTask.assignees.map((assignee) => (
+                      <View key={assignee.id} style={styles.memberItem}>
+                        <Image
+                          source={{ uri: assignee.avatar || 'https://via.placeholder.com/40' }}
+                          style={styles.memberAvatar}
+                        />
+                        <Text style={[styles.memberName, { color: colors.foreground }]}>
+                          {assignee.name}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+                
+                {/* Description / Progress Log */}
+                <View style={[styles.detailSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={styles.sectionHeader}>
+                    <FileText color={colors.primary} size={18} />
+                    <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Description / Progress Log</Text>
+                  </View>
+                  <TextInput
+                    style={[styles.descriptionInput, { color: colors.foreground, borderColor: colors.border }]}
+                    value={selectedTask.description}
+                    onChangeText={(text) => setSelectedTask({ ...selectedTask, description: text })}
+                    placeholder="Add a description or progress update..."
+                    placeholderTextColor={colors['muted-foreground']}
+                    multiline
+                    numberOfLines={4}
+                  />
+                  {selectedTask.comments && selectedTask.comments.length > 0 && (
+                    <View style={styles.progressLogs}>
+                      {selectedTask.comments.slice(0, 2).map(comment => (
+                        <View key={comment.id} style={[styles.logItem, { borderColor: colors.border }]}>
+                          <Image
+                            source={{ uri: comment.author.avatar || 'https://via.placeholder.com/24' }}
+                            style={styles.logAvatar}
+                          />
+                          <View style={styles.logContent}>
+                            <Text style={[styles.logText, { color: colors.foreground }]}>
+                              {comment.text}
+                            </Text>
+                            <Text style={[styles.logTime, { color: colors['muted-foreground'] }]}>
+                              {formatDate(comment.createdAt)}
+                            </Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+                
+                {/* Checklist */}
+                {(selectedTask.checklist && selectedTask.checklist.length > 0) || isAddingChecklist ? (
+                  <View style={[styles.detailSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={styles.sectionHeader}>
+                      <CheckSquare color={colors.primary} size={18} />
+                      <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Checklist</Text>
+                      <Text style={[styles.checklistProgress, { color: colors['muted-foreground'] }]}>
+                        {selectedTask.checklist?.filter(item => item.completed).length || 0}/{selectedTask.checklist?.length || 0}
+                      </Text>
+                    </View>
+                    <View style={styles.checklistItems}>
+                      {selectedTask.checklist?.map((item) => (
+                        <TouchableOpacity
+                          key={item.id}
+                          style={styles.checklistItem}
+                          onPress={() => {
+                            const updatedChecklist = selectedTask.checklist?.map(check => 
+                              check.id === item.id ? { ...check, completed: !check.completed } : check
+                            );
+                            setSelectedTask({ ...selectedTask, checklist: updatedChecklist });
+                          }}
+                        >
+                          <View style={[styles.checkbox, { borderColor: colors.border, backgroundColor: item.completed ? colors.primary : 'transparent' }]}>
+                            {item.completed && <Check color="white" size={12} />}
+                          </View>
+                          <Text style={[
+                            styles.checklistText, 
+                            { 
+                              color: item.completed ? colors['muted-foreground'] : colors.foreground,
+                              textDecorationLine: item.completed ? 'line-through' : 'none'
+                            }
+                          ]}>
+                            {item.text}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                      {isAddingChecklist && (
+                        <View style={styles.addChecklistItem}>
+                          <TextInput
+                            style={[styles.checklistInput, { color: colors.foreground, borderColor: colors.border }]}
+                            value={newChecklistItem}
+                            onChangeText={setNewChecklistItem}
+                            placeholder="Add an item..."
+                            placeholderTextColor={colors['muted-foreground']}
+                            onSubmitEditing={() => {
+                              if (newChecklistItem.trim()) {
+                                const newItem: ChecklistItem = {
+                                  id: `check-${Date.now()}`,
+                                  text: newChecklistItem,
+                                  completed: false
+                                };
+                                setSelectedTask({
+                                  ...selectedTask,
+                                  checklist: [...(selectedTask.checklist || []), newItem]
+                                });
+                                setNewChecklistItem('');
+                                setIsAddingChecklist(false);
+                              }
+                            }}
+                            autoFocus
+                          />
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                ) : null}
+                
+                {/* Attachments */}
+                {selectedTask.attachments && selectedTask.attachments.length > 0 && (
+                  <View style={[styles.detailSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={styles.sectionHeader}>
+                      <Paperclip color={colors.primary} size={18} />
+                      <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Attachments</Text>
+                    </View>
+                    <View style={styles.attachmentsList}>
+                      {selectedTask.attachments.map((attachment) => (
+                        <TouchableOpacity
+                          key={attachment.id}
+                          style={[styles.attachmentItem, { backgroundColor: colors.muted }]}
+                        >
+                          <FileText color={colors['muted-foreground']} size={16} />
+                          <View style={styles.attachmentInfo}>
+                            <Text style={[styles.attachmentName, { color: colors.foreground }]}>
+                              {attachment.name}
+                            </Text>
+                            <Text style={[styles.attachmentMeta, { color: colors['muted-foreground'] }]}>
+                              {attachment.size} • {attachment.uploadedBy}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
                     </View>
                   </View>
                 )}
                 
-                {selectedTask.assignees.length > 0 && (
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: colors.foreground }]}>Assignees</Text>
-                    <View style={styles.assigneesContainer}>
-                      {selectedTask.assignees.map((assignee) => (
-                        <View key={assignee.id} style={styles.assigneeItem}>
-                          <Image
-                            source={{ uri: assignee.avatar || 'https://via.placeholder.com/32' }}
-                            style={styles.assigneeAvatarLarge}
-                          />
-                          <Text style={[styles.assigneeName, { color: colors.foreground }]}>
-                            {assignee.name}
+                {/* Dates */}
+                <View style={[styles.detailSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={styles.sectionHeader}>
+                    <CalendarDays color={colors.primary} size={18} />
+                    <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Dates</Text>
+                  </View>
+                  <View style={styles.datesContainer}>
+                    {selectedTask.startDate && (
+                      <View style={styles.dateItem}>
+                        <Text style={[styles.dateLabel, { color: colors['muted-foreground'] }]}>Start Date</Text>
+                        <TouchableOpacity style={[styles.dateValue, { backgroundColor: colors.muted }]}>
+                          <Calendar color={colors['muted-foreground']} size={14} />
+                          <Text style={[styles.dateText, { color: colors.foreground }]}>
+                            {formatDate(selectedTask.startDate)}
                           </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    {selectedTask.dueDate && (
+                      <View style={styles.dateItem}>
+                        <Text style={[styles.dateLabel, { color: colors['muted-foreground'] }]}>Due Date</Text>
+                        <TouchableOpacity style={[styles.dateValue, { backgroundColor: colors.muted }]}>
+                          <Calendar color={colors['muted-foreground']} size={14} />
+                          <Text style={[styles.dateText, { color: colors.foreground }]}>
+                            {formatDate(selectedTask.dueDate)}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                </View>
+                
+                {/* Activity Feed */}
+                {selectedTask.activityLog && selectedTask.activityLog.length > 0 && (
+                  <View style={[styles.detailSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={styles.sectionHeader}>
+                      <Activity color={colors.primary} size={18} />
+                      <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Activity</Text>
+                    </View>
+                    <View style={styles.activityList}>
+                      {selectedTask.activityLog.map((activity) => (
+                        <View key={activity.id} style={styles.activityItem}>
+                          <View style={[styles.activityDot, { backgroundColor: colors.primary }]} />
+                          <View style={styles.activityContent}>
+                            <View style={styles.activityHeader}>
+                              <Image
+                                source={{ uri: activity.user.avatar || 'https://via.placeholder.com/20' }}
+                                style={styles.activityAvatar}
+                              />
+                              <Text style={[styles.activityUser, { color: colors.foreground }]}>
+                                {activity.user.name}
+                              </Text>
+                              <Text style={[styles.activityAction, { color: colors['muted-foreground'] }]}>
+                                {activity.description}
+                              </Text>
+                            </View>
+                            <Text style={[styles.activityTime, { color: colors['muted-foreground'] }]}>
+                              {formatDate(activity.timestamp)}
+                            </Text>
+                          </View>
                         </View>
                       ))}
                     </View>
                   </View>
                 )}
-              </>
-            )}
-          </ScrollView>
-        </View>
+                
+                {/* Comments Section */}
+                <View style={[styles.detailSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={styles.sectionHeader}>
+                    <MessageSquare color={colors.primary} size={18} />
+                    <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Comments</Text>
+                  </View>
+                  
+                  {selectedTask.comments && selectedTask.comments.length > 0 && (
+                    <View style={styles.commentsList}>
+                      {selectedTask.comments.map((comment) => (
+                        <View key={comment.id} style={styles.commentItem}>
+                          <Image
+                            source={{ uri: comment.author.avatar || 'https://via.placeholder.com/32' }}
+                            style={styles.commentAvatar}
+                          />
+                          <View style={styles.commentContent}>
+                            <View style={styles.commentHeader}>
+                              <Text style={[styles.commentAuthor, { color: colors.foreground }]}>
+                                {comment.author.name}
+                              </Text>
+                              <Text style={[styles.commentTime, { color: colors['muted-foreground'] }]}>
+                                {formatDate(comment.createdAt)}
+                              </Text>
+                            </View>
+                            <Text style={[styles.commentText, { color: colors.foreground }]}>
+                              {comment.text}
+                            </Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                  
+                  <View style={[styles.addCommentContainer, { borderColor: colors.border }]}>
+                    <Image
+                      source={{ uri: 'https://via.placeholder.com/32' }}
+                      style={styles.currentUserAvatar}
+                    />
+                    <TextInput
+                      style={[styles.commentInput, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]}
+                      value={newComment}
+                      onChangeText={setNewComment}
+                      placeholder="Add a comment... Use @ to mention"
+                      placeholderTextColor={colors['muted-foreground']}
+                      multiline
+                    />
+                    <TouchableOpacity 
+                      style={[styles.sendButton, { backgroundColor: newComment.trim() ? colors.primary : colors.muted }]}
+                      disabled={!newComment.trim()}
+                      onPress={() => {
+                        if (newComment.trim()) {
+                          const newCommentObj: Comment = {
+                            id: `comm-${Date.now()}`,
+                            text: newComment,
+                            author: { id: 'current', name: 'You', avatar: 'https://via.placeholder.com/32' },
+                            createdAt: new Date().toISOString(),
+                            mentions: newComment.match(/@\w+/g)?.map(m => m.slice(1)) || []
+                          };
+                          setSelectedTask({
+                            ...selectedTask,
+                            comments: [...(selectedTask.comments || []), newCommentObj]
+                          });
+                          setNewComment('');
+                        }
+                      }}
+                    >
+                      <Send color="white" size={16} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </ScrollView>
+            </>
+          )}
+        </KeyboardAvoidingView>
       </Modal>
       
       {/* Edit Task Modal */}
@@ -1411,7 +1985,8 @@ export default function TasksScreen() {
           </ScrollView>
         </View>
       </Modal>
-      </View>
+    </View>
+    </GestureHandlerRootView>
   );
 }
 
@@ -1965,6 +2540,356 @@ const styles = StyleSheet.create({
   taskContent: {
     flex: 1,
   },
+  
+  // Enhanced Task Details Modal Styles
+  taskCover: {
+    height: 80,
+    width: '100%',
+  },
+  detailSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+    flex: 1,
+  },
+  addButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  // Location Section
+  locationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  boardName: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  columnIndicator: {
+    fontSize: 14,
+  },
+  columnBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+  },
+  columnName: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  moveOptions: {
+    marginTop: 8,
+    gap: 4,
+  },
+  moveOption: {
+    padding: 10,
+    borderRadius: 6,
+  },
+  moveOptionText: {
+    fontSize: 14,
+  },
+  
+  // Quick Actions
+  quickActions: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    gap: 12,
+  },
+  quickActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+  },
+  quickActionText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  
+  // Members Section
+  membersList: {
+    gap: 12,
+  },
+  memberItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  memberAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  memberName: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  
+  // Description Section
+  descriptionInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  progressLogs: {
+    marginTop: 12,
+    gap: 8,
+  },
+  logItem: {
+    flexDirection: 'row',
+    padding: 8,
+    borderLeftWidth: 2,
+    paddingLeft: 12,
+    gap: 8,
+  },
+  logAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  logContent: {
+    flex: 1,
+  },
+  logText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  logTime: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  
+  // Checklist Section
+  checklistProgress: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  checklistItems: {
+    gap: 8,
+  },
+  checklistItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 4,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checklistText: {
+    fontSize: 14,
+    flex: 1,
+  },
+  addChecklistItem: {
+    marginTop: 8,
+  },
+  checklistInput: {
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 8,
+    fontSize: 14,
+  },
+  
+  // Attachments Section
+  attachmentsList: {
+    gap: 8,
+  },
+  attachmentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    gap: 12,
+  },
+  attachmentInfo: {
+    flex: 1,
+  },
+  attachmentName: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  attachmentMeta: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  
+  // Dates Section
+  datesContainer: {
+    gap: 12,
+  },
+  dateItem: {
+    gap: 8,
+  },
+  dateLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+  },
+  dateValue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 8,
+    gap: 8,
+  },
+  dateText: {
+    fontSize: 14,
+  },
+  
+  // Activity Section
+  activityList: {
+    gap: 12,
+  },
+  activityItem: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  activityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 6,
+  },
+  activityContent: {
+    flex: 1,
+  },
+  activityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  activityAvatar: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+  },
+  activityUser: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  activityAction: {
+    fontSize: 14,
+  },
+  activityTime: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  
+  // Comments Section
+  commentsList: {
+    gap: 16,
+    marginBottom: 16,
+  },
+  commentItem: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  commentAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  commentContent: {
+    flex: 1,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  commentAuthor: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  commentTime: {
+    fontSize: 12,
+  },
+  commentText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  addCommentContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  currentUserAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  commentInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 14,
+    minHeight: 40,
+    maxHeight: 120,
+  },
+  sendButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholder: {
+    height: 100,
+    marginVertical: 8,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0.7,
+  },
+  placeholderInner: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  placeholderDots: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
 });
 
-export default Board;
+export default TasksScreen;
