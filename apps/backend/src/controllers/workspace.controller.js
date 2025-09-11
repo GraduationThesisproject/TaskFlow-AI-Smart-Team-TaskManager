@@ -490,7 +490,7 @@ exports.inviteMember = async (req, res) => {
                 await NotificationService.createNotification({
                     title: 'Workspace invitation',
                     message: `${req.user.name} invited you to join workspace "${workspace.name}" as ${role}`,
-                    type: 'invitation_received',
+                    type: 'workspace_invitation',
                     recipient: existingUser._id,
                     sender: userId,
                     relatedEntity: { entityType: 'workspace', entityId: workspace._id },

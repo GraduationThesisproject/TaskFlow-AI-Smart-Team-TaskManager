@@ -6,6 +6,9 @@ export interface CreateSpaceData {
   name: string;
   description?: string;
   workspaceId: string;
+  // Some backend versions accept `workspace` instead of `workspaceId`.
+  // We'll normalize in the request body to support both.
+  workspace?: string;
   settings?: any;
 }
 
@@ -41,20 +44,35 @@ export class SpaceService {
   // Create new space
   static async createSpace(data: CreateSpaceData): Promise<ApiResponse<Space>> {
     try {
-      const response = await axiosInstance.post('/spaces', data);
+      // Normalize payload to support backends expecting either `workspaceId` or `workspace`
+      const body: any = {
+        name: data.name,
+        description: data.description,
+        workspaceId: data.workspaceId,
+        workspace: data.workspace || data.workspaceId,
+      };
+      const response = await axiosInstance.post('/spaces', body);
       return response.data;
-    } catch (error) {
-      console.error('Error creating space:', error);
+    } catch (error: any) {
+      if (error?.response) {
+        console.error('Error creating space:', error.response.status, error.response.data);
+      } else {
+        console.error('Error creating space:', error?.message || error);
+      }
       throw error;
     }
   }
 
-  // Update space
+  // Update space (try PATCH first for partial updates; fallback to PUT)
   static async updateSpace(id: string, data: UpdateSpaceData): Promise<ApiResponse<Space>> {
     try {
-      const response = await axiosInstance.put(`/spaces/${id}`, data);
+      const response = await axiosInstance.patch(`/spaces/${id}`, data);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.response?.status === 405 || error?.response?.status === 404) {
+        const response = await axiosInstance.put(`/spaces/${id}`, data);
+        return response.data;
+      }
       console.error('Error updating space:', error);
       throw error;
     }

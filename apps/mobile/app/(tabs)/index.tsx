@@ -277,7 +277,7 @@ const WorkspacesSection: React.FC = () => {
               </TouchableOpacity>
             ))}
             {workspaces.length > 3 && (
-              <TouchableOpacity style={styles.viewAllButton}>
+              <TouchableOpacity style={styles.viewAllButton} onPress={() => router.push('/(tabs)/workspaces')}>
                 <Text style={[TextStyles.body.small, { color: colors.primary }]}>
                   View all {workspaces.length} workspaces →
                 </Text>

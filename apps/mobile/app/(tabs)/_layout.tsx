@@ -4,6 +4,7 @@ import { Tabs } from 'expo-router';
 
 import { useThemeColors } from '@/components/ThemeProvider';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import NotificationBell from '@/components/common/NotificationBell';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -39,13 +40,17 @@ export default function TabLayout() {
           title: 'Dashboard',
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           headerShown: false, // Remove redundant header
-          href: null, // Hide from tab bar
         }}
       />
       <Tabs.Screen
         name="workspace"
         options={{
           href: null, // Hide from tab bar
+          headerShown: true,
+          headerTitle: 'Workspace',
+          headerTitleAlign: 'center',
+          headerShadowVisible: false,
+          headerRight: () => (<NotificationBell size={22} />),
         }}
       />
       <Tabs.Screen
