@@ -12,7 +12,17 @@ import {
 import { DraggableColumn } from '../../components/board/DraggableColumn';
 import { AddColumnModal } from '../../components/board/AddColumnModal';
 import { EditColumnModal } from '../../components/board/EditColumnModal';
+import { AddChecklistModal } from '../../components/board/AddChecklistModal';
 import { ErrorBoundaryWrapper } from '../../components';
+
+interface ChecklistTemplate {
+  _id: string;
+  name: string;
+  color: string;
+  items: string[];
+  createdAt: string;
+  usageCount: number;
+}
 
 interface KanbanViewLayoutProps {
   currentBoard: Board | null;
@@ -45,6 +55,11 @@ interface KanbanViewLayoutProps {
   isEditColumnModalOpen: boolean;
   setIsEditColumnModalOpen: (open: boolean) => void;
   editingColumn: Column | null;
+  // Checklist props
+  checklistTemplates?: ChecklistTemplate[];
+  onAddChecklistTemplate?: (template: { name: string; color: string; items: string[] }) => Promise<void>;
+  onDeleteChecklistTemplate?: (templateId: string) => Promise<void>;
+  onUseChecklistTemplate?: (templateId: string) => void;
 }
 
 export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
@@ -71,7 +86,12 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
   setIsAddColumnModalOpen,
   isEditColumnModalOpen,
   setIsEditColumnModalOpen,
-  editingColumn
+  editingColumn,
+  // Checklist props
+  checklistTemplates = [],
+  onAddChecklistTemplate,
+  onDeleteChecklistTemplate,
+  onUseChecklistTemplate
 }) => {
   // Animation state management
   const [newColumnIds, setNewColumnIds] = useState<Set<string>>(new Set());
@@ -85,6 +105,11 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
   const [isScrolling, setIsScrolling] = useState(false);
   const [contentWidth, setContentWidth] = useState(0);
   const animationTimeoutsRef = useRef<Map<string, number>>(new Map());
+
+  // Checklist state management
+  const [isAddChecklistModalOpen, setIsAddChecklistModalOpen] = useState(false);
+  const [showChecklistDropdown, setShowChecklistDropdown] = useState(false);
+  const checklistDropdownRef = useRef<HTMLDivElement>(null);
 
 
   // Enhanced CSS for better scrolling and design
@@ -507,6 +532,22 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
     }, 300); // Slightly less than animation duration
   };
 
+  // Handle click outside for checklist dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (checklistDropdownRef.current && !checklistDropdownRef.current.contains(event.target as Node)) {
+        setShowChecklistDropdown(false);
+      }
+    };
+
+    if (showChecklistDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showChecklistDropdown]);
+
 
 
 
@@ -574,10 +615,95 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
       >
         <div className="min-h-screen bg-background/60 text-foreground w-full pb-20 rounded-2xl border border-border/50">
           <div className="w-full ">
-            {/* Compact Stats */}
+            {/* Header with Stats and Checklist Templates */}
             <ErrorBoundaryWrapper>
               <div className="mt-2 mb-2">
-                <div className="flex justify-end">
+                <div className="flex justify-between items-center">
+                  {/* Checklist Templates Section */}
+                  <div className="flex items-center gap-3">
+                    <Typography variant="body-small" className="text-muted-foreground font-medium">
+                      Templates:
+                    </Typography>
+                    
+                    {/* Existing checklist templates */}
+                    <div className="flex items-center gap-2">
+                      {checklistTemplates.slice(0, 3).map((template) => (
+                        <div
+                          key={template._id}
+                          onClick={() => onUseChecklistTemplate?.(template._id)}
+                          className="group relative flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/50 hover:border-border transition-all duration-300 cursor-pointer bg-card/50 hover:bg-card/80"
+                        >
+                          <div
+                            className="w-3 h-3 rounded"
+                            style={{ backgroundColor: template.color }}
+                          />
+                          <span className="text-xs font-medium text-foreground">
+                            {template.name}
+                          </span>
+                          <div className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                            {template.items.length}
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {/* Show more button if there are more than 3 templates */}
+                      {checklistTemplates.length > 3 && (
+                        <div className="relative" ref={checklistDropdownRef}>
+                          <button
+                            onClick={() => setShowChecklistDropdown(!showChecklistDropdown)}
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-border/50 hover:border-border transition-all duration-300 cursor-pointer bg-card/50 hover:bg-card/80"
+                          >
+                            <span className="text-xs font-medium text-muted-foreground">
+                              +{checklistTemplates.length - 3} more
+                            </span>
+                            <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                          
+                          {/* Dropdown with remaining templates */}
+                          {showChecklistDropdown && (
+                            <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 min-w-48">
+                              {checklistTemplates.slice(3).map((template) => (
+                                <div
+                                  key={template._id}
+                                  onClick={() => {
+                                    onUseChecklistTemplate?.(template._id);
+                                    setShowChecklistDropdown(false);
+                                  }}
+                                  className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors cursor-pointer"
+                                >
+                                  <div
+                                    className="w-3 h-3 rounded"
+                                    style={{ backgroundColor: template.color }}
+                                  />
+                                  <span className="text-sm font-medium text-foreground flex-1">
+                                    {template.name}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {template.items.length}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Add new checklist template button */}
+                      <button
+                        onClick={() => setIsAddChecklistModalOpen(true)}
+                        className="group flex items-center gap-1 px-3 py-1.5 rounded-lg border border-dashed border-primary/30 hover:border-primary/60 transition-all duration-300 cursor-pointer bg-primary/5 hover:bg-primary/10"
+                      >
+                        <svg className="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span className="text-xs font-medium text-primary">Add Template</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Task Stats */}
                   <div className="flex items-center gap-2">
                     {/* Done */}
                     <div className="group relative flex items-center gap-1 px-2 py-1 rounded-md hover:bg-emerald-500/10 transition-all duration-300 cursor-pointer">
@@ -761,6 +887,15 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                 onClose={() => setIsEditColumnModalOpen(false)}
                 column={editingColumn}
                 onSave={onUpdateColumn}
+              />
+
+              <AddChecklistModal
+                isOpen={isAddChecklistModalOpen}
+                onClose={() => setIsAddChecklistModalOpen(false)}
+                onSubmit={async (template) => {
+                  await onAddChecklistTemplate?.(template);
+                  setIsAddChecklistModalOpen(false);
+                }}
               />
             </ErrorBoundaryWrapper>
           </div>
