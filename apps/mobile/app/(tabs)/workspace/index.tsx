@@ -321,9 +321,9 @@ export default function WorkspaceScreen() {
                           <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
                         )}
                         <View style={styles.memberMetaRow}>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                          <Text key="role" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                          <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                          <Text key="status" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
                         </View>
                       </View>
                       {m.role !== 'owner' && (
@@ -450,9 +450,9 @@ export default function WorkspaceScreen() {
                     </Text>
                   ) : null}
                   <View style={styles.spaceStats}>
-                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.members?.length || 0)} members</Text>
-                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.stats?.totalBoards || 0)} boards</Text>
+                    <Text key="members" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.members?.length || 0)} members</Text>
+                    <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                    <Text key="boards" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.stats?.totalBoards || 0)} boards</Text>
                   </View>
                   
                   {/* Archive countdown for archived spaces */}
@@ -467,14 +467,18 @@ export default function WorkspaceScreen() {
                         }
                       ]}>
                         <FontAwesome 
+                          key="clock-icon"
                           name="clock-o" 
                           size={10} 
                           color={getArchiveCountdownStyle(space.archiveExpiresAt).color} 
                         />
-                        <Text style={[
-                          TextStyles.caption.small, 
-                          { color: getArchiveCountdownStyle(space.archiveExpiresAt).color }
-                        ]}>
+                        <Text 
+                          key="countdown-text"
+                          style={[
+                            TextStyles.caption.small, 
+                            { color: getArchiveCountdownStyle(space.archiveExpiresAt).color }
+                          ]}
+                        >
                           {getArchiveStatusMessage(space.archiveExpiresAt)}
                         </Text>
                       </View>
