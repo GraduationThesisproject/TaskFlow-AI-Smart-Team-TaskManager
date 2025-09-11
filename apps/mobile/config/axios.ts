@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 
 // Create axios instance
 // Normalize base URL to ensure it targets the backend API prefix
-let rawBase = (env.API_BASE_URL || env.API_URL || env.BASE_URL || 'http://192.168.1.64:3001').trim();
+let rawBase = (env.API_BASE_URL || env.API_URL || env.BASE_URL || 'http://192.168.1.64:3001 ' || 'http://192.168.1.14:3001').trim();
 
 // On Android emulator, localhost should point to the host machine via 10.0.2.2
 if (env.IS_ANDROID && __DEV__) {

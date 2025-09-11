@@ -6,7 +6,8 @@ export const env = {
   // Server Configuration
   NODE_ENV: __DEV__ ? 'development' : 'production',
   PORT: 3001,
-  
+    
+   DEFAULT_URL: process.env.PUBLIC_DEFAULT_BASE || 'http://192.168.1.64:3001' || 'http://192.168.1.14:3001' || 'http://192.168.1.142:3001',
   // API Configuration
   // Prefer EXPO_PUBLIC_* when provided. Otherwise choose sensible defaults:
   // - Android emulator: 10.0.2.2
@@ -14,7 +15,7 @@ export const env = {
   // For physical devices, override via apps/mobile/.env -> EXPO_PUBLIC_API_BASE_URL
   get DEFAULT_HOST() {
     if (__DEV__ && Platform.OS === 'android') return '10.0.2.2';
-    return '192.168.1.142'; // Use your computer's actual IP address
+    return this.DEFAULT_URL; // Use your computer's actual IP address
   },
   get DEFAULT_API() {
     return `http://${this.DEFAULT_HOST}:3001/api`;
