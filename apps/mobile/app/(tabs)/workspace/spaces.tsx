@@ -80,7 +80,7 @@ export default function SpacesScreen() {
     }
   };
 
-  const handleSubmitCreate = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+  const handleSubmitCreate = async ({ name, description }: { name: string; description?: string }) => {
     if (!selectedWorkspaceId) return;
     if (!name || !name.trim()) {
       alert('Name is required.');
@@ -90,7 +90,7 @@ export default function SpacesScreen() {
       setCreating(true);
       await SpaceService.createSpace({
         name: name.trim(),
-        description,
+        description: description?.trim() || undefined,
         workspaceId: String(selectedWorkspaceId),
       });
       await loadSpaces(selectedWorkspaceId);

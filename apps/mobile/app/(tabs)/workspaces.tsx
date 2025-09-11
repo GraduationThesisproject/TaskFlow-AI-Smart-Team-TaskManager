@@ -54,7 +54,7 @@ export default function WorkspacesScreen() {
       await dispatch(createWorkspace({
         name: newWorkspaceName.trim(),
         description: '',
-        visibility: 'private'
+        isPublic: false
       }));
       setNewWorkspaceName('');
       setIsCreating(false);
