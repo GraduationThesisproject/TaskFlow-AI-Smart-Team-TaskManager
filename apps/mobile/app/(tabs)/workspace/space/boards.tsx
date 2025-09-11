@@ -133,7 +133,9 @@ export default function SpaceBoardsScreen() {
   const submitCreateBoard = async () => {
     if (!space?._id && !space?.id) return;
     if (!boardName.trim()) {
-      Alert.alert('Board name required', 'Please enter a name for the board.');
+      // Non-intrusive validation: show banner instead of alert
+      setBanner({ type: 'error', message: 'Board name required' });
+      setTimeout(() => setBanner(null), 2500);
       return;
     }
     try {
@@ -154,10 +156,6 @@ export default function SpaceBoardsScreen() {
       }
       setCreateVisible(false);
       resetCreateState();
-      // Show non-blocking success banner instead of popup
-      setBanner({ type: 'success', message: 'Board created successfully' });
-      // Auto-dismiss after 2.5s
-      setTimeout(() => setBanner(null), 2500);
       // Force reload to ensure we bypass the lastLoadedSpaceId guard and get server truth
       await loadBoards(true);
       // Refresh spaces via hook so Workspace list immediately reflects the new count
@@ -166,7 +164,10 @@ export default function SpaceBoardsScreen() {
         loadSpaces(wsId);
       }
     } catch (e: any) {
-      Alert.alert('Failed to create board', e?.response?.data?.message || e?.message || 'Unknown error');
+      console.warn('Failed to create board:', e?.response?.data || e);
+      // Non-intrusive error banner
+      setBanner({ type: 'error', message: e?.response?.data?.message || e?.message || 'Failed to create board' });
+      setTimeout(() => setBanner(null), 3000);
     } finally {
       setCreating(false);
     }
