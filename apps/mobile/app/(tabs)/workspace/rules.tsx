@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, View as RNView, Text as RNText } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
@@ -9,7 +9,6 @@ import * as Sharing from 'expo-sharing';
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
-import { useAppSelector } from '@/store';
 
 const RULES_FILE = FileSystem.documentDirectory + 'workspace_rules.txt';
 
@@ -91,26 +90,6 @@ export default function WorkspaceRulesScreen() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Determine if current user is workspace owner
-  const { user: authUser } = useAppSelector((s: any) => s.auth);
-  const workspaceState = useAppSelector((s: any) => s.workspace);
-  const currentWorkspaceId = (workspaceState?.currentWorkspaceId)
-    || (workspaceState?.currentWorkspace?._id)
-    || (workspaceState?.currentWorkspace?.id)
-    || null;
-  const members = Array.isArray(workspaceState?.members) ? workspaceState.members : [];
-  const userId = (authUser?.user?._id) || (authUser?.user?.id) || null;
-  const roleFromAuth = (authUser?.roles?.workspaces || {})[currentWorkspaceId as any];
-  const isOwner = useMemo(() => {
-    if (!userId) return false;
-    if (String(roleFromAuth).toLowerCase() === 'owner') return true;
-    return members.some((m: any) => {
-      const mid = m?.user?._id || m?.user?.id || m?._id || m?.id;
-      const role = String(m?.role || '').toLowerCase();
-      return String(mid) === String(userId) && role === 'owner';
-    });
-  }, [userId, roleFromAuth, members, currentWorkspaceId]);
-
   useEffect(() => {
     (async () => {
       try {
@@ -183,7 +162,7 @@ export default function WorkspaceRulesScreen() {
           <TouchableOpacity onPress={handleExportPdf} style={styles.headerBtn}>
             <FontAwesome name="file-pdf-o" size={20} color={colors.accent} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleSave} disabled={saving || !isOwner} style={styles.headerBtn}>
+          <TouchableOpacity onPress={handleSave} disabled={saving} style={styles.headerBtn}>
             <FontAwesome name="save" size={20} color={colors.primary} />
           </TouchableOpacity>
         </RNView>
@@ -191,30 +170,16 @@ export default function WorkspaceRulesScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <Card style={[styles.editorCard, { backgroundColor: colors.card }]}>
-          {isOwner ? (
-            <TextInput
-              value={rules}
-              onChangeText={setRules}
-              editable={!loading}
-              placeholder="Write or paste your workspace rules here..."
-              placeholderTextColor={colors['muted-foreground']}
-              multiline
-              textAlignVertical="top"
-              style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
-            />
-          ) : (
-            <RNView>
-              <RNText
-                selectable
-                style={[
-                  styles.readonlyText,
-                  { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }
-                ]}
-              >
-                {rules}
-              </RNText>
-            </RNView>
-          )}
+          <TextInput
+            value={rules}
+            onChangeText={setRules}
+            editable={!loading}
+            placeholder="Write or paste your workspace rules here..."
+            placeholderTextColor={colors['muted-foreground']}
+            multiline
+            textAlignVertical="top"
+            style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
+          />
         </Card>
       </ScrollView>
     </View>
@@ -241,13 +206,5 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 14,
-  },
-  readonlyText: {
-    minHeight: 400,
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 14,
-    lineHeight: 20,
   },
 });
