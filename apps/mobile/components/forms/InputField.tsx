@@ -88,15 +88,18 @@ export default function InputField({
           onSubmitEditing={onSubmitEditing}
           style={[
             styles.input,
-            leftIcon && styles.inputWithLeftIcon,
-            rightIcon && styles.inputWithRightIcon,
-            error && { borderColor: colors.error },
-            disabled && { opacity: 0.6 }
+            ...(leftIcon ? [styles.inputWithLeftIcon as any] : []),
+            ...(rightIcon ? [styles.inputWithRightIcon as any] : []),
+            ...(error ? [{ borderColor: colors.error } as any] : []),
+            ...(disabled ? [{ opacity: 0.6 } as any] : []),
           ]}
         />
 
         {rightIcon && (
-          <View style={styles.rightIcon}>
+          <View style={[
+            styles.rightIcon,
+            { backgroundColor: colors.input, borderRadius: 6, padding: 6 }
+          ]}>
             {rightIcon}
           </View>
         )}

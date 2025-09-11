@@ -5,6 +5,7 @@ import InputField from '../forms/InputField';
 import { useThemeColors } from '../ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAuth } from '../../hooks/useAuth';
+import { Ionicons } from '@expo/vector-icons';
 
 interface LoginFormProps {
   onForgotPassword?: () => void;
@@ -21,6 +22,7 @@ export default function LoginForm({
   const { login, isLoading, error, clearAuthError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -118,9 +120,23 @@ export default function LoginForm({
             if (passwordError) setPasswordError('');
           }}
           placeholder="Enter your password"
-          secureTextEntry
+          secureTextEntry={!showPassword}
           error={passwordError}
           required
+          rightIcon={(
+            <TouchableOpacity
+              onPress={() => setShowPassword((v) => !v)}
+              accessibilityRole="button"
+              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={18}
+                color={colors['muted-foreground']}
+              />
+            </TouchableOpacity>
+          )}
         />
 
         {/* Remember me toggle */}
@@ -146,14 +162,6 @@ export default function LoginForm({
           <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Remember me</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          onPress={() => onForgotPassword?.()} 
-          style={styles.forgotPassword}
-        >
-          <Text style={[TextStyles.body.small, { color: colors.primary }]}>
-            Forgot your password?
-          </Text>
-        </TouchableOpacity>
         {onForgotPassword && (
           <TouchableOpacity 
             onPress={onForgotPassword} 
