@@ -7,7 +7,7 @@ export const env = {
   NODE_ENV: __DEV__ ? 'development' : 'production',
   PORT: 3001,
     
-   DEFAULT_URL: process.env.PUBLIC_DEFAULT_BASE || 'http://192.168.1.14:3001' ,
+   DEFAULT_URL: process.env.PUBLIC_DEFAULT_BASE || 'http://192.168.1.64:3001' ,
   // API Configuration
   // Prefer EXPO_PUBLIC_* when provided. Otherwise choose sensible defaults:
   // - Android emulator: 10.0.2.2
