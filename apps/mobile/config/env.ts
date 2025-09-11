@@ -6,7 +6,8 @@ export const env = {
   // Server Configuration
   NODE_ENV: __DEV__ ? 'development' : 'production',
   PORT: 3001,
-  
+    
+   DEFAULT_URL: process.env.PUBLIC_DEFAULT_BASE || 'http://192.168.1.14:3001' ,
   // API Configuration
   // Prefer EXPO_PUBLIC_* when provided. Otherwise choose sensible defaults:
   // - Android emulator: 10.0.2.2
@@ -14,7 +15,7 @@ export const env = {
   // For physical devices, override via apps/mobile/.env -> EXPO_PUBLIC_API_BASE_URL
   get DEFAULT_HOST() {
     if (__DEV__ && Platform.OS === 'android') return '10.0.2.2';
-    return '192.168.1.142'; // Use your computer's actual IP address
+    return 'localhost'; // For iOS simulator / web defaults; override via EXPO_PUBLIC_* for physical devices
   },
   get DEFAULT_API() {
     return `http://${this.DEFAULT_HOST}:3001/api`;
@@ -22,14 +23,14 @@ export const env = {
   get DEFAULT_BASE() {
     return `http://${this.DEFAULT_HOST}:3001`;
   },
-  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || Constants.expoConfig?.extra?.apiBaseUrl || 'http://192.168.1.64:3001/api',
-  API_URL: process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl || 'http://192.168.1.64:3001/api',
-  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || Constants.expoConfig?.extra?.socketUrl || 'http://192.168.1.64:3001',
+  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || Constants.expoConfig?.extra?.apiBaseUrl || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:3001/api`,
+  API_URL: process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:3001/api`,
+  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || Constants.expoConfig?.extra?.socketUrl || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:3001`,
   
   // App Configuration
   APP_NAME: Constants.expoConfig?.name || 'TaskFlow',
   APP_VERSION: Constants.expoConfig?.version || '1.0.0',
-  BASE_URL: process.env.EXPO_PUBLIC_BASE_URL || Constants.expoConfig?.extra?.baseUrl || 'http://192.168.1.64:3001',
+  BASE_URL: process.env.EXPO_PUBLIC_BASE_URL || Constants.expoConfig?.extra?.baseUrl || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:3001`,
   
   // Feature Flags
   ENABLE_ANALYTICS: process.env.EXPO_PUBLIC_ENABLE_ANALYTICS === 'true' || Constants.expoConfig?.extra?.enableAnalytics === true,
