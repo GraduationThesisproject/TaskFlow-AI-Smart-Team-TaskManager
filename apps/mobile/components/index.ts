@@ -14,6 +14,7 @@ export { default as Toast } from './common/Toast';
 export { default as Badge } from './common/Badge';
 export { default as Divider } from './common/Divider';
 export { default as Icon } from './common/Icon';
+export { default as Alert } from './common/Alert';
 
 // Form Components
 export { default as FormField } from './forms/FormField';
@@ -24,4 +25,3 @@ export { default as TaskCard } from './cards/TaskCard';
 
 // Auth Components
 export { default as LoginForm } from './auth/LoginForm';
-
