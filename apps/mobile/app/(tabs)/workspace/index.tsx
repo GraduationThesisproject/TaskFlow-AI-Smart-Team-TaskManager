@@ -266,20 +266,35 @@ export default function WorkspaceScreen() {
     );
   };
 
-  const handleSubmitCreate = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+  const handleSubmitCreate = async ({ name, description }: { name: string; description?: string }) => {
     if (!workspaceId) return;
+    if (!name || !name.trim()) {
+      Alert.alert('Error', 'Space name is required.');
+      return;
+    }
     try {
       setCreatingSpace(true);
       await SpaceService.createSpace({
-        name,
-        description,
+        name: name.trim(),
+        description: description?.trim() || undefined,
         workspaceId,
-        settings: { isPrivate: visibility === 'private' },
       });
       await loadSpaces(workspaceId);
       setShowCreateSpace(false);
-    } catch (e) {
+      // Show success message
+      setAlertVariant('success');
+      setAlertTitle('Space created');
+      setAlertDescription(`"${name.trim()}" has been created successfully.`);
+      setAlertVisible(true);
+    } catch (e: any) {
       console.warn('Failed to create space', e);
+      const errorMessage = e?.response?.data?.message || e?.message || 'Failed to create space';
+      Alert.alert('Error', errorMessage);
+      // Also show error banner
+      setAlertVariant('error');
+      setAlertTitle('Failed to create space');
+      setAlertDescription(errorMessage);
+      setAlertVisible(true);
     } finally {
       setCreatingSpace(false);
     }
