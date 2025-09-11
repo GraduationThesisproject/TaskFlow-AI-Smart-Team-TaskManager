@@ -49,6 +49,7 @@ export default function SpaceBoardsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Grid sizing for 3 columns
   const [gridWidth, setGridWidth] = useState(0);
@@ -61,8 +62,8 @@ export default function SpaceBoardsScreen() {
     ? Math.floor((containerW - GRID_GAP * (COLUMNS - 1)) / COLUMNS)
     : undefined;
 
-  // Only show first 5 boards here; show full list in allboards screen
-  const VISIBLE_MAX = 5;
+  // Only show first 12 boards here; show full list in allboards screen
+  const VISIBLE_MAX = 12;
   const visibleBoards = Array.isArray(boards) ? boards.slice(0, VISIBLE_MAX) : [];
 
   // Create Board modal state
@@ -153,7 +154,10 @@ export default function SpaceBoardsScreen() {
       }
       setCreateVisible(false);
       resetCreateState();
-      Alert.alert('Board created', 'Your board has been created.');
+      // Show non-blocking success banner instead of popup
+      setBanner({ type: 'success', message: 'Board created successfully' });
+      // Auto-dismiss after 2.5s
+      setTimeout(() => setBanner(null), 2500);
       // Force reload to ensure we bypass the lastLoadedSpaceId guard and get server truth
       await loadBoards(true);
       // Refresh spaces via hook so Workspace list immediately reflects the new count
@@ -374,6 +378,20 @@ export default function SpaceBoardsScreen() {
   // Stacked layout on phones
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* In-app notification banner */}
+      {banner && (
+        <View
+          style={[
+            styles.banner,
+            {
+              backgroundColor: banner.type === 'success' ? colors.primary : colors.destructive,
+              borderColor: banner.type === 'success' ? colors.primary : colors.destructive,
+            },
+          ]}
+        >
+          <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'] }]}>{banner.message}</Text>
+        </View>
+      )}
       <SpaceHeader
         space={{
           ...space,
@@ -598,4 +616,5 @@ const styles = StyleSheet.create({
   memberAvatar: { width: 32, height: 32, borderRadius: 16 },
   memberAvatarPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   checkbox: { width: 18, height: 18, borderRadius: 4, borderWidth: StyleSheet.hairlineWidth },
+  banner: { position: 'absolute', top: 12, left: 16, right: 16, zIndex: 10, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, padding: 12, alignItems: 'center' },
 });
