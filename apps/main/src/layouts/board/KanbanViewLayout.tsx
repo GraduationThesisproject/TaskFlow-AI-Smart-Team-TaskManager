@@ -58,7 +58,6 @@ interface KanbanViewLayoutProps {
   // Checklist props
   checklistTemplates?: ChecklistTemplate[];
   onAddChecklistTemplate?: (template: { name: string; color: string; items: string[] }) => Promise<void>;
-  onDeleteChecklistTemplate?: (templateId: string) => Promise<void>;
   onUseChecklistTemplate?: (templateId: string) => void;
 }
 
@@ -90,7 +89,6 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
   // Checklist props
   checklistTemplates = [],
   onAddChecklistTemplate,
-  onDeleteChecklistTemplate,
   onUseChecklistTemplate
 }) => {
   // Animation state management
