@@ -39,7 +39,6 @@ export default function TabLayout() {
           title: 'Dashboard',
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           headerShown: false, // Remove redundant header
-          href: null, // Hide from tab bar
         }}
       />
       <Tabs.Screen

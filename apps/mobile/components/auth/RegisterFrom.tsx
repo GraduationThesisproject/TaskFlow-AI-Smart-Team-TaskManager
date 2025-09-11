@@ -5,6 +5,7 @@ import InputField from '../forms/InputField';
 import { useThemeColors } from '../ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAuth } from '../../hooks/useAuth';
+import { Ionicons } from '@expo/vector-icons';
 
 interface RegisterFormProps {
   onSignin?: () => void;
@@ -19,6 +20,8 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -167,9 +170,23 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
             if (passwordError) setPasswordError('');
           }}
           placeholder="Enter your password"
-          secureTextEntry
+          secureTextEntry={!showPassword}
           error={passwordError}
           required
+          rightIcon={(
+            <TouchableOpacity
+              onPress={() => setShowPassword((v) => !v)}
+              accessibilityRole="button"
+              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={18}
+                color={colors['muted-foreground']}
+              />
+            </TouchableOpacity>
+          )}
         />
 
         <InputField
@@ -181,9 +198,23 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
             if (confirmPasswordError) setConfirmPasswordError('');
           }}
           placeholder="Confirm your password"
-          secureTextEntry
+          secureTextEntry={!showConfirmPassword}
           error={confirmPasswordError}
           required
+          rightIcon={(
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword((v) => !v)}
+              accessibilityRole="button"
+              accessibilityLabel={showConfirmPassword ? 'Hide password' : 'Show password'}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name={showConfirmPassword ? 'eye-off' : 'eye'}
+                size={18}
+                color={colors['muted-foreground']}
+              />
+            </TouchableOpacity>
+          )}
         />
 
         <TouchableOpacity

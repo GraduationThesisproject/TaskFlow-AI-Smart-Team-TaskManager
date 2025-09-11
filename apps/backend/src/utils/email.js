@@ -617,6 +617,13 @@ class EmailService {
 
     // Initialize email transporter
     initializeTransporter() {
+        // Allow explicit disable via env
+        if (String(process.env.SMTP_ENABLED).toLowerCase() === 'false') {
+            logger.warn('Email disabled by SMTP_ENABLED=false. Emails will not be sent.');
+            return;
+            
+        }
+
         if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
             logger.warn('Email configuration missing. Email features will be disabled.');
             return;
@@ -648,6 +655,12 @@ class EmailService {
         // Verify connection
         this.transporter.verify((error, success) => {
             if (error) {
+                // In development, gracefully fall back to console logging instead of failing
+                if (env.NODE_ENV === 'development') {
+                    logger.warn('Email transporter verification failed in development. Falling back to console logging. Details:', error);
+                    this.transporter = null; // force sendEmail() to log instead of sending
+                    return;
+                }
                 logger.error('Email transporter verification failed:', error);
             } else {
                 logger.info('Email transporter verified successfully');

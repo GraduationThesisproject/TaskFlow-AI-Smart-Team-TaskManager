@@ -1,12 +1,12 @@
-import type { Middleware } from '@reduxjs/toolkit';
+import type { Middleware, AnyAction } from '@reduxjs/toolkit';
 import { io, Socket } from 'socket.io-client';
 import { env } from '../../config/env';
 import { addNotification, fetchNotifications } from '../slices/notificationSlice';
-import { removeWorkspaceById, upsertWorkspaceStatus, createWorkspace } from '../slices/workspaceSlice';
+import { removeWorkspaceById, upsertWorkspaceStatus, createWorkspace, fetchMembers } from '../slices/workspaceSlice';
 import { logoutUser } from '../slices/authSlice';
 import { addActivity } from '../slices/activitySlice';
 
-import type { RootState } from "../../store"
+// import type { RootState } from "../../store"
 
 export const notificationsSocketMiddleware: Middleware = (store) => {
 
@@ -31,7 +31,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     }
     return Boolean(v);
   };
-  const isRealTimeEnabled = (state: RootState): boolean => {
+  const isRealTimeEnabled = (state: any): boolean => {
     const pref = state.auth.user?.preferences?.notifications?.realTime as any;
     if (pref && typeof pref === 'object') {
       try {
@@ -55,7 +55,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
   const notifyMobile = (title: string, body?: string) => {
     try {
       // Respect RT preference at display time, too
-      const state = (store.getState?.() as RootState);
+      const state = (store.getState?.() as any);
       if (state && !isRealTimeEnabled(state)) return;
       // Respect user mute and throttle bursts
       if (isMuted()) return;
@@ -128,13 +128,13 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       reconnectAttempts = 0; // Reset counter on successful connection
       console.log('🔌 [notificationsSocketMiddleware] socket connected', { id: socket?.id });
       // Only auto-fetch on connect if real-time is enabled
-      const stateNow = store.getState() as RootState;
+      const stateNow = store.getState() as any;
       if (isRealTimeEnabled(stateNow)) {
         store.dispatch(fetchNotifications() as any);
       }
     });
 
-    socket.on('connect_error', (err) => {
+    socket.on('connect_error', (err : any) => {
       console.error('❌ [notificationsSocketMiddleware] connect_error', {
         message: err?.message || err,
         description: err?.description,
@@ -165,10 +165,10 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     socket.on('error', (err) => {
       console.error('❗ [notificationsSocketMiddleware] socket error', err);
     });
-
+  
     socket.on('notification:new', ({ notification }) => {
       // Gate by preference
-      const stateNow = store.getState() as RootState;
+      const stateNow = store.getState() as any;
       if (!isRealTimeEnabled(stateNow)) return;
       console.log('📩 [notificationsSocketMiddleware] notification:new', {
         id: notification?._id,
@@ -213,7 +213,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     }) => {
       try {
         // Gate by preference
-        const stateNow = store.getState() as RootState;
+        const stateNow = store.getState() as any;
         if (!isRealTimeEnabled(stateNow)) return;
         const { workspaceId, status, archivedAt = null, archiveExpiresAt = null } = data || {} as any;
         if (!workspaceId || !status) return;
@@ -242,7 +242,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     // Real-time workspace delete
     socket.on('workspace:deleted', ({ id }) => {
       try {
-        const stateNow = store.getState() as RootState;
+        const stateNow = store.getState() as any;
         if (!isRealTimeEnabled(stateNow)) return;
         console.log('🗑️ [notificationsSocketMiddleware] workspace:deleted', { id });
         store.dispatch(removeWorkspaceById(id));
@@ -255,7 +255,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     // Real-time activities
     socket.on('activity:new', ({ activity }) => {
       try {
-        const stateNow = store.getState() as RootState;
+        const stateNow = store.getState() as any;
         if (!isRealTimeEnabled(stateNow)) return;
         console.log('📝 [notificationsSocketMiddleware] activity:new', {
           id: activity?._id,
@@ -316,8 +316,49 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       }
     });
 
+    // Member joined/accepted invitation: refresh members list
+    socket.on('workspace:member-added', ({ workspaceId, member }) => {
+      try {
+        const stateNow = store.getState() as any;
+        if (!isRealTimeEnabled(stateNow)) return;
+        if (workspaceId) {
+          console.log('👤 [notificationsSocketMiddleware] workspace:member-added', { workspaceId, memberId: member?._id || member?.id });
+          store.dispatch(fetchMembers({ id: workspaceId }) as any);
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to process workspace:member-added', e);
+      }
+    });
+
+    // Some backends emit a generic members-updated event
+    socket.on('workspace:members-updated', ({ workspaceId }) => {
+      try {
+        const stateNow = store.getState() as any;
+        if (!isRealTimeEnabled(stateNow)) return;
+        if (workspaceId) {
+          console.log('👥 [notificationsSocketMiddleware] workspace:members-updated', { workspaceId });
+          store.dispatch(fetchMembers({ id: workspaceId }) as any);
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to process workspace:members-updated', e);
+      }
+    });
+
+    // Invitation accepted alias (if backend uses invitation namespace)
+    socket.on('invitation:accepted', ({ workspaceId, userId }) => {
+      try {
+        const stateNow = store.getState() as any;
+        if (!isRealTimeEnabled(stateNow)) return;
+        if (workspaceId) {
+          console.log('✅ [notificationsSocketMiddleware] invitation:accepted', { workspaceId, userId });
+          store.dispatch(fetchMembers({ id: workspaceId }) as any);
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to process invitation:accepted', e);
+      }
+    });
     socket.on('notifications:deleted', ({ notificationId }) => {
-      const stateNow = store.getState() as RootState;
+      const stateNow = store.getState() as any;
       if (!isRealTimeEnabled(stateNow)) return;
       console.log('🗑️ [notificationsSocketMiddleware] notifications:deleted received', { notificationId });
       
@@ -334,11 +375,12 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         console.log('🗑️ [notificationsSocketMiddleware] Removed notification from local state:', notificationId);
       } else {
         console.log('🗑️ [notificationsSocketMiddleware] Notification not found in local state:', notificationId);
+
       }
     });
 
     socket.on('notifications:unreadCount', () => {
-      const stateNow = store.getState() as RootState;
+      const stateNow = store.getState() as any;
       if (!isRealTimeEnabled(stateNow)) return;
       console.log('🔄 [notificationsSocketMiddleware] notifications:unreadCount received -> refetch');
       store.dispatch(fetchNotifications() as any);
@@ -375,23 +417,25 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
     }
   };
 
-  return (next) => (action) => {
+  return (next) => (action: unknown) => {
     // Let the action update the state first
     const result = next(action);
 
-    const state = store.getState() as RootState;
+    const actionAny = action as AnyAction;
+
+    const state = store.getState() as any;
     const currentToken = state.auth.token;
     const realTimeEnabled = isRealTimeEnabled(state);
 
     // Handle logout action
-    if (action.type === logoutUser.fulfilled.type) {
+    if (actionAny.type === logoutUser.fulfilled.type) {
       disconnect();
       return result;
     }
 
     // Handle workspace creation - emit socket event and create notification
-    if (action.type === createWorkspace.fulfilled.type && socket?.connected) {
-      const workspace = action.payload;
+    if (actionAny.type === createWorkspace.fulfilled.type && socket?.connected) {
+      const workspace = actionAny.payload;
       const currentUser = state.auth.user;
       
       if (workspace && currentUser) {

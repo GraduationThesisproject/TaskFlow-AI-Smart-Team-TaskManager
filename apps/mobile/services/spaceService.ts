@@ -49,12 +49,16 @@ export class SpaceService {
     }
   }
 
-  // Update space
+  // Update space (try PATCH first for partial updates; fallback to PUT)
   static async updateSpace(id: string, data: UpdateSpaceData): Promise<ApiResponse<Space>> {
     try {
-      const response = await axiosInstance.put(`/spaces/${id}`, data);
+      const response = await axiosInstance.patch(`/spaces/${id}`, data);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.response?.status === 405 || error?.response?.status === 404) {
+        const response = await axiosInstance.put(`/spaces/${id}`, data);
+        return response.data;
+      }
       console.error('Error updating space:', error);
       throw error;
     }
