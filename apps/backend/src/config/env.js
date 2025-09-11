@@ -22,6 +22,7 @@ module.exports = {
     'http://192.168.1.14:3001', // Mobile app direct connection
     'http://192.168.1.14:8081', // Mobile app direct connection
     'exp://192.168.1.14:8081', // Alternative Expo protocol
+ // Alternative Expo protocol
     // Allow all origins in development (be careful in production)
     ...(process.env.NODE_ENV === 'development' ? ['*'] : [])
   ],
