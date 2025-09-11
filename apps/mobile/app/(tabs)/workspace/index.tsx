@@ -198,6 +198,17 @@ export default function WorkspaceScreen() {
   const [alertDescription, setAlertDescription] = useState<string | undefined>(undefined);
   const [alertVariant, setAlertVariant] = useState<'success' | 'error' | 'warning' | 'info'>('info');
 
+  // Auto-dismiss banner after 5 seconds
+  useEffect(() => {
+    if (alertVisible) {
+      const timer = setTimeout(() => {
+        setAlertVisible(false);
+      }, 5000); // Auto-dismiss after 5 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [alertVisible]);
+
   // Confirm removal dialog state
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<any | null>(null);
@@ -403,16 +414,32 @@ export default function WorkspaceScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
 
+      {/* Custom Header */}
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <FontAwesome name="arrow-left" size={24} color={colors.primary} />
+        </TouchableOpacity>
+        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Workspace</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
       {/* Inline banner alert */}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <MobileAlert
-          variant={alertVariant}
-          title={alertTitle}
-          description={alertDescription}
-          visible={alertVisible}
-          onClose={() => setAlertVisible(false)}
-        />
-
+        <TouchableOpacity 
+          onPress={() => setAlertVisible(false)}
+          disabled={!alertVisible}
+        >
+          <MobileAlert
+            variant={alertVariant}
+            title={alertTitle}
+            description={alertDescription}
+            visible={alertVisible}
+            onClose={() => setAlertVisible(false)}
+          />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -900,7 +927,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 24,
+    paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   backButton: { padding: 8 },

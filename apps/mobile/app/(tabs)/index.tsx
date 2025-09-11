@@ -494,7 +494,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    paddingTop: 32,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
   },
   menuButton: {
