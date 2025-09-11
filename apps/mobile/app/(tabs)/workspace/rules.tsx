@@ -1,198 +1,221 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, RefreshControl } from 'react-native';
-import * as DocumentPicker from 'expo-document-picker';
+import { StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, View as RNView, Text as RNText } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector } from '@/store';
-import { WorkspaceService } from '@/services/D_workspaceService';
+
+const RULES_FILE = FileSystem.documentDirectory + 'workspace_rules.txt';
+
+const DEFAULT_RULES = `📌 Task Management Rules
+
+One Task = One Owner
+
+Every task must have a single responsible owner (others can be collaborators).
+
+Clear Titles & Descriptions
+
+Task titles should be short but descriptive.
+
+Description must include context, requirements, and links/resources if needed.
+
+Due Dates are Mandatory
+
+Every task must have a start and/or due date.
+
+Use Labels/Tags
+
+Add at least one tag (e.g., frontend, backend, urgent, bug).
+
+Checklist for Big Tasks
+
+Break larger tasks into subtasks or checklists.
+
+📌 Workflow Rules
+
+No Skipping Columns
+
+Tasks must move step-by-step (e.g., To Do ➝ In Progress ➝ Review ➝ Done).
+
+Limit Work in Progress (WIP)
+
+Max 3 active tasks per person to avoid overload.
+
+Daily Standup Updates
+
+Each member updates at least once per day (comment or status).
+
+Review Required Before Done
+
+Every task in Review must be checked by another teammate or AI assistant before moving to Done.
+
+📌 Communication Rules
+
+Comment Before Closing
+
+Always leave a final comment when completing a task (summary, links, results).
+
+@Mentions for Clarity
+
+Use @name to assign or notify directly.
+
+AI Suggestions First
+
+Before asking the team, check if TaskFlow AI can suggest fixes/answers.
+
+📌 AI Integration Rules
+
+AI for Task Drafting
+
+Use AI to draft tasks, acceptance criteria, or user stories before team refinement.
+
+AI for Summaries
+
+At the end of the day, AI generates a progress summary for the team.
+
+AI for Estimates
+
+Use AI as a second opinion for effort/priority estimation.`;
 
 export default function WorkspaceRulesScreen() {
   const colors = useThemeColors();
   const router = useRouter();
-  const { currentWorkspaceId, currentWorkspace } = useAppSelector((s: any) => s.workspace);
 
-  const workspaceId = useMemo(() => currentWorkspaceId || (currentWorkspace?._id || currentWorkspace?.id) || null, [currentWorkspaceId, currentWorkspace]);
+  const [rules, setRules] = useState<string>('');
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [content, setContent] = useState('');
-  const [version, setVersion] = useState<number | undefined>(undefined);
-  const [lastUpdated, setLastUpdated] = useState<string | undefined>(undefined);
-  const [showPreview, setShowPreview] = useState(false);
-
-  const goBack = () => router.back();
-
-  const loadRules = async () => {
-    if (!workspaceId) return;
-    setLoading(true);
-    try {
-      const rules = await WorkspaceService.getWorkspaceRules(workspaceId);
-      setContent(rules?.content || '');
-      setVersion(rules?.version);
-      setLastUpdated(rules?.updatedAt);
-    } catch (e: any) {
-      Alert.alert('Rules', e?.message || 'Failed to load rules');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onRefresh = async () => {
-    if (!workspaceId) return;
-    setRefreshing(true);
-    try {
-      await loadRules();
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const saveRules = async () => {
-    if (!workspaceId) return;
-    setLoading(true);
-    try {
-      const updated = await WorkspaceService.updateWorkspaceRules(workspaceId, { content });
-      setContent(updated?.content || content);
-      setVersion(updated?.version);
-      setLastUpdated(updated?.updatedAt);
-      Alert.alert('Rules', 'Rules saved successfully');
-    } catch (e: any) {
-      Alert.alert('Rules', e?.message || 'Failed to save rules');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteRules = async () => {
-    if (!workspaceId) return;
-    Alert.alert('Delete Rules', 'Are you sure you want to delete/reset the workspace rules?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          setLoading(true);
-          try {
-            await WorkspaceService.deleteWorkspaceRules(workspaceId);
-            setContent('');
-            setVersion(undefined);
-            setLastUpdated(undefined);
-            Alert.alert('Rules', 'Rules deleted');
-          } catch (e: any) {
-            Alert.alert('Rules', e?.message || 'Failed to delete rules');
-          } finally {
-            setLoading(false);
-          }
-        }
-      }
-    ]);
-  };
-
-  const uploadPdf = async () => {
-    if (!workspaceId) return;
-    try {
-      const res = await DocumentPicker.getDocumentAsync({ type: 'application/pdf', multiple: false });
-      if (res.canceled || !res.assets?.length) return;
-      const file = res.assets[0];
-      setLoading(true);
-      // Expo DocumentPicker returns { uri, name, mimeType, size }
-      const formFile: any = { uri: file.uri, name: file.name || 'rules.pdf', type: file.mimeType || 'application/pdf' };
-      const uploaded = await WorkspaceService.uploadWorkspaceRules(workspaceId, formFile);
-      setContent(uploaded?.content || content);
-      setVersion(uploaded?.version);
-      setLastUpdated(uploaded?.updatedAt);
-      Alert.alert('Rules', 'Rules PDF uploaded and content updated');
-    } catch (e: any) {
-      Alert.alert('Rules', e?.message || 'Failed to upload rules PDF');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Determine if current user is workspace owner
+  const { user: authUser } = useAppSelector((s: any) => s.auth);
+  const workspaceState = useAppSelector((s: any) => s.workspace);
+  const currentWorkspaceId = (workspaceState?.currentWorkspaceId)
+    || (workspaceState?.currentWorkspace?._id)
+    || (workspaceState?.currentWorkspace?.id)
+    || null;
+  const members = Array.isArray(workspaceState?.members) ? workspaceState.members : [];
+  const userId = (authUser?.user?._id) || (authUser?.user?.id) || null;
+  const roleFromAuth = (authUser?.roles?.workspaces || {})[currentWorkspaceId as any];
+  const isOwner = useMemo(() => {
+    if (!userId) return false;
+    if (String(roleFromAuth).toLowerCase() === 'owner') return true;
+    return members.some((m: any) => {
+      const mid = m?.user?._id || m?.user?.id || m?._id || m?.id;
+      const role = String(m?.role || '').toLowerCase();
+      return String(mid) === String(userId) && role === 'owner';
+    });
+  }, [userId, roleFromAuth, members, currentWorkspaceId]);
 
   useEffect(() => {
-    if (workspaceId) loadRules();
-  }, [workspaceId]);
+    (async () => {
+      try {
+        const info = await FileSystem.getInfoAsync(RULES_FILE);
+        if (info.exists) {
+          const content = await FileSystem.readAsStringAsync(RULES_FILE);
+          setRules(content);
+        } else {
+          // Prefill with default and persist once
+          setRules(DEFAULT_RULES);
+          await FileSystem.writeAsStringAsync(RULES_FILE, DEFAULT_RULES, { encoding: FileSystem.EncodingType.UTF8 });
+        }
+      } catch (e) {
+        console.warn('Failed to load rules file, using defaults.', e);
+        setRules(DEFAULT_RULES);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
-  if (!workspaceId) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <TouchableOpacity style={[styles.headerBtn, { backgroundColor: colors.primary }]} onPress={goBack}>
-            <FontAwesome name="chevron-left" size={18} color={colors['primary-foreground']} />
-          </TouchableOpacity>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]} numberOfLines={1}>Workspace Rules</Text>
-          <View style={styles.headerSpacer} />
-        </View>
-        <View style={styles.emptyBox}>
-          <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'], textAlign: 'center' }]}>No workspace selected</Text>
-        </View>
-      </View>
-    );
-  }
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await FileSystem.writeAsStringAsync(RULES_FILE, rules, { encoding: FileSystem.EncodingType.UTF8 });
+      Alert.alert('Saved', 'Workspace rules saved successfully.');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to save rules');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    try {
+      const safe = (rules || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>');
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />
+        <title>Workspace Rules</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif; padding: 24px; }
+          h1 { font-size: 22px; margin-bottom: 12px; }
+          .content { line-height: 1.5; font-size: 14px; }
+        </style>
+      </head><body>
+        <h1>Workspace Rules</h1>
+        <div class="content">${safe}</div>
+      </body></html>`;
+
+      const { uri } = await Print.printToFileAsync({ html });
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(uri, { UTI: 'com.adobe.pdf', mimeType: 'application/pdf' });
+      } else {
+        Alert.alert('PDF saved', `Saved to: ${uri}`);
+      }
+    } catch (e: any) {
+      Alert.alert('Export failed', e?.message || 'Failed to export PDF');
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.headerBtn, { backgroundColor: colors.primary }]} onPress={goBack}>
-          <FontAwesome name="chevron-left" size={18} color={colors['primary-foreground']} />
+      <RNView style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
+          <FontAwesome name="arrow-left" size={22} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]} numberOfLines={1}>Workspace Rules</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Workspace Rules</Text>
+        <RNView style={styles.headerActions}>
+          <TouchableOpacity onPress={handleExportPdf} style={styles.headerBtn}>
+            <FontAwesome name="file-pdf-o" size={20} color={colors.accent} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSave} disabled={saving || !isOwner} style={styles.headerBtn}>
+            <FontAwesome name="save" size={20} color={colors.primary} />
+          </TouchableOpacity>
+        </RNView>
+      </RNView>
 
-      <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>        
-        {/* Info */}
-        <Card style={styles.sectionCard}>
-          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Workspace</Text>
-          <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>{currentWorkspace?.name || workspaceId}</Text>
-          {version ? (
-            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 4 }]}>Version {version}{lastUpdated ? ` • Updated ${new Date(lastUpdated).toLocaleString()}` : ''}</Text>
-          ) : null}
+      <ScrollView contentContainerStyle={styles.content}>
+        <Card style={[styles.editorCard, { backgroundColor: colors.card }]}>
+          {isOwner ? (
+            <TextInput
+              value={rules}
+              onChangeText={setRules}
+              editable={!loading}
+              placeholder="Write or paste your workspace rules here..."
+              placeholderTextColor={colors['muted-foreground']}
+              multiline
+              textAlignVertical="top"
+              style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
+            />
+          ) : (
+            <RNView>
+              <RNText
+                selectable
+                style={[
+                  styles.readonlyText,
+                  { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }
+                ]}
+              >
+                {rules}
+              </RNText>
+            </RNView>
+          )}
         </Card>
-
-        {/* Editor */}
-        <Card style={styles.sectionCard}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 8 }]}>Content</Text>
-          <TextInput
-            value={content}
-            onChangeText={setContent}
-            placeholder={'# Workspace Rules\n\nWelcome to **TaskFlow**! Edit these rules to match your workspace policies.'}
-            placeholderTextColor={colors['muted-foreground']}
-            multiline
-            style={[styles.textArea, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
-          />
-          <View style={styles.actionsRow}>
-            <TouchableOpacity disabled={loading} onPress={loadRules} style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Load</Text>
-            </TouchableOpacity>
-            <TouchableOpacity disabled={loading} onPress={saveRules} style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
-              <Text style={{ color: colors['primary-foreground'] }}>{loading ? 'Saving...' : 'Save'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity disabled={loading} onPress={deleteRules} style={[styles.actionBtn, { backgroundColor: colors.destructive }]}>
-              <Text style={{ color: colors['destructive-foreground'] }}>Delete</Text>
-            </TouchableOpacity>
-            <TouchableOpacity disabled={loading} onPress={uploadPdf} style={[styles.actionBtn, { backgroundColor: colors.secondary }]}>
-              <Text style={{ color: colors['secondary-foreground'] }}>Upload PDF</Text>
-            </TouchableOpacity>
-            <TouchableOpacity disabled={loading} onPress={() => setShowPreview(p => !p)} style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[TextStyles.body.small, { color: colors.foreground }]}>{showPreview ? 'Hide Preview' : 'Show Preview'}</Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
-
-        {showPreview && (
-          <Card style={styles.sectionCard}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 8 }]}>Preview</Text>
-            <ScrollView style={{ maxHeight: 260 }}>
-              <Text style={[TextStyles.body.small, { color: colors.foreground }]}>
-                {content || 'No content'}
-              </Text>
-            </ScrollView>
-          </Card>
-        )}
       </ScrollView>
     </View>
   );
@@ -200,13 +223,31 @@ export default function WorkspaceRulesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
-  headerBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  headerSpacer: { width: 40 },
-  content: { flex: 1, padding: 16 },
-  sectionCard: { padding: 20, marginBottom: 20 },
-  emptyBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  textArea: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, minHeight: 220, textAlignVertical: 'top' },
-  actionsRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  actionBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10, borderWidth: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerBtn: { padding: 8 },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
+  content: { padding: 16 },
+  editorCard: { padding: 12 },
+  input: {
+    minHeight: 400,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+  },
+  readonlyText: {
+    minHeight: 400,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    lineHeight: 20,
+  },
 });

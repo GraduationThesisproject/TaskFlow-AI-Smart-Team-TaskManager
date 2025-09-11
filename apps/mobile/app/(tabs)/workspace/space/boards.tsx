@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, useWindowDimensions, View as RNView, Modal, Pressable, TextInput, Switch, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, useWindowDimensions, View as RNView, Modal, Pressable, TextInput, Switch, ActivityIndicator, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { View, Text, Card } from '@/components/Themed';
@@ -10,8 +10,6 @@ import { TextStyles } from '@/constants/Fonts';
 import { BoardService } from '@/services/boardService';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import SpaceHeader from '@/components/space/SpaceHeader';
-import SpaceRightSidebar from '@/components/space/SpaceRightSidebar';
-
 
 export default function SpaceBoardsScreen() {
   const colors = useThemeColors();
@@ -22,8 +20,27 @@ export default function SpaceBoardsScreen() {
   const isWide = width >= 768; // show right sidebar on tablets/landscape
 
   const { selectedSpace, members: workspaceMembers } = useAppSelector((s: any) => s.workspace);
+  const { user: authUser } = useAppSelector((s: any) => s.auth);
+  const currentUserId = useMemo(() => String(authUser?.user?._id || authUser?.user?.id || ''), [authUser]);
   const space = selectedSpace;
   const { loadSpaces } = useWorkspaces({ autoFetch: false });
+
+  // Include all members (including owner). We'll prevent adding yourself via UI guards.
+  const displayMembers = useMemo(() => (
+    Array.isArray(workspaceMembers) ? workspaceMembers : []
+  ), [workspaceMembers]);
+
+  // Precompute owner IDs for disable logic
+  const ownerIds = useMemo(() => {
+    const ids = new Set<string>();
+    (Array.isArray(displayMembers) ? displayMembers : []).forEach((m: any) => {
+      if (String(m?.role || '').toLowerCase() === 'owner') {
+        const id = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
+        if (id) ids.add(id);
+      }
+    });
+    return ids;
+  }, [displayMembers]);
 
   const [refreshing, setRefreshing] = useState(false);
   const lastLoadedSpaceId = useRef<string | null>(null);
@@ -31,6 +48,7 @@ export default function SpaceBoardsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
   // Grid sizing for 3 columns
   const [gridWidth, setGridWidth] = useState(0);
@@ -160,6 +178,12 @@ export default function SpaceBoardsScreen() {
     Alert.alert('Add to board', `Selected member IDs: ${ids.join(', ')}`);
   };
 
+  const toggleMemberSelection = (id: string) => {
+    setSelectedMemberIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
   if (!space) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -244,12 +268,104 @@ export default function SpaceBoardsScreen() {
             )}
           </ScrollView>
         </View>
-        <View style={{ width: 300, padding: 16 }}>
-          <SpaceRightSidebar
-            space={space}
-            availableMembers={workspaceMembers}
-            onInvite={onAddMembersToBoard}
-          />
+        <View style={{ width: 320, padding: 16 }}>
+          {/* Sidebar: Add Members to Board (workspace members only; you can't add yourself) */}
+          <Card style={[styles.sidebarCard, { backgroundColor: colors.card }]}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Add Members to Board</Text>
+            {Array.isArray(displayMembers) && displayMembers.length > 0 ? (
+              <RNView style={{ gap: 8 }}>
+                {displayMembers.map((m: any) => {
+                  const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
+                  const email = m?.user?.email || m?.email || '';
+                  const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
+                  const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id);
+                  const selected = selectedMemberIds.includes(memberId);
+                  const isSelf = currentUserId && memberId === currentUserId;
+                  const isOwner = ownerIds.has(memberId);
+                  const letter = String(displayName).charAt(0).toUpperCase();
+                  return (
+                    <TouchableOpacity
+                      key={memberId}
+                      onPress={() => { if (!isSelf && !isOwner) toggleMemberSelection(memberId); }}
+                      style={[
+                        styles.memberItem,
+                        { backgroundColor: colors.background, borderColor: colors.border },
+                        (isSelf || isOwner) ? { opacity: 0.6 } : null,
+                      ]}
+                    >
+                      {avatarUrl ? (
+                        <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
+                      ) : (
+                        <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
+                        {!!email && (
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
+                        )}
+                      </View>
+                      <View style={[
+                        styles.checkbox,
+                        { borderColor: colors.border, backgroundColor: selected ? colors.primary : 'transparent' },
+                        (isSelf || isOwner) ? { backgroundColor: 'transparent' } : null,
+                      ]} />
+                    </TouchableOpacity>
+                  );
+                })}
+                <TouchableOpacity
+                  onPress={() => {
+                    const ids = selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !ownerIds.has(id));
+                    onAddMembersToBoard(ids);
+                    setSelectedMemberIds([]);
+                  }}
+                  disabled={selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !ownerIds.has(id)).length === 0}
+                  style={[
+                    styles.primaryBtn,
+                    { backgroundColor: colors.primary, opacity: selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !ownerIds.has(id)).length === 0 ? 0.6 : 1 },
+                  ]}
+                >
+                  <Text style={{ color: colors['primary-foreground'] }}>Add to Board</Text>
+                </TouchableOpacity>
+              </RNView>
+            ) : (
+              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No workspace members available.</Text>
+            )}
+          </Card>
+          {/* Sidebar: Members list (read-only) */}
+          <Card style={[styles.sidebarCard, { backgroundColor: colors.card, marginTop: 12 }]}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({Array.isArray(displayMembers) ? displayMembers.length : 0})</Text>
+            {Array.isArray(displayMembers) && displayMembers.length > 0 ? (
+              <RNView style={{ gap: 8 }}>
+                {displayMembers.map((m: any) => {
+                  const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
+                  const email = m?.user?.email || m?.email || '';
+                  const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
+                  const letter = String(displayName).charAt(0).toUpperCase();
+                  return (
+                    <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.background, borderColor: colors.border }]}> 
+                      {avatarUrl ? (
+                        <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
+                      ) : (
+                        <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}> 
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
+                        {!!email && (
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+              </RNView>
+            ) : (
+              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No members yet.</Text>
+            )}
+          </Card>
         </View>
       </RNView>
     );
@@ -327,15 +443,75 @@ export default function SpaceBoardsScreen() {
       <Modal animationType="slide" transparent visible={sidebarOpen} onRequestClose={() => setSidebarOpen(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setSidebarOpen(false)} />
         <View style={[styles.modalPanel, { backgroundColor: colors.background, borderLeftColor: colors.border }]}> 
-          <SpaceRightSidebar
-            space={space}
-            availableMembers={workspaceMembers}
-            onMembersClose={() => setSidebarOpen(false)}
-            onInvite={(ids: string[]) => {
-              setSidebarOpen(false);
-              Alert.alert('Add to board', `Selected member IDs: ${ids.join(', ')}`);
-            }}
-          />
+          <Card style={[styles.sidebarCard, { backgroundColor: colors.card }]}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Add Members to Board</Text>
+            {Array.isArray(displayMembers) && displayMembers.length > 0 ? (
+              <RNView style={{ gap: 8 }}>
+                {displayMembers.map((m: any) => {
+                  const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
+                  const email = m?.user?.email || m?.email || '';
+                  const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
+                  const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id);
+                  const selected = selectedMemberIds.includes(memberId);
+                  const isSelf = currentUserId && memberId === currentUserId;
+                  const isOwner = ownerIds.has(memberId);
+                  const letter = String(displayName).charAt(0).toUpperCase();
+                  return (
+                    <TouchableOpacity
+                      key={memberId}
+                      onPress={() => { if (!isSelf && !isOwner) toggleMemberSelection(memberId); }}
+                      style={[
+                        styles.memberItem,
+                        { backgroundColor: colors.background, borderColor: colors.border },
+                        (isSelf || isOwner) ? { opacity: 0.6 } : null,
+                      ]}
+                    >
+                      {avatarUrl ? (
+                        <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
+                      ) : (
+                        <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
+                        {!!email && (
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
+                        )}
+                      </View>
+                      <View style={[
+                        styles.checkbox,
+                        { borderColor: colors.border, backgroundColor: selected ? colors.primary : 'transparent' },
+                        (isSelf || isOwner) ? { backgroundColor: 'transparent' } : null,
+                      ]} />
+                    </TouchableOpacity>
+                  );
+                })}
+                <RNView style={{ flexDirection: 'row', gap: 8 }}>
+                  <TouchableOpacity onPress={() => setSidebarOpen(false)} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
+                    <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Close</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      const ids = selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !ownerIds.has(id));
+                      setSidebarOpen(false);
+                      onAddMembersToBoard(ids);
+                      setSelectedMemberIds([]);
+                    }}
+                    disabled={selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !ownerIds.has(id)).length === 0}
+                    style={[
+                      styles.primaryBtn,
+                      { backgroundColor: colors.primary, opacity: selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !ownerIds.has(id)).length === 0 ? 0.6 : 1 },
+                    ]}
+                  >
+                    <Text style={{ color: colors['primary-foreground'] }}>Add to Board</Text>
+                  </TouchableOpacity>
+                </RNView>
+              </RNView>
+            ) : (
+              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No workspace members available.</Text>
+            )}
+          </Card>
         </View>
       </Modal>
 
@@ -417,5 +593,9 @@ const styles = StyleSheet.create({
   previewCard: { height: 36, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth, marginBottom: 6 },
   viewMoreBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, marginTop: 8 },
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
-
+  sidebarCard: { padding: 12, borderRadius: 12 },
+  memberItem: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: 10, borderWidth: 1 },
+  memberAvatar: { width: 32, height: 32, borderRadius: 16 },
+  memberAvatarPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  checkbox: { width: 18, height: 18, borderRadius: 4, borderWidth: StyleSheet.hairlineWidth },
 });
