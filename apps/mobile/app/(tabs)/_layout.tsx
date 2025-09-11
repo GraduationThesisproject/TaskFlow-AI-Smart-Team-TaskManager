@@ -23,8 +23,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors['muted-foreground'],
         tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: colors.border,
+          display: 'none', // Hide the entire tab bar
         },
         headerStyle: {
           backgroundColor: colors.background,
@@ -37,8 +36,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          href: null, // Hide from tab bar
           headerShown: false, // Remove redundant header
         }}
       />
@@ -46,18 +44,12 @@ export default function TabLayout() {
         name="workspace"
         options={{
           href: null, // Hide from tab bar
-          headerShown: true,
-          headerTitle: 'Workspace',
-          headerTitleAlign: 'center',
-          headerShadowVisible: false,
-          headerRight: () => (<NotificationBell size={22} />),
+          headerShown: false, // Use custom header instead
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
           href: null, // Hide from tab bar
           headerShown: false, // Remove redundant header
         }}

@@ -205,97 +205,99 @@ export default function NotificationBell({
 
       <Modal
         visible={isModalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        transparent={true}
+        animationType="fade"
         onRequestClose={() => setIsModalVisible(false)}
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-                Notifications
-              </Text>
-              {unreadCount > 0 && (
-                <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                  {unreadCount} unread
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsModalVisible(false)}
+        >
+          <View style={[styles.popupContainer, { backgroundColor: colors.card }]}>
+            {/* Header */}
+            <View style={[styles.popupHeader, { borderBottomColor: colors.border }]}>
+              <View style={styles.popupHeaderLeft}>
+                <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>
+                  Notifications
                 </Text>
-              )}
+                {unreadCount > 0 && (
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                    {unreadCount} unread
+                  </Text>
+                )}
+              </View>
+              <View style={styles.popupHeaderRight}>
+                {hasNotifications && (
+                  <>
+                    <TouchableOpacity
+                      style={styles.popupHeaderButton}
+                      onPress={handleMarkAllAsRead}
+                      disabled={unreadCount === 0}
+                    >
+                      <FontAwesome 
+                        name="check" 
+                        size={14} 
+                        color={unreadCount === 0 ? colors['muted-foreground'] : colors.foreground} 
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.popupHeaderButton}
+                      onPress={handleClearAll}
+                    >
+                      <FontAwesome 
+                        name="trash" 
+                        size={14} 
+                        color={colors.destructive} 
+                      />
+                    </TouchableOpacity>
+                  </>
+                )}
+                <TouchableOpacity
+                  style={styles.popupHeaderButton}
+                  onPress={() => setIsModalVisible(false)}
+                >
+                  <FontAwesome name="times" size={14} color={colors.foreground} />
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.headerRight}>
-              {hasNotifications && (
-                <>
-                  <TouchableOpacity
-                    style={styles.headerButton}
-                    onPress={handleMarkAllAsRead}
-                    disabled={unreadCount === 0}
-                  >
-                    <FontAwesome 
-                      name="check" 
-                      size={16} 
-                      color={unreadCount === 0 ? colors['muted-foreground'] : colors.foreground} 
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.headerButton}
-                    onPress={handleClearAll}
-                  >
-                    <FontAwesome 
-                      name="trash" 
-                      size={16} 
-                      color={colors.destructive} 
-                    />
-                  </TouchableOpacity>
-                </>
-              )}
-              <TouchableOpacity
-                style={styles.headerButton}
-                onPress={() => setIsModalVisible(false)}
-              >
-                <FontAwesome name="times" size={16} color={colors.foreground} />
-              </TouchableOpacity>
-            </View>
-          </View>
 
-          {/* Content */}
-          <ScrollView style={styles.content}>
+            {/* Content */}
+            <ScrollView style={styles.popupContent} showsVerticalScrollIndicator={false}>
             {loading ? (
-              <View style={styles.emptyState}>
-                <FontAwesome name="spinner" size={32} color={colors['muted-foreground']} />
-                <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
-                  Loading notifications...
+              <View style={styles.popupEmptyState}>
+                <FontAwesome name="spinner" size={24} color={colors['muted-foreground']} />
+                <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
+                  Loading...
                 </Text>
               </View>
             ) : error ? (
-              <View style={styles.emptyState}>
-                <FontAwesome name="exclamation-triangle" size={32} color={colors.destructive} />
-                <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>
-                  {error}
+              <View style={styles.popupEmptyState}>
+                <FontAwesome name="exclamation-triangle" size={24} color={colors.destructive} />
+                <Text style={[TextStyles.body.small, { color: colors.destructive }]}>
+                  Failed to load
                 </Text>
                 <TouchableOpacity
-                  style={[styles.retryButton, { backgroundColor: colors.primary }]}
+                  style={[styles.popupRetryButton, { backgroundColor: colors.primary }]}
                   onPress={() => {
                     clearError();
                     fetchNotifications?.();
                   }}
                 >
-                  <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>
+                  <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'] }]}>
                     Retry
                   </Text>
                 </TouchableOpacity>
               </View>
             ) : !hasNotifications ? (
-              <View style={styles.emptyState}>
-                <FontAwesome name="bell-slash" size={32} color={colors['muted-foreground']} />
-                <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
-                  No notifications yet
-                </Text>
+              <View style={styles.popupEmptyState}>
+                <FontAwesome name="bell-slash" size={24} color={colors['muted-foreground']} />
                 <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                  You'll see updates about your workspaces and tasks here
+                  No notifications
                 </Text>
               </View>
             ) : (
-              <View style={styles.notificationsList}>
+              <View style={styles.popupNotificationsList}>
                 {notifications.slice(0, 50).map((notification) => {
                   // Debug notification structure
                   console.log('📋 [NotificationBell] Rendering notification:', {
@@ -307,10 +309,10 @@ export default function NotificationBell({
                   });
                   
                   return (
-                    <Card
+                    <TouchableOpacity
                       key={notification._id || notification.id}
                       style={[
-                        styles.notificationItem,
+                        styles.popupNotificationItem,
                         { 
                           backgroundColor: notification.isRead 
                             ? colors.card 
@@ -318,71 +320,40 @@ export default function NotificationBell({
                           borderLeftColor: notification.isRead 
                             ? colors.border 
                             : colors.primary,
-                          borderLeftWidth: notification.isRead ? 1 : 4,
                         }
                       ]}
+                      onPress={() => !notification.isRead && handleMarkAsRead(notification._id)}
                     >
-                    <View style={styles.notificationContent}>
-                      <View style={styles.notificationHeader}>
-                        <View style={styles.notificationIcon}>
-                          {getNotificationIcon(notification.type)}
-                        </View>
-                        <View style={styles.notificationText}>
-                          <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-                            {notification.title}
-                          </Text>
-                          <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                            {formatTime(notification.createdAt)}
-                          </Text>
-                        </View>
-                        {!notification.isRead && (
-                          <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />
-                        )}
-                      </View>
-                      
-                      <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                        {notification.message}
-                      </Text>
-
-                      {notification.sender && (
-                        <View style={styles.senderInfo}>
-                          <FontAwesome name="user" size={12} color={colors['muted-foreground']} />
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                            From {notification.sender.name}
-                          </Text>
-                        </View>
-                      )}
-
-                      <View style={styles.notificationActions}>
-                        {!notification.isRead && (
-                          <TouchableOpacity
-                            style={[styles.actionButton, { backgroundColor: colors.primary + '20' }]}
-                            onPress={() => handleMarkAsRead(notification._id)}
-                          >
-                            <FontAwesome name="check" size={12} color={colors.primary} />
-                            <Text style={[TextStyles.caption.small, { color: colors.primary }]}>
-                              Mark Read
+                      <View style={styles.popupNotificationContent}>
+                        <View style={styles.popupNotificationHeader}>
+                          <View style={styles.popupNotificationIcon}>
+                            {getNotificationIcon(notification.type)}
+                          </View>
+                          <View style={styles.popupNotificationText}>
+                            <Text style={[TextStyles.body.small, { color: colors.foreground }]} numberOfLines={1}>
+                              {notification.title}
                             </Text>
-                          </TouchableOpacity>
-                        )}
-                        <TouchableOpacity
-                          style={[styles.actionButton, { backgroundColor: colors.destructive + '20' }]}
-                          onPress={() => handleDeleteNotification(notification._id || notification.id)}
-                        >
-                          <FontAwesome name="trash" size={12} color={colors.destructive} />
-                          <Text style={[TextStyles.caption.small, { color: colors.destructive }]}>
-                            Delete
-                          </Text>
-                        </TouchableOpacity>
+                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>
+                              {formatTime(notification.createdAt)}
+                            </Text>
+                          </View>
+                          {!notification.isRead && (
+                            <View style={[styles.popupUnreadDot, { backgroundColor: colors.primary }]} />
+                          )}
+                        </View>
+                        
+                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={2}>
+                          {notification.message}
+                        </Text>
                       </View>
-                    </View>
-                  </Card>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
             )}
-          </ScrollView>
-        </View>
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
       </Modal>
     </>
   );
@@ -411,27 +382,95 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
   },
-  header: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 60,
+    paddingRight: 16,
+  },
+  popupContainer: {
+    width: 320,
+    maxHeight: 400,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  popupHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
-  headerLeft: {
+  popupHeaderLeft: {
     flex: 1,
   },
-  headerRight: {
+  popupHeaderRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
-  headerButton: {
-    padding: 8,
+  popupHeaderButton: {
+    padding: 6,
   },
-  content: {
+  popupContent: {
+    maxHeight: 300,
+  },
+  popupNotificationItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderLeftWidth: 3,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  popupNotificationContent: {
+    gap: 6,
+  },
+  popupNotificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  popupNotificationIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  popupNotificationText: {
     flex: 1,
+    gap: 2,
+  },
+  popupUnreadDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  popupEmptyState: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  popupRetryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginTop: 4,
   },
   emptyState: {
     flex: 1,
@@ -444,6 +483,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+  },
+  popupNotificationsList: {
+    gap: 0,
   },
   notificationsList: {
     padding: 16,
