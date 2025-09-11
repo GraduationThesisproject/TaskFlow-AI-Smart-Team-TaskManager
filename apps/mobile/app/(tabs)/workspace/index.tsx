@@ -128,7 +128,7 @@ export default function WorkspaceScreen() {
 
   const handleOpenSpace = (space: any) => {
     dispatch(setSelectedSpace(space));
-    router.push('/workspace/space/boards');
+    router.push('/workspace/space/main');
   };
 
   const goToReports = () => router.push('/workspace/reports');
@@ -270,10 +270,21 @@ export default function WorkspaceScreen() {
     return unique.size;
   };
 
+  // Grid sizing for 3 columns in Spaces preview
+  const [previewGridW, setPreviewGridW] = useState(0);
+  const PREVIEW_COLS = 3;
+  const PREVIEW_GAP = 12;
+  const previewTile = previewGridW > 0
+    ? Math.floor((previewGridW - PREVIEW_GAP * (PREVIEW_COLS - 1)) / PREVIEW_COLS)
+    : undefined;
+
+  const { width } = useWindowDimensions();
+  const isWide = width >= 768;
+  const [membersSidebarOpen, setMembersSidebarOpen] = useState(false);
+
   // Loading state — only block the UI if we have no cached spaces yet
   if (!USE_MOCK && loading && !refreshing && (!Array.isArray(spaces) || spaces.length === 0)) {
     return (
-
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
           <TouchableOpacity
@@ -288,23 +299,13 @@ export default function WorkspaceScreen() {
           <View style={styles.headerSpacer} />
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Loading workspace...</Text>
+          <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
+            Loading workspace...
+          </Text>
         </View>
       </View>
     );
   }
-
-  // Grid sizing for 3 columns in Spaces preview
-  const [previewGridW, setPreviewGridW] = useState(0);
-  const PREVIEW_COLS = 3;
-  const PREVIEW_GAP = 12;
-  const previewTile = previewGridW > 0
-    ? Math.floor((previewGridW - PREVIEW_GAP * (PREVIEW_COLS - 1)) / PREVIEW_COLS)
-    : undefined;
-
-  const { width } = useWindowDimensions();
-  const isWide = width >= 768;
-  const [membersSidebarOpen, setMembersSidebarOpen] = useState(false);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -388,9 +389,9 @@ export default function WorkspaceScreen() {
                           <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
                         )}
                         <View style={styles.memberMetaRow}>
-                          <Text key="role" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                          <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                          <Text key="status" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
                         </View>
                       </View>
                       {m.role !== 'owner' && (
@@ -521,9 +522,9 @@ export default function WorkspaceScreen() {
                     </Text>
                   ) : null}
                   <View style={styles.spaceStats}>
-                    <Text key="members" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.members?.length || 0)} members</Text>
-                    <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                    <Text key="boards" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.stats?.totalBoards || 0)} boards</Text>
+                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.members?.length || 0)} members</Text>
+                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.stats?.totalBoards || 0)} boards</Text>
                   </View>
                   
                   {/* Archive countdown for archived spaces */}
@@ -538,13 +539,11 @@ export default function WorkspaceScreen() {
                         }
                       ]}>
                         <FontAwesome 
-                          key="clock-icon"
                           name="clock-o" 
                           size={10} 
                           color={getArchiveCountdownStyle(space.archiveExpiresAt).color} 
                         />
                         <Text 
-                          key="countdown-text"
                           style={[
                             TextStyles.caption.small, 
                             { color: getArchiveCountdownStyle(space.archiveExpiresAt).color }
