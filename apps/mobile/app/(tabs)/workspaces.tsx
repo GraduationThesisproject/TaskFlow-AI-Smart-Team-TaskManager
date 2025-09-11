@@ -7,7 +7,6 @@ import { useAppSelector, useAppDispatch } from '@/store';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
 import { fetchWorkspaces, createWorkspace, deleteWorkspace, restoreWorkspace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
-import CreateWorkspaceModal from '@/components/common/CreateWorkspaceModal';
 import { useRouter } from 'expo-router';
 import { formatArchiveCountdown, getArchiveCountdownStyle, getArchiveStatusMessage } from '@/utils/archiveTimeUtils';
 
@@ -144,16 +143,19 @@ export default function WorkspacesScreen() {
             />
             <TouchableOpacity 
               onPress={handleCreateWorkspace}
-              style={[styles.createButton, { backgroundColor: colors.success }]}
+              style={[styles.actionButton, { 
+                backgroundColor: newWorkspaceName.trim() ? colors.success : colors.muted,
+                opacity: newWorkspaceName.trim() ? 1 : 0.5
+              }]}
               disabled={!newWorkspaceName.trim()}
             >
-              <FontAwesome name="check" size={14} color={colors.foreground} />
+              <FontAwesome name="check" size={14} color={colors['primary-foreground']} />
             </TouchableOpacity>
             <TouchableOpacity 
               onPress={handleCancelCreate}
-              style={[styles.cancelButton, { backgroundColor: colors.muted }]}
+              style={[styles.actionButton, { backgroundColor: colors.muted }]}
             >
-              <FontAwesome name="times" size={14} color={colors.foreground} />
+              <FontAwesome name="times" size={14} color={colors['muted-foreground']} />
             </TouchableOpacity>
           </View>
         )}
@@ -291,7 +293,7 @@ export default function WorkspacesScreen() {
             </Text>
             <TouchableOpacity 
               onPress={() => setIsCreating(true)}
-              style={[styles.createButton, { backgroundColor: colors.primary }]}
+              style={[styles.emptyStateButton, { backgroundColor: colors.primary }]}
             >
               <FontAwesome name="plus" size={16} color={colors['primary-foreground']} />
               <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'] }]}>
@@ -302,12 +304,6 @@ export default function WorkspacesScreen() {
         )}
       </ScrollView>
 
-      <CreateWorkspaceModal
-        visible={isCreating}
-        onClose={() => setIsCreating(false)}
-        onSubmit={handleCreateWorkspace}
-        submitting={isCreating}
-      />
 
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="dashboard" />
     </View>
@@ -424,18 +420,20 @@ const styles = StyleSheet.create({
     paddingVertical: 64,
     gap: 16,
   },
-  createButton: {
+  actionButton: {
     width: 28,
     height: 28,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  emptyStateButton: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
   },
 });

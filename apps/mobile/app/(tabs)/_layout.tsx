@@ -46,6 +46,7 @@ export default function TabLayout() {
         name="workspace"
         options={{
           href: null, // Hide from tab bar
+          headerShown: false, // Remove redundant header
         }}
       />
       <Tabs.Screen
