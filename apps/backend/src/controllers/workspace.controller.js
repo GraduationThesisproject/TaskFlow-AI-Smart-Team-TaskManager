@@ -211,7 +211,7 @@ exports.createWorkspace = async (req, res) => {
 exports.updateWorkspace = async (req, res) => {
     try {
         const { id: workspaceId } = req.params;
-        const { name, description, settings, githubOrg } = req.body;
+        const { name, description, settings, githubOrg, limits } = req.body;
         const userId = req.user.id;
         // SECURITY FIX: Use verified roles from auth middleware
         const userRoles = req.user.roles;
@@ -250,6 +250,14 @@ exports.updateWorkspace = async (req, res) => {
                     Object.assign(workspace.settings[section], updates);
                 }
             });
+        }
+
+        // Update limits if provided (e.g., { maxSpaces: 25 })
+        if (limits && typeof limits === 'object') {
+            workspace.limits = {
+                ...(workspace.limits || {}),
+                ...limits,
+            };
         }
 
         await workspace.save();

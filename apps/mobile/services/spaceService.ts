@@ -25,7 +25,7 @@ export class SpaceService {
       const response = await axiosInstance.get(`/spaces?workspace=${workspaceId}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching spaces:', error);
+      console.warn('Error fetching spaces:', error);
       throw error;
     }
   }
@@ -36,7 +36,7 @@ export class SpaceService {
       const response = await axiosInstance.get(`/spaces/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching space:', error);
+      console.warn('Error fetching space:', error);
       throw error;
     }
   }
@@ -55,9 +55,9 @@ export class SpaceService {
       return response.data;
     } catch (error: any) {
       if (error?.response) {
-        console.error('Error creating space:', error.response.status, error.response.data);
+        console.warn('Error creating space:', error.response.status, error.response.data);
       } else {
-        console.error('Error creating space:', error?.message || error);
+        console.warn('Error creating space:', error?.message || error);
       }
       throw error;
     }
@@ -73,7 +73,7 @@ export class SpaceService {
         const response = await axiosInstance.put(`/spaces/${id}`, data);
         return response.data;
       }
-      console.error('Error updating space:', error);
+      console.warn('Error updating space:', error);
       throw error;
     }
   }
@@ -84,7 +84,7 @@ export class SpaceService {
       const response = await axiosInstance.delete(`/spaces/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Error deleting space:', error);
+      console.warn('Error deleting space:', error);
       throw error;
     }
   }
@@ -95,7 +95,7 @@ export class SpaceService {
       const response = await axiosInstance.get(`/spaces/${id}/members`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching space members:', error);
+      console.warn('Error fetching space members:', error);
       throw error;
     }
   }
@@ -106,7 +106,7 @@ export class SpaceService {
       const response = await axiosInstance.get(`/spaces/${id}/boards`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching space boards:', error);
+      console.warn('Error fetching space boards:', error);
       throw error;
     }
   }
@@ -117,7 +117,7 @@ export class SpaceService {
       const response = await axiosInstance.post(`/spaces/${spaceId}/members`, { userId, role });
       return response.data;
     } catch (error) {
-      console.error('Error adding space member:', error);
+      console.warn('Error adding space member:', error);
       throw error;
     }
   }
@@ -128,7 +128,7 @@ export class SpaceService {
       const response = await axiosInstance.delete(`/spaces/${spaceId}/members/${memberId}`);
       return response.data;
     } catch (error) {
-      console.error('Error removing space member:', error);
+      console.warn('Error removing space member:', error);
       throw error;
     }
   }
@@ -139,7 +139,7 @@ export class SpaceService {
       const response = await axiosInstance.post(`/spaces/${id}/archive`, {});
       return response.data;
     } catch (error) {
-      console.error('Error archiving space:', error);
+      console.warn('Error archiving space:', error);
       throw error;
     }
   }
@@ -150,7 +150,7 @@ export class SpaceService {
       const response = await axiosInstance.post(`/spaces/${id}/archive`, { unarchive: true });
       return response.data;
     } catch (error) {
-      console.error('Error unarchiving space:', error);
+      console.warn('Error unarchiving space:', error);
       throw error;
     }
   }
