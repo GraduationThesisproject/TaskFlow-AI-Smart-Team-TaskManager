@@ -89,49 +89,49 @@ export default function SettingsScreen() {
     await setTheme(value ? 'dark' : 'light');
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout? You will need to login again to access your account.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logout();
-              Alert.alert('Logged Out', 'You have been successfully logged out.');
-            } catch (error) {
-              Alert.alert('Logout Failed', 'Failed to logout. Please try again.');
-            }
-          }
-        },
-      ]
-    );
-  };
+  // const handleLogout = () => {
+  //   Alert.alert(
+  //     'Logout',
+  //     'Are you sure you want to logout? You will need to login again to access your account.',
+  //     [
+  //       { text: 'Cancel', style: 'cancel' },
+  //       { 
+  //         text: 'Logout', 
+  //         style: 'destructive',
+  //         onPress: async () => {
+  //           try {
+  //             await logout();
+  //             Alert.alert('Logged Out', 'You have been successfully logged out.');
+  //           } catch (error) {
+  //             Alert.alert('Logout Failed', 'Failed to logout. Please try again.');
+  //           }
+  //         }
+  //       },
+  //     ]
+  //   );
+  // };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteAccount();
-              Alert.alert('Account Deleted', 'Your account has been successfully deleted.');
-            } catch (error) {
-              Alert.alert('Deletion Failed', 'Failed to delete account. Please try again.');
-            }
-          }
-        },
-      ]
-    );
-  };
+  // const handleDeleteAccount = () => {
+  //   Alert.alert(
+  //     'Delete Account',
+  //     'Are you sure you want to delete your account? This action cannot be undone.',
+  //     [
+  //       { text: 'Cancel', style: 'cancel' },
+  //       { 
+  //         text: 'Delete', 
+  //         style: 'destructive',
+  //         onPress: async () => {
+  //           try {
+  //             await deleteAccount();
+  //             Alert.alert('Account Deleted', 'Your account has been successfully deleted.');
+  //           } catch (error) {
+  //             Alert.alert('Deletion Failed', 'Failed to delete account. Please try again.');
+  //           }
+  //         }
+  //       },
+  //     ]
+  //   );
+  // };
 
 
   const renderContent = () => {
