@@ -68,7 +68,6 @@ export default function Toast({
     }
   }, [visible, duration, fadeAnim, onHide]);
 
-  // Early return after all hooks to avoid violating Rules of Hooks
   if (!visible) return null;
 
   return (

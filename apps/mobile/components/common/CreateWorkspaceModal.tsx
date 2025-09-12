@@ -5,10 +5,12 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
+export type WorkspaceVisibility = 'private' | 'public';
+
 interface CreateWorkspaceModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (payload: { name: string; description?: string }) => Promise<void> | void;
+  onSubmit: (payload: { name: string; description?: string; visibility: WorkspaceVisibility }) => Promise<void> | void;
   submitting?: boolean;
 }
 
@@ -16,11 +18,13 @@ export default function CreateWorkspaceModal({ visible, onClose, onSubmit, submi
   const colors = useThemeColors();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [visibility, setVisibility] = useState<WorkspaceVisibility>('private');
 
   useEffect(() => {
     if (!visible) {
       setName('');
       setDescription('');
+      setVisibility('private');
     }
   }, [visible]);
 
@@ -28,7 +32,7 @@ export default function CreateWorkspaceModal({ visible, onClose, onSubmit, submi
 
   const handleSubmit = async () => {
     if (!canCreate) return;
-    await onSubmit({ name: name.trim(), description: description.trim() || undefined });
+    await onSubmit({ name: name.trim(), description: description.trim() || undefined, visibility });
   };
 
   return (
@@ -82,6 +86,38 @@ export default function CreateWorkspaceModal({ visible, onClose, onSubmit, submi
                     minHeight: 80,
                   }}
                 />
+              </View>
+
+              <View>
+                <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginBottom: 6 }]}>Visibility</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TouchableOpacity
+                    onPress={() => setVisibility('private')}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      borderRadius: 999,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      backgroundColor: visibility === 'private' ? colors.primary : colors.card,
+                    }}
+                  >
+                    <Text style={[TextStyles.caption.small, { color: visibility === 'private' ? colors['primary-foreground'] : colors.foreground }]}>Private</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setVisibility('public')}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      borderRadius: 999,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      backgroundColor: visibility === 'public' ? colors.primary : colors.card,
+                    }}
+                  >
+                    <Text style={[TextStyles.caption.small, { color: visibility === 'public' ? colors['primary-foreground'] : colors.foreground }]}>Public</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
 

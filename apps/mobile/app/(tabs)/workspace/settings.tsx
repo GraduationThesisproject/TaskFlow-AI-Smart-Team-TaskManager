@@ -59,8 +59,13 @@ export default function WorkspaceSettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.primary }]} onPress={() => router.back()}>
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.primary }]}>
+        <TouchableOpacity
+          style={[styles.backButton, { backgroundColor: colors.primary }]}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
           <FontAwesome name="chevron-left" size={18} color={colors['primary-foreground']} />
         </TouchableOpacity>
         <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Workspace Settings</Text>

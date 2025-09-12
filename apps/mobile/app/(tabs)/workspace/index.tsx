@@ -165,7 +165,7 @@ export default function WorkspaceScreen() {
 
   const handleOpenSpace = (space: any) => {
     dispatch(setSelectedSpace(space));
-    router.push('/workspace/space/main');
+    router.push('/workspace/space/boards');
   };
 
   const goToReports = () => router.push('/workspace/reports');
@@ -197,17 +197,9 @@ export default function WorkspaceScreen() {
   const [alertTitle, setAlertTitle] = useState<string | undefined>(undefined);
   const [alertDescription, setAlertDescription] = useState<string | undefined>(undefined);
   const [alertVariant, setAlertVariant] = useState<'success' | 'error' | 'warning' | 'info'>('info');
-
-  // Auto-dismiss banner after 5 seconds
-  useEffect(() => {
-    if (alertVisible) {
-      const timer = setTimeout(() => {
-        setAlertVisible(false);
-      }, 5000); // Auto-dismiss after 5 seconds
-
-      return () => clearTimeout(timer);
-    }
-  }, [alertVisible]);
+  const [alertIsConfirmable, setAlertIsConfirmable] = useState(false);
+  const [alertConfirmText, setAlertConfirmText] = useState<string>('Confirm');
+  const [alertCancelText, setAlertCancelText] = useState<string>('Cancel');
 
   // Confirm removal dialog state
   const [confirmVisible, setConfirmVisible] = useState(false);
@@ -277,35 +269,32 @@ export default function WorkspaceScreen() {
     );
   };
 
-  const handleSubmitCreate = async ({ name, description }: { name: string; description?: string }) => {
+  const handleSubmitCreate = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
     if (!workspaceId) return;
-    if (!name || !name.trim()) {
-      Alert.alert('Error', 'Space name is required.');
+    const MAX_SPACES = 5;
+    const canCreateMoreSpaces = (effectiveSpaces?.length || 0) < MAX_SPACES;
+    if (!canCreateMoreSpaces) {
+      setAlertVariant('warning');
+      setAlertTitle('Space limit reached');
+      setAlertDescription("You've reached the limit of 5 spaces. Upgrade to Premium to create more.");
+      setAlertIsConfirmable(true);
+      setAlertConfirmText('Upgrade');
+      setAlertCancelText('Cancel');
+      setAlertVisible(true);
       return;
     }
     try {
       setCreatingSpace(true);
       await SpaceService.createSpace({
-        name: name.trim(),
-        description: description?.trim() || undefined,
+        name,
+        description,
         workspaceId,
+        settings: { isPrivate: visibility === 'private' },
       });
       await loadSpaces(workspaceId);
       setShowCreateSpace(false);
-      // Show success message
-      setAlertVariant('success');
-      setAlertTitle('Space created');
-      setAlertDescription(`"${name.trim()}" has been created successfully.`);
-      setAlertVisible(true);
-    } catch (e: any) {
+    } catch (e) {
       console.warn('Failed to create space', e);
-      const errorMessage = e?.response?.data?.message || e?.message || 'Failed to create space';
-      Alert.alert('Error', errorMessage);
-      // Also show error banner
-      setAlertVariant('error');
-      setAlertTitle('Failed to create space');
-      setAlertDescription(errorMessage);
-      setAlertVisible(true);
     } finally {
       setCreatingSpace(false);
     }
@@ -321,17 +310,8 @@ export default function WorkspaceScreen() {
     if (space?.createdBy) { const c = space.createdBy as any; push(c?._id || c?.id || c); }
     return new Set(ids);
   };
-  const getUniqueNonOwnerMemberCount = (space: any): number => {
-    const ownerIds = getOwnerIds(space);
-    const list = Array.isArray(space?.members) ? space.members.filter(Boolean) : [];
-    const unique = new Set<string>();
-    for (const m of list) {
-      const id = getId(m);
-      if (!id || ownerIds.has(id)) continue;
-      unique.add(id);
-    }
-    return unique.size;
-  };
+  
+
 
   // Grid sizing for 3 columns in Spaces preview
   const [previewGridW, setPreviewGridW] = useState(0);
@@ -345,101 +325,70 @@ export default function WorkspaceScreen() {
   const isWide = width >= 768;
   const [membersSidebarOpen, setMembersSidebarOpen] = useState(false);
 
-  // Check if current user is owner of the workspace
+  // Only owners should see the Edit Rules button
   const isOwner = useMemo(() => {
-    if (!effectiveWorkspace || !authUser) return false;
-    const workspaceOwnerId = effectiveWorkspace?.owner?._id || effectiveWorkspace?.ownerId || effectiveWorkspace?.createdBy?._id || effectiveWorkspace?.createdBy;
-    const currentUserId = authUser?._id || authUser?.id;
-    return workspaceOwnerId === currentUserId;
-  }, [effectiveWorkspace, authUser]);
+    const userId = authUser?.user?._id || authUser?.user?.id;
+    if (!userId) return false;
+    // Prefer Redux currentWorkspace, fallback to hook workspace (ws)
+    const ownerId = (currentWorkspace?.owner?._id || currentWorkspace?.owner?.id || currentWorkspace?.ownerId)
+      || (ws?.owner?._id || (ws as any)?.owner?.id || (ws as any)?.ownerId);
+    if (ownerId && String(ownerId) === String(userId)) return true;
+    // Use Redux members; if empty, fallback to ws.members
+    const memberList: any[] = Array.isArray(members) && members.length > 0 ? members : (Array.isArray((ws as any)?.members) ? (ws as any).members : []);
+    return memberList.some((m: any) => {
+      const mid = m?.user?._id || m?.user?.id || m?.userId || m?._id || m?.id;
+      const role = String(m?.role || '').toLowerCase();
+      return String(mid) === String(userId) && role === 'owner';
+    });
+  }, [authUser, currentWorkspace, members, ws]);
 
-  // Helper functions for archive countdown styling
-  const getArchiveCountdownStyle = (archiveExpiresAt: string) => {
-    if (!archiveExpiresAt) return { backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e' };
-    
-    const expiresAt = new Date(archiveExpiresAt);
-    const now = new Date();
-    const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysLeft <= 3) {
-      return { backgroundColor: '#fee2e2', borderColor: '#ef4444', color: '#dc2626' };
-    } else if (daysLeft <= 7) {
-      return { backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e' };
-    } else {
-      return { backgroundColor: '#f0f9ff', borderColor: '#0ea5e9', color: '#0369a1' };
+  const handleCreateSpacePress = () => {
+    const MAX_SPACES = 5;
+    const canCreateMoreSpaces = (effectiveSpaces?.length || 0) < MAX_SPACES;
+    if (!canCreateMoreSpaces) {
+      setAlertVariant('warning');
+      setAlertTitle('Space limit reached');
+      setAlertDescription("You've reached the limit of 5 spaces. Upgrade to Premium to create more.");
+      setAlertIsConfirmable(true);
+      setAlertConfirmText('Upgrade');
+      setAlertCancelText('Cancel');
+      setAlertVisible(true);
+      return;
     }
+    setShowCreateSpace(true);
   };
-
-  const getArchiveStatusMessage = (archiveExpiresAt: string) => {
-    if (!archiveExpiresAt) return 'Archived';
-    
-    const expiresAt = new Date(archiveExpiresAt);
-    const now = new Date();
-    const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysLeft <= 0) {
-      return 'Expires soon';
-    } else if (daysLeft === 1) {
-      return '1 day left';
-    } else {
-      return `${daysLeft} days left`;
-    }
-  };
-
-  // Loading state — only block the UI if we have no cached spaces yet
-  if (!USE_MOCK && loading && !refreshing && (!Array.isArray(spaces) || spaces.length === 0)) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <FontAwesome name="arrow-left" size={24} color={colors.primary} />
-          </TouchableOpacity>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]} >
-            Workspace
-          </Text>
-          <View style={styles.headerSpacer} />
-        </View>
-        <View style={styles.loadingContainer}>
-          <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
-            Loading workspace...
-          </Text>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
 
-      {/* Custom Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <FontAwesome name="arrow-left" size={24} color={colors.primary} />
-        </TouchableOpacity>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Workspace</Text>
-        <View style={styles.headerSpacer} />
-      </View>
-
       {/* Inline banner alert */}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <TouchableOpacity 
-          onPress={() => setAlertVisible(false)}
-          disabled={!alertVisible}
+        <MobileAlert
+          variant={alertVariant}
+          title={alertTitle}
+          description={alertDescription}
+          visible={alertVisible}
+          onClose={() => { setAlertVisible(false); setAlertIsConfirmable(false); }}
+          onCancel={alertIsConfirmable ? () => { setAlertVisible(false); setAlertIsConfirmable(false); } : undefined}
+          onConfirm={alertIsConfirmable ? () => { setAlertVisible(false); setAlertIsConfirmable(false); router.push('/(tabs)/settings'); } : undefined}
+          cancelText={alertIsConfirmable ? alertCancelText : undefined}
+          confirmText={alertIsConfirmable ? alertConfirmText : undefined}
+        />
+
+      </View>
+
+      {/* Header */}
+      <View style={[{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+        <TouchableOpacity
+          style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}
+          onPress={() => router.push('/')}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
         >
-          <MobileAlert
-            variant={alertVariant}
-            title={alertTitle}
-            description={alertDescription}
-            visible={alertVisible}
-            onClose={() => setAlertVisible(false)}
-          />
+          <FontAwesome name="chevron-left" size={18} color={colors['primary-foreground']} />
         </TouchableOpacity>
+        <Text style={[TextStyles.heading.h1, { color: colors.foreground, flex: 1 }]} numberOfLines={1}>Workspace</Text>
+        <View style={{ width: 40, height: 40 }} />
       </View>
 
       <ScrollView
@@ -453,92 +402,6 @@ export default function WorkspaceScreen() {
           </Card>
         )}
 
-        {/* Invite & Quick actions */}
-        {workspaceId && effectiveWorkspace && (
-          <Card style={styles.sectionCard}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Invite Members</Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TextInput
-                value={inviteEmail}
-                onChangeText={setInviteEmail}
-                placeholder="email@example.com"
-                placeholderTextColor={colors['muted-foreground']}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                style={[styles.input, { flex: 1, color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
-              />
-              <TouchableOpacity onPress={() => setInviteRole(inviteRole === 'member' ? 'admin' : 'member')} style={[styles.pill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>{inviteRole}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleInvite} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}>
-                <Text style={{ color: colors['primary-foreground'] }}>Invite</Text>
-              </TouchableOpacity>
-            </View>
-          </Card>
-        )}
-
-        {/* Members List */}
-        {workspaceId && (
-          <Card style={styles.sectionCard}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({members?.length || 0})</Text>
-            {membersLoading ? (
-              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading members...</Text>
-            ) : membersError ? (
-              <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>{membersError}</Text>
-            ) : (Array.isArray(members) && members.length > 0 ? (
-              <View style={{ gap: 8 }}>
-                {members.map((m: any) => {
-                  const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
-                  const email = m?.user?.email || m?.email || '';
-                  const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
-                  const letter = String(displayName).charAt(0).toUpperCase();
-                  return (
-                    <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                      {/* Avatar */}
-                      {avatarUrl ? (
-                        <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
-                      ) : (
-                        <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
-                        </View>
-                      )}
-                      {/* Name and meta */}
-                      <View style={{ flex: 1 }}>
-                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
-                        {!!email && (
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
-                        )}
-                        <View style={styles.memberMetaRow}>
-                          <Text key="role" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                          <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                          <Text key="status" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
-                        </View>
-                      </View>
-                      {m.role !== 'owner' && (
-                        <TouchableOpacity
-                          onPress={() => handleRemoveMember(m)}
-                          disabled={!!membersLoading}
-                          style={[
-                            styles.destructiveBtn,
-                            { backgroundColor: colors.destructive },
-                            membersLoading ? { opacity: 0.6 } : null,
-                          ]}
-                        >
-                          <Text style={{ color: colors['destructive-foreground'] }}>
-                            {membersLoading ? 'Removing…' : 'Remove'}
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  );
-                })}
-              </View>
-            ) : (
-              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No members yet.</Text>
-            ))}
-          </Card>
-        )}
-
         {/* Spaces toolbar: Search + Create */}
         <Card style={styles.sectionCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -549,7 +412,7 @@ export default function WorkspaceScreen() {
               placeholderTextColor={colors['muted-foreground']}
               style={[styles.input, { flex: 1, color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
             />
-            <TouchableOpacity onPress={() => setShowCreateSpace(true)} style={[styles.secondaryBtn, { backgroundColor: colors.secondary }]}>
+            <TouchableOpacity onPress={handleCreateSpacePress} style={[styles.secondaryBtn, { backgroundColor: colors.secondary }]}>
               <Text style={{ color: colors['secondary-foreground'] }}>Create Space</Text>
             </TouchableOpacity>
             {!isWide && (
@@ -606,15 +469,6 @@ export default function WorkspaceScreen() {
                   <FontAwesome name="cog" size={16} color={colors['secondary-foreground']} />
                   <Text style={[TextStyles.body.small, { color: colors['secondary-foreground'] }]}>Settings</Text>
                 </TouchableOpacity>
-                {isOwner && (
-                  <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
-                    onPress={() => router.push({ pathname: '/(tabs)/workspace/rules', params: { workspaceId } })}
-                  >
-                    <FontAwesome name="pencil" size={16} color={colors.foreground} />
-                    <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Edit Rules</Text>
-                  </TouchableOpacity>
-                )}
                 <TouchableOpacity
                   style={[styles.actionButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
                   onPress={() => router.push('/(tabs)/workspace/rules')}
@@ -630,67 +484,24 @@ export default function WorkspaceScreen() {
         {!!(effectiveSpaces && effectiveSpaces.length) && (
           <Card style={styles.sectionCard}>
             <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Spaces</Text>
-            <View style={styles.spaceList}>
-              {filteredSpaces.slice(0, 4).map((space: any) => (
-                <TouchableOpacity key={space._id || space.id} style={[styles.spaceItem, { backgroundColor: colors.card }]} onPress={() => handleOpenSpace(space)}>
-                  <View style={styles.spaceHeader}>
-                    <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{space.name}</Text>
-                    <View style={styles.spaceActions}>
-                      <TouchableOpacity 
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleArchiveSpace(space._id || space.id, space.name, space.isArchived);
-                        }}
-                        style={styles.archiveButton}
-                      >
-                        <FontAwesome 
-                          name={space.isArchived ? 'undo' : 'archive'} 
-                          size={14} 
-                          color={space.isArchived ? colors.success : colors.warning} 
-                        />
-                      </TouchableOpacity>
-                      <FontAwesome name="chevron-right" size={14} color={colors['muted-foreground']} />
-                    </View>
-                  </View>
-                  {space.description ? (
-                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 6 }]} numberOfLines={2}>
-                      {space.description}
-                    </Text>
-                  ) : null}
-                  <View style={styles.spaceStats}>
-                    <Text key="members" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.members?.length || 0)} members</Text>
-                    <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                    <Text key="boards" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.stats?.totalBoards || 0)} boards</Text>
-                  </View>
-                  
-                  {/* Archive countdown for archived spaces */}
-                  {space.isArchived && space.archiveExpiresAt && (
-                    <View style={styles.archiveCountdown}>
-                      <View style={[
-                        styles.countdownBadge,
-                        { 
-                          backgroundColor: getArchiveCountdownStyle(space.archiveExpiresAt).backgroundColor,
-                          borderColor: getArchiveCountdownStyle(space.archiveExpiresAt).borderColor,
-                          borderWidth: 1
-                        }
-                      ]}>
-                        <FontAwesome 
-                          name="clock-o" 
-                          size={10} 
-                          color={getArchiveCountdownStyle(space.archiveExpiresAt).color} 
-                        />
-                        <Text 
-                          style={[
-                            TextStyles.caption.small, 
-                            { color: getArchiveCountdownStyle(space.archiveExpiresAt).color }
-                          ]}
-                        >
-                          {getArchiveStatusMessage(space.archiveExpiresAt)}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-                </TouchableOpacity>
+            <View
+              style={[styles.spaceList, { flexDirection: 'row', flexWrap: 'wrap', gap: PREVIEW_GAP, backgroundColor: colors.background }]}
+              onLayout={(e) => setPreviewGridW(e.nativeEvent.layout.width)}
+            >
+              {filteredSpaces.slice(0, 9).map((space: any) => (
+                <SpaceCard
+                  key={space._id || space.id}
+                  name={space.name}
+                  description={space.description}
+                  membersCount={membersCount}
+                  icon={space.icon || '📂'}
+                  isArchived={!!space.isArchived}
+                  createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
+                  tileSize={previewTile}
+                  onPress={() => handleOpenSpace(space)}
+                  onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, space.isArchived)}
+                />
+
               ))}
               {filteredSpaces.length > 9 && (
                 <TouchableOpacity
@@ -798,9 +609,9 @@ export default function WorkspaceScreen() {
                             <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
                           )}
                           <View style={styles.memberMetaRow}>
-                            <Text key="role" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                            <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                            <Text key="status" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
                           </View>
                         </View>
                         {m.role !== 'owner' && (
@@ -887,9 +698,9 @@ export default function WorkspaceScreen() {
                               <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
                             )}
                             <View style={styles.memberMetaRow}>
-                              <Text key="role" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                              <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                              <Text key="status" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
                             </View>
                           </View>
                           {m.role !== 'owner' && (
@@ -922,17 +733,6 @@ export default function WorkspaceScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  backButton: { padding: 8 },
-  headerSpacer: { width: 40 }, // Same width as backButton to center the title
   content: { flex: 1, padding: 16 },
   errorCard: { padding: 16, marginBottom: 16, borderRadius: 12 },
   sectionCard: { padding: 20, marginBottom: 20 },

@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { TextStyles } from '@/constants/Fonts';
 import { BoardService } from '@/services/boardService';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { useSpaces as useSpacesHook } from '@/hooks/useSpaces';
 import SpaceHeader from '@/components/space/SpaceHeader';
 
 export default function SpaceBoardsScreen() {
@@ -24,6 +25,7 @@ export default function SpaceBoardsScreen() {
   const currentUserId = useMemo(() => String(authUser?.user?._id || authUser?.user?.id || ''), [authUser]);
   const space = selectedSpace;
   const { loadSpaces } = useWorkspaces({ autoFetch: false });
+  const { loadSpaceMembers, addMember, removeMember, currentSpace } = useSpacesHook();
 
   // Include all members (including owner). We'll prevent adding yourself via UI guards.
   const displayMembers = useMemo(() => (
@@ -42,6 +44,45 @@ export default function SpaceBoardsScreen() {
     return ids;
   }, [displayMembers]);
 
+  // Set of already-added member IDs (space members)
+  const addedMemberIdSet = useMemo(() => {
+    const set = new Set<string>();
+    const members = (currentSpace as any)?.members || [];
+    (Array.isArray(members) ? members : []).forEach((m: any) => {
+      const id = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
+      if (id) set.add(id);
+    });
+    return set;
+  }, [currentSpace]);
+
+  // Optimistic: track IDs just added so they disappear immediately from addable list
+  const [tempAddedIds, setTempAddedIds] = useState<Set<string>>(new Set());
+
+  // Merge server-known added members with optimistic temporary IDs
+  const effectiveAddedMemberIdSet = useMemo(() => {
+    const merged = new Set<string>(addedMemberIdSet);
+    tempAddedIds.forEach((id) => merged.add(id));
+    return merged;
+  }, [addedMemberIdSet, tempAddedIds]);
+
+  // Members that can be added to a board (exclude workspace owners from selection list)
+  const addableMembers = useMemo(() => {
+    const list = Array.isArray(displayMembers) ? displayMembers : [];
+    return list.filter((m: any) => {
+      const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
+      const isSelf = currentUserId && memberId === currentUserId;
+      const isOwner = ownerIds.has(memberId);
+      const isAlreadyAdded = effectiveAddedMemberIdSet.has(memberId);
+      return memberId && !isSelf && !isOwner && !isAlreadyAdded;
+    });
+  }, [displayMembers, ownerIds, effectiveAddedMemberIdSet, currentUserId]);
+
+  // Actual members already added to the current space (for the "Added Members" list)
+  const spaceMembers = useMemo(() => {
+    const members = (currentSpace as any)?.members || [];
+    return Array.isArray(members) ? members : [];
+  }, [currentSpace]);
+
   const [refreshing, setRefreshing] = useState(false);
   const lastLoadedSpaceId = useRef<string | null>(null);
   const [boards, setBoards] = useState<any[]>([]);
@@ -49,6 +90,7 @@ export default function SpaceBoardsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [selectedRole, setSelectedRole] = useState<'viewer' | 'editor' | 'admin'>('viewer');
   const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Grid sizing for 3 columns
@@ -114,10 +156,19 @@ export default function SpaceBoardsScreen() {
     loadBoards(false);
   }, [loadBoards]);
 
+  useEffect(() => {
+    const spaceId = String(space?._id || space?.id || '');
+    if (spaceId) {
+      loadSpaceMembers(spaceId);
+    }
+  }, [space?._id, space?.id]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     try {
       await loadBoards(true);
+      const spaceId = String(space?._id || space?.id || '');
+      if (spaceId) await loadSpaceMembers(spaceId);
     } finally {
       setRefreshing(false);
     }
@@ -179,8 +230,45 @@ export default function SpaceBoardsScreen() {
     if (!isWide) setSidebarOpen(true);
   };
   const goSettings = () => router.push('/workspace/space/settings');
-  const onAddMembersToBoard = (ids: string[]) => {
-    Alert.alert('Add to board', `Selected member IDs: ${ids.join(', ')}`);
+  const onAddMembersToBoard = async (ids: string[]) => {
+    // Using Space-level membership via useSpaces hook as requested
+    const spaceId = String(space?._id || space?.id || '');
+    if (!spaceId) return;
+    try {
+      // Add each selected member to the space with selectedRole
+      await Promise.all(ids.map((uid) => addMember(spaceId, uid, selectedRole)));
+      // Optimistically mark them as added so they disappear immediately
+      setTempAddedIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach((id) => next.add(id));
+        return next;
+      });
+      // Refresh members from server
+      await loadSpaceMembers(spaceId);
+      // After server state is in, clear temporary IDs
+      setTempAddedIds(new Set());
+      setBanner({ type: 'success', message: `Added ${ids.length} member${ids.length > 1 ? 's' : ''} to space` });
+      setTimeout(() => setBanner(null), 1500);
+    } catch (e: any) {
+      setBanner({ type: 'error', message: e?.response?.data?.message || e?.message || 'Failed to add members' });
+      setTimeout(() => setBanner(null), 2000);
+    }
+  };
+
+  const onRemoveMemberFromSpace = async (memberId: string) => {
+    const spaceId = String(space?._id || space?.id || '');
+    if (!spaceId || !memberId) return;
+    // Prevent removing owners or yourself via UI guards, but double-check here too
+    if (ownerIds.has(memberId) || (currentUserId && memberId === currentUserId)) return;
+    try {
+      await removeMember(spaceId, memberId);
+      await loadSpaceMembers(spaceId);
+      setBanner({ type: 'success', message: 'Member removed from space' });
+      setTimeout(() => setBanner(null), 1200);
+    } catch (e: any) {
+      setBanner({ type: 'error', message: e?.response?.data?.message || e?.message || 'Failed to remove member' });
+      setTimeout(() => setBanner(null), 1800);
+    }
   };
 
   const toggleMemberSelection = (id: string) => {
@@ -277,26 +365,28 @@ export default function SpaceBoardsScreen() {
           {/* Sidebar: Add Members to Board (workspace members only; you can't add yourself) */}
           <Card style={[styles.sidebarCard, { backgroundColor: colors.card }]}>
             <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Add Members to Board</Text>
-            {Array.isArray(displayMembers) && displayMembers.length > 0 ? (
+            {Array.isArray(addableMembers) && addableMembers.length > 0 ? (
               <RNView style={{ gap: 8 }}>
-                {displayMembers.map((m: any) => {
+                {addableMembers.map((m: any) => {
                   const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
                   const email = m?.user?.email || m?.email || '';
-                  const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
+                  const avatarUrl = m?.user?.avatar || m?.avatar || m?.profile?.avatar;
                   const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id);
                   const selected = selectedMemberIds.includes(memberId);
                   const isSelf = currentUserId && memberId === currentUserId;
                   const isOwner = ownerIds.has(memberId);
+                  const isAlreadyAdded = effectiveAddedMemberIdSet.has(memberId);
                   const letter = String(displayName).charAt(0).toUpperCase();
                   return (
                     <TouchableOpacity
                       key={memberId}
-                      onPress={() => { if (!isSelf && !isOwner) toggleMemberSelection(memberId); }}
+                      onPress={() => { if (!isSelf && !isOwner && !isAlreadyAdded) toggleMemberSelection(memberId); }}
                       style={[
                         styles.memberItem,
                         { backgroundColor: colors.background, borderColor: colors.border },
-                        (isSelf || isOwner) ? { opacity: 0.6 } : null,
+                        (isSelf || isOwner || isAlreadyAdded) ? { opacity: 0.6 } : null,
                       ]}
+                      accessibilityState={{ disabled: isSelf || isOwner || isAlreadyAdded }}
                     >
                       {avatarUrl ? (
                         <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
@@ -313,22 +403,22 @@ export default function SpaceBoardsScreen() {
                       </View>
                       <View style={[
                         styles.checkbox,
-                        { borderColor: colors.border, backgroundColor: selected ? colors.primary : 'transparent' },
-                        (isSelf || isOwner) ? { backgroundColor: 'transparent' } : null,
+                        { borderColor: colors.border, backgroundColor: (selected && !isAlreadyAdded && !isSelf && !isOwner) ? colors.primary : 'transparent' },
+                        (isSelf || isOwner || isAlreadyAdded) ? { backgroundColor: 'transparent' } : null,
                       ]} />
                     </TouchableOpacity>
                   );
                 })}
                 <TouchableOpacity
                   onPress={() => {
-                    const ids = selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !ownerIds.has(id));
+                    const ids = selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !effectiveAddedMemberIdSet.has(id));
                     onAddMembersToBoard(ids);
                     setSelectedMemberIds([]);
                   }}
-                  disabled={selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !ownerIds.has(id)).length === 0}
+                  disabled={selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !effectiveAddedMemberIdSet.has(id)).length === 0}
                   style={[
                     styles.primaryBtn,
-                    { backgroundColor: colors.primary, opacity: selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !ownerIds.has(id)).length === 0 ? 0.6 : 1 },
+                    { backgroundColor: colors.primary, opacity: selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !effectiveAddedMemberIdSet.has(id)).length === 0 ? 0.6 : 1 },
                   ]}
                 >
                   <Text style={{ color: colors['primary-foreground'] }}>Add to Board</Text>
@@ -338,6 +428,47 @@ export default function SpaceBoardsScreen() {
               <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No workspace members available.</Text>
             )}
           </Card>
+          {/* Sidebar: Added Members (wide) */}
+          {Array.isArray(spaceMembers) && spaceMembers.length > 0 && (
+            <Card style={[styles.sidebarCard, { backgroundColor: colors.card, marginTop: 12 }] }>
+              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Added Members ({spaceMembers.length})</Text>
+              <RNView style={{ gap: 8 }}>
+                {spaceMembers.map((m: any) => {
+                  const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
+                  const email = m?.user?.email || m?.email || '';
+                  const avatarUrl = m?.user?.avatar || m?.avatar || m?.profile?.avatar;
+                  const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
+                  const isSelf = currentUserId && memberId === currentUserId;
+                  const isOwner = ownerIds.has(memberId);
+                  const letter = String(displayName).charAt(0).toUpperCase();
+                  return (
+                    <View key={(memberId || email || displayName) + '-added'} style={[styles.memberItem, { backgroundColor: colors.background, borderColor: colors.border }]}> 
+                      {avatarUrl ? (
+                        <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
+                      ) : (
+                        <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
+                        {!!email && (
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
+                        )}
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => onRemoveMemberFromSpace(memberId)}
+                        disabled={!memberId || isSelf || isOwner}
+                        style={[styles.ghostBtn, { borderColor: colors.border, opacity: (!memberId || isSelf || isOwner) ? 0.6 : 1 }]}
+                      >
+                        <Text style={[TextStyles.body.small, { color: colors.destructive }]}>Remove</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </RNView>
+            </Card>
+          )}
           {/* Sidebar: Members list (read-only) */}
           <Card style={[styles.sidebarCard, { backgroundColor: colors.card, marginTop: 12 }]}>
             <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({Array.isArray(displayMembers) ? displayMembers.length : 0})</Text>
@@ -346,7 +477,7 @@ export default function SpaceBoardsScreen() {
                 {displayMembers.map((m: any) => {
                   const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
                   const email = m?.user?.email || m?.email || '';
-                  const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
+                  const avatarUrl = m?.user?.avatar || m?.avatar || m?.profile?.avatar;
                   const letter = String(displayName).charAt(0).toUpperCase();
                   return (
                     <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.background, borderColor: colors.border }]}> 
@@ -464,26 +595,28 @@ export default function SpaceBoardsScreen() {
         <View style={[styles.modalPanel, { backgroundColor: colors.background, borderLeftColor: colors.border }]}> 
           <Card style={[styles.sidebarCard, { backgroundColor: colors.card }]}>
             <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Add Members to Board</Text>
-            {Array.isArray(displayMembers) && displayMembers.length > 0 ? (
+            {Array.isArray(addableMembers) && addableMembers.length > 0 ? (
               <RNView style={{ gap: 8 }}>
-                {displayMembers.map((m: any) => {
+                {addableMembers.map((m: any) => {
                   const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
                   const email = m?.user?.email || m?.email || '';
-                  const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
+                  const avatarUrl = m?.user?.avatar || m?.avatar || m?.profile?.avatar;
                   const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id);
                   const selected = selectedMemberIds.includes(memberId);
                   const isSelf = currentUserId && memberId === currentUserId;
                   const isOwner = ownerIds.has(memberId);
+                  const isAlreadyAdded = effectiveAddedMemberIdSet.has(memberId);
                   const letter = String(displayName).charAt(0).toUpperCase();
                   return (
                     <TouchableOpacity
                       key={memberId}
-                      onPress={() => { if (!isSelf && !isOwner) toggleMemberSelection(memberId); }}
+                      onPress={() => { if (!isSelf && !isOwner && !isAlreadyAdded) toggleMemberSelection(memberId); }}
                       style={[
                         styles.memberItem,
                         { backgroundColor: colors.background, borderColor: colors.border },
-                        (isSelf || isOwner) ? { opacity: 0.6 } : null,
+                        (isSelf || isOwner || isAlreadyAdded) ? { opacity: 0.6 } : null,
                       ]}
+                      accessibilityState={{ disabled: isSelf || isOwner || isAlreadyAdded }}
                     >
                       {avatarUrl ? (
                         <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
@@ -500,8 +633,8 @@ export default function SpaceBoardsScreen() {
                       </View>
                       <View style={[
                         styles.checkbox,
-                        { borderColor: colors.border, backgroundColor: selected ? colors.primary : 'transparent' },
-                        (isSelf || isOwner) ? { backgroundColor: 'transparent' } : null,
+                        { borderColor: colors.border, backgroundColor: (selected && !isAlreadyAdded && !isSelf && !isOwner) ? colors.primary : 'transparent' },
+                        (isSelf || isOwner || isAlreadyAdded) ? { backgroundColor: 'transparent' } : null,
                       ]} />
                     </TouchableOpacity>
                   );
@@ -512,15 +645,15 @@ export default function SpaceBoardsScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => {
-                      const ids = selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !ownerIds.has(id));
+                      const ids = selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !effectiveAddedMemberIdSet.has(id));
                       setSidebarOpen(false);
                       onAddMembersToBoard(ids);
                       setSelectedMemberIds([]);
                     }}
-                    disabled={selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !ownerIds.has(id)).length === 0}
+                    disabled={selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !effectiveAddedMemberIdSet.has(id)).length === 0}
                     style={[
                       styles.primaryBtn,
-                      { backgroundColor: colors.primary, opacity: selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !ownerIds.has(id)).length === 0 ? 0.6 : 1 },
+                      { backgroundColor: colors.primary, opacity: selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !effectiveAddedMemberIdSet.has(id)).length === 0 ? 0.6 : 1 },
                     ]}
                   >
                     <Text style={{ color: colors['primary-foreground'] }}>Add to Board</Text>
@@ -531,6 +664,47 @@ export default function SpaceBoardsScreen() {
               <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No workspace members available.</Text>
             )}
           </Card>
+          {/* Sidebar Modal: Added Members (phone) */}
+          {Array.isArray(spaceMembers) && spaceMembers.length > 0 && (
+            <Card style={[styles.sidebarCard, { backgroundColor: colors.card, marginTop: 12 }] }>
+              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Added Members ({spaceMembers.length})</Text>
+              <RNView style={{ gap: 8 }}>
+                {spaceMembers.map((m: any) => {
+                  const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
+                  const email = m?.user?.email || m?.email || '';
+                  const avatarUrl = m?.user?.avatar || m?.avatar || m?.profile?.avatar;
+                  const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
+                  const isSelf = currentUserId && memberId === currentUserId;
+                  const isOwner = ownerIds.has(memberId);
+                  const letter = String(displayName).charAt(0).toUpperCase();
+                  return (
+                    <View key={(memberId || email || displayName) + '-added'} style={[styles.memberItem, { backgroundColor: colors.background, borderColor: colors.border }]}> 
+                      {avatarUrl ? (
+                        <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
+                      ) : (
+                        <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
+                        {!!email && (
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
+                        )}
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => onRemoveMemberFromSpace(memberId)}
+                        disabled={!memberId || isSelf || isOwner}
+                        style={[styles.ghostBtn, { borderColor: colors.border, opacity: (!memberId || isSelf || isOwner) ? 0.6 : 1 }]}
+                      >
+                        <Text style={[TextStyles.body.small, { color: colors.destructive }]}>Remove</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </RNView>
+            </Card>
+          )}
         </View>
       </Modal>
 
