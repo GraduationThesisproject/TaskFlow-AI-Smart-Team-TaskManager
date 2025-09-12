@@ -3,14 +3,7 @@ import type { UserPreferences } from "./auth.types";
 import type { Board, Column } from "./board.types";
 import type { Space } from "./space.types";
 
-// Task status and priority types - defined first to avoid redeclaration errors
-export const TASK_STATUS = {
-  TODO: 'todo',
-  IN_PROGRESS: 'in_progress',
-  REVIEW: 'review',
-  DONE: 'done',
-  ARCHIVED: 'archived',
-} as const;
+// Task priority types - defined first to avoid redeclaration errors
 
 export const TASK_PRIORITY = {
   LOW: 'low',
@@ -19,7 +12,6 @@ export const TASK_PRIORITY = {
   CRITICAL: 'critical',
 } as const;
 
-export type TaskStatus = typeof TASK_STATUS[keyof typeof TASK_STATUS];
 export type TaskPriority = typeof TASK_PRIORITY[keyof typeof TASK_PRIORITY];
 export interface User {
   _id: string;
@@ -54,7 +46,6 @@ export interface Task {
   board: string;
   space: string;
   column: string;
-  status: TaskStatus;
   priority: TaskPriority;
   color: string;
   assignees: string[];
@@ -234,7 +225,7 @@ export interface TaskState {
 
 
 export interface TaskFilters {
-  status: string[];
+  column: string[];
   priority: string[];
   assignee: string[];
   tags: string[];
@@ -306,7 +297,6 @@ export interface CreateTaskForm {
 export interface UpdateTaskForm {
   title?: string;
   description?: string;
-  status?: TaskStatus;
   priority?: TaskPriority;
   color?: string;
   assignees?: string[];

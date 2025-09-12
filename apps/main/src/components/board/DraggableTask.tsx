@@ -15,7 +15,6 @@ import type { DraggableTaskProps } from '../../types/interfaces/ui';
 export const DraggableTask: React.FC<DraggableTaskProps> = ({
   task,
   index,
-  columnId,
   onClick,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -24,6 +23,57 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
     const colors = ['bg-blue-100 text-blue-800', 'bg-green-100 text-green-800', 'bg-orange-100 text-orange-800', 'bg-red-100 text-red-800', 'bg-purple-100 text-purple-800'];
     const index = tag.length % colors.length;
     return colors[index];
+  };
+
+  const getTagColor = (tag: string) => {
+    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#6366F1', '#84CC16', '#F97316'];
+    const index = tag.length % colors.length;
+    return colors[index];
+  };
+
+  const getPriorityIndicator = (priority: string) => {
+    switch (priority) {
+      case 'urgent':
+      case 'critical':
+        return '|||';
+      case 'high':
+      case 'medium':
+        return '||';
+      case 'low':
+      case 'normal':
+      default:
+        return '|';
+    }
+  };
+
+  const getTimeRemaining = () => {
+    if (!task.startDate && !task.dueDate) return null;
+    
+    const now = new Date();
+    const startDate = task.startDate ? new Date(task.startDate) : null;
+    const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+    
+    // If task hasn't started yet
+    if (startDate && now < startDate) {
+      const diffTime = startDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return `Starts in ${diffDays}d`;
+    }
+    
+    // If task has started and has due date
+    if (dueDate && now >= (startDate || now)) {
+      const diffTime = dueDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays > 0) {
+        return `${diffDays}d left`;
+      } else if (diffDays === 0) {
+        return 'Due today';
+      } else {
+        return `${Math.abs(diffDays)}d overdue`;
+      }
+    }
+    
+    return null;
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -38,7 +88,7 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
     return `${Math.floor(diffInDays / 30)} months`;
   };
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = () => {
     if (!isDragging) {
       onClick(task);
     }
@@ -61,99 +111,66 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
             }`}
             onClick={handleClick}
           >
-            <Card className="cursor-pointer hover:border-primary/30 transition-all duration-200 border border-border/20 bg-card/95 backdrop-blur-sm rounded-xl overflow-hidden group">
-              {task.color && (
-                <div 
-                  className="h-1 w-full" 
-                  style={{ backgroundColor: task.color }}
-                />
-              )}
+            <Card 
+              className="cursor-pointer hover:border-primary/30 transition-all duration-200 bg-card/95 backdrop-blur-sm rounded-lg overflow-hidden group"
+              style={{
+                border: `3px solid ${task.color || '#D1D5DB'}`,
+                borderColor: task.color || '#D1D5DB'
+              }}
+            >
               <CardContent className="p-3">
+                {/* Top row with priority and time remaining */}
                 <div className="flex items-center justify-between mb-2">
+                  {/* Priority indicator */}
                   <div className="flex items-center gap-1">
-                    <div className={`w-2 h-2 rounded-full ${
-                      task.priority === 'critical' ? 'bg-red-500' :
-                      task.priority === 'high' ? 'bg-orange-500' :
-                      task.priority === 'medium' ? 'bg-yellow-500' :
-                      'bg-green-500'
-                    }`} />
-                    {task.tags && task.tags.length > 0 && (
-                      <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                    )}
+                    <span className="text-green-600 font-mono text-sm">
+                      {getPriorityIndicator(task.priority || 'normal')}
+                    </span>
                   </div>
-                  {task.status === 'done' && (
-                    <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
-                      <span className="text-green-600 text-xs">✓</span>
+                  
+                  {/* Time remaining */}
+                  {getTimeRemaining() && (
+                    <div className="text-xs text-muted-foreground">
+                      {getTimeRemaining()}
                     </div>
                   )}
                 </div>
 
+                {/* Task Title */}
                 <Typography variant="body-small" className="font-medium mb-2 line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-200">
                   {task.title}
                 </Typography>
 
+                {/* Bottom row with checklist count and tags */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {task.attachments && task.attachments.length > 0 && (
+                    {/* Checklist count - only show if > 0 */}
+                    {task.checklist && task.checklist.length > 0 && (
                       <div className="flex items-center gap-1 text-muted-foreground">
-                        <span className="text-xs">📎</span>
-                        <span className="text-xs">{task.attachments.length}</span>
-                      </div>
-                    )}
-                    {task.dueDate && (
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <span className="text-xs">⏰</span>
-                        <span className="text-xs">{formatTimeAgo(task.dueDate)}</span>
-                      </div>
-                    )}
-                    {task.estimatedHours && task.estimatedHours > 0 && (
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <span className="text-xs">⏱️</span>
-                        <span className="text-xs">{task.estimatedHours}h</span>
+                        <span className="text-xs">✓</span>
+                        <span className="text-xs">{task.checklist.length}</span>
                       </div>
                     )}
                   </div>
 
-                  {task.assignees && task.assignees.length > 0 && (
-                    <div className="flex items-center -space-x-1">
-                      {task.assignees.slice(0, 2).map((assignee, index) => (
-                        <Avatar key={index} size="xs" className="border-2 border-background">
-                          <AvatarFallback
-                            className={`text-xs ${getAvatarColor(assignee)}`}
-                          >
-                            {getInitials(assignee)}
-                          </AvatarFallback>
-                        </Avatar>
+                  {/* Tag colors as dots */}
+                  {task.tags && task.tags.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      {task.tags.slice(0, 3).map((tag: string, index: number) => (
+                        <div
+                          key={index}
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: getTagColor(tag) }}
+                        />
                       ))}
-                      {task.assignees.length > 2 && (
-                        <div className="w-6 h-6 rounded-full bg-muted/80 flex items-center justify-center border-2 border-background">
-                          <Typography variant="body-small" className="text-muted-foreground text-xs">
-                            +{task.assignees.length - 2}
-                          </Typography>
+                      {task.tags.length > 3 && (
+                        <div className="w-2 h-2 rounded-full bg-gray-400 flex items-center justify-center">
+                          <span className="text-xs text-white">+</span>
                         </div>
                       )}
                     </div>
                   )}
                 </div>
-
-                {task.tags && task.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {task.tags.slice(0, 2).map((tag, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className={`text-xs px-1.5 py-0.5 ${getLabelColor(tag)}`}
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                    {task.tags.length > 2 && (
-                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-muted/60 text-muted-foreground">
-                        +{task.tags.length - 2}
-                      </Badge>
-                    )}
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>

@@ -441,6 +441,31 @@ exports.moveTask = async (req, res) => {
     }
 };
 
+// Get task comments
+exports.getTaskComments = async (req, res) => {
+    try {
+        const { id: taskId } = req.params;
+        const userId = req.user.id;
+
+        const task = await Task.findById(taskId);
+        if (!task) {
+            return sendResponse(res, 404, false, 'Task not found');
+        }
+
+        // Permission check is handled by middleware
+
+        // Get comments for the task
+        const comments = await Comment.findByTask(taskId);
+
+        sendResponse(res, 200, true, 'Task comments retrieved successfully', {
+            comments
+        });
+    } catch (error) {
+        logger.error('Error getting task comments:', error);
+        sendResponse(res, 500, false, 'Server error getting task comments');
+    }
+};
+
 // Add comment to task
 exports.addComment = async (req, res) => {
     try {

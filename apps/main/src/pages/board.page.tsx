@@ -6,6 +6,7 @@ import { KanbanViewLayout } from "../layouts/board/KanbanViewLayout";
 import { SubNavigationTest as SubNavigation } from "../components/board/SubNavigationTest";
 import { BoardHeader } from "../components/board/BoardHeader";
 import { TaskDetailModal } from "../components/board/TaskDetailModal";
+import { DeleteColumnModal } from "../components/board/DeleteColumnModal";
 import { useBoard, useTasks, useColumns, useSpaceManager } from "../hooks";
 import { useSocketContext } from '../contexts/SocketContext';
 import type { Task } from "../types/task.types";
@@ -23,13 +24,15 @@ export const BoardPage = () => {
     const { joinBoardRoom, leaveBoardRoom, createColumn: socketCreateColumn, updateColumn: socketUpdateColumn, deleteColumn: socketDeleteColumn, reorderColumns: socketReorderColumns, boardSocket, isConnected } = useSocketContext();
     
     // Board data
-    const { currentBoard, loading: boardLoading, error: boardError } = useBoard();
+    const { currentBoard, loading: boardLoading, error: boardError, createBoardTag, deleteTag } = useBoard();
     
     // Tasks data
     const {
         loading: tasksLoading,
         error: tasksError,
         addTask,
+        editTask,
+        removeTask,
         moveTask
     } = useTasks();
 
@@ -64,9 +67,10 @@ export const BoardPage = () => {
     const [newColumnName, setNewColumnName] = useState('');
     const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
     const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
-    const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
     const [selectedColumn, setSelectedColumn] = useState<string>('');
     const [editingColumn, setEditingColumn] = useState<Column | null>(null);
+    const [isDeleteColumnModalOpen, setIsDeleteColumnModalOpen] = useState(false);
+    const [deletingColumn, setDeletingColumn] = useState<Column | null>(null);
     
     // Task detail modal state
     const [isTaskDetailModalOpen, setIsTaskDetailModalOpen] = useState(false);
@@ -77,22 +81,18 @@ export const BoardPage = () => {
 
     // Load data when component mounts (only if we have a board but no data)
     useEffect(() => {
-        console.log('🔄 Board page useEffect triggered:', { boardId, prevBoardId: prevBoardIdRef.current, loadedBoards: Array.from(loadedBoards) });
         
         if (!boardId) {
-            console.log('❌ No boardId, skipping load');
             return;
         }
         
         // Only load if boardId has actually changed and we haven't loaded it yet
         if (boardId !== prevBoardIdRef.current && !loadedBoards.has(boardId)) {
-            console.log('✅ Loading columns for board:', boardId);
             prevBoardIdRef.current = boardId;
             loadedBoards.add(boardId);
             loadColumnsByBoard(boardId);
             // Tasks will be loaded into columns via socket events or separate API calls
         } else {
-            console.log('⏭️ Skipping load - already loaded or same boardId');
         }
     }, [boardId, loadColumnsByBoard]);
 
@@ -107,12 +107,10 @@ export const BoardPage = () => {
     // Join board room when board changes and socket is connected
     useEffect(() => {
         if (boardId && isConnected) {
-            console.log('🔗 Joining board room for board:', boardId);
             joinBoardRoom(boardId);
             
             // Cleanup: leave room when component unmounts or board changes
             return () => {
-                console.log('🔌 Leaving board room for board:', boardId);
                 leaveBoardRoom(boardId);
             };
         }
@@ -131,11 +129,9 @@ export const BoardPage = () => {
     // Socket room management for real-time updates
     useEffect(() => {
         if (boardId && boardSocket && isConnected) {
-            console.log('🔌 Joining board room for real-time updates:', boardId);
             boardSocket.emit('board:join', { boardId });
             
             return () => {
-                console.log('🔌 Leaving board room:', boardId);
                 boardSocket.emit('board:leave', { boardId });
             };
         }
@@ -174,7 +170,7 @@ export const BoardPage = () => {
                 setNewColumnName('');
                 setIsAddingColumn(false);
             } catch (error) {
-                console.error('Failed to add column:', error);
+                // Handle error silently
             }
         }
     };
@@ -197,8 +193,6 @@ export const BoardPage = () => {
         try {
             if (!boardId) return;
             
-            console.log('🎯 handleAddTask - Received taskData:', taskData);
-            console.log('🎯 handleAddTask - Using column from taskData:', taskData.column);
             
             await addTask({
                 ...taskData,
@@ -209,7 +203,7 @@ export const BoardPage = () => {
             setIsAddTaskModalOpen(false);
             setSelectedColumn('');
         } catch (error) {
-            console.error('Failed to add task:', error);
+            // Handle error silently
         }
     };
 
@@ -250,14 +244,14 @@ export const BoardPage = () => {
                     boardId || ''
                 );
             } catch (error) {
-                console.error('Failed to move task:', error);
+                // Handle error silently
             }
         } else if (type === 'COLUMN') {
             // Handle column reordering
             try {
                 await handleReorderColumns(source.index, destination.index);
             } catch (error) {
-                console.error('Failed to reorder columns:', error);
+                // Handle error silently
             }
         }
     };
@@ -265,7 +259,7 @@ export const BoardPage = () => {
     const handleReorderColumns = async (sourceIndex: number, destinationIndex: number) => {
         try {
             if (!boardId) {
-                console.error('No board ID available for reordering columns');
+                // No board ID available
                 return;
             }
             
@@ -281,7 +275,7 @@ export const BoardPage = () => {
             socketReorderColumns(boardId, columnIds);
             
         } catch (error) {
-            console.error('Failed to reorder columns:', error);
+            // Handle error silently
         }
     };
 
@@ -290,7 +284,6 @@ export const BoardPage = () => {
         const column = sortedColumns.find(col => col._id === columnId);
         if (column) {
             setEditingColumn(column);
-            setIsEditColumnModalOpen(true);
         }
     };
 
@@ -298,60 +291,68 @@ export const BoardPage = () => {
         try {
             if (!boardId) return;
             
-            // Check if column has tasks
+            // Find the column to delete
             const column = sortedColumns.find(col => col._id === columnId);
-            const columnTasks = column?.tasks || [];
+            if (!column) return;
             
-            if (columnTasks.length > 0) {
-                // Find another column to move tasks to
-                const otherColumns = sortedColumns.filter(col => col._id !== columnId);
-                
-                if (otherColumns.length === 0) {
-                    alert('Cannot delete the last column. Please create another column first.');
-                    return;
-                }
-                
-                // Show confirmation dialog
-                const confirmMessage = `This column contains ${columnTasks.length} task(s). They will be moved to "${otherColumns[0].name}" column. Do you want to continue?`;
-                if (!confirm(confirmMessage)) {
-                    return;
-                }
-                
-                // Move tasks to the first available column
-                const targetColumnId = otherColumns[0]._id;
-                
-                // Move all tasks to the target column
-                for (const task of columnTasks) {
-                    try {
-                        await moveTask(task._id, columnId, targetColumnId, 0, boardId);
-                    } catch (error) {
-                        console.error(`Failed to move task ${task._id}:`, error);
-                    }
-                }
-                
-                // Wait a bit for tasks to be moved
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
+            // Set up delete modal state
+            setDeletingColumn(column);
+            setIsDeleteColumnModalOpen(true);
             
-            // Now delete the column
-            socketDeleteColumn(columnId, boardId);
         } catch (error) {
-            console.error('Failed to delete column:', error);
+            // Handle error silently
+        }
+    };
+
+    const confirmDeleteColumn = async () => {
+        if (!deletingColumn || !boardId) return;
+        
+        try {
+            // Delete the column via socket (backend will handle deleting all tasks)
+            socketDeleteColumn(deletingColumn._id, boardId);
+            
+        } catch (error) {
+            // Handle error silently
+            throw error; // Re-throw to show error in modal
         }
     };
 
     const handleUpdateColumn = async (columnId: string, columnData: Partial<Column>) => {
         try {
             // Use socket operation instead of HTTP
-            socketUpdateColumn(columnId, {
+            const updateData: any = {
                 name: columnData.name || '',
-                color: (columnData as any).color,
-                settings: columnData.settings
-            });
-            setIsEditColumnModalOpen(false);
+            };
+            
+            // Handle style updates - send complete style object
+            if (columnData.style) {
+                updateData.style = {
+                    color: columnData.style.color || '#6B7280',
+                    backgroundColor: columnData.style.backgroundColor || '#F9FAFB',
+                    icon: columnData.style.icon || null,
+                    ...columnData.style // Preserve any additional properties
+                };
+            }
+            
+            // Handle legacy color property
+            if ((columnData as any).color) {
+                updateData.style = {
+                    color: (columnData as any).color,
+                    backgroundColor: (columnData as any).color,
+                    icon: columnData.style?.icon || null,
+                    ...updateData.style
+                };
+            }
+            
+            // Handle settings
+            if (columnData.settings) {
+                updateData.settings = columnData.settings;
+            }
+            
+            socketUpdateColumn(columnId, updateData);
             setEditingColumn(null);
         } catch (error) {
-            console.error('Failed to update column:', error);
+            // Handle error silently
         }
     };
 
@@ -364,25 +365,25 @@ export const BoardPage = () => {
     // Task modal handlers
     const handleTaskSave = async (taskData: Partial<Task>) => {
         try {
-            // Update task logic here
-            console.log('Saving task:', taskData);
-            // You can implement the actual save logic here
+            if (selectedTask && currentBoard) {
+                await editTask(selectedTask._id, { ...taskData, board: currentBoard._id });
+            }
         } catch (error) {
             console.error('Failed to save task:', error);
+            throw error;
         }
     };
 
     const handleTaskDelete = async () => {
         try {
-            if (selectedTask) {
-                // Delete task logic here
-                console.log('Deleting task:', selectedTask._id);
-                // You can implement the actual delete logic here
+            if (selectedTask && currentBoard) {
+                await removeTask(selectedTask._id, currentBoard._id);
                 setIsTaskDetailModalOpen(false);
                 setSelectedTask(null);
             }
         } catch (error) {
             console.error('Failed to delete task:', error);
+            throw error;
         }
     };
 
@@ -397,12 +398,22 @@ export const BoardPage = () => {
         return acc;
     }, {} as Record<string, Task[]>);
 
-    // Calculate task stats
+    // Helper function to determine task status from column name
+    const getTaskStatusFromColumn = (task: any) => {
+        if (!task.column?.name) return 'todo';
+        const columnName = task.column.name.toLowerCase();
+        if (columnName.includes('done') || columnName.includes('complete')) return 'done';
+        if (columnName.includes('review') || columnName.includes('testing')) return 'review';
+        if (columnName.includes('progress') || columnName.includes('doing')) return 'in_progress';
+        return 'todo';
+    };
+
+    // Calculate task stats based on column names
     const taskStats = {
         total: allTasks.length,
-        completed: allTasks.filter(task => task.status === 'done').length,
-        inProgress: allTasks.filter(task => task.status === 'in_progress').length,
-        todo: allTasks.filter(task => task.status === 'todo').length,
+        completed: allTasks.filter(task => getTaskStatusFromColumn(task) === 'done').length,
+        inProgress: allTasks.filter(task => getTaskStatusFromColumn(task) === 'in_progress').length,
+        todo: allTasks.filter(task => getTaskStatusFromColumn(task) === 'todo').length,
     };
 
     // Loading state
@@ -495,10 +506,19 @@ export const BoardPage = () => {
         setIsAddTaskModalOpen,
         isAddColumnModalOpen,
         setIsAddColumnModalOpen,
-        isEditColumnModalOpen,
-        setIsEditColumnModalOpen,
         selectedColumn,
-        editingColumn
+        editingColumn,
+        // Board tag functions
+        onAddBoardTag: async (tag: { name: string; color: string }) => {
+            if (currentBoard?._id) {
+                createBoardTag(currentBoard._id, tag);
+            }
+        },
+        onRemoveBoardTag: async (tagName: string) => {
+            if (currentBoard?._id) {
+                deleteTag(currentBoard._id, tagName);
+            }
+        }
     };
 
     // Function to render the current view
@@ -566,6 +586,19 @@ export const BoardPage = () => {
                 task={selectedTask}
                 onSave={handleTaskSave}
                 onDelete={handleTaskDelete}
+            />
+
+            {/* Delete Column Modal */}
+            <DeleteColumnModal
+                isOpen={isDeleteColumnModalOpen}
+                onClose={() => {
+                    setIsDeleteColumnModalOpen(false);
+                    setDeletingColumn(null);
+                }}
+                onConfirm={confirmDeleteColumn}
+                column={deletingColumn}
+                taskCount={deletingColumn?.tasks?.length || 0}
+                isLastColumn={deletingColumn ? sortedColumns.filter(col => col._id !== deletingColumn._id).length === 0 : false}
             />
 
         </div>

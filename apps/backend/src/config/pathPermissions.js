@@ -169,6 +169,14 @@ const BOARD_PERMISSIONS = {
     },
     '/board/:id/export': {
         GET: ['owner', 'admin', 'member']
+    },
+    '/board/:id/tags': {
+        GET: ['owner', 'admin', 'member', 'viewer'],
+        POST: ['owner', 'admin', 'member']
+    },
+    '/board/:id/tags/:tagName': {
+        PUT: ['owner', 'admin', 'member'],
+        DELETE: ['owner', 'admin', 'member']
     }
 };
 

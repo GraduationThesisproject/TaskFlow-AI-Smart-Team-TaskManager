@@ -27,11 +27,6 @@ const taskSchema = new mongoose.Schema({
     ref: 'Column',
     required: [true, 'Task must be in a column']
   },
-  status: {
-    type: String,
-    enum: ['todo', 'in_progress', 'review', 'done', 'archived'],
-    default: 'todo'
-  },
   priority: {
     type: String,
     enum: ['low', 'medium', 'high', 'critical'],
@@ -167,12 +162,17 @@ const taskSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Virtual for task progress
+// Virtual for task progress based on column
 taskSchema.virtual('progress').get(function() {
-  if (this.status === 'done') return 100;
-  if (this.status === 'review') return 75;
-  if (this.status === 'in_progress') return 50;
-  if (this.status === 'todo') return 0;
+  // Progress will be determined by the column the task is in
+  // This should be populated when the column is populated
+  if (this.populated('column') && this.column) {
+    const columnName = this.column.name ? this.column.name.toLowerCase() : '';
+    if (columnName.includes('done') || columnName.includes('complete')) return 100;
+    if (columnName.includes('review') || columnName.includes('testing')) return 75;
+    if (columnName.includes('progress') || columnName.includes('doing')) return 50;
+    return 25; // Default for new/todo columns
+  }
   return 0;
 });
 
@@ -183,7 +183,14 @@ taskSchema.virtual('isTimeTracking').get(function() {
 
 // Virtual for overdue status
 taskSchema.virtual('overdueDays').get(function() {
-  if (!this.dueDate || this.status === 'done') return 0;
+  if (!this.dueDate) return 0;
+  
+  // Check if task is in a "done" or "complete" column
+  if (this.populated('column') && this.column) {
+    const columnName = this.column.name ? this.column.name.toLowerCase() : '';
+    if (columnName.includes('done') || columnName.includes('complete')) return 0;
+  }
+  
   const now = new Date();
   const due = new Date(this.dueDate);
   return Math.max(0, Math.ceil((now - due) / (1000 * 60 * 60 * 24)));
@@ -201,20 +208,19 @@ taskSchema.index({ board: 1 });
 taskSchema.index({ space: 1 });
 taskSchema.index({ assignees: 1 });
 taskSchema.index({ reporter: 1 });
-taskSchema.index({ status: 1 });
 taskSchema.index({ priority: 1 });
 taskSchema.index({ dueDate: 1 });
 taskSchema.index({ 'tags': 1 });
 taskSchema.index({ isOverdue: 1 });
 // Composite indexes for common query patterns
-taskSchema.index({ board: 1, status: 1 });
-taskSchema.index({ space: 1, status: 1 });
-taskSchema.index({ assignees: 1, status: 1 });
-taskSchema.index({ board: 1, assignees: 1, status: 1 });
-taskSchema.index({ dueDate: 1, status: 1 });
-taskSchema.index({ priority: 1, status: 1 });
+taskSchema.index({ board: 1, column: 1 });
+taskSchema.index({ space: 1, column: 1 });
+taskSchema.index({ assignees: 1, column: 1 });
+taskSchema.index({ board: 1, assignees: 1, column: 1 });
+taskSchema.index({ dueDate: 1, column: 1 });
+taskSchema.index({ priority: 1, column: 1 });
 // Additional indexes for common filters
-taskSchema.index({ space: 1, board: 1, status: 1, assignees: 1, dueDate: 1 });
+taskSchema.index({ space: 1, board: 1, column: 1, assignees: 1, dueDate: 1 });
 
 // Text search indexes for faster, ranked search
 taskSchema.index({ title: 'text', description: 'text', tags: 'text' });
@@ -222,13 +228,7 @@ taskSchema.index({ title: 'text', description: 'text', tags: 'text' });
 // Method to move task to different column
 taskSchema.methods.moveToColumn = function(columnId) {
   this.column = columnId;
-  
-  // Update status based on column name (you can customize this logic)
-  if (this.column) {
-    // This would need to be implemented based on your column structure
-    // For now, we'll keep the current status
-  }
-  
+  this.movedAt = new Date();
   return this.save();
 };
 
@@ -321,8 +321,15 @@ taskSchema.methods.removeAttachment = function(fileId) {
 
 // Method to check if overdue
 taskSchema.methods.checkOverdue = function() {
-  if (this.dueDate && this.status !== 'done') {
-    this.isOverdue = new Date() > this.dueDate;
+  if (this.dueDate) {
+    // Check if task is in a "done" or "complete" column
+    let isComplete = false;
+    if (this.populated('column') && this.column) {
+      const columnName = this.column.name ? this.column.name.toLowerCase() : '';
+      isComplete = columnName.includes('done') || columnName.includes('complete');
+    }
+    
+    this.isOverdue = !isComplete && (new Date() > this.dueDate);
   } else {
     this.isOverdue = false;
   }
@@ -332,9 +339,8 @@ taskSchema.methods.checkOverdue = function() {
 // Static method to find overdue tasks
 taskSchema.statics.findOverdue = function() {
   return this.find({
-    dueDate: { $lt: new Date() },
-    status: { $ne: 'done' }
-  });
+    dueDate: { $lt: new Date() }
+  }).populate('column');
 };
 
 // Static method to find tasks by assignee
@@ -342,9 +348,9 @@ taskSchema.statics.findByAssignee = function(userId) {
   return this.find({ assignees: userId });
 };
 
-// Static method to find tasks by status
-taskSchema.statics.findByStatus = function(status) {
-  return this.find({ status });
+// Static method to find tasks by column
+taskSchema.statics.findByColumn = function(columnId) {
+  return this.find({ column: columnId });
 };
 
 // Static method to find tasks by priority
