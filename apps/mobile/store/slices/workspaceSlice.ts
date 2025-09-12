@@ -154,6 +154,9 @@ export const updateWorkspaceSettings = createAsyncThunk(
       } else if (section === 'visibility') {
         // visibility toggles like isPublic should be top-level
         payload = { isPublic: updates?.isPublic };
+      } else if (section === 'limits') {
+        // allow updating limits such as maxSpaces
+        payload = { limits: updates };
       } else if (section === 'general') {
         // name/description already at top-level
         payload = updates;
@@ -354,8 +357,11 @@ const workspaceSlice = createSlice({
     removePendingInvitationByEmail(state, action: PayloadAction<string>) {
       const email = (action.payload || '').toLowerCase();
       state.pendingInvitations = (state.pendingInvitations || []).filter((inv: any) => {
-        const e = (inv?.invitedUser?.email || inv?.email || '').toLowerCase();
-        return e !== email;
+        const invitedEmail = inv?.invitedUser?.email || inv?.email || null;
+        const invitedUserId = inv?.invitedUser?.userId ? String(inv.invitedUser.userId) : null;
+        if (invitedUserId && memberIds.has(invitedUserId)) return false;
+        if (invitedEmail && memberEmails.has(invitedEmail)) return false;
+        return true;
       });
     },
     resetWorkspaceState: () => initialState,
