@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import BoardCard from '@/components/common/BoardCard';
 import { BoardService } from '@/services/boardService';
+import SpaceHeader from '@/components/space/SpaceHeader';
 
 export default function AllBoardsScreen() {
   const colors = useThemeColors();
@@ -81,14 +82,16 @@ export default function AllBoardsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}> 
-      {/* Header */}
-      <RNView style={[styles.headerRow, { borderBottomColor: colors.border }]}> 
-        <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { borderColor: colors.border }]}> 
-          <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Back</Text>
-        </TouchableOpacity>
-        <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>All Boards</Text>
-        <RNView style={{ width: 60 }} />
-      </RNView>
+      {/* Match SpaceBoardsScreen header */}
+      <SpaceHeader
+        space={{
+          ...space,
+          totalBoards: Array.isArray(boards) ? boards.length : (space?.totalBoards || space?.stats?.totalBoards || 0),
+          stats: { ...(space?.stats || {}), totalBoards: Array.isArray(boards) ? boards.length : (space?.stats?.totalBoards || 0) },
+        }}
+        onBackToWorkspace={() => router.push('/(tabs)/workspace')}
+        onSettings={() => router.push('/workspace/space/settings')}
+      />
 
       <ScrollView
         style={styles.content}
@@ -107,7 +110,17 @@ export default function AllBoardsScreen() {
 
         {!loading && (!boards || boards.length === 0) ? (
           <Card style={[styles.emptyCard, { backgroundColor: colors.card }]}> 
-            <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No boards found.</Text>
+            <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'], marginBottom: 12 }]}>No boards yet. Here is a preview of how your board will look.</Text>
+            {/* Preview board UI (match SpaceBoardsScreen) */}
+            <RNView style={[styles.previewBoard, { borderColor: colors.border, backgroundColor: colors.background }]}> 
+              {['To do', 'In progress', 'Done'].map((col) => (
+                <RNView key={col} style={styles.previewColumn}> 
+                  <Text style={[TextStyles.caption.small, { color: colors.foreground, marginBottom: 6 }]} numberOfLines={1}>{col}</Text>
+                  <RNView style={[styles.previewCard, { backgroundColor: colors.card, borderColor: colors.border }]} />
+                  <RNView style={[styles.previewCard, { backgroundColor: colors.card, borderColor: colors.border }]} />
+                </RNView>
+              ))}
+            </RNView>
           </Card>
         ) : (
           <RNView
@@ -130,13 +143,13 @@ export default function AllBoardsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
   content: { flex: 1, padding: 16 },
   centerBox: { padding: 24, alignItems: 'center', justifyContent: 'center' },
   errorCard: { padding: 16, margin: 16, borderRadius: 12 },
   emptyCard: { padding: 16, borderRadius: 12 },
   boardGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   gridItem: { marginBottom: 12 },
-});
-
+  previewBoard: { flexDirection: 'row', gap: 8, padding: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 10 },
+  previewColumn: { flex: 1 },
+  previewCard: { height: 36, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth, marginBottom: 6 },
+})
