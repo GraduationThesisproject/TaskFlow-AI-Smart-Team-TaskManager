@@ -4,8 +4,7 @@ const userSessionsSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    unique: true
+    required: true,   // removed unique:true
   },
   sessions: [{
     sessionId: {
@@ -130,7 +129,18 @@ userSessionsSchema.index({ 'sessions.isActive': 1 });
 userSessionsSchema.index({ 'sessions.lastActivityAt': -1 });
 
 // Method to create new session
-userSessionsSchema.methods.createSession = function(sessionData) {
+userSessionsSchema.methods.createSession = async function(sessionData) {
+  // Validate required fields
+  if (!sessionData.deviceId) {
+    sessionData.deviceId = 'web-' + Date.now();
+  }
+  if (!sessionData.ipAddress) {
+    sessionData.ipAddress = '0.0.0.0';
+  }
+  if (!sessionData.deviceInfo || !sessionData.deviceInfo.type) {
+    sessionData.deviceInfo = { type: 'web' };
+  }
+  
   // End any existing sessions for the same device if not allowing multiple
   const existingSessionIndex = this.sessions.findIndex(session => 
     session.deviceId === sessionData.deviceId && session.isActive
@@ -141,17 +151,91 @@ userSessionsSchema.methods.createSession = function(sessionData) {
     this.sessions[existingSessionIndex].logoutAt = new Date();
   }
   
-  // Generate unique session ID
-  const sessionId = require('crypto').randomBytes(32).toString('hex');
+  // Generate unique session ID with retry mechanism
+  let sessionId = null;
+  let attempts = 0;
+  const maxAttempts = 5;
   
-  this.sessions.push({
-    sessionId,
-    ...sessionData,
+  while (!sessionId && attempts < maxAttempts) {
+    attempts++;
+    
+    // Generate a new session ID
+    const crypto = require('crypto');
+    const candidateId = crypto.randomBytes(32).toString('hex');
+    
+    // Ensure it's not null or empty
+    if (!candidateId) {
+      continue;
+    }
+    
+    // Check for global uniqueness across all user sessions
+    const UserSessions = this.constructor;
+    const existingSession = await UserSessions.findOne({
+      'sessions.sessionId': candidateId
+    });
+    
+    if (!existingSession) {
+      sessionId = candidateId;
+    }
+  }
+  
+  // Final fallback with timestamp to ensure uniqueness
+  if (!sessionId) {
+    sessionId = `${Date.now()}-${Math.random().toString(36).substring(2)}-${require('crypto').randomBytes(16).toString('hex')}`;
+  }
+  
+  // Validate sessionId one more time
+  if (!sessionId) {
+    throw new Error('Failed to generate session ID');
+  }
+  
+  const newSession = {
+    sessionId: sessionId,
+    deviceId: sessionData.deviceId,
+    deviceInfo: sessionData.deviceInfo,
+    ipAddress: sessionData.ipAddress,
+    isActive: true,
     loginAt: new Date(),
-    lastActivityAt: new Date()
-  });
+    lastActivityAt: new Date(),
+    rememberMe: sessionData.rememberMe || false
+  };
   
-  return this.save();
+  // Add location if provided
+  if (sessionData.location) {
+    newSession.location = sessionData.location;
+  }
+  
+  this.sessions.push(newSession);
+  
+  try {
+    await this.save();
+    // Return the newly created session object
+    return this.sessions[this.sessions.length - 1];
+  } catch (error) {
+    // Handle duplicate key error gracefully
+    if (error.code === 11000 && error.keyPattern && error.keyPattern['sessions.sessionId']) {
+      this.sessions.pop(); // Remove the failed session
+      
+      // Try one more time with a completely different approach
+      const fallbackSessionId = `fallback-${Date.now()}-${process.pid}-${Math.random().toString(36).substring(2)}-${require('crypto').randomBytes(16).toString('hex')}`;
+      
+      newSession.sessionId = fallbackSessionId;
+      this.sessions.push(newSession);
+      
+      try {
+        await this.save();
+        // Return the newly created session object
+        return this.sessions[this.sessions.length - 1];
+      } catch (retryError) {
+        // If still failing, provide a user-friendly error
+        if (retryError.code === 11000) {
+          throw new Error('Unable to create session. Please try logging in again.');
+        }
+        throw retryError;
+      }
+    }
+    throw error;
+  }
 };
 
 // Method to end session
