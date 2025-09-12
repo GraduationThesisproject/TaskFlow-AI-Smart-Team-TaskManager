@@ -465,7 +465,6 @@ export interface CommentItemProps extends BaseUIProps {
   users: { _id: string; name: string; email?: string; avatar?: string }[];
   currentUserId: string;
   onCommentUpdate: (commentId: string, updated: any) => void;
-  onCommentDelete: (commentId: string) => void;
   onReplyAdd: (commentId: string, content: string) => void;
 }
 
@@ -478,6 +477,7 @@ export interface DraggableColumnProps extends BaseUIProps {
   onAddTask: (taskData: any) => Promise<void>;
   onEditColumn: (columnId: string) => void;
   onDeleteColumn: (columnId: string) => void;
+  onUpdateColumn?: (columnId: string, columnData: any) => Promise<void>;
 }
 
 export interface TaskDetailModalProps extends BaseUIProps {

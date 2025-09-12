@@ -2,12 +2,14 @@ import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import { useSocket } from '../hooks/socket/useSocket';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../hooks/useToast';
 import { env } from '../config/env';
 import { 
   updateColumnRealTime,
   addColumnRealTime,
   removeColumnRealTime,
-  updateColumnPositionsRealTime
+  updateColumnPositionsRealTime,
+  addTaskRealTime
 } from '../store/slices/taskSlice';
 import { 
   updateColumnRealTime as updateColumnRealTimeColumnSlice,
@@ -15,6 +17,12 @@ import {
   removeColumnRealTime as removeColumnRealTimeColumnSlice,
   updateColumnPositionsRealTime as updateColumnPositionsRealTimeColumnSlice
 } from '../store/slices/columnSlice';
+import {
+  addBoardTagRealTime,
+  updateBoardTagRealTime,
+  removeBoardTagRealTime,
+  updateBoardRealTime
+} from '../store/slices/boardSlice';
 import type { 
   SocketNamespace, 
   SocketContextType, 
@@ -26,6 +34,7 @@ const SocketContext = createContext<SocketContextType | undefined>(undefined);
 export function SocketProvider({ children }: SocketProviderProps) {
   const { isAuthenticated, user, token, isLoading: authLoading } = useAuth();
   const dispatch = useDispatch();
+  const toast = useToast();
   const [isReady, setIsReady] = useState(false);
   const [namespaces, setNamespaces] = useState<Map<string, SocketNamespace>>(new Map());
 
@@ -43,7 +52,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
     auth: authConfig,
   });
 
-  // Test socket connection without namespace for debugging
 
   const notificationSocket = useSocket({
     url: env.SOCKET_URL,
@@ -95,20 +103,8 @@ export function SocketProvider({ children }: SocketProviderProps) {
   useEffect(() => {
     const newNamespaces = new Map();
     
-    console.log('🔄 Updating namespaces:', {
-      boardSocket: !!boardSocket.socket,
-      boardSocketConnected: boardSocket.socket?.connected,
-      notificationSocket: !!notificationSocket.socket,
-      systemSocket: !!systemSocket.socket,
-      chatSocket: !!chatSocket.socket,
-      workspaceSocket: !!workspaceSocket.socket
-    });
-    
     if (boardSocket.socket) {
       newNamespaces.set('board', createNamespaceObject('board', boardSocket));
-      console.log('✅ Board namespace created');
-    } else {
-      console.log('❌ Board socket not available for namespace creation');
     }
     if (notificationSocket.socket) {
       newNamespaces.set('notifications', createNamespaceObject('notifications', notificationSocket));
@@ -123,18 +119,14 @@ export function SocketProvider({ children }: SocketProviderProps) {
       newNamespaces.set('workspace', createNamespaceObject('workspace', workspaceSocket));
     }
     
-    console.log('📋 Final namespaces:', Array.from(newNamespaces.keys()));
     setNamespaces(newNamespaces);
   }, [boardSocket.socket, notificationSocket.socket, systemSocket.socket, chatSocket.socket, workspaceSocket.socket]);
 
   // Set up real-time event listeners for column operations
   useEffect(() => {
     if (boardSocket.socket && boardSocket.isConnected) {
-      console.log('🎧 Setting up real-time column event listeners');
-
       // Listen for column reorder updates
       boardSocket.socket.on('columns:reordered', (data: { columnOrder: Array<{ columnId: string; position: number }> }) => {
-        console.log('📡 Received columns:reordered event:', data);
         // Update column positions in both slices for real-time updates
         dispatch(updateColumnPositionsRealTime(data.columnOrder)); // taskSlice
         dispatch(updateColumnPositionsRealTimeColumnSlice(data.columnOrder)); // columnSlice
@@ -142,7 +134,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
       // Listen for column creation updates
       boardSocket.socket.on('column:created', (data: { boardId: string; column: any }) => {
-        console.log('📡 Received column:created event:', data);
         // Dispatch Redux action to add new column in both slices
         dispatch(addColumnRealTime(data.column)); // taskSlice
         dispatch(addColumnRealTimeColumnSlice(data.column)); // columnSlice
@@ -150,55 +141,135 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
       // Listen for column update updates
       boardSocket.socket.on('column:updated', (data: { boardId: string; column: any }) => {
-        console.log('📡 Received column:updated event:', data);
         // Dispatch Redux action to update column in both slices
         dispatch(updateColumnRealTime(data.column)); // taskSlice
         dispatch(updateColumnRealTimeColumnSlice(data.column)); // columnSlice
       });
 
       // Listen for column deletion updates
-      boardSocket.socket.on('column:deleted', (data: { boardId: string; columnId: string }) => {
-        console.log('📡 Received column:deleted event:', data);
+      boardSocket.socket.on('column:deleted', (data: { boardId: string; columnId: string; columnName?: string; taskCount?: number }) => {
         // Dispatch Redux action to remove column in both slices
         dispatch(removeColumnRealTime(data.columnId)); // taskSlice
         dispatch(removeColumnRealTimeColumnSlice(data.columnId)); // columnSlice
+        
+        // Show success toast notification
+        const message = data.taskCount && data.taskCount > 0 
+          ? `Column "${data.columnName || 'Untitled'}" and ${data.taskCount} task(s) have been deleted successfully.`
+          : `Column "${data.columnName || 'Untitled'}" has been deleted successfully.`;
+          
+        toast.success(
+          message,
+          'Column Deleted',
+          { duration: 4000 }
+        );
+      });
+
+      // Listen for board state updates (when joining a board)
+      boardSocket.socket.on('board:state', (data: { board: any; columns: any[]; tasks: any[]; timestamp: Date }) => {
+        // Update the current board with populated member data
+        dispatch(updateBoardRealTime(data.board));
+        
+        // Update columns - only add if they don't already exist
+        data.columns.forEach(column => {
+          // Check if column already exists before adding
+          dispatch({ type: 'columns/addColumnIfNotExists', payload: column });
+        });
+        
+        // Update tasks - add them to their respective columns
+        data.tasks.forEach(task => {
+          const columnId = typeof task.column === 'string' ? task.column : task.column?._id;
+          if (columnId) {
+            dispatch({ type: 'columns/addTaskToColumn', payload: { columnId, task } });
+          }
+        });
+      });
+
+      // Listen for board tag creation updates
+      boardSocket.socket.on('board:tag:created', (data: { boardId: string; tag: { name: string; color: string } }) => {
+        // Add tag to board
+        dispatch(addBoardTagRealTime({ 
+          boardId: data.boardId, 
+          tag: data.tag 
+        }));
+        
+        // Show success toast notification
+        toast.success(
+          `Tag "${data.tag.name}" has been created successfully.`,
+          'Tag Created',
+          { duration: 3000 }
+        );
+      });
+
+      // Listen for board tag update updates
+      boardSocket.socket.on('board:tag:updated', (data: { boardId: string; oldTagName: string; tag: { name: string; color: string } }) => {
+        // Update tag in board
+        dispatch(updateBoardTagRealTime({ 
+          boardId: data.boardId, 
+          oldTagName: data.oldTagName,
+          tag: data.tag 
+        }));
+        
+        // Show success toast notification
+        toast.success(
+          `Tag "${data.oldTagName}" has been updated successfully.`,
+          'Tag Updated',
+          { duration: 3000 }
+        );
+      });
+
+      // Listen for board tag deletion updates
+      boardSocket.socket.on('board:tag:deleted', (data: { boardId: string; tagName: string }) => {
+        // Remove tag from board
+        dispatch(removeBoardTagRealTime({ 
+          boardId: data.boardId, 
+          tagName: data.tagName 
+        }));
+        
+        // Show success toast notification
+        toast.success(
+          `Tag "${data.tagName}" has been deleted successfully.`,
+          'Tag Deleted',
+          { duration: 3000 }
+        );
       });
 
       // Cleanup function
       return () => {
-        console.log('🧹 Cleaning up column event listeners');
+        boardSocket.socket?.off('board:state');
         boardSocket.socket?.off('columns:reordered');
         boardSocket.socket?.off('column:created');
         boardSocket.socket?.off('column:updated');
         boardSocket.socket?.off('column:deleted');
+        boardSocket.socket?.off('board:tag:created');
+        boardSocket.socket?.off('board:tag:updated');
+        boardSocket.socket?.off('board:tag:deleted');
       };
     }
-  }, [boardSocket.socket, boardSocket.isConnected]);
+  }, [boardSocket.socket, boardSocket.isConnected, dispatch, toast]);
 
   // Set up real-time event listeners for task operations
   useEffect(() => {
     if (boardSocket.socket && boardSocket.isConnected) {
-      console.log('🎧 Setting up real-time task event listeners');
-
       // Listen for task creation updates
       boardSocket.socket.on('task:created', (data: { task: any; createdBy: any; timestamp: Date }) => {
-        console.log('📡 Received task:created event:', data);
-        console.log('📡 Task data:', data.task);
         // Add task to the appropriate column
         const columnId = typeof data.task.column === 'string' ? data.task.column : data.task.column?._id;
-        console.log('📡 Extracted columnId:', columnId);
-        console.log('📡 Task column field:', data.task.column);
+        console.log('🎯 task:created received:', { 
+          taskId: data.task._id, 
+          taskTitle: data.task.title,
+          columnId, 
+          columnType: typeof data.task.column,
+          columnValue: data.task.column 
+        });
         if (columnId) {
-          console.log('📡 Dispatching addTaskToColumn with:', { columnId, taskId: data.task._id });
           dispatch({ type: 'columns/addTaskToColumn', payload: { columnId, task: data.task } });
         } else {
-          console.error('❌ No columnId found for task:', data.task);
+          console.error('❌ No column ID found for task:', data.task);
         }
       });
 
       // Listen for task update updates
       boardSocket.socket.on('task:updated', (data: { task: any; updatedBy: any; timestamp: Date }) => {
-        console.log('📡 Received task:updated event:', data);
         // Update task in the appropriate column
         const columnId = typeof data.task.column === 'string' ? data.task.column : data.task.column?._id;
         if (columnId) {
@@ -208,7 +279,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
       // Listen for task deletion updates
       boardSocket.socket.on('task:deleted', (data: { taskId: string; columnId: string; deletedBy: any; timestamp: Date }) => {
-        console.log('📡 Received task:deleted event:', data);
         // Remove task from the appropriate column
         if (data.columnId) {
           dispatch({ type: 'columns/removeTaskFromColumn', payload: { columnId: data.columnId, taskId: data.taskId } });
@@ -217,56 +287,33 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
       // Listen for task movement updates
       boardSocket.socket.on('task:moved', (data: { taskId: string; sourceColumnId: string; targetColumnId: string; targetPosition: number; movedBy: any; timestamp: Date }) => {
-        console.log('📡 Received task:moved event:', data);
         // Move task between columns
         dispatch({ type: 'columns/moveTaskBetweenColumns', payload: data });
       });
 
       // Cleanup function
       return () => {
-        console.log('🧹 Cleaning up task event listeners');
         boardSocket.socket?.off('task:created');
         boardSocket.socket?.off('task:updated');
         boardSocket.socket?.off('task:deleted');
         boardSocket.socket?.off('task:moved');
       };
     }
-  }, [boardSocket.socket, boardSocket.isConnected]);
+  }, [boardSocket.socket, boardSocket.isConnected, dispatch]);
 
   // Determine if we're ready to attempt socket connections
   const isReadyToConnect = !authLoading && isAuthenticated && !!token;
 
   // Update socket connections when authentication state changes
   useEffect(() => {
-    console.log('🔄 Socket connection effect triggered:', {
-      isReadyToConnect,
-      isAuthenticated,
-      hasToken: !!token,
-      authLoading,
-      tokenPreview: token ? `${token.substring(0, 20)}...` : 'No token'
-    });
-
     if (isReadyToConnect) {
-      console.log('✅ Setting up authenticated socket connections for all namespaces');
-      console.log('🔍 Connection details:', {
-        isAuthenticated,
-        hasToken: !!token,
-        authLoading,
-        userRoles: user?.roles?.global,
-        userPermissions: user?.roles?.permissions,
-        socketUrl: env.SOCKET_URL
-      });
       setIsReady(true);
       
-
-
       // Connect to all namespaces
-      console.log('🔌 Connecting to board socket...');
       try {
         boardSocket.connect();
-        console.log('📡 Board socket connect() called');
       } catch (error) {
-        console.error('❌ Error connecting board socket:', error);
+        // Handle connection error silently
       }
       
       notificationSocket.connect();
@@ -278,7 +325,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
         systemSocket.connect();
       }
     } else if (!authLoading && (!isAuthenticated || !token)) {
-      console.log('❌ Disconnecting all socket connections - no authentication');
       setIsReady(false);
       
       // Disconnect all namespaces
@@ -303,7 +349,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
   // Connection methods
   const connect = () => {
     if (isReadyToConnect) {
-      console.log('🔄 Manual connection requested for all namespaces');
       
       try {
         boardSocket.connect();
@@ -315,13 +360,11 @@ export function SocketProvider({ children }: SocketProviderProps) {
           systemSocket.connect();
         }
       } catch (error) {
-        console.error('Failed to connect to socket namespaces:', error);
       }
     }
   };
 
   const disconnect = () => {
-    console.log('🔌 Disconnecting all socket namespaces');
     boardSocket.disconnect();
     notificationSocket.disconnect();
     systemSocket.disconnect();
@@ -352,7 +395,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const joinRoom = (room: string, namespace?: string) => {
     const targetNamespace = namespace ? namespaces.get(namespace) : namespaces.get('board');
     if (targetNamespace) {
-      console.log(`🔗 Joining room: ${room} in namespace: ${targetNamespace.name}`);
       targetNamespace.join(room);
     }
   };
@@ -360,7 +402,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const leaveRoom = (room: string, namespace?: string) => {
     const targetNamespace = namespace ? namespaces.get(namespace) : namespaces.get('board');
     if (targetNamespace) {
-      console.log(`🔌 Leaving room: ${room} in namespace: ${targetNamespace.name}`);
       targetNamespace.leave(room);
     }
   };
@@ -369,90 +410,61 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const joinBoardRoom = (boardId: string) => {
     const boardNamespace = namespaces.get('board');
     if (boardNamespace) {
-      console.log('📤 Joining board room via socket namespace:', boardId);
       boardNamespace.emit('board:join', { boardId });
     } else if (boardSocket && boardSocket.isConnected) {
-      console.log('📤 Joining board room via direct socket (fallback):', boardId);
       boardSocket.emit('board:join', { boardId });
     } else {
-      console.error('Board socket not available for joining room');
     }
   };
 
   const leaveBoardRoom = (boardId: string) => {
     const boardNamespace = namespaces.get('board');
     if (boardNamespace) {
-      console.log('📤 Leaving board room via socket namespace:', boardId);
       boardNamespace.emit('board:leave', { boardId });
     } else if (boardSocket && boardSocket.isConnected) {
-      console.log('📤 Leaving board room via direct socket (fallback):', boardId);
       boardSocket.emit('board:leave', { boardId });
     } else {
-      console.error('Board socket not available for leaving room');
     }
   };
 
   // Socket-based task operations
   const createTask = (boardId: string, taskData: any) => {
     const boardNamespace = namespaces.get('board');
-    console.log('📤 Creating task - Debug info:', { 
-      boardId, 
-      taskData, 
-      hasNamespace: !!boardNamespace,
-      socketConnected: boardSocket?.isConnected,
-      namespaces: Array.from(namespaces.keys())
-    });
     
     // Ensure we're in the board room before creating task
     joinBoardRoom(boardId);
     
     if (boardNamespace) {
-      console.log('📤 Creating task via socket namespace:', { boardId, taskData });
       boardNamespace.emit('task:create', { boardId, taskData });
     } else if (boardSocket && boardSocket.isConnected) {
-      console.log('📤 Creating task via direct socket (fallback):', { boardId, taskData });
       boardSocket.emit('task:create', { boardId, taskData });
-    } else {
-      console.error('Board socket not available for task creation');
     }
   };
 
   const updateTask = (taskId: string, taskData: any, boardId: string) => {
     const boardNamespace = namespaces.get('board');
     if (boardNamespace) {
-      console.log('📤 Updating task via socket namespace:', { taskId, taskData, boardId });
       boardNamespace.emit('task:update', { taskId, updates: taskData, boardId });
     } else if (boardSocket && boardSocket.isConnected) {
-      console.log('📤 Updating task via direct socket (fallback):', { taskId, taskData, boardId });
       boardSocket.emit('task:update', { taskId, updates: taskData, boardId });
-    } else {
-      console.error('Board socket not available for task update');
     }
   };
 
   const deleteTask = (taskId: string, boardId: string) => {
     const boardNamespace = namespaces.get('board');
     if (boardNamespace) {
-      console.log('📤 Deleting task via socket namespace:', { taskId, boardId });
       boardNamespace.emit('task:delete', { taskId, boardId });
     } else if (boardSocket && boardSocket.isConnected) {
-      console.log('📤 Deleting task via direct socket (fallback):', { taskId, boardId });
       boardSocket.emit('task:delete', { taskId, boardId });
-    } else {
-      console.error('Board socket not available for task deletion');
     }
   };
 
   const moveTask = (taskId: string, sourceColumnId: string, targetColumnId: string, targetPosition: number, boardId: string) => {
     const boardNamespace = namespaces.get('board');
     if (boardNamespace) {
-      console.log('📤 Moving task via socket namespace:', { taskId, sourceColumnId, targetColumnId, targetPosition, boardId });
       boardNamespace.emit('task:move', { taskId, sourceColumnId, targetColumnId, targetPosition, boardId });
     } else if (boardSocket && boardSocket.isConnected) {
-      console.log('📤 Moving task via direct socket (fallback):', { taskId, sourceColumnId, targetColumnId, targetPosition, boardId });
       boardSocket.emit('task:move', { taskId, sourceColumnId, targetColumnId, targetPosition, boardId });
-    } else {
-      console.error('Board socket not available for task movement');
     }
   };
 
@@ -460,67 +472,69 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const createColumn = (boardId: string, columnData: { name: string; position: number; settings?: any }) => {
     const boardNamespace = namespaces.get('board');
     if (boardNamespace) {
-      console.log('📤 Creating column via socket namespace:', { boardId, columnData });
       boardNamespace.emit('column:create', { boardId, columnData });
     } else if (boardSocket && boardSocket.isConnected) {
-      console.log('📤 Creating column via direct socket (fallback):', { boardId, columnData });
       boardSocket.emit('column:create', { boardId, columnData });
-    } else {
-      console.error('Board socket not available for column creation');
     }
   };
 
   const updateColumn = (columnId: string, columnData: { name: string; color?: string; settings?: any }) => {
     const boardNamespace = namespaces.get('board');
     if (boardNamespace) {
-      console.log('📤 Updating column via socket namespace:', { columnId, columnData });
       boardNamespace.emit('column:update', { columnId, updates: columnData });
     } else if (boardSocket && boardSocket.isConnected) {
-      console.log('📤 Updating column via direct socket (fallback):', { columnId, columnData });
       boardSocket.emit('column:update', { columnId, updates: columnData });
-    } else {
-      console.error('Board socket not available for column update');
     }
   };
 
   const deleteColumn = (columnId: string, boardId: string) => {
     const boardNamespace = namespaces.get('board');
     if (boardNamespace) {
-      console.log('📤 Deleting column via socket namespace:', { columnId, boardId });
       boardNamespace.emit('column:delete', { columnId });
     } else if (boardSocket && boardSocket.isConnected) {
-      console.log('📤 Deleting column via direct socket (fallback):', { columnId, boardId });
       boardSocket.emit('column:delete', { columnId });
-    } else {
-      console.error('Board socket not available for column deletion');
     }
   };
 
   const reorderColumns = (boardId: string, columnIds: string[]) => {
     const boardNamespace = namespaces.get('board');
-    console.log('🔍 Debug reorderColumns:', {
-      boardNamespace,
-      namespacesSize: namespaces.size,
-      namespacesKeys: Array.from(namespaces.keys()),
-      boardSocketConnected: boardSocket?.isConnected,
-      isAnyConnected
-    });
     
     if (boardNamespace) {
-      console.log('📤 Reordering columns via socket namespace:', { boardId, columnIds });
       // Convert columnIds to the format expected by backend
       const columnOrder = columnIds.map((columnId, index) => ({ columnId, position: index }));
       boardNamespace.emit('columns:reorder', { boardId, columnOrder });
     } else if (boardSocket && boardSocket.isConnected) {
-      console.log('📤 Reordering columns via direct socket (fallback):', { boardId, columnIds });
       // Fallback to direct socket if namespace isn't available
       const columnOrder = columnIds.map((columnId, index) => ({ columnId, position: index }));
       boardSocket.emit('columns:reorder', { boardId, columnOrder });
-    } else {
-      console.error('Board socket not available for column reordering');
-      console.info('Available namespaces:', Array.from(namespaces.keys()));
-      console.info('Board socket:', boardSocket);
-      console.info('Is connected:', isAnyConnected);
+    }
+  };
+
+  // Board tag operations
+  const createBoardTag = (boardId: string, tag: { name: string; color: string }) => {
+    const boardNamespace = namespaces.get('board');
+    if (boardNamespace) {
+      boardNamespace.emit('board:tag:create', { boardId, tag });
+    } else if (boardSocket && boardSocket.isConnected) {
+      boardSocket.emit('board:tag:create', { boardId, tag });
+    }
+  };
+
+  const updateBoardTag = (boardId: string, tagName: string, updates: { name?: string; color?: string }) => {
+    const boardNamespace = namespaces.get('board');
+    if (boardNamespace) {
+      boardNamespace.emit('board:tag:update', { boardId, tagName, updates });
+    } else if (boardSocket && boardSocket.isConnected) {
+      boardSocket.emit('board:tag:update', { boardId, tagName, updates });
+    }
+  };
+
+  const deleteBoardTag = (boardId: string, tagName: string) => {
+    const boardNamespace = namespaces.get('board');
+    if (boardNamespace) {
+      boardNamespace.emit('board:tag:delete', { boardId, tagName });
+    } else if (boardSocket && boardSocket.isConnected) {
+      boardSocket.emit('board:tag:delete', { boardId, tagName });
     }
   };
 
@@ -564,29 +578,13 @@ export function SocketProvider({ children }: SocketProviderProps) {
   // Log connection status changes
   useEffect(() => {
     if (isAnyConnected) {
-      console.log('🔌 At least one socket namespace connected');
+      // Connection established
     } else if (isAnyConnecting) {
-      console.log('🔄 Socket namespaces connecting...');
+      // Connection in progress
     } else if (hasErrors) {
-      console.error('❌ Socket errors detected in one or more namespaces');
+      // Connection errors
     }
   }, [isAnyConnected, isAnyConnecting, hasErrors]);
-
-  // Debug authentication state changes
-  useEffect(() => {
-    console.log('🔍 Socket context debug info:', {
-      isAuthenticated,
-      hasToken: !!token,
-      authLoading,
-      isReadyToConnect,
-      isAnyConnected,
-      isAnyConnecting,
-      hasErrors,
-      isReady,
-      userRoles: user?.roles?.global,
-      userPermissions: user?.roles?.permissions
-    });
-  }, [isAuthenticated, token, authLoading, isReadyToConnect, isAnyConnected, isAnyConnecting, hasErrors, isReady, user?.roles?.global, user?.roles?.permissions]);
 
   const value: SocketContextType = {
     // Main socket connections
@@ -629,6 +627,11 @@ export function SocketProvider({ children }: SocketProviderProps) {
     updateColumn,
     deleteColumn,
     reorderColumns,
+    
+    // Socket-based board tag operations
+    createBoardTag,
+    updateBoardTag,
+    deleteBoardTag,
     
     // Namespace management
     getNamespace,

@@ -11,18 +11,9 @@ import {
 } from '@taskflow/ui';
 import { DraggableColumn } from '../../components/board/DraggableColumn';
 import { AddColumnModal } from '../../components/board/AddColumnModal';
-import { EditColumnModal } from '../../components/board/EditColumnModal';
-import { AddChecklistModal } from '../../components/board/AddChecklistModal';
+import { AddTagModal } from '../../components/board/AddTagModal';
 import { ErrorBoundaryWrapper } from '../../components';
 
-interface ChecklistTemplate {
-  _id: string;
-  name: string;
-  color: string;
-  items: string[];
-  createdAt: string;
-  usageCount: number;
-}
 
 interface KanbanViewLayoutProps {
   currentBoard: Board | null;
@@ -41,7 +32,7 @@ interface KanbanViewLayoutProps {
   onAddTask: (taskData: Partial<Task>) => Promise<void>;
   onDragEnd: (result: DropResult) => Promise<void>;
   onEditColumn: (columnId: string) => void;
-  onDeleteColumn: (columnId: string) => Promise<void>;
+  onDeleteColumn: (columnId: string) => void;
   onUpdateColumn: (columnId: string, columnData: Partial<Column>) => Promise<void>;
   onAddColumn: () => Promise<void>;
   onCancelAddColumn: () => void;
@@ -52,13 +43,9 @@ interface KanbanViewLayoutProps {
   setIsAddingColumn: (adding: boolean) => void;
   isAddColumnModalOpen: boolean;
   setIsAddColumnModalOpen: (open: boolean) => void;
-  isEditColumnModalOpen: boolean;
-  setIsEditColumnModalOpen: (open: boolean) => void;
-  editingColumn: Column | null;
-  // Checklist props
-  checklistTemplates?: ChecklistTemplate[];
-  onAddChecklistTemplate?: (template: { name: string; color: string; items: string[] }) => Promise<void>;
-  onUseChecklistTemplate?: (templateId: string) => void;
+  // Board tag props
+  onAddBoardTag?: (tag: { name: string; color: string }) => Promise<void>;
+  onRemoveBoardTag?: (tagName: string) => Promise<void>;
 }
 
 export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
@@ -83,13 +70,9 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
   setIsAddingColumn,
   isAddColumnModalOpen,
   setIsAddColumnModalOpen,
-  isEditColumnModalOpen,
-  setIsEditColumnModalOpen,
-  editingColumn,
-  // Checklist props
-  checklistTemplates = [],
-  onAddChecklistTemplate,
-  onUseChecklistTemplate
+  // Board tag props
+  onAddBoardTag,
+  onRemoveBoardTag
 }) => {
   // Animation state management
   const [newColumnIds, setNewColumnIds] = useState<Set<string>>(new Set());
@@ -108,6 +91,11 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
   const [isAddChecklistModalOpen, setIsAddChecklistModalOpen] = useState(false);
   const [showChecklistDropdown, setShowChecklistDropdown] = useState(false);
   const checklistDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Tag dropdown state management
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const tagDropdownRef = useRef<HTMLDivElement>(null);
+  const tagDropdownTimeoutRef = useRef<number | null>(null);
 
 
   // Enhanced CSS for better scrolling and design
@@ -511,23 +499,20 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
   }, [columns]);
 
   // Enhanced delete column handler with animation
-  const handleDeleteColumn = async (columnId: string) => {
+  const handleDeleteColumn = (columnId: string) => {
     setDeletingColumnIds(prev => new Set([...prev, columnId]));
     
-    // Wait for animation to complete before actually deleting
-    setTimeout(async () => {
-      try {
-        await onDeleteColumn(columnId);
-      } catch (error) {
-        console.error('Failed to delete column:', error);
-        // Remove from deleting state if deletion failed
-        setDeletingColumnIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(columnId);
-          return newSet;
-        });
-      }
-    }, 300); // Slightly less than animation duration
+    // Call the delete handler immediately (it will show the modal)
+    onDeleteColumn(columnId);
+    
+    // Remove from deleting state after a short delay for visual feedback
+    setTimeout(() => {
+      setDeletingColumnIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(columnId);
+        return newSet;
+      });
+    }, 300);
   };
 
   // Handle click outside for checklist dropdown
@@ -545,6 +530,60 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
       };
     }
   }, [showChecklistDropdown]);
+
+  // Handle click outside for tag dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(event.target as Node)) {
+        setShowTagDropdown(false);
+      }
+    };
+
+    if (showTagDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showTagDropdown]);
+
+  // Tag dropdown hover handlers with delay
+  const handleTagButtonMouseEnter = () => {
+    if (tagDropdownTimeoutRef.current) {
+      clearTimeout(tagDropdownTimeoutRef.current);
+      tagDropdownTimeoutRef.current = null;
+    }
+    setShowTagDropdown(true);
+  };
+
+  const handleTagButtonMouseLeave = () => {
+    tagDropdownTimeoutRef.current = window.setTimeout(() => {
+      setShowTagDropdown(false);
+    }, 150); // Small delay to allow moving to dropdown
+  };
+
+  const handleTagDropdownMouseEnter = () => {
+    if (tagDropdownTimeoutRef.current) {
+      clearTimeout(tagDropdownTimeoutRef.current);
+      tagDropdownTimeoutRef.current = null;
+    }
+    setShowTagDropdown(true);
+  };
+
+  const handleTagDropdownMouseLeave = () => {
+    tagDropdownTimeoutRef.current = window.setTimeout(() => {
+      setShowTagDropdown(false);
+    }, 150);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (tagDropdownTimeoutRef.current) {
+        clearTimeout(tagDropdownTimeoutRef.current);
+      }
+    };
+  }, []);
 
 
 
@@ -603,101 +642,147 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
         onDragStart={(start) => {
           // Ensure proper drag behavior
           document.body.style.cursor = 'grabbing';
-          console.log('Drag started:', start);
         }}
         onDragUpdate={(update) => {
           // Keep cursor consistent during drag
           document.body.style.cursor = 'grabbing';
-          console.log('Drag update:', update);
         }}
       >
         <div className="min-h-screen bg-background/60 text-foreground w-full pb-20 rounded-2xl border border-border/50">
           <div className="w-full ">
-            {/* Header with Stats and Checklist Templates */}
+            {/* Header with Stats and Board Tags */}
             <ErrorBoundaryWrapper>
               <div className="mt-2 mb-2">
                 <div className="flex justify-between items-center">
-                  {/* Checklist Templates Section */}
-                  <div className="flex items-center gap-3">
-                    <Typography variant="body-small" className="text-muted-foreground font-medium">
-                      Templates:
-                    </Typography>
-                    
-                    {/* Existing checklist templates */}
-                    <div className="flex items-center gap-2">
-                      {checklistTemplates.slice(0, 3).map((template) => (
-                        <div
-                          key={template._id}
-                          onClick={() => onUseChecklistTemplate?.(template._id)}
-                          className="group relative flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/50 hover:border-border transition-all duration-300 cursor-pointer bg-card/50 hover:bg-card/80"
-                        >
-                          <div
-                            className="w-3 h-3 rounded"
-                            style={{ backgroundColor: template.color }}
-                          />
-                          <span className="text-xs font-medium text-foreground">
-                            {template.name}
+                  {/* Board Tags Section */}
+                  <div className="flex items-center gap-2">
+                    {/* Tag Management Button with Hover Dropdown */}
+                    <div className="relative" ref={tagDropdownRef}>
+                      <button
+                        onMouseEnter={handleTagButtonMouseEnter}
+                        onMouseLeave={handleTagButtonMouseLeave}
+                        onClick={() => setIsAddChecklistModalOpen(true)}
+                        className="group flex items-center gap-2 px-4 py-2 rounded-xl border border-border/30 hover:border-primary/50 transition-all duration-300 cursor-pointer bg-gradient-to-r from-muted/20 to-muted/10 hover:from-primary/10 hover:to-primary/5 hover:shadow-lg backdrop-blur-sm"
+                      >
+                        {/* Tag Icon */}
+                        <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center group-hover:from-primary/30 group-hover:to-primary/40 transition-all duration-300">
+                          <svg className="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                          </svg>
+                        </div>
+                        
+                        {/* Button Text */}
+                        <div className="flex flex-col items-start">
+                          <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                            Manage Tags
                           </span>
-                          <div className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
-                            {template.items.length}
+                          <span className="text-xs text-muted-foreground group-hover:text-primary/70 transition-colors">
+                            {currentBoard?.tags?.length || 0} tags
+                          </span>
+                        </div>
+                        
+                        {/* Dropdown Arrow */}
+                        <svg 
+                          className={`w-4 h-4 text-muted-foreground group-hover:text-primary transition-all duration-300 ${showTagDropdown ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      
+                      {/* Elegant Hover Dropdown */}
+                      {showTagDropdown && (
+                        <div 
+                          className="absolute top-full left-0 mt-1 w-80 bg-card/95 backdrop-blur-xl border border-border/20 rounded-2xl shadow-2xl z-50 overflow-hidden"
+                          onMouseEnter={handleTagDropdownMouseEnter}
+                          onMouseLeave={handleTagDropdownMouseLeave}
+                        >
+                          {/* Dropdown Header */}
+                          <div className="p-4 border-b border-border/10 bg-gradient-to-r from-muted/5 to-transparent">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center">
+                                  <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                  </svg>
+                                </div>
+                                <div>
+                                  <h3 className="text-sm font-semibold text-foreground">Board Tags</h3>
+                                  <p className="text-xs text-muted-foreground">Manage your board tags</p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setIsAddChecklistModalOpen(true)}
+                                className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-all duration-200 group"
+                                title="Add new tag"
+                              >
+                                <svg className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {/* Tags List */}
+                          <div className="max-h-64 overflow-y-auto">
+                            {currentBoard?.tags && currentBoard.tags.length > 0 ? (
+                              <div className="p-2 space-y-1">
+                                {currentBoard.tags.map((tag, index) => (
+                                  <div
+                                    key={index}
+                                    className="group flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer"
+                                  >
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                      <div
+                                        className="w-3 h-3 rounded-full shadow-sm flex-shrink-0"
+                                        style={{ backgroundColor: tag.color }}
+                                      />
+                                      <span 
+                                        className="text-sm font-medium text-foreground truncate"
+                                        style={{ color: tag.color }}
+                                      >
+                                        {tag.name}
+                                      </span>
+                                    </div>
+                                    
+                                    {/* Delete Button */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onRemoveBoardTag?.(tag.name);
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-red-500/20 hover:scale-105"
+                                      title="Delete tag"
+                                    >
+                                      <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-6 text-center">
+                                <div className="w-12 h-12 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-3">
+                                  <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                  </svg>
+                                </div>
+                                <h4 className="text-sm font-medium text-foreground mb-1">No tags yet</h4>
+                                <p className="text-xs text-muted-foreground mb-3">Create your first tag to organize tasks</p>
+                                <button
+                                  onClick={() => setIsAddChecklistModalOpen(true)}
+                                  className="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium rounded-lg transition-all duration-200"
+                                >
+                                  Create Tag
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      ))}
-                      
-                      {/* Show more button if there are more than 3 templates */}
-                      {checklistTemplates.length > 3 && (
-                        <div className="relative" ref={checklistDropdownRef}>
-                          <button
-                            onClick={() => setShowChecklistDropdown(!showChecklistDropdown)}
-                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-border/50 hover:border-border transition-all duration-300 cursor-pointer bg-card/50 hover:bg-card/80"
-                          >
-                            <span className="text-xs font-medium text-muted-foreground">
-                              +{checklistTemplates.length - 3} more
-                            </span>
-                            <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
-                          
-                          {/* Dropdown with remaining templates */}
-                          {showChecklistDropdown && (
-                            <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 min-w-48">
-                              {checklistTemplates.slice(3).map((template) => (
-                                <div
-                                  key={template._id}
-                                  onClick={() => {
-                                    onUseChecklistTemplate?.(template._id);
-                                    setShowChecklistDropdown(false);
-                                  }}
-                                  className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors cursor-pointer"
-                                >
-                                  <div
-                                    className="w-3 h-3 rounded"
-                                    style={{ backgroundColor: template.color }}
-                                  />
-                                  <span className="text-sm font-medium text-foreground flex-1">
-                                    {template.name}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {template.items.length}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
                       )}
-                      
-                      {/* Add new checklist template button */}
-                      <button
-                        onClick={() => setIsAddChecklistModalOpen(true)}
-                        className="group flex items-center gap-1 px-3 py-1.5 rounded-lg border border-dashed border-primary/30 hover:border-primary/60 transition-all duration-300 cursor-pointer bg-primary/5 hover:bg-primary/10"
-                      >
-                        <svg className="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        <span className="text-xs font-medium text-primary">Add Template</span>
-                      </button>
                     </div>
                   </div>
 
@@ -713,7 +798,6 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                           <span className="text-[10px] font-bold text-white">{taskStats.completed}</span>
                         </div>
                       </div>
-                      <span className="text-xs font-medium text-emerald-700 group-hover:text-emerald-800 transition-colors">Done</span>
                     </div>
 
                     {/* In Progress */}
@@ -726,7 +810,6 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                           <span className="text-[10px] font-bold text-white">{taskStats.inProgress}</span>
                         </div>
                       </div>
-                      <span className="text-xs font-medium text-blue-700 group-hover:text-blue-800 transition-colors">Progress</span>
                   </div>
                   
                     {/* Pending */}
@@ -739,7 +822,6 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                           <span className="text-[10px] font-bold text-white">{taskStats.todo}</span>
                         </div>
                       </div>
-                      <span className="text-xs font-medium text-orange-700 group-hover:text-orange-800 transition-colors">Pending</span>
                     </div>
                   </div>
                 </div>
@@ -802,6 +884,7 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                               onAddTask={onAddTask as any}
                           onEditColumn={onEditColumn}
                               onDeleteColumn={handleDeleteColumn}
+                          onUpdateColumn={onUpdateColumn}
                         />
                       </ErrorBoundaryWrapper>
                         </div>
@@ -880,18 +963,12 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                 onSubmit={onAddColumn}
               />
 
-              <EditColumnModal
-                isOpen={isEditColumnModalOpen}
-                onClose={() => setIsEditColumnModalOpen(false)}
-                column={editingColumn}
-                onSave={onUpdateColumn}
-              />
 
-              <AddChecklistModal
+              <AddTagModal
                 isOpen={isAddChecklistModalOpen}
                 onClose={() => setIsAddChecklistModalOpen(false)}
-                onSubmit={async (template) => {
-                  await onAddChecklistTemplate?.(template);
+                onSubmit={async (tag) => {
+                  await onAddBoardTag?.(tag);
                   setIsAddChecklistModalOpen(false);
                 }}
               />

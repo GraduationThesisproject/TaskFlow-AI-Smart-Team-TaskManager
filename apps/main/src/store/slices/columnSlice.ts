@@ -194,13 +194,27 @@ const columnSlice = createSlice({
     updateColumnRealTime: (state, action: PayloadAction<Column>) => {
       const index = state.columns.findIndex(col => col._id === action.payload._id);
       if (index !== -1) {
-        state.columns[index] = action.payload;
+        // Preserve existing tasks when updating column
+        const existingColumn = state.columns[index];
+        const updatedColumn = {
+          ...action.payload,
+          tasks: action.payload.tasks || existingColumn.tasks || []
+        };
+        state.columns[index] = updatedColumn;
       }
     },
     
     // Add column in real-time (for socket events)
     addColumnRealTime: (state, action: PayloadAction<Column>) => {
       state.columns.push(action.payload);
+    },
+
+    // Add column only if it doesn't already exist (for board:state events)
+    addColumnIfNotExists: (state, action: PayloadAction<Column>) => {
+      const existingColumn = state.columns.find(col => col._id === action.payload._id);
+      if (!existingColumn) {
+        state.columns.push(action.payload);
+      }
     },
     
     // Remove column in real-time (for socket events)
@@ -425,6 +439,7 @@ export const {
   stopDraggingColumn,
   updateColumnRealTime,
   addColumnRealTime,
+  addColumnIfNotExists,
   removeColumnRealTime,
   updateColumnPositionsRealTime,
   addTaskToColumn,

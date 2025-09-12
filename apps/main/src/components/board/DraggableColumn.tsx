@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import {
   Card,
@@ -7,7 +7,7 @@ import {
   Typography,
   Button
 } from '@taskflow/ui';
-import { DraggableTask } from './DraggableTask';
+import { DraggableTask } from '../../components/board/DraggableTask';
 import type { DraggableColumnProps } from '../../types/interfaces/ui';
 
 export const DraggableColumn: React.FC<DraggableColumnProps> = ({
@@ -17,11 +17,131 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
   boardId,
   onTaskClick,
   onAddTask,
-  onEditColumn,
   onDeleteColumn,
+  onUpdateColumn,
 }) => {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  
+  // Separate edit modes
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editingName, setEditingName] = useState(column.name);
+  const [showIconDropdown, setShowIconDropdown] = useState(false);
+  const [showColorDropdown, setShowColorDropdown] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Update name when column changes, but only if not currently editing name
+  useEffect(() => {
+    if (!isEditingName) {
+      setEditingName(column.name);
+    }
+  }, [column.name, isEditingName]);
+
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      // Position cursor at the end of the text
+      const length = nameInputRef.current.value.length;
+      nameInputRef.current.setSelectionRange(length, length);
+    }
+  }, [isEditingName]);
+
+  const handleNameClick = () => {
+    setIsEditingName(true);
+    // Close other dropdowns
+    setShowIconDropdown(false);
+    setShowColorDropdown(false);
+  };
+
+  const handleInputBlur = () => {
+    handleSaveNameChanges();
+  };
+
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingName(e.target.value);
+  };
+
+  const handleNameKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveNameChanges();
+    } else if (e.key === 'Escape') {
+      handleCancelNameEdit();
+    }
+  };
+
+  const handleSaveNameChanges = async () => {
+    if (editingName.trim() && onUpdateColumn) {
+      try {
+        const updateData = {
+          name: editingName.trim(),
+          style: {
+            ...column.style // Preserve existing style properties
+          }
+        };
+        
+        await onUpdateColumn(column._id, updateData);
+        setIsEditingName(false);
+      } catch (error) {
+        // Handle error silently
+      }
+    } else {
+      setIsEditingName(false);
+    }
+  };
+
+  const handleCancelNameEdit = () => {
+    setEditingName(column.name);
+    setIsEditingName(false);
+  };
+
+  const handleColorChange = (color: string) => {
+    // Update the column immediately
+    if (onUpdateColumn) {
+      const updateData = {
+        name: column.name,
+        style: {
+          ...column.style, // Preserve existing style properties first
+          color: color,
+          backgroundColor: color,
+          icon: column.style?.icon || '📋' // Override with the new color
+        }
+      };
+      
+      onUpdateColumn(column._id, updateData);
+    }
+  };
+
+  const handleIconChange = (icon: string) => {
+    // Update the column immediately
+    if (onUpdateColumn) {
+      const updateData = {
+        name: column.name,
+        style: {
+          ...column.style, // Preserve existing style properties first
+          color: column.style?.backgroundColor || column.color || '#3B82F6',
+          backgroundColor: column.style?.backgroundColor || column.color || '#3B82F6',
+          icon: icon // Override with the new icon
+        }
+      };
+      
+      onUpdateColumn(column._id, updateData);
+    }
+  };
+
+  const handleIconClick = () => {
+    setShowIconDropdown(!showIconDropdown);
+    setShowColorDropdown(false);
+    setIsEditingName(false);
+  };
+
+  const handleColorClick = () => {
+    setShowColorDropdown(!showColorDropdown);
+    setShowIconDropdown(false);
+    setIsEditingName(false);
+  };
 
   const handleAddTask = () => {
     setIsAddingTask(true);
@@ -46,7 +166,7 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
         setIsAddingTask(false);
         setNewTaskTitle('');
       } catch (error) {
-        console.error('Failed to add task:', error);
+        // Handle error silently
       }
     }
   };
@@ -59,32 +179,33 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
     }
   };
 
-  const getColumnColor = (color?: string) => {
-    switch (color) {
-      case 'primary': return 'bg-primary';
-      case 'secondary': return 'bg-secondary';
-      case 'success': return 'bg-green-500';
-      case 'warning': return 'bg-yellow-500';
-      case 'error': return 'bg-red-500';
-      case 'info': return 'bg-cyan-500';
-      default: return 'bg-muted-foreground';
-    }
+
+  // Helper function to determine if task is complete based on column name
+  const isTaskComplete = () => {
+    const columnName = column.name.toLowerCase();
+    return columnName.includes('done') || columnName.includes('complete');
   };
 
-  const getColumnProgressColor = (color?: string) => {
-    switch (color) {
-      case 'primary': return 'bg-primary/20';
-      case 'secondary': return 'bg-secondary/20';
-      case 'success': return 'bg-green-500/20';
-      case 'warning': return 'bg-yellow-500/20';
-      case 'error': return 'bg-red-500/20';
-      case 'info': return 'bg-cyan-500/20';
-      default: return 'bg-muted/30';
-    }
-  };
-
-  const completedTasks = tasks.filter(task => task.status === 'done').length;
+  const completedTasks = isTaskComplete() ? tasks.length : 0; // All tasks in a "done" column are completed
   const progressPercentage = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
+
+  // Function to determine text color based on background color
+  const getTextColor = (backgroundColor: string) => {
+    if (!backgroundColor) return '#000000';
+    
+    // Convert hex to RGB
+    const hex = backgroundColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return white text for dark backgrounds, black for light backgrounds
+    return luminance > 0.5 ? '#000000' : '#ffffff';
+  };
+
 
   return (
     <Draggable draggableId={column._id} index={index}>
@@ -98,32 +219,130 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
           style={provided.draggableProps.style}
         >
           <Card 
-            className="h-fit border border-border/20 backdrop-blur-sm rounded-2xl transition-all duration-300 hover:border-border/40 bg-card/95 overflow-hidden group hover:scale-[1.02]"
+            className="h-fit border border-border/20 backdrop-blur-sm rounded-2xl transition-all duration-300 hover:border-border/40 bg-card overflow-hidden hover:scale-[1.02] relative"
             style={{
-              backgroundColor: column.style?.backgroundColor || undefined,
-              borderColor: column.style?.backgroundColor ? `${column.style.backgroundColor}20` : undefined
+              backgroundColor: (column.style?.backgroundColor || column.color) ? 
+                `${(column.style?.backgroundColor || column.color)}80` : 
+                'rgba(255, 255, 255, 0.8)',
+              borderColor: (column.style?.backgroundColor || column.color) ? `${(column.style?.backgroundColor || column.color)}40` : undefined,
+              borderLeftWidth: (column.style?.backgroundColor || column.color) ? '4px' : undefined,
+              borderLeftColor: (column.style?.backgroundColor || column.color) || undefined,
+              color: getTextColor(column.style?.backgroundColor || column.color)
             }}
           >
             <CardHeader className="p-4 pb-3 relative">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              {/* Subtle gradient overlay for better text readability */}
+              <div 
+                className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent rounded-t-2xl"
+                style={{
+                  background: (column.style?.backgroundColor || column.color) ? 
+                    `linear-gradient(to bottom, ${(column.style?.backgroundColor || column.color)}15, transparent)` : 
+                    'linear-gradient(to bottom, rgba(255,255,255,0.1), transparent)'
+                }}
+              ></div>
+              
+              <div 
+                className="absolute top-0 left-0 right-0 h-1 transition-opacity duration-300"
+                style={{
+                  backgroundColor: (column.style?.backgroundColor || column.color) || '#3B82F6',
+                  opacity: 0.8
+                }}
+              ></div>
               
               <div className="relative">
                 <div 
-                  className="flex items-center justify-between mb-3 cursor-grab active:cursor-grabbing group"
+                  className="flex items-center justify-between mb-3 cursor-grab active:cursor-grabbing"
                   {...provided.dragHandleProps}
                 >
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className={`w-3 h-3 rounded-full ${getColumnColor(column.style?.color || column.color)}`}
-                      style={column.style?.color?.startsWith('#') ? { backgroundColor: column.style.color } : {}}
-                    />
-                    <Typography variant="h4" className="font-semibold text-foreground">
-                      {column.name}
-                    </Typography>
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <div className="w-1 h-1 bg-muted-foreground/40 rounded-full"></div>
-                      <div className="w-1 h-1 bg-muted-foreground/40 rounded-full"></div>
-                      <div className="w-1 h-1 bg-muted-foreground/40 rounded-full"></div>
+                  <div className="flex items-center gap-3 flex-1">
+                    {/* Column Icon */}
+                    <div className="text-lg relative">
+                      <div 
+                        className="h-6 w-6 flex items-center justify-center cursor-pointer hover:bg-muted/50 rounded transition-colors"
+                        onClick={handleIconClick}
+                      >
+                        {column.style?.icon || '📋'}
+                      </div>
+                      {showIconDropdown && (
+                        <div className="absolute top-6 left-0 z-50 p-2 bg-card border border-border rounded-lg shadow-lg w-32">
+                          <div className="grid grid-cols-4 gap-1">
+                            {['📋', '📊', '📈', '📉', '🎨', '🔧', '⚙️', '🔍', '📌', '📍', '🎪', '🏆', '🥇', '🥈', '🥉', '🎖️'].map((icon) => (
+                              <button
+                                key={icon}
+                                type="button"
+                                className="h-6 w-6 rounded border-0 outline-none focus:outline-none text-xs hover:bg-muted/50 flex items-center justify-center"
+                                onClick={() => {
+                                  handleIconChange(icon);
+                                  setShowIconDropdown(false);
+                                }}
+                              >
+                                {icon}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Column Name - Inline Editing */}
+                    {isEditingName ? (
+                      <input
+                        ref={nameInputRef}
+                        value={editingName}
+                        onChange={handleNameChange}
+                        onKeyDown={handleNameKeyPress}
+                        onBlur={handleInputBlur}
+                        className="h-6 text-sm font-semibold bg-muted/20 border border-muted/30 rounded px-2 py-1 outline-none focus:outline-none focus:ring-1 focus:ring-primary/20 focus:border-primary/50 flex-1"
+                        style={{ color: getTextColor(column.style?.backgroundColor || column.color) }}
+                        placeholder="Column name"
+                      />
+                    ) : (
+                      <div 
+                        className="flex-1 cursor-pointer hover:bg-muted/30 rounded-md px-2 py-1 -mx-2 -my-1 transition-colors"
+                        onClick={handleNameClick}
+                      >
+                        <Typography 
+                          variant="h4" 
+                          className="font-semibold"
+                          style={{ color: getTextColor(column.style?.backgroundColor || column.color) }}
+                        >
+                          {column.name}
+                        </Typography>
+                      </div>
+                    )}
+
+                    {/* Color Picker */}
+                    <div className="relative">
+                      <div 
+                        className="h-4 w-4 rounded-full border-2 border-white shadow-sm cursor-pointer hover:scale-110 transition-transform" 
+                        style={{ backgroundColor: (column.style?.backgroundColor || column.color) || '#3B82F6' }}
+                        onClick={handleColorClick}
+                      />
+                      {showColorDropdown && (
+                        <div className="absolute top-6 right-0 z-50 p-3 bg-card border border-border rounded-lg shadow-lg w-48">
+                          <div className="grid grid-cols-6 gap-2">
+                            {[
+                              '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899',
+                              '#06B6D4', '#6366F1', '#84CC16', '#F97316', '#64748B', '#000000',
+                              '#FFFFFF', '#F3F4F6', '#E5E7EB', '#D1D5DB', '#9CA3AF', '#6B7280'
+                            ].map((color) => (
+                              <button
+                                key={color}
+                                type="button"
+                                className="h-6 w-6 rounded-full border-2 border-transparent hover:border-foreground/20 hover:scale-110 transition-all"
+                                style={{ 
+                                  backgroundColor: color,
+                                  borderColor: color === '#FFFFFF' ? '#D1D5DB' : 'transparent'
+                                }}
+                                onClick={() => {
+                                  handleColorChange(color);
+                                  setShowColorDropdown(false);
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -147,21 +366,6 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onEditColumn(column._id);
-                      }}
-                      className="w-7 h-7 p-0 hover:bg-muted/50 rounded-full"
-                      title="Edit Column"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756.426-1.756 2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
                         onDeleteColumn(column._id);
                       }}
                       className="w-7 h-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-500/10 rounded-full"
@@ -179,7 +383,7 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
 
               {isAddingTask && (
                 <div className="px-4 py-3 border-b border-border/20">
-                  <div className="h-8 border-2 border-primary/60 rounded-lg bg-card backdrop-blur-md overflow-hidden">
+                  <div className="h-8 border border-border/30 rounded-lg bg-card backdrop-blur-md overflow-hidden">
                     <div className="h-full flex items-center px-3">
                       <input
                         type="text"
@@ -188,7 +392,16 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                         onKeyDown={handleKeyPress}
                         onBlur={handleCancelAddTask}
                         placeholder="Enter task title..."
-                        className="w-full text-sm font-medium text-foreground placeholder-muted-foreground bg-transparent border-0 outline-none focus:outline-none"
+                        className="w-full text-sm font-medium text-foreground placeholder-muted-foreground bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus:border-0"
+                        style={{
+                          boxShadow: 'none',
+                          border: 'none',
+                          outline: 'none',
+                          background: 'transparent',
+                          appearance: 'none',
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none'
+                        }}
                         autoFocus
                       />
                     </div>
@@ -196,24 +409,33 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                 </div>
               )}
 
+
               <div className="mb-2">
                 <div className="flex justify-between items-center mb-2">
-                  <Typography variant="body-small" className="text-muted-foreground text-xs font-medium">
+                  <Typography 
+                    variant="body-small" 
+                    className="text-xs font-medium"
+                    style={{ color: getTextColor(column.style?.backgroundColor || column.color) }}
+                  >
                     Progress
                   </Typography>
-                  <Typography variant="body-small" className="text-muted-foreground text-xs">
+                  <Typography 
+                    variant="body-small" 
+                    className="text-xs"
+                    style={{ color: getTextColor(column.style?.backgroundColor || column.color) }}
+                  >
                     {completedTasks}/{tasks.length}
                   </Typography>
                 </div>
-                <div className="relative w-full bg-muted/15 rounded-full h-2 overflow-hidden">
+                <div className="relative w-full bg-black/20 rounded-full h-2 overflow-hidden">
                   <div
-                    className={`h-2 rounded-full transition-all duration-500 ease-out ${getColumnProgressColor(column.style?.color || column.color)} relative overflow-hidden`}
+                    className="h-2 rounded-full transition-all duration-500 ease-out relative overflow-hidden"
                     style={{ 
                       width: `${progressPercentage}%`,
-                      backgroundColor: column.style?.color?.startsWith('#') ? column.style.color + '40' : undefined
+                      backgroundColor: (column.style?.backgroundColor || column.color) || '#3B82F6'
                     }}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"></div>
                   </div>
                 </div>
               </div>
@@ -251,13 +473,13 @@ export const DraggableColumn: React.FC<DraggableColumnProps> = ({
                           </Typography>
                         </div>
                       ) : (
-                        tasks.map((task, taskIndex) => (
+                        tasks.map((task: any, taskIndex: number) => (
                           <DraggableTask
                             key={task._id}
                             task={task}
                             index={taskIndex}
                             columnId={column._id}
-                            onClick={(task) => onTaskClick(task)}
+                            onClick={(task: any) => onTaskClick(task)}
                           />
                         ))
                       )}
