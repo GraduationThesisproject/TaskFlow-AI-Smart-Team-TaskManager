@@ -227,19 +227,17 @@ export const logoutUser = createAsyncThunk(
       
       await clearAuthToken();
       
-      // Redirect to landing page after successful logout
+      // Navigate to login screen after successful logout
       if (navigate) {
-        navigate('/');
-      } else if (typeof window !== 'undefined') {
-        window.location.href = '/';
+        navigate('/login');
       }
       
       return true;
     } catch (error: any) {
       await clearAuthToken();
-      // Still redirect even if there's an error with the API call
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
+      // Still navigate even if there's an error with the API call
+      if (navigate) {
+        navigate('/login');
       }
       const errorMessage = error.response?.data?.message || error.message || 'Logout failed';
       return rejectWithValue(errorMessage);
@@ -257,11 +255,9 @@ export const deleteUserAccount = createAsyncThunk(
       
       await clearAuthToken();
       
-      // Redirect to landing page after successful deletion
+      // Navigate to login screen after successful deletion
       if (navigate) {
-        navigate('/');
-      } else if (typeof window !== 'undefined') {
-        window.location.href = '/';
+        navigate('/login');
       }
       
       return true;

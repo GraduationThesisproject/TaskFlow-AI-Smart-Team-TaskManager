@@ -1,7 +1,7 @@
 import type { Middleware, AnyAction } from '@reduxjs/toolkit';
 import { io, Socket } from 'socket.io-client';
 import { env } from '../../config/env';
-import { addNotification, fetchNotifications } from '../slices/notificationSlice';
+import { addNotification, fetchNotifications, clearWorkspaceNotifications } from '../slices/notificationSlice';
 import { removeWorkspaceById, upsertWorkspaceStatus, createWorkspace, fetchMembers } from '../slices/workspaceSlice';
 import { logoutUser } from '../slices/authSlice';
 import { addActivity } from '../slices/activitySlice';
@@ -233,6 +233,31 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
           : undefined;
         notifyMobile(title, body);
 
+        // Clear old workspace status notifications to prevent accumulation
+        setTimeout(() => {
+          const stateNow = store.getState() as any;
+          const notifications = stateNow.notifications?.notifications || [];
+          const oldWorkspaceNotifications = notifications.filter((n: any) => {
+            const isWorkspaceStatus = 
+              n.title === 'Workspace restored' || 
+              n.title === 'Workspace archived' ||
+              n.type === 'workspace_restored' ||
+              n.type === 'workspace_archived';
+            
+            if (!isWorkspaceStatus) return false;
+            
+            // Check if notification is older than 30 minutes
+            const notificationTime = new Date(n.createdAt).getTime();
+            const thirtyMinutesAgo = Date.now() - (30 * 60 * 1000);
+            return notificationTime < thirtyMinutesAgo;
+          });
+
+          if (oldWorkspaceNotifications.length > 0) {
+            console.log('🧹 [notificationsSocketMiddleware] Clearing old workspace notifications:', oldWorkspaceNotifications.length);
+            store.dispatch(clearWorkspaceNotifications());
+          }
+        }, 2000); // Wait 2 seconds after the new notification is processed
+
         console.log('🔔 [notificationsSocketMiddleware] workspace:status-changed', data);
       } catch (e) {
         console.warn('⚠️ [notificationsSocketMiddleware] failed to process workspace:status-changed', e);
@@ -433,7 +458,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       return result;
     }
 
-    // Handle workspace creation - emit socket event and create notification
+    // Handle workspace creation - emit socket event only (no notification to avoid duplicate success messages)
     if (actionAny.type === createWorkspace.fulfilled.type && socket?.connected) {
       const workspace = actionAny.payload;
       const currentUser = state.auth.user;
@@ -446,24 +471,8 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
           timestamp: new Date().toISOString()
         });
 
-        // Create local notification
-        store.dispatch(addNotification({
-          _id: `workspace-created-${Date.now()}`,
-          title: 'Workspace Created',
-          message: `Successfully created workspace "${workspace.name}"`,
-          type: 'success',
-          recipientId: currentUser.user._id,
-          relatedEntity: {
-            type: 'workspace',
-            id: workspace._id || workspace.id,
-            name: workspace.name
-          },
-          priority: 'low',
-          isRead: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          clientOnly: true,
-        } as any));
+        // Don't create notification since workspace creation already shows local success messages
+        // This prevents duplicate success banners/toasts
       }
     }
 
