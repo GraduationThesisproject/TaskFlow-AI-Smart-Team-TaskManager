@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PersistGate } from 'redux-persist/integration/react';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -31,24 +32,15 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    // Register custom font family names WITHOUT commas (commas break CSS font-family on web)
-    // Inter variable fonts
-    Inter: require('../assets/fonts/Inter-VariableFont_opsz,wght.ttf'),
-    'Inter-Italic': require('../assets/fonts/Inter-Italic-VariableFont_opsz,wght.ttf'),
+    // Load only essential fonts to avoid conflicts
+    'SpaceMono-Regular': require('../assets/fonts/SpaceMono-Regular.ttf'),
     
-    // Poppins fonts
+    // Poppins fonts (only load what exists)
     'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'),
     'Poppins-Medium': require('../assets/fonts/Poppins-Medium.ttf'),
     'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf'),
     'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'),
     'Poppins-Light': require('../assets/fonts/Poppins-Light.ttf'),
-    
-    // JetBrains Mono variable fonts
-    JetBrainsMono: require('../assets/fonts/JetBrainsMono-VariableFont_wght.ttf'),
-    'JetBrainsMono-Italic': require('../assets/fonts/JetBrainsMono-Italic-VariableFont_wght.ttf'),
-    
-    // Additional fonts
-    'SpaceMono-Regular': require('../assets/fonts/SpaceMono-Regular.ttf'),
     
     // FontAwesome icons
     ...FontAwesome.font,
@@ -56,7 +48,11 @@ export default function RootLayout() {
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
-    if (error) throw error;
+    if (error) {
+      console.error('Font loading error:', error);
+      // Don't throw the error, just log it to prevent app crash
+      // throw error;
+    }
   }, [error]);
 
   useEffect(() => {
@@ -82,6 +78,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <SocketProvider>
@@ -93,6 +90,7 @@ function RootLayoutNav() {
         </SocketProvider>
       </PersistGate>
     </Provider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -102,7 +100,7 @@ function AuthGate() {
   const [hasOnboardingValue, setHasOnboardingValue] = useState<null | boolean>(null);
   const devAlwaysShowOnboarding = true; // Force onboarding every launch for development testing
 
-  // On app start, check auth status (reads token from storage and fetches profile with timeout)
+  // // On app start, check auth status (reads token from storage and fetches profile with timeout)
   useEffect(() => {
     dispatch(checkAuthStatus());
   }, [dispatch]);
@@ -149,8 +147,13 @@ function AuthGate() {
   // Authenticated: show main tabs (workspace section lives under tabs/index)
   return (
     <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> 
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }
+
+
+
+
+
