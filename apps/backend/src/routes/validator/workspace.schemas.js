@@ -15,7 +15,8 @@ const updateWorkspaceSchema = {
     settings: { object: true },
     githubOrg: { 
         object: true
-    }
+    },
+    limits: { maxlength : 500 }
 };
 
 const inviteMemberSchema = {

@@ -222,6 +222,35 @@ export const clearAllNotifications = createAsyncThunk(
   }
 );
 
+export const clearWorkspaceCreationNotifications = createAsyncThunk(
+  'notifications/clearWorkspaceCreationNotifications',
+  async () => {
+    console.log('🗑️ [clearWorkspaceCreationNotifications] Clearing workspace creation notifications');
+    try {
+      // Clear workspace creation notifications from server
+      await axiosInstance.delete('/notifications/clear-workspace-creation');
+      console.log('🗑️ [clearWorkspaceCreationNotifications] Successfully cleared workspace creation notifications');
+      return true;
+    } catch (err: any) {
+      console.error('🗑️ [clearWorkspaceCreationNotifications] Clear workspace creation notifications error:', { 
+        status: err?.response?.status, 
+        message: err?.response?.data?.message || err?.message,
+        data: err?.response?.data,
+        url: err?.config?.url,
+        method: err?.config?.method
+      });
+      
+      // If endpoint doesn't exist (404), we'll handle it locally
+      if (err?.response?.status === 404) {
+        console.warn(`🗑️ Clear workspace creation endpoint not found (404), clearing locally`);
+        return true;
+      }
+      
+      throw err;
+    }
+  }
+);
+
 const notificationSlice = createSlice({
   name: 'notifications',
   initialState,
