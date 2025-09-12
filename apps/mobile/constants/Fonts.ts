@@ -2,14 +2,14 @@
 // Supports iOS and Android with proper font fallbacks
 
 export const Fonts = {
-  // Primary font family - Inter (using variable font)
+  // Primary font family - Poppins (using specific weight files)
   primary: {
-    // Using Inter variable font for all weights
-    regular: 'Inter',
-    medium: 'Inter',
-    semiBold: 'Inter',
-    bold: 'Inter',
-    light: 'Inter',
+    // Using Poppins specific weight files
+    regular: 'Poppins-Regular',
+    medium: 'Poppins-Medium',
+    semiBold: 'Poppins-SemiBold',
+    bold: 'Poppins-Bold',
+    light: 'Poppins-Light',
   },
   
   // Secondary font family - Poppins (using specific weight files)
@@ -21,11 +21,11 @@ export const Fonts = {
     light: 'Poppins-Light',
   },
   
-  // Monospace font - JetBrains Mono (using variable font)
+  // Monospace font - SpaceMono (using available font)
   mono: {
-    regular: 'JetBrainsMono',
-    medium: 'JetBrainsMono',
-    bold: 'JetBrainsMono',
+    regular: 'SpaceMono-Regular',
+    medium: 'SpaceMono-Regular',
+    bold: 'SpaceMono-Regular',
   },
   
   // System fallbacks
@@ -170,26 +170,18 @@ export const TextStyles = {
   },
 };
 
-// Font loading configuration - updated to match actual files
+// Font loading configuration - only load existing fonts
 export const FontConfig = {
   // Font files to load (relative to assets/fonts/)
   fonts: [
-    // Inter variable fonts
-    'Inter-VariableFont_opsz,wght.ttf',
-    'Inter-Italic-VariableFont_opsz,wght.ttf',
-    
-    // Poppins specific weights
+    // Poppins specific weights (confirmed to exist)
     'Poppins-Regular.ttf',
     'Poppins-Medium.ttf',
     'Poppins-SemiBold.ttf',
     'Poppins-Bold.ttf',
     'Poppins-Light.ttf',
     
-    // JetBrains Mono variable fonts
-    'JetBrainsMono-VariableFont_wght.ttf',
-    'JetBrainsMono-Italic-VariableFont_wght.ttf',
-    
-    // Additional fonts
+    // SpaceMono (confirmed to exist)
     'SpaceMono-Regular.ttf',
   ],
   

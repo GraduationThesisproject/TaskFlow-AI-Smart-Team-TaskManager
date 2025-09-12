@@ -41,6 +41,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="tasks"
+        options={{
+          title: 'Tasks',
+          tabBarIcon: ({ color }) => <TabBarIcon name="tasks" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="workspace"
         options={{
           href: null, // Hide from tab bar
