@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { env } from '../config/env';
-import { useAppDispatch, useAppSelector } from '../store';
+import { useAppDispatch, useAppSelector, store } from '../store';
 import type { RootState } from '../store';
 import {
   fetchNotifications,
@@ -9,6 +9,7 @@ import {
   deleteNotification as deleteNotificationAction,
   clearReadNotifications,
   clearAllNotifications as clearAllNotificationsAction,
+  clearWorkspaceNotifications,
   clearError,
   addNotification,
   updateNotificationStatus,
@@ -55,12 +56,75 @@ export const useNotifications = (): UseNotificationsReturn => {
     return () => clearInterval(interval);
   }, []);
 
-  // Show toast notifications for new notifications
+  // Auto-clear old workspace creation notifications on app startup
+  useEffect(() => {
+    if (!notifications.length) return;
+
+    // Find and auto-mark ALL workspace creation notifications as read (not just old ones)
+    const workspaceCreationNotifications = notifications.filter(notification => 
+      notification.title === 'Workspace Created' || 
+      notification.message?.includes('Successfully created workspace') ||
+      notification.message?.includes('was created successfully')
+    );
+
+    // Mark ALL workspace creation notifications as read immediately
+    workspaceCreationNotifications.forEach(notification => {
+      if (!notification.isRead) {
+        markAsRead(notification._id);
+      }
+    });
+  }, [notifications, markAsRead]);
+
+  // Auto-clear old workspace status notifications (archived/restored) on app startup
+  useEffect(() => {
+    if (!notifications.length) return;
+
+    // Find workspace status notifications that are older than 1 hour
+    const workspaceStatusNotifications = notifications.filter(notification => {
+      const isWorkspaceStatus = 
+        notification.title === 'Workspace restored' || 
+        notification.title === 'Workspace archived' ||
+        notification.type === 'workspace_restored' ||
+        notification.type === 'workspace_archived';
+      
+      if (!isWorkspaceStatus) return false;
+      
+      // Check if notification is older than 1 hour
+      const notificationTime = new Date(notification.createdAt).getTime();
+      const oneHourAgo = Date.now() - (60 * 60 * 1000);
+      return notificationTime < oneHourAgo;
+    });
+
+    // Clear old workspace status notifications
+    if (workspaceStatusNotifications.length > 0) {
+      console.log('🧹 Clearing old workspace status notifications:', workspaceStatusNotifications.length);
+      dispatch(clearWorkspaceNotifications());
+    }
+  }, [notifications, dispatch]);
+
+  // Show toast notifications for new notifications (excluding workspace creation notifications)
   useEffect(() => {
     if (!notifications.length) return;
 
     const latestNotification = notifications[0];
     if (!latestNotification || processedNotifications.current.has(latestNotification._id)) return;
+
+    // Skip workspace creation notifications to prevent duplicate success messages
+    const isWorkspaceCreationNotification = 
+      latestNotification.title === 'Workspace Created' || 
+      latestNotification.title === 'Workspace created' ||
+      latestNotification.message?.includes('Successfully created workspace') ||
+      latestNotification.message?.includes('was created successfully') ||
+      latestNotification.message?.includes('workspace') && latestNotification.message?.includes('created') ||
+      latestNotification.type === 'workspace_created' ||
+      latestNotification.message?.toLowerCase().includes('workspace') && latestNotification.message?.toLowerCase().includes('created');
+    
+    if (isWorkspaceCreationNotification) {
+      processedNotifications.current.add(latestNotification._id);
+      // Auto-mark workspace creation notifications as read to prevent them from showing again
+      markAsRead(latestNotification._id);
+      return;
+    }
 
     processedNotifications.current.add(latestNotification._id);
 
@@ -147,8 +211,32 @@ export const useNotifications = (): UseNotificationsReturn => {
   useEffect(() => {
     if (token && realTimeEnabled) {
       fetchNotificationsHandler();
+      
+      // Clear any existing workspace creation notifications to prevent them from showing on app start
+      setTimeout(() => {
+        const state = store.getState() as any;
+        const notifications = state.notifications.notifications || [];
+        const workspaceCreationNotifications = notifications.filter((n: any) => {
+          const isWorkspaceCreation = 
+            n.title === 'Workspace Created' || 
+            n.title === 'Workspace created' ||
+            n.message?.includes('Successfully created workspace') ||
+            n.message?.includes('was created successfully') ||
+            n.message?.includes('workspace') && n.message?.includes('created') ||
+            n.type === 'workspace_created' ||
+            n.message?.toLowerCase().includes('workspace') && n.message?.toLowerCase().includes('created');
+          return isWorkspaceCreation;
+        });
+        
+        if (workspaceCreationNotifications.length > 0) {
+          console.log('🗑️ Clearing workspace creation notifications on app start:', workspaceCreationNotifications.length);
+          workspaceCreationNotifications.forEach((notification: any) => {
+            dispatch(deleteNotificationAction(notification._id));
+          });
+        }
+      }, 1000); // Small delay to ensure notifications are loaded
     }
-  }, [token, realTimeEnabled, fetchNotificationsHandler]);
+  }, [token, realTimeEnabled, fetchNotificationsHandler, dispatch]);
 
   return {
     notifications,

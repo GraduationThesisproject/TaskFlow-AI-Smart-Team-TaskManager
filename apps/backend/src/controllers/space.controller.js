@@ -182,10 +182,22 @@ exports.createSpace = async (req, res) => {
             return sendResponse(res, 404, false, 'Workspace not found');
         }
 
-        // // Check space limits
-        // if (workspace.usage.spacesCount >= workspace.limits.maxSpaces) {
-        //     return sendResponse(res, 400, false, 'Workspace space limit reached');
-        // }
+        // Enforce workspace space limit BEFORE creating the space
+        try {
+            const current = Number(workspace?.usage?.spacesCount || 0);
+            const maximum = Number(workspace?.limits?.maxSpaces || 0);
+            if (maximum && current >= maximum) {
+                return sendResponse(res, 400, false, 'Workspace space limit reached', {
+                    limit: { current, maximum }
+                });
+            }
+        } catch (limitErr) {
+            // Non-blocking: if limits are malformed, continue with creation but log for diagnostics
+            logger.warn('Workspace limit check failed in createSpace', {
+                workspaceId,
+                message: limitErr?.message,
+            });
+        }
 
         const space = await Space.create({
             name,
@@ -200,8 +212,26 @@ exports.createSpace = async (req, res) => {
             permissions: permissions || {}
         });
 
-        // Add space to workspace
-        await workspace.addSpace(space._id);
+        // Add space to workspace (robust: fallback if instance method not present)
+        try {
+            if (typeof workspace.addSpace === 'function') {
+                await workspace.addSpace(space._id);
+            } else {
+                await Workspace.findByIdAndUpdate(
+                    workspaceId,
+                    { $addToSet: { spaces: space._id } },
+                    { new: true }
+                );
+            }
+        } catch (attachErr) {
+            logger.error('Failed to attach space to workspace', {
+                workspaceId,
+                spaceId: String(space._id),
+                message: attachErr?.message,
+                stack: attachErr?.stack,
+            });
+            // Do not fail creation: continue; a background repair can re-link if needed
+        }
 
         await space.populate('workspace', 'name');
 
@@ -216,14 +246,18 @@ exports.createSpace = async (req, res) => {
             metadata: { ipAddress: req.ip }
         });
 
-        logger.info(`Space created: ${name} in workspace ${workspace.name}`);
+        logger.info(`Space created: ${name} in workspace ${workspace?.name || workspaceId}`);
 
         sendResponse(res, 201, true, 'Space created successfully', {
             space: space.toObject(),
             userRole: 'admin'
         });
     } catch (error) {
-        logger.error('Create space error:', error);
+        logger.error('Create space error', {
+            message: error?.message,
+            stack: error?.stack,
+            name: error?.name,
+        });
         sendResponse(res, 500, false, 'Server error creating space');
     }
 };

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl, View } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl, View, Alert } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -74,13 +74,13 @@ export default function SpacesScreen() {
     // Navigate to the space screen; also pass id as a param for deep-link robustness
     const id = space?._id || space?.id;
     if (id) {
-      router.push({ pathname: '/workspace/space/boards', params: { id } });
+      router.push({ pathname: '/workspace/space/main', params: { id } });
     } else {
-      router.push('/workspace/space/boards');
+      router.push('/workspace/space/main');
     }
   };
 
-  const handleSubmitCreate = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+  const handleSubmitCreate = async ({ name, description }: { name: string; description?: string }) => {
     if (!selectedWorkspaceId) return;
     if (!name || !name.trim()) {
       alert('Name is required.');
@@ -90,7 +90,7 @@ export default function SpacesScreen() {
       setCreating(true);
       await SpaceService.createSpace({
         name: name.trim(),
-        description,
+        description: description?.trim() || undefined,
         workspaceId: String(selectedWorkspaceId),
       });
       await loadSpaces(selectedWorkspaceId);
@@ -101,6 +101,27 @@ export default function SpacesScreen() {
       alert(msg);
     } finally {
       setCreating(false);
+    }
+  };
+
+  // Toggle archive/unarchive for a space
+  const handleToggleArchive = async (space: any) => {
+    if (!selectedWorkspaceId) return;
+    const spaceId = String(space?._id || space?.id || '').trim();
+    if (!spaceId) return;
+    try {
+      const isArchived = !!space?.isArchived;
+      if (isArchived) {
+        await SpaceService.unarchiveSpace(spaceId);
+        Alert.alert('Space restored', 'The space has been restored.');
+      } else {
+        await SpaceService.archiveSpace(spaceId);
+        Alert.alert('Space archived', 'The space has been archived.');
+      }
+      await loadSpaces(selectedWorkspaceId);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || 'Failed to toggle archive state';
+      Alert.alert('Action failed', msg);
     }
   };
 
@@ -204,7 +225,7 @@ export default function SpacesScreen() {
                     createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
                     tileSize={tileSize}
                     onPress={() => openSpace(space)}
-                    onToggleArchive={undefined}
+                    onToggleArchive={() => handleToggleArchive(space)}
                   />
                 ))}
               </View>

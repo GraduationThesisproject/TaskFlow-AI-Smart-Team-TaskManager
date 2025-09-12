@@ -100,10 +100,11 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await logout();
+              await logout({ navigate: (path: string) => router.replace(path as any) });
               Alert.alert('Logged Out', 'You have been successfully logged out.');
-            } catch (error) {
-              Alert.alert('Logout Failed', 'Failed to logout. Please try again.');
+            } catch (error: any) {
+              const errorMessage = error?.message || 'Failed to logout. Please try again.';
+              Alert.alert('Logout Failed', errorMessage);
             }
           }
         },
@@ -114,18 +115,20 @@ export default function SettingsScreen() {
   const handleDeleteAccount = () => {
     Alert.alert(
       'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone.',
+      'Are you absolutely sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.',
       [
         { text: 'Cancel', style: 'cancel' },
         { 
-          text: 'Delete', 
+          text: 'Delete Account', 
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteAccount();
+              // Navigate to login screen after successful deletion
+              await deleteAccount({ navigate: (path: string) => router.replace(path as any) });
               Alert.alert('Account Deleted', 'Your account has been successfully deleted.');
-            } catch (error) {
-              Alert.alert('Deletion Failed', 'Failed to delete account. Please try again.');
+            } catch (error: any) {
+              const errorMessage = error?.message || 'Failed to delete account. Please try again.';
+              Alert.alert('Deletion Failed', errorMessage);
             }
           }
         },
