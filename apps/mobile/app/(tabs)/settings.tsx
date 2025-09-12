@@ -111,27 +111,27 @@ export default function SettingsScreen() {
     );
   };
 
-  // const handleDeleteAccount = () => {
-  //   Alert.alert(
-  //     'Delete Account',
-  //     'Are you sure you want to delete your account? This action cannot be undone.',
-  //     [
-  //       { text: 'Cancel', style: 'cancel' },
-  //       { 
-  //         text: 'Delete', 
-  //         style: 'destructive',
-  //         onPress: async () => {
-  //           try {
-  //             await deleteAccount();
-  //             Alert.alert('Account Deleted', 'Your account has been successfully deleted.');
-  //           } catch (error) {
-  //             Alert.alert('Deletion Failed', 'Failed to delete account. Please try again.');
-  //           }
-  //         }
-  //       },
-  //     ]
-  //   );
-  // };
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              Alert.alert('Account Deleted', 'Your account has been successfully deleted.');
+            } catch (error) {
+              Alert.alert('Deletion Failed', 'Failed to delete account. Please try again.');
+            }
+          }
+        },
+      ]
+    );
+  };
 
 
   const renderContent = () => {
