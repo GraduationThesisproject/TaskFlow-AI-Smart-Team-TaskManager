@@ -33,63 +33,47 @@ exports.register = async (req, res) => {
             }
         }
 
-        const user = await User.createWithDefaults({ name, email, password });
-
-        // Generate email verification token and send verification email
+        // Generate 4-digit verification code and send via email
         try {
-            const verificationToken = user.generateEmailVerificationToken();
-            await user.save();
+            const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+            const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-            const baseUrl = env.BASE_URL || 'http://localhost:3001';
-            const verificationUrl = `${baseUrl}/api/auth/verify-email?token=${verificationToken}`;
+            // Store pending registration data (user will be created only after verification)
+            pendingRegistrations.set(email, {
+                name,
+                email,
+                password,
+                deviceId: deviceId || 'web-' + Date.now(),
+                deviceInfo: deviceInfo || { type: 'web' },
+                ipAddress: req.ip,
+                invitation,
+                createdAt: new Date()
+            });
+
+            // Store verification code in memory (in production, use Redis)
+            emailVerifyCodes.set(email, {
+                code: verificationCode,
+                expiresAt,
+                attempts: 0
+            });
 
             await sendEmail({
-                to: user.email,
-                template: 'email-verification',
+                to: email,
+                template: 'email-verification-code',
                 subject: 'Verify Your Email - TaskFlow',
-                data: { name: user.name, verificationUrl }
+                data: { 
+                    name, 
+                    code: verificationCode,
+                    expiresIn: '10 minutes'
+                }
             });
         } catch (emailError) {
             logger.warn('Verification email failed:', emailError);
         }
 
-        const userSessions = await user.getSessions();
-        await userSessions.createSession({
-            deviceId: deviceId || 'web-' + Date.now(),
-            deviceInfo: deviceInfo || { type: 'web' },
-            ipAddress: req.ip,
-            rememberMe: false
-        });
-
-        if (invitation) {
-            await invitation.accept(user._id);
-            const userRoles = await user.getRoles();
-            switch (invitation.targetEntity.type) {
-                case 'Workspace':
-                    await userRoles.addWorkspaceRole(invitation.targetEntity.id, invitation.role);
-                    break;
-                case 'Space':
-                    await userRoles.addSpaceRole(invitation.targetEntity.id, invitation.role);
-                    break;
-            }
-        }
-
-        const token = jwt.generateToken(user._id);
-
-        // Optionally send a welcome email after verification; skip here
-
-        await ActivityLog.logActivity({
-            userId: user._id,
-            action: 'user_register',
-            description: `User registered: ${email}`,
-            entity: { type: 'User', id: user._id, name: user.name },
-            metadata: { ipAddress: req.ip, userAgent: req.get('User-Agent'), deviceInfo, hasInvitation: !!invitation },
-            severity: 'info'
-        });
-
-        sendResponse(res, 201, true, 'User registered successfully', {
-            token,
-            user: user.getPublicProfile(),
+        sendResponse(res, 201, true, 'Registration initiated successfully. Please check your email for verification code.', {
+            requiresVerification: true,
+            email: email,
             invitation: invitation ? {
                 entityType: invitation.targetEntity.type,
                 entityName: invitation.targetEntity.name,
@@ -211,11 +195,6 @@ exports.login = async (req, res) => {
         const user = await User.findOne({ email, isActive: true }).select('+password');
         if (!user) {
             return sendResponse(res, 401, false, 'Invalid email or password');
-        }
-
-        // Block login for unverified users
-        if (!user.emailVerified) {
-            return sendResponse(res, 403, false, 'Please confirm your email to continue');
         }
 
         const userSessions = await user.getSessions();
@@ -1074,7 +1053,7 @@ exports.updatePreferences = async (req, res) => {
 };
 
 // ============================================================================
-// EMAIL VERIFICATION
+// EMAIL VERIFICATION (LINK-BASED)
 // ============================================================================
 
 exports.verifyEmail = async (req, res) => {
@@ -1106,6 +1085,158 @@ exports.verifyEmail = async (req, res) => {
     } catch (error) {
         logger.error('Verify email error:', error);
         sendResponse(res, 500, false, 'Server error verifying email');
+    }
+};
+
+// ============================================================================
+// EMAIL VERIFICATION (4-DIGIT CODE FLOW for Mobile)
+// ============================================================================
+
+// In-memory store for email verification codes (use Redis/DB in production)
+const emailVerifyCodes = new Map();
+
+// In-memory store for pending registrations (use Redis/DB in production)
+const pendingRegistrations = new Map();
+
+// Export for testing
+exports.emailVerifyCodes = emailVerifyCodes;
+exports.pendingRegistrations = pendingRegistrations;
+
+exports.resendVerificationCode = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return sendResponse(res, 400, false, 'Email is required');
+        }
+
+        // Check if there's a pending registration
+        const pendingData = pendingRegistrations.get(email);
+        if (!pendingData) {
+            // Do not reveal existence
+            return sendResponse(res, 200, true, 'If a registration with that email exists, a code has been sent');
+        }
+
+        // Check if registration data is not too old
+        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        if (Date.now() - pendingData.createdAt.getTime() > maxAge) {
+            pendingRegistrations.delete(email);
+            return sendResponse(res, 400, false, 'Registration data has expired. Please register again.');
+        }
+
+        const code = Math.floor(1000 + Math.random() * 9000).toString();
+        const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
+        emailVerifyCodes.set(email, { code, expiresAt, attempts: 0 });
+
+        try {
+            await sendEmail({
+                to: email,
+                template: 'email-verification-code',
+                subject: 'Your verification code',
+                data: { name: pendingData.name, code, expiresIn: '10 minutes' }
+            });
+        } catch (emailErr) {
+            // Log but do not fail the request; code is generated and valid
+            logger.warn('Email send failed for verification code, continuing:', emailErr?.message || emailErr);
+        }
+
+        return sendResponse(res, 200, true, 'Verification code sent');
+    } catch (error) {
+        logger.error('Resend verification code error:', error);
+        return sendResponse(res, 500, false, 'Server error resending verification code');
+    }
+};
+
+exports.verifyEmailCode = async (req, res) => {
+    try {
+        const { email, code } = req.body;
+        if (!email || !code) {
+            return sendResponse(res, 400, false, 'Email and code are required');
+        }
+
+        const record = emailVerifyCodes.get(email);
+        if (!record) {
+            return sendResponse(res, 400, false, 'Invalid or expired verification code');
+        }
+        if (Date.now() > record.expiresAt) {
+            emailVerifyCodes.delete(email);
+            return sendResponse(res, 400, false, 'Verification code has expired');
+        }
+        if (record.attempts >= 5) {
+            emailVerifyCodes.delete(email);
+            return sendResponse(res, 400, false, 'Too many failed attempts');
+        }
+        if (record.code !== code) {
+            record.attempts += 1;
+            emailVerifyCodes.set(email, record);
+            return sendResponse(res, 400, false, 'Invalid verification code');
+        }
+
+        // Get pending registration data
+        const pendingData = pendingRegistrations.get(email);
+        if (!pendingData) {
+            emailVerifyCodes.delete(email);
+            return sendResponse(res, 404, false, 'No pending registration found for this email');
+        }
+
+        // Check if registration data is not too old (e.g., 24 hours)
+        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        if (Date.now() - pendingData.createdAt.getTime() > maxAge) {
+            pendingRegistrations.delete(email);
+            emailVerifyCodes.delete(email);
+            return sendResponse(res, 400, false, 'Registration data has expired. Please register again.');
+        }
+
+        // Create user only after successful verification
+        const user = await User.createWithDefaults({ 
+            name: pendingData.name, 
+            email: pendingData.email, 
+            password: pendingData.password 
+        });
+        user.emailVerified = true;
+        await user.save();
+
+        // Create user session
+        const userSessions = await user.getSessions();
+        await userSessions.createSession({
+            deviceId: pendingData.deviceId,
+            deviceInfo: pendingData.deviceInfo,
+            ipAddress: pendingData.ipAddress,
+            rememberMe: false
+        });
+
+        // Handle invitation if present
+        if (pendingData.invitation) {
+            await pendingData.invitation.accept(user._id);
+            const userRoles = await user.getRoles();
+            switch (pendingData.invitation.targetEntity.type) {
+                case 'Workspace':
+                    await userRoles.addWorkspaceRole(pendingData.invitation.targetEntity.id, pendingData.invitation.role);
+                    break;
+                case 'Space':
+                    await userRoles.addSpaceRole(pendingData.invitation.targetEntity.id, pendingData.invitation.role);
+                    break;
+            }
+        }
+
+        // Clean up pending data
+        pendingRegistrations.delete(email);
+        emailVerifyCodes.delete(email);
+
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'user_register',
+            description: `User registered and verified: ${email}`,
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: { ipAddress: pendingData.ipAddress, userAgent: req.get('User-Agent'), deviceInfo: pendingData.deviceInfo, hasInvitation: !!pendingData.invitation, via: 'code' },
+            severity: 'info'
+        });
+
+        return sendResponse(res, 200, true, 'Email verified successfully. Please login to continue.', {
+            user: user.getPublicProfile()
+        });
+    } catch (error) {
+        logger.error('Verify email code error:', error);
+        return sendResponse(res, 500, false, 'Server error verifying email code');
     }
 };
 

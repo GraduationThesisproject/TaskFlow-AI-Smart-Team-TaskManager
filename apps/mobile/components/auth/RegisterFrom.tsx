@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
-import { Text, Card, View } from '../Themed';
-import InputField from '../forms/InputField';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animated, Platform, TextInput } from 'react-native';
+import { Text, View } from 'react-native';
+import PremiumAuthInput from './PremiumAuthInput';
+import PremiumAuthCard from './PremiumAuthCard';
+import PremiumAuthText from './PremiumAuthText';
+import PremiumAuthButton from './PremiumAuthButton';
 import { useThemeColors } from '../ThemeProvider';
-import { TextStyles } from '@/constants/Fonts';
+import { TextStyles, FontSizes, FontWeights } from '@/constants/Fonts';
 import { useAuth } from '../../hooks/useAuth';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 interface RegisterFormProps {
   onSignin?: () => void;
@@ -27,6 +31,53 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const logoRotateAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Entrance animations
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Logo rotation animation
+    Animated.loop(
+      Animated.timing(logoRotateAnim, {
+        toValue: 1,
+        duration: 10000,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    // Pulse animation for accent elements
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.1,
+          duration: 2500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 2500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   const validateEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim().toLowerCase());
   const validatePasswordComplexity = (val: string) =>
@@ -106,168 +157,334 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
         return;
       }
       if ((result as any)?.meta?.requestStatus === 'fulfilled') {
+        // After signup, navigate to verify-email screen with the email used
+        const emailParam = email.trim().toLowerCase();
         onSuccess?.();
+        router.replace({ pathname: '/verify-email', params: { email: emailParam } });
       }
     } catch {
       // Error surfaced via `error` from useAuth
     }
   };
 
+  const { width, height } = Dimensions.get('window');
+  const logoRotate = logoRotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   return (
-    <Card style={styles.container}>
-      <Text style={[TextStyles.heading.h1, { color: colors.foreground, textAlign: 'center' }]}>
-        Create Account
-      </Text>
-
-      <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'], textAlign: 'center', marginTop: 8 }]}>
-        Join thousands of users managing their tasks efficiently
-      </Text>
-
-      {error && (
-        <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}>
-          <Text style={[TextStyles.body.small, { color: colors.error }]}>
-            {error}
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.form}>
-        <InputField
-          label="Full Name"
-          value={name}
-          onChangeText={(val) => {
-            if (error) clearAuthError();
-            setName(val);
-            if (nameError) setNameError('');
-          }}
-          placeholder="Enter your full name"
-          error={nameError}
-          required
-        />
-
-        <InputField
-          label="Email Address"
-          value={email}
-          onChangeText={(val) => {
-            if (error) clearAuthError();
-            setEmail(val);
-            if (emailError) setEmailError('');
-          }}
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          error={emailError}
-          required
-        />
-
-        <InputField
-          label="Password"
-          value={password}
-          onChangeText={(val) => {
-            if (error) clearAuthError();
-            setPassword(val);
-            if (passwordError) setPasswordError('');
-          }}
-          placeholder="Enter your password"
-          secureTextEntry={!showPassword}
-          error={passwordError}
-          required
-          rightIcon={(
-            <TouchableOpacity
-              onPress={() => setShowPassword((v) => !v)}
-              accessibilityRole="button"
-              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={18}
-                color={colors['muted-foreground']}
-              />
-            </TouchableOpacity>
-          )}
-        />
-
-        <InputField
-          label="Confirm Password"
-          value={confirmPassword}
-          onChangeText={(val) => {
-            if (error) clearAuthError();
-            setConfirmPassword(val);
-            if (confirmPasswordError) setConfirmPasswordError('');
-          }}
-          placeholder="Confirm your password"
-          secureTextEntry={!showConfirmPassword}
-          error={confirmPasswordError}
-          required
-          rightIcon={(
-            <TouchableOpacity
-              onPress={() => setShowConfirmPassword((v) => !v)}
-              accessibilityRole="button"
-              accessibilityLabel={showConfirmPassword ? 'Hide password' : 'Show password'}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons
-                name={showConfirmPassword ? 'eye-off' : 'eye'}
-                size={18}
-                color={colors['muted-foreground']}
-              />
-            </TouchableOpacity>
-          )}
-        />
-
-        <TouchableOpacity
-          onPress={handleSubmit}
-          disabled={isLoading}
-          style={[styles.submitButton, { backgroundColor: colors.primary, opacity: isLoading ? 0.6 : 1 }]}
-        >
-          <Text style={{ color: colors['primary-foreground'], textAlign: 'center' }}>
-            {isLoading ? 'Creating Account...' : 'Create Account'}
-          </Text>
+    <View style={[styles.container, { backgroundColor: '#f8f9fa' }]}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Subtle Background Elements */}
+      <View style={[styles.backgroundLeaf1, { backgroundColor: colors.accent + '15' }]} />
+      <View style={[styles.backgroundLeaf2, { backgroundColor: colors.primary + '10' }]} />
+      
+      {/* Navigation Header */}
+      <View style={styles.navHeader}>
+        <TouchableOpacity style={styles.backButton} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={24} color={colors.foreground} />
         </TouchableOpacity>
+        {onSignin && (
+          <TouchableOpacity onPress={onSignin} style={styles.signinLink} activeOpacity={0.7}>
+            <Text style={[styles.signinText, { color: colors.primary }]}>Sign In</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {onSignin && (
-        <View style={styles.signinContainer}>
-          <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
-            Already have an account?{' '}
-          </Text>
-          <TouchableOpacity onPress={onSignin}>
-            <Text style={[TextStyles.body.medium, { color: colors.primary }]}>
-              Sign in here
+      {/* App Header */}
+      <View style={styles.appHeader}>
+        <View style={[styles.appIcon, { backgroundColor: colors.accent }]}>
+          <MaterialIcons name="person-add" size={32} color="white" />
+        </View>
+        <Text style={[styles.appTitle, { color: colors.accent }]}>Join TaskFlow</Text>
+      </View>
+
+      {/* Centered Form Card */}
+      <View style={styles.formContainer}>
+        <View style={[styles.formCard, { backgroundColor: 'white', shadowColor: colors.foreground }]}>
+
+          {error && (
+            <View style={[styles.errorContainer, { 
+              backgroundColor: colors.error + '10', 
+              borderColor: colors.error + '20',
+              borderWidth: 1
+            }]}>
+              <Ionicons name="alert-circle" size={16} color={colors.error} style={{ marginRight: 8 }} />
+              <Text style={[styles.errorText, { color: colors.error }]}>
+                {error}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: colors.foreground }]}>Full Name</Text>
+            <TextInput
+              style={[styles.textInput, { 
+                color: colors.foreground,
+                borderColor: nameError ? colors.error : colors.border
+              }]}
+              value={name}
+              onChangeText={(val) => {
+                if (error) clearAuthError();
+                setName(val);
+                if (nameError) setNameError('');
+              }}
+              placeholder="Enter your full name"
+              placeholderTextColor={colors['muted-foreground']}
+              autoCapitalize="words"
+              autoCorrect={false}
+            />
+            {nameError && <Text style={[styles.fieldError, { color: colors.error }]}>{nameError}</Text>}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: colors.foreground }]}>Email Address</Text>
+            <TextInput
+              style={[styles.textInput, { 
+                color: colors.foreground,
+                borderColor: emailError ? colors.error : colors.border
+              }]}
+              value={email}
+              onChangeText={(val) => {
+                if (error) clearAuthError();
+                setEmail(val);
+                if (emailError) setEmailError('');
+              }}
+              placeholder="Enter your email"
+              placeholderTextColor={colors['muted-foreground']}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {emailError && <Text style={[styles.fieldError, { color: colors.error }]}>{emailError}</Text>}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: colors.foreground }]}>Password</Text>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={[styles.textInput, { 
+                  color: colors.foreground,
+                  borderColor: passwordError ? colors.error : colors.border,
+                  flex: 1
+                }]}
+                value={password}
+                onChangeText={(val) => {
+                  if (error) clearAuthError();
+                  setPassword(val);
+                  if (passwordError) setPasswordError('');
+                }}
+                placeholder="Enter your password"
+                placeholderTextColor={colors['muted-foreground']}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.showPasswordButton}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.showPasswordText, { color: colors.accent }]}>
+                  {showPassword ? 'Hide' : 'Show'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {passwordError && <Text style={[styles.fieldError, { color: colors.error }]}>{passwordError}</Text>}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: colors.foreground }]}>Confirm Password</Text>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={[styles.textInput, { 
+                  color: colors.foreground,
+                  borderColor: confirmPasswordError ? colors.error : colors.border,
+                  flex: 1
+                }]}
+                value={confirmPassword}
+                onChangeText={(val) => {
+                  if (error) clearAuthError();
+                  setConfirmPassword(val);
+                  if (confirmPasswordError) setConfirmPasswordError('');
+                }}
+                placeholder="Confirm your password"
+                placeholderTextColor={colors['muted-foreground']}
+                secureTextEntry={!showConfirmPassword}
+              />
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={styles.showPasswordButton}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.showPasswordText, { color: colors.accent }]}>
+                  {showConfirmPassword ? 'Hide' : 'Show'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {confirmPasswordError && <Text style={[styles.fieldError, { color: colors.error }]}>{confirmPasswordError}</Text>}
+          </View>
+
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={isLoading}
+            style={[
+              styles.registerButton, 
+              { 
+                backgroundColor: colors.accent,
+                opacity: isLoading ? 0.7 : 1 
+              }
+            ]}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.registerButtonText, { color: 'white' }]}>
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </Text>
           </TouchableOpacity>
         </View>
-      )}
-    </Card>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 24,
-    margin: 16,
+    flex: 1,
   },
-  form: {
-    marginTop: 24,
+  // Subtle Background Elements
+  backgroundLeaf1: {
+    position: 'absolute',
+    top: 100,
+    left: -50,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    opacity: 0.1,
   },
-  errorContainer: {
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 16,
+  backgroundLeaf2: {
+    position: 'absolute',
+    bottom: 100,
+    right: -50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    opacity: 0.08,
   },
-  submitButton: {
-    marginTop: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+  // Navigation Header
+  navHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  backButton: {
+    padding: 8,
+  },
+  signinLink: {
+    padding: 8,
+  },
+  signinText: {
+    fontSize: 16,
+    fontWeight: FontWeights.medium,
+  },
+  // App Header
+  appHeader: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  appIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  signinContainer: {
-    flexDirection: 'row',
+  appTitle: {
+    fontSize: 24,
+    fontWeight: FontWeights.bold,
+    textAlign: 'center',
+  },
+  // Form Container
+  formContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
     justifyContent: 'center',
-    marginTop: 24,
+  },
+  formCard: {
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  // Input Styles
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: FontWeights.medium,
+    marginBottom: 8,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: '#f8f9fa',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: '#f8f9fa',
+  },
+  showPasswordButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  showPasswordText: {
+    fontSize: 16,
+    fontWeight: FontWeights.medium,
+  },
+  fieldError: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  // Button Styles
+  registerButton: {
+    borderRadius: 8,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  registerButtonText: {
+    fontSize: 18,
+    fontWeight: FontWeights.semiBold,
+  },
+  // Error Styles
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: FontWeights.medium,
+    flex: 1,
   },
 });
