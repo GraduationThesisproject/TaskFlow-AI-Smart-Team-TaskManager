@@ -10,7 +10,6 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { setSelectedSpace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
-import CreateSpaceModal from '@/components/common/CreateSpaceModal';
 import { SpaceService } from '@/services/spaceService';
 import SpaceCard from '@/components/common/SpaceCard';
 
@@ -74,13 +73,13 @@ export default function SpacesScreen() {
     // Navigate to the space screen; also pass id as a param for deep-link robustness
     const id = space?._id || space?.id;
     if (id) {
-      router.push({ pathname: '/workspace/space/main', params: { id } });
+      router.push({ pathname: '/workspace/space/boards', params: { id } });
     } else {
-      router.push('/workspace/space/main');
+      router.push('/workspace/space/boards');
     }
   };
 
-  const handleSubmitCreate = async ({ name, description }: { name: string; description?: string }) => {
+  const handleSubmitCreate = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
     if (!selectedWorkspaceId) return;
     if (!name || !name.trim()) {
       alert('Name is required.');
@@ -90,7 +89,7 @@ export default function SpacesScreen() {
       setCreating(true);
       await SpaceService.createSpace({
         name: name.trim(),
-        description: description?.trim() || undefined,
+        description,
         workspaceId: String(selectedWorkspaceId),
       });
       await loadSpaces(selectedWorkspaceId);
@@ -233,23 +232,6 @@ export default function SpacesScreen() {
           )}
         </Card>
       </ScrollView>
-
-      {/* Floating Action Button */}
-      {selectedWorkspaceId && (
-        <View style={styles.fabContainer}>
-          <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setShowCreate(true)}>
-            <FontAwesome name="plus" size={20} color={colors['primary-foreground']} />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Create Space Modal */}
-      <CreateSpaceModal
-        visible={!!selectedWorkspaceId && showCreate}
-        onClose={() => setShowCreate(false)}
-        onSubmit={handleSubmitCreate}
-        submitting={creating}
-      />
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, View as RNView, Text as RNText } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
@@ -9,6 +9,7 @@ import * as Sharing from 'expo-sharing';
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
+import { useAppSelector } from '@/store';
 
 const RULES_FILE = FileSystem.documentDirectory + 'workspace_rules.txt';
 
@@ -86,9 +87,29 @@ export default function WorkspaceRulesScreen() {
   const colors = useThemeColors();
   const router = useRouter();
 
+  const { currentWorkspace, members } = useAppSelector((s: any) => s.workspace);
+  const { user: authUser } = useAppSelector((s: any) => s.auth);
+
   const [rules, setRules] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+
+  // Determine permissions: owner or admin can edit
+  const canEdit = useMemo(() => {
+    const uid = String(authUser?.user?._id || authUser?.user?.id || '');
+    if (!uid) return false;
+    // Owner check
+    const ownerId = currentWorkspace?.owner?._id || currentWorkspace?.owner?.id || currentWorkspace?.ownerId;
+    if (ownerId && String(ownerId) === uid) return true;
+    // Admin role among members
+    const list: any[] = Array.isArray(members) ? members : [];
+    return list.some((m: any) => {
+      const mid = m?.user?._id || m?.user?.id || m?.userId || m?._id || m?.id;
+      const role = String(m?.role || '').toLowerCase();
+      return String(mid) === uid && (role === 'admin' || role === 'owner');
+    });
+  }, [authUser, currentWorkspace, members]);
 
   useEffect(() => {
     (async () => {
@@ -116,6 +137,7 @@ export default function WorkspaceRulesScreen() {
       setSaving(true);
       await FileSystem.writeAsStringAsync(RULES_FILE, rules, { encoding: FileSystem.EncodingType.UTF8 });
       Alert.alert('Saved', 'Workspace rules saved successfully.');
+      setEditing(false);
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to save rules');
     } finally {
@@ -153,27 +175,39 @@ export default function WorkspaceRulesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <RNView style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
-          <FontAwesome name="arrow-left" size={22} color={colors.primary} />
+      <RNView style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}> 
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.headerBtn, { backgroundColor: colors.primary, borderRadius: 20, width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }]}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
+          <FontAwesome name="chevron-left" size={18} color={colors['primary-foreground']} />
         </TouchableOpacity>
         <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Workspace Rules</Text>
         <RNView style={styles.headerActions}>
           <TouchableOpacity onPress={handleExportPdf} style={styles.headerBtn}>
             <FontAwesome name="file-pdf-o" size={20} color={colors.accent} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleSave} disabled={saving} style={styles.headerBtn}>
-            <FontAwesome name="save" size={20} color={colors.primary} />
-          </TouchableOpacity>
+          {canEdit && !editing && (
+            <TouchableOpacity onPress={() => setEditing(true)} style={styles.headerBtn}>
+              <FontAwesome name="pencil" size={20} color={colors.primary} />
+            </TouchableOpacity>
+          )}
+          {canEdit && editing && (
+            <TouchableOpacity onPress={handleSave} disabled={saving} style={styles.headerBtn}>
+              <FontAwesome name="save" size={20} color={colors.primary} />
+            </TouchableOpacity>
+          )}
         </RNView>
       </RNView>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Card style={[styles.editorCard, { backgroundColor: colors.card }]}>
+        <Card style={[styles.editorCard, { backgroundColor: colors.card }]}> 
           <TextInput
             value={rules}
             onChangeText={setRules}
-            editable={!loading}
+            editable={!loading && canEdit && editing}
             placeholder="Write or paste your workspace rules here..."
             placeholderTextColor={colors['muted-foreground']}
             multiline

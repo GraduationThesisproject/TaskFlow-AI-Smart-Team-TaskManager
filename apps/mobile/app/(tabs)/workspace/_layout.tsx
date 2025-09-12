@@ -15,9 +15,9 @@ export default function WorkspaceStackLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Workspace' }} />
-      <Stack.Screen name="space/main" options={{ title: 'Space' }} />
+      <Stack.Screen name="space/index" options={{ title: 'Space' }} />
       <Stack.Screen name="space/boards" options={{ title: 'Boards' }} />
-      <Stack.Screen name="space/allboards" options={{ title: 'All Boards' }} />
+      <Stack.Screen name="space/members" options={{ title: 'Members' }} />
       <Stack.Screen name="space/settings" options={{ title: 'Space Settings' }} />
     </Stack>
   );

@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useRouter } from 'expo-router';
 
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector } from '@/store';
 import { useWorkspaceAnalytics } from '@/hooks/useAnalytics';
+import { useRouter } from 'expo-router';
 
 export default function WorkspaceReportsScreen() {
   const colors = useThemeColors();
-  const router = useRouter();
 
   const { currentWorkspace, currentWorkspaceId } = useAppSelector((s: any) => s.workspace);
   const workspaceId: string | null = (currentWorkspace as any)?._id || (currentWorkspace as any)?.id || currentWorkspaceId || null;
@@ -20,6 +19,7 @@ export default function WorkspaceReportsScreen() {
   const { data, loading, error, period, setPeriod, refresh } = useWorkspaceAnalytics(workspaceId, 'month');
 
   const title = 'Reports';
+  const router = useRouter();
   const goBack = () => router.back();
 
   const onRefresh = async () => {
@@ -35,7 +35,12 @@ export default function WorkspaceReportsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}> 
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}> 
-        <TouchableOpacity style={[styles.headerBtn, { backgroundColor: colors.primary }]} onPress={goBack}>
+        <TouchableOpacity
+          style={[styles.headerBtn, { backgroundColor: colors.primary }]}
+          onPress={goBack}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
           <FontAwesome name="chevron-left" size={18} color={colors['primary-foreground']} />
         </TouchableOpacity>
         <Text style={[TextStyles.heading.h1, { color: colors.foreground, flex: 1 }]} numberOfLines={1}>

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, useWindowDimensions } 
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { Card } from '@/components/Themed';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 export type SpaceHeaderProps = {
   space: any;
@@ -42,8 +43,13 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
             <View style={{ flex: 1, paddingRight: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 {!!onBackToWorkspace && (
-                  <TouchableOpacity onPress={onBackToWorkspace} style={[styles.backIconBtn, { backgroundColor: colors.primary }]}> 
-                    <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>{'<'}</Text>
+                  <TouchableOpacity
+                    onPress={onBackToWorkspace}
+                    style={[styles.backIconBtn, { backgroundColor: colors.primary, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Back to workspace"
+                  >
+                    <FontAwesome name="chevron-left" size={16} color={colors['primary-foreground']} />
                   </TouchableOpacity>
                 )}
                 <View style={[styles.iconBox, { backgroundColor: bgTint }]}>
@@ -169,8 +175,13 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
             <View style={styles.rowBetween}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
                 {!!onBackToWorkspace && (
-                  <TouchableOpacity onPress={onBackToWorkspace} style={[styles.backIconBtn, { backgroundColor: colors.primary }]}> 
-                    <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>{'<'}</Text>
+                  <TouchableOpacity
+                    onPress={onBackToWorkspace}
+                    style={[styles.backIconBtn, { backgroundColor: colors.primary, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Back to workspace"
+                  >
+                    <FontAwesome name="chevron-left" size={16} color={colors['primary-foreground']} />
                   </TouchableOpacity>
                 )}
                 <View style={[styles.iconBox, { backgroundColor: bgTint }]}>
