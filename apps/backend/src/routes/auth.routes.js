@@ -62,6 +62,9 @@ router.post('/forgot-password/reset',
 // Email Verification (support both path param and query param)
 router.get('/verify-email', authController.verifyEmail);
 router.get('/verify-email/:token', authController.verifyEmail);
+// 4-digit code email verification flow (API used by mobile app)
+router.post('/resend-verification', authController.resendVerificationCode);
+router.post('/verify-email', authController.verifyEmailCode);
 
 // OAuth Authentication
 router.get('/google', authController.googleLogin);
