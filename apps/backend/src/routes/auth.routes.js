@@ -59,10 +59,9 @@ router.post('/forgot-password/reset',
     authController.resetPasswordWithCode
 );
 
-// Email Verification
-router.get('/verify-email/:token',
-    authController.verifyEmail
-);
+// Email Verification (support both path param and query param)
+router.get('/verify-email', authController.verifyEmail);
+router.get('/verify-email/:token', authController.verifyEmail);
 
 // OAuth Authentication
 router.get('/google', authController.googleLogin);
