@@ -35,6 +35,24 @@ exports.register = async (req, res) => {
 
         const user = await User.createWithDefaults({ name, email, password });
 
+        // Generate email verification token and send verification email
+        try {
+            const verificationToken = user.generateEmailVerificationToken();
+            await user.save();
+
+            const baseUrl = env.BASE_URL || 'http://localhost:3001';
+            const verificationUrl = `${baseUrl}/api/auth/verify-email?token=${verificationToken}`;
+
+            await sendEmail({
+                to: user.email,
+                template: 'email-verification',
+                subject: 'Verify Your Email - TaskFlow',
+                data: { name: user.name, verificationUrl }
+            });
+        } catch (emailError) {
+            logger.warn('Verification email failed:', emailError);
+        }
+
         const userSessions = await user.getSessions();
         await userSessions.createSession({
             deviceId: deviceId || 'web-' + Date.now(),
@@ -58,11 +76,7 @@ exports.register = async (req, res) => {
 
         const token = jwt.generateToken(user._id);
 
-        try {
-            await sendEmail({ to: user.email, template: 'welcome', data: { name: user.name } });
-        } catch (emailError) {
-            logger.warn('Welcome email failed:', emailError);
-        }
+        // Optionally send a welcome email after verification; skip here
 
         await ActivityLog.logActivity({
             userId: user._id,
@@ -197,6 +211,11 @@ exports.login = async (req, res) => {
         const user = await User.findOne({ email, isActive: true }).select('+password');
         if (!user) {
             return sendResponse(res, 401, false, 'Invalid email or password');
+        }
+
+        // Block login for unverified users
+        if (!user.emailVerified) {
+            return sendResponse(res, 403, false, 'Please confirm your email to continue');
         }
 
         const userSessions = await user.getSessions();
@@ -1060,7 +1079,7 @@ exports.updatePreferences = async (req, res) => {
 
 exports.verifyEmail = async (req, res) => {
     try {
-        const { token } = req.params;
+        const token = req.query.token || req.params.token;
         
         const user = await User.findOne({
             'tempTokens.emailVerificationToken': token,
