@@ -26,7 +26,7 @@ describe('Authentication Endpoints', () => {
     });
 
     describe('POST /api/auth/register', () => {
-        it('should register a new user with valid data', async () => {
+        it('should initiate registration with valid data', async () => {
             const userData = {
                 name: 'Test User',
                 email: 'test@example.com',
@@ -39,10 +39,16 @@ describe('Authentication Endpoints', () => {
                 .expect(201);
 
             expect(response.body.success).toBe(true);
-            expect(response.body.message).toContain('registered successfully');
-            expect(response.body.data.token).toBeDefined();
-            expect(response.body.data.user.email).toBe(userData.email);
-            expect(response.body.data.user.password).toBeUndefined();
+            expect(response.body.message).toContain('Registration initiated successfully');
+            expect(response.body.message).toContain('verification code');
+            expect(response.body.data.requiresVerification).toBe(true);
+            expect(response.body.data.email).toBe(userData.email);
+            expect(response.body.data.token).toBeUndefined();
+            expect(response.body.data.user).toBeUndefined();
+
+            // Verify user is not created in database yet
+            const user = await User.findOne({ email: userData.email });
+            expect(user).toBeNull();
         });
 
         it('should not register user with invalid email', async () => {
@@ -97,6 +103,84 @@ describe('Authentication Endpoints', () => {
 
             expect(response.body.success).toBe(false);
             expect(response.body.message).toContain('already exists');
+        });
+    });
+
+    describe('POST /api/auth/verify-email', () => {
+        let testUser;
+        let verificationCode;
+
+        beforeEach(async () => {
+            // Register a user first
+            const userData = {
+                name: 'Test User',
+                email: 'test@example.com',
+                password: 'TestPass123!'
+            };
+
+            await request(app)
+                .post('/api/auth/register')
+                .send(userData);
+
+            // Get the verification code from the emailVerifyCodes map
+            // In a real test, you'd need to mock the email service or access the code differently
+            testUser = await User.findOne({ email: userData.email });
+            verificationCode = '1234'; // This would be the actual code in a real scenario
+        });
+
+        it('should verify email with valid code and create user', async () => {
+            // First register to create pending registration
+            const userData = {
+                name: 'Test User',
+                email: 'test@example.com',
+                password: 'TestPass123!'
+            };
+
+            await request(app)
+                .post('/api/auth/register')
+                .send(userData);
+
+            // Set the verification code in the controller's map
+            const { emailVerifyCodes, pendingRegistrations } = require('../controllers/auth.controller');
+            emailVerifyCodes.set('test@example.com', {
+                code: '1234',
+                expiresAt: Date.now() + 10 * 60 * 1000,
+                attempts: 0
+            });
+
+            const response = await request(app)
+                .post('/api/auth/verify-email')
+                .send({
+                    email: 'test@example.com',
+                    code: '1234'
+                })
+                .expect(200);
+
+            expect(response.body.success).toBe(true);
+            expect(response.body.message).toContain('verified successfully');
+            expect(response.body.data.user.email).toBe('test@example.com');
+
+            // Verify user was created in database
+            const user = await User.findOne({ email: 'test@example.com' });
+            expect(user).toBeTruthy();
+            expect(user.emailVerified).toBe(true);
+            expect(user.name).toBe('Test User');
+
+            // Verify pending registration was cleaned up
+            expect(pendingRegistrations.has('test@example.com')).toBe(false);
+        });
+
+        it('should not verify email with invalid code', async () => {
+            const response = await request(app)
+                .post('/api/auth/verify-email')
+                .send({
+                    email: 'test@example.com',
+                    code: '9999'
+                })
+                .expect(400);
+
+            expect(response.body.success).toBe(false);
+            expect(response.body.message).toContain('Invalid or expired');
         });
     });
 

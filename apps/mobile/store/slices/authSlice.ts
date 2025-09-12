@@ -131,18 +131,14 @@ export const registerUser = createAsyncThunk(
   async (userData: RegisterData, { rejectWithValue }) => {
     try {
       const response = await AuthService.register(userData);
-      const token = (response as any)?.data?.data?.token;
-      if (token) {
-        await setAuthToken(token);
-      }
-      const profileResponse = await AuthService.getProfile();
-      const profileData = (profileResponse as any)?.data?.data;
-      
+      // Registration only initiates the process; user is created only after verification
       return {
         ...(response as any).data,
-        user: safeSerializeUser(profileData),
-        token
-      };
+        user: null,
+        token: null,
+        requiresVerification: true,
+        email: userData.email,
+      } as any;
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
       return rejectWithValue(errorMessage);
@@ -373,17 +369,12 @@ export const verifyEmail = createAsyncThunk(
   async (verificationData: EmailVerificationData, { rejectWithValue }) => {
     try {
       const response = await AuthService.verifyEmail(verificationData);
-      const token = (response as any)?.data?.data?.token;
-      if (token) {
-        await setAuthToken(token);
-      }
-      const profileResponse = await AuthService.getProfile();
-      const profileData = (profileResponse as any)?.data?.data;
-      
+      // Do not auto-login after verification; user must login separately
       return {
         ...(response as any).data,
-        user: safeSerializeUser(profileData),
-        token
+        user: null,
+        token: null,
+        verified: true
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Email verification failed';
@@ -627,9 +618,10 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.isAuthenticated = true;
+        // Do not set user or token; user must verify email first
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -689,6 +681,23 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(oauthRegister.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Verify Email (4-digit code)
+      .addCase(verifyEmail.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(verifyEmail.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Do not set user/token; user must login separately after verification
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.error = null;
+      })
+      .addCase(verifyEmail.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })

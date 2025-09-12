@@ -68,6 +68,56 @@ const templates = {
             </html>
         `
     },
+    'email-verification-code': {
+        subject: '✅ Your TaskFlow Email Verification Code',
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Email Verification Code</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">✅ Verify Your Email</h1>
+                        <p style="color: #bbf7d0; margin: 10px 0 0 0; font-size: 16px;">Enter this code in the app to complete verification</p>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div style="padding: 40px 30px;">
+                        <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hello {{name}},</h2>
+                        <p style="color: #475569; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                            Use the 4-digit code below to verify your email address for TaskFlow.
+                        </p>
+                        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 16px; padding: 32px; margin: 30px 0; text-align: center;">
+                            <div style="background-color: #ffffff; border-radius: 12px; padding: 24px; margin-bottom: 16px;">
+                                <p style="color: #64748b; margin: 0 0 8px 0; font-size: 14px; font-weight: 500;">Your verification code is:</p>
+                                <div style="background-color: #f8fafc; border: 2px dashed #10b981; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                                    <span style="color: #1e293b; font-size: 32px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;">{{code}}</span>
+                                </div>
+                            </div>
+                            <p style="color: #d1fae5; margin: 0; font-size: 14px; font-weight: 500;">
+                                This code expires in {{expiresIn}}
+                            </p>
+                        </div>
+                        <p style="color: #64748b; line-height: 1.6; margin: 0; font-size: 14px;">
+                            If you didn’t request this, you can ignore this email.
+                        </p>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                        <p style="color: #64748b; margin: 0 0 10px 0; font-size: 14px;">Best regards,</p>
+                        <p style="color: #1e293b; margin: 0; font-weight: 600; font-size: 16px;">The TaskFlow Team</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    },
     'password-reset': {
         subject: '🔐 Reset Your TaskFlow Password',
         html: `
