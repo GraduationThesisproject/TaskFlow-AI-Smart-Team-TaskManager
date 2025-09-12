@@ -59,10 +59,11 @@ export default function WorkspaceScreen() {
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member');
 
   const { currentWorkspaceId, workspaces } = useAppSelector((s: any) => s.workspace);
-  const { members, isLoading: membersLoading, error: membersError } = useAppSelector((s: any) => s.workspace);
+  const { members, isLoading: membersLoading, error: membersError, currentWorkspace } = useAppSelector((s: any) => s.workspace);
+  const { user: authUser } = useAppSelector((s: any) => s.auth);
   const selectedWorkspaceId = (params.workspaceId as string) || (params.id as string) || currentWorkspaceId || null;
 
-  const { workspaces: wsList, currentWorkspace, spaces, loading, error, refetchWorkspaces, loadSpaces, inviteNewMember } = useWorkspaces({ autoFetch: true, workspaceId: selectedWorkspaceId });
+  const { workspaces: wsList, currentWorkspace: ws, spaces, loading, error, refetchWorkspaces, loadSpaces, inviteNewMember } = useWorkspaces({ autoFetch: true, workspaceId: selectedWorkspaceId });
 
   const realWorkspaceId = (currentWorkspace as any)?._id || (currentWorkspace as any)?.id || null;
   const effectiveWorkspace = realWorkspaceId ? currentWorkspace : (USE_MOCK ? (MOCK_WORKSPACE as any) : null);
@@ -81,18 +82,54 @@ export default function WorkspaceScreen() {
     }, [workspaceId, dispatch, loadSpaces])
   );
 
-  const activeSpaces = useMemo(() => {
-    return Array.isArray(spaces) ? spaces.filter((s: any) => s?.status !== 'archived') : [];
-  }, [spaces]);
-  const effectiveSpaces = activeSpaces.length > 0 ? activeSpaces : (USE_MOCK ? MOCK_SPACES : activeSpaces);
+  // Resolve spaces from hook or fallback to the workspace object returned by the hook
+  const spacesSource = useMemo(() => {
+    if (Array.isArray(spaces) && spaces.length > 0) return spaces;
+    const wsSpaces = (ws as any)?.spaces;
+    return Array.isArray(wsSpaces) ? wsSpaces : [];
+  }, [spaces, ws]);
+
+  const activeSpaces = useMemo(() => (
+    Array.isArray(spacesSource) ? spacesSource.filter((s: any) => s?.status !== 'archived') : []
+  ), [spacesSource]);
+
+  // Deduplicate spaces by id to avoid duplicate renders when multiple fetches race
+  const uniqueSpaces = useMemo(() => {
+    const seen = new Set<string>();
+    const list: any[] = [];
+    for (const s of activeSpaces) {
+      const id = String((s as any)?._id || (s as any)?.id || '');
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      list.push(s);
+    }
+    return list;
+  }, [activeSpaces]);
+
+  const effectiveSpaces = uniqueSpaces.length > 0 ? uniqueSpaces : (USE_MOCK ? MOCK_SPACES : []);
+
   const filteredSpaces = useMemo(() => {
     const q = spaceSearch.trim().toLowerCase();
     if (!q) return effectiveSpaces;
     return (effectiveSpaces || []).filter((s: any) => (s?.name || '').toLowerCase().includes(q) || (s?.description || '').toLowerCase().includes(q));
   }, [spaceSearch, effectiveSpaces]);
 
-  // Workspace should count owner as a member
-  const membersCount = Array.isArray(members) ? members.length : 0;
+  // Deduplicate members by user id to avoid duplicate renders
+  const uniqueMembers = useMemo(() => {
+    const seen = new Set<string>();
+    const out: any[] = [];
+    const src = Array.isArray(members) ? members : [];
+    for (const m of src) {
+      const mid = String(m?.user?._id || m?.userId || m?._id || m?.id || '');
+      if (!mid || seen.has(mid)) continue;
+      seen.add(mid);
+      out.push(m);
+    }
+    return out;
+  }, [members]);
+
+  // Workspace should count unique members (including owner via server data)
+  const membersCount = uniqueMembers.length;
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -128,7 +165,7 @@ export default function WorkspaceScreen() {
 
   const handleOpenSpace = (space: any) => {
     dispatch(setSelectedSpace(space));
-    router.push('/workspace/space/boards');
+    router.push('/workspace/space/main');
   };
 
   const goToReports = () => router.push('/workspace/reports');
@@ -160,6 +197,17 @@ export default function WorkspaceScreen() {
   const [alertTitle, setAlertTitle] = useState<string | undefined>(undefined);
   const [alertDescription, setAlertDescription] = useState<string | undefined>(undefined);
   const [alertVariant, setAlertVariant] = useState<'success' | 'error' | 'warning' | 'info'>('info');
+
+  // Auto-dismiss banner after 5 seconds
+  useEffect(() => {
+    if (alertVisible) {
+      const timer = setTimeout(() => {
+        setAlertVisible(false);
+      }, 5000); // Auto-dismiss after 5 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [alertVisible]);
 
   // Confirm removal dialog state
   const [confirmVisible, setConfirmVisible] = useState(false);
@@ -229,20 +277,35 @@ export default function WorkspaceScreen() {
     );
   };
 
-  const handleSubmitCreate = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+  const handleSubmitCreate = async ({ name, description }: { name: string; description?: string }) => {
     if (!workspaceId) return;
+    if (!name || !name.trim()) {
+      Alert.alert('Error', 'Space name is required.');
+      return;
+    }
     try {
       setCreatingSpace(true);
       await SpaceService.createSpace({
-        name,
-        description,
+        name: name.trim(),
+        description: description?.trim() || undefined,
         workspaceId,
-        settings: { isPrivate: visibility === 'private' },
       });
       await loadSpaces(workspaceId);
       setShowCreateSpace(false);
-    } catch (e) {
+      // Show success message
+      setAlertVariant('success');
+      setAlertTitle('Space created');
+      setAlertDescription(`"${name.trim()}" has been created successfully.`);
+      setAlertVisible(true);
+    } catch (e: any) {
       console.warn('Failed to create space', e);
+      const errorMessage = e?.response?.data?.message || e?.message || 'Failed to create space';
+      Alert.alert('Error', errorMessage);
+      // Also show error banner
+      setAlertVariant('error');
+      setAlertTitle('Failed to create space');
+      setAlertDescription(errorMessage);
+      setAlertVisible(true);
     } finally {
       setCreatingSpace(false);
     }
@@ -270,10 +333,62 @@ export default function WorkspaceScreen() {
     return unique.size;
   };
 
+  // Grid sizing for 3 columns in Spaces preview
+  const [previewGridW, setPreviewGridW] = useState(0);
+  const PREVIEW_COLS = 3;
+  const PREVIEW_GAP = 12;
+  const previewTile = previewGridW > 0
+    ? Math.floor((previewGridW - PREVIEW_GAP * (PREVIEW_COLS - 1)) / PREVIEW_COLS)
+    : undefined;
+
+  const { width } = useWindowDimensions();
+  const isWide = width >= 768;
+  const [membersSidebarOpen, setMembersSidebarOpen] = useState(false);
+
+  // Check if current user is owner of the workspace
+  const isOwner = useMemo(() => {
+    if (!effectiveWorkspace || !authUser) return false;
+    const workspaceOwnerId = effectiveWorkspace?.owner?._id || effectiveWorkspace?.ownerId || effectiveWorkspace?.createdBy?._id || effectiveWorkspace?.createdBy;
+    const currentUserId = authUser?._id || authUser?.id;
+    return workspaceOwnerId === currentUserId;
+  }, [effectiveWorkspace, authUser]);
+
+  // Helper functions for archive countdown styling
+  const getArchiveCountdownStyle = (archiveExpiresAt: string) => {
+    if (!archiveExpiresAt) return { backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e' };
+    
+    const expiresAt = new Date(archiveExpiresAt);
+    const now = new Date();
+    const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysLeft <= 3) {
+      return { backgroundColor: '#fee2e2', borderColor: '#ef4444', color: '#dc2626' };
+    } else if (daysLeft <= 7) {
+      return { backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e' };
+    } else {
+      return { backgroundColor: '#f0f9ff', borderColor: '#0ea5e9', color: '#0369a1' };
+    }
+  };
+
+  const getArchiveStatusMessage = (archiveExpiresAt: string) => {
+    if (!archiveExpiresAt) return 'Archived';
+    
+    const expiresAt = new Date(archiveExpiresAt);
+    const now = new Date();
+    const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysLeft <= 0) {
+      return 'Expires soon';
+    } else if (daysLeft === 1) {
+      return '1 day left';
+    } else {
+      return `${daysLeft} days left`;
+    }
+  };
+
   // Loading state — only block the UI if we have no cached spaces yet
   if (!USE_MOCK && loading && !refreshing && (!Array.isArray(spaces) || spaces.length === 0)) {
     return (
-
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
           <TouchableOpacity
@@ -288,37 +403,43 @@ export default function WorkspaceScreen() {
           <View style={styles.headerSpacer} />
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Loading workspace...</Text>
+          <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
+            Loading workspace...
+          </Text>
         </View>
       </View>
     );
   }
 
-  // Grid sizing for 3 columns in Spaces preview
-  const [previewGridW, setPreviewGridW] = useState(0);
-  const PREVIEW_COLS = 3;
-  const PREVIEW_GAP = 12;
-  const previewTile = previewGridW > 0
-    ? Math.floor((previewGridW - PREVIEW_GAP * (PREVIEW_COLS - 1)) / PREVIEW_COLS)
-    : undefined;
-
-  const { width } = useWindowDimensions();
-  const isWide = width >= 768;
-  const [membersSidebarOpen, setMembersSidebarOpen] = useState(false);
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
 
+      {/* Custom Header */}
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <FontAwesome name="arrow-left" size={24} color={colors.primary} />
+        </TouchableOpacity>
+        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Workspace</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
       {/* Inline banner alert */}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <MobileAlert
-          variant={alertVariant}
-          title={alertTitle}
-          description={alertDescription}
-          visible={alertVisible}
-          onClose={() => setAlertVisible(false)}
-        />
-
+        <TouchableOpacity 
+          onPress={() => setAlertVisible(false)}
+          disabled={!alertVisible}
+        >
+          <MobileAlert
+            variant={alertVariant}
+            title={alertTitle}
+            description={alertDescription}
+            visible={alertVisible}
+            onClose={() => setAlertVisible(false)}
+          />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -329,6 +450,92 @@ export default function WorkspaceScreen() {
         {!USE_MOCK && error && (
           <Card style={[styles.errorCard, { backgroundColor: colors.destructive }]}>
             <Text style={[TextStyles.body.medium, { color: colors['destructive-foreground'] }]}>Failed to load workspace data. Pull to refresh.</Text>
+          </Card>
+        )}
+
+        {/* Invite & Quick actions */}
+        {workspaceId && effectiveWorkspace && (
+          <Card style={styles.sectionCard}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Invite Members</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TextInput
+                value={inviteEmail}
+                onChangeText={setInviteEmail}
+                placeholder="email@example.com"
+                placeholderTextColor={colors['muted-foreground']}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                style={[styles.input, { flex: 1, color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
+              />
+              <TouchableOpacity onPress={() => setInviteRole(inviteRole === 'member' ? 'admin' : 'member')} style={[styles.pill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>{inviteRole}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleInvite} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}>
+                <Text style={{ color: colors['primary-foreground'] }}>Invite</Text>
+              </TouchableOpacity>
+            </View>
+          </Card>
+        )}
+
+        {/* Members List */}
+        {workspaceId && (
+          <Card style={styles.sectionCard}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({members?.length || 0})</Text>
+            {membersLoading ? (
+              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading members...</Text>
+            ) : membersError ? (
+              <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>{membersError}</Text>
+            ) : (Array.isArray(members) && members.length > 0 ? (
+              <View style={{ gap: 8 }}>
+                {members.map((m: any) => {
+                  const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
+                  const email = m?.user?.email || m?.email || '';
+                  const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
+                  const letter = String(displayName).charAt(0).toUpperCase();
+                  return (
+                    <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                      {/* Avatar */}
+                      {avatarUrl ? (
+                        <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
+                      ) : (
+                        <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
+                        </View>
+                      )}
+                      {/* Name and meta */}
+                      <View style={{ flex: 1 }}>
+                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
+                        {!!email && (
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
+                        )}
+                        <View style={styles.memberMetaRow}>
+                          <Text key="role" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                          <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                          <Text key="status" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                        </View>
+                      </View>
+                      {m.role !== 'owner' && (
+                        <TouchableOpacity
+                          onPress={() => handleRemoveMember(m)}
+                          disabled={!!membersLoading}
+                          style={[
+                            styles.destructiveBtn,
+                            { backgroundColor: colors.destructive },
+                            membersLoading ? { opacity: 0.6 } : null,
+                          ]}
+                        >
+                          <Text style={{ color: colors['destructive-foreground'] }}>
+                            {membersLoading ? 'Removing…' : 'Remove'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No members yet.</Text>
+            ))}
           </Card>
         )}
 
@@ -399,6 +606,22 @@ export default function WorkspaceScreen() {
                   <FontAwesome name="cog" size={16} color={colors['secondary-foreground']} />
                   <Text style={[TextStyles.body.small, { color: colors['secondary-foreground'] }]}>Settings</Text>
                 </TouchableOpacity>
+                {isOwner && (
+                  <TouchableOpacity
+                    style={[styles.actionButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+                    onPress={() => router.push({ pathname: '/(tabs)/workspace/rules', params: { workspaceId } })}
+                  >
+                    <FontAwesome name="pencil" size={16} color={colors.foreground} />
+                    <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Edit Rules</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+                  onPress={() => router.push('/(tabs)/workspace/rules')}
+                >
+                  <FontAwesome name="file-text" size={16} color={colors.foreground} />
+                  <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Rules</Text>
+                </TouchableOpacity>
               </View>
             </Card>
           </>
@@ -407,26 +630,69 @@ export default function WorkspaceScreen() {
         {!!(effectiveSpaces && effectiveSpaces.length) && (
           <Card style={styles.sectionCard}>
             <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Spaces</Text>
-            <View
-              style={[styles.spaceList, { flexDirection: 'row', flexWrap: 'wrap', gap: PREVIEW_GAP, backgroundColor: colors.background }]}
-              onLayout={(e) => setPreviewGridW(e.nativeEvent.layout.width)}
-            >
-              {filteredSpaces.slice(0, 3).map((space: any) => (
-                <SpaceCard
-                  key={space._id || space.id}
-                  name={space.name}
-                  description={space.description}
-                  membersCount={membersCount}
-                  icon={space.icon || '📂'}
-                  isArchived={!!space.isArchived}
-                  createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
-                  tileSize={previewTile}
-                  onPress={() => handleOpenSpace(space)}
-                  onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, space.isArchived)}
-                />
-
+            <View style={styles.spaceList}>
+              {filteredSpaces.slice(0, 4).map((space: any) => (
+                <TouchableOpacity key={space._id || space.id} style={[styles.spaceItem, { backgroundColor: colors.card }]} onPress={() => handleOpenSpace(space)}>
+                  <View style={styles.spaceHeader}>
+                    <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{space.name}</Text>
+                    <View style={styles.spaceActions}>
+                      <TouchableOpacity 
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleArchiveSpace(space._id || space.id, space.name, space.isArchived);
+                        }}
+                        style={styles.archiveButton}
+                      >
+                        <FontAwesome 
+                          name={space.isArchived ? 'undo' : 'archive'} 
+                          size={14} 
+                          color={space.isArchived ? colors.success : colors.warning} 
+                        />
+                      </TouchableOpacity>
+                      <FontAwesome name="chevron-right" size={14} color={colors['muted-foreground']} />
+                    </View>
+                  </View>
+                  {space.description ? (
+                    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 6 }]} numberOfLines={2}>
+                      {space.description}
+                    </Text>
+                  ) : null}
+                  <View style={styles.spaceStats}>
+                    <Text key="members" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.members?.length || 0)} members</Text>
+                    <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                    <Text key="boards" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}> {(space.stats?.totalBoards || 0)} boards</Text>
+                  </View>
+                  
+                  {/* Archive countdown for archived spaces */}
+                  {space.isArchived && space.archiveExpiresAt && (
+                    <View style={styles.archiveCountdown}>
+                      <View style={[
+                        styles.countdownBadge,
+                        { 
+                          backgroundColor: getArchiveCountdownStyle(space.archiveExpiresAt).backgroundColor,
+                          borderColor: getArchiveCountdownStyle(space.archiveExpiresAt).borderColor,
+                          borderWidth: 1
+                        }
+                      ]}>
+                        <FontAwesome 
+                          name="clock-o" 
+                          size={10} 
+                          color={getArchiveCountdownStyle(space.archiveExpiresAt).color} 
+                        />
+                        <Text 
+                          style={[
+                            TextStyles.caption.small, 
+                            { color: getArchiveCountdownStyle(space.archiveExpiresAt).color }
+                          ]}
+                        >
+                          {getArchiveStatusMessage(space.archiveExpiresAt)}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </TouchableOpacity>
               ))}
-              {effectiveSpaces.length > 4 && (
+              {filteredSpaces.length > 9 && (
                 <TouchableOpacity
                   style={{ paddingVertical: 8, alignItems: 'center' }}
                   onPress={() => router.push({ pathname: '/workspace/spaces', params: { workspaceId } })}
@@ -505,14 +771,14 @@ export default function WorkspaceScreen() {
           {/* Sidebar: Members */}
           {workspaceId && (
             <Card style={styles.sectionCard}>
-              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({members?.length || 0})</Text>
+              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({membersCount})</Text>
               {membersLoading ? (
                 <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading members...</Text>
               ) : membersError ? (
                 <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>{membersError}</Text>
-              ) : (Array.isArray(members) && members.length > 0 ? (
+              ) : (Array.isArray(uniqueMembers) && uniqueMembers.length > 0 ? (
                 <View style={{ gap: 8 }}>
-                  {members.map((m: any) => {
+                  {uniqueMembers.map((m: any) => {
                     const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
                     const email = m?.user?.email || m?.email || '';
                     const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
@@ -522,7 +788,7 @@ export default function WorkspaceScreen() {
                         {avatarUrl ? (
                           <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
                         ) : (
-                          <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
+                          <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}> 
                             <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
                           </View>
                         )}
@@ -532,9 +798,9 @@ export default function WorkspaceScreen() {
                             <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
                           )}
                           <View style={styles.memberMetaRow}>
-                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                            <Text key="role" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                            <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                            <Text key="status" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
                           </View>
                         </View>
                         {m.role !== 'owner' && (
@@ -594,14 +860,14 @@ export default function WorkspaceScreen() {
             {/* Members */}
             {workspaceId && (
               <Card style={styles.sectionCard}>
-                <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({members?.length || 0})</Text>
+                <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({membersCount})</Text>
                 {membersLoading ? (
                   <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading members...</Text>
                 ) : membersError ? (
                   <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>{membersError}</Text>
-                ) : (Array.isArray(members) && members.length > 0 ? (
+                ) : (Array.isArray(uniqueMembers) && uniqueMembers.length > 0 ? (
                   <View style={{ gap: 8 }}>
-                    {members.map((m: any) => {
+                    {uniqueMembers.map((m: any) => {
                       const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
                       const email = m?.user?.email || m?.email || '';
                       const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
@@ -621,9 +887,9 @@ export default function WorkspaceScreen() {
                               <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
                             )}
                             <View style={styles.memberMetaRow}>
-                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
+                              <Text key="role" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
+                              <Text key="separator" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
+                              <Text key="status" style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
                             </View>
                           </View>
                           {m.role !== 'owner' && (
@@ -656,6 +922,17 @@ export default function WorkspaceScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  backButton: { padding: 8 },
+  headerSpacer: { width: 40 }, // Same width as backButton to center the title
   content: { flex: 1, padding: 16 },
   errorCard: { padding: 16, marginBottom: 16, borderRadius: 12 },
   sectionCard: { padding: 20, marginBottom: 20 },
