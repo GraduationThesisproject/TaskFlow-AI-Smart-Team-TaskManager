@@ -65,7 +65,7 @@ export default function AnalyticsScreen() {
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuButton}>
-          <FontAwesome name="bars" size={24} color={colors.foreground} />
+          <FontAwesome name="bars" size={24} color={colors.primary} />
         </TouchableOpacity>
         <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Analytics</Text>
         <View style={styles.headerRight} />

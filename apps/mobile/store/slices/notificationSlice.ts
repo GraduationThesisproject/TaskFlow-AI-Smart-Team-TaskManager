@@ -251,6 +251,35 @@ export const clearWorkspaceCreationNotifications = createAsyncThunk(
   }
 );
 
+export const clearWorkspaceNotifications = createAsyncThunk(
+  'notifications/clearWorkspaceNotifications',
+  async () => {
+    console.log('🗑️ [clearWorkspaceNotifications] Clearing workspace notifications');
+    try {
+      // Clear workspace notifications from server
+      await axiosInstance.delete('/notifications/clear-workspace');
+      console.log('🗑️ [clearWorkspaceNotifications] Successfully cleared workspace notifications');
+      return true;
+    } catch (err: any) {
+      console.error('🗑️ [clearWorkspaceNotifications] Clear workspace notifications error:', { 
+        status: err?.response?.status, 
+        message: err?.response?.data?.message || err?.message,
+        data: err?.response?.data,
+        url: err?.config?.url,
+        method: err?.config?.method
+      });
+      
+      // If endpoint doesn't exist (404), we'll handle it locally
+      if (err?.response?.status === 404) {
+        console.warn(`🗑️ Clear workspace notifications endpoint not found (404), clearing locally`);
+        return true;
+      }
+      
+      throw err;
+    }
+  }
+);
+
 const notificationSlice = createSlice({
   name: 'notifications',
   initialState,
@@ -443,6 +472,31 @@ const notificationSlice = createSlice({
       })
       .addCase(clearAllNotifications.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to clear all notifications';
+      })
+      
+      // Clear workspace notifications
+      .addCase(clearWorkspaceNotifications.fulfilled, (state) => {
+        const workspaceNotifications = state.notifications.filter(n => 
+          n.type === 'workspace_archived' || n.type === 'workspace_restored'
+        );
+        state.notifications = state.notifications.filter(n => 
+          n.type !== 'workspace_archived' && n.type !== 'workspace_restored'
+        );
+        
+        if (state.stats) {
+          state.stats.total = Math.max(0, state.stats.total - workspaceNotifications.length);
+          workspaceNotifications.forEach(notification => {
+            if (!notification.isRead) {
+              state.stats!.unread = Math.max(0, state.stats!.unread - 1);
+            }
+            if (state.stats!.byType[notification.type] !== undefined) {
+              state.stats!.byType[notification.type] = Math.max(0, state.stats!.byType[notification.type] - 1);
+            }
+          });
+        }
+      })
+      .addCase(clearWorkspaceNotifications.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to clear workspace notifications';
       });
   },
 });
