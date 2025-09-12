@@ -111,8 +111,6 @@ export default function SettingsScreen() {
     );
   };
 
-  
-
   const handleDeleteAccount = () => {
     Alert.alert(
       'Delete Account',
