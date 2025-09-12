@@ -64,6 +64,7 @@ router.patch('/bulk-read',
 );
 
 router.delete('/clear-all', notificationController.clearAllNotifications);
+router.delete('/clear-workspace', notificationController.clearWorkspaceNotifications);
 router.delete('/:id', notificationController.deleteNotification);
 router.post('/clear-read', notificationController.deleteReadNotifications);
 

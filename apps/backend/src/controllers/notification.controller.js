@@ -443,6 +443,40 @@ exports.clearAllNotifications = async (req, res) => {
     }
 };
 
+// Clear workspace-related notifications (archived/restored)
+exports.clearWorkspaceNotifications = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        console.log(' [clearWorkspaceNotifications] Clearing workspace notifications for userId:', userId);
+
+        const result = await Notification.deleteMany({
+            recipient: userId,
+            type: { $in: ['workspace_archived', 'workspace_restored'] }
+        });
+
+        console.log(' [clearWorkspaceNotifications] Deleted count:', result.deletedCount);
+
+        // Emit unread count update so clients refresh state
+        try {
+            const io = req.app.get('io') || global.io;
+            if (io) {
+                io.notifyUser(userId, 'notifications:unreadCount', {});
+                console.log(' [clearWorkspaceNotifications] emitted unreadCount to:', userId);
+            }
+        } catch (e) {
+            logger.warn('Socket emit failed (clearWorkspaceNotifications unreadCount):', e);
+        }
+
+        sendResponse(res, 200, true, 'Workspace notifications cleared successfully', {
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        logger.error('Clear workspace notifications error:', error);
+        sendResponse(res, 500, false, 'Server error clearing workspace notifications');
+    }
+};
+
 // Create payment notification (for payment success/failure)
 exports.createPaymentNotification = async (req, res) => {
     try {
