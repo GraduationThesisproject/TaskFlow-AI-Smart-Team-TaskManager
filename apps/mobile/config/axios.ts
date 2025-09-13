@@ -93,10 +93,16 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
-
+    console.log('✅ API response:', {
+      url: response.config.url,
+      method: response.config.method,
+      status: response.status,
+      data: response.data,
+    });
     return response;
   },
   async (error) => {
+    console.error('❌ API request error:', error?.message || error);
     const originalRequest = error?.config;
 
     // Handle common errors

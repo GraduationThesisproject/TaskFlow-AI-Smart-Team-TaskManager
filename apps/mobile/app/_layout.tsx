@@ -13,6 +13,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { FontConfig } from '@/constants/Fonts';
 import { store, persistor, useAppDispatch, useAppSelector } from '@/store';
 import { checkAuthStatus } from '@/store/slices/authSlice';
+import { clearWorkspaceCreationNotifications } from '@/utils/notificationUtils';
 import { SocketProvider } from '@/contexts/SocketContext';
 import { ToastProvider } from '@/components/common/ToastProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -103,6 +104,11 @@ function AuthGate() {
   // // On app start, check auth status (reads token from storage and fetches profile with timeout)
   useEffect(() => {
     dispatch(checkAuthStatus());
+    
+    // Clear persistent workspace creation notifications on app start
+    setTimeout(() => {
+      clearWorkspaceCreationNotifications();
+    }, 2000); // Delay to ensure notifications are loaded
   }, [dispatch]);
 
   // Check onboarding flag

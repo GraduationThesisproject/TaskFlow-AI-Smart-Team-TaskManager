@@ -266,7 +266,7 @@ export default function Sidebar({
               style={[styles.closeButton, { backgroundColor: colors.card }]}
               onPress={onClose}
             >
-              <FontAwesome name="times" size={20} color={colors.foreground} />
+              <FontAwesome name="times" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
         )}
