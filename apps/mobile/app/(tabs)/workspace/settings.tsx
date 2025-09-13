@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Switch } from 'react-native';
+import { StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Switch, Modal } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 
@@ -8,11 +8,14 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { updateWorkspaceSettings } from '@/store/slices/workspaceSlice';
+import { useAuth } from '@/hooks/useAuth';
+import { useAuthToken } from '@/hooks/useLocalStorage';
 
 export default function WorkspaceSettingsScreen() {
   const colors = useThemeColors();
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { token } = useAuth();
 
   const { currentWorkspace, loading } = useAppSelector((state: any) => state.workspace);
   const workspaceId = (currentWorkspace as any)?._id || (currentWorkspace as any)?.id;
@@ -27,6 +30,12 @@ export default function WorkspaceSettingsScreen() {
   const [wsRestrictBoardCreation, setWsRestrictBoardCreation] = useState<boolean>(!!(currentWorkspace as any)?.settings?.restrictBoardCreation);
   const [wsRestrictBoardDeletion, setWsRestrictBoardDeletion] = useState<boolean>(!!(currentWorkspace as any)?.settings?.restrictBoardDeletion);
   const [wsSlackRestricted, setWsSlackRestricted] = useState<boolean>(!!(currentWorkspace as any)?.settings?.slackRestricted);
+  
+  // GitHub integration state
+  const [githubConnected, setGithubConnected] = useState<boolean>(!!(currentWorkspace as any)?.github?.connected);
+  const [githubOrganization, setGithubOrganization] = useState<string>((currentWorkspace as any)?.github?.organization || '');
+  const [githubToken, setGithubToken] = useState<string>('');
+  const [showGithubModal, setShowGithubModal] = useState<boolean>(false);
 
   useEffect(() => {
     // Only resync toggle state when switching to a different workspace
@@ -35,9 +44,13 @@ export default function WorkspaceSettingsScreen() {
     setWsRestrictBoardCreation(!!(currentWorkspace as any)?.settings?.restrictBoardCreation);
     setWsRestrictBoardDeletion(!!(currentWorkspace as any)?.settings?.restrictBoardDeletion);
     setWsSlackRestricted(!!(currentWorkspace as any)?.settings?.slackRestricted);
+    
+    // GitHub integration state
+    setGithubConnected(!!(currentWorkspace as any)?.githubOrg?.login);
+    setGithubOrganization((currentWorkspace as any)?.githubOrg?.login || '');
   }, [workspaceId]);
 
-  const safeUpdateWorkspace = async (updates: any, revert: () => void, section: 'settings' | 'visibility' | 'general' = 'settings') => {
+  const safeUpdateWorkspace = async (updates: any, revert: () => void, section: 'settings' | 'visibility' | 'general' | 'github' = 'settings') => {
     if (!workspaceId) return;
     try {
       await dispatch(updateWorkspaceSettings({ id: workspaceId, section, updates }) as any).unwrap();
@@ -45,6 +58,87 @@ export default function WorkspaceSettingsScreen() {
       revert();
       Alert.alert('Workspace Settings', e?.message || 'Failed to update workspace settings');
     }
+  };
+
+  const handleGithubConnect = async () => {
+    try {
+      // Check if user already has GitHub linked
+      const response = await fetch('/api/github/status', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data?.linked) {
+          // User already has GitHub linked, just link the organization
+          await safeUpdateWorkspace(
+            { 
+              githubOrg: { 
+                login: githubOrganization.trim(),
+                linkedAt: new Date()
+              } 
+            },
+            () => {
+              setGithubConnected(false);
+              setGithubOrganization('');
+            },
+            'github'
+          );
+          
+          setGithubConnected(true);
+          setGithubOrganization(githubOrganization.trim());
+          setShowGithubModal(false);
+          Alert.alert('Success', 'GitHub organization linked successfully!');
+        } else {
+          // User needs to link GitHub account first
+          Alert.alert(
+            'GitHub Account Required',
+            'You need to link your GitHub account first. Would you like to do that now?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { 
+                text: 'Link GitHub', 
+                onPress: () => {
+                  // Redirect to GitHub App installation for organization
+                  const installUrl = `https://github.com/apps/taskflow-ai/installations/new?state=${encodeURIComponent(JSON.stringify({
+                    type: 'workspace',
+                    workspaceId: workspaceId,
+                    organization: githubOrganization.trim()
+                  }))}&redirect_uri=${encodeURIComponent('http://localhost:3001/api/github-app/install/callback')}`;
+                  window.open(installUrl, '_blank');
+                }
+              }
+            ]
+          );
+        }
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to check GitHub status. Please try again.');
+    }
+  };
+
+  const handleGithubDisconnect = async () => {
+    Alert.alert(
+      'Disconnect GitHub',
+      'Are you sure you want to disconnect GitHub integration? This will remove all GitHub-related settings.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: async () => {
+            await safeUpdateWorkspace(
+              { githubOrg: { login: '', linkedAt: null } },
+              () => {},
+              'github'
+            );
+            setGithubConnected(false);
+            setGithubOrganization('');
+            Alert.alert('Success', 'GitHub integration disconnected successfully!');
+          }
+        }
+      ]
+    );
   };
 
   const onSave = async () => {
@@ -222,9 +316,93 @@ export default function WorkspaceSettingsScreen() {
                 />
               </View>
             </Card>
+
+            {/* GitHub Integration */}
+            <Card style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>GitHub Integration</Text>
+              
+              {githubConnected ? (
+                <View style={styles.githubConnected}>
+                  <View style={styles.githubInfo}>
+                    <FontAwesome name="github" size={24} color={colors.foreground} />
+                    <View style={styles.githubDetails}>
+                      <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Connected to GitHub</Text>
+                      <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                        Organization: {githubOrganization || 'Not specified'}
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.disconnectButton, { backgroundColor: colors.destructive }]}
+                    onPress={handleGithubDisconnect}
+                  >
+                    <Text style={[TextStyles.body.small, { color: colors['destructive-foreground'] }]}>Disconnect</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.githubDisconnected}>
+                  <FontAwesome name="github" size={32} color={colors['muted-foreground']} />
+                  <Text style={[TextStyles.body.medium, { color: colors.foreground, marginTop: 8 }]}>Connect to GitHub</Text>
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], textAlign: 'center', marginTop: 4 }]}>
+                    Link your workspace to a GitHub organization to sync repositories and manage issues
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.connectButton, { backgroundColor: colors.primary }]}
+                    onPress={() => setShowGithubModal(true)}
+                  >
+                    <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>Connect GitHub</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </Card>
           </>
         )}
       </ScrollView>
+
+      {/* GitHub Connection Modal */}
+      <Modal
+        visible={showGithubModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowGithubModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Connect to GitHub</Text>
+            
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], marginBottom: 12 }]}>
+              Enter the GitHub organization name to link to your workspace.
+            </Text>
+            
+            <TextInput
+              style={[styles.input, { 
+                color: colors.foreground, 
+                borderColor: colors.border, 
+                backgroundColor: colors.background 
+              }]}
+              placeholder="GitHub Organization Name (e.g., microsoft, facebook)"
+              placeholderTextColor={colors['muted-foreground']}
+              value={githubOrganization}
+              onChangeText={setGithubOrganization}
+            />
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: colors.muted }]}
+                onPress={() => setShowGithubModal(false)}
+              >
+                <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: colors.primary }]}
+                onPress={handleGithubConnect}
+              >
+                <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>Connect</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -243,4 +421,62 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
   textArea: { minHeight: 90, textAlignVertical: 'top' },
   saveButton: { marginTop: 8, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  
+  // GitHub Integration Styles
+  githubConnected: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  githubInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  githubDetails: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  githubDisconnected: {
+    alignItems: 'center',
+    padding: 24,
+  },
+  connectButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 16,
+  },
+  disconnectButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    padding: 20,
+    borderRadius: 12,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
 });

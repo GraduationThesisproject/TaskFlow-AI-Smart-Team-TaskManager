@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, Image, Alert, useWindowDimensions, Modal, Pressable } from 'react-native';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, Image, Alert, useWindowDimensions, Modal, Pressable, Animated } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -16,6 +16,7 @@ import CreateSpaceModal from '@/components/common/CreateSpaceModal';
 import MobileAlert from '@/components/common/Alert';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 import SpaceCard from '@/components/common/SpaceCard';
+import Sidebar from '@/components/navigation/Sidebar';
 
 
 // Toggle this to quickly demo with mock data
@@ -57,6 +58,7 @@ export default function WorkspaceScreen() {
   const [creatingSpace, setCreatingSpace] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member');
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   const { currentWorkspaceId, workspaces } = useAppSelector((s: any) => s.workspace);
   const { members, isLoading: membersLoading, error: membersError, currentWorkspace } = useAppSelector((s: any) => s.workspace);
@@ -129,7 +131,7 @@ export default function WorkspaceScreen() {
   }, [members]);
 
   // Workspace should count unique members (including owner via server data)
-  const membersCount = uniqueMembers.length;
+  const membersCount = Array.isArray(uniqueMembers) ? uniqueMembers.length : 0;
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -168,8 +170,6 @@ export default function WorkspaceScreen() {
     router.push('/workspace/space/boards');
   };
 
-  const goToReports = () => router.push('/workspace/reports');
-  const goToWorkspaceSettings = () => router.push('/workspace/settings');
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
@@ -313,7 +313,7 @@ export default function WorkspaceScreen() {
   
 
 
-  // Grid sizing for 3 columns in Spaces preview
+  // Grid sizing for 3 columns in Spaces
   const [previewGridW, setPreviewGridW] = useState(0);
   const PREVIEW_COLS = 3;
   const PREVIEW_GAP = 12;
@@ -324,6 +324,24 @@ export default function WorkspaceScreen() {
   const { width } = useWindowDimensions();
   const isWide = width >= 768;
   const [membersSidebarOpen, setMembersSidebarOpen] = useState(false);
+  const slideAnim = useRef(new Animated.Value(320)).current;
+
+  // Animation effect for members sidebar
+  useEffect(() => {
+    if (membersSidebarOpen) {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 320,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [membersSidebarOpen, slideAnim]);
 
   // Only owners should see the Edit Rules button
   const isOwner = useMemo(() => {
@@ -359,42 +377,52 @@ export default function WorkspaceScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
+      <View style={{ flex: 1 }}>
+        {/* Inline banner alert */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+          <MobileAlert
+            variant={alertVariant}
+            title={alertTitle}
+            description={alertDescription}
+            visible={alertVisible}
+            onClose={() => { setAlertVisible(false); setAlertIsConfirmable(false); }}
+            onCancel={alertIsConfirmable ? () => { setAlertVisible(false); setAlertIsConfirmable(false); } : undefined}
+            onConfirm={alertIsConfirmable ? () => { setAlertVisible(false); setAlertIsConfirmable(false); router.push('/(tabs)/settings?section=upgrade'); } : undefined}
+            cancelText={alertIsConfirmable ? alertCancelText : undefined}
+            confirmText={alertIsConfirmable ? alertConfirmText : undefined}
+          />
 
-      {/* Inline banner alert */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <MobileAlert
-          variant={alertVariant}
-          title={alertTitle}
-          description={alertDescription}
-          visible={alertVisible}
-          onClose={() => { setAlertVisible(false); setAlertIsConfirmable(false); }}
-          onCancel={alertIsConfirmable ? () => { setAlertVisible(false); setAlertIsConfirmable(false); } : undefined}
-          onConfirm={alertIsConfirmable ? () => { setAlertVisible(false); setAlertIsConfirmable(false); router.push('/(tabs)/settings'); } : undefined}
-          cancelText={alertIsConfirmable ? alertCancelText : undefined}
-          confirmText={alertIsConfirmable ? alertConfirmText : undefined}
-        />
+        </View>
 
-      </View>
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.push('/(tabs)')}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+            >
+              <FontAwesome name="arrow-left" size={24} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.sidebarButton}
+              onPress={() => setSidebarVisible(true)}
+            >
+              <FontAwesome name="bars" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.headerCenter}>
+            <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>Workspace</Text>
+          </View>
+          <View style={styles.headerRight} />
+        </View>
 
-      {/* Header */}
-      <View style={[{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, backgroundColor: colors.card }]}>
-        <TouchableOpacity
-          style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}
-          onPress={() => router.push('/')}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
+        <ScrollView
+          style={styles.content}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          <FontAwesome name="chevron-left" size={18} color={colors['primary-foreground']} />
-        </TouchableOpacity>
-        <Text style={[TextStyles.heading.h1, { color: colors.foreground, flex: 1 }]} numberOfLines={1}>Workspace</Text>
-        <View style={{ width: 40, height: 40 }} />
-      </View>
-
-      <ScrollView
-        style={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
         {/* Error */}
         {!USE_MOCK && error && (
           <Card style={[styles.errorCard, { backgroundColor: colors.destructive }]}>
@@ -458,29 +486,9 @@ export default function WorkspaceScreen() {
               </Card>
             </View>
 
-            <Card style={styles.sectionCard}>
-              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Workspace Actions</Text>
-              <View style={styles.actionsContainer}>
-                <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={goToReports}>
-                  <FontAwesome name="line-chart" size={16} color={colors['primary-foreground']} />
-                  <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>Reports</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.secondary }]} onPress={goToWorkspaceSettings}>
-                  <FontAwesome name="cog" size={16} color={colors['secondary-foreground']} />
-                  <Text style={[TextStyles.body.small, { color: colors['secondary-foreground'] }]}>Settings</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.actionButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
-                  onPress={() => router.push('/(tabs)/workspace/rules')}
-                >
-                  <FontAwesome name="file-text" size={16} color={colors.foreground} />
-                  <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Rules</Text>
-                </TouchableOpacity>
-              </View>
-            </Card>
           </>
         )}
-        {/* Spaces Preview: show only first 4, with View more */}
+        {/* Spaces List */}
         {!!(effectiveSpaces && effectiveSpaces.length) && (
           <Card style={styles.sectionCard}>
             <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Spaces</Text>
@@ -488,7 +496,7 @@ export default function WorkspaceScreen() {
               style={[styles.spaceList, { flexDirection: 'row', flexWrap: 'wrap', gap: PREVIEW_GAP, backgroundColor: colors.background }]}
               onLayout={(e) => setPreviewGridW(e.nativeEvent.layout.width)}
             >
-              {filteredSpaces.slice(0, 9).map((space: any) => (
+              {filteredSpaces.map((space: any) => (
                 <SpaceCard
                   key={space._id || space.id}
                   name={space.name}
@@ -501,58 +509,35 @@ export default function WorkspaceScreen() {
                   onPress={() => handleOpenSpace(space)}
                   onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, space.isArchived)}
                 />
-
               ))}
-              {filteredSpaces.length > 9 && (
-                <TouchableOpacity
-                  style={{ paddingVertical: 8, alignItems: 'center' }}
-                  onPress={() => router.push({ pathname: '/workspace/spaces', params: { workspaceId } })}
-                >
-                  <Text style={[TextStyles.body.small, { color: colors.primary }]}>View more spaces →</Text>
-                </TouchableOpacity>
-              )}
             </View>
           </Card>
         )}
-      </ScrollView>
+        </ScrollView>
+      </View>
 
-      {/* Create Space Modal */}
-      <CreateSpaceModal
-        visible={!!workspaceId && showCreateSpace}
-        onClose={() => setShowCreateSpace(false)}
-        onSubmit={handleSubmitCreate}
-        submitting={creatingSpace}
-      />
-
-      {/* Confirm remove member */}
-      <ConfirmationDialog
-        visible={confirmVisible}
-        title="Remove member?"
-        message={
-          memberToRemove
-            ? `Are you sure you want to remove ${memberToRemove?.user?.name || memberToRemove?.name || 'this member'} from the workspace?`
-            : 'Are you sure you want to remove this member from the workspace?'
-        }
-        confirmText="Remove"
-        cancelText="Cancel"
-        onConfirm={async () => {
-          const target = memberToRemove;
-          setConfirmVisible(false);
-          setMemberToRemove(null);
-          if (target) {
-            await handleRemoveMember(target);
-          }
-        }}
-        onCancel={() => {
-          setConfirmVisible(false);
-          setMemberToRemove(null);
-        }}
-        variant="danger"
-      />
-
-      {isWide && (
-        <View style={{ width: 320, padding: 16 }}>
-          {/* Sidebar: Invite */}
+      {/* Right Sidebar */}
+      {membersSidebarOpen && (
+        <>
+          {/* Backdrop */}
+          <TouchableOpacity
+            style={[styles.modalBackdrop, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}
+            activeOpacity={1}
+            onPress={() => setMembersSidebarOpen(false)}
+          />
+          
+          {/* Sidebar */}
+          <Animated.View 
+            style={[
+              styles.modalPanel, 
+              { 
+                backgroundColor: colors.background, 
+                borderLeftColor: colors.border,
+                transform: [{ translateX: slideAnim }],
+              }
+            ]}
+          >
+          {/* Invite */}
           {workspaceId && effectiveWorkspace && (
             <Card style={styles.sectionCard}>
               <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Invite Members</Text>
@@ -579,10 +564,15 @@ export default function WorkspaceScreen() {
               </View>
             </Card>
           )}
-          {/* Sidebar: Members */}
+          {/* Members */}
           {workspaceId && (
             <Card style={styles.sectionCard}>
-              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({membersCount})</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Members ({membersCount})</Text>
+                <TouchableOpacity onPress={() => setMembersSidebarOpen(false)} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
+                  <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Close</Text>
+                </TouchableOpacity>
+              </View>
               {membersLoading ? (
                 <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading members...</Text>
               ) : membersError ? (
@@ -634,104 +624,83 @@ export default function WorkspaceScreen() {
               ))}
             </Card>
           )}
-        </View>
+          </Animated.View>
+        </>
       )}
-      {/* Sidebar modal on phones */}
-      {!isWide && (
-        <Modal animationType="slide" transparent visible={membersSidebarOpen} onRequestClose={() => setMembersSidebarOpen(false)}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setMembersSidebarOpen(false)} />
-          <View style={[styles.modalPanel, { backgroundColor: colors.background, borderLeftColor: colors.border }]}> 
-            {/* Invite */}
-            {workspaceId && effectiveWorkspace && (
-              <Card style={styles.sectionCard}>
-                <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Invite Members</Text>
-                <View style={{ gap: 8 }}>
-                  <TextInput
-                    value={inviteEmail}
-                    onChangeText={setInviteEmail}
-                    placeholder="email@example.com"
-                    placeholderTextColor={colors['muted-foreground']}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    textContentType="emailAddress"
-                    keyboardType="email-address"
-                    style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
-                  />
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    <TouchableOpacity onPress={() => setInviteRole(inviteRole === 'member' ? 'admin' : 'member')} style={[styles.pill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                      <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>{inviteRole}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={handleInvite} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}> 
-                      <Text style={{ color: colors['primary-foreground'] }}>Invite</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Card>
-            )}
-            {/* Members */}
-            {workspaceId && (
-              <Card style={styles.sectionCard}>
-                <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({membersCount})</Text>
-                {membersLoading ? (
-                  <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading members...</Text>
-                ) : membersError ? (
-                  <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>{membersError}</Text>
-                ) : (Array.isArray(uniqueMembers) && uniqueMembers.length > 0 ? (
-                  <View style={{ gap: 8 }}>
-                    {uniqueMembers.map((m: any) => {
-                      const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
-                      const email = m?.user?.email || m?.email || '';
-                      const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
-                      const letter = String(displayName).charAt(0).toUpperCase();
-                      return (
-                        <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                          {avatarUrl ? (
-                            <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
-                          ) : (
-                            <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}> 
-                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
-                            </View>
-                          )}
-                          <View style={{ flex: 1 }}>
-                            <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
-                            {!!email && (
-                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
-                            )}
-                            <View style={styles.memberMetaRow}>
-                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
-                            </View>
-                          </View>
-                          {m.role !== 'owner' && (
-                            <TouchableOpacity
-                              onPress={() => { setMemberToRemove(m); setConfirmVisible(true); }}
-                              disabled={!!membersLoading}
-                              style={[styles.destructiveBtn, { backgroundColor: colors.destructive }, membersLoading ? { opacity: 0.6 } : null]}
-                            >
-                              <Text style={{ color: colors['destructive-foreground'] }}>
-                                {membersLoading ? 'Removing…' : 'Remove'}
-                              </Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      );
-                    })}
-                  </View>
-                ) : (
-                  <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No members yet.</Text>
-                ))}
-              </Card>
-            )}
-          </View>
-        </Modal>
-      )}
+
+      {/* Create Space Modal */}
+      <CreateSpaceModal
+        visible={!!workspaceId && showCreateSpace}
+        onClose={() => setShowCreateSpace(false)}
+        onSubmit={handleSubmitCreate}
+        submitting={creatingSpace}
+      />
+
+      {/* Confirm remove member */}
+      <ConfirmationDialog
+        visible={confirmVisible}
+        title="Remove member?"
+        message={
+          memberToRemove
+            ? `Are you sure you want to remove ${memberToRemove?.user?.name || memberToRemove?.name || 'this member'} from the workspace?`
+            : 'Are you sure you want to remove this member from the workspace?'
+        }
+        confirmText="Remove"
+        cancelText="Cancel"
+        onConfirm={async () => {
+          const target = memberToRemove;
+          setConfirmVisible(false);
+          setMemberToRemove(null);
+          if (target) {
+            await handleRemoveMember(target);
+          }
+        }}
+        onCancel={() => {
+          setConfirmVisible(false);
+          setMemberToRemove(null);
+        }}
+        variant="danger"
+      />
+
+      {/* Sidebar */}
+      <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="workspace" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  backButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sidebarButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { flex: 1, padding: 16 },
   errorCard: { padding: 16, marginBottom: 16, borderRadius: 12 },
@@ -760,8 +729,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignSelf: 'flex-start',
   },
-  actionsContainer: { flexDirection: 'row', gap: 12 },
-  actionButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12, gap: 8 },
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
   pill: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 999, borderWidth: 1 },
   primaryBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10 },
@@ -771,6 +738,7 @@ const styles = StyleSheet.create({
   destructiveBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   memberAvatar: { width: 36, height: 36, borderRadius: 18 },
   memberAvatarPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  modalBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#00000088' },
-  modalPanel: { position: 'absolute', top: 0, right: 0, bottom: 0, width: 320, borderLeftWidth: StyleSheet.hairlineWidth, padding: 16 },
+  modalBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#00000088', zIndex: 1000 },
+  modalPanel: { position: 'absolute', top: 0, right: 0, bottom: 0, width: 320, borderLeftWidth: StyleSheet.hairlineWidth, padding: 16, zIndex: 1001 },
+  ghostBtn: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, alignItems: 'center' },
 });

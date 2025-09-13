@@ -1,5 +1,9 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import { getApiConfig, logNetworkConfig } from '../utils/network-detector';
+
+// Get automatic network configuration
+const networkConfig = getApiConfig();
 
 // Environment configuration for React Native/Expo
 export const env = {
@@ -7,30 +11,15 @@ export const env = {
   NODE_ENV: __DEV__ ? 'development' : 'production',
   PORT: 3001,
     
-   DEFAULT_URL: process.env.PUBLIC_DEFAULT_BASE || 'http://192.168.1.64:3001' ,
-  // API Configuration
-  // Prefer EXPO_PUBLIC_* when provided. Otherwise choose sensible defaults:
-  // - Android emulator: 10.0.2.2
-  // - iOS simulator / Web: localhost
-  // For physical devices, override via apps/mobile/.env -> EXPO_PUBLIC_API_BASE_URL
-  get DEFAULT_HOST() {
-    if (__DEV__ && Platform.OS === 'android') return '10.0.2.2';
-    return 'localhost'; // For iOS simulator / web defaults; override via EXPO_PUBLIC_* for physical devices
-  },
-  get DEFAULT_API() {
-    return `http://${this.DEFAULT_HOST}:3001/api`;
-  },
-  get DEFAULT_BASE() {
-    return `http://${this.DEFAULT_HOST}:3001`;
-  },
-  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || Constants.expoConfig?.extra?.apiBaseUrl || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:3001/api`,
-  API_URL: process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:3001/api`,
-  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || Constants.expoConfig?.extra?.socketUrl || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:3001`,
+  // API Configuration - Auto-detected
+  API_BASE_URL: networkConfig.API_BASE_URL,
+  API_URL: networkConfig.API_URL,
+  SOCKET_URL: networkConfig.SOCKET_URL,
+  BASE_URL: networkConfig.BASE_URL,
   
   // App Configuration
   APP_NAME: Constants.expoConfig?.name || 'TaskFlow',
   APP_VERSION: Constants.expoConfig?.version || '1.0.0',
-  BASE_URL: process.env.EXPO_PUBLIC_BASE_URL || Constants.expoConfig?.extra?.baseUrl || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:3001`,
   
   // Feature Flags
   ENABLE_ANALYTICS: process.env.EXPO_PUBLIC_ENABLE_ANALYTICS === 'true' || Constants.expoConfig?.extra?.enableAnalytics === true,
@@ -116,16 +105,16 @@ export type Env = typeof env;
 export function getEnvVar<T extends keyof Env>(key: T, fallback?: Env[T]): Env[T] {
   // Provide smart fallbacks for base URLs at runtime
   if ((key === 'API_BASE_URL' || key === 'API_URL') && (env[key] as any) == null) {
-    return env.DEFAULT_API as any;
+    return env.API_BASE_URL as any;
   }
   if (key === 'SOCKET_URL' && (env[key] as any) == null) {
-    return env.DEFAULT_BASE as any;
+    return env.SOCKET_URL as any;
   }
   if (key === 'BASE_URL' && (env[key] as any) == null) {
-    return env.DEFAULT_BASE as any;
+    return env.BASE_URL as any;
   }
   if (key === 'DEVELOPMENT_API_URL' && (env[key] as any) == null) {
-    return env.DEFAULT_API as any;
+    return env.API_BASE_URL as any;
   }
   return (env[key] ?? fallback ?? ('' as Env[T]));
 }
@@ -242,4 +231,7 @@ if (__DEV__) {
   if (!validation.isValid) {
     console.warn('⚠️ Environment configuration issues:', validation.errors);
   }
+  
+  // Log network configuration for debugging
+  logNetworkConfig();
 }

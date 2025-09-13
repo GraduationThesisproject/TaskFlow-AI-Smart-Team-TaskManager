@@ -12,6 +12,7 @@ import { setSelectedSpace, setCurrentWorkspaceId } from '@/store/slices/workspac
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { SpaceService } from '@/services/spaceService';
 import SpaceCard from '@/components/common/SpaceCard';
+import Sidebar from '@/components/navigation/Sidebar';
 
 export default function SpacesScreen() {
   const colors = useThemeColors();
@@ -30,6 +31,7 @@ export default function SpacesScreen() {
   const [query, setQuery] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -169,11 +171,24 @@ export default function SpacesScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.primary }]} onPress={() => router.back()}>
-          <FontAwesome name="chevron-left" size={18} color={colors['primary-foreground']} />
-        </TouchableOpacity>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]} numberOfLines={1}>Spaces</Text>
-        <View style={styles.headerSpacer} />
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <FontAwesome name="arrow-left" size={24} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.sidebarButton}
+            onPress={() => setSidebarVisible(true)}
+          >
+            <FontAwesome name="bars" size={24} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.headerCenter}>
+          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Spaces</Text>
+        </View>
+        <View style={styles.headerRight} />
       </View>
 
       <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>        
@@ -232,15 +247,46 @@ export default function SpacesScreen() {
           )}
         </Card>
       </ScrollView>
+
+      {/* Sidebar */}
+      <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="workspace" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
-  backButton: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  headerSpacer: { width: 40 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  backButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sidebarButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   content: { flex: 1, padding: 16 },
   sectionCard: { padding: 20, marginBottom: 20 },
   errorCard: { padding: 12, borderRadius: 12 },

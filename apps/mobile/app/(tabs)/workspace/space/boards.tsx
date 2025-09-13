@@ -6,11 +6,15 @@ import { View, Text, Card } from '@/components/Themed';
 import BoardCard from '@/components/common/BoardCard';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { useAppDispatch, useAppSelector } from '@/store';
+import { fetchMembers } from '@/store/slices/workspaceSlice';
+import { removeMemberOptimistically } from '@/store/slices/spaceSlice';
 import { TextStyles } from '@/constants/Fonts';
 import { BoardService } from '@/services/boardService';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useSpaces as useSpacesHook } from '@/hooks/useSpaces';
 import SpaceHeader from '@/components/space/SpaceHeader';
+import SpaceRightSidebar from '@/components/space/SpaceRightSidebar';
+import Sidebar from '@/components/navigation/Sidebar';
 
 export default function SpaceBoardsScreen() {
   const colors = useThemeColors();
@@ -20,29 +24,76 @@ export default function SpaceBoardsScreen() {
   const { width } = useWindowDimensions();
   const isWide = width >= 768; // show right sidebar on tablets/landscape
 
-  const { selectedSpace, members: workspaceMembers } = useAppSelector((s: any) => s.workspace);
+  const { selectedSpace, members: workspaceMembers, currentWorkspace } = useAppSelector((s: any) => s.workspace);
   const { user: authUser } = useAppSelector((s: any) => s.auth);
-  const currentUserId = useMemo(() => String(authUser?.user?._id || authUser?.user?.id || ''), [authUser]);
+  const { workspaces: wsList } = useAppSelector((s: any) => s.workspace);
+  const currentUserId = useMemo(() => {
+    console.log('=== AUTH DEBUG ===');
+    console.log('Raw authUser:', JSON.stringify(authUser, null, 2));
+    console.log('authUser?.user:', authUser?.user);
+    console.log('authUser?._id:', authUser?._id);
+    console.log('authUser?.id:', authUser?.id);
+    
+    const userId = authUser?.user?._id || authUser?.user?.id || authUser?._id || authUser?.id;
+    console.log('Final userId:', userId);
+    return String(userId || '');
+  }, [authUser]);
   const space = selectedSpace;
   const { loadSpaces } = useWorkspaces({ autoFetch: false });
-  const { loadSpaceMembers, addMember, removeMember, editSpace, removeSpace, currentSpace } = useSpacesHook();
+  const { loadSpaceMembers, addMember, removeMember, currentSpace, loadSpace } = useSpacesHook();
 
   // Include all members (including owner). We'll prevent adding yourself via UI guards.
-  const displayMembers = useMemo(() => (
-    Array.isArray(workspaceMembers) ? workspaceMembers : []
-  ), [workspaceMembers]);
+  const displayMembers = useMemo(() => {
+    const members = Array.isArray(workspaceMembers) ? workspaceMembers : [];
+    console.log('Workspace members from Redux:', members.map(m => ({
+      id: String(m?.user?._id || m?.user?.id || m?._id || m?.id || ''),
+      role: m?.role,
+      name: m?.user?.name || m?.name,
+      email: m?.user?.email || m?.email
+    })));
+    return members;
+  }, [workspaceMembers]);
 
-  // Precompute owner IDs for disable logic
+  // Precompute owner IDs for disable logic - use same logic as workspace index
   const ownerIds = useMemo(() => {
     const ids = new Set<string>();
-    (Array.isArray(displayMembers) ? displayMembers : []).forEach((m: any) => {
-      if (String(m?.role || '').toLowerCase() === 'owner') {
-        const id = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
-        if (id) ids.add(id);
+    console.log('Computing ownerIds from workspace data...');
+    
+    console.log('Redux currentWorkspace:', currentWorkspace);
+    console.log('Redux workspaces list:', wsList);
+    
+    // Find current workspace
+    const currentWs = currentWorkspace || (Array.isArray(wsList) ? wsList.find((ws: any) => {
+      const wsId = String(ws?._id || ws?.id || '');
+      const currentWsId = String(selectedSpace?.workspaceId || selectedSpace?.workspace?._id || selectedSpace?.workspace?.id || '');
+      return wsId === currentWsId;
+    }) : null);
+    
+    console.log('Current workspace found:', currentWs);
+    
+    // Method 1: Check workspace owner field (same as workspace index)
+    const ownerId = (currentWs?.owner?._id || currentWs?.owner?.id || currentWs?.ownerId);
+    if (ownerId) {
+      const ownerIdStr = String(ownerId);
+      ids.add(ownerIdStr);
+      console.log('Added workspace owner ID:', ownerIdStr);
+    }
+    
+    // Method 2: Check members list for owner role (same as workspace index)
+    const memberList: any[] = Array.isArray(displayMembers) ? displayMembers : [];
+    memberList.forEach((m: any) => {
+      const mid = m?.user?._id || m?.user?.id || m?.userId || m?._id || m?.id;
+      const role = String(m?.role || '').toLowerCase();
+      if (mid && role === 'owner') {
+        const memberIdStr = String(mid);
+        ids.add(memberIdStr);
+        console.log('Added member owner ID:', memberIdStr, 'for member:', m?.user?.name || m?.name);
       }
     });
+    
+    console.log('Final ownerIds:', Array.from(ids));
     return ids;
-  }, [displayMembers]);
+  }, [displayMembers, selectedSpace, currentWorkspace, wsList]);
 
   // Set of already-added member IDs (space members)
   const addedMemberIdSet = useMemo(() => {
@@ -65,23 +116,166 @@ export default function SpaceBoardsScreen() {
     return merged;
   }, [addedMemberIdSet, tempAddedIds]);
 
-  // Members that can be added to a board (exclude workspace owners from selection list)
+  // Actual members already added to the current space (for the "Added Members" list)
+  // Show all valid space members (owner + any members in the space)
+  const spaceMembers = useMemo(() => {
+    if (!currentSpace) return [];
+    const members = (currentSpace as any)?.members;
+    const spaceMembersList = Array.isArray(members) ? members : [];
+    
+    // Filter to show all valid space members
+    const filteredSpaceMembers = spaceMembersList.filter(spaceMember => {
+      const hasValidUser = spaceMember?.user && (spaceMember.user._id || spaceMember.user.id);
+      const hasValidName = spaceMember?.user?.name || spaceMember?.user?.email || spaceMember?.name || spaceMember?.email;
+      const hasValidEmail = spaceMember?.user?.email || spaceMember?.email;
+      
+      // Only include members that have valid user data
+      if (!hasValidUser || !hasValidName || !hasValidEmail) {
+        console.warn('Filtering out invalid space member (missing user, name, or email):', spaceMember);
+        return false;
+      }
+      
+      // Additional check: ensure the member exists in the workspace members list
+      const memberId = String(spaceMember?.user?._id || spaceMember?.user?.id || spaceMember?._id || spaceMember?.id || '');
+      const existsInWorkspace = displayMembers.some(wsMember => {
+        const wsMemberId = String(wsMember?.user?._id || wsMember?.user?.id || wsMember?._id || wsMember?.id || '');
+        return wsMemberId === memberId;
+      });
+      
+      if (!existsInWorkspace) {
+        console.warn('Filtering out space member not in workspace:', spaceMember);
+        return false;
+      }
+      
+      // Include all valid space members (owner or added)
+      return true;
+    });
+    
+    // Merge space members with workspace member roles
+    const enrichedSpaceMembers = filteredSpaceMembers.map(spaceMember => {
+      const memberId = String(spaceMember?.user?._id || spaceMember?.user?.id || spaceMember?._id || spaceMember?.id || '');
+      
+      // Find the corresponding workspace member to get the correct role
+      const workspaceMember = displayMembers.find(wsMember => {
+        const wsMemberId = String(wsMember?.user?._id || wsMember?.user?.id || wsMember?._id || wsMember?.id || '');
+        return wsMemberId === memberId;
+      });
+      
+      // Use workspace role if available, otherwise use space role
+      const correctRole = workspaceMember?.role || spaceMember?.role || 'member';
+      
+      return {
+        ...spaceMember,
+        role: correctRole,
+        // Also update the nested user object if it exists
+        user: spaceMember?.user ? {
+          ...spaceMember.user,
+          role: correctRole
+        } : spaceMember?.user
+      };
+    });
+    
+    console.log('=== SPACE MEMBERS FILTERING DEBUG ===');
+    console.log('Original space members count:', spaceMembersList.length);
+    console.log('Filtered space members count (owner + explicitly added):', filteredSpaceMembers.length);
+    console.log('Final enriched space members count:', enrichedSpaceMembers.length);
+    console.log('=== END FILTERING DEBUG ===');
+    
+    return enrichedSpaceMembers;
+  }, [currentSpace, displayMembers, ownerIds]);
+
+  // Members that can be added to a board (exclude workspace owners and already added members)
   const addableMembers = useMemo(() => {
     const list = Array.isArray(displayMembers) ? displayMembers : [];
-    return list.filter((m: any) => {
+    const filtered = list.filter((m: any) => {
       const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
       const isSelf = currentUserId && memberId === currentUserId;
       const isOwner = ownerIds.has(memberId);
-      const isAlreadyAdded = effectiveAddedMemberIdSet.has(memberId);
-      return memberId && !isSelf && !isOwner && !isAlreadyAdded;
+      
+      // Check if member is already in space (using the same logic as spaceMembers)
+      const isAlreadyInSpace = spaceMembers.some((spaceMember: any) => {
+        const spaceMemberId = String(spaceMember?.user?._id || spaceMember?.user?.id || spaceMember?._id || spaceMember?.id || '');
+        return spaceMemberId === memberId;
+      });
+      
+      if (isSelf) {
+        console.log('❌ FILTERED OUT from Addable (Self):', memberId, m?.user?.name || m?.name);
+        return false;
+      }
+      
+      if (isOwner) {
+        console.log('❌ FILTERED OUT from Addable (Owner):', memberId, m?.user?.name || m?.name);
+        return false;
+      }
+      
+      if (isAlreadyInSpace) {
+        console.log('❌ FILTERED OUT from Addable (Already in Space):', memberId, m?.user?.name || m?.name);
+        return false;
+      }
+      
+      console.log('✅ ADDABLE MEMBER:', memberId, m?.user?.name || m?.name);
+      return true;
     });
-  }, [displayMembers, ownerIds, effectiveAddedMemberIdSet, currentUserId]);
+    
+    console.log('=== ADDABLE MEMBERS (BOARDS) ===');
+    console.log('Total addable members:', filtered.length);
+    console.log('Addable members:', filtered.map(m => ({
+      id: String(m?.user?._id || m?.user?.id || m?._id || m?.id || ''),
+      name: m?.user?.name || m?.name
+    })));
+    console.log('=== END ADDABLE MEMBERS ===');
+    
+    return filtered;
+  }, [displayMembers, ownerIds, spaceMembers, currentUserId]);
 
-  // Actual members already added to the current space (for the "Added Members" list)
-  const spaceMembers = useMemo(() => {
-    const members = (currentSpace as any)?.members || [];
-    return Array.isArray(members) ? members : [];
-  }, [currentSpace]);
+  // Check if current user is admin or owner (can manage members) - use same logic as workspace index
+  const canManageMembers = useMemo(() => {
+    console.log('=== Permission Check ===');
+    console.log('currentUserId:', currentUserId);
+    console.log('ownerIds:', Array.from(ownerIds));
+    
+    // Temporary: If currentUserId is empty, try to find the user from the enriched space members
+    let effectiveUserId = currentUserId;
+    if (!effectiveUserId) {
+      // Look for the current user in the space members (they should be there as owner)
+      const currentUserInSpace = spaceMembers.find((m: any) => {
+        const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
+        return memberId && ownerIds.has(memberId);
+      });
+      
+      if (currentUserInSpace) {
+        effectiveUserId = String(currentUserInSpace?.user?._id || currentUserInSpace?.user?.id || currentUserInSpace?._id || currentUserInSpace?.id || '');
+        console.log('Found current user in space members, using ID:', effectiveUserId);
+      }
+    }
+    
+    if (!effectiveUserId) {
+      console.log('No effectiveUserId - returning false');
+      return false;
+    }
+    
+    // Method 1: Check if user is in ownerIds (workspace owner)
+    const isWorkspaceOwner = ownerIds.has(effectiveUserId);
+    console.log('isWorkspaceOwner:', isWorkspaceOwner);
+    if (isWorkspaceOwner) {
+      console.log('User is workspace owner - returning true');
+      return true;
+    }
+    
+    // Method 2: Check if user is workspace admin (same logic as workspace index)
+    const userMember = displayMembers.find((m: any) => {
+      const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
+      return memberId === effectiveUserId;
+    });
+    
+    console.log('userMember found:', userMember);
+    const isAdmin = userMember?.role === 'admin';
+    console.log('isAdmin:', isAdmin, 'userMember.role:', userMember?.role);
+    console.log('Final canManageMembers result:', isAdmin);
+    console.log('=== End Permission Check ===');
+    
+    return isAdmin;
+  }, [currentUserId, ownerIds, displayMembers, spaceMembers]);
 
   const [refreshing, setRefreshing] = useState(false);
   const lastLoadedSpaceId = useRef<string | null>(null);
@@ -92,6 +286,8 @@ export default function SpaceBoardsScreen() {
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState<'viewer' | 'editor' | 'admin'>('viewer');
   const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  
 
   // Grid sizing for 3 columns
   const [gridWidth, setGridWidth] = useState(0);
@@ -116,10 +312,6 @@ export default function SpaceBoardsScreen() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [boardType, setBoardType] = useState<'kanban' | 'list' | 'calendar' | 'timeline'>('kanban');
 
-  // Rename Space modal state
-  const [renameVisible, setRenameVisible] = useState(false);
-  const [renameName, setRenameName] = useState('');
-  const [renaming, setRenaming] = useState(false);
 
   // If navigated directly with an id param and no selectedSpace in store, fetch it.
 
@@ -163,9 +355,19 @@ export default function SpaceBoardsScreen() {
   useEffect(() => {
     const spaceId = String(space?._id || space?.id || '');
     if (spaceId) {
+      console.log('Loading space members for space:', spaceId);
       loadSpaceMembers(spaceId);
     }
   }, [space?._id, space?.id]);
+
+  // Also ensure workspace members are loaded when space changes
+  useEffect(() => {
+    const workspaceId = String(space?.workspaceId || space?.workspace?._id || space?.workspace?.id || '');
+    if (workspaceId) {
+      // Dispatch fetchMembers to ensure workspace members are loaded
+      dispatch(fetchMembers({ id: workspaceId }));
+    }
+  }, [space?.workspaceId, space?.workspace, dispatch]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -230,17 +432,201 @@ export default function SpaceBoardsScreen() {
 
   // Simple handlers used by SpaceHeader/Sidebar
   const goMembers = () => {
-    // On phones, open the sidebar as a drawer; on wide screens it's already visible
-    if (!isWide) setSidebarOpen(true);
+    // Toggle the space members sidebar
+    setSidebarVisible(!sidebarVisible);
   };
   const goSettings = () => router.push('/workspace/space/settings');
-  const onAddMembersToBoard = async (ids: string[]) => {
+
+  // Member management functions
+  const handleAddMember = async (memberId: string, role: string = 'member') => {
+    if (!space?._id && !space?.id) return;
+    
+    console.log('=== ADDING MEMBER ===');
+    console.log('memberId:', memberId);
+    console.log('role:', role);
+    console.log('spaceId:', space._id || space.id);
+    
+    try {
+      const spaceId = space._id || space.id;
+      await addMember(spaceId, memberId, role);
+      
+      console.log('✅ Member added successfully via API');
+      
+      // Refresh space members
+      await loadSpaceMembers(spaceId);
+      
+      console.log('✅ Space members refreshed');
+      
+      setBanner({ type: 'success', message: 'Member added successfully' });
+      setTimeout(() => setBanner(null), 3000);
+    } catch (error: any) {
+      console.error('❌ Failed to add member:', error);
+      setBanner({ type: 'error', message: error?.message || 'Failed to add member' });
+      setTimeout(() => setBanner(null), 3000);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!space?._id && !space?.id) return;
+    
+    try {
+      const spaceId = space._id || space.id;
+      console.log('=== REMOVE MEMBER DEBUG ===');
+      console.log('spaceId:', spaceId);
+      console.log('memberId:', memberId);
+      console.log('API endpoint will be:', `/spaces/${spaceId}/members/${memberId}`);
+      
+      // First, let's check if this member actually exists in our current space members
+      const currentMembers = (currentSpace as any)?.members || [];
+      const memberExists = currentMembers.some((m: any) => {
+        const membershipId = String(m?._id || m?.id || '');
+        return membershipId === memberId;
+      });
+      
+      console.log('Member exists in current space members:', memberExists);
+      console.log('Current space members count:', currentMembers.length);
+      console.log('Current space members IDs:', currentMembers.map((m: any) => String(m?._id || m?.id || '')));
+      
+      if (!memberExists) {
+        console.log('Member not found in current space members, refreshing data first');
+        await loadSpaceMembers(spaceId);
+        setBanner({ type: 'success', message: 'Refreshing member list...' });
+        setTimeout(() => setBanner(null), 2000);
+        return;
+      }
+      
+      await removeMember(spaceId, memberId);
+      
+      // Refresh space members
+      await loadSpaceMembers(spaceId);
+      
+      setBanner({ type: 'success', message: 'Member removed successfully' });
+      setTimeout(() => setBanner(null), 3000);
+    } catch (error: any) {
+      console.error('Failed to remove member:', error);
+      console.error('Error details:', {
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+        message: error?.message
+      });
+      
+      // If it's a 404 error, the member doesn't exist on the backend
+      if (error?.response?.status === 404) {
+        console.log('Member not found on backend (404), this indicates data sync issue');
+        console.log('Removing member optimistically from local state');
+        
+        // Remove the member from local state optimistically
+        dispatch(removeMemberOptimistically(memberId));
+        
+        setBanner({ type: 'success', message: 'Member was already removed from the server' });
+        
+        // Force refresh to get the latest state from backend
+        const spaceId = space._id || space.id;
+        await loadSpaceMembers(spaceId);
+        await loadSpace(spaceId);
+      } else {
+        setBanner({ type: 'error', message: error?.message || 'Failed to remove member' });
+      }
+      setTimeout(() => setBanner(null), 3000);
+    }
+  };
+
+  // Clean up invalid members (those with null user data or not in workspace)
+  const cleanupInvalidMembers = async () => {
+    if (!space?._id && !space?.id) return;
+    
+    try {
+      const spaceId = space._id || space.id;
+      const members = (currentSpace as any)?.members || [];
+      
+      // Find invalid members (those with null user data or not in workspace)
+      const invalidMembers = members.filter((spaceMember: any) => {
+        const hasValidUser = spaceMember?.user && (spaceMember.user._id || spaceMember.user.id);
+        const hasValidName = spaceMember?.user?.name || spaceMember?.user?.email || spaceMember?.name || spaceMember?.email;
+        const hasValidEmail = spaceMember?.user?.email || spaceMember?.email;
+        
+        // Check if member exists in workspace
+        const memberId = String(spaceMember?.user?._id || spaceMember?.user?.id || spaceMember?._id || spaceMember?.id || '');
+        const existsInWorkspace = displayMembers.some(wsMember => {
+          const wsMemberId = String(wsMember?.user?._id || wsMember?.user?.id || wsMember?._id || wsMember?.id || '');
+          return wsMemberId === memberId;
+        });
+        
+        return !hasValidUser || !hasValidName || !hasValidEmail || !existsInWorkspace;
+      });
+      
+      if (invalidMembers.length === 0) {
+        setBanner({ type: 'success', message: 'No invalid members found' });
+        setTimeout(() => setBanner(null), 3000);
+        return;
+      }
+      
+      console.log('Found invalid members to clean up:', invalidMembers);
+      
+      let successCount = 0;
+      let errorCount = 0;
+      
+      // Remove each invalid member
+      for (const invalidMember of invalidMembers) {
+        const memberId = String(invalidMember?._id || invalidMember?.id || '');
+        if (memberId) {
+          console.log('Attempting to remove invalid member:', memberId);
+          try {
+            await removeMember(spaceId, memberId);
+            successCount++;
+          } catch (error: any) {
+            console.warn(`Failed to remove member ${memberId} via API:`, error?.message);
+            errorCount++;
+            
+            // If API fails with 404, try to remove from local state
+            if (error?.response?.status === 404) {
+              console.log(`Member ${memberId} not found on backend, removing from local state`);
+              // This will be handled by refreshing the space members
+            }
+          }
+        }
+      }
+      
+      // Refresh space members to get clean state from backend
+      await loadSpaceMembers(spaceId);
+      
+      // Also refresh the space data to ensure we have the latest state
+      if (errorCount > 0) {
+        console.log('Refreshing space data due to API errors');
+        // Force refresh the space data
+        await loadSpace(spaceId);
+      }
+      
+      // Additional cleanup: Force refresh to sync with backend
+      console.log('Performing final refresh to sync with backend...');
+      await loadSpaceMembers(spaceId);
+      await loadSpace(spaceId);
+      
+      if (errorCount > 0) {
+        setBanner({ 
+          type: 'success', 
+          message: `Cleaned up ${successCount} member(s). ${errorCount} member(s) were already removed from backend.` 
+        });
+      } else {
+        setBanner({ type: 'success', message: `Cleaned up ${successCount} invalid member(s)` });
+      }
+      setTimeout(() => setBanner(null), 3000);
+    } catch (error: any) {
+      console.error('Failed to cleanup invalid members:', error);
+      setBanner({ type: 'error', message: error?.message || 'Failed to cleanup invalid members' });
+      setTimeout(() => setBanner(null), 3000);
+    }
+  };
+
+  const onAddMembersToBoard = async (ids: string[], role?: string) => {
     // Using Space-level membership via useSpaces hook as requested
     const spaceId = String(space?._id || space?.id || '');
     if (!spaceId) return;
     try {
-      // Add each selected member to the space with selectedRole
-      await Promise.all(ids.map((uid) => addMember(spaceId, uid, selectedRole)));
+      // Add each selected member to the space with the specified role (default to 'viewer')
+      const memberRole = role || 'viewer';
+      await Promise.all(ids.map((uid) => addMember(spaceId, uid, memberRole as any)));
       // Optimistically mark them as added so they disappear immediately
       setTempAddedIds((prev) => {
         const next = new Set(prev);
@@ -251,8 +637,7 @@ export default function SpaceBoardsScreen() {
       await loadSpaceMembers(spaceId);
       // After server state is in, clear temporary IDs
       setTempAddedIds(new Set());
-      setBanner({ type: 'success', message: `Added ${ids.length} member${ids.length > 1 ? 's' : ''} to space` });
-      setTimeout(() => setBanner(null), 1500);
+      // Member added successfully - no notification needed
     } catch (e: any) {
       setBanner({ type: 'error', message: e?.response?.data?.message || e?.message || 'Failed to add members' });
       setTimeout(() => setBanner(null), 2000);
@@ -267,8 +652,7 @@ export default function SpaceBoardsScreen() {
     try {
       await removeMember(spaceId, memberId);
       await loadSpaceMembers(spaceId);
-      setBanner({ type: 'success', message: 'Member removed from space' });
-      setTimeout(() => setBanner(null), 1200);
+      // Member removed successfully - no notification needed
     } catch (e: any) {
       setBanner({ type: 'error', message: e?.response?.data?.message || e?.message || 'Failed to remove member' });
       setTimeout(() => setBanner(null), 1800);
@@ -292,60 +676,6 @@ export default function SpaceBoardsScreen() {
     }
   };
 
-  const openRenameSpace = () => {
-    const currentName = String((space as any)?.name || '');
-    setRenameName(currentName);
-    setRenameVisible(true);
-  };
-
-  const submitRenameSpace = async () => {
-    const spaceId = String(space?._id || space?.id || '');
-    if (!spaceId) return;
-    if (!renameName.trim()) {
-      setBanner({ type: 'error', message: 'Space name required' });
-      setTimeout(() => setBanner(null), 1500);
-      return;
-    }
-    try {
-      setRenaming(true);
-      await editSpace(spaceId, { name: renameName.trim() });
-      await loadBoards(true);
-      await loadSpaceMembers(spaceId);
-      setRenameVisible(false);
-      setBanner({ type: 'success', message: 'Space renamed' });
-      setTimeout(() => setBanner(null), 1200);
-    } catch (e: any) {
-      setBanner({ type: 'error', message: e?.response?.data?.message || e?.message || 'Failed to rename space' });
-      setTimeout(() => setBanner(null), 1800);
-    } finally {
-      setRenaming(false);
-    }
-  };
-
-  const confirmDeleteSpace = () => {
-    Alert.alert(
-      'Delete Space',
-      'Are you sure you want to delete this space? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: deleteSpaceNow },
-      ]
-    );
-  };
-
-  const deleteSpaceNow = async () => {
-    const spaceId = String(space?._id || space?.id || '');
-    if (!spaceId) return;
-    try {
-      await removeSpace(spaceId);
-      setBanner({ type: 'success', message: 'Space deleted' });
-      setTimeout(() => setBanner(null), 1000);
-      router.push('/(tabs)/workspace');
-    } catch (e: any) {
-      setBanner({ type: 'error', message: e?.response?.data?.message || e?.message || 'Failed to delete space' });
-      setTimeout(() => setBanner(null), 1800);
-    }
-  };
 
   if (!space) {
     return (
@@ -424,7 +754,7 @@ export default function SpaceBoardsScreen() {
               </View>
             )}
             {/* View more button */}
-            {!loading && boards.length > VISIBLE_MAX && (
+            {!loading && Array.isArray(boards) && boards.length > VISIBLE_MAX && (
               <TouchableOpacity onPress={() => router.push('/(tabs)/workspace/space/allboards')} style={[styles.viewMoreBtn, { borderColor: colors.border }]}> 
                 <Text style={[TextStyles.body.medium, { color: colors.primary }]}>View more</Text>
               </TouchableOpacity>
@@ -432,42 +762,33 @@ export default function SpaceBoardsScreen() {
           </ScrollView>
         </View>
         <View style={{ width: 320, padding: 16 }}>
-          {/* Sidebar: Add Members to Board (workspace members only; you can't add yourself) */}
+          {/* Sidebar: Available Members */}
           <Card style={[styles.sidebarCard, { backgroundColor: colors.card }]}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Add Members to Board</Text>
-            {/* Role selection */}
-            <RNView style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-              {(['viewer','editor','admin'] as const).map((r) => (
-                <TouchableOpacity key={r} onPress={() => setSelectedRole(r)} style={[styles.pill, { borderColor: colors.border, backgroundColor: selectedRole === r ? colors.primary : colors.card }]}>
-                  <Text style={[TextStyles.caption.small, { color: selectedRole === r ? colors['primary-foreground'] : colors.foreground }]}>{r}</Text>
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity onPress={onRefreshMembers} style={[styles.ghostBtn, { borderColor: colors.border, marginLeft: 'auto' }]}> 
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Available Members</Text>
+              <TouchableOpacity onPress={onRefreshMembers} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
                 <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Refresh</Text>
               </TouchableOpacity>
-            </RNView>
+            </View>
             {Array.isArray(addableMembers) && addableMembers.length > 0 ? (
               <RNView style={{ gap: 8 }}>
                 {addableMembers.map((m: any) => {
                   const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
                   const email = m?.user?.email || m?.email || '';
                   const avatarUrl = m?.user?.avatar || m?.avatar || m?.profile?.avatar;
-                  const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id);
-                  const selected = selectedMemberIds.includes(memberId);
+                  const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
                   const isSelf = currentUserId && memberId === currentUserId;
                   const isOwner = ownerIds.has(memberId);
                   const isAlreadyAdded = effectiveAddedMemberIdSet.has(memberId);
                   const letter = String(displayName).charAt(0).toUpperCase();
                   return (
-                    <TouchableOpacity
+                    <View
                       key={memberId}
-                      onPress={() => { if (!isSelf && !isOwner && !isAlreadyAdded) toggleMemberSelection(memberId); }}
                       style={[
                         styles.memberItem,
                         { backgroundColor: colors.background, borderColor: colors.border },
                         (isSelf || isOwner || isAlreadyAdded) ? { opacity: 0.6 } : null,
                       ]}
-                      accessibilityState={{ disabled: isSelf || isOwner || isAlreadyAdded }}
                     >
                       {avatarUrl ? (
                         <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
@@ -481,45 +802,28 @@ export default function SpaceBoardsScreen() {
                         {!!email && (
                           <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
                         )}
+                        <Text style={[TextStyles.caption.small, { color: colors.primary }]}>{m.role || 'member'}</Text>
                       </View>
-                      <View style={[
-                        styles.checkbox,
-                        { borderColor: colors.border, backgroundColor: (selected && !isAlreadyAdded && !isSelf && !isOwner) ? colors.primary : 'transparent' },
-                        (isSelf || isOwner || isAlreadyAdded) ? { backgroundColor: 'transparent' } : null,
-                      ]} />
-                    </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleAddMember(memberId, 'viewer')}
+                        disabled={isSelf || isOwner || isAlreadyAdded}
+                        style={[
+                          styles.addButton,
+                          { 
+                            backgroundColor: colors.primary,
+                            opacity: (isSelf || isOwner || isAlreadyAdded) ? 0.6 : 1
+                          }
+                        ]}
+                      >
+                        <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'] }]}>+ Add</Text>
+                      </TouchableOpacity>
+                    </View>
                   );
                 })}
-                <TouchableOpacity
-                  onPress={() => {
-                    const ids = selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !effectiveAddedMemberIdSet.has(id));
-                    onAddMembersToBoard(ids);
-                    setSelectedMemberIds([]);
-                  }}
-                  disabled={selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !effectiveAddedMemberIdSet.has(id)).length === 0}
-                  style={[
-                    styles.primaryBtn,
-                    { backgroundColor: colors.primary, opacity: selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !effectiveAddedMemberIdSet.has(id)).length === 0 ? 0.6 : 1 },
-                  ]}
-                >
-                  <Text style={{ color: colors['primary-foreground'] }}>Add to Board</Text>
-                </TouchableOpacity>
               </RNView>
             ) : (
               <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No workspace members available.</Text>
             )}
-          </Card>
-          {/* Space actions (wide) */}
-          <Card style={[styles.sidebarCard, { backgroundColor: colors.card, marginTop: 12 }]}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Space Actions</Text>
-            <RNView style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity onPress={openRenameSpace} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
-                <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Rename</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={confirmDeleteSpace} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
-                <Text style={[TextStyles.body.small, { color: colors.destructive }]}>Delete</Text>
-              </TouchableOpacity>
-            </RNView>
           </Card>
           {/* Sidebar: Added Members (wide) */}
           {Array.isArray(spaceMembers) && spaceMembers.length > 0 && (
@@ -562,39 +866,6 @@ export default function SpaceBoardsScreen() {
               </RNView>
             </Card>
           )}
-          {/* Sidebar: Members list (read-only) */}
-          <Card style={[styles.sidebarCard, { backgroundColor: colors.card, marginTop: 12 }]}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Members ({Array.isArray(displayMembers) ? displayMembers.length : 0})</Text>
-            {Array.isArray(displayMembers) && displayMembers.length > 0 ? (
-              <RNView style={{ gap: 8 }}>
-                {displayMembers.map((m: any) => {
-                  const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
-                  const email = m?.user?.email || m?.email || '';
-                  const avatarUrl = m?.user?.avatar || m?.avatar || m?.profile?.avatar;
-                  const letter = String(displayName).charAt(0).toUpperCase();
-                  return (
-                    <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.background, borderColor: colors.border }]}> 
-                      {avatarUrl ? (
-                        <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
-                      ) : (
-                        <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}> 
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
-                        </View>
-                      )}
-                      <View style={{ flex: 1 }}>
-                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
-                        {!!email && (
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
-                        )}
-                      </View>
-                    </View>
-                  );
-                })}
-              </RNView>
-            ) : (
-              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No members yet.</Text>
-            )}
-          </Card>
         </View>
       </RNView>
     );
@@ -602,36 +873,37 @@ export default function SpaceBoardsScreen() {
 
   // Stacked layout on phones
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* In-app notification banner */}
-      {banner && (
-        <View
-          style={[
-            styles.banner,
-            {
-              backgroundColor: banner.type === 'success' ? colors.primary : colors.destructive,
-              borderColor: banner.type === 'success' ? colors.primary : colors.destructive,
-            },
-          ]}
+    <RNView style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
+      <View style={{ flex: 1 }}>
+        {/* In-app notification banner */}
+        {banner && (
+          <View
+            style={[
+              styles.banner,
+              {
+                backgroundColor: banner.type === 'success' ? colors.primary : colors.destructive,
+                borderColor: banner.type === 'success' ? colors.primary : colors.destructive,
+              },
+            ]}
+          >
+            <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'] }]}>{banner.message}</Text>
+          </View>
+        )}
+        <SpaceHeader
+          space={{
+            ...space,
+            totalBoards: Array.isArray(boards) ? boards.length : (space?.totalBoards || space?.stats?.totalBoards || 0),
+            stats: { ...(space?.stats || {}), totalBoards: Array.isArray(boards) ? boards.length : (space?.stats?.totalBoards || 0) },
+          }}
+          onCreateBoard={openCreateBoard}
+          onMembers={goMembers}
+          onSettings={goSettings}
+          onBackToWorkspace={() => router.push('/(tabs)/workspace')}
+        />
+        <ScrollView
+          style={styles.content}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'] }]}>{banner.message}</Text>
-        </View>
-      )}
-      <SpaceHeader
-        space={{
-          ...space,
-          totalBoards: Array.isArray(boards) ? boards.length : (space?.totalBoards || space?.stats?.totalBoards || 0),
-          stats: { ...(space?.stats || {}), totalBoards: Array.isArray(boards) ? boards.length : (space?.stats?.totalBoards || 0) },
-        }}
-        onCreateBoard={openCreateBoard}
-        onMembers={goMembers}
-        onSettings={goSettings}
-        onBackToWorkspace={() => router.push('/(tabs)/workspace')}
-      />
-      <ScrollView
-        style={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
         {!!error && (
           <Card style={[styles.errorCard, { backgroundColor: colors.destructive }]}> 
             <Text style={[TextStyles.body.medium, { color: colors['destructive-foreground'] }]}>{error}</Text>
@@ -676,227 +948,34 @@ export default function SpaceBoardsScreen() {
           </View>
         )}
         {/* View more button (phone) */}
-        {!loading && boards.length > VISIBLE_MAX && (
+        {!loading && Array.isArray(boards) && boards.length > VISIBLE_MAX && (
           <TouchableOpacity onPress={() => router.push('/(tabs)/workspace/space/allboards')} style={[styles.viewMoreBtn, { borderColor: colors.border, alignSelf: 'center', marginTop: 12 }]}> 
             <Text style={[TextStyles.body.medium, { color: colors.primary }]}>View more</Text>
           </TouchableOpacity>
         )}
-      </ScrollView>
-      {/* Sidebar Modal Drawer */}
-      <Modal animationType="slide" transparent visible={sidebarOpen} onRequestClose={() => setSidebarOpen(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setSidebarOpen(false)} />
-        <View style={[styles.modalPanel, { backgroundColor: colors.background, borderLeftColor: colors.border }]}> 
-          <Card style={[styles.sidebarCard, { backgroundColor: colors.card }]}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Add Members to Board</Text>
-            {/* Role selection */}
-            <RNView style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-              {(['viewer','editor','admin'] as const).map((r) => (
-                <TouchableOpacity key={r} onPress={() => setSelectedRole(r)} style={[styles.pill, { borderColor: colors.border, backgroundColor: selectedRole === r ? colors.primary : colors.card }]}>
-                  <Text style={[TextStyles.caption.small, { color: selectedRole === r ? colors['primary-foreground'] : colors.foreground }]}>{r}</Text>
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity onPress={onRefreshMembers} style={[styles.ghostBtn, { borderColor: colors.border, marginLeft: 'auto' }]}> 
-                <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Refresh</Text>
-              </TouchableOpacity>
-            </RNView>
-            {Array.isArray(addableMembers) && addableMembers.length > 0 ? (
-              <RNView style={{ gap: 8 }}>
-                {addableMembers.map((m: any) => {
-                  const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
-                  const email = m?.user?.email || m?.email || '';
-                  const avatarUrl = m?.user?.avatar || m?.avatar || m?.profile?.avatar;
-                  const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id);
-                  const selected = selectedMemberIds.includes(memberId);
-                  const isSelf = currentUserId && memberId === currentUserId;
-                  const isOwner = ownerIds.has(memberId);
-                  const isAlreadyAdded = effectiveAddedMemberIdSet.has(memberId);
-                  const letter = String(displayName).charAt(0).toUpperCase();
-                  return (
-                    <TouchableOpacity
-                      key={memberId}
-                      onPress={() => { if (!isSelf && !isOwner && !isAlreadyAdded) toggleMemberSelection(memberId); }}
-                      style={[
-                        styles.memberItem,
-                        { backgroundColor: colors.background, borderColor: colors.border },
-                        (isSelf || isOwner || isAlreadyAdded) ? { opacity: 0.6 } : null,
-                      ]}
-                      accessibilityState={{ disabled: isSelf || isOwner || isAlreadyAdded }}
-                    >
-                      {avatarUrl ? (
-                        <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
-                      ) : (
-                        <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
-                        </View>
-                      )}
-                      <View style={{ flex: 1 }}>
-                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
-                        {!!email && (
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
-                        )}
-                      </View>
-                      <View style={[
-                        styles.checkbox,
-                        { borderColor: colors.border, backgroundColor: (selected && !isAlreadyAdded && !isSelf && !isOwner) ? colors.primary : 'transparent' },
-                        (isSelf || isOwner || isAlreadyAdded) ? { backgroundColor: 'transparent' } : null,
-                      ]} />
-                    </TouchableOpacity>
-                  );
-                })}
-                <RNView style={{ flexDirection: 'row', gap: 8 }}>
-                  <TouchableOpacity onPress={() => setSidebarOpen(false)} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
-                    <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Close</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => {
-                      const ids = selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !effectiveAddedMemberIdSet.has(id));
-                      setSidebarOpen(false);
-                      onAddMembersToBoard(ids);
-                      setSelectedMemberIds([]);
-                    }}
-                    disabled={selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !effectiveAddedMemberIdSet.has(id)).length === 0}
-                    style={[
-                      styles.primaryBtn,
-                      { backgroundColor: colors.primary, opacity: selectedMemberIds.filter((id) => (!currentUserId || id !== currentUserId) && !effectiveAddedMemberIdSet.has(id)).length === 0 ? 0.6 : 1 },
-                    ]}
-                  >
-                    <Text style={{ color: colors['primary-foreground'] }}>Add to Board</Text>
-                  </TouchableOpacity>
-                </RNView>
-              </RNView>
-            ) : (
-              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No workspace members available.</Text>
-            )}
-          </Card>
-          {/* Sidebar Modal: Added Members (phone) */}
-          {Array.isArray(spaceMembers) && spaceMembers.length > 0 && (
-            <Card style={[styles.sidebarCard, { backgroundColor: colors.card, marginTop: 12 }] }>
-              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Added Members ({spaceMembers.length})</Text>
-              <RNView style={{ gap: 8 }}>
-                {spaceMembers.map((m: any) => {
-                  const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
-                  const email = m?.user?.email || m?.email || '';
-                  const avatarUrl = m?.user?.avatar || m?.avatar || m?.profile?.avatar;
-                  const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
-                  const isSelf = currentUserId && memberId === currentUserId;
-                  const isOwner = ownerIds.has(memberId);
-                  const letter = String(displayName).charAt(0).toUpperCase();
-                  return (
-                    <View key={(memberId || email || displayName) + '-added'} style={[styles.memberItem, { backgroundColor: colors.background, borderColor: colors.border }]}> 
-                      {avatarUrl ? (
-                        <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
-                      ) : (
-                        <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}>
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
-                        </View>
-                      )}
-                      <View style={{ flex: 1 }}>
-                        <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
-                        {!!email && (
-                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
-                        )}
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => onRemoveMemberFromSpace(memberId)}
-                        disabled={!memberId || isSelf || isOwner}
-                        style={[styles.ghostBtn, { borderColor: colors.border, opacity: (!memberId || isSelf || isOwner) ? 0.6 : 1 }]}
-                      >
-                        <Text style={[TextStyles.body.small, { color: colors.destructive }]}>Remove</Text>
-                      </TouchableOpacity>
-                    </View>
-                  );
-                })}
-              </RNView>
-            </Card>
-          )}
-          {/* Space actions (phone) */}
-          <Card style={[styles.sidebarCard, { backgroundColor: colors.card, marginTop: 12 }]}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Space Actions</Text>
-            <RNView style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity onPress={openRenameSpace} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
-                <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Rename</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={confirmDeleteSpace} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
-                <Text style={[TextStyles.body.small, { color: colors.destructive }]}>Delete</Text>
-              </TouchableOpacity>
-            </RNView>
-          </Card>
-        </View>
-      </Modal>
+        </ScrollView>
+      </View>
+      
+      {/* Right Sidebar */}
+      <SpaceRightSidebar
+        space={space}
+        availableMembers={displayMembers}
+        spaceMembers={spaceMembers}
+        ownerIds={ownerIds}
+        currentUserId={currentUserId}
+        onInvite={onAddMembersToBoard}
+        onAddMember={handleAddMember}
+        onRemoveMember={handleRemoveMember}
+        onCleanupInvalidMembers={cleanupInvalidMembers}
+        onClose={() => setSidebarVisible(false)}
+        isVisible={sidebarVisible}
+        animationDuration={250}
+        width={320}
+        canManageMembers={canManageMembers}
+        loading={loading}
+      />
 
-      {/* Create Board Modal */}
-      <Modal animationType="slide" transparent visible={createVisible} onRequestClose={() => setCreateVisible(false)}>
-        <View style={styles.modalBackdrop} />
-        <View style={[styles.createModalCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
-          <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 8 }]}>New Board</Text>
-          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginBottom: 12 }]}>Create a new board in this space.</Text>
-
-          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Name</Text>
-          <TextInput
-            value={boardName}
-            onChangeText={setBoardName}
-            placeholder="Board name"
-            placeholderTextColor={colors['muted-foreground']}
-            style={[styles.input, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]}
-          />
-
-          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 10 }]}>Description</Text>
-          <TextInput
-            value={boardDesc}
-            onChangeText={setBoardDesc}
-            placeholder="Optional description"
-            placeholderTextColor={colors['muted-foreground']}
-            multiline
-            numberOfLines={3}
-            style={[styles.textarea, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]}
-          />
-
-          <RNView style={[styles.rowBetween, { marginTop: 12 }]}>
-            <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Private</Text>
-            <Switch value={isPrivate} onValueChange={setIsPrivate} trackColor={{ true: colors.primary, false: colors.border }} />
-          </RNView>
-
-          <RNView style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-            {(['kanban', 'list', 'calendar', 'timeline'] as const).map((t) => (
-              <TouchableOpacity key={t} onPress={() => setBoardType(t)} style={[styles.pill, { borderColor: colors.border, backgroundColor: boardType === t ? colors.primary : colors.card }]}> 
-                <Text style={[TextStyles.caption.small, { color: boardType === t ? colors['primary-foreground'] : colors.foreground }]}>{t}</Text>
-              </TouchableOpacity>
-            ))}
-          </RNView>
-
-          <RNView style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
-            <TouchableOpacity onPress={() => { setCreateVisible(false); resetCreateState(); }} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
-              <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={submitCreateBoard} disabled={creating} style={[styles.primaryBtn, { backgroundColor: colors.primary, opacity: creating ? 0.7 : 1 }]}> 
-              <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>{creating ? 'Creating…' : 'Create Board'}</Text>
-            </TouchableOpacity>
-          </RNView>
-        </View>
-      </Modal>
-      {/* Rename Space Modal */}
-      <Modal animationType="fade" transparent visible={renameVisible} onRequestClose={() => setRenameVisible(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setRenameVisible(false)} />
-        <View style={[styles.createModalCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
-          <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 8 }]}>Rename Space</Text>
-          <TextInput
-            value={renameName}
-            onChangeText={setRenameName}
-            placeholder="Space name"
-            placeholderTextColor={colors['muted-foreground']}
-            style={[styles.input, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]}
-          />
-          <RNView style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
-            <TouchableOpacity onPress={() => setRenameVisible(false)} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
-              <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={submitRenameSpace} disabled={renaming} style={[styles.primaryBtn, { backgroundColor: colors.primary, opacity: renaming ? 0.7 : 1 }]}> 
-              <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>{renaming ? 'Saving…' : 'Save'}</Text>
-            </TouchableOpacity>
-          </RNView>
-        </View>
-      </Modal>
-    </View>
+    </RNView>
   );
 }
 
@@ -930,4 +1009,7 @@ const styles = StyleSheet.create({
   memberAvatarPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   checkbox: { width: 18, height: 18, borderRadius: 4, borderWidth: StyleSheet.hairlineWidth },
   banner: { position: 'absolute', top: 12, left: 16, right: 16, zIndex: 10, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, padding: 12, alignItems: 'center' },
+  addButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  removeButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  emptyState: { padding: 16, borderRadius: 8, alignItems: 'center' },
 });

@@ -355,6 +355,51 @@ exports.addMember = async (req, res) => {
     }
 };
 
+// Remove member from space
+exports.removeMember = async (req, res) => {
+    try {
+        const { id: spaceId, memberId } = req.params;
+        const currentUserId = req.user.id;
+
+        const space = await Space.findById(spaceId);
+        if (!space) {
+            return sendResponse(res, 404, false, 'Space not found');
+        }
+
+        // Check if member exists in space
+        const member = space.members.find(m => m.user.toString() === memberId.toString());
+        if (!member) {
+            return sendResponse(res, 404, false, 'Member not found in space');
+        }
+
+        // Get member info for logging
+        const memberUser = await User.findById(memberId);
+
+        // Remove member from space
+        await space.removeMember(memberId);
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId: currentUserId,
+            action: 'space_member_remove',
+            description: `Removed member from space: ${space.name}`,
+            entity: { type: 'Space', id: spaceId, name: space.name },
+            relatedEntities: [{ type: 'User', id: memberId, name: memberUser?.name || 'Unknown User' }],
+            workspaceId: space.workspace,
+            spaceId,
+            metadata: {
+                memberRole: member.role,
+                ipAddress: req.ip
+            }
+        });
+
+        sendResponse(res, 200, true, 'Member removed from space successfully');
+    } catch (error) {
+        logger.error('Remove space member error:', error);
+        sendResponse(res, 500, false, 'Server error removing member from space');
+    }
+};
+
 // Archive space
 exports.archiveSpace = async (req, res) => {
     try {
