@@ -5,6 +5,7 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAuth } from '@/hooks/useAuth';
+import { router } from 'expo-router';
 
 const DangerZone: React.FC = () => {
   const colors = useThemeColors();
@@ -22,10 +23,12 @@ const DangerZone: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteAccount();
+              // Navigate to login screen after successful deletion
+              await deleteAccount({ navigate: (path: string) => router.replace(path as any) });
               Alert.alert('Account Deleted', 'Your account has been successfully deleted.');
-            } catch (error) {
-              Alert.alert('Deletion Failed', 'Failed to delete account. Please try again.');
+            } catch (error: any) {
+              const errorMessage = error?.message || 'Failed to delete account. Please try again.';
+              Alert.alert('Deletion Failed', errorMessage);
             }
           }
         }
@@ -44,10 +47,11 @@ const DangerZone: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await logout();
+              await logout({ navigate: (path: string) => router.replace(path as any) });
               Alert.alert('Logged Out', 'You have been successfully logged out.');
-            } catch (error) {
-              Alert.alert('Logout Failed', 'Failed to logout. Please try again.');
+            } catch (error: any) {
+              const errorMessage = error?.message || 'Failed to logout. Please try again.';
+              Alert.alert('Logout Failed', errorMessage);
             }
           }
         }

@@ -1,7 +1,7 @@
 import type { Middleware, AnyAction } from '@reduxjs/toolkit';
 import { io, Socket } from 'socket.io-client';
 import { env } from '../../config/env';
-import { addNotification, fetchNotifications } from '../slices/notificationSlice';
+import { addNotification, fetchNotifications, clearWorkspaceNotifications } from '../slices/notificationSlice';
 import { removeWorkspaceById, upsertWorkspaceStatus, createWorkspace, fetchMembers } from '../slices/workspaceSlice';
 import { logoutUser } from '../slices/authSlice';
 import { addActivity } from '../slices/activitySlice';
@@ -232,6 +232,31 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
           ? (archiveExpiresAt ? `Will be permanently deleted at ${new Date(archiveExpiresAt).toLocaleString()}` : undefined)
           : undefined;
         notifyMobile(title, body);
+
+        // Clear old workspace status notifications to prevent accumulation
+        setTimeout(() => {
+          const stateNow = store.getState() as any;
+          const notifications = stateNow.notifications?.notifications || [];
+          const oldWorkspaceNotifications = notifications.filter((n: any) => {
+            const isWorkspaceStatus = 
+              n.title === 'Workspace restored' || 
+              n.title === 'Workspace archived' ||
+              n.type === 'workspace_restored' ||
+              n.type === 'workspace_archived';
+            
+            if (!isWorkspaceStatus) return false;
+            
+            // Check if notification is older than 30 minutes
+            const notificationTime = new Date(n.createdAt).getTime();
+            const thirtyMinutesAgo = Date.now() - (30 * 60 * 1000);
+            return notificationTime < thirtyMinutesAgo;
+          });
+
+          if (oldWorkspaceNotifications.length > 0) {
+            console.log('🧹 [notificationsSocketMiddleware] Clearing old workspace notifications:', oldWorkspaceNotifications.length);
+            store.dispatch(clearWorkspaceNotifications());
+          }
+        }, 2000); // Wait 2 seconds after the new notification is processed
 
         console.log('🔔 [notificationsSocketMiddleware] workspace:status-changed', data);
       } catch (e) {

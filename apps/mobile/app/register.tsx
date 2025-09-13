@@ -12,9 +12,6 @@ export default function RegisterScreen() {
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flex: 1, padding: 16, justifyContent: 'center' }}>
-        <Card style={{ padding: 16, marginBottom: 16 }}>
-          <Text style={[TextStyles.heading.h1, { color: colors.foreground, textAlign: 'center' }]}>Sign Up</Text>
-        </Card>
         <RegisterFrom onSignin={() => router.replace('/login')} />
       </View>
     </ScrollView>
