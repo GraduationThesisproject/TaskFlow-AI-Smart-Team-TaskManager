@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { env } from '../config/env';
-import { useAppDispatch, useAppSelector } from '../store';
+import { store, useAppDispatch, useAppSelector } from '../store';
 import type { RootState } from '../store';
 import {
   fetchNotifications,
@@ -71,7 +71,7 @@ export const useNotifications = (): UseNotificationsReturn => {
         markAsRead(notification._id);
       }
     });
-  }, [notifications, markAsRead]);
+  }, [notifications]);
 
   // Auto-clear old workspace status notifications (archived/restored) on app startup
   useEffect(() => {
@@ -80,10 +80,8 @@ export const useNotifications = (): UseNotificationsReturn => {
     // Find workspace status notifications that are older than 1 hour
     const workspaceStatusNotifications = notifications.filter(notification => {
       const isWorkspaceStatus = 
-        notification.title === 'Workspace restored' || 
-        notification.title === 'Workspace archived' ||
-        notification.type === 'workspace_restored' ||
-        notification.type === 'workspace_archived';
+        notification.title === 'Workspace restored' || notification.title === 'Workspace archived' 
+      
       
       if (!isWorkspaceStatus) return false;
       
@@ -98,7 +96,7 @@ export const useNotifications = (): UseNotificationsReturn => {
       console.log('🧹 Clearing old workspace status notifications:', workspaceStatusNotifications.length);
       dispatch(clearWorkspaceNotifications());
     }
-  }, [notifications, dispatch]);
+  }, [notifications]);
 
   // Show toast notifications for new notifications (excluding workspace creation notifications)
   useEffect(() => {
@@ -110,11 +108,9 @@ export const useNotifications = (): UseNotificationsReturn => {
     // Skip workspace creation notifications to prevent duplicate success messages
     const isWorkspaceCreationNotification = 
       latestNotification.title === 'Workspace Created' || 
-      latestNotification.title === 'Workspace created' ||
       latestNotification.message?.includes('Successfully created workspace') ||
       latestNotification.message?.includes('was created successfully') ||
       latestNotification.message?.includes('workspace') && latestNotification.message?.includes('created') ||
-      latestNotification.type === 'workspace_created' ||
       latestNotification.message?.toLowerCase().includes('workspace') && latestNotification.message?.toLowerCase().includes('created');
     
     if (isWorkspaceCreationNotification) {
