@@ -133,6 +133,22 @@ const spaceSlice = createSlice({
       if (state.currentSpace?._id === action.payload) {
         state.currentSpace = null;
       }
+    },
+    
+    // Optimistically remove member from space (for 404 error handling)
+    removeMemberOptimistically: (state, action: PayloadAction<string>) => {
+      const memberId = action.payload;
+      if (state.currentSpace && Array.isArray((state.currentSpace as any).members)) {
+        const beforeCount = (state.currentSpace as any).members.length;
+        (state.currentSpace as any).members = (state.currentSpace as any).members.filter(
+          (m: any) => {
+            const membershipId = String(m?._id || m?.id || '');
+            return membershipId !== memberId;
+          }
+        );
+        const afterCount = (state.currentSpace as any).members.length;
+        console.log(`Optimistically removed member ${memberId}. Count: ${beforeCount} -> ${afterCount}`);
+      }
     }
   },
   extraReducers: (builder) => {
@@ -294,17 +310,30 @@ const spaceSlice = createSlice({
       .addCase(addSpaceMember.fulfilled, (state, action) => {
         const payload: any = action.payload;
         const added = payload?.member ?? payload?.data ?? payload;
-        if (!added) return;
+        console.log('=== ADD SPACE MEMBER REDUCER ===');
+        console.log('Payload:', payload);
+        console.log('Added member:', added);
+        if (!added) {
+          console.log('No added member found in payload');
+          return;
+        }
         if (state.currentSpace) {
           const members: any[] = Array.isArray((state.currentSpace as any).members)
             ? (state.currentSpace as any).members
             : ((state.currentSpace as any).members = []);
           const addedId = String(added?.user?._id || added?.user?.id || added?._id || added?.id || '');
           const exists = members.some((m) => String(m?.user?._id || m?.user?.id || m?._id || m?.id || '') === addedId);
+          console.log('Added member ID:', addedId);
+          console.log('Already exists:', exists);
+          console.log('Current members count before:', members.length);
           if (!exists) {
             members.push(added);
+            console.log('Member added to state. New count:', members.length);
+          } else {
+            console.log('Member already exists, not adding');
           }
         }
+        console.log('=== END ADD SPACE MEMBER REDUCER ===');
       })
       .addCase(addSpaceMember.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to add space member';
@@ -317,15 +346,28 @@ const spaceSlice = createSlice({
       })
       .addCase(removeSpaceMember.fulfilled, (state, action) => {
         const { memberId } = action.payload as any;
-        if (!memberId) return;
+        console.log('=== REMOVE SPACE MEMBER REDUCER ===');
+        console.log('Member ID to remove:', memberId);
+        if (!memberId) {
+          console.log('No member ID provided');
+          return;
+        }
         if (state.currentSpace && Array.isArray((state.currentSpace as any).members)) {
+          const membersBefore = (state.currentSpace as any).members.length;
+          console.log('Members count before removal:', membersBefore);
           (state.currentSpace as any).members = (state.currentSpace as any).members.filter(
             (m: any) => {
-              const id = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
-              return id !== String(memberId);
+              // Remove by space membership record ID (_id), not user ID
+              const membershipId = String(m?._id || m?.id || '');
+              const shouldKeep = membershipId !== String(memberId);
+              console.log(`Member ${membershipId} (${m?.user?.name || m?.name}): ${shouldKeep ? 'KEEP' : 'REMOVE'}`);
+              return shouldKeep;
             }
           );
+          const membersAfter = (state.currentSpace as any).members.length;
+          console.log('Members count after removal:', membersAfter);
         }
+        console.log('=== END REMOVE SPACE MEMBER REDUCER ===');
       })
       .addCase(removeSpaceMember.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to remove space member';
@@ -339,7 +381,8 @@ export const {
   setSocketConnected,
   updateSpaceRealTime,
   addSpaceRealTime,
-  removeSpaceRealTime
+  removeSpaceRealTime,
+  removeMemberOptimistically
 } = spaceSlice.actions;
 
 // Export reducer

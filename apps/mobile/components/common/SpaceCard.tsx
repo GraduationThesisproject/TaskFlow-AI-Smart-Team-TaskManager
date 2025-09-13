@@ -57,47 +57,50 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
             backgroundColor: colors.card,
             borderColor: colors.border,
             borderWidth: StyleSheet.hairlineWidth,
-            shadowColor: colors.shadow,
+            shadowColor: colors.foreground,
           },
         ]}
       >
-        {/* Gradient Header with Emoji */}
+        {/* Enhanced Gradient Header with Emoji */}
         <LinearGradient
-          colors={[colors.primary, colors.primary + 'CC']}
+          colors={[colors.primary, colors.primary + 'DD', colors.primary + 'AA']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerCap}
         >
-          <Text style={styles.emoji}>{icon}</Text>
+          <RNView style={styles.emojiContainer}>
+            <Text style={styles.emoji}>{icon}</Text>
+          </RNView>
           {onToggleArchive && (
             <TouchableOpacity
               onPress={onToggleArchive}
-              style={[styles.fab, { backgroundColor: colors.card }]}
+              style={[styles.fab, { backgroundColor: colors.card + 'F0' }]}
             >
               <FontAwesome
                 name={isArchived ? 'undo' : 'archive'}
-                size={18}
+                size={16}
                 color={isArchived ? colors.success : colors.warning}
               />
             </TouchableOpacity>
           )}
         </LinearGradient>
 
-        {/* Content */}
+        {/* Enhanced Content */}
         <RNView style={styles.bottomBox}>
           <Text
-            style={[TextStyles.body.medium, { color: colors.foreground, fontWeight: '600' }]}
-            numberOfLines={1}
+            style={[TextStyles.body.medium, { color: colors.foreground, fontWeight: '700' }]}
+            numberOfLines={2}
           >
             {name}
           </Text>
-          {/* Meta chips (members, created date) directly under the name */}
-          <RNView style={[styles.metaRow, { borderTopColor: colors.border }]}>
-            <RNView style={[styles.chip, { backgroundColor: colors['muted'] }]}>
+          
+          {/* Enhanced Meta chips */}
+          <RNView style={[styles.metaRow, { borderTopColor: colors.border + '40' }]}>
+            <RNView style={[styles.chip, { backgroundColor: colors.primary + '15' }]}>
               <Text
                 style={[
                   TextStyles.caption.small,
-                  { color: colors.foreground },
+                  { color: colors.primary, fontWeight: '600' },
                 ]}
               >
                 👥 {membersCount}
@@ -105,12 +108,12 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
             </RNView>
             {createdLabel && (
               <RNView
-                style={[styles.chip, { backgroundColor: colors['muted'] }]}
+                style={[styles.chip, { backgroundColor: colors.muted + '30' }]}
               >
                 <Text
                   style={[
                     TextStyles.caption.small,
-                    { color: colors.foreground },
+                    { color: colors['muted-foreground'], fontWeight: '500' },
                   ]}
                 >
                   📅 {createdLabel}
@@ -118,7 +121,6 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
               </RNView>
             )}
           </RNView>
-          {/* Description intentionally hidden per request */}
         </RNView>
       </Card>
     </TouchableOpacity>
@@ -127,59 +129,73 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
-    padding: 12,
+    borderRadius: 24,
+    padding: 16,
     overflow: 'hidden',
     aspectRatio: 1,
     justifyContent: 'space-between',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
   headerCap: {
-    height: 60,
-    borderRadius: 16,
-    marginBottom: 8,
-    alignItems: 'flex-start',
+    height: 70,
+    borderRadius: 20,
+    marginBottom: 12,
+    alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+  },
+  emojiContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   emoji: {
-    fontSize: 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    fontSize: 28,
+    textAlign: 'center',
   },
   fab: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    padding: 6,
-    borderRadius: 999,
-    elevation: 3,
+    top: 10,
+    right: 10,
+    padding: 8,
+    borderRadius: 20,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   bottomBox: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
   },
   metaRow: {
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 6,
-    paddingTop: 6,
+    gap: 8,
+    marginTop: 8,
+    paddingTop: 8,
     flexWrap: 'wrap',
   },
   chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minHeight: 24,
+    justifyContent: 'center',
   },
 });
 
