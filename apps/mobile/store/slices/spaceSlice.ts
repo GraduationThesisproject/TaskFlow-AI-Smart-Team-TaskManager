@@ -235,7 +235,7 @@ const spaceSlice = createSlice({
           state.spaces[index] = { ...state.spaces[index], ...action.payload };
         }
         if (state.currentSpace?._id === action.payload._id) {
-          state.currentSpace = { ...state.currentSpace, ...action.payload };
+          state.currentSpace = { ...state.currentSpace, ...action.payload } as any;
         }
       })
       .addCase(archiveSpace.rejected, (state, action) => {
@@ -256,12 +256,79 @@ const spaceSlice = createSlice({
           state.spaces[index] = { ...state.spaces[index], ...action.payload };
         }
         if (state.currentSpace?._id === action.payload._id) {
-          state.currentSpace = { ...state.currentSpace, ...action.payload };
+          state.currentSpace = { ...state.currentSpace, ...action.payload } as any;
         }
       })
       .addCase(unarchiveSpace.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to unarchive space';
+      });
+    
+    // Members: get list
+    builder
+      .addCase(getSpaceMembers.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(getSpaceMembers.fulfilled, (state, action) => {
+        const payload: any = action.payload;
+        const members = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload?.members)
+          ? payload.members
+          : [];
+        if (state.currentSpace) {
+          (state.currentSpace as any).members = members;
+        }
+      })
+      .addCase(getSpaceMembers.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to load space members';
+      });
+    
+    // Members: add one
+    builder
+      .addCase(addSpaceMember.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(addSpaceMember.fulfilled, (state, action) => {
+        const payload: any = action.payload;
+        const added = payload?.member ?? payload?.data ?? payload;
+        if (!added) return;
+        if (state.currentSpace) {
+          const members: any[] = Array.isArray((state.currentSpace as any).members)
+            ? (state.currentSpace as any).members
+            : ((state.currentSpace as any).members = []);
+          const addedId = String(added?.user?._id || added?.user?.id || added?._id || added?.id || '');
+          const exists = members.some((m) => String(m?.user?._id || m?.user?.id || m?._id || m?.id || '') === addedId);
+          if (!exists) {
+            members.push(added);
+          }
+        }
+      })
+      .addCase(addSpaceMember.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to add space member';
+      });
+    
+    // Members: remove one
+    builder
+      .addCase(removeSpaceMember.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(removeSpaceMember.fulfilled, (state, action) => {
+        const { memberId } = action.payload as any;
+        if (!memberId) return;
+        if (state.currentSpace && Array.isArray((state.currentSpace as any).members)) {
+          (state.currentSpace as any).members = (state.currentSpace as any).members.filter(
+            (m: any) => {
+              const id = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
+              return id !== String(memberId);
+            }
+          );
+        }
+      })
+      .addCase(removeSpaceMember.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to remove space member';
       });
   }
 });

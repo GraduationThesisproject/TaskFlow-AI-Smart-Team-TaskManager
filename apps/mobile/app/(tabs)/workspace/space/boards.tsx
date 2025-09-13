@@ -25,7 +25,7 @@ export default function SpaceBoardsScreen() {
   const currentUserId = useMemo(() => String(authUser?.user?._id || authUser?.user?.id || ''), [authUser]);
   const space = selectedSpace;
   const { loadSpaces } = useWorkspaces({ autoFetch: false });
-  const { loadSpaceMembers, addMember, removeMember, currentSpace } = useSpacesHook();
+  const { loadSpaceMembers, addMember, removeMember, editSpace, removeSpace, currentSpace } = useSpacesHook();
 
   // Include all members (including owner). We'll prevent adding yourself via UI guards.
   const displayMembers = useMemo(() => (
@@ -116,8 +116,12 @@ export default function SpaceBoardsScreen() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [boardType, setBoardType] = useState<'kanban' | 'list' | 'calendar' | 'timeline'>('kanban');
 
-  // If navigated directly with an id param and no selectedSpace in store, fetch it.
+  // Rename Space modal state
+  const [renameVisible, setRenameVisible] = useState(false);
+  const [renameName, setRenameName] = useState('');
+  const [renaming, setRenaming] = useState(false);
 
+  // If navigated directly with an id param and no selectedSpace in store, fetch it.
 
   const loadBoards = useCallback(async (force = false) => {
     const spaceId = space?._id || space?.id;
@@ -277,6 +281,72 @@ export default function SpaceBoardsScreen() {
     );
   };
 
+  const onRefreshMembers = async () => {
+    const spaceId = String(space?._id || space?.id || '');
+    if (!spaceId) return;
+    setRefreshing(true);
+    try {
+      await loadSpaceMembers(spaceId);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const openRenameSpace = () => {
+    const currentName = String((space as any)?.name || '');
+    setRenameName(currentName);
+    setRenameVisible(true);
+  };
+
+  const submitRenameSpace = async () => {
+    const spaceId = String(space?._id || space?.id || '');
+    if (!spaceId) return;
+    if (!renameName.trim()) {
+      setBanner({ type: 'error', message: 'Space name required' });
+      setTimeout(() => setBanner(null), 1500);
+      return;
+    }
+    try {
+      setRenaming(true);
+      await editSpace(spaceId, { name: renameName.trim() });
+      await loadBoards(true);
+      await loadSpaceMembers(spaceId);
+      setRenameVisible(false);
+      setBanner({ type: 'success', message: 'Space renamed' });
+      setTimeout(() => setBanner(null), 1200);
+    } catch (e: any) {
+      setBanner({ type: 'error', message: e?.response?.data?.message || e?.message || 'Failed to rename space' });
+      setTimeout(() => setBanner(null), 1800);
+    } finally {
+      setRenaming(false);
+    }
+  };
+
+  const confirmDeleteSpace = () => {
+    Alert.alert(
+      'Delete Space',
+      'Are you sure you want to delete this space? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: deleteSpaceNow },
+      ]
+    );
+  };
+
+  const deleteSpaceNow = async () => {
+    const spaceId = String(space?._id || space?.id || '');
+    if (!spaceId) return;
+    try {
+      await removeSpace(spaceId);
+      setBanner({ type: 'success', message: 'Space deleted' });
+      setTimeout(() => setBanner(null), 1000);
+      router.push('/(tabs)/workspace');
+    } catch (e: any) {
+      setBanner({ type: 'error', message: e?.response?.data?.message || e?.message || 'Failed to delete space' });
+      setTimeout(() => setBanner(null), 1800);
+    }
+  };
+
   if (!space) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -365,6 +435,17 @@ export default function SpaceBoardsScreen() {
           {/* Sidebar: Add Members to Board (workspace members only; you can't add yourself) */}
           <Card style={[styles.sidebarCard, { backgroundColor: colors.card }]}>
             <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Add Members to Board</Text>
+            {/* Role selection */}
+            <RNView style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+              {(['viewer','editor','admin'] as const).map((r) => (
+                <TouchableOpacity key={r} onPress={() => setSelectedRole(r)} style={[styles.pill, { borderColor: colors.border, backgroundColor: selectedRole === r ? colors.primary : colors.card }]}>
+                  <Text style={[TextStyles.caption.small, { color: selectedRole === r ? colors['primary-foreground'] : colors.foreground }]}>{r}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity onPress={onRefreshMembers} style={[styles.ghostBtn, { borderColor: colors.border, marginLeft: 'auto' }]}> 
+                <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Refresh</Text>
+              </TouchableOpacity>
+            </RNView>
             {Array.isArray(addableMembers) && addableMembers.length > 0 ? (
               <RNView style={{ gap: 8 }}>
                 {addableMembers.map((m: any) => {
@@ -427,6 +508,18 @@ export default function SpaceBoardsScreen() {
             ) : (
               <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No workspace members available.</Text>
             )}
+          </Card>
+          {/* Space actions (wide) */}
+          <Card style={[styles.sidebarCard, { backgroundColor: colors.card, marginTop: 12 }]}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Space Actions</Text>
+            <RNView style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity onPress={openRenameSpace} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
+                <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Rename</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={confirmDeleteSpace} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
+                <Text style={[TextStyles.body.small, { color: colors.destructive }]}>Delete</Text>
+              </TouchableOpacity>
+            </RNView>
           </Card>
           {/* Sidebar: Added Members (wide) */}
           {Array.isArray(spaceMembers) && spaceMembers.length > 0 && (
@@ -595,6 +688,17 @@ export default function SpaceBoardsScreen() {
         <View style={[styles.modalPanel, { backgroundColor: colors.background, borderLeftColor: colors.border }]}> 
           <Card style={[styles.sidebarCard, { backgroundColor: colors.card }]}>
             <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Add Members to Board</Text>
+            {/* Role selection */}
+            <RNView style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+              {(['viewer','editor','admin'] as const).map((r) => (
+                <TouchableOpacity key={r} onPress={() => setSelectedRole(r)} style={[styles.pill, { borderColor: colors.border, backgroundColor: selectedRole === r ? colors.primary : colors.card }]}>
+                  <Text style={[TextStyles.caption.small, { color: selectedRole === r ? colors['primary-foreground'] : colors.foreground }]}>{r}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity onPress={onRefreshMembers} style={[styles.ghostBtn, { borderColor: colors.border, marginLeft: 'auto' }]}> 
+                <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Refresh</Text>
+              </TouchableOpacity>
+            </RNView>
             {Array.isArray(addableMembers) && addableMembers.length > 0 ? (
               <RNView style={{ gap: 8 }}>
                 {addableMembers.map((m: any) => {
@@ -705,6 +809,18 @@ export default function SpaceBoardsScreen() {
               </RNView>
             </Card>
           )}
+          {/* Space actions (phone) */}
+          <Card style={[styles.sidebarCard, { backgroundColor: colors.card, marginTop: 12 }]}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Space Actions</Text>
+            <RNView style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity onPress={openRenameSpace} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
+                <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Rename</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={confirmDeleteSpace} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
+                <Text style={[TextStyles.body.small, { color: colors.destructive }]}>Delete</Text>
+              </TouchableOpacity>
+            </RNView>
+          </Card>
         </View>
       </Modal>
 
@@ -754,6 +870,28 @@ export default function SpaceBoardsScreen() {
             </TouchableOpacity>
             <TouchableOpacity onPress={submitCreateBoard} disabled={creating} style={[styles.primaryBtn, { backgroundColor: colors.primary, opacity: creating ? 0.7 : 1 }]}> 
               <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>{creating ? 'Creating…' : 'Create Board'}</Text>
+            </TouchableOpacity>
+          </RNView>
+        </View>
+      </Modal>
+      {/* Rename Space Modal */}
+      <Modal animationType="fade" transparent visible={renameVisible} onRequestClose={() => setRenameVisible(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setRenameVisible(false)} />
+        <View style={[styles.createModalCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+          <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 8 }]}>Rename Space</Text>
+          <TextInput
+            value={renameName}
+            onChangeText={setRenameName}
+            placeholder="Space name"
+            placeholderTextColor={colors['muted-foreground']}
+            style={[styles.input, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]}
+          />
+          <RNView style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+            <TouchableOpacity onPress={() => setRenameVisible(false)} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
+              <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={submitRenameSpace} disabled={renaming} style={[styles.primaryBtn, { backgroundColor: colors.primary, opacity: renaming ? 0.7 : 1 }]}> 
+              <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>{renaming ? 'Saving…' : 'Save'}</Text>
             </TouchableOpacity>
           </RNView>
         </View>
