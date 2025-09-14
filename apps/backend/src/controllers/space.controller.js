@@ -330,6 +330,10 @@ exports.addMember = async (req, res) => {
         // Get new member info for logging
         const newMember = await User.findById(newMemberId);
 
+        if (!newMember) {
+            return sendResponse(res, 404, false, 'User not found');
+        }
+
         // Add member to space
         await space.addMember(newMemberId, role, currentUserId);
 

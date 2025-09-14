@@ -8,9 +8,11 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector } from '@/store';
 import { useWorkspaceAnalytics } from '@/hooks/useAnalytics';
 import { useRouter } from 'expo-router';
+import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
-export default function WorkspaceReportsScreen() {
+function WorkspaceReportsScreenContent() {
   const colors = useThemeColors();
+  const { showSuccess, showError, showWarning, showInfo } = useBanner();
 
   const { currentWorkspace, currentWorkspaceId } = useAppSelector((s: any) => s.workspace);
   const workspaceId: string | null = (currentWorkspace as any)?._id || (currentWorkspace as any)?.id || currentWorkspaceId || null;
@@ -172,6 +174,15 @@ export default function WorkspaceReportsScreen() {
         </Card>
       </ScrollView>
     </View>
+  );
+}
+
+// Wrapper component with BannerProvider
+export default function WorkspaceReportsScreen() {
+  return (
+    <BannerProvider>
+      <WorkspaceReportsScreenContent />
+    </BannerProvider>
   );
 }
 

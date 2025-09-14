@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, useWindowDimensions, View as RNView, Modal, Pressable, TextInput, Switch, ActivityIndicator, Image } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, useWindowDimensions, View as RNView, Modal, Pressable, TextInput, Switch, ActivityIndicator, Image, Animated } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { View, Text, Card } from '@/components/Themed';
@@ -7,7 +7,6 @@ import BoardCard from '@/components/common/BoardCard';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchMembers } from '@/store/slices/workspaceSlice';
-import { removeMemberOptimistically } from '@/store/slices/spaceSlice';
 import { TextStyles } from '@/constants/Fonts';
 import { BoardService } from '@/services/boardService';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
@@ -15,6 +14,7 @@ import { useSpaces as useSpacesHook } from '@/hooks/useSpaces';
 import SpaceHeader from '@/components/space/SpaceHeader';
 import SpaceRightSidebar from '@/components/space/SpaceRightSidebar';
 import Sidebar from '@/components/navigation/Sidebar';
+import Banner from '@/components/common/Banner';
 
 export default function SpaceBoardsScreen() {
   const colors = useThemeColors();
@@ -28,14 +28,14 @@ export default function SpaceBoardsScreen() {
   const { user: authUser } = useAppSelector((s: any) => s.auth);
   const { workspaces: wsList } = useAppSelector((s: any) => s.workspace);
   const currentUserId = useMemo(() => {
-    console.log('=== AUTH DEBUG ===');
-    console.log('Raw authUser:', JSON.stringify(authUser, null, 2));
-    console.log('authUser?.user:', authUser?.user);
-    console.log('authUser?._id:', authUser?._id);
-    console.log('authUser?.id:', authUser?.id);
+    // console.log('=== AUTH DEBUG ===');
+    // console.log('Raw authUser:', JSON.stringify(authUser, null, 2));
+    // console.log('authUser?.user:', authUser?.user);
+    // console.log('authUser?._id:', authUser?._id);
+    // console.log('authUser?.id:', authUser?.id);
     
     const userId = authUser?.user?._id || authUser?.user?.id || authUser?._id || authUser?.id;
-    console.log('Final userId:', userId);
+    // console.log('Final userId:', userId);
     return String(userId || '');
   }, [authUser]);
   const space = selectedSpace;
@@ -45,22 +45,22 @@ export default function SpaceBoardsScreen() {
   // Include all members (including owner). We'll prevent adding yourself via UI guards.
   const displayMembers = useMemo(() => {
     const members = Array.isArray(workspaceMembers) ? workspaceMembers : [];
-    console.log('Workspace members from Redux:', members.map(m => ({
-      id: String(m?.user?._id || m?.user?.id || m?._id || m?.id || ''),
-      role: m?.role,
-      name: m?.user?.name || m?.name,
-      email: m?.user?.email || m?.email
-    })));
+    // console.log('Workspace members from Redux:', members.map(m => ({
+    //   id: String(m?.user?._id || m?.user?.id || m?._id || m?.id || ''),
+    //   role: m?.role,
+    //   name: m?.user?.name || m?.name,
+    //   email: m?.user?.email || m?.email
+    // })));
     return members;
   }, [workspaceMembers]);
 
   // Precompute owner IDs for disable logic - use same logic as workspace index
   const ownerIds = useMemo(() => {
     const ids = new Set<string>();
-    console.log('Computing ownerIds from workspace data...');
+    // console.log('Computing ownerIds from workspace data...');
     
-    console.log('Redux currentWorkspace:', currentWorkspace);
-    console.log('Redux workspaces list:', wsList);
+    // console.log('Redux currentWorkspace:', currentWorkspace);
+    // console.log('Redux workspaces list:', wsList);
     
     // Find current workspace
     const currentWs = currentWorkspace || (Array.isArray(wsList) ? wsList.find((ws: any) => {
@@ -69,14 +69,14 @@ export default function SpaceBoardsScreen() {
       return wsId === currentWsId;
     }) : null);
     
-    console.log('Current workspace found:', currentWs);
+    // console.log('Current workspace found:', currentWs);
     
     // Method 1: Check workspace owner field (same as workspace index)
     const ownerId = (currentWs?.owner?._id || currentWs?.owner?.id || currentWs?.ownerId);
     if (ownerId) {
       const ownerIdStr = String(ownerId);
       ids.add(ownerIdStr);
-      console.log('Added workspace owner ID:', ownerIdStr);
+      // console.log('Added workspace owner ID:', ownerIdStr);
     }
     
     // Method 2: Check members list for owner role (same as workspace index)
@@ -87,11 +87,11 @@ export default function SpaceBoardsScreen() {
       if (mid && role === 'owner') {
         const memberIdStr = String(mid);
         ids.add(memberIdStr);
-        console.log('Added member owner ID:', memberIdStr, 'for member:', m?.user?.name || m?.name);
+        // console.log('Added member owner ID:', memberIdStr, 'for member:', m?.user?.name || m?.name);
       }
     });
     
-    console.log('Final ownerIds:', Array.from(ids));
+    // console.log('Final ownerIds:', Array.from(ids));
     return ids;
   }, [displayMembers, selectedSpace, currentWorkspace, wsList]);
 
@@ -131,19 +131,7 @@ export default function SpaceBoardsScreen() {
       
       // Only include members that have valid user data
       if (!hasValidUser || !hasValidName || !hasValidEmail) {
-        console.warn('Filtering out invalid space member (missing user, name, or email):', spaceMember);
-        return false;
-      }
-      
-      // Additional check: ensure the member exists in the workspace members list
-      const memberId = String(spaceMember?.user?._id || spaceMember?.user?.id || spaceMember?._id || spaceMember?.id || '');
-      const existsInWorkspace = displayMembers.some(wsMember => {
-        const wsMemberId = String(wsMember?.user?._id || wsMember?.user?.id || wsMember?._id || wsMember?.id || '');
-        return wsMemberId === memberId;
-      });
-      
-      if (!existsInWorkspace) {
-        console.warn('Filtering out space member not in workspace:', spaceMember);
+        // Silently filter out invalid members (no need to log every time)
         return false;
       }
       
@@ -151,114 +139,97 @@ export default function SpaceBoardsScreen() {
       return true;
     });
     
-    // Merge space members with workspace member roles
+    // Return space members with their original roles (no workspace role merging to avoid circular dependency)
     const enrichedSpaceMembers = filteredSpaceMembers.map(spaceMember => {
-      const memberId = String(spaceMember?.user?._id || spaceMember?.user?.id || spaceMember?._id || spaceMember?.id || '');
-      
-      // Find the corresponding workspace member to get the correct role
-      const workspaceMember = displayMembers.find(wsMember => {
-        const wsMemberId = String(wsMember?.user?._id || wsMember?.user?.id || wsMember?._id || wsMember?.id || '');
-        return wsMemberId === memberId;
-      });
-      
-      // Use workspace role if available, otherwise use space role
-      const correctRole = workspaceMember?.role || spaceMember?.role || 'member';
-      
       return {
         ...spaceMember,
-        role: correctRole,
+        // Keep the original space role
+        role: spaceMember?.role || 'member',
         // Also update the nested user object if it exists
         user: spaceMember?.user ? {
           ...spaceMember.user,
-          role: correctRole
+          role: spaceMember?.role || 'member'
         } : spaceMember?.user
       };
     });
     
-    console.log('=== SPACE MEMBERS FILTERING DEBUG ===');
-    console.log('Original space members count:', spaceMembersList.length);
-    console.log('Filtered space members count (owner + explicitly added):', filteredSpaceMembers.length);
-    console.log('Final enriched space members count:', enrichedSpaceMembers.length);
-    console.log('=== END FILTERING DEBUG ===');
+    // Debug logging (commented out for performance)
+    // console.log('=== SPACE MEMBERS FILTERING DEBUG ===');
+    // console.log('Original space members count:', spaceMembersList.length);
+    // console.log('Filtered space members count (owner + explicitly added):', filteredSpaceMembers.length);
+    // console.log('Final enriched space members count:', enrichedSpaceMembers.length);
+    // console.log('=== END FILTERING DEBUG ===');
     
     return enrichedSpaceMembers;
-  }, [currentSpace, displayMembers, ownerIds]);
+  }, [currentSpace]);
 
   // Members that can be added to a board (exclude workspace owners and already added members)
   const addableMembers = useMemo(() => {
     const list = Array.isArray(displayMembers) ? displayMembers : [];
+    const spaceMembersList = Array.isArray(currentSpace?.members) ? currentSpace.members : [];
+    
     const filtered = list.filter((m: any) => {
       const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
       const isSelf = currentUserId && memberId === currentUserId;
       const isOwner = ownerIds.has(memberId);
       
-      // Check if member is already in space (using the same logic as spaceMembers)
-      const isAlreadyInSpace = spaceMembers.some((spaceMember: any) => {
+      // Check if member is already in space (using the raw space members data)
+      const isAlreadyInSpace = spaceMembersList.some((spaceMember: any) => {
         const spaceMemberId = String(spaceMember?.user?._id || spaceMember?.user?.id || spaceMember?._id || spaceMember?.id || '');
         return spaceMemberId === memberId;
       });
       
       if (isSelf) {
-        console.log('❌ FILTERED OUT from Addable (Self):', memberId, m?.user?.name || m?.name);
         return false;
       }
       
       if (isOwner) {
-        console.log('❌ FILTERED OUT from Addable (Owner):', memberId, m?.user?.name || m?.name);
         return false;
       }
       
       if (isAlreadyInSpace) {
-        console.log('❌ FILTERED OUT from Addable (Already in Space):', memberId, m?.user?.name || m?.name);
         return false;
       }
       
-      console.log('✅ ADDABLE MEMBER:', memberId, m?.user?.name || m?.name);
       return true;
     });
     
-    console.log('=== ADDABLE MEMBERS (BOARDS) ===');
-    console.log('Total addable members:', filtered.length);
-    console.log('Addable members:', filtered.map(m => ({
-      id: String(m?.user?._id || m?.user?.id || m?._id || m?.id || ''),
-      name: m?.user?.name || m?.name
-    })));
-    console.log('=== END ADDABLE MEMBERS ===');
-    
     return filtered;
-  }, [displayMembers, ownerIds, spaceMembers, currentUserId]);
+  }, [displayMembers, ownerIds, currentSpace?.members, currentUserId]);
 
   // Check if current user is admin or owner (can manage members) - use same logic as workspace index
   const canManageMembers = useMemo(() => {
-    console.log('=== Permission Check ===');
-    console.log('currentUserId:', currentUserId);
-    console.log('ownerIds:', Array.from(ownerIds));
+    // Debug logging (commented out for performance)
+    // console.log('=== Permission Check ===');
+    // console.log('currentUserId:', currentUserId);
+    // console.log('ownerIds:', Array.from(ownerIds));
     
-    // Temporary: If currentUserId is empty, try to find the user from the enriched space members
+    // Temporary: If currentUserId is empty, try to find the user from the raw space members
     let effectiveUserId = currentUserId;
     if (!effectiveUserId) {
       // Look for the current user in the space members (they should be there as owner)
-      const currentUserInSpace = spaceMembers.find((m: any) => {
+      const spaceMembersList = Array.isArray(currentSpace?.members) ? currentSpace.members : [];
+      const currentUserInSpace = spaceMembersList.find((m: any) => {
         const memberId = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
         return memberId && ownerIds.has(memberId);
       });
       
       if (currentUserInSpace) {
         effectiveUserId = String(currentUserInSpace?.user?._id || currentUserInSpace?.user?.id || currentUserInSpace?._id || currentUserInSpace?.id || '');
-        console.log('Found current user in space members, using ID:', effectiveUserId);
+        // console.log('Found current user in space members, using ID:', effectiveUserId);
       }
     }
     
     if (!effectiveUserId) {
-      console.log('No effectiveUserId - returning false');
+      // console.log('No effectiveUserId - returning false');
       return false;
     }
     
     // Method 1: Check if user is in ownerIds (workspace owner)
     const isWorkspaceOwner = ownerIds.has(effectiveUserId);
-    console.log('isWorkspaceOwner:', isWorkspaceOwner);
+    // console.log('isWorkspaceOwner:', isWorkspaceOwner);
     if (isWorkspaceOwner) {
-      console.log('User is workspace owner - returning true');
+      // console.log('User is workspace owner - returning true');
       return true;
     }
     
@@ -268,14 +239,14 @@ export default function SpaceBoardsScreen() {
       return memberId === effectiveUserId;
     });
     
-    console.log('userMember found:', userMember);
+    // console.log('userMember found:', userMember);
     const isAdmin = userMember?.role === 'admin';
-    console.log('isAdmin:', isAdmin, 'userMember.role:', userMember?.role);
-    console.log('Final canManageMembers result:', isAdmin);
-    console.log('=== End Permission Check ===');
+    // console.log('isAdmin:', isAdmin, 'userMember.role:', userMember?.role);
+    // console.log('Final canManageMembers result:', isAdmin);
+    // console.log('=== End Permission Check ===');
     
     return isAdmin;
-  }, [currentUserId, ownerIds, displayMembers, spaceMembers]);
+  }, [currentUserId, ownerIds, displayMembers, currentSpace?.members]);
 
   const [refreshing, setRefreshing] = useState(false);
   const lastLoadedSpaceId = useRef<string | null>(null);
@@ -288,6 +259,15 @@ export default function SpaceBoardsScreen() {
   const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   
+  // Show banner helper
+  const showBanner = useCallback((type: 'success' | 'error', message: string) => {
+    setBanner({ type, message });
+  }, []);
+  
+  // Hide banner helper
+  const hideBanner = useCallback(() => {
+    setBanner(null);
+  }, []);
 
   // Grid sizing for 3 columns
   const [gridWidth, setGridWidth] = useState(0);
@@ -346,7 +326,7 @@ export default function SpaceBoardsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [space?._id, space?.id]);
+  }, [space?._id, space?.id, loadSpaces]);
 
   useEffect(() => {
     loadBoards(false);
@@ -354,11 +334,10 @@ export default function SpaceBoardsScreen() {
 
   useEffect(() => {
     const spaceId = String(space?._id || space?.id || '');
-    if (spaceId) {
-      console.log('Loading space members for space:', spaceId);
+    if (spaceId && spaceId !== lastLoadedSpaceId.current) {
       loadSpaceMembers(spaceId);
     }
-  }, [space?._id, space?.id]);
+  }, [space?._id, space?.id, loadSpaceMembers]);
 
   // Also ensure workspace members are loaded when space changes
   useEffect(() => {
@@ -367,7 +346,7 @@ export default function SpaceBoardsScreen() {
       // Dispatch fetchMembers to ensure workspace members are loaded
       dispatch(fetchMembers({ id: workspaceId }));
     }
-  }, [space?.workspaceId, space?.workspace, dispatch]);
+  }, [space?.workspaceId, space?.workspace?._id, space?.workspace?.id, dispatch]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -391,8 +370,7 @@ export default function SpaceBoardsScreen() {
     if (!space?._id && !space?.id) return;
     if (!boardName.trim()) {
       // Non-intrusive validation: show banner instead of alert
-      setBanner({ type: 'error', message: 'Board name required' });
-      setTimeout(() => setBanner(null), 2500);
+      showBanner('error', 'Board name required');
       return;
     }
     try {
@@ -423,8 +401,7 @@ export default function SpaceBoardsScreen() {
     } catch (e: any) {
       console.warn('Failed to create board:', e?.response?.data || e);
       // Non-intrusive error banner
-      setBanner({ type: 'error', message: e?.response?.data?.message || e?.message || 'Failed to create board' });
-      setTimeout(() => setBanner(null), 3000);
+      showBanner('error', e?.response?.data?.message || e?.message || 'Failed to create board');
     } finally {
       setCreating(false);
     }
@@ -441,28 +418,30 @@ export default function SpaceBoardsScreen() {
   const handleAddMember = async (memberId: string, role: string = 'member') => {
     if (!space?._id && !space?.id) return;
     
-    console.log('=== ADDING MEMBER ===');
-    console.log('memberId:', memberId);
-    console.log('role:', role);
-    console.log('spaceId:', space._id || space.id);
+    // Check if the user ID is valid
+    if (!memberId || memberId === 'undefined' || memberId === 'null') {
+      console.error('Invalid memberId:', memberId);
+      return;
+    }
     
     try {
       const spaceId = space._id || space.id;
       await addMember(spaceId, memberId, role);
       
-      console.log('✅ Member added successfully via API');
+      // console.log('✅ Member added successfully via API');
+      
+      // Small delay to ensure backend processing
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Refresh space members
       await loadSpaceMembers(spaceId);
       
-      console.log('✅ Space members refreshed');
+      // console.log('✅ Space members refreshed');
       
-      setBanner({ type: 'success', message: 'Member added successfully' });
-      setTimeout(() => setBanner(null), 3000);
+      showBanner('success', 'Member added successfully');
     } catch (error: any) {
       console.error('❌ Failed to add member:', error);
-      setBanner({ type: 'error', message: error?.message || 'Failed to add member' });
-      setTimeout(() => setBanner(null), 3000);
+      showBanner('error', error?.message || 'Failed to add member');
     }
   };
 
@@ -471,37 +450,17 @@ export default function SpaceBoardsScreen() {
     
     try {
       const spaceId = space._id || space.id;
-      console.log('=== REMOVE MEMBER DEBUG ===');
-      console.log('spaceId:', spaceId);
-      console.log('memberId:', memberId);
-      console.log('API endpoint will be:', `/spaces/${spaceId}/members/${memberId}`);
-      
-      // First, let's check if this member actually exists in our current space members
-      const currentMembers = (currentSpace as any)?.members || [];
-      const memberExists = currentMembers.some((m: any) => {
-        const membershipId = String(m?._id || m?.id || '');
-        return membershipId === memberId;
-      });
-      
-      console.log('Member exists in current space members:', memberExists);
-      console.log('Current space members count:', currentMembers.length);
-      console.log('Current space members IDs:', currentMembers.map((m: any) => String(m?._id || m?.id || '')));
-      
-      if (!memberExists) {
-        console.log('Member not found in current space members, refreshing data first');
-        await loadSpaceMembers(spaceId);
-        setBanner({ type: 'success', message: 'Refreshing member list...' });
-        setTimeout(() => setBanner(null), 2000);
-        return;
-      }
+      // console.log('=== REMOVE MEMBER DEBUG ===');
+      // console.log('spaceId:', spaceId);
+      // console.log('memberId:', memberId);
+      // console.log('API endpoint will be:', `/spaces/${spaceId}/members/${memberId}`);
       
       await removeMember(spaceId, memberId);
       
       // Refresh space members
       await loadSpaceMembers(spaceId);
       
-      setBanner({ type: 'success', message: 'Member removed successfully' });
-      setTimeout(() => setBanner(null), 3000);
+      showBanner('success', 'Member removed successfully');
     } catch (error: any) {
       console.error('Failed to remove member:', error);
       console.error('Error details:', {
@@ -513,22 +472,16 @@ export default function SpaceBoardsScreen() {
       
       // If it's a 404 error, the member doesn't exist on the backend
       if (error?.response?.status === 404) {
-        console.log('Member not found on backend (404), this indicates data sync issue');
-        console.log('Removing member optimistically from local state');
-        
-        // Remove the member from local state optimistically
-        dispatch(removeMemberOptimistically(memberId));
-        
-        setBanner({ type: 'success', message: 'Member was already removed from the server' });
+        // console.log('Member not found on backend (404), refreshing data to sync with server');
+        showBanner('success', 'Member was already removed from the server');
         
         // Force refresh to get the latest state from backend
         const spaceId = space._id || space.id;
         await loadSpaceMembers(spaceId);
         await loadSpace(spaceId);
       } else {
-        setBanner({ type: 'error', message: error?.message || 'Failed to remove member' });
+        showBanner('error', error?.message || 'Failed to remove member');
       }
-      setTimeout(() => setBanner(null), 3000);
     }
   };
 
@@ -557,12 +510,11 @@ export default function SpaceBoardsScreen() {
       });
       
       if (invalidMembers.length === 0) {
-        setBanner({ type: 'success', message: 'No invalid members found' });
-        setTimeout(() => setBanner(null), 3000);
+        showBanner('success', 'No invalid members found');
         return;
       }
       
-      console.log('Found invalid members to clean up:', invalidMembers);
+      // console.log('Found invalid members to clean up:', invalidMembers);
       
       let successCount = 0;
       let errorCount = 0;
@@ -571,7 +523,7 @@ export default function SpaceBoardsScreen() {
       for (const invalidMember of invalidMembers) {
         const memberId = String(invalidMember?._id || invalidMember?.id || '');
         if (memberId) {
-          console.log('Attempting to remove invalid member:', memberId);
+          // console.log('Attempting to remove invalid member:', memberId);
           try {
             await removeMember(spaceId, memberId);
             successCount++;
@@ -581,7 +533,7 @@ export default function SpaceBoardsScreen() {
             
             // If API fails with 404, try to remove from local state
             if (error?.response?.status === 404) {
-              console.log(`Member ${memberId} not found on backend, removing from local state`);
+              // console.log(`Member ${memberId} not found on backend, removing from local state`);
               // This will be handled by refreshing the space members
             }
           }
@@ -593,29 +545,24 @@ export default function SpaceBoardsScreen() {
       
       // Also refresh the space data to ensure we have the latest state
       if (errorCount > 0) {
-        console.log('Refreshing space data due to API errors');
+        // console.log('Refreshing space data due to API errors');
         // Force refresh the space data
         await loadSpace(spaceId);
       }
       
       // Additional cleanup: Force refresh to sync with backend
-      console.log('Performing final refresh to sync with backend...');
+      // console.log('Performing final refresh to sync with backend...');
       await loadSpaceMembers(spaceId);
       await loadSpace(spaceId);
       
       if (errorCount > 0) {
-        setBanner({ 
-          type: 'success', 
-          message: `Cleaned up ${successCount} member(s). ${errorCount} member(s) were already removed from backend.` 
-        });
+        showBanner('success', `Cleaned up ${successCount} member(s). ${errorCount} member(s) were already removed from backend.`);
       } else {
-        setBanner({ type: 'success', message: `Cleaned up ${successCount} invalid member(s)` });
+        showBanner('success', `Cleaned up ${successCount} invalid member(s)`);
       }
-      setTimeout(() => setBanner(null), 3000);
     } catch (error: any) {
       console.error('Failed to cleanup invalid members:', error);
-      setBanner({ type: 'error', message: error?.message || 'Failed to cleanup invalid members' });
-      setTimeout(() => setBanner(null), 3000);
+      showBanner('error', error?.message || 'Failed to cleanup invalid members');
     }
   };
 
@@ -639,8 +586,7 @@ export default function SpaceBoardsScreen() {
       setTempAddedIds(new Set());
       // Member added successfully - no notification needed
     } catch (e: any) {
-      setBanner({ type: 'error', message: e?.response?.data?.message || e?.message || 'Failed to add members' });
-      setTimeout(() => setBanner(null), 2000);
+      showBanner('error', e?.response?.data?.message || e?.message || 'Failed to add members');
     }
   };
 
@@ -654,8 +600,7 @@ export default function SpaceBoardsScreen() {
       await loadSpaceMembers(spaceId);
       // Member removed successfully - no notification needed
     } catch (e: any) {
-      setBanner({ type: 'error', message: e?.response?.data?.message || e?.message || 'Failed to remove member' });
-      setTimeout(() => setBanner(null), 1800);
+      showBanner('error', e?.response?.data?.message || e?.message || 'Failed to remove member');
     }
   };
 
@@ -875,20 +820,16 @@ export default function SpaceBoardsScreen() {
   return (
     <RNView style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
       <View style={{ flex: 1 }}>
-        {/* In-app notification banner */}
-        {banner && (
-          <View
-            style={[
-              styles.banner,
-              {
-                backgroundColor: banner.type === 'success' ? colors.primary : colors.destructive,
-                borderColor: banner.type === 'success' ? colors.primary : colors.destructive,
-              },
-            ]}
-          >
-            <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'] }]}>{banner.message}</Text>
-          </View>
-        )}
+        {/* Professional in-app notification banner */}
+        <Banner
+          visible={!!banner}
+          type={banner?.type || 'info'}
+          message={banner?.message || ''}
+          onClose={hideBanner}
+          position="bottom"
+          duration={banner?.type === 'error' ? 4000 : 3000}
+          animationDuration={400}
+        />
         <SpaceHeader
           space={{
             ...space,
@@ -1008,7 +949,6 @@ const styles = StyleSheet.create({
   memberAvatar: { width: 32, height: 32, borderRadius: 16 },
   memberAvatarPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   checkbox: { width: 18, height: 18, borderRadius: 4, borderWidth: StyleSheet.hairlineWidth },
-  banner: { position: 'absolute', top: 12, left: 16, right: 16, zIndex: 10, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, padding: 12, alignItems: 'center' },
   addButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   removeButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   emptyState: { padding: 16, borderRadius: 8, alignItems: 'center' },

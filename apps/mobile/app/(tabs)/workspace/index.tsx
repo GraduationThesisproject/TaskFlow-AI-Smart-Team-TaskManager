@@ -17,6 +17,7 @@ import MobileAlert from '@/components/common/Alert';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 import SpaceCard from '@/components/common/SpaceCard';
 import Sidebar from '@/components/navigation/Sidebar';
+import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
 
 // Toggle this to quickly demo with mock data
@@ -47,11 +48,12 @@ const MOCK_SPACES = [
   },
 ];
 
-export default function WorkspaceScreen() {
+function WorkspaceScreenContent() {
   const colors = useThemeColors();
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; workspaceId?: string }>();
   const dispatch = useAppDispatch();
+  const { showSuccess, showError, showWarning, showInfo } = useBanner();
   const [refreshing, setRefreshing] = useState(false);
   const [spaceSearch, setSpaceSearch] = useState('');
   const [showCreateSpace, setShowCreateSpace] = useState(false);
@@ -84,37 +86,39 @@ export default function WorkspaceScreen() {
     }, [workspaceId, dispatch, loadSpaces])
   );
 
-  // Resolve spaces from hook or fallback to the workspace object returned by the hook
-  const spacesSource = useMemo(() => {
-    if (Array.isArray(spaces) && spaces.length > 0) return spaces;
-    const wsSpaces = (ws as any)?.spaces;
-    return Array.isArray(wsSpaces) ? wsSpaces : [];
-  }, [spaces, ws]);
+  // Optimized: Combine all space processing into a single useMemo to avoid dependency chains
+  const processedSpaces = useMemo(() => {
+    // Resolve spaces from hook or fallback to the workspace object returned by the hook
+    let spacesSource: any[] = [];
+    if (Array.isArray(spaces) && spaces.length > 0) {
+      spacesSource = spaces;
+    } else {
+      const wsSpaces = (ws as any)?.spaces;
+      spacesSource = Array.isArray(wsSpaces) ? wsSpaces : [];
+    }
 
-  const activeSpaces = useMemo(() => (
-    Array.isArray(spacesSource) ? spacesSource.filter((s: any) => s?.status !== 'archived') : []
-  ), [spacesSource]);
+    // Filter active spaces
+    const activeSpaces = spacesSource.filter((s: any) => s?.status !== 'archived');
 
-  // Deduplicate spaces by id to avoid duplicate renders when multiple fetches race
-  const uniqueSpaces = useMemo(() => {
+    // Deduplicate spaces by id to avoid duplicate renders when multiple fetches race
     const seen = new Set<string>();
-    const list: any[] = [];
+    const uniqueSpaces: any[] = [];
     for (const s of activeSpaces) {
       const id = String((s as any)?._id || (s as any)?.id || '');
       if (!id || seen.has(id)) continue;
       seen.add(id);
-      list.push(s);
+      uniqueSpaces.push(s);
     }
-    return list;
-  }, [activeSpaces]);
 
-  const effectiveSpaces = uniqueSpaces.length > 0 ? uniqueSpaces : (USE_MOCK ? MOCK_SPACES : []);
+    // Return effective spaces (use mock if no real spaces)
+    return uniqueSpaces.length > 0 ? uniqueSpaces : (USE_MOCK ? MOCK_SPACES : []);
+  }, [spaces, ws]);
 
   const filteredSpaces = useMemo(() => {
     const q = spaceSearch.trim().toLowerCase();
-    if (!q) return effectiveSpaces;
-    return (effectiveSpaces || []).filter((s: any) => (s?.name || '').toLowerCase().includes(q) || (s?.description || '').toLowerCase().includes(q));
-  }, [spaceSearch, effectiveSpaces]);
+    if (!q) return processedSpaces;
+    return (processedSpaces || []).filter((s: any) => (s?.name || '').toLowerCase().includes(q) || (s?.description || '').toLowerCase().includes(q));
+  }, [spaceSearch, processedSpaces]);
 
   // Deduplicate members by user id to avoid duplicate renders
   const uniqueMembers = useMemo(() => {
@@ -227,12 +231,7 @@ export default function WorkspaceScreen() {
       setAlertVisible(true);
     } catch (e: any) {
       console.warn('Failed to remove member', e);
-      Alert.alert('Failed to remove member', e?.message || 'Unknown error');
-      // Also show an error banner for visibility
-      setAlertVariant('error');
-      setAlertTitle('Failed to remove member');
-      setAlertDescription(e?.message || 'Unknown error');
-      setAlertVisible(true);
+      showError(`Failed to remove member: ${e?.message || 'Unknown error'}`);
     }
   };
 
@@ -251,17 +250,17 @@ export default function WorkspaceScreen() {
             try {
               if (isArchived) {
                 await dispatch(unarchiveSpace(spaceId));
-                Alert.alert('Success', 'Space restored successfully!');
+                showSuccess('Space restored successfully!');
               } else {
                 await dispatch(archiveSpace(spaceId));
-                Alert.alert('Success', 'Space archived successfully!');
+                showSuccess('Space archived successfully!');
               }
               // Refresh spaces after archiving/unarchiving
               if (workspaceId) {
                 loadSpaces(workspaceId);
               }
             } catch (error) {
-              Alert.alert('Error', `Failed to ${actionText} space`);
+              showError(`Failed to ${actionText} space`);
             }
           }
         }
@@ -272,7 +271,7 @@ export default function WorkspaceScreen() {
   const handleSubmitCreate = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
     if (!workspaceId) return;
     const MAX_SPACES = 5;
-    const canCreateMoreSpaces = (effectiveSpaces?.length || 0) < MAX_SPACES;
+    const canCreateMoreSpaces = (processedSpaces?.length || 0) < MAX_SPACES;
     if (!canCreateMoreSpaces) {
       setAlertVariant('warning');
       setAlertTitle('Space limit reached');
@@ -362,7 +361,7 @@ export default function WorkspaceScreen() {
 
   const handleCreateSpacePress = () => {
     const MAX_SPACES = 5;
-    const canCreateMoreSpaces = (effectiveSpaces?.length || 0) < MAX_SPACES;
+    const canCreateMoreSpaces = (processedSpaces?.length || 0) < MAX_SPACES;
     if (!canCreateMoreSpaces) {
       setAlertVariant('warning');
       setAlertTitle('Space limit reached');
@@ -481,7 +480,7 @@ export default function WorkspaceScreen() {
                 <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Members</Text>
               </Card>
               <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
-                <Text style={[TextStyles.heading.h3, { color: colors.accent }]}>{effectiveSpaces.length}</Text>
+                <Text style={[TextStyles.heading.h3, { color: colors.accent }]}>{processedSpaces.length}</Text>
                 <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Active Spaces</Text>
               </Card>
             </View>
@@ -489,7 +488,7 @@ export default function WorkspaceScreen() {
           </>
         )}
         {/* Spaces List */}
-        {!!(effectiveSpaces && effectiveSpaces.length) && (
+        {!!(processedSpaces && processedSpaces.length) && (
           <Card style={styles.sectionCard}>
             <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Spaces</Text>
             <View
@@ -665,6 +664,15 @@ export default function WorkspaceScreen() {
       {/* Sidebar */}
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="workspace" />
     </View>
+  );
+}
+
+// Wrapper component with BannerProvider
+export default function WorkspaceScreen() {
+  return (
+    <BannerProvider>
+      <WorkspaceScreenContent />
+    </BannerProvider>
   );
 }
 

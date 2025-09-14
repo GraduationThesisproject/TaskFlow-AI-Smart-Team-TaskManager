@@ -10,6 +10,7 @@ import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector } from '@/store';
+import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
 const RULES_FILE = FileSystem.documentDirectory + 'workspace_rules.txt';
 
@@ -83,9 +84,10 @@ AI for Estimates
 
 Use AI as a second opinion for effort/priority estimation.`;
 
-export default function WorkspaceRulesScreen() {
+function WorkspaceRulesScreenContent() {
   const colors = useThemeColors();
   const router = useRouter();
+  const { showSuccess, showError, showWarning, showInfo } = useBanner();
 
   const { currentWorkspace, members } = useAppSelector((s: any) => s.workspace);
   const { user: authUser } = useAppSelector((s: any) => s.auth);
@@ -217,6 +219,15 @@ export default function WorkspaceRulesScreen() {
         </Card>
       </ScrollView>
     </View>
+  );
+}
+
+// Wrapper component with BannerProvider
+export default function WorkspaceRulesScreen() {
+  return (
+    <BannerProvider>
+      <WorkspaceRulesScreenContent />
+    </BannerProvider>
   );
 }
 
