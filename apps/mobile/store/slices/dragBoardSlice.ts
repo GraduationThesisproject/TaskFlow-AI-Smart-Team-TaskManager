@@ -93,41 +93,9 @@ export const fetchBoard = createAsyncThunk(
       },
     ];
 
+    // Initialize with empty tasks for all columns
     const mockTasks: Record<string, DragTask[]> = {
-      'col-1': [
-        {
-          _id: 'task-1',
-          title: 'Design new dashboard layout',
-          description: 'Create wireframes and mockups for the new dashboard',
-          status: 'todo',
-          priority: 'high',
-          dueDate: '2024-03-15',
-          assignees: [
-            { id: '1', name: 'Alice Johnson' },
-            { id: '2', name: 'Bob Smith' },
-          ],
-          columnId: 'col-1',
-          position: 0,
-          comments: 3,
-          attachments: 2,
-          createdAt: '2024-03-01T10:00:00Z',
-          updatedAt: '2024-03-01T10:00:00Z',
-        },
-        {
-          _id: 'task-2',
-          title: 'Implement user authentication',
-          description: 'Set up secure login and registration system',
-          status: 'todo',
-          priority: 'urgent',
-          dueDate: '2024-03-20',
-          assignees: [{ id: '3', name: 'Carol Davis' }],
-          columnId: 'col-1',
-          position: 1,
-          comments: 5,
-          createdAt: '2024-03-02T10:00:00Z',
-          updatedAt: '2024-03-02T10:00:00Z',
-        },
-      ],
+      'col-1': [],
       'col-2': [],
       'col-3': [],
       'col-4': [],

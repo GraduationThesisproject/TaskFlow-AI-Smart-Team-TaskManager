@@ -130,10 +130,10 @@ export const Column = memo<ColumnProps>(({
     <View style={styles.headerSpacer} />
   ), []);
 
-  // List footer component
+  // List footer component - only show when there are tasks
   const ListFooterComponent = useMemo(() => (
     <>
-      {editable && (
+      {editable && tasks.length > 0 && (
         <TouchableOpacity
           style={[
             styles.addTaskButton,
@@ -152,7 +152,7 @@ export const Column = memo<ColumnProps>(({
       )}
       <View style={styles.footerSpacer} />
     </>
-  ), [editable, colors, onAddTask]);
+  ), [editable, colors, onAddTask, tasks.length]);
 
   // Empty component
   const ListEmptyComponent = useMemo(() => (
