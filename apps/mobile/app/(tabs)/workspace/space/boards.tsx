@@ -450,10 +450,10 @@ export default function SpaceBoardsScreen() {
     
     try {
       const spaceId = space._id || space.id;
-      // console.log('=== REMOVE MEMBER DEBUG ===');
-      // console.log('spaceId:', spaceId);
-      // console.log('memberId:', memberId);
-      // console.log('API endpoint will be:', `/spaces/${spaceId}/members/${memberId}`);
+      console.log('=== REMOVE MEMBER DEBUG (Frontend) ===');
+      console.log('spaceId:', spaceId);
+      console.log('memberId (user ID):', memberId);
+      console.log('API endpoint will be:', `/spaces/${spaceId}/members/${memberId}`);
       
       await removeMember(spaceId, memberId);
       
@@ -472,7 +472,7 @@ export default function SpaceBoardsScreen() {
       
       // If it's a 404 error, the member doesn't exist on the backend
       if (error?.response?.status === 404) {
-        // console.log('Member not found on backend (404), refreshing data to sync with server');
+        console.log('Member not found on backend (404), refreshing data to sync with server');
         showBanner('success', 'Member was already removed from the server');
         
         // Force refresh to get the latest state from backend
@@ -480,6 +480,7 @@ export default function SpaceBoardsScreen() {
         await loadSpaceMembers(spaceId);
         await loadSpace(spaceId);
       } else {
+        console.error('Unexpected error removing member:', error);
         showBanner('error', error?.message || 'Failed to remove member');
       }
     }

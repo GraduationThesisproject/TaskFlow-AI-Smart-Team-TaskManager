@@ -138,10 +138,10 @@ function WorkspaceRulesScreenContent() {
     try {
       setSaving(true);
       await FileSystem.writeAsStringAsync(RULES_FILE, rules, { encoding: FileSystem.EncodingType.UTF8 });
-      Alert.alert('Saved', 'Workspace rules saved successfully.');
+      showSuccess('Workspace rules saved successfully.');
       setEditing(false);
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to save rules');
+      showError(`Failed to save rules: ${e?.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -167,10 +167,10 @@ function WorkspaceRulesScreenContent() {
       if (canShare) {
         await Sharing.shareAsync(uri, { UTI: 'com.adobe.pdf', mimeType: 'application/pdf' });
       } else {
-        Alert.alert('PDF saved', `Saved to: ${uri}`);
+        showSuccess(`PDF saved to: ${uri}`);
       }
     } catch (e: any) {
-      Alert.alert('Export failed', e?.message || 'Failed to export PDF');
+      showError(`Export failed: ${e?.message || 'Failed to export PDF'}`);
     }
   };
 
