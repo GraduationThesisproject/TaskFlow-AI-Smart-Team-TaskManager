@@ -6,32 +6,22 @@ import {
   ModalFooter,
   Button,
   Input,
+  Select,
+  SelectOption,
   Typography,
-  Stack,
-  ColorPicker,
-  IconPicker
+  Stack
 } from '@taskflow/ui';
 import type { Column } from '../../store/slices/taskSlice';
 import type { AddColumnModalProps } from '../../types/interfaces/ui';
 
-// Custom preset colors for columns
-const columnPresetColors = [
-  '#007ADF', // Primary blue
-  '#00E8C6', // Accent cyan
-  '#10b981', // Success green
-  '#f59e0b', // Warning orange
-  '#ef4444', // Error red
-  '#3b82f6', // Info blue
-  '#8b5cf6', // Purple
-  '#ec4899', // Pink
-  '#f97316', // Orange
-  '#84cc16', // Lime
-  '#06b6d4', // Cyan
-  '#6366f1', // Indigo
-  '#64748b', // Slate
-  '#6b7280', // Gray
-  '#374151', // Dark gray
-  '#000000', // Black
+const COLOR_OPTIONS = [
+  { value: 'default', label: 'Default' },
+  { value: 'primary', label: 'Primary' },
+  { value: 'secondary', label: 'Secondary' },
+  { value: 'success', label: 'Success' },
+  { value: 'warning', label: 'Warning' },
+  { value: 'error', label: 'Error' },
+  { value: 'info', label: 'Info' },
 ];
 
 export const AddColumnModal: React.FC<AddColumnModalProps> = ({
@@ -39,16 +29,15 @@ export const AddColumnModal: React.FC<AddColumnModalProps> = ({
   onClose,
   onSubmit,
 }) => {
-  const [formData, setFormData] = useState<Partial<Column> & { backgroundColor?: string; icon?: string | null }>({
+  const [formData, setFormData] = useState<Partial<Column>>({
     name: '',
-    backgroundColor: '#F9FAFB', // Default to light gray background
-    icon: null,
+    color: 'default',
     wipLimit: 0,
     isDefault: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (field: keyof Column | 'backgroundColor' | 'icon', value: any) => {
+  const handleInputChange = (field: keyof Column, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -70,8 +59,7 @@ export const AddColumnModal: React.FC<AddColumnModalProps> = ({
   const handleClose = () => {
     setFormData({
       name: '',
-      backgroundColor: '#F9FAFB', // Default to light gray background
-      icon: null,
+      color: 'default',
       wipLimit: 0,
       isDefault: false,
     });
@@ -88,7 +76,6 @@ export const AddColumnModal: React.FC<AddColumnModalProps> = ({
       <form onSubmit={handleSubmit}>
         <ModalBody>
           <Stack spacing="lg">
-            {/* Basic Information */}
             <div>
               <Typography variant="body-medium" className="mb-2 font-semibold">
                 Column Information
@@ -108,7 +95,6 @@ export const AddColumnModal: React.FC<AddColumnModalProps> = ({
               </Stack>
             </div>
 
-            {/* Column Properties */}
             <div>
               <Typography variant="body-medium" className="mb-2 font-semibold">
                 Column Properties
@@ -117,31 +103,18 @@ export const AddColumnModal: React.FC<AddColumnModalProps> = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Typography variant="body-small" className="mb-1 text-muted-foreground">
-                      Background Color
+                      Color
                     </Typography>
-                    <ColorPicker
-                      value={formData.backgroundColor || '#F9FAFB'}
-                      onChange={(backgroundColor) => handleInputChange('backgroundColor', backgroundColor)}
-                      placeholder="Choose background color..."
-                      presetColors={columnPresetColors}
-                      showLabel={false}
-                      size="default"
-                      variant="outline"
-                    />
-                  </div>
-
-                  <div>
-                    <Typography variant="body-small" className="mb-1 text-muted-foreground">
-                      Column Icon
-                    </Typography>
-                    <IconPicker
-                      value={formData.icon || null}
-                      onChange={(icon) => handleInputChange('icon', icon)}
-                      placeholder="Choose column icon..."
-                      showLabel={false}
-                      size="default"
-                      variant="outline"
-                    />
+                    <Select
+                      value={formData.color}
+                      onChange={(e) => handleInputChange('color', e.target.value)}
+                    >
+                      {COLOR_OPTIONS.map(option => (
+                        <SelectOption key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectOption>
+                      ))}
+                    </Select>
                   </div>
                   
                   <div>
@@ -195,3 +168,5 @@ export const AddColumnModal: React.FC<AddColumnModalProps> = ({
     </Modal>
   );
 };
+
+

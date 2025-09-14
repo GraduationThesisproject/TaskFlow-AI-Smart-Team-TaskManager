@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { 
   Avatar,
   AvatarImage,
@@ -12,6 +13,7 @@ import {
 } from '@taskflow/ui';
 import type { CommentReaction } from '../../types/task.types';
 import { CommentService } from '../../services/commentService';
+import { addCommentReaction, removeCommentReaction } from '../../store/slices/taskSlice';
 import { useToast } from '../../hooks/useToast';
 import type { CommentItemProps } from '../../types/interfaces/ui';
 
@@ -22,9 +24,9 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   users,
   currentUserId,
   onCommentUpdate,
-  onCommentDelete,
   onReplyAdd
 }) => {
+  const dispatch = useDispatch();
   const { warning } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
@@ -33,9 +35,12 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
 
-  const author = users.find(u => u._id === comment.author);
+  // Use populated author data from comment if available, otherwise fallback to users array
+  const author = comment.author && typeof comment.author === 'object' 
+    ? comment.author 
+    : users.find(u => u._id === comment.author);
   const currentUser = users.find(u => u._id === currentUserId);
-  const isAuthor = comment.author === currentUserId;
+  const isAuthor = comment.author === currentUserId || (typeof comment.author === 'object' && comment.author._id === currentUserId);
 
   const formatTimeAgo = (date: Date): string => {
     const now = new Date();
@@ -65,23 +70,6 @@ export const CommentItem: React.FC<CommentItemProps> = ({
     }
   };
 
-  const handleDelete = async () => {
-    warning(
-      'Are you sure you want to delete this comment?',
-      'Delete Comment',
-      { duration: 0, dismissible: true }
-    );
-    
-    setIsSubmitting(true);
-    try {
-      await CommentService.deleteComment(comment._id);
-      onCommentDelete(comment._id);
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleReply = async () => {
     if (!replyContent.trim()) return;
@@ -101,29 +89,15 @@ export const CommentItem: React.FC<CommentItemProps> = ({
 
   const handleReaction = async (emoji: string) => {
     try {
-      const existingReaction = comment.reactions.find(
+      const existingReaction = comment.reactions?.find(
         r => r.user === currentUserId && r.emoji === emoji
       );
 
       if (existingReaction) {
-        await CommentService.removeReaction(comment._id, emoji);
+        dispatch(removeCommentReaction({ commentId: comment._id, emoji }) as any);
       } else {
-        await CommentService.addReaction(comment._id, emoji);
+        dispatch(addCommentReaction({ commentId: comment._id, reactionData: { emoji } }) as any);
       }
-      
-      // Refresh the comment data
-      const updatedComment = { ...comment };
-      if (existingReaction) {
-        updatedComment.reactions = comment.reactions.filter(
-          r => !(r.user === currentUserId && r.emoji === emoji)
-        );
-      } else {
-        updatedComment.reactions = [
-          ...comment.reactions,
-          { user: currentUserId, emoji, createdAt: new Date().toISOString() }
-        ];
-      }
-      onCommentUpdate(comment._id, updatedComment);
     } catch (error) {
       console.error('Error handling reaction:', error);
     }
@@ -142,12 +116,12 @@ export const CommentItem: React.FC<CommentItemProps> = ({
 
 
   const hasUserReacted = (emoji: string) => {
-    return comment.reactions.some(r => r.user === currentUserId && r.emoji === emoji);
+    return (comment.reactions || []).some(r => r.user === currentUserId && r.emoji === emoji);
   };
 
   const getUniqueReactions = () => {
     const uniqueReactions = new Map<string, CommentReaction[]>();
-    comment.reactions.forEach(reaction => {
+    (comment.reactions || []).forEach(reaction => {
       if (!uniqueReactions.has(reaction.emoji)) {
         uniqueReactions.set(reaction.emoji, []);
       }
@@ -158,10 +132,10 @@ export const CommentItem: React.FC<CommentItemProps> = ({
 
   return (
     <div className="group relative">
-      <div className={`flex gap-3 p-4 rounded-xl hover:bg-muted/30 transition-all duration-200 border ${
+      <div className={`flex gap-2 p-2 rounded-lg hover:bg-muted/20 transition-all duration-200 border ${
         comment.isPinned 
           ? 'border-primary/20 bg-primary/5' 
-          : 'border-transparent hover:border-border/50'
+          : 'border-transparent hover:border-border/30'
       }`}>
         {comment.isPinned && (
           <div className="absolute -top-2 -left-2 bg-primary text-white text-xs px-2 py-1 rounded-full z-10">
@@ -169,7 +143,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           </div>
         )}
         
-        <Avatar size="lg" className="ring-2 ring-border/50 flex-shrink-0">
+        <Avatar size="sm" className="ring-1 ring-border/20 flex-shrink-0">
           <AvatarImage src={author?.avatar} alt={author?.name || 'Unknown'} />
           <AvatarFallback variant={getAvatarColor(author?.name || 'Unknown')}>
             {getInitials(author?.name || 'Unknown')}
@@ -177,11 +151,11 @@ export const CommentItem: React.FC<CommentItemProps> = ({
         </Avatar>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-2 mb-1">
             <Typography variant="body-small" className="font-semibold text-foreground">
               {author?.name || 'Unknown User'}
             </Typography>
-            <Typography variant="caption" className="text-muted-foreground bg-muted/50 px-2 py-1 rounded-full">
+            <Typography variant="caption" className="text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded-md text-xs">
               {formatTimeAgo(new Date(comment.createdAt))}
             </Typography>
             {comment.isResolved && (
@@ -189,14 +163,14 @@ export const CommentItem: React.FC<CommentItemProps> = ({
             )}
           </div>
           
-          <div className="bg-muted/20 rounded-lg p-3">
+          <div className="bg-muted/15 rounded-md p-2">
             {isEditing ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <TextArea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="min-h-20 resize-none"
-                  rows={3}
+                  className="min-h-16 resize-none"
+                  rows={2}
                 />
                 <div className="flex gap-2">
                   <Button 
@@ -226,13 +200,13 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           </div>
           
           {/* Reactions */}
-          {comment.reactions.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-3">
+          {comment.reactions && comment.reactions.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
               {getUniqueReactions().map(([emoji, reactions]) => (
                 <button
                   key={emoji}
                   onClick={() => handleReaction(emoji)}
-                  className={`px-2 py-1 rounded-full text-xs transition-colors ${
+                  className={`px-1.5 py-0.5 rounded-md text-xs transition-colors ${
                     hasUserReacted(emoji)
                       ? 'bg-primary/20 text-primary'
                       : 'bg-muted/50 text-muted-foreground hover:bg-muted'
@@ -245,7 +219,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           )}
           
           {/* Action buttons */}
-          <div className="flex items-center gap-4 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-3 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
             {/* Reaction button */}
             <div className="relative">
               <button 
@@ -304,36 +278,24 @@ export const CommentItem: React.FC<CommentItemProps> = ({
               {comment.isPinned ? 'Pinned' : 'Pin'}
             </button>
             
-            {/* Edit/Delete buttons for author */}
+            {/* Edit button for author */}
             {isAuthor && (
-              <>
-                <button 
-                  className="text-muted-foreground hover:text-foreground text-xs flex items-center gap-1"
-                  onClick={() => setIsEditing(true)}
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Edit
-                </button>
-                <button 
-                  className="text-error hover:text-error text-xs flex items-center gap-1"
-                  onClick={handleDelete}
-                  disabled={isSubmitting}
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Delete
-                </button>
-              </>
+              <button 
+                className="text-muted-foreground hover:text-foreground text-xs flex items-center gap-1"
+                onClick={() => setIsEditing(true)}
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit
+              </button>
             )}
           </div>
           
           {/* Reply form */}
           {isReplying && (
-            <div className="mt-4 space-y-3">
-              <div className="flex gap-3">
+            <div className="mt-3 space-y-2">
+              <div className="flex gap-2">
                 <Avatar size="sm" className="ring-1 ring-border flex-shrink-0">
                   <AvatarImage src={currentUser?.avatar} alt={currentUser?.name || 'You'} />
                   <AvatarFallback variant={getAvatarColor(currentUser?.name || 'You')}>
@@ -345,8 +307,8 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
                     placeholder="Write a reply..."
-                    className="min-h-20 resize-none border-0 bg-muted/30 focus:bg-muted/50 transition-colors"
-                    rows={3}
+                    className="min-h-16 resize-none border-0 bg-muted/30 focus:bg-muted/50 transition-colors"
+                    rows={2}
                   />
                 </div>
               </div>
