@@ -21,13 +21,7 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
-  // Debug logging
-  console.log('DraggableTask render:', { 
-    taskId: task._id, 
-    taskTitle: task.title, 
-    index,
-    columnId 
-  });
+  // Debug logging removed to prevent console spam
 
 
 
@@ -74,7 +68,14 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
             }`}
             onClick={handleClick}
           >
-            <Card className="cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-200 border border-border/20 bg-card/95 backdrop-blur-sm rounded-xl overflow-hidden group">
+            <Card className="cursor-pointer hover:border-primary/30 transition-all duration-200 border border-border/20 bg-card/95 backdrop-blur-sm rounded-xl overflow-hidden group">
+              {/* Task Color Indicator */}
+              {task.color && (
+                <div 
+                  className="h-1 w-full" 
+                  style={{ backgroundColor: task.color }}
+                />
+              )}
               <CardContent className="p-3">
                 {/* Compact Header with Priority and Status */}
                 <div className="flex items-center justify-between mb-2">
