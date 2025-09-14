@@ -101,16 +101,39 @@ function WorkspaceRulesScreenContent() {
   const canEdit = useMemo(() => {
     const uid = String(authUser?.user?._id || authUser?.user?.id || '');
     if (!uid) return false;
-    // Owner check
-    const ownerId = currentWorkspace?.owner?._id || currentWorkspace?.owner?.id || currentWorkspace?.ownerId;
-    if (ownerId && String(ownerId) === uid) return true;
+    
+    console.log('🔍 Rules Permission Check:', {
+      uid,
+      currentWorkspace,
+      members: members?.length || 0,
+      ownerField: currentWorkspace?.owner,
+      ownerId: currentWorkspace?.ownerId
+    });
+    
+    // Owner check - owner field can be a string (ID) or object with _id/id
+    const ownerId = typeof currentWorkspace?.owner === 'string' 
+      ? currentWorkspace.owner 
+      : (currentWorkspace?.owner?._id || currentWorkspace?.owner?.id || currentWorkspace?.ownerId);
+    
+    if (ownerId && String(ownerId) === uid) {
+      console.log('✅ User is workspace owner');
+      return true;
+    }
+    
     // Admin role among members
     const list: any[] = Array.isArray(members) ? members : [];
-    return list.some((m: any) => {
+    const isAdmin = list.some((m: any) => {
       const mid = m?.user?._id || m?.user?.id || m?.userId || m?._id || m?.id;
       const role = String(m?.role || '').toLowerCase();
-      return String(mid) === uid && (role === 'admin' || role === 'owner');
+      const isAdminRole = String(mid) === uid && (role === 'admin' || role === 'owner');
+      if (isAdminRole) {
+        console.log('✅ User is admin/owner in members list:', { mid, role });
+      }
+      return isAdminRole;
     });
+    
+    console.log('🔍 Final canEdit result:', isAdmin);
+    return isAdmin;
   }, [authUser, currentWorkspace, members]);
 
   useEffect(() => {
