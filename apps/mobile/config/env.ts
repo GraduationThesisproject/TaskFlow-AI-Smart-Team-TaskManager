@@ -1,43 +1,67 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
+// Simple network configuration
+const getNetworkConfig = () => {
+  const isDev = __DEV__;
+  const isAndroid = Platform.OS === 'android';
+  const isIOS = Platform.OS === 'ios';
+  
+  if (isDev) {
+    if (isAndroid) {
+      // Android - use development machine IP
+      return {
+        apiBaseUrl: 'http://192.168.1.14:3001/api',
+        baseUrl: 'http://192.168.1.14:3001',
+        socketUrl: 'http://192.168.1.14:3001',
+        frontendUrl: 'http://192.168.1.14:5173',
+      };
+    }
+    
+    if (isIOS || Platform.OS === 'web') {
+      // iOS simulator and web - use localhost
+      return {
+        apiBaseUrl: 'http://localhost:3001/api',
+        baseUrl: 'http://localhost:3001',
+        socketUrl: 'http://localhost:3001',
+        frontendUrl: 'http://localhost:5173',
+      };
+    }
+  }
+  
+  // Production URLs
+  return {
+    apiBaseUrl: 'https://api.taskflow.com/api',
+    baseUrl: 'https://api.taskflow.com',
+    socketUrl: 'https://api.taskflow.com',
+    frontendUrl: 'https://taskflow.com',
+  };
+};
+
+const networkConfig = getNetworkConfig();
+
 // Environment configuration for React Native/Expo
 export const env = {
   // Server Configuration
   NODE_ENV: __DEV__ ? 'development' : 'production',
   PORT: 3001,
     
-   DEFAULT_URL: process.env.PUBLIC_DEFAULT_BASE || 'http://192.168.1.64:3001' ,
   // API Configuration
-  // Prefer EXPO_PUBLIC_* when provided. Otherwise choose sensible defaults:
-  // - Android emulator: 10.0.2.2
-  // - iOS simulator / Web: localhost
-  // For physical devices, override via apps/mobile/.env -> EXPO_PUBLIC_API_BASE_URL
-  get DEFAULT_HOST() {
-    if (__DEV__ && Platform.OS === 'android') return '10.0.2.2';
-    return 'localhost'; // For iOS simulator / web defaults; override via EXPO_PUBLIC_* for physical devices
-  },
-  get DEFAULT_API() {
-    return `http://${this.DEFAULT_HOST}:3001/api`;
-  },
-  get DEFAULT_BASE() {
-    return `http://${this.DEFAULT_HOST}:3001`;
-  },
-  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || Constants.expoConfig?.extra?.apiBaseUrl || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:3001/api`,
-  API_URL: process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:3001/api`,
-  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || Constants.expoConfig?.extra?.socketUrl || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:3001`,
+  API_BASE_URL: networkConfig.apiBaseUrl,
+  API_URL: networkConfig.apiBaseUrl,
+  SOCKET_URL: networkConfig.socketUrl,
+  BASE_URL: networkConfig.baseUrl,
   
   // App Configuration
   APP_NAME: Constants.expoConfig?.name || 'TaskFlow',
   APP_VERSION: Constants.expoConfig?.version || '1.0.0',
-  BASE_URL: process.env.EXPO_PUBLIC_BASE_URL || Constants.expoConfig?.extra?.baseUrl || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:3001`,
   
   // Feature Flags
   ENABLE_ANALYTICS: process.env.EXPO_PUBLIC_ENABLE_ANALYTICS === 'true' || Constants.expoConfig?.extra?.enableAnalytics === true,
   ENABLE_DEBUG: __DEV__,
   
   // OAuth Configuration
-  GOOGLE_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || Constants.expoConfig?.extra?.googleClientId || '625288272720-qem1ue46j75pt272mab8f35baimqgeag.apps.googleusercontent.com',
+  GOOGLE_CLIENT_ID: '823340430443-hmc2puv4ffap7sgo0jc79bm5juivkvvf.apps.googleusercontent.com', // Web client ID for Expo Go
   GOOGLE_CLIENT_SECRET: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_SECRET || Constants.expoConfig?.extra?.googleClientSecret || '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',
   GOOGLE_CALLBACK_URL: process.env.EXPO_PUBLIC_GOOGLE_CALLBACK_URL || Constants.expoConfig?.extra?.googleCallbackUrl || 'taskflow://auth/google/callback',
   GITHUB_CLIENT_ID: process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID || Constants.expoConfig?.extra?.githubClientId || 'Ov23liwZN5YwJ4eZvffU',
@@ -88,9 +112,9 @@ export const env = {
   PERFORMANCE_MONITORING_ENABLED: process.env.EXPO_PUBLIC_PERFORMANCE_MONITORING_ENABLED === 'true' || Constants.expoConfig?.extra?.performanceMonitoringEnabled === true,
   
   // Environment specific URLs
-  DEVELOPMENT_API_URL: process.env.EXPO_PUBLIC_DEV_API_URL || 'http://localhost:3001/api',
-  STAGING_API_URL: process.env.EXPO_PUBLIC_STAGING_API_URL || 'https://staging-api.taskflow.com/api',
-  PRODUCTION_API_URL: process.env.EXPO_PUBLIC_PROD_API_URL || 'https://api.taskflow.com/api',
+  DEVELOPMENT_API_URL: networkConfig.apiBaseUrl,
+  STAGING_API_URL: 'https://staging-api.taskflow.com/api',
+  PRODUCTION_API_URL: 'https://api.taskflow.com/api',
   
   // Feature toggles
   ENABLE_PUSH_NOTIFICATIONS: process.env.EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS === 'true' || Constants.expoConfig?.extra?.enablePushNotifications === true,
@@ -116,16 +140,16 @@ export type Env = typeof env;
 export function getEnvVar<T extends keyof Env>(key: T, fallback?: Env[T]): Env[T] {
   // Provide smart fallbacks for base URLs at runtime
   if ((key === 'API_BASE_URL' || key === 'API_URL') && (env[key] as any) == null) {
-    return env.DEFAULT_API as any;
+    return env.API_BASE_URL as any;
   }
   if (key === 'SOCKET_URL' && (env[key] as any) == null) {
-    return env.DEFAULT_BASE as any;
+    return env.SOCKET_URL as any;
   }
   if (key === 'BASE_URL' && (env[key] as any) == null) {
-    return env.DEFAULT_BASE as any;
+    return env.BASE_URL as any;
   }
   if (key === 'DEVELOPMENT_API_URL' && (env[key] as any) == null) {
-    return env.DEFAULT_API as any;
+    return env.API_BASE_URL as any;
   }
   return (env[key] ?? fallback ?? ('' as Env[T]));
 }
@@ -241,5 +265,16 @@ if (__DEV__) {
   const validation = validateEnvironment();
   if (!validation.isValid) {
     console.warn('⚠️ Environment configuration issues:', validation.errors);
+  }
+  
+  // Log network configuration for debugging
+  if (__DEV__) {
+    console.log('🌐 Network Configuration:', {
+      platform: Platform.OS,
+      isDev: __DEV__,
+      apiBaseUrl: env.API_BASE_URL,
+      baseUrl: env.BASE_URL,
+      socketUrl: env.SOCKET_URL,
+    });
   }
 }

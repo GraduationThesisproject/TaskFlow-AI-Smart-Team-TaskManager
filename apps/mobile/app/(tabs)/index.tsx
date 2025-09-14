@@ -15,6 +15,7 @@ import { router } from 'expo-router';
 import CreateWorkspaceModal from '@/components/common/CreateWorkspaceModal';
 import { createWorkspace } from '@/store/slices/workspaceSlice';
 import NotificationBell from '@/components/common/NotificationBell';
+import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
 // Welcome Header Component
 const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
@@ -147,6 +148,7 @@ const WorkspacesSection: React.FC = () => {
   const colors = useThemeColors();
   const { workspaces, loading: workspacesLoading, error: workspacesError } = useAppSelector(state => state.workspace);
   const dispatch = useAppDispatch();
+  const { showSuccess, showError } = useBanner();
 
   const recentWorkspaces = workspaces?.slice(0, 3) || [];
 
@@ -168,10 +170,13 @@ const WorkspacesSection: React.FC = () => {
       if (id) {
         dispatch(setCurrentWorkspaceId(id));
         router.push(`/(tabs)/workspace?workspaceId=${id}`);
+        showSuccess('Workspace created successfully!');
       }
       // refresh the dashboard list
       await dispatch(fetchWorkspaces());
       setShowCreateWs(false);
+    } catch (error: any) {
+      showError(error?.message || 'Failed to create workspace');
     } finally {
       setCreatingWs(false);
     }
@@ -371,7 +376,7 @@ const UpcomingDeadlines: React.FC = () => {
   );
 };
 
-export default function DashboardScreen() {
+function DashboardScreenContent() {
   const colors = useThemeColors();
   const dispatch = useAppDispatch();
   const { logout } = useAuth();
@@ -483,6 +488,14 @@ export default function DashboardScreen() {
 
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="dashboard" />
     </View>
+  );
+}
+
+export default function DashboardScreen() {
+  return (
+    <BannerProvider>
+      <DashboardScreenContent />
+    </BannerProvider>
   );
 }
 

@@ -4,16 +4,22 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "start:offline": "expo start --offline",
+    "start:clear": "expo start --clear",
+    "start:clear:offline": "expo start --clear --offline",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "jest --watchAll"
+    "web:offline": "expo start --web --offline",
+    "test": "jest --watchAll",
+    "setup-network": "node scripts/setup-network.js"
   },
   "jest": {
     "preset": "jest-expo"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
+    "@lottiefiles/dotlottie-react": "^0.13.5",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-navigation/native": "^7.1.6",
     "@reduxjs/toolkit": "^2.9.0",
@@ -24,6 +30,7 @@
     "expo-font": "~13.3.2",
     "expo-haptics": "^15.0.6",
     "expo-image-picker": "^16.1.4",
+    "expo-linear-gradient": "~13.0.2",
     "expo-linking": "~7.1.7",
     "expo-notifications": "^0.31.4",
     "expo-print": "^15.0.6",
@@ -51,7 +58,8 @@
     "react-redux": "^9.2.0",
     "redux-persist": "^6.0.0",
     "redux-persist-transform-encrypt": "^5.1.1",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "expo-auth-session": "~6.2.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
