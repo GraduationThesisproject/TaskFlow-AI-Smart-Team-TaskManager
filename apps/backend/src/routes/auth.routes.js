@@ -72,6 +72,10 @@ router.get('/google/callback', authController.googleCallback);
 router.get('/github', authController.githubLogin);
 router.get('/github/callback', authController.githubCallback);
 
+// Mobile OAuth Authentication
+router.post('/google/mobile', authController.googleMobile);
+router.post('/github/mobile', authController.githubMobile);
+
 // ============================================================================
 // PROTECTED ROUTES (Authentication Required)
 // ============================================================================
