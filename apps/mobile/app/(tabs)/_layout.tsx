@@ -23,7 +23,15 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors['muted-foreground'],
         tabBarStyle: {
-          display: 'none', // Hide the entire tab bar
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          marginBottom: 4,
         },
         headerStyle: {
           backgroundColor: colors.background,
@@ -41,10 +49,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="board"
+        options={{
+          title: 'Board',
+          tabBarIcon: ({ color }) => <TabBarIcon name="columns" color={color} />,
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
         name="tasks"
         options={{
           title: 'Tasks',
           tabBarIcon: ({ color }) => <TabBarIcon name="tasks" color={color} />,
+          headerShown: false,
         }}
       />
       <Tabs.Screen
