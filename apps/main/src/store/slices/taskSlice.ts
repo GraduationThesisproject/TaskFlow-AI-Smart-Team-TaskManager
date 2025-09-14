@@ -372,7 +372,13 @@ const taskSlice = createSlice({
       if (Array.isArray(state.columns)) {
         const index = state.columns.findIndex(col => col._id === action.payload._id);
         if (index !== -1) {
-          state.columns[index] = action.payload;
+          // Preserve existing tasks when updating column
+          const existingColumn = state.columns[index];
+          const updatedColumn = {
+            ...action.payload,
+            tasks: action.payload.tasks || existingColumn.tasks || []
+          };
+          state.columns[index] = updatedColumn;
         }
       } else {
         state.columns = [];
@@ -723,9 +729,9 @@ export const selectFilteredTasks = (state: { tasks: TaskState }) => {
   
   let filteredTasks = [...tasks];
   
-  // Apply status filter
-  if (filters.status.length > 0) {
-    filteredTasks = filteredTasks.filter(task => filters.status.includes(task.status));
+  // Apply column filter
+  if (filters.column.length > 0) {
+    filteredTasks = filteredTasks.filter(task => filters.column.includes(task.column));
   }
   
   // Apply priority filter

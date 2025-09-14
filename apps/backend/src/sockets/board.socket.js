@@ -117,7 +117,8 @@ const handleBoardSocket = (io) => {
                     return;
                 }
                 
-                const board = await Board.findById(boardId);
+                const board = await Board.findById(boardId)
+                    .populate('members.user', 'name email avatar');
                 if (!board) {
                     socket.emit('error', { message: 'Board not found' });
                     return;
@@ -282,22 +283,33 @@ const handleBoardSocket = (io) => {
                     return;
                 }
 
+                const boardId = column.board;
+                const columnName = column.name;
+
                 // Check if column has tasks
-                const taskCount = await Task.countDocuments({ column: columnId });
+                const tasks = await Task.find({ column: columnId });
+                const taskCount = tasks.length;
+
+                // If column has tasks, delete them first
                 if (taskCount > 0) {
-                    socket.emit('error', { message: 'Cannot delete column with tasks' });
-                    return;
+                    // Delete all tasks in this column
+                    await Task.deleteMany({ column: columnId });
+                    logger.info(`Deleted ${taskCount} tasks from column ${columnName}`);
                 }
 
-                const boardId = column.board;
+                // Delete the column
                 await Column.findByIdAndDelete(columnId);
 
                 // Broadcast to board
                 boardNamespace.to(`board:${boardId}`).emit('column:deleted', {
                     columnId,
+                    columnName,
+                    taskCount,
                     deletedBy: socket.user,
                     timestamp: new Date()
                 });
+
+                logger.info(`Column deleted: ${columnName} (${taskCount} tasks deleted)`);
 
             } catch (error) {
                 logger.error('Delete column error:', error);
@@ -347,12 +359,223 @@ const handleBoardSocket = (io) => {
             }
         });
 
+        // ===== BOARD TAG OPERATIONS =====
+        
+        // Handle board tag creation
+        socket.on('board:tag:create', async (data) => {
+            try {
+                const { boardId, tag } = data;
+                
+                if (!boardId || !tag || !tag.name || !tag.color) {
+                    socket.emit('error', { message: 'Board ID, tag name, and color are required' });
+                    return;
+                }
+
+                // Check permissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/board/:id/tags', 
+                    'POST', 
+                    boardId
+                );
+                
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
+                    return;
+                }
+
+                // Find the board
+                const board = await Board.findById(boardId);
+                if (!board) {
+                    socket.emit('error', { message: 'Board not found' });
+                    return;
+                }
+
+                // Check if tag already exists
+                const existingTag = board.tags.find(t => t.name.toLowerCase() === tag.name.toLowerCase());
+                if (existingTag) {
+                    socket.emit('error', { message: 'Tag with this name already exists' });
+                    return;
+                }
+
+                // Add tag to board
+                board.tags.push({
+                    name: tag.name.trim(),
+                    color: tag.color
+                });
+
+                await board.save();
+
+                // Broadcast to board
+                boardNamespace.to(`board:${boardId}`).emit('board:tag:created', {
+                    boardId,
+                    tag: {
+                        name: tag.name.trim(),
+                        color: tag.color
+                    },
+                    createdBy: socket.user,
+                    timestamp: new Date()
+                });
+
+                logger.info(`Tag "${tag.name}" created for board ${boardId} by ${socket.user.name}`);
+
+            } catch (error) {
+                logger.error('Create board tag error:', error);
+                socket.emit('error', { message: 'Failed to create board tag' });
+            }
+        });
+
+        // Handle board tag update
+        socket.on('board:tag:update', async (data) => {
+            try {
+                const { boardId, tagName, updates } = data;
+                
+                if (!boardId || !tagName || !updates) {
+                    socket.emit('error', { message: 'Board ID, tag name, and updates are required' });
+                    return;
+                }
+
+                // Check permissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/board/:id/tags/:tagName', 
+                    'PUT', 
+                    boardId
+                );
+                
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
+                    return;
+                }
+
+                // Find the board
+                const board = await Board.findById(boardId);
+                if (!board) {
+                    socket.emit('error', { message: 'Board not found' });
+                    return;
+                }
+
+                // Find the tag
+                const tagIndex = board.tags.findIndex(t => t.name === tagName);
+                if (tagIndex === -1) {
+                    socket.emit('error', { message: 'Tag not found' });
+                    return;
+                }
+
+                // Update tag
+                if (updates.name) {
+                    // Check if new name already exists
+                    const existingTag = board.tags.find(t => t.name.toLowerCase() === updates.name.toLowerCase() && t.name !== tagName);
+                    if (existingTag) {
+                        socket.emit('error', { message: 'Tag with this name already exists' });
+                        return;
+                    }
+                    board.tags[tagIndex].name = updates.name.trim();
+                }
+                if (updates.color) {
+                    board.tags[tagIndex].color = updates.color;
+                }
+
+                await board.save();
+
+                // Broadcast to board
+                boardNamespace.to(`board:${boardId}`).emit('board:tag:updated', {
+                    boardId,
+                    oldTagName: tagName,
+                    tag: board.tags[tagIndex],
+                    updatedBy: socket.user,
+                    timestamp: new Date()
+                });
+
+                logger.info(`Tag "${tagName}" updated for board ${boardId} by ${socket.user.name}`);
+
+            } catch (error) {
+                logger.error('Update board tag error:', error);
+                socket.emit('error', { message: 'Failed to update board tag' });
+            }
+        });
+
+        // Handle board tag deletion
+        socket.on('board:tag:delete', async (data) => {
+            try {
+                const { boardId, tagName } = data;
+                
+                if (!boardId || !tagName) {
+                    socket.emit('error', { message: 'Board ID and tag name are required' });
+                    return;
+                }
+
+                // Check permissions
+                const permissionCheck = await checkSocketPermission(
+                    socket, 
+                    '/board/:id/tags/:tagName', 
+                    'DELETE', 
+                    boardId
+                );
+                
+                if (!permissionCheck.hasAccess) {
+                    socket.emit('error', { 
+                        code: 'FORBIDDEN', 
+                        message: permissionCheck.error 
+                    });
+                    return;
+                }
+
+                // Find the board
+                const board = await Board.findById(boardId);
+                if (!board) {
+                    socket.emit('error', { message: 'Board not found' });
+                    return;
+                }
+
+                // Find the tag
+                const tagIndex = board.tags.findIndex(t => t.name === tagName);
+                if (tagIndex === -1) {
+                    socket.emit('error', { message: 'Tag not found' });
+                    return;
+                }
+
+                const tag = board.tags[tagIndex];
+
+                // Remove tag from board
+                board.tags.splice(tagIndex, 1);
+                await board.save();
+
+                // Remove tag from all tasks that use it
+                await Task.updateMany(
+                    { board: boardId, tags: tagName },
+                    { $pull: { tags: tagName } }
+                );
+
+                // Broadcast to board
+                boardNamespace.to(`board:${boardId}`).emit('board:tag:deleted', {
+                    boardId,
+                    tagName,
+                    deletedBy: socket.user,
+                    timestamp: new Date()
+                });
+
+                logger.info(`Tag "${tagName}" deleted from board ${boardId} by ${socket.user.name}`);
+
+            } catch (error) {
+                logger.error('Delete board tag error:', error);
+                socket.emit('error', { message: 'Failed to delete board tag' });
+            }
+        });
+
         // ===== TASK OPERATIONS =====
         
         // Handle task creation
         socket.on('task:create', async (data) => {
             try {
                 const { taskData, boardId } = data;
+                console.log('🔍 BACKEND DEBUG - Task creation request received:', { taskData, boardId, userId: socket.userId });
                 logger.info(`Task creation request received:`, { taskData, boardId, userId: socket.userId });
                 
                 // Check permissions using pathPermissions
@@ -382,6 +605,11 @@ const handleBoardSocket = (io) => {
                 }
 
                 // Create task
+                console.log('🔍 BACKEND DEBUG - Original taskData:', taskData);
+                console.log('🔍 BACKEND DEBUG - Column from taskData:', taskData.column);
+                logger.info(`Original taskData:`, taskData);
+                logger.info(`Column from taskData:`, taskData.column);
+                
                 const task = new Task({
                     ...taskData,
                     board: boardId,
@@ -390,15 +618,25 @@ const handleBoardSocket = (io) => {
                     lastActivity: new Date()
                 });
                 
+                console.log('🔍 BACKEND DEBUG - Creating task with data:', task.toObject());
+                console.log('🔍 BACKEND DEBUG - Task column field:', task.column);
                 logger.info(`Creating task with data:`, task.toObject());
+                logger.info(`Task column field:`, task.column);
                 await task.save();
+                console.log('🔍 BACKEND DEBUG - Task saved successfully:', task._id);
+                console.log('🔍 BACKEND DEBUG - Task column after save:', task.column);
                 logger.info(`Task saved successfully: ${task._id}`);
+                logger.info(`Task column after save:`, task.column);
                 await task.populate('assignees', 'name email avatar');
                 await task.populate('reporter', 'name email avatar');
+                logger.info(`Task column after populate:`, task.column);
 
                 // Broadcast to all users in the board
+                const finalTaskData = task.toObject();
+                console.log('🔍 BACKEND DEBUG - Final task data being sent:', finalTaskData);
+                console.log('🔍 BACKEND DEBUG - Final task column:', finalTaskData.column);
                 boardNamespace.to(`board:${boardId}`).emit('task:created', {
-                    task: task.toObject(),
+                    task: finalTaskData,
                     createdBy: socket.user,
                     timestamp: new Date()
                 });
@@ -538,12 +776,16 @@ const handleBoardSocket = (io) => {
                     return;
                 }
 
+                // Get columnId before deleting
+                const columnId = task.column;
+
                 // Delete task
                 await Task.findByIdAndDelete(taskId);
 
                 // Broadcast to all users in the board
                 boardNamespace.to(`board:${boardId}`).emit('task:deleted', {
                     taskId,
+                    columnId,
                     deletedBy: socket.user,
                     timestamp: new Date()
                 });

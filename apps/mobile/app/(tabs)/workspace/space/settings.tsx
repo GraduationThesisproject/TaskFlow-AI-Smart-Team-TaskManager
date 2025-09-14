@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Switch, View as RNView, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { View, Text, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
@@ -8,11 +9,13 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { SpaceService } from '@/services/spaceService';
 import { setSelectedSpace } from '@/store/slices/workspaceSlice';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function SpaceSettingsScreen() {
   const colors = useThemeColors();
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { token } = useAuth();
 
   const { selectedSpace } = useAppSelector((s: any) => s.workspace);
   const space = selectedSpace;
@@ -26,12 +29,23 @@ export default function SpaceSettingsScreen() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState<boolean>(false);
+  
+  // GitHub integration state
+  const [githubConnected, setGithubConnected] = useState<boolean>(!!(space as any)?.githubRepo?.fullName);
+  const [githubRepository, setGithubRepository] = useState<string>((space as any)?.githubRepo?.fullName || '');
+  const [githubBranch, setGithubBranch] = useState<string>((space as any)?.githubRepo?.defaultBranch || 'main');
+  const [showGithubModal, setShowGithubModal] = useState<boolean>(false);
 
   useEffect(() => {
     if (space) {
       setName(space.name || '');
       setDescription(space.description || '');
       setIsPrivate(!!(space?.settings?.isPrivate));
+      
+      // GitHub integration state
+      setGithubConnected(!!(space as any)?.githubRepo?.fullName);
+      setGithubRepository((space as any)?.githubRepo?.fullName || '');
+      setGithubBranch((space as any)?.githubRepo?.defaultBranch || 'main');
     }
   }, [space]);
 
@@ -113,6 +127,107 @@ export default function SpaceSettingsScreen() {
     }
   };
 
+  const handleGithubConnect = async () => {
+    if (!githubRepository.trim()) {
+      Alert.alert('GitHub Integration', 'Please enter a repository name');
+      return;
+    }
+    
+    try {
+      // Check if user has GitHub linked
+      const response = await fetch('/api/github/status', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data?.linked) {
+          // User has GitHub linked, link the repository
+          const id = space?._id || space?.id;
+          if (!id) return;
+          
+          const payload = {
+            githubRepo: {
+              fullName: githubRepository.trim(),
+              name: githubRepository.split('/').pop(),
+              defaultBranch: githubBranch.trim() || 'main',
+              linkedAt: new Date()
+            }
+          };
+          
+          await SpaceService.updateSpace(id, payload as any);
+          
+          setGithubConnected(true);
+          setGithubRepository(githubRepository.trim());
+          setGithubBranch(githubBranch.trim() || 'main');
+          setShowGithubModal(false);
+          Alert.alert('Success', 'GitHub repository linked successfully!');
+        } else {
+          // User needs to link GitHub account first
+          Alert.alert(
+            'GitHub Account Required',
+            'You need to link your GitHub account first. Would you like to do that now?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { 
+                text: 'Link GitHub', 
+                onPress: () => {
+                  // Redirect to GitHub App installation for repository
+                  const installUrl = `https://github.com/apps/taskflow-ai/installations/new?state=${encodeURIComponent(JSON.stringify({
+                    type: 'space',
+                    spaceId: space?._id || space?.id,
+                    repository: githubRepository.trim()
+                  }))}&redirect_uri=${encodeURIComponent('http://localhost:3001/api/github-app/install/callback')}`;
+                  window.open(installUrl, '_blank');
+                }
+              }
+            ]
+       
+          );
+        }
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to link GitHub repository. Please try again.');
+    }
+  };
+
+  const handleGithubDisconnect = async () => {
+    Alert.alert(
+      'Disconnect GitHub',
+      'Are you sure you want to disconnect this space from GitHub? This will remove all GitHub-related settings.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const id = space?._id || space?.id;
+              if (!id) return;
+              
+              const payload = {
+                githubRepo: {
+                  fullName: '',
+                  name: '',
+                  defaultBranch: '',
+                  linkedAt: null
+                }
+              };
+              
+              await SpaceService.updateSpace(id, payload as any);
+              setGithubConnected(false);
+              setGithubRepository('');
+              setGithubBranch('main');
+              Alert.alert('Success', 'GitHub repository disconnected successfully!');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to disconnect GitHub repository.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleDelete = async () => {
     if (!space?._id && !space?.id) return;
     try {
@@ -145,14 +260,19 @@ export default function SpaceSettingsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.primary }]} onPress={() => router.back()}>
-          <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>{'<'}</Text>
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={{ color: colors.primary, fontWeight: '600' }}>{'<'}</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.headerCenter}>
           <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Space Settings</Text>
           <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Manage your space configuration</Text>
         </View>
-        <View style={{ width: 40 }} />
+        <View style={styles.headerRight} />
       </View>
 
       <ScrollView style={styles.content}>
@@ -268,6 +388,48 @@ export default function SpaceSettingsScreen() {
           </RNView>
         </Card>
 
+        {/* GitHub Integration */}
+        <Card style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 10 }]}>GitHub Integration</Text>
+          
+          {githubConnected ? (
+            <View style={styles.githubConnected as any}>
+              <View style={styles.githubInfo}>
+                <FontAwesome name="github" size={24} color={colors.foreground} />
+                <View style={styles.githubDetails}>
+                  <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Connected to GitHub</Text>
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                    Repository: {githubRepository || 'Not specified'}
+                  </Text>
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                    Branch: {githubBranch || 'main'}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[styles.disconnectButton, { backgroundColor: colors.destructive }]}
+                onPress={handleGithubDisconnect}
+              >
+                <Text style={[TextStyles.body.small, { color: colors['destructive-foreground'] }]}>Disconnect</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.githubDisconnected}>
+              <FontAwesome name="github" size={32} color={colors['muted-foreground']} />
+              <Text style={[TextStyles.body.medium, { color: colors.foreground, marginTop: 8 }]}>Link to GitHub Repository</Text>
+              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], textAlign: 'center', marginTop: 4 }]}>
+                Connect this space to a GitHub repository to sync issues and manage development tasks
+              </Text>
+              <TouchableOpacity
+                style={[styles.connectButton, { backgroundColor: colors.primary }]}
+                onPress={() => setShowGithubModal(true)}
+              >
+                <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>Link Repository</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </Card>
+
         {/* Danger Zone */}
         <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.destructive, borderWidth: 1 }]}> 
           <Text style={[TextStyles.heading.h3, { color: colors.destructive, marginBottom: 10 }]}>Danger Zone</Text>
@@ -295,14 +457,96 @@ export default function SpaceSettingsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* GitHub Connection Modal */}
+      <Modal
+        visible={showGithubModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowGithubModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Link GitHub Repository</Text>
+            
+            <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], marginBottom: 12 }]}>
+              Enter the GitHub repository name and branch to connect this space.
+            </Text>
+            
+            <TextInput
+              style={[styles.input, { 
+                color: colors.foreground, 
+                borderColor: colors.border, 
+                backgroundColor: colors.background 
+              }]}
+              placeholder="Repository Name (e.g., microsoft/vscode)"
+              placeholderTextColor={colors['muted-foreground']}
+              value={githubRepository}
+              onChangeText={setGithubRepository}
+            />
+            
+            <TextInput
+              style={[styles.input, { 
+                color: colors.foreground, 
+                borderColor: colors.border, 
+                backgroundColor: colors.background 
+              }]}
+              placeholder="Branch Name (e.g., main, develop)"
+              placeholderTextColor={colors['muted-foreground']}
+              value={githubBranch}
+              onChangeText={setGithubBranch}
+            />
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: colors.muted }]}
+                onPress={() => setShowGithubModal(false)}
+              >
+                <Text style={[TextStyles.body.small, { color: colors.foreground }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: colors.primary }]}
+                onPress={handleGithubConnect}
+              >
+                <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>Link Repository</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
-  backButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  backButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   content: { flex: 1, padding: 16 },
   centerBox: { padding: 24, alignItems: 'center', justifyContent: 'center' },
   sectionCard: { padding: 16, borderRadius: 12, marginBottom: 16 },
@@ -316,4 +560,55 @@ const styles = StyleSheet.create({
   infoItem: { width: '48%' },
   modalOverlay: { flex: 1, backgroundColor: '#00000088', alignItems: 'center', justifyContent: 'center', padding: 20 },
   modalCard: { width: '100%', maxWidth: 420, borderRadius: 12, borderWidth: 1, padding: 16 },
+  
+  // GitHub Integration Styles
+  githubConnected: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  githubInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  githubDetails: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  githubDisconnected: {
+    alignItems: 'center',
+    padding: 24,
+  },
+  connectButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 16,
+  },
+  disconnectButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    padding: 20,
+    borderRadius: 12,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
 });

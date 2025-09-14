@@ -108,6 +108,11 @@ const SPACE_PERMISSIONS = {
         PUT: ['owner', 'admin'],
         DELETE: ['owner', 'admin']
     },
+    '/space/:id/members/:memberId': {
+        GET: ['owner', 'admin', 'member', 'viewer'],
+        PUT: ['owner', 'admin'],
+        DELETE: ['owner', 'admin']
+    },
     '/space/:id/boards': {
         GET: ['owner', 'admin', 'member', 'viewer'],
         POST: ['owner', 'admin', 'member']
@@ -169,6 +174,14 @@ const BOARD_PERMISSIONS = {
     },
     '/board/:id/export': {
         GET: ['owner', 'admin', 'member']
+    },
+    '/board/:id/tags': {
+        GET: ['owner', 'admin', 'member', 'viewer'],
+        POST: ['owner', 'admin', 'member']
+    },
+    '/board/:id/tags/:tagName': {
+        PUT: ['owner', 'admin', 'member'],
+        DELETE: ['owner', 'admin', 'member']
     }
 };
 
