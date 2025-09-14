@@ -1,0 +1,5458 @@
+[
+  {
+    "_id": "68a5fc0a8a7b1bd27300b28f",
+    "name": "Release Balanced foreground data-warehouse Tasks",
+    "description": "Track feature development and bug fixes.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b202",
+    "owner": "68a5fc098a7b1bd27300b1f1",
+    "members": [
+      {
+        "user": "68a5fc098a7b1bd27300b1f1",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-02T15:49:34.146Z",
+        "_id": "68a5fc0a8a7b1bd27300b290"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1f1",
+        "permissions": [
+          "manage_columns"
+        ],
+        "addedAt": "2025-07-31T12:23:15.035Z",
+        "_id": "68a5fc0a8a7b1bd27300b291"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 21
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-02T00:04:48.856Z",
+    "updatedAt": "2025-06-02T00:04:48.856Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b293",
+    "name": "Project Self-enabling optimal installation Board",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b206",
+    "owner": "68a5fc048a7b1bd27300b119",
+    "members": [
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-12T17:48:34.601Z",
+        "_id": "68a5fc0a8a7b1bd27300b294"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1f1",
+        "permissions": [
+          "manage_members",
+          "view",
+          "edit"
+        ],
+        "addedAt": "2025-07-29T13:59:23.924Z",
+        "_id": "68a5fc0a8a7b1bd27300b295"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b16d",
+        "permissions": [
+          "delete"
+        ],
+        "addedAt": "2025-07-28T05:07:33.796Z",
+        "_id": "68a5fc0a8a7b1bd27300b296"
+      },
+      {
+        "user": "68a5fc038a7b1bd27300b10d",
+        "permissions": [
+          "manage_members",
+          "delete",
+          "edit"
+        ],
+        "addedAt": "2025-08-13T01:23:45.632Z",
+        "_id": "68a5fc0a8a7b1bd27300b297"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "manage_columns",
+          "delete",
+          "view"
+        ],
+        "addedAt": "2025-08-11T18:53:50.972Z",
+        "_id": "68a5fc0a8a7b1bd27300b298"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 58
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-26T17:55:00.735Z",
+    "updatedAt": "2025-07-26T17:55:00.735Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b29a",
+    "name": "Planning Extended object-oriented firmware Kanban",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68a5fc0a8a7b1bd27300b20e",
+    "owner": "68a5fc068a7b1bd27300b179",
+    "members": [
+      {
+        "user": "68a5fc068a7b1bd27300b179",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-06T16:06:34.340Z",
+        "_id": "68a5fc0a8a7b1bd27300b29b"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-08-05T12:45:38.800Z",
+        "_id": "68a5fc0a8a7b1bd27300b29c"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b179",
+        "permissions": [
+          "manage_members",
+          "view"
+        ],
+        "addedAt": "2025-08-05T13:19:55.626Z",
+        "_id": "68a5fc0a8a7b1bd27300b29d"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 15
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-03T10:03:09.087Z",
+    "updatedAt": "2025-08-03T10:03:09.087Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b29f",
+    "name": "Design Realigned asymmetric contingency Scrum",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b20e",
+    "owner": "68a5fc078a7b1bd27300b19d",
+    "members": [
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-15T01:36:47.825Z",
+        "_id": "68a5fc0a8a7b1bd27300b2a0"
+      },
+      {
+        "user": "68a5fc038a7b1bd27300b10d",
+        "permissions": [
+          "view"
+        ],
+        "addedAt": "2025-07-24T14:39:49.128Z",
+        "_id": "68a5fc0a8a7b1bd27300b2a1"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1b5",
+        "permissions": [
+          "manage_columns"
+        ],
+        "addedAt": "2025-07-31T14:21:14.597Z",
+        "_id": "68a5fc0a8a7b1bd27300b2a2"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "high",
+      "autoArchive": true,
+      "archiveAfterDays": 58
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-05-25T14:24:29.378Z",
+    "updatedAt": "2025-05-25T14:24:29.378Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2a4",
+    "name": "Sprint Optional mobile core Tasks",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b20e",
+    "owner": "68a5fc088a7b1bd27300b1b5",
+    "members": [
+      {
+        "user": "68a5fc088a7b1bd27300b1b5",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-27T06:06:42.905Z",
+        "_id": "68a5fc0a8a7b1bd27300b2a5"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "manage_columns",
+          "view"
+        ],
+        "addedAt": "2025-07-24T18:39:26.468Z",
+        "_id": "68a5fc0a8a7b1bd27300b2a6"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1b5",
+        "permissions": [
+          "view"
+        ],
+        "addedAt": "2025-08-01T20:06:49.187Z",
+        "_id": "68a5fc0a8a7b1bd27300b2a7"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b179",
+        "permissions": [
+          "edit",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-23T13:09:35.237Z",
+        "_id": "68a5fc0a8a7b1bd27300b2a8"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b185",
+        "permissions": [
+          "edit",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-02T00:22:41.173Z",
+        "_id": "68a5fc0a8a7b1bd27300b2a9"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-06T17:14:13.241Z",
+        "_id": "68a5fc0a8a7b1bd27300b2aa"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 11
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-12T21:46:54.231Z",
+    "updatedAt": "2025-06-12T21:46:54.231Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2ac",
+    "name": "Sprint Advanced empowering matrices Scrum",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b20e",
+    "owner": "68a5fc048a7b1bd27300b119",
+    "members": [
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-16T17:06:25.730Z",
+        "_id": "68a5fc0a8a7b1bd27300b2ad"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "delete",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-17T07:56:59.286Z",
+        "_id": "68a5fc0a8a7b1bd27300b2ae"
+      },
+      {
+        "user": "68a5fc038a7b1bd27300b10d",
+        "permissions": [
+          "manage_members",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-01T16:41:49.798Z",
+        "_id": "68a5fc0a8a7b1bd27300b2af"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1b5",
+        "permissions": [
+          "edit",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-24T09:01:06.411Z",
+        "_id": "68a5fc0a8a7b1bd27300b2b0"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b179",
+        "permissions": [
+          "delete",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-02T03:37:48.826Z",
+        "_id": "68a5fc0a8a7b1bd27300b2b1"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b185",
+        "permissions": [
+          "view",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-12T14:16:10.983Z",
+        "_id": "68a5fc0a8a7b1bd27300b2b2"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 39
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-24T01:45:09.121Z",
+    "updatedAt": "2025-06-24T01:45:09.121Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2b4",
+    "name": "Release Cross-group asynchronous adapter Backlog",
+    "description": "Track and manage project tasks and milestones.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b21b",
+    "owner": "68a5fc098a7b1bd27300b1e5",
+    "members": [
+      {
+        "user": "68a5fc098a7b1bd27300b1e5",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-17T23:07:07.889Z",
+        "_id": "68a5fc0a8a7b1bd27300b2b5"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1f1",
+        "permissions": [
+          "manage_members"
+        ],
+        "addedAt": "2025-07-25T20:08:47.652Z",
+        "_id": "68a5fc0a8a7b1bd27300b2b6"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1e5",
+        "permissions": [
+          "edit",
+          "view",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-30T07:01:50.023Z",
+        "_id": "68a5fc0a8a7b1bd27300b2b7"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b131",
+        "permissions": [
+          "view"
+        ],
+        "addedAt": "2025-08-11T06:30:57.014Z",
+        "_id": "68a5fc0a8a7b1bd27300b2b8"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b179",
+        "permissions": [
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-15T04:32:15.980Z",
+        "_id": "68a5fc0a8a7b1bd27300b2b9"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": false,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "medium",
+      "autoArchive": true,
+      "archiveAfterDays": 9
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-24T14:56:53.684Z",
+    "updatedAt": "2025-06-24T14:56:53.684Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2bb",
+    "name": "Review Innovative fresh-thinking array Board",
+    "description": "Coordinate team efforts and project timeline.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b222",
+    "owner": "68a5fc078a7b1bd27300b19d",
+    "members": [
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-08T17:57:51.120Z",
+        "_id": "68a5fc0a8a7b1bd27300b2bc"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1f1",
+        "permissions": [
+          "delete"
+        ],
+        "addedAt": "2025-07-30T06:48:13.077Z",
+        "_id": "68a5fc0a8a7b1bd27300b2bd"
+      },
+      {
+        "user": "68a5fc058a7b1bd27300b149",
+        "permissions": [
+          "manage_members",
+          "view"
+        ],
+        "addedAt": "2025-08-07T13:57:47.115Z",
+        "_id": "68a5fc0a8a7b1bd27300b2be"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": false,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "low",
+      "autoArchive": true,
+      "archiveAfterDays": 74
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-05-30T03:13:20.657Z",
+    "updatedAt": "2025-05-30T03:13:20.657Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2c0",
+    "name": "Bug Fix Team-oriented multi-state methodology Roadmap",
+    "description": "Manage sprint planning and execution.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b222",
+    "owner": "68a5fc098a7b1bd27300b1f1",
+    "members": [
+      {
+        "user": "68a5fc098a7b1bd27300b1f1",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-26T15:54:17.340Z",
+        "_id": "68a5fc0a8a7b1bd27300b2c1"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "manage_members",
+          "edit",
+          "delete"
+        ],
+        "addedAt": "2025-08-12T09:58:15.830Z",
+        "_id": "68a5fc0a8a7b1bd27300b2c2"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "high",
+      "autoArchive": true,
+      "archiveAfterDays": 24
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-10T02:52:45.243Z",
+    "updatedAt": "2025-06-10T02:52:45.243Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2c4",
+    "name": "Project Realigned next generation pricing structure Kanban",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b222",
+    "owner": "68a5fc058a7b1bd27300b149",
+    "members": [
+      {
+        "user": "68a5fc058a7b1bd27300b149",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-03T04:06:32.089Z",
+        "_id": "68a5fc0a8a7b1bd27300b2c5"
+      },
+      {
+        "user": "68a5fc058a7b1bd27300b149",
+        "permissions": [
+          "edit",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-03T03:29:29.425Z",
+        "_id": "68a5fc0a8a7b1bd27300b2c6"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1f1",
+        "permissions": [
+          "view",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-09T14:54:04.776Z",
+        "_id": "68a5fc0a8a7b1bd27300b2c7"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "manage_members"
+        ],
+        "addedAt": "2025-08-04T10:16:10.199Z",
+        "_id": "68a5fc0a8a7b1bd27300b2c8"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 67
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-16T00:53:20.603Z",
+    "updatedAt": "2025-06-16T00:53:20.603Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2ca",
+    "name": "Feature User-centric contextually-based extranet Scrum",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b222",
+    "owner": "68a5fc058a7b1bd27300b149",
+    "members": [
+      {
+        "user": "68a5fc058a7b1bd27300b149",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-11T20:16:57.713Z",
+        "_id": "68a5fc0a8a7b1bd27300b2cb"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "edit",
+          "manage_members",
+          "view"
+        ],
+        "addedAt": "2025-08-10T18:50:24.473Z",
+        "_id": "68a5fc0a8a7b1bd27300b2cc"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": false,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 23
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-14T18:09:14.232Z",
+    "updatedAt": "2025-08-14T18:09:14.232Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2ce",
+    "name": "Bug Fix Multi-tiered intermediate moderator Kanban",
+    "description": "Coordinate team efforts and project timeline.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b227",
+    "owner": "68a5fc048a7b1bd27300b119",
+    "members": [
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-03T09:16:18.216Z",
+        "_id": "68a5fc0a8a7b1bd27300b2cf"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "manage_members"
+        ],
+        "addedAt": "2025-07-26T12:49:35.636Z",
+        "_id": "68a5fc0a8a7b1bd27300b2d0"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1f1",
+        "permissions": [
+          "manage_columns",
+          "view"
+        ],
+        "addedAt": "2025-07-21T20:39:20.116Z",
+        "_id": "68a5fc0a8a7b1bd27300b2d1"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "manage_columns",
+          "edit"
+        ],
+        "addedAt": "2025-08-20T00:21:43.407Z",
+        "_id": "68a5fc0a8a7b1bd27300b2d2"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 53
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-18T02:49:33.507Z",
+    "updatedAt": "2025-06-18T02:49:33.507Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2d4",
+    "name": "Project Multi-lateral web-enabled time-frame Kanban",
+    "description": "Manage sprint planning and execution.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b227",
+    "owner": "68a5fc048a7b1bd27300b119",
+    "members": [
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-08T01:11:57.480Z",
+        "_id": "68a5fc0a8a7b1bd27300b2d5"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "manage_members",
+          "delete",
+          "edit"
+        ],
+        "addedAt": "2025-08-07T03:03:19.537Z",
+        "_id": "68a5fc0a8a7b1bd27300b2d6"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 11
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-08T11:32:27.367Z",
+    "updatedAt": "2025-07-08T11:32:27.367Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2d8",
+    "name": "Feature Optional didactic complexity Backlog",
+    "description": "Manage sprint planning and execution.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b227",
+    "owner": "68a5fc098a7b1bd27300b1f1",
+    "members": [
+      {
+        "user": "68a5fc098a7b1bd27300b1f1",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-17T22:25:21.679Z",
+        "_id": "68a5fc0a8a7b1bd27300b2d9"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "manage_columns",
+          "edit"
+        ],
+        "addedAt": "2025-07-24T23:10:50.074Z",
+        "_id": "68a5fc0a8a7b1bd27300b2da"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": false,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "medium",
+      "autoArchive": true,
+      "archiveAfterDays": 20
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-10T21:49:03.862Z",
+    "updatedAt": "2025-07-10T21:49:03.862Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2dc",
+    "name": "Project Profit-focused dedicated ability Board",
+    "description": "Track and manage project tasks and milestones.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b227",
+    "owner": "68a5fc098a7b1bd27300b1f1",
+    "members": [
+      {
+        "user": "68a5fc098a7b1bd27300b1f1",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-31T06:02:42.368Z",
+        "_id": "68a5fc0a8a7b1bd27300b2dd"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "manage_columns",
+          "edit"
+        ],
+        "addedAt": "2025-07-30T18:48:43.191Z",
+        "_id": "68a5fc0a8a7b1bd27300b2de"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-13T07:31:02.801Z",
+        "_id": "68a5fc0a8a7b1bd27300b2df"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 13
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-20T13:58:06.081Z",
+    "updatedAt": "2025-07-20T13:58:06.081Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2e1",
+    "name": "Review Integrated dedicated product Workflow",
+    "description": "Track and manage project tasks and milestones.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b22c",
+    "owner": "68a5fc078a7b1bd27300b19d",
+    "members": [
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-25T11:54:34.855Z",
+        "_id": "68a5fc0a8a7b1bd27300b2e2"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "edit",
+          "view"
+        ],
+        "addedAt": "2025-07-29T18:21:55.773Z",
+        "_id": "68a5fc0a8a7b1bd27300b2e3"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 7
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-08T14:24:36.290Z",
+    "updatedAt": "2025-06-08T14:24:36.290Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2e5",
+    "name": "Release Exclusive maximized projection Tasks",
+    "description": "Visualize workflow and project status.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b22c",
+    "owner": "68a5fc088a7b1bd27300b1a9",
+    "members": [
+      {
+        "user": "68a5fc088a7b1bd27300b1a9",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-17T04:20:13.552Z",
+        "_id": "68a5fc0a8a7b1bd27300b2e6"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1d9",
+        "permissions": [
+          "view",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-09T22:31:26.615Z",
+        "_id": "68a5fc0a8a7b1bd27300b2e7"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": true,
+      "archiveAfterDays": 38
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-27T20:21:15.203Z",
+    "updatedAt": "2025-07-27T20:21:15.203Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2e9",
+    "name": "Release Polarised foreground infrastructure Backlog",
+    "description": "Track feature development and bug fixes.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b22c",
+    "owner": "68a5fc088a7b1bd27300b1a9",
+    "members": [
+      {
+        "user": "68a5fc088a7b1bd27300b1a9",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-01T23:25:13.282Z",
+        "_id": "68a5fc0a8a7b1bd27300b2ea"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1a9",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-07-28T11:54:43.960Z",
+        "_id": "68a5fc0a8a7b1bd27300b2eb"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "view"
+        ],
+        "addedAt": "2025-08-16T17:53:15.699Z",
+        "_id": "68a5fc0a8a7b1bd27300b2ec"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1d9",
+        "permissions": [
+          "manage_members"
+        ],
+        "addedAt": "2025-08-08T18:59:55.004Z",
+        "_id": "68a5fc0a8a7b1bd27300b2ed"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1e5",
+        "permissions": [
+          "manage_members",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-01T20:57:14.887Z",
+        "_id": "68a5fc0a8a7b1bd27300b2ee"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": true,
+      "archiveAfterDays": 14
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-06T17:33:48.614Z",
+    "updatedAt": "2025-06-06T17:33:48.614Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2f0",
+    "name": "Bug Fix Diverse well-modulated knowledge base Backlog",
+    "description": "Track feature development and bug fixes.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b23d",
+    "owner": "68a5fc058a7b1bd27300b13d",
+    "members": [
+      {
+        "user": "68a5fc058a7b1bd27300b13d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-08T07:45:51.819Z",
+        "_id": "68a5fc0a8a7b1bd27300b2f1"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1a9",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-19T02:22:18.856Z",
+        "_id": "68a5fc0a8a7b1bd27300b2f2"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-25T07:29:51.871Z",
+        "_id": "68a5fc0a8a7b1bd27300b2f3"
+      },
+      {
+        "user": "68a5fc058a7b1bd27300b13d",
+        "permissions": [
+          "manage_columns",
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-07-30T04:46:40.226Z",
+        "_id": "68a5fc0a8a7b1bd27300b2f4"
+      },
+      {
+        "user": "68a5fc058a7b1bd27300b155",
+        "permissions": [
+          "edit",
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-08-05T17:52:12.666Z",
+        "_id": "68a5fc0a8a7b1bd27300b2f5"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 22
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-18T10:38:54.133Z",
+    "updatedAt": "2025-06-18T10:38:54.133Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2f7",
+    "name": "Design Total dynamic application Roadmap",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b245",
+    "owner": "68a5fc078a7b1bd27300b191",
+    "members": [
+      {
+        "user": "68a5fc078a7b1bd27300b191",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-04T09:10:11.471Z",
+        "_id": "68a5fc0a8a7b1bd27300b2f8"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b125",
+        "permissions": [
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-08-02T16:19:32.648Z",
+        "_id": "68a5fc0a8a7b1bd27300b2f9"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 43
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-22T18:04:20.658Z",
+    "updatedAt": "2025-06-22T18:04:20.658Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b2fb",
+    "name": "Sprint Multi-lateral content-based system engine Kanban",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68a5fc0a8a7b1bd27300b24b",
+    "owner": "68a5fc088a7b1bd27300b1b5",
+    "members": [
+      {
+        "user": "68a5fc088a7b1bd27300b1b5",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-17T14:10:57.152Z",
+        "_id": "68a5fc0a8a7b1bd27300b2fc"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b16d",
+        "permissions": [
+          "delete"
+        ],
+        "addedAt": "2025-08-19T01:28:31.148Z",
+        "_id": "68a5fc0a8a7b1bd27300b2fd"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1b5",
+        "permissions": [
+          "view",
+          "manage_members",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-06T18:11:42.095Z",
+        "_id": "68a5fc0a8a7b1bd27300b2fe"
+      },
+      {
+        "user": "68a5fc058a7b1bd27300b13d",
+        "permissions": [
+          "view",
+          "delete",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-07T14:35:58.533Z",
+        "_id": "68a5fc0a8a7b1bd27300b2ff"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 16
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-29T11:08:08.943Z",
+    "updatedAt": "2025-07-29T11:08:08.943Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b301",
+    "name": "Planning Pre-emptive demand-driven task-force Scrum",
+    "description": "Coordinate team efforts and project timeline.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b24b",
+    "owner": "68a5fc048a7b1bd27300b119",
+    "members": [
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-24T18:39:03.544Z",
+        "_id": "68a5fc0a8a7b1bd27300b302"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "delete",
+          "view"
+        ],
+        "addedAt": "2025-07-28T00:50:46.817Z",
+        "_id": "68a5fc0a8a7b1bd27300b303"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b16d",
+        "permissions": [
+          "view",
+          "delete",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-03T22:38:54.145Z",
+        "_id": "68a5fc0a8a7b1bd27300b304"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "critical",
+      "autoArchive": true,
+      "archiveAfterDays": 75
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-21T00:47:27.232Z",
+    "updatedAt": "2025-07-21T00:47:27.232Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b306",
+    "name": "Sprint Team-oriented explicit local area network Roadmap",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b24b",
+    "owner": "68a5fc068a7b1bd27300b16d",
+    "members": [
+      {
+        "user": "68a5fc068a7b1bd27300b16d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-08T10:01:39.547Z",
+        "_id": "68a5fc0a8a7b1bd27300b307"
+      },
+      {
+        "user": "68a5fc058a7b1bd27300b13d",
+        "permissions": [
+          "delete",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-14T22:29:07.640Z",
+        "_id": "68a5fc0a8a7b1bd27300b308"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "view"
+        ],
+        "addedAt": "2025-07-31T10:38:19.988Z",
+        "_id": "68a5fc0a8a7b1bd27300b309"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1b5",
+        "permissions": [
+          "manage_columns",
+          "edit"
+        ],
+        "addedAt": "2025-07-25T01:06:19.875Z",
+        "_id": "68a5fc0a8a7b1bd27300b30a"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b16d",
+        "permissions": [
+          "view",
+          "delete",
+          "edit"
+        ],
+        "addedAt": "2025-07-23T01:58:06.709Z",
+        "_id": "68a5fc0a8a7b1bd27300b30b"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 15
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-01T06:43:13.079Z",
+    "updatedAt": "2025-06-01T06:43:13.079Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b30d",
+    "name": "Feature Diverse composite functionalities Tasks",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b24b",
+    "owner": "68a5fc048a7b1bd27300b119",
+    "members": [
+      {
+        "user": "68a5fc048a7b1bd27300b119",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-24T17:53:00.720Z",
+        "_id": "68a5fc0a8a7b1bd27300b30e"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b16d",
+        "permissions": [
+          "manage_columns",
+          "view"
+        ],
+        "addedAt": "2025-07-31T16:06:22.771Z",
+        "_id": "68a5fc0a8a7b1bd27300b30f"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": false,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 12
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-11T02:34:32.049Z",
+    "updatedAt": "2025-06-11T02:34:32.049Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b311",
+    "name": "Project Inverse optimizing frame Board",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68a5fc0a8a7b1bd27300b252",
+    "owner": "68a5fc068a7b1bd27300b179",
+    "members": [
+      {
+        "user": "68a5fc068a7b1bd27300b179",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-15T22:17:18.070Z",
+        "_id": "68a5fc0a8a7b1bd27300b312"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1c1",
+        "permissions": [
+          "delete",
+          "edit",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-01T02:36:18.106Z",
+        "_id": "68a5fc0a8a7b1bd27300b313"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b179",
+        "permissions": [
+          "delete"
+        ],
+        "addedAt": "2025-07-23T02:48:15.994Z",
+        "_id": "68a5fc0a8a7b1bd27300b314"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": true,
+      "archiveAfterDays": 23
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-08T10:43:52.019Z",
+    "updatedAt": "2025-06-08T10:43:52.019Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b316",
+    "name": "Planning Implemented mission-critical Graphic Interface Kanban",
+    "description": "Visualize workflow and project status.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b252",
+    "owner": "68a5fc068a7b1bd27300b179",
+    "members": [
+      {
+        "user": "68a5fc068a7b1bd27300b179",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-10T20:59:25.929Z",
+        "_id": "68a5fc0a8a7b1bd27300b317"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b179",
+        "permissions": [
+          "manage_members",
+          "manage_columns",
+          "view"
+        ],
+        "addedAt": "2025-08-07T23:50:57.949Z",
+        "_id": "68a5fc0a8a7b1bd27300b318"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1c1",
+        "permissions": [
+          "view",
+          "manage_members",
+          "edit"
+        ],
+        "addedAt": "2025-08-03T17:30:18.892Z",
+        "_id": "68a5fc0a8a7b1bd27300b319"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 75
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-19T07:36:39.074Z",
+    "updatedAt": "2025-07-19T07:36:39.074Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b31b",
+    "name": "Sprint User-friendly 6th generation structure Board",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b252",
+    "owner": "68a5fc098a7b1bd27300b1d9",
+    "members": [
+      {
+        "user": "68a5fc098a7b1bd27300b1d9",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-02T11:07:52.781Z",
+        "_id": "68a5fc0a8a7b1bd27300b31c"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1d9",
+        "permissions": [
+          "delete"
+        ],
+        "addedAt": "2025-08-06T23:08:23.951Z",
+        "_id": "68a5fc0a8a7b1bd27300b31d"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1c1",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-15T04:57:43.577Z",
+        "_id": "68a5fc0a8a7b1bd27300b31e"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 47
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-13T12:48:09.545Z",
+    "updatedAt": "2025-06-13T12:48:09.545Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b320",
+    "name": "Sprint De-engineered contextually-based workforce Kanban",
+    "description": "Track and manage project tasks and milestones.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b252",
+    "owner": "68a5fc068a7b1bd27300b179",
+    "members": [
+      {
+        "user": "68a5fc068a7b1bd27300b179",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-11T01:16:53.283Z",
+        "_id": "68a5fc0a8a7b1bd27300b321"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1c1",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-03T13:20:51.710Z",
+        "_id": "68a5fc0a8a7b1bd27300b322"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1d9",
+        "permissions": [
+          "view"
+        ],
+        "addedAt": "2025-07-31T01:41:46.140Z",
+        "_id": "68a5fc0a8a7b1bd27300b323"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 33
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-05-31T20:14:09.312Z",
+    "updatedAt": "2025-05-31T20:14:09.312Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b325",
+    "name": "Design Cross-group content-based paradigm Kanban",
+    "description": "Track and manage project tasks and milestones.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b261",
+    "owner": "68a5fc088a7b1bd27300b1c1",
+    "members": [
+      {
+        "user": "68a5fc088a7b1bd27300b1c1",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-06T03:42:42.405Z",
+        "_id": "68a5fc0a8a7b1bd27300b326"
+      },
+      {
+        "user": "68a5fc038a7b1bd27300b10d",
+        "permissions": [
+          "view",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-02T07:57:14.622Z",
+        "_id": "68a5fc0a8a7b1bd27300b327"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1cd",
+        "permissions": [
+          "manage_members",
+          "edit",
+          "view"
+        ],
+        "addedAt": "2025-08-04T17:18:24.191Z",
+        "_id": "68a5fc0a8a7b1bd27300b328"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "high",
+      "autoArchive": true,
+      "archiveAfterDays": 63
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-22T19:46:57.733Z",
+    "updatedAt": "2025-07-22T19:46:57.733Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b32a",
+    "name": "Sprint Synergistic composite product Roadmap",
+    "description": "Track and manage project tasks and milestones.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68a5fc0a8a7b1bd27300b261",
+    "owner": "68a5fc048a7b1bd27300b131",
+    "members": [
+      {
+        "user": "68a5fc048a7b1bd27300b131",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-22T19:43:55.693Z",
+        "_id": "68a5fc0a8a7b1bd27300b32b"
+      },
+      {
+        "user": "68a5fc038a7b1bd27300b10d",
+        "permissions": [
+          "delete"
+        ],
+        "addedAt": "2025-07-29T21:50:23.959Z",
+        "_id": "68a5fc0a8a7b1bd27300b32c"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1cd",
+        "permissions": [
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-08-02T23:22:05.798Z",
+        "_id": "68a5fc0a8a7b1bd27300b32d"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b131",
+        "permissions": [
+          "manage_members"
+        ],
+        "addedAt": "2025-07-30T10:41:38.231Z",
+        "_id": "68a5fc0a8a7b1bd27300b32e"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1c1",
+        "permissions": [
+          "delete",
+          "manage_columns",
+          "view"
+        ],
+        "addedAt": "2025-08-19T02:42:01.438Z",
+        "_id": "68a5fc0a8a7b1bd27300b32f"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": true,
+      "archiveAfterDays": 70
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-18T02:20:13.462Z",
+    "updatedAt": "2025-07-18T02:20:13.462Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b331",
+    "name": "Planning Re-engineered bi-directional solution Kanban",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b261",
+    "owner": "68a5fc038a7b1bd27300b10d",
+    "members": [
+      {
+        "user": "68a5fc038a7b1bd27300b10d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-09T16:34:29.843Z",
+        "_id": "68a5fc0a8a7b1bd27300b332"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1cd",
+        "permissions": [
+          "delete",
+          "manage_members",
+          "view"
+        ],
+        "addedAt": "2025-08-16T00:57:47.115Z",
+        "_id": "68a5fc0a8a7b1bd27300b333"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1c1",
+        "permissions": [
+          "edit",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-17T04:35:58.894Z",
+        "_id": "68a5fc0a8a7b1bd27300b334"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": true,
+      "archiveAfterDays": 85
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-24T23:18:08.444Z",
+    "updatedAt": "2025-07-24T23:18:08.444Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b336",
+    "name": "Feature Cross-group real-time protocol Workflow",
+    "description": "Track feature development and bug fixes.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68a5fc0a8a7b1bd27300b267",
+    "owner": "68a5fc098a7b1bd27300b1d9",
+    "members": [
+      {
+        "user": "68a5fc098a7b1bd27300b1d9",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-02T08:06:04.964Z",
+        "_id": "68a5fc0a8a7b1bd27300b337"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1d9",
+        "permissions": [
+          "manage_columns",
+          "edit"
+        ],
+        "addedAt": "2025-07-25T09:53:21.750Z",
+        "_id": "68a5fc0a8a7b1bd27300b338"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": false,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 36
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-16T13:32:15.067Z",
+    "updatedAt": "2025-08-16T13:32:15.067Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b33a",
+    "name": "Feature Adaptive 24 hour portal Tasks",
+    "description": "Manage sprint planning and execution.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68a5fc0a8a7b1bd27300b267",
+    "owner": "68a5fc058a7b1bd27300b149",
+    "members": [
+      {
+        "user": "68a5fc058a7b1bd27300b149",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-19T04:44:37.999Z",
+        "_id": "68a5fc0a8a7b1bd27300b33b"
+      },
+      {
+        "user": "68a5fc058a7b1bd27300b13d",
+        "permissions": [
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-07-24T17:01:48.157Z",
+        "_id": "68a5fc0a8a7b1bd27300b33c"
+      },
+      {
+        "user": "68a5fc098a7b1bd27300b1d9",
+        "permissions": [
+          "manage_members",
+          "manage_columns",
+          "edit"
+        ],
+        "addedAt": "2025-08-01T15:17:27.142Z",
+        "_id": "68a5fc0a8a7b1bd27300b33d"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b179",
+        "permissions": [
+          "edit",
+          "manage_members",
+          "delete"
+        ],
+        "addedAt": "2025-08-01T23:25:42.331Z",
+        "_id": "68a5fc0a8a7b1bd27300b33e"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": false,
+      "archiveAfterDays": 7
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-15T02:36:32.269Z",
+    "updatedAt": "2025-07-15T02:36:32.269Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b340",
+    "name": "Planning Customizable optimizing functionalities Kanban",
+    "description": "Coordinate team efforts and project timeline.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b272",
+    "owner": "68a5fc078a7b1bd27300b19d",
+    "members": [
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-05T22:28:04.336Z",
+        "_id": "68a5fc0a8a7b1bd27300b341"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "view",
+          "edit",
+          "manage_columns"
+        ],
+        "addedAt": "2025-07-26T20:48:41.192Z",
+        "_id": "68a5fc0a8a7b1bd27300b342"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b16d",
+        "permissions": [
+          "edit",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-14T05:04:33.185Z",
+        "_id": "68a5fc0a8a7b1bd27300b343"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 15
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-06T19:54:19.452Z",
+    "updatedAt": "2025-08-06T19:54:19.452Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b345",
+    "name": "Review Public-key homogeneous conglomeration Board",
+    "description": "Visualize workflow and project status.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68a5fc0a8a7b1bd27300b272",
+    "owner": "68a5fc068a7b1bd27300b16d",
+    "members": [
+      {
+        "user": "68a5fc068a7b1bd27300b16d",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-22T20:29:36.413Z",
+        "_id": "68a5fc0a8a7b1bd27300b346"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b19d",
+        "permissions": [
+          "edit",
+          "view"
+        ],
+        "addedAt": "2025-07-27T06:55:28.600Z",
+        "_id": "68a5fc0a8a7b1bd27300b347"
+      },
+      {
+        "user": "68a5fc068a7b1bd27300b16d",
+        "permissions": [
+          "edit",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-14T01:32:54.984Z",
+        "_id": "68a5fc0a8a7b1bd27300b348"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 18
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-24T23:28:19.675Z",
+    "updatedAt": "2025-07-24T23:28:19.675Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b34a",
+    "name": "Sprint Networked multimedia portal Scrum",
+    "description": "Monitor project progress and team productivity.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b276",
+    "owner": "68a5fc088a7b1bd27300b1b5",
+    "members": [
+      {
+        "user": "68a5fc088a7b1bd27300b1b5",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-29T23:37:15.838Z",
+        "_id": "68a5fc0a8a7b1bd27300b34b"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b185",
+        "permissions": [
+          "view"
+        ],
+        "addedAt": "2025-07-29T23:01:24.786Z",
+        "_id": "68a5fc0a8a7b1bd27300b34c"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 77
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-23T20:24:41.644Z",
+    "updatedAt": "2025-07-23T20:24:41.644Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b34e",
+    "name": "Feature Organic actuating function Board",
+    "description": "Track feature development and bug fixes.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b276",
+    "owner": "68a5fc048a7b1bd27300b125",
+    "members": [
+      {
+        "user": "68a5fc048a7b1bd27300b125",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-27T19:54:11.338Z",
+        "_id": "68a5fc0a8a7b1bd27300b34f"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1b5",
+        "permissions": [
+          "edit",
+          "view"
+        ],
+        "addedAt": "2025-08-10T19:53:38.463Z",
+        "_id": "68a5fc0a8a7b1bd27300b350"
+      },
+      {
+        "user": "68a5fc058a7b1bd27300b155",
+        "permissions": [
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-02T06:53:21.026Z",
+        "_id": "68a5fc0a8a7b1bd27300b351"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": false,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 40
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-16T01:20:29.550Z",
+    "updatedAt": "2025-08-16T01:20:29.550Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b353",
+    "name": "Bug Fix Vision-oriented neutral budgetary management Backlog",
+    "description": "Manage sprint planning and execution.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b276",
+    "owner": "68a5fc078a7b1bd27300b185",
+    "members": [
+      {
+        "user": "68a5fc078a7b1bd27300b185",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-17T08:33:23.101Z",
+        "_id": "68a5fc0a8a7b1bd27300b354"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b185",
+        "permissions": [
+          "edit",
+          "delete",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-27T23:07:43.402Z",
+        "_id": "68a5fc0a8a7b1bd27300b355"
+      },
+      {
+        "user": "68a5fc058a7b1bd27300b155",
+        "permissions": [
+          "edit",
+          "delete",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-02T12:40:27.657Z",
+        "_id": "68a5fc0a8a7b1bd27300b356"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b125",
+        "permissions": [
+          "view",
+          "delete",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-05T20:21:20.975Z",
+        "_id": "68a5fc0a8a7b1bd27300b357"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1b5",
+        "permissions": [
+          "edit",
+          "manage_columns",
+          "delete"
+        ],
+        "addedAt": "2025-07-29T20:18:03.975Z",
+        "_id": "68a5fc0a8a7b1bd27300b358"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": false,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 16
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-08-11T01:27:19.986Z",
+    "updatedAt": "2025-08-11T01:27:19.986Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b35a",
+    "name": "Design Organized explicit task-force Backlog",
+    "description": "Collaborate on tasks and project deliverables.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b27c",
+    "owner": "68a5fc078a7b1bd27300b185",
+    "members": [
+      {
+        "user": "68a5fc078a7b1bd27300b185",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-15T23:54:31.822Z",
+        "_id": "68a5fc0a8a7b1bd27300b35b"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1c1",
+        "permissions": [
+          "delete",
+          "view"
+        ],
+        "addedAt": "2025-07-24T22:52:06.598Z",
+        "_id": "68a5fc0a8a7b1bd27300b35c"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b185",
+        "permissions": [
+          "view",
+          "edit"
+        ],
+        "addedAt": "2025-08-06T14:28:56.794Z",
+        "_id": "68a5fc0a8a7b1bd27300b35d"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 66
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-05T06:01:54.356Z",
+    "updatedAt": "2025-06-05T06:01:54.356Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b35f",
+    "name": "Review Expanded object-oriented alliance Board",
+    "description": "Track and manage project tasks and milestones.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b27c",
+    "owner": "68a5fc078a7b1bd27300b185",
+    "members": [
+      {
+        "user": "68a5fc078a7b1bd27300b185",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-01T06:40:46.304Z",
+        "_id": "68a5fc0a8a7b1bd27300b360"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b185",
+        "permissions": [
+          "manage_members",
+          "delete"
+        ],
+        "addedAt": "2025-07-31T14:28:30.223Z",
+        "_id": "68a5fc0a8a7b1bd27300b361"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1b5",
+        "permissions": [
+          "edit",
+          "manage_columns",
+          "view"
+        ],
+        "addedAt": "2025-07-31T06:52:04.707Z",
+        "_id": "68a5fc0a8a7b1bd27300b362"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1c1",
+        "permissions": [
+          "manage_columns",
+          "view"
+        ],
+        "addedAt": "2025-08-04T19:45:53.275Z",
+        "_id": "68a5fc0a8a7b1bd27300b363"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 44
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-22T18:30:48.526Z",
+    "updatedAt": "2025-06-22T18:30:48.526Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b365",
+    "name": "Release Organic explicit interface Scrum",
+    "description": "Coordinate team efforts and project timeline.",
+    "type": "kanban",
+    "visibility": "workspace",
+    "space": "68a5fc0a8a7b1bd27300b27c",
+    "owner": "68a5fc078a7b1bd27300b185",
+    "members": [
+      {
+        "user": "68a5fc078a7b1bd27300b185",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-08T06:00:39.115Z",
+        "_id": "68a5fc0a8a7b1bd27300b366"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b185",
+        "permissions": [
+          "delete",
+          "edit"
+        ],
+        "addedAt": "2025-08-07T21:58:39.602Z",
+        "_id": "68a5fc0a8a7b1bd27300b367"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1c1",
+        "permissions": [
+          "view"
+        ],
+        "addedAt": "2025-08-09T12:21:12.385Z",
+        "_id": "68a5fc0a8a7b1bd27300b368"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": false,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": true,
+      "archiveAfterDays": 19
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-21T15:34:24.912Z",
+    "updatedAt": "2025-06-21T15:34:24.912Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b36a",
+    "name": "Planning Function-based empowering concept Roadmap",
+    "description": "Visualize workflow and project status.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b281",
+    "owner": "68a5fc088a7b1bd27300b1c1",
+    "members": [
+      {
+        "user": "68a5fc088a7b1bd27300b1c1",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-07-31T16:17:52.581Z",
+        "_id": "68a5fc0a8a7b1bd27300b36b"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1b5",
+        "permissions": [
+          "edit",
+          "manage_members",
+          "manage_columns"
+        ],
+        "addedAt": "2025-08-10T03:52:25.667Z",
+        "_id": "68a5fc0a8a7b1bd27300b36c"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b191",
+        "permissions": [
+          "edit"
+        ],
+        "addedAt": "2025-08-10T02:35:45.439Z",
+        "_id": "68a5fc0a8a7b1bd27300b36d"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1c1",
+        "permissions": [
+          "manage_columns",
+          "view",
+          "edit"
+        ],
+        "addedAt": "2025-08-17T13:52:04.836Z",
+        "_id": "68a5fc0a8a7b1bd27300b36e"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b125",
+        "permissions": [
+          "edit",
+          "delete"
+        ],
+        "addedAt": "2025-08-17T00:35:15.857Z",
+        "_id": "68a5fc0a8a7b1bd27300b36f"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "critical",
+      "autoArchive": false,
+      "archiveAfterDays": 38
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-23T21:16:37.485Z",
+    "updatedAt": "2025-07-23T21:16:37.485Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b371",
+    "name": "Feature Vision-oriented coherent initiative Scrum",
+    "description": "Visualize workflow and project status.",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68a5fc0a8a7b1bd27300b289",
+    "owner": "68a5fc048a7b1bd27300b125",
+    "members": [
+      {
+        "user": "68a5fc048a7b1bd27300b125",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-06T16:31:25.736Z",
+        "_id": "68a5fc0a8a7b1bd27300b372"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b125",
+        "permissions": [
+          "manage_columns",
+          "delete",
+          "edit"
+        ],
+        "addedAt": "2025-07-28T13:18:41.473Z",
+        "_id": "68a5fc0a8a7b1bd27300b373"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": false,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "low",
+      "autoArchive": false,
+      "archiveAfterDays": 63
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-07-11T06:03:50.845Z",
+    "updatedAt": "2025-07-11T06:03:50.845Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b375",
+    "name": "Review Digitized uniform migration Backlog",
+    "description": "Coordinate team efforts and project timeline.",
+    "type": "kanban",
+    "visibility": "public",
+    "space": "68a5fc0a8a7b1bd27300b289",
+    "owner": "68a5fc078a7b1bd27300b191",
+    "members": [
+      {
+        "user": "68a5fc078a7b1bd27300b191",
+        "permissions": [
+          "view",
+          "edit",
+          "delete",
+          "manage_columns",
+          "manage_members"
+        ],
+        "addedAt": "2025-08-08T15:11:37.918Z",
+        "_id": "68a5fc0a8a7b1bd27300b376"
+      },
+      {
+        "user": "68a5fc078a7b1bd27300b191",
+        "permissions": [
+          "view",
+          "delete"
+        ],
+        "addedAt": "2025-07-24T09:58:24.109Z",
+        "_id": "68a5fc0a8a7b1bd27300b377"
+      },
+      {
+        "user": "68a5fc058a7b1bd27300b13d",
+        "permissions": [
+          "delete"
+        ],
+        "addedAt": "2025-08-17T20:49:31.650Z",
+        "_id": "68a5fc0a8a7b1bd27300b378"
+      },
+      {
+        "user": "68a5fc048a7b1bd27300b125",
+        "permissions": [
+          "manage_members",
+          "view",
+          "edit"
+        ],
+        "addedAt": "2025-07-25T08:41:13.464Z",
+        "_id": "68a5fc0a8a7b1bd27300b379"
+      },
+      {
+        "user": "68a5fc088a7b1bd27300b1cd",
+        "permissions": [
+          "edit",
+          "manage_members",
+          "manage_columns"
+        ],
+        "addedAt": "2025-07-27T22:19:35.795Z",
+        "_id": "68a5fc0a8a7b1bd27300b37a"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": true,
+      "defaultTaskPriority": "high",
+      "autoArchive": true,
+      "archiveAfterDays": 75
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "createdAt": "2025-06-26T09:34:54.650Z",
+    "updatedAt": "2025-06-26T09:34:54.650Z",
+    "tags": [],
+    "__v": 0
+  },
+  {
+    "_id": "68bf3a7b387a55265171044f",
+    "name": "qsdsqdsqdq",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bef78c8dad39bb023b51a4",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68bf3a7b387a552651710450",
+        "addedAt": "2025-09-08T20:20:11.174Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-08T20:20:11.176Z",
+    "updatedAt": "2025-09-08T20:20:11.176Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bf840716557ec994c99ff0",
+    "name": "our first team project",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bef6918dad39bb023b4f83",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68bf840716557ec994c99ff1",
+        "addedAt": "2025-09-09T01:33:59.770Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T01:33:59.771Z",
+    "updatedAt": "2025-09-09T01:33:59.771Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c02b6e460047d2153e31ed",
+    "name": "New Board",
+    "description": "",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c02b6e460047d2153e31ee",
+        "addedAt": "2025-09-09T13:28:14.378Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T13:28:14.382Z",
+    "updatedAt": "2025-09-09T13:28:14.382Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c02b72460047d2153e32d0",
+    "name": "New Board",
+    "description": "",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c02b72460047d2153e32d1",
+        "addedAt": "2025-09-09T13:28:18.961Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T13:28:18.962Z",
+    "updatedAt": "2025-09-09T13:28:18.962Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c02b76460047d2153e3342",
+    "name": "New Board",
+    "description": "",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c02b76460047d2153e3343",
+        "addedAt": "2025-09-09T13:28:22.893Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T13:28:22.894Z",
+    "updatedAt": "2025-09-09T13:28:22.894Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c03118460047d2153e4cfd",
+    "name": "New Board",
+    "description": "",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c03118460047d2153e4cfe",
+        "addedAt": "2025-09-09T13:52:24.458Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T13:52:24.459Z",
+    "updatedAt": "2025-09-09T13:52:24.459Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c0336a460047d2153e4de9",
+    "name": "New Board",
+    "description": "",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c0336a460047d2153e4dea",
+        "addedAt": "2025-09-09T14:02:18.954Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T14:02:18.955Z",
+    "updatedAt": "2025-09-09T14:02:18.955Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c03c3433da0f744ece9a2c",
+    "name": "New Board",
+    "description": "",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c03c3433da0f744ece9a2d",
+        "addedAt": "2025-09-09T14:39:48.526Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T14:39:48.526Z",
+    "updatedAt": "2025-09-09T14:39:48.526Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c04b8ebca3f40fbbfc8baa",
+    "name": "New Board",
+    "description": "",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c04b8ebca3f40fbbfc8bab",
+        "addedAt": "2025-09-09T15:45:18.983Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T15:45:18.984Z",
+    "updatedAt": "2025-09-09T15:45:18.984Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c05088a452b0d465c543ce",
+    "name": "New Board",
+    "description": "",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c05088a452b0d465c543cf",
+        "addedAt": "2025-09-09T16:06:32.823Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T16:06:32.824Z",
+    "updatedAt": "2025-09-09T16:06:32.824Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c0508ba452b0d465c54493",
+    "name": "New Board",
+    "description": "",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c0508ba452b0d465c54494",
+        "addedAt": "2025-09-09T16:06:35.626Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T16:06:35.626Z",
+    "updatedAt": "2025-09-09T16:06:35.626Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c051f9a452b0d465c545a5",
+    "name": "New Board",
+    "description": "",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c051f9a452b0d465c545a6",
+        "addedAt": "2025-09-09T16:12:41.488Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T16:12:41.489Z",
+    "updatedAt": "2025-09-09T16:12:41.489Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c051fba452b0d465c54628",
+    "name": "New Board",
+    "description": "",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c051fba452b0d465c54629",
+        "addedAt": "2025-09-09T16:12:43.615Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T16:12:43.615Z",
+    "updatedAt": "2025-09-09T16:12:43.615Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c054c7a36c95c62acf38b3",
+    "name": "board",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c054c7a36c95c62acf38b4",
+        "addedAt": "2025-09-09T16:24:39.382Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T16:24:39.383Z",
+    "updatedAt": "2025-09-09T16:24:39.383Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c054d0a36c95c62acf39d9",
+    "name": "dsadsadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c054d0a36c95c62acf39da",
+        "addedAt": "2025-09-09T16:24:48.036Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-09T16:24:48.037Z",
+    "updatedAt": "2025-09-09T16:24:48.037Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c0fbaca66ff6f533be6e5c",
+    "name": "create new board",
+    "description": "sss",
+    "type": "list",
+    "visibility": "private",
+    "space": "68bef78c8dad39bb023b51a4",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c0fbaca66ff6f533be6e5d",
+        "addedAt": "2025-09-10T04:16:44.740Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T04:16:44.741Z",
+    "updatedAt": "2025-09-10T04:16:44.741Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c0fc84a66ff6f533be6ffc",
+    "name": "dsada",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bef78c8dad39bb023b51a4",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c0fc84a66ff6f533be6ffd",
+        "addedAt": "2025-09-10T04:20:20.864Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T04:20:20.864Z",
+    "updatedAt": "2025-09-10T04:20:20.864Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c0fd31a66ff6f533be7e8b",
+    "name": "dsadsada",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c0fd31a66ff6f533be7e8c",
+        "addedAt": "2025-09-10T04:23:13.495Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T04:23:13.496Z",
+    "updatedAt": "2025-09-10T04:23:13.496Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c1046d7c31a06eeb2aa656",
+    "name": "dsqdsq",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68bffd0c2d2516b1efc725af",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c1046d7c31a06eeb2aa657",
+        "addedAt": "2025-09-10T04:54:05.954Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T04:54:05.955Z",
+    "updatedAt": "2025-09-10T04:54:05.955Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c1524bb38bd6d34e4e1bae",
+    "name": "dsadsa",
+    "description": "dsadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c1523ab38bd6d34e4e1a26",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c1524bb38bd6d34e4e1baf",
+        "addedAt": "2025-09-10T10:26:19.375Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T10:26:19.376Z",
+    "updatedAt": "2025-09-10T10:26:19.376Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c15659b38bd6d34e4e33af",
+    "name": "dasda",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c1564cb38bd6d34e4e2d73",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c15659b38bd6d34e4e33b0",
+        "addedAt": "2025-09-10T10:43:37.936Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T10:43:37.936Z",
+    "updatedAt": "2025-09-10T10:43:37.936Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c15affb38bd6d34e4e549c",
+    "name": "dsadsada",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c1564cb38bd6d34e4e2d73",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c15affb38bd6d34e4e549d",
+        "addedAt": "2025-09-10T11:03:27.285Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T11:03:27.286Z",
+    "updatedAt": "2025-09-10T11:03:27.286Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c15f98b38bd6d34e4e74e7",
+    "name": "dsadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c15f93b38bd6d34e4e73d2",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c15f98b38bd6d34e4e74e8",
+        "addedAt": "2025-09-10T11:23:04.964Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T11:23:04.965Z",
+    "updatedAt": "2025-09-10T11:23:04.965Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c1600ab38bd6d34e4e7803",
+    "name": "dsadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c15f93b38bd6d34e4e73d2",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c1600ab38bd6d34e4e7804",
+        "addedAt": "2025-09-10T11:24:58.492Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T11:24:58.492Z",
+    "updatedAt": "2025-09-10T11:24:58.492Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c16077b38bd6d34e4e7d07",
+    "name": "dsadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c15f93b38bd6d34e4e73d2",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c16077b38bd6d34e4e7d08",
+        "addedAt": "2025-09-10T11:26:47.911Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T11:26:47.911Z",
+    "updatedAt": "2025-09-10T11:26:47.911Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c16082b38bd6d34e4e7deb",
+    "name": "wsada",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c15f93b38bd6d34e4e73d2",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c16082b38bd6d34e4e7dec",
+        "addedAt": "2025-09-10T11:26:58.335Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T11:26:58.336Z",
+    "updatedAt": "2025-09-10T11:26:58.336Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c16431b38bd6d34e4e86b2",
+    "name": "dsadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c15f93b38bd6d34e4e73d2",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c16431b38bd6d34e4e86b3",
+        "addedAt": "2025-09-10T11:42:41.993Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T11:42:41.993Z",
+    "updatedAt": "2025-09-10T11:42:41.993Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c16439b38bd6d34e4e874c",
+    "name": "wwwwwwwwwwww",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c15f93b38bd6d34e4e73d2",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c16439b38bd6d34e4e874d",
+        "addedAt": "2025-09-10T11:42:49.523Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T11:42:49.523Z",
+    "updatedAt": "2025-09-10T11:42:49.523Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c18ca288e1e991c8c8ed6a",
+    "name": "my board",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c16eee88e1e991c8c73f9d",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c18ca288e1e991c8c8ed6b",
+        "addedAt": "2025-09-10T14:35:14.742Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-10T14:35:14.744Z",
+    "updatedAt": "2025-09-10T14:35:14.744Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c24f69e13caafeefe5a6ff",
+    "name": "create a board",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c24f5de13caafeefe5a568",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c24f69e13caafeefe5a700",
+        "addedAt": "2025-09-11T04:26:17.616Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T04:26:17.618Z",
+    "updatedAt": "2025-09-11T04:26:17.618Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c25117e13caafeefe5c3b2",
+    "name": "dsadsad",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c24fc7e13caafeefe5b2fd",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c25117e13caafeefe5c3b3",
+        "addedAt": "2025-09-11T04:33:27.281Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T04:33:27.283Z",
+    "updatedAt": "2025-09-11T04:33:27.283Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c273d4e13caafeefe96480",
+    "name": "sssssss",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27209e13caafeefe90ed9",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c273d4e13caafeefe96481",
+        "addedAt": "2025-09-11T07:01:40.145Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T07:01:40.146Z",
+    "updatedAt": "2025-09-11T07:01:40.146Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c277bbe13caafeefea4c56",
+    "name": "dsqdsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27223e13caafeefe91935",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c277bbe13caafeefea4c57",
+        "addedAt": "2025-09-11T07:18:19.551Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T07:18:19.552Z",
+    "updatedAt": "2025-09-11T07:18:19.552Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c277bbe13caafeefea4c5a",
+    "name": "dsqdsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27223e13caafeefe91935",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c277bbe13caafeefea4c5b",
+        "addedAt": "2025-09-11T07:18:19.554Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T07:18:19.555Z",
+    "updatedAt": "2025-09-11T07:18:19.555Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c278eae13caafeefea91e8",
+    "name": "dsqazds",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27113e13caafeefe8c8b9",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c278eae13caafeefea91e9",
+        "addedAt": "2025-09-11T07:23:22.961Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T07:23:22.962Z",
+    "updatedAt": "2025-09-11T07:23:22.962Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c278f2e13caafeefea93fd",
+    "name": "wsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27113e13caafeefe8c8b9",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c278f2e13caafeefea93fe",
+        "addedAt": "2025-09-11T07:23:30.624Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T07:23:30.624Z",
+    "updatedAt": "2025-09-11T07:23:30.624Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2a3e5153457aecdbc98bf",
+    "name": "create a boooooooards",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c262ede13caafeefe73836",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2a3e5153457aecdbc98c0",
+        "addedAt": "2025-09-11T10:26:45.700Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T10:26:45.705Z",
+    "updatedAt": "2025-09-11T10:26:45.705Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2a7290ec8c16274dbc35d",
+    "name": "my first board",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27c78e13caafeefeada71",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2a7290ec8c16274dbc35e",
+        "addedAt": "2025-09-11T10:40:41.118Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T10:40:41.122Z",
+    "updatedAt": "2025-09-11T10:40:41.122Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2a81b0ec8c16274dbced3",
+    "name": "dsadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27902e13caafeefea9adc",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2a81b0ec8c16274dbced4",
+        "addedAt": "2025-09-11T10:44:43.783Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T10:44:43.783Z",
+    "updatedAt": "2025-09-11T10:44:43.783Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2a8200ec8c16274dbcfd4",
+    "name": "dsqdsqdsq",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27902e13caafeefea9adc",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2a8200ec8c16274dbcfd5",
+        "addedAt": "2025-09-11T10:44:48.886Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T10:44:48.886Z",
+    "updatedAt": "2025-09-11T10:44:48.886Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2a8240ec8c16274dbd143",
+    "name": "dsadsadas",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27902e13caafeefea9adc",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2a8240ec8c16274dbd144",
+        "addedAt": "2025-09-11T10:44:52.546Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T10:44:52.547Z",
+    "updatedAt": "2025-09-11T10:44:52.547Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2a8240ec8c16274dbd147",
+    "name": "dsadsadas",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27902e13caafeefea9adc",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2a8240ec8c16274dbd148",
+        "addedAt": "2025-09-11T10:44:52.548Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T10:44:52.548Z",
+    "updatedAt": "2025-09-11T10:44:52.548Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2a8280ec8c16274dbd2e3",
+    "name": "zwwwwwwwwwwwww",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27902e13caafeefea9adc",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2a8280ec8c16274dbd2e4",
+        "addedAt": "2025-09-11T10:44:56.649Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T10:44:56.650Z",
+    "updatedAt": "2025-09-11T10:44:56.650Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2a82c0ec8c16274dbd3ec",
+    "name": "dsadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27902e13caafeefea9adc",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2a82c0ec8c16274dbd3ed",
+        "addedAt": "2025-09-11T10:45:00.118Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T10:45:00.118Z",
+    "updatedAt": "2025-09-11T10:45:00.118Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2a9060ec8c16274dbee7a",
+    "name": "dsadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27902e13caafeefea9adc",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2a9060ec8c16274dbee7b",
+        "addedAt": "2025-09-11T10:48:38.756Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T10:48:38.756Z",
+    "updatedAt": "2025-09-11T10:48:38.756Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2aa2a0ec8c16274dc06cd",
+    "name": "das",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c2a9390ec8c16274dbf3e2",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2aa2a0ec8c16274dc06ce",
+        "addedAt": "2025-09-11T10:53:30.619Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T10:53:30.620Z",
+    "updatedAt": "2025-09-11T10:53:30.620Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2aaf90ec8c16274dc1448",
+    "name": "hkuhiuk",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27c7de13caafeefeadcd7",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2aaf90ec8c16274dc1449",
+        "addedAt": "2025-09-11T10:56:57.961Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T10:56:57.962Z",
+    "updatedAt": "2025-09-11T10:56:57.962Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2c9f9e78e3fd8285e4bad",
+    "name": "dsqdsqdsq",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c2bd33e78e3fd8285df790",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2c9f9e78e3fd8285e4bae",
+        "addedAt": "2025-09-11T13:09:13.074Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T13:09:13.075Z",
+    "updatedAt": "2025-09-11T13:09:13.075Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2c9f9e78e3fd8285e4bb1",
+    "name": "dsqdsqdsq",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c2bd33e78e3fd8285df790",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2c9f9e78e3fd8285e4bb2",
+        "addedAt": "2025-09-11T13:09:13.077Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T13:09:13.077Z",
+    "updatedAt": "2025-09-11T13:09:13.077Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2ca00e78e3fd8285e4d45",
+    "name": "dsadadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c2bd33e78e3fd8285df790",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2ca00e78e3fd8285e4d46",
+        "addedAt": "2025-09-11T13:09:20.984Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T13:09:20.984Z",
+    "updatedAt": "2025-09-11T13:09:20.984Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2ca09e78e3fd8285e4e4b",
+    "name": "dsadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c2bd33e78e3fd8285df790",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2ca09e78e3fd8285e4e4c",
+        "addedAt": "2025-09-11T13:09:29.269Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T13:09:29.269Z",
+    "updatedAt": "2025-09-11T13:09:29.269Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2ca10e78e3fd8285e4f52",
+    "name": "dsadsasdazda",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c2bd33e78e3fd8285df790",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2ca10e78e3fd8285e4f53",
+        "addedAt": "2025-09-11T13:09:36.724Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T13:09:36.724Z",
+    "updatedAt": "2025-09-11T13:09:36.724Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2cb59e78e3fd8285e81ee",
+    "name": "ddddddddddsad",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c2b6a30ec8c16274dcb243",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2cb59e78e3fd8285e81ef",
+        "addedAt": "2025-09-11T13:15:05.500Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T13:15:05.501Z",
+    "updatedAt": "2025-09-11T13:15:05.501Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2cc2ce78e3fd8285e919a",
+    "name": "fazdsas",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27902e13caafeefea9adc",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2cc2ce78e3fd8285e919b",
+        "addedAt": "2025-09-11T13:18:36.050Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T13:18:36.051Z",
+    "updatedAt": "2025-09-11T13:18:36.051Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2cc7be78e3fd8285e9350",
+    "name": "dsasda",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c27902e13caafeefea9adc",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2cc7be78e3fd8285e9351",
+        "addedAt": "2025-09-11T13:19:55.423Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T13:19:55.424Z",
+    "updatedAt": "2025-09-11T13:19:55.424Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2cca4e78e3fd8285e9c94",
+    "name": "dsadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c2bd33e78e3fd8285df790",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2cca4e78e3fd8285e9c95",
+        "addedAt": "2025-09-11T13:20:36.571Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T13:20:36.571Z",
+    "updatedAt": "2025-09-11T13:20:36.571Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c2d6cae78e3fd8285f6b84",
+    "name": "dsadsa",
+    "type": "kanban",
+    "visibility": "private",
+    "space": "68c2bbefe78e3fd8285de9c6",
+    "owner": "68bedbdf8dad39bb0238d2ae",
+    "members": [
+      {
+        "user": "68bedbdf8dad39bb0238d2ae",
+        "permissions": [
+          "view"
+        ],
+        "_id": "68c2d6cae78e3fd8285f6b85",
+        "addedAt": "2025-09-11T14:03:54.113Z"
+      }
+    ],
+    "columns": [],
+    "settings": {
+      "allowComments": true,
+      "allowAttachments": true,
+      "allowTimeTracking": false,
+      "defaultTaskPriority": "medium",
+      "autoArchive": false,
+      "archiveAfterDays": 30
+    },
+    "archived": false,
+    "isActive": true,
+    "isTemplate": false,
+    "templateSource": null,
+    "githubBranch": {
+      "commit": {
+        "sha": null,
+        "url": null
+      },
+      "protection": {
+        "enabled": false,
+        "requiredStatusChecks": false,
+        "enforceAdmins": false
+      },
+      "name": null,
+      "linkedAt": null
+    },
+    "tags": [],
+    "createdAt": "2025-09-11T14:03:54.114Z",
+    "updatedAt": "2025-09-11T14:03:54.114Z",
+    "__v": 0
+  }
+]

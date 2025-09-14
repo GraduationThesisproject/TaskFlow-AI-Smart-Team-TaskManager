@@ -9,11 +9,13 @@ import Sidebar from '@/components/navigation/Sidebar';
 import { fetchWorkspaces, createWorkspace, deleteWorkspace, restoreWorkspace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
 import { useRouter } from 'expo-router';
 import { formatArchiveCountdown, getArchiveCountdownStyle, getArchiveStatusMessage } from '@/utils/archiveTimeUtils';
+import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
-export default function WorkspacesScreen() {
+function WorkspacesScreenContent() {
   const colors = useThemeColors();
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const { showSuccess, showError } = useBanner();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -58,9 +60,10 @@ export default function WorkspacesScreen() {
       }));
       setNewWorkspaceName('');
       setIsCreating(false);
+      showSuccess('Workspace created successfully!');
     } catch (error: any) {
       console.error('Failed to create workspace:', error);
-      Alert.alert('Error', error?.message || 'Failed to create workspace');
+      showError(error?.message || 'Failed to create workspace');
     }
   };
 
@@ -321,6 +324,14 @@ export default function WorkspacesScreen() {
 
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="dashboard" />
     </View>
+  );
+}
+
+export default function WorkspacesScreen() {
+  return (
+    <BannerProvider>
+      <WorkspacesScreenContent />
+    </BannerProvider>
   );
 }
 

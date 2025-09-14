@@ -1,4 +1,5 @@
 const axios = require('axios');
+const jwt = require('jsonwebtoken');
 const logger = require('../config/logger');
 const env = require('../config/env');
 
@@ -7,6 +8,10 @@ class GitHubService {
     this.baseURL = 'https://api.github.com';
     this.clientId = env.GITHUB_CLIENT_ID;
     this.clientSecret = env.GITHUB_CLIENT_SECRET;
+    
+    // GitHub App configuration
+    this.appId = env.GITHUB_APP_ID;
+    this.privateKey = env.GITHUB_PRIVATE_KEY;
   }
 
   // Get user's GitHub organizations
@@ -253,6 +258,64 @@ class GitHubService {
     } catch (error) {
       logger.error('Error exchanging code for token:', error.response?.data || error.message);
       throw new Error(`Failed to exchange code for token: ${error.response?.data?.error_description || error.message}`);
+    }
+  }
+
+  // GitHub App Installation Methods
+  async getInstallation(installationId) {
+    try {
+      const response = await axios.get(`${this.baseURL}/app/installations/${installationId}`, {
+        headers: {
+          'Authorization': `Bearer ${await this.getAppToken()}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      logger.error('Error getting installation:', error.response?.data || error.message);
+      throw new Error(`Failed to get installation: ${error.message}`);
+    }
+  }
+
+  async getAppToken() {
+    try {
+      // Generate JWT token for GitHub App
+      const now = Math.floor(Date.now() / 1000);
+      const payload = {
+        iat: now - 60, // Issued at time (1 minute ago)
+        exp: now + (10 * 60), // Expires in 10 minutes
+        iss: this.appId // GitHub App ID
+      };
+
+      const token = jwt.sign(payload, this.privateKey, { algorithm: 'RS256' });
+      return token;
+    } catch (error) {
+      logger.error('Error generating app token:', error);
+      throw new Error('Failed to generate app token');
+    }
+  }
+
+  async sendInstallationNotification(installationId, notification) {
+    try {
+      const appToken = await this.getAppToken();
+      
+      // Create an issue or comment in the repository/organization
+      const response = await axios.post(`${this.baseURL}/repos/${notification.repository}/issues`, {
+        title: `TaskFlow Integration: ${notification.type}`,
+        body: notification.message,
+        labels: ['taskflow', 'integration']
+      }, {
+        headers: {
+          'Authorization': `Bearer ${appToken}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      return response.data;
+    } catch (error) {
+      logger.error('Error sending installation notification:', error.response?.data || error.message);
+      // Don't throw error for notification failures
+      logger.warn('Installation notification failed, but installation was successful');
     }
   }
 }
