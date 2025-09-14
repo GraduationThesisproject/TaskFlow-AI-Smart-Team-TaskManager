@@ -37,7 +37,7 @@ export const env = {
   ENABLE_DEBUG: __DEV__,
   
   // OAuth Configuration
-  GOOGLE_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || Constants.expoConfig?.extra?.googleClientId || '625288272720-qem1ue46j75pt272mab8f35baimqgeag.apps.googleusercontent.com',
+  GOOGLE_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || Constants.expoConfig?.extra?.googleClientId || '823340430443-hmc2puv4ffap7sgo0jc79bm5juivkvvf.apps.googleusercontent.com',
   GOOGLE_CLIENT_SECRET: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_SECRET || Constants.expoConfig?.extra?.googleClientSecret || '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',
   GOOGLE_CALLBACK_URL: process.env.EXPO_PUBLIC_GOOGLE_CALLBACK_URL || Constants.expoConfig?.extra?.googleCallbackUrl || 'taskflow://auth/google/callback',
   GITHUB_CLIENT_ID: process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID || Constants.expoConfig?.extra?.githubClientId || 'Ov23liwZN5YwJ4eZvffU',

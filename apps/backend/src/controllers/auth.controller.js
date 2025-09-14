@@ -10,6 +10,7 @@ const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
 const passport = require('passport');
 const env = require('../config/env');
+const oauthService = require('../services/oauth.service');
 
 // ============================================================================
 // USER REGISTRATION & INVITATION
@@ -181,6 +182,67 @@ exports.githubCallback = (req, res, next) => {
             return sendResponse(res, 500, false, 'Failed to complete authentication process');
         }
     })(req, res, next);
+};
+
+// ============================================================================
+// MOBILE OAUTH AUTHENTICATION
+// ============================================================================
+
+// Google OAuth for mobile - verify access token and authenticate
+exports.googleMobile = async (req, res) => {
+    try {
+        const { access_token } = req.body;
+
+        if (!access_token) {
+            return sendResponse(res, 400, false, 'Access token is required');
+        }
+
+        // Verify the Google access token and get user info
+        const googleProfile = await oauthService.verifyGoogleToken(access_token);
+        
+        // Find or create user
+        const user = await oauthService.findOrCreateGoogleUser(googleProfile);
+        
+        // Generate auth response
+        const response = oauthService.generateAuthResponse(user);
+        
+        logger.info(`Google mobile OAuth successful for user: ${user.email}`);
+        return sendResponse(res, 200, true, response.message, response.data);
+        
+    } catch (error) {
+        logger.error('Google mobile OAuth error:', error);
+        return sendResponse(res, 500, false, error.message || 'Google authentication failed');
+    }
+};
+
+// GitHub OAuth for mobile - exchange code for token and authenticate
+exports.githubMobile = async (req, res) => {
+    try {
+        const { code } = req.body;
+
+        if (!code) {
+            return sendResponse(res, 400, false, 'Authorization code is required');
+        }
+
+        // Exchange code for access token
+        const tokenData = await oauthService.exchangeGitHubCodeForToken(code);
+        
+        // Get GitHub user profile
+        const githubProfile = await oauthService.getGitHubUserProfile(tokenData.access_token);
+        
+        // Find or create user
+        const user = await oauthService.findOrCreateGitHubUser(githubProfile);
+        
+        // Generate auth response
+        const response = oauthService.generateAuthResponse(user);
+        
+        logger.info(`GitHub mobile OAuth successful for user: ${user.email}`);
+        return sendResponse(res, 200, true, response.message, response.data);
+        
+    } catch (error) {
+        logger.error('GitHub mobile OAuth error:', error);
+        return sendResponse(res, 500, false, error.message || 'GitHub authentication failed');
+    }
 };
 
 // ============================================================================
