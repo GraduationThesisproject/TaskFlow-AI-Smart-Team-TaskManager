@@ -40,23 +40,33 @@ function WorkspaceSettingsScreenContent() {
   const [showGithubModal, setShowGithubModal] = useState<boolean>(false);
 
   useEffect(() => {
-    // Only resync toggle state when switching to a different workspace
-    setWsIsPublic(!!(currentWorkspace as any)?.isPublic);
-    setWsAllowGuestAccess(!!(currentWorkspace as any)?.settings?.allowGuestAccess);
-    setWsRestrictBoardCreation(!!(currentWorkspace as any)?.settings?.restrictBoardCreation);
-    setWsRestrictBoardDeletion(!!(currentWorkspace as any)?.settings?.restrictBoardDeletion);
-    setWsSlackRestricted(!!(currentWorkspace as any)?.settings?.slackRestricted);
-    
-    // GitHub integration state
-    setGithubConnected(!!(currentWorkspace as any)?.githubOrg?.login);
-    setGithubOrganization((currentWorkspace as any)?.githubOrg?.login || '');
-  }, [workspaceId]);
+    // Only initialize state when workspace changes, not when navigating away
+    if (currentWorkspace) {
+      setWsIsPublic(!!(currentWorkspace as any)?.isPublic);
+      setWsAllowGuestAccess(!!(currentWorkspace as any)?.settings?.allowGuestAccess);
+      setWsRestrictBoardCreation(!!(currentWorkspace as any)?.settings?.restrictBoardCreation);
+      setWsRestrictBoardDeletion(!!(currentWorkspace as any)?.settings?.restrictBoardDeletion);
+      setWsSlackRestricted(!!(currentWorkspace as any)?.settings?.slackRestricted);
+      
+      // GitHub integration state
+      setGithubConnected(!!(currentWorkspace as any)?.githubOrg?.login);
+      setGithubOrganization((currentWorkspace as any)?.githubOrg?.login || '');
+    }
+  }, [currentWorkspace]);
 
   const safeUpdateWorkspace = async (updates: any, revert: () => void, section: 'settings' | 'visibility' | 'general' | 'github' = 'settings') => {
     if (!workspaceId) return;
     try {
-      await dispatch(updateWorkspaceSettings({ id: workspaceId, section, updates }) as any).unwrap();
+      const result = await dispatch(updateWorkspaceSettings({ id: workspaceId, section, updates }) as any).unwrap();
+      
+      // Only show success if the update was actually successful
+      if (result) {
+        showSuccess('Settings updated successfully');
+      } else {
+        throw new Error('No response from server');
+      }
     } catch (e: any) {
+      console.error('Failed to update workspace settings:', e);
       revert();
       showError(`Failed to update workspace settings: ${e?.message || 'Unknown error'}`);
     }
@@ -285,9 +295,20 @@ function WorkspaceSettingsScreenContent() {
                   </View>
                   <Switch
                     value={wsIsPublic}
-                    onValueChange={(val) => {
-                      const prev = wsIsPublic; setWsIsPublic(val);
-                      safeUpdateWorkspace({ isPublic: val }, () => setWsIsPublic(prev), 'visibility');
+                    onValueChange={async (val) => {
+                      console.log('Toggling isPublic from', wsIsPublic, 'to', val);
+                      const prev = wsIsPublic; 
+                      setWsIsPublic(val);
+                      
+                      try {
+                        await safeUpdateWorkspace({ isPublic: val }, () => {
+                          console.log('Reverting isPublic back to', prev);
+                          setWsIsPublic(prev);
+                        }, 'visibility');
+                      } catch (error) {
+                        console.error('Error updating isPublic:', error);
+                        setWsIsPublic(prev);
+                      }
                     }}
                     trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor={colors.background}
@@ -310,9 +331,20 @@ function WorkspaceSettingsScreenContent() {
                   </View>
                   <Switch
                     value={wsAllowGuestAccess}
-                    onValueChange={(val) => {
-                      const prev = wsAllowGuestAccess; setWsAllowGuestAccess(val);
-                      safeUpdateWorkspace({ allowGuestAccess: val }, () => setWsAllowGuestAccess(prev), 'settings');
+                    onValueChange={async (val) => {
+                      console.log('Toggling allowGuestAccess from', wsAllowGuestAccess, 'to', val);
+                      const prev = wsAllowGuestAccess; 
+                      setWsAllowGuestAccess(val);
+                      
+                      try {
+                        await safeUpdateWorkspace({ allowGuestAccess: val }, () => {
+                          console.log('Reverting allowGuestAccess back to', prev);
+                          setWsAllowGuestAccess(prev);
+                        }, 'settings');
+                      } catch (error) {
+                        console.error('Error updating allowGuestAccess:', error);
+                        setWsAllowGuestAccess(prev);
+                      }
                     }}
                     trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor={colors.background}
@@ -335,9 +367,20 @@ function WorkspaceSettingsScreenContent() {
                   </View>
                   <Switch
                     value={wsRestrictBoardCreation}
-                    onValueChange={(val) => {
-                      const prev = wsRestrictBoardCreation; setWsRestrictBoardCreation(val);
-                      safeUpdateWorkspace({ restrictBoardCreation: val }, () => setWsRestrictBoardCreation(prev), 'settings');
+                    onValueChange={async (val) => {
+                      console.log('Toggling restrictBoardCreation from', wsRestrictBoardCreation, 'to', val);
+                      const prev = wsRestrictBoardCreation; 
+                      setWsRestrictBoardCreation(val);
+                      
+                      try {
+                        await safeUpdateWorkspace({ restrictBoardCreation: val }, () => {
+                          console.log('Reverting restrictBoardCreation back to', prev);
+                          setWsRestrictBoardCreation(prev);
+                        }, 'settings');
+                      } catch (error) {
+                        console.error('Error updating restrictBoardCreation:', error);
+                        setWsRestrictBoardCreation(prev);
+                      }
                     }}
                     trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor={colors.background}
@@ -360,9 +403,20 @@ function WorkspaceSettingsScreenContent() {
                   </View>
                   <Switch
                     value={wsRestrictBoardDeletion}
-                    onValueChange={(val) => {
-                      const prev = wsRestrictBoardDeletion; setWsRestrictBoardDeletion(val);
-                      safeUpdateWorkspace({ restrictBoardDeletion: val }, () => setWsRestrictBoardDeletion(prev), 'settings');
+                    onValueChange={async (val) => {
+                      console.log('Toggling restrictBoardDeletion from', wsRestrictBoardDeletion, 'to', val);
+                      const prev = wsRestrictBoardDeletion; 
+                      setWsRestrictBoardDeletion(val);
+                      
+                      try {
+                        await safeUpdateWorkspace({ restrictBoardDeletion: val }, () => {
+                          console.log('Reverting restrictBoardDeletion back to', prev);
+                          setWsRestrictBoardDeletion(prev);
+                        }, 'settings');
+                      } catch (error) {
+                        console.error('Error updating restrictBoardDeletion:', error);
+                        setWsRestrictBoardDeletion(prev);
+                      }
                     }}
                     trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor={colors.background}
@@ -385,9 +439,20 @@ function WorkspaceSettingsScreenContent() {
                   </View>
                   <Switch
                     value={wsSlackRestricted}
-                    onValueChange={(val) => {
-                      const prev = wsSlackRestricted; setWsSlackRestricted(val);
-                      safeUpdateWorkspace({ slackRestricted: val }, () => setWsSlackRestricted(prev), 'settings');
+                    onValueChange={async (val) => {
+                      console.log('Toggling slackRestricted from', wsSlackRestricted, 'to', val);
+                      const prev = wsSlackRestricted; 
+                      setWsSlackRestricted(val);
+                      
+                      try {
+                        await safeUpdateWorkspace({ slackRestricted: val }, () => {
+                          console.log('Reverting slackRestricted back to', prev);
+                          setWsSlackRestricted(prev);
+                        }, 'settings');
+                      } catch (error) {
+                        console.error('Error updating slackRestricted:', error);
+                        setWsSlackRestricted(prev);
+                      }
                     }}
                     trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor={colors.background}

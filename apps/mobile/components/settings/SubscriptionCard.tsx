@@ -27,7 +27,7 @@ const SubscriptionCard: React.FC = () => {
       key: "free",
       name: "Free",
       monthlyPrice: 0,
-      desc: "For individuals or small teams looking to keep work organized.",
+      desc: "For individuals or small teams. Up to 5 spaces and 10 boards per workspace.",
       cta: "Current",
       ctaVariant: "secondary" as const,
       highlighted: false,
@@ -36,7 +36,7 @@ const SubscriptionCard: React.FC = () => {
       key: "standard",
       name: "Standard",
       monthlyPrice: 5,
-      desc: "Get more done with unlimited boards, card mirroring, and more automation.",
+      desc: "Unlimited spaces and boards, advanced automation, and team collaboration tools.",
       cta: "Upgrade",
       ctaVariant: "default" as const,
       highlighted: false,
@@ -45,7 +45,7 @@ const SubscriptionCard: React.FC = () => {
       key: "premium",
       name: "Premium",
       monthlyPrice: 10,
-      desc: "Add AI to your boards and admin controls to your toolkit. Plus, get more perspective with views.",
+      desc: "Advanced analytics, custom integrations, priority support, and all views.",
       cta: "Upgrade",
       ctaVariant: "default" as const,
       highlighted: true,
@@ -54,7 +54,7 @@ const SubscriptionCard: React.FC = () => {
       key: "enterprise",
       name: "Enterprise",
       monthlyPrice: 17.5,
-      desc: "Add enterprise‑grade security and controls to your toolkit.",
+      desc: "Enterprise-grade security, dedicated support, and unlimited everything.",
       cta: "Contact Sales",
       ctaVariant: "accent" as const,
       highlighted: false,
@@ -299,32 +299,86 @@ const SubscriptionCard: React.FC = () => {
             ))}
           </View>
           
-          {/* Features */}
+          {/* Features with sections */}
           {[
-            { label: "Unlimited cards", values: [true, true, true, true] },
-            { label: "Boards per Workspace", values: ["Up to 10", "∞", "∞", "∞"] },
-            { label: "Storage", values: ["10MB/file", "250MB/file", "250MB/file", "∞"] },
-            { label: "Workspace command runs", values: ["250/month", "1,000/month", "∞", "∞"] },
-            { label: "Advanced checklists", values: [false, true, true, true] },
-            { label: "Calendar, Timeline, Table, Dashboard", values: [false, false, true, true] },
-          ].map((feature, index) => (
-            <View key={index} style={styles.tableRow}>
-              <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], flex: 2 }]}>
-                {feature.label}
-              </Text>
-              {feature.values.map((value, idx) => (
-                <View key={idx} style={styles.tableCell}>
-                  {typeof value === "boolean" ? (
-                    value ? (
-                      <FontAwesome name="check" size={16} color={colors.accent} />
-                    ) : (
-                      <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>—</Text>
-                    )
-                  ) : value === "∞" ? (
-                    <Text style={[TextStyles.body.small, { color: colors.accent }]}>{value}</Text>
-                  ) : (
-                    <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>{value}</Text>
-                  )}
+            // BASICS
+            { section: "BASICS", items: [
+              { label: "Unlimited cards", values: [true, true, true, true] },
+              { label: "Boards per Workspace", values: ["Up to 10", "∞", "∞", "∞"] },
+              { label: "Storage", values: ["10MB/file", "250MB/file", "250MB/file", "∞"] },
+            ]},
+            
+            // WORKSPACE & SPACES
+            { section: "WORKSPACE & SPACES", items: [
+              { label: "Spaces per Workspace", values: ["Up to 5", "∞", "∞", "∞"] },
+              { label: "Advanced space management", values: [false, true, true, true] },
+              { label: "Team collaboration tools", values: ["Basic", true, true, true] },
+              { label: "Advanced security features", values: [false, false, true, true] },
+            ]},
+            
+            // AUTOMATION
+            { section: "AUTOMATION", items: [
+              { label: "Workspace command runs", values: ["250/month", "1,000/month", "∞", "∞"] },
+              { label: "Advanced checklists", values: [false, true, true, true] },
+            ]},
+            
+            // ANALYTICS & REPORTING
+            { section: "ANALYTICS & REPORTING", items: [
+              { label: "Basic analytics", values: [true, true, true, true] },
+              { label: "Advanced analytics & reporting", values: [false, false, true, true] },
+              { label: "Custom dashboards", values: [false, false, true, true] },
+            ]},
+            
+            // INTEGRATIONS & API
+            { section: "INTEGRATIONS & API", items: [
+              { label: "Basic integrations", values: [true, true, true, true] },
+              { label: "Custom integrations & API access", values: [false, false, true, true] },
+              { label: "Webhook support", values: [false, false, true, true] },
+            ]},
+            
+            // SUPPORT
+            { section: "SUPPORT", items: [
+              { label: "Community support", values: [true, true, true, true] },
+              { label: "Email support", values: [false, true, true, true] },
+              { label: "Priority support & faster response", values: [false, false, true, true] },
+              { label: "Dedicated account manager", values: [false, false, false, true] },
+            ]},
+            
+            // VIEWS
+            { section: "VIEWS", items: [
+              { label: "Calendar, Timeline, Table, Dashboard", values: [false, false, true, true] },
+            ]},
+          ].map((section, sectionIndex) => (
+            <View key={sectionIndex}>
+              {/* Section Header */}
+              <View style={[styles.tableRow, styles.sectionHeader]}>
+                <Text style={[TextStyles.caption.small, { color: colors.accent, fontWeight: '600', flex: 2 }]}>
+                  {section.section}
+                </Text>
+                <View style={{ flex: 4 }} />
+              </View>
+              
+              {/* Section Items */}
+              {section.items.map((feature, index) => (
+                <View key={index} style={styles.tableRow}>
+                  <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], flex: 2 }]}>
+                    {feature.label}
+                  </Text>
+                  {feature.values.map((value, idx) => (
+                    <View key={idx} style={styles.tableCell}>
+                      {typeof value === "boolean" ? (
+                        value ? (
+                          <FontAwesome name="check" size={16} color={colors.accent} />
+                        ) : (
+                          <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>—</Text>
+                        )
+                      ) : value === "∞" ? (
+                        <Text style={[TextStyles.body.small, { color: colors.accent }]}>{value}</Text>
+                      ) : (
+                        <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>{value}</Text>
+                      )}
+                    </View>
+                  ))}
                 </View>
               ))}
             </View>
@@ -416,6 +470,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  sectionHeader: {
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderBottomWidth: 2,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+    paddingVertical: 8,
   },
   tableCell: {
     flex: 1,
