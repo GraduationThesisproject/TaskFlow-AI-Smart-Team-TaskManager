@@ -16,9 +16,9 @@ export const useOAuth = () => {
   const dispatch = useAppDispatch();
 
   // Generate redirect URI for Expo Go
-  // For Expo Go, use preferLocalhost for better compatibility
+  // Use makeRedirectUri() to automatically generate correct proxy URL for development
   const redirectUri = __DEV__ 
-    ? AuthSession.makeRedirectUri({ preferLocalhost: true })
+    ? AuthSession.makeRedirectUri()
     : AuthSession.makeRedirectUri({ scheme: 'taskflow' });
   
   console.log('Google OAuth Redirect URI:', redirectUri);
