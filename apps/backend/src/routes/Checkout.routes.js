@@ -6,6 +6,16 @@ const stripe = env.STRIPE_SECRET_KEY ? require("stripe")(env.STRIPE_SECRET_KEY) 
 const { sendEmail } = require('../utils/email');
 const User = require('../models/User');
 
+// Initialize Stripe only if API key is available
+let stripe = null;
+if (env.STRIPE_SECRET_KEY) {
+  try {
+    stripe = require("stripe")(env.STRIPE_SECRET_KEY);
+  } catch (error) {
+    console.warn('Failed to initialize Stripe:', error.message);
+  }
+}
+
 router.post("/create-checkout-session", async (req, res) => {
   const { products, metadata } = req.body;
   // Merge client-provided metadata with the authenticated user id so webhook can notify the right user

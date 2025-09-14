@@ -148,8 +148,10 @@ export const updateWorkspaceSettings = createAsyncThunk(
   }, { rejectWithValue }) => {
     try {
       // Build payload shape based on section
-      let payload: any = updates;
+      let payload: any = {};
+      
       if (section === 'settings') {
+        // For settings, nest them under a settings object
         payload = { settings: updates };
       } else if (section === 'visibility') {
         // visibility toggles like isPublic should be top-level
@@ -160,8 +162,15 @@ export const updateWorkspaceSettings = createAsyncThunk(
       } else if (section === 'general') {
         // name/description already at top-level
         payload = updates;
+      } else if (section === 'github') {
+        // GitHub organization should be top-level
+        payload = { githubOrg: updates?.githubOrg };
+      } else {
+        // Default: send updates directly
+        payload = updates;
       }
 
+      console.log('Sending workspace update payload:', payload);
       const response = await WorkspaceService.updateWorkspace(id, payload);
        
       // The service returns the workspace directly, not wrapped in response.data
@@ -169,6 +178,7 @@ export const updateWorkspaceSettings = createAsyncThunk(
         throw new Error('Invalid response from server');
       }
       
+      console.log('Workspace update successful:', response);
       return response as Workspace;
     } catch (error: any) {
       console.error('Error updating workspace settings:', error);

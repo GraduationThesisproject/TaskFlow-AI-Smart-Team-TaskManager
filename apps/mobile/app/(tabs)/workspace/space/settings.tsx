@@ -10,7 +10,6 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { SpaceService } from '@/services/spaceService';
 import { setSelectedSpace } from '@/store/slices/workspaceSlice';
 import { useAuth } from '@/hooks/useAuth';
-import Sidebar from '@/components/navigation/Sidebar';
 
 export default function SpaceSettingsScreen() {
   const colors = useThemeColors();
@@ -26,7 +25,6 @@ export default function SpaceSettingsScreen() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveOk, setSaveOk] = useState(false);
-  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -268,12 +266,6 @@ export default function SpaceSettingsScreen() {
             onPress={() => router.back()}
           >
             <Text style={{ color: colors.primary, fontWeight: '600' }}>{'<'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.sidebarButton}
-            onPress={() => setSidebarVisible(true)}
-          >
-            <Text style={{ color: colors.primary, fontWeight: '600' }}>☰</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.headerCenter}>
@@ -523,8 +515,6 @@ export default function SpaceSettingsScreen() {
         </View>
       </Modal>
 
-      {/* Sidebar */}
-      <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="workspace" />
     </View>
   );
 }
@@ -553,11 +543,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   backButton: {
-    padding: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sidebarButton: {
     padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
