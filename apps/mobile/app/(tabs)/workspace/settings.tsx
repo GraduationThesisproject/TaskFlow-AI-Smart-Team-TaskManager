@@ -90,7 +90,7 @@ function WorkspaceSettingsScreenContent() {
           setGithubConnected(true);
           setGithubOrganization(githubOrganization.trim());
           setShowGithubModal(false);
-          Alert.alert('Success', 'GitHub organization linked successfully!');
+          showSuccess('GitHub organization linked successfully!');
         } else {
           // User needs to link GitHub account first
           Alert.alert(
