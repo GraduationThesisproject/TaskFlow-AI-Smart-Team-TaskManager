@@ -40,6 +40,7 @@ export const useColumns = () => {
       if (!boardId) {
         throw new Error('boardId is required to create a column');
       }
+      console.log('🔄 useColumns: Creating column with data:', { boardId, columnData: columnDataWithoutBoardId });
       await dispatch(createColumn({ boardId, columnData: columnDataWithoutBoardId }) as any).unwrap();
     } catch (error) {
       console.error('Failed to create column:', error);
@@ -52,7 +53,8 @@ export const useColumns = () => {
       if (!boardId) {
         throw new Error('boardId is required to update a column');
       }
-      await dispatch(updateColumn({ columnId, columnData: { ...columnData, boardId } }) as any).unwrap();
+      console.log('🔄 useColumns: Updating column with data:', { columnId, columnData });
+      await dispatch(updateColumn({ columnId, columnData }) as any).unwrap();
     } catch (error) {
       console.error('Failed to update column:', error);
       throw error;
@@ -64,7 +66,8 @@ export const useColumns = () => {
       if (!boardId) {
         throw new Error('boardId is required to delete a column');
       }
-      await dispatch(deleteColumn({ columnId, boardId }) as any).unwrap();
+      console.log('🔄 useColumns: Deleting column:', columnId);
+      await dispatch(deleteColumn(columnId) as any).unwrap();
     } catch (error) {
       console.error('Failed to delete column:', error);
       throw error;
@@ -73,7 +76,7 @@ export const useColumns = () => {
 
   const reorderColumnsAction = useCallback(async (boardId: string, columnIds: string[]) => {
     try {
-      await dispatch(reorderColumns({ boardId, columnOrder: columnIds }) as any).unwrap();
+      await dispatch(reorderColumns({ boardId, columnIds }) as any).unwrap();
     } catch (error) {
       console.error('Failed to reorder columns:', error);
       throw error;
@@ -91,6 +94,14 @@ export const useColumns = () => {
   // Computed values - Add defensive programming to handle null/undefined columns
   const columnsArray = Array.isArray(columns) ? columns : [];
   const sortedColumns = [...columnsArray].sort((a, b) => (a.position || 0) - (b.position || 0));
+  
+  console.log('🔍 useColumns state:', { 
+    columnsLength: columnsArray.length, 
+    sortedColumnsLength: sortedColumns.length,
+    loading, 
+    error,
+    columns: columnsArray 
+  });
   const activeColumns = columnsArray.filter(col => !col.isArchived);
   const archivedColumns = columnsArray.filter(col => col.isArchived);
 

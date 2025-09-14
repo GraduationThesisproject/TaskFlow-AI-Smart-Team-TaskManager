@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import type { Task } from '../../types/task.types';
@@ -9,10 +9,11 @@ import {
   Loading,
   Button
 } from '@taskflow/ui';
-import { DraggableColumn } from '../../components/space/DraggableColumn';
-import { AddColumnModal } from '../../components/space';
-import { EditColumnModal } from '../../components/board/EditColumnModal';
+import { DraggableColumn } from '../../components/board/DraggableColumn';
+import { AddColumnModal } from '../../components/board/AddColumnModal';
+import { AddTagModal } from '../../components/board/AddTagModal';
 import { ErrorBoundaryWrapper } from '../../components';
+
 
 interface KanbanViewLayoutProps {
   currentBoard: Board | null;
@@ -31,7 +32,7 @@ interface KanbanViewLayoutProps {
   onAddTask: (taskData: Partial<Task>) => Promise<void>;
   onDragEnd: (result: DropResult) => Promise<void>;
   onEditColumn: (columnId: string) => void;
-  onDeleteColumn: (columnId: string) => Promise<void>;
+  onDeleteColumn: (columnId: string) => void;
   onUpdateColumn: (columnId: string, columnData: Partial<Column>) => Promise<void>;
   onAddColumn: () => Promise<void>;
   onCancelAddColumn: () => void;
@@ -42,9 +43,9 @@ interface KanbanViewLayoutProps {
   setIsAddingColumn: (adding: boolean) => void;
   isAddColumnModalOpen: boolean;
   setIsAddColumnModalOpen: (open: boolean) => void;
-  isEditColumnModalOpen: boolean;
-  setIsEditColumnModalOpen: (open: boolean) => void;
-  editingColumn: Column | null;
+  // Board tag props
+  onAddBoardTag?: (tag: { name: string; color: string }) => Promise<void>;
+  onRemoveBoardTag?: (tagName: string) => Promise<void>;
 }
 
 export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
@@ -69,41 +70,171 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
   setIsAddingColumn,
   isAddColumnModalOpen,
   setIsAddColumnModalOpen,
-  isEditColumnModalOpen,
-  setIsEditColumnModalOpen,
-  editingColumn
+  // Board tag props
+  onAddBoardTag,
+  onRemoveBoardTag
 }) => {
   // Animation state management
   const [newColumnIds, setNewColumnIds] = useState<Set<string>>(new Set());
   const [deletingColumnIds, setDeletingColumnIds] = useState<Set<string>>(new Set());
   const previousColumnsRef = useRef<Column[]>([]);
+  
+  // Scroll synchronization
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const mainScrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const [contentWidth, setContentWidth] = useState(0);
   const animationTimeoutsRef = useRef<Map<string, number>>(new Map());
 
-  // Add CSS to move scrollbar to top and style it elegantly
+  // Checklist state management
+  const [isAddChecklistModalOpen, setIsAddChecklistModalOpen] = useState(false);
+  const [showChecklistDropdown, setShowChecklistDropdown] = useState(false);
+  const checklistDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Tag dropdown state management
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const tagDropdownRef = useRef<HTMLDivElement>(null);
+  const tagDropdownTimeoutRef = useRef<number | null>(null);
+
+
+  // Enhanced CSS for better scrolling and design
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
-      .scrollbar-top {
-        transform: rotateX(180deg);
+      /* Column Task List Scrollbar Design */
+      .column-task-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted) / 0.1);
+        scroll-behavior: smooth;
       }
-      .scrollbar-top > * {
-        transform: rotateX(180deg);
+      
+      .column-task-scroll::-webkit-scrollbar {
+        width: 8px;
       }
-      .scrollbar-top::-webkit-scrollbar {
+      
+      .column-task-scroll::-webkit-scrollbar-track {
+        background: hsl(var(--muted) / 0.05);
+        border-radius: 4px;
+        margin: 4px 0;
+      }
+      
+      .column-task-scroll::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, hsl(var(--primary) / 0.4), hsl(var(--primary) / 0.6));
+        border-radius: 4px;
+        border: 1px solid hsl(var(--background));
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      
+      .column-task-scroll::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, hsl(var(--primary) / 0.6), hsl(var(--primary) / 0.8));
+        transform: scaleX(1.1);
+      }
+      
+      .column-task-scroll::-webkit-scrollbar-thumb:active {
+        background: hsl(var(--primary) / 0.8);
+        transform: scaleX(1.2);
+      }
+
+      /* Professional Horizontal Scrollbar Design */
+      .kanban-horizontal-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: hsl(var(--primary) / 0.3) transparent;
+        scroll-behavior: smooth;
+      }
+      
+      .kanban-horizontal-scroll::-webkit-scrollbar {
         height: 8px;
       }
-      .scrollbar-top::-webkit-scrollbar-track {
-        background: hsl(var(--muted) / 0.3);
+      
+      .kanban-horizontal-scroll::-webkit-scrollbar-track {
+        background: hsl(var(--muted) / 0.1);
         border-radius: 4px;
+        margin: 0 4px;
       }
-      .scrollbar-top::-webkit-scrollbar-thumb {
-        background: hsl(var(--primary) / 0.6);
+      
+      .kanban-horizontal-scroll::-webkit-scrollbar-thumb {
+        background: linear-gradient(90deg, hsl(var(--primary) / 0.3), hsl(var(--primary) / 0.5));
         border-radius: 4px;
-        transition: all 0.2s ease;
+        border: 1px solid hsl(var(--background));
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       }
-      .scrollbar-top::-webkit-scrollbar-thumb:hover {
-        background: hsl(var(--primary) / 0.8);
+      
+      .kanban-horizontal-scroll::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(90deg, hsl(var(--primary) / 0.5), hsl(var(--primary) / 0.7));
+        transform: scaleY(1.1);
       }
+      
+      .kanban-horizontal-scroll::-webkit-scrollbar-thumb:active {
+        background: hsl(var(--primary) / 0.7);
+        transform: scaleY(1.2);
+      }
+
+      /* Top Scrollbar Indicator */
+      .top-scroll-indicator {
+        background: linear-gradient(90deg, 
+          hsl(var(--primary) / 0.1) 0%, 
+          hsl(var(--primary) / 0.2) 50%, 
+          hsl(var(--primary) / 0.1) 100%);
+        border-radius: 2px;
+        transition: all 0.3s ease;
+      }
+      
+      .top-scroll-indicator:hover {
+        background: linear-gradient(90deg, 
+          hsl(var(--primary) / 0.2) 0%, 
+          hsl(var(--primary) / 0.3) 50%, 
+          hsl(var(--primary) / 0.2) 100%);
+      }
+
+      /* Professional Column Animations */
+      .column-container {
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      
+      .column-container:hover {
+        transform: translateY(-2px);
+      }
+      
+      .column-enter {
+        animation: columnEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      
+      .column-deleting {
+        animation: columnDelete 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      
+      @keyframes columnEnter {
+        0% {
+          opacity: 0;
+          transform: translateX(-20px) scale(0.95);
+        }
+        100% {
+          opacity: 1;
+          transform: translateX(0) scale(1);
+        }
+      }
+      
+      @keyframes columnDelete {
+        0% {
+          opacity: 1;
+          transform: translateX(0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(20px) scale(0.95);
+        }
+      }
+
+      /* Add Column Button Animations */
+      .add-column-button {
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      
+      .add-column-button:hover {
+        transform: translateY(-1px);
+      }
+      
       
       /* Fix drag preview positioning */
       [data-rbd-draggable-id] {
@@ -264,6 +395,58 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
     };
   }, []);
 
+  // Scroll synchronization functions
+  const syncScrollFromTop = useCallback((event: Event) => {
+    if (isScrolling) return;
+    setIsScrolling(true);
+    
+    const target = event.target as HTMLDivElement;
+    if (mainScrollRef.current && target.scrollLeft !== undefined) {
+      mainScrollRef.current.scrollLeft = target.scrollLeft;
+    }
+    
+    setTimeout(() => setIsScrolling(false), 10);
+  }, [isScrolling]);
+
+  const syncScrollFromMain = useCallback((event: Event) => {
+    if (isScrolling) return;
+    setIsScrolling(true);
+    
+    const target = event.target as HTMLDivElement;
+    if (topScrollRef.current && target.scrollLeft !== undefined) {
+      topScrollRef.current.scrollLeft = target.scrollLeft;
+    }
+    
+    setTimeout(() => setIsScrolling(false), 10);
+  }, [isScrolling]);
+
+  // Setup scroll synchronization and content width tracking
+  useEffect(() => {
+    const topScroll = topScrollRef.current;
+    const mainScroll = mainScrollRef.current;
+    const content = contentRef.current;
+
+    if (topScroll && mainScroll && content) {
+      // Setup scroll synchronization
+      topScroll.addEventListener('scroll', syncScrollFromTop, { passive: true });
+      mainScroll.addEventListener('scroll', syncScrollFromMain, { passive: true });
+
+      // Setup ResizeObserver to track content width
+      const resizeObserver = new ResizeObserver(() => {
+        const width = content.scrollWidth;
+        setContentWidth(width);
+      });
+
+      resizeObserver.observe(content);
+
+      return () => {
+        topScroll.removeEventListener('scroll', syncScrollFromTop);
+        mainScroll.removeEventListener('scroll', syncScrollFromMain);
+        resizeObserver.disconnect();
+      };
+    }
+  }, [syncScrollFromTop, syncScrollFromMain]);
+
   // Handle column animation detection
   useEffect(() => {
     const previousColumns = previousColumnsRef.current;
@@ -316,49 +499,93 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
   }, [columns]);
 
   // Enhanced delete column handler with animation
-  const handleDeleteColumn = async (columnId: string) => {
+  const handleDeleteColumn = (columnId: string) => {
     setDeletingColumnIds(prev => new Set([...prev, columnId]));
     
-    // Wait for animation to complete before actually deleting
-    setTimeout(async () => {
-      try {
-        await onDeleteColumn(columnId);
-      } catch (error) {
-        console.error('Failed to delete column:', error);
-        // Remove from deleting state if deletion failed
-        setDeletingColumnIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(columnId);
-          return newSet;
-        });
-      }
-    }, 300); // Slightly less than animation duration
+    // Call the delete handler immediately (it will show the modal)
+    onDeleteColumn(columnId);
+    
+    // Remove from deleting state after a short delay for visual feedback
+    setTimeout(() => {
+      setDeletingColumnIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(columnId);
+        return newSet;
+      });
+    }, 300);
   };
 
-  // // Handle column creation
-  // const handleAddColumn = async (columnData: { name?: string; backgroundColor?: string; icon?: string | null; wipLimit?: number; isDefault?: boolean }) => {
-  //   try {
-  //     if (!boardId) return;
-      
-  //     console.log('Creating column:', columnData);
-      
-  //     try {
-  //       await addColumn({
-  //         name: columnData.name || 'New Column',
-  //         boardId: boardId,
-  //         position: columns.length,
-  //         backgroundColor: columnData.backgroundColor || '#F9FAFB',
-  //         icon: columnData.icon || null,
-  //         settings: {}
-  //       });
-  //       console.log('Column created successfully!');
-  //     } catch (error) {
-  //       console.error('Column creation failed:', error);
-  //     }
-  //   } catch (error) {
-  //     console.error('Failed to add column:', error);
-  //   }
-  // };
+  // Handle click outside for checklist dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (checklistDropdownRef.current && !checklistDropdownRef.current.contains(event.target as Node)) {
+        setShowChecklistDropdown(false);
+      }
+    };
+
+    if (showChecklistDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showChecklistDropdown]);
+
+  // Handle click outside for tag dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(event.target as Node)) {
+        setShowTagDropdown(false);
+      }
+    };
+
+    if (showTagDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showTagDropdown]);
+
+  // Tag dropdown hover handlers with delay
+  const handleTagButtonMouseEnter = () => {
+    if (tagDropdownTimeoutRef.current) {
+      clearTimeout(tagDropdownTimeoutRef.current);
+      tagDropdownTimeoutRef.current = null;
+    }
+    setShowTagDropdown(true);
+  };
+
+  const handleTagButtonMouseLeave = () => {
+    tagDropdownTimeoutRef.current = window.setTimeout(() => {
+      setShowTagDropdown(false);
+    }, 150); // Small delay to allow moving to dropdown
+  };
+
+  const handleTagDropdownMouseEnter = () => {
+    if (tagDropdownTimeoutRef.current) {
+      clearTimeout(tagDropdownTimeoutRef.current);
+      tagDropdownTimeoutRef.current = null;
+    }
+    setShowTagDropdown(true);
+  };
+
+  const handleTagDropdownMouseLeave = () => {
+    tagDropdownTimeoutRef.current = window.setTimeout(() => {
+      setShowTagDropdown(false);
+    }, 150);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (tagDropdownTimeoutRef.current) {
+        clearTimeout(tagDropdownTimeoutRef.current);
+      }
+    };
+  }, []);
+
+
 
 
 
@@ -415,20 +642,151 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
         onDragStart={(start) => {
           // Ensure proper drag behavior
           document.body.style.cursor = 'grabbing';
-          console.log('Drag started:', start);
         }}
         onDragUpdate={(update) => {
           // Keep cursor consistent during drag
           document.body.style.cursor = 'grabbing';
-          console.log('Drag update:', update);
         }}
       >
         <div className="min-h-screen bg-background/60 text-foreground w-full pb-20 rounded-2xl border border-border/50">
-          <div className="w-full px-6 sm:px-8 lg:px-12 py-8">
-            {/* Compact Stats */}
+          <div className="w-full ">
+            {/* Header with Stats and Board Tags */}
             <ErrorBoundaryWrapper>
-              <div className="mb-4">
-                <div className="flex justify-end">
+              <div className="mt-2 mb-2">
+                <div className="flex justify-between items-center">
+                  {/* Board Tags Section */}
+                  <div className="flex items-center gap-2">
+                    {/* Tag Management Button with Hover Dropdown */}
+                    <div className="relative" ref={tagDropdownRef}>
+                      <button
+                        onMouseEnter={handleTagButtonMouseEnter}
+                        onMouseLeave={handleTagButtonMouseLeave}
+                        onClick={() => setIsAddChecklistModalOpen(true)}
+                        className="group flex items-center gap-2 px-4 py-2 rounded-xl border border-border/30 hover:border-primary/50 transition-all duration-300 cursor-pointer bg-gradient-to-r from-muted/20 to-muted/10 hover:from-primary/10 hover:to-primary/5 hover:shadow-lg backdrop-blur-sm"
+                      >
+                        {/* Tag Icon */}
+                        <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center group-hover:from-primary/30 group-hover:to-primary/40 transition-all duration-300">
+                          <svg className="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                          </svg>
+                        </div>
+                        
+                        {/* Button Text */}
+                        <div className="flex flex-col items-start">
+                          <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                            Manage Tags
+                          </span>
+                          <span className="text-xs text-muted-foreground group-hover:text-primary/70 transition-colors">
+                            {currentBoard?.tags?.length || 0} tags
+                          </span>
+                        </div>
+                        
+                        {/* Dropdown Arrow */}
+                        <svg 
+                          className={`w-4 h-4 text-muted-foreground group-hover:text-primary transition-all duration-300 ${showTagDropdown ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      
+                      {/* Elegant Hover Dropdown */}
+                      {showTagDropdown && (
+                        <div 
+                          className="absolute top-full left-0 mt-1 w-80 bg-card/95 backdrop-blur-xl border border-border/20 rounded-2xl shadow-2xl z-50 overflow-hidden"
+                          onMouseEnter={handleTagDropdownMouseEnter}
+                          onMouseLeave={handleTagDropdownMouseLeave}
+                        >
+                          {/* Dropdown Header */}
+                          <div className="p-4 border-b border-border/10 bg-gradient-to-r from-muted/5 to-transparent">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center">
+                                  <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                  </svg>
+                                </div>
+                                <div>
+                                  <h3 className="text-sm font-semibold text-foreground">Board Tags</h3>
+                                  <p className="text-xs text-muted-foreground">Manage your board tags</p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setIsAddChecklistModalOpen(true)}
+                                className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-all duration-200 group"
+                                title="Add new tag"
+                              >
+                                <svg className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {/* Tags List */}
+                          <div className="max-h-64 overflow-y-auto">
+                            {currentBoard?.tags && currentBoard.tags.length > 0 ? (
+                              <div className="p-2 space-y-1">
+                                {currentBoard.tags.map((tag, index) => (
+                                  <div
+                                    key={index}
+                                    className="group flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer"
+                                  >
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                      <div
+                                        className="w-3 h-3 rounded-full shadow-sm flex-shrink-0"
+                                        style={{ backgroundColor: tag.color }}
+                                      />
+                                      <span 
+                                        className="text-sm font-medium text-foreground truncate"
+                                        style={{ color: tag.color }}
+                                      >
+                                        {tag.name}
+                                      </span>
+                                    </div>
+                                    
+                                    {/* Delete Button */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onRemoveBoardTag?.(tag.name);
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-red-500/20 hover:scale-105"
+                                      title="Delete tag"
+                                    >
+                                      <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-6 text-center">
+                                <div className="w-12 h-12 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-3">
+                                  <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                  </svg>
+                                </div>
+                                <h4 className="text-sm font-medium text-foreground mb-1">No tags yet</h4>
+                                <p className="text-xs text-muted-foreground mb-3">Create your first tag to organize tasks</p>
+                                <button
+                                  onClick={() => setIsAddChecklistModalOpen(true)}
+                                  className="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium rounded-lg transition-all duration-200"
+                                >
+                                  Create Tag
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Task Stats */}
                   <div className="flex items-center gap-2">
                     {/* Done */}
                     <div className="group relative flex items-center gap-1 px-2 py-1 rounded-md hover:bg-emerald-500/10 transition-all duration-300 cursor-pointer">
@@ -440,7 +798,6 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                           <span className="text-[10px] font-bold text-white">{taskStats.completed}</span>
                         </div>
                       </div>
-                      <span className="text-xs font-medium text-emerald-700 group-hover:text-emerald-800 transition-colors">Done</span>
                     </div>
 
                     {/* In Progress */}
@@ -453,7 +810,6 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                           <span className="text-[10px] font-bold text-white">{taskStats.inProgress}</span>
                         </div>
                       </div>
-                      <span className="text-xs font-medium text-blue-700 group-hover:text-blue-800 transition-colors">Progress</span>
                   </div>
                   
                     {/* Pending */}
@@ -466,7 +822,6 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                           <span className="text-[10px] font-bold text-white">{taskStats.todo}</span>
                         </div>
                       </div>
-                      <span className="text-xs font-medium text-orange-700 group-hover:text-orange-800 transition-colors">Pending</span>
                     </div>
                   </div>
                 </div>
@@ -475,16 +830,37 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
 
             {/* Modern Kanban Board */}
             <ErrorBoundaryWrapper>
-              <div className="relative bg-card backdrop-blur-md rounded-2xl border border-border shadow-xl p-8">
-                <Droppable droppableId="board" type="COLUMN" direction="horizontal">
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`flex gap-12 py-2 overflow-x-auto ${
-                        snapshot.isDraggingOver ? 'bg-primary/10 rounded-xl' : ''
-                      }`}
-                    >
+              <div className="relative p-2">
+                {/* Professional Horizontal Scroll Container */}
+                <div className="relative">
+                  {/* Top Scrollbar Indicator */}
+                  <div 
+                    ref={topScrollRef}
+                    className="kanban-horizontal-scroll overflow-x-auto mb-2"
+                    style={{ height: '10px' }}
+                  >
+                    <div className="h-2 bg-transparent" style={{ width: contentWidth || '100%' }}>
+                      <div className="top-scroll-indicator h-full" style={{ width: '100%' }}></div>
+                    </div>
+                  </div>
+                  
+                  {/* Main Scrollable Content */}
+                  <div 
+                    ref={mainScrollRef}
+                    className="kanban-horizontal-scroll overflow-x-auto"
+                  >
+              <Droppable droppableId="board" type="COLUMN" direction="horizontal">
+                {(provided, snapshot) => (
+                  <div
+                          ref={(el) => {
+                            provided.innerRef(el);
+                            contentRef.current = el;
+                          }}
+                    {...provided.droppableProps}
+                          className={`flex gap-6 py-4 min-w-max ${
+                            snapshot.isDraggingOver ? 'bg-primary/10 rounded-xl' : ''
+                          }`}
+                        >
                     {columns.map((column: Column, index: number) => {
                       const isNewColumn = newColumnIds.has(column._id);
                       const isDeletingColumn = deletingColumnIds.has(column._id);
@@ -492,44 +868,45 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                       return (
                         <div 
                           key={column._id} 
-                          className={`flex-shrink-0 w-72 column-container ${
+                          className={`flex-shrink-0 w-80 column-container transition-all duration-300 ${
                             isNewColumn ? 'column-enter' : ''
                           } ${
                             isDeletingColumn ? 'column-deleting' : ''
                           }`}
                         >
                           <ErrorBoundaryWrapper>
-                            <DraggableColumn
-                              column={column}
-                              tasks={tasksByColumn[column._id] || []}
-                              index={index}
+                        <DraggableColumn
+                          column={column}
+                          tasks={tasksByColumn[column._id] || []}
+                          index={index}
                               boardId={currentBoard?._id || ''}
-                              onTaskClick={onTaskClick}
+                          onTaskClick={onTaskClick}
                               onAddTask={onAddTask as any}
-                              onEditColumn={onEditColumn}
+                          onEditColumn={onEditColumn}
                               onDeleteColumn={handleDeleteColumn}
-                            />
-                          </ErrorBoundaryWrapper>
+                          onUpdateColumn={onUpdateColumn}
+                        />
+                      </ErrorBoundaryWrapper>
                         </div>
                       );
                     })}
                     
-                    {/* Modern Add Column Button/Input */}
-                    <div className="flex-shrink-0 w-72">
+                    {/* Professional Add Column Button/Input */}
+                    <div className="flex-shrink-0 w-80">
                       {!isAddingColumn ? (
                         <div 
                           onClick={() => setIsAddingColumn(true)}
-                          className="h-24 border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-all duration-300 rounded-xl group cursor-pointer bg-muted/20 hover:bg-muted/40 backdrop-blur-sm hover:shadow-md add-column-button"
+                          className="h-32 border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 transition-all duration-300 rounded-2xl group cursor-pointer bg-gradient-to-br from-muted/10 to-muted/20 hover:from-primary/5 hover:to-primary/10 backdrop-blur-sm hover:shadow-lg add-column-button"
                         >
-                          <div className="h-full flex flex-col items-center justify-center gap-4 px-6">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-all duration-300 shadow-sm group-hover:shadow-md">
-                              <svg className="w-5 h-5 text-primary group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="h-full flex flex-col items-center justify-center gap-3 px-6">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/10 to-primary/20 group-hover:from-primary/20 group-hover:to-primary/30 flex items-center justify-center transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:scale-105">
+                              <svg className="w-6 h-6 text-primary group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                               </svg>
                             </div>
                             <div className="text-center">
                               <div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                                Add Column
+                              Add Column
                               </div>
                               <div className="text-xs text-muted-foreground group-hover:text-primary/80 transition-colors">
                                 Create a new column
@@ -538,7 +915,7 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                           </div>
                         </div>
                       ) : (
-                        <div className="h-16 border-2 border-primary/60 rounded-xl bg-card backdrop-blur-md shadow-lg overflow-hidden">
+                        <div className="h-20 border-2 border-primary/60 rounded-2xl bg-card backdrop-blur-md shadow-lg overflow-hidden">
                           <div className="h-full flex items-center px-6">
                             <input
                               type="text"
@@ -554,10 +931,12 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                         </div>
                       )}
                     </div>
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+                  </div>
+                </div>
               </div>
             </ErrorBoundaryWrapper>
 
@@ -584,11 +963,14 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                 onSubmit={onAddColumn}
               />
 
-              <EditColumnModal
-                isOpen={isEditColumnModalOpen}
-                onClose={() => setIsEditColumnModalOpen(false)}
-                column={editingColumn}
-                onSave={onUpdateColumn}
+
+              <AddTagModal
+                isOpen={isAddChecklistModalOpen}
+                onClose={() => setIsAddChecklistModalOpen(false)}
+                onSubmit={async (tag) => {
+                  await onAddBoardTag?.(tag);
+                  setIsAddChecklistModalOpen(false);
+                }}
               />
             </ErrorBoundaryWrapper>
           </div>

@@ -22,9 +22,49 @@ exports.getSpacesByWorkspace = async (req, res) => {
             .populate('boards', 'name type')
             .sort({ updatedAt: -1 });
 
+        // Calculate real-time stats for each space
+        const Board = require('../models/Board');
+        const Task = require('../models/Task');
+        
+        const spacesWithStats = await Promise.all(spaces.map(async (space) => {
+            // Get real-time board count
+            const boardCount = await Board.countDocuments({ 
+                space: space._id, 
+                isArchived: { $ne: true } 
+            });
+            
+            // Get real-time task counts
+            const taskCount = await Task.countDocuments({ 
+                space: space._id, 
+                archived: { $ne: true } 
+            });
+            
+            const completedTaskCount = await Task.countDocuments({ 
+                space: space._id, 
+                status: 'completed', 
+                archived: { $ne: true } 
+            });
+            
+            const overdueTaskCount = await Task.countDocuments({ 
+                space: space._id, 
+                dueDate: { $lt: new Date() },
+                status: { $ne: 'completed' },
+                archived: { $ne: true }
+            });
+
+            // Update space stats with real-time data
+            space.stats.totalBoards = boardCount;
+            space.stats.totalTasks = taskCount;
+            space.stats.completedTasks = completedTaskCount;
+            space.stats.overdueTasks = overdueTaskCount;
+            space.stats.activeMembersCount = space.members.length;
+
+            return space;
+        }));
+
         sendResponse(res, 200, true, 'Spaces retrieved successfully', {
-            spaces: spaces,
-            count: spaces.length
+            spaces: spacesWithStats,
+            count: spacesWithStats.length
         });
     } catch (error) {
         logger.error('Get spaces by workspace error:', error);
@@ -44,9 +84,49 @@ exports.getSpaces = async (req, res) => {
             .populate('boards', 'name type')
             .sort({ updatedAt: -1 });
 
+        // Calculate real-time stats for each space
+        const Board = require('../models/Board');
+        const Task = require('../models/Task');
+        
+        const spacesWithStats = await Promise.all(spaces.map(async (space) => {
+            // Get real-time board count
+            const boardCount = await Board.countDocuments({ 
+                space: space._id, 
+                isArchived: { $ne: true } 
+            });
+            
+            // Get real-time task counts
+            const taskCount = await Task.countDocuments({ 
+                space: space._id, 
+                archived: { $ne: true } 
+            });
+            
+            const completedTaskCount = await Task.countDocuments({ 
+                space: space._id, 
+                status: 'completed', 
+                archived: { $ne: true } 
+            });
+            
+            const overdueTaskCount = await Task.countDocuments({ 
+                space: space._id, 
+                dueDate: { $lt: new Date() },
+                status: { $ne: 'completed' },
+                archived: { $ne: true }
+            });
+
+            // Update space stats with real-time data
+            space.stats.totalBoards = boardCount;
+            space.stats.totalTasks = taskCount;
+            space.stats.completedTasks = completedTaskCount;
+            space.stats.overdueTasks = overdueTaskCount;
+            space.stats.activeMembersCount = space.members.length;
+
+            return space;
+        }));
+
         sendResponse(res, 200, true, 'Spaces retrieved successfully', {
-            spaces: spaces,
-            count: spaces.length
+            spaces: spacesWithStats,
+            count: spacesWithStats.length
         });
     } catch (error) {
         logger.error('Get spaces error:', error);

@@ -34,9 +34,6 @@ interface TaskDetailsLayoutProps {
   setIsAddTaskModalOpen: (open: boolean) => void;
   isAddColumnModalOpen: boolean;
   setIsAddColumnModalOpen: (open: boolean) => void;
-  isEditColumnModalOpen: boolean;
-  setIsEditColumnModalOpen: (open: boolean) => void;
-  editingColumn: Column | null;
 }
 
 export const TaskDetailsLayout: React.FC<TaskDetailsLayoutProps> = (props) => {

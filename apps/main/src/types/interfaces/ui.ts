@@ -451,20 +451,21 @@ export interface AddTaskModalProps extends BaseUIProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (task: any) => void;
+  selectedColumn?: string;
+  columns?: any[];
   boardId?: string;
   spaceId?: string;
   workspaceId?: string;
+  currentUser?: any;
   initialData?: any;
 }
 
 export interface CommentItemProps extends BaseUIProps {
   comment: any;
-  onEdit?: (comment: any) => void;
-  onDelete?: (commentId: string) => void;
-  onReply?: (comment: any) => void;
-  canEdit?: boolean;
-  canDelete?: boolean;
-  canReply?: boolean;
+  users: { _id: string; name: string; email?: string; avatar?: string }[];
+  currentUserId: string;
+  onCommentUpdate: (commentId: string, updated: any) => void;
+  onReplyAdd: (commentId: string, content: string) => void;
 }
 
 export interface DraggableColumnProps extends BaseUIProps {
@@ -476,6 +477,7 @@ export interface DraggableColumnProps extends BaseUIProps {
   onAddTask: (taskData: any) => Promise<void>;
   onEditColumn: (columnId: string) => void;
   onDeleteColumn: (columnId: string) => void;
+  onUpdateColumn?: (columnId: string, columnData: any) => Promise<void>;
 }
 
 export interface TaskDetailModalProps extends BaseUIProps {
