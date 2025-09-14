@@ -34,12 +34,9 @@ interface TimelineViewLayoutProps {
   setIsAddTaskModalOpen: (open: boolean) => void;
   isAddColumnModalOpen: boolean;
   setIsAddColumnModalOpen: (open: boolean) => void;
-  isEditColumnModalOpen: boolean;
-  setIsEditColumnModalOpen: (open: boolean) => void;
-  editingColumn: Column | null;
 }
 
-export const TimelineViewLayout: React.FC<TimelineViewLayoutProps> = (props) => {
+export const TimelineViewLayout: React.FC<TimelineViewLayoutProps> = () => {
   return (
     <div className="min-h-screen bg-white/[0.7] backdrop-blur-sm text-foreground w-full pb-20">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6">

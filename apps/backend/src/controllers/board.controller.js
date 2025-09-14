@@ -15,6 +15,7 @@ exports.getBoards = async (req, res) => {
             isArchived: { $ne: true }
         })
         .populate('space', 'name')
+        .populate('members.user', 'name email avatar')
         .sort({ updatedAt: -1 });
 
         // Ensure all boards have a theme and populate theme.background for boards that have it
@@ -53,7 +54,8 @@ exports.getBoards = async (req, res) => {
 exports.getBoard = async (req, res) => {
     try {
         const board = await Board.findById(req.params.id)
-            .populate('space', 'name');
+            .populate('space', 'name')
+            .populate('members.user', 'name email avatar');
 
         // Add default theme if it doesn't exist or if it's the default white
         if (board && (!board.theme || (board.theme.color === '#FFFFFF' && !board.theme.background))) {
@@ -134,10 +136,13 @@ exports.createBoard = async (req, res) => {
             },
             members: [{
                 user: userId,
-                role: 'owner',
-                joinedAt: new Date()
+                permissions: ['view', 'edit', 'delete', 'manage_columns', 'manage_members'],
+                addedAt: new Date()
             }]
         });
+
+        // Add board to space and update stats
+        await space.addBoard(board._id);
 
         // Create default columns based on board type
         const defaultColumns = getDefaultColumns(type);
@@ -172,6 +177,20 @@ exports.updateBoard = async (req, res) => {
             return sendResponse(res, 404, false, 'Board not found');
         }
 
+        // Handle archive/unarchive status change
+        if (typeof archived === 'boolean' && archived !== board.archived) {
+            const space = await Space.findById(board.space);
+            if (space) {
+                if (archived) {
+                    // Board is being archived - remove from space stats
+                    await space.removeBoard(board._id);
+                } else {
+                    // Board is being unarchived - add back to space stats
+                    await space.addBoard(board._id);
+                }
+            }
+        }
+
         // Update board
         const updatedBoard = await Board.findByIdAndUpdate(
             id,
@@ -196,6 +215,13 @@ exports.deleteBoard = async (req, res) => {
         const board = await Board.findById(id);
         if (!board) {
             return sendResponse(res, 404, false, 'Board not found');
+        }
+
+        // Get space to update stats
+        const space = await Space.findById(board.space);
+        if (space) {
+            // Remove board from space and update stats
+            await space.removeBoard(board._id);
         }
 
         // Delete board and related data

@@ -267,7 +267,7 @@ export const useSpaceTasks = (options: UseSpaceTasksOptions) => {
   const loading = false;
   const error = null;
   const filters = {
-    status: [] as Task['status'][],
+    column: [] as string[],
     priority: [] as Task['priority'][],
     assignee: [] as string[],
     tags: [] as string[],
@@ -295,14 +295,24 @@ export const useSpaceTasks = (options: UseSpaceTasksOptions) => {
     return grouped;
   }, [tasks, columns]);
 
+  // Helper function to determine task status from column name
+  const getTaskStatusFromColumn = (task: any) => {
+    if (!task.column?.name) return 'todo';
+    const columnName = task.column.name.toLowerCase();
+    if (columnName.includes('done') || columnName.includes('complete')) return 'done';
+    if (columnName.includes('review') || columnName.includes('testing')) return 'review';
+    if (columnName.includes('progress') || columnName.includes('doing')) return 'in_progress';
+    return 'todo';
+  };
+
   const taskStats = useMemo(() => {
     const total = tasks.length;
-    const completed = tasks.filter(task => task.status === 'done').length;
-    const inProgress = tasks.filter(task => task.status === 'in_progress').length;
-    const todo = tasks.filter(task => task.status === 'todo').length;
+    const completed = tasks.filter(task => getTaskStatusFromColumn(task) === 'done').length;
+    const inProgress = tasks.filter(task => getTaskStatusFromColumn(task) === 'in_progress').length;
+    const todo = tasks.filter(task => getTaskStatusFromColumn(task) === 'todo').length;
     const overdue = tasks.filter(task => {
       if (!task.dueDate) return false;
-      return new Date(task.dueDate) < new Date() && task.status !== 'done';
+      return new Date(task.dueDate) < new Date() && getTaskStatusFromColumn(task) !== 'done';
     }).length;
 
     return {

@@ -1,7 +1,7 @@
 const express = require('express');
 const taskController = require('../controllers/task.controller');
 const validateMiddleware = require('../middlewares/validate.middleware');
-const { requireBoardPermission } = require('../middlewares/permission.middleware');
+const { requireBoardPermission, requireTaskAccess } = require('../middlewares/permission.middleware');
 const { uploadMiddlewares } = require('../middlewares/upload.middleware');
 const { task: taskSchemas } = require('./validator');
 const { authMiddleware } = require('../middlewares/auth.middleware');
@@ -59,6 +59,7 @@ router.post('/:id/dependencies', taskController.addTaskDependency);
 router.delete('/:id/dependencies/:dependencyId', taskController.removeTaskDependency);
 
 // Comment routes
+router.get('/:id/comments', requireTaskAccess, taskController.getTaskComments);
 router.post('/:id/comments',
     uploadMiddlewares.commentAttachment,
     validateMiddleware.validateBody(taskSchemas.addCommentSchema),

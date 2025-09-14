@@ -47,6 +47,39 @@ export const deleteBoard = createAsyncThunk(
   }
 );
 
+// Tag operations
+export const addTagToBoard = createAsyncThunk(
+  'boards/addTagToBoard',
+  async ({ boardId, tag }: { boardId: string; tag: { name: string; color: string } }) => {
+    const response = await BoardService.addTagToBoard(boardId, tag);
+    return response.data;
+  }
+);
+
+export const updateBoardTag = createAsyncThunk(
+  'boards/updateBoardTag',
+  async ({ boardId, tagName, updates }: { boardId: string; tagName: string; updates: { name?: string; color?: string } }) => {
+    const response = await BoardService.updateBoardTag(boardId, tagName, updates);
+    return response.data;
+  }
+);
+
+export const removeTagFromBoard = createAsyncThunk(
+  'boards/removeTagFromBoard',
+  async ({ boardId, tagName }: { boardId: string; tagName: string }) => {
+    const response = await BoardService.removeTagFromBoard(boardId, tagName);
+    return response.data;
+  }
+);
+
+export const fetchBoardTags = createAsyncThunk(
+  'boards/fetchBoardTags',
+  async (boardId: string) => {
+    const response = await BoardService.getBoardTags(boardId);
+    return response.data;
+  }
+);
+
 // Initial state
 const initialState: BoardState = {
   boards: [],
@@ -79,6 +112,53 @@ const boardSlice = createSlice({
       }
       if (state.currentBoard?._id === action.payload._id) {
         state.currentBoard = action.payload;
+      }
+    },
+    
+    // Board tag real-time operations
+    addBoardTagRealTime: (state, action: PayloadAction<{ boardId: string; tag: { name: string; color: string } }>) => {
+      const { boardId, tag } = action.payload;
+      
+      const boardIndex = state.boards.findIndex(board => board._id === boardId);
+      if (boardIndex !== -1) {
+        if (!state.boards[boardIndex].tags) {
+          state.boards[boardIndex].tags = [];
+        }
+        state.boards[boardIndex].tags.push(tag);
+      }
+      if (state.currentBoard?._id === boardId) {
+        if (!state.currentBoard.tags) {
+          state.currentBoard.tags = [];
+        }
+        state.currentBoard.tags.push(tag);
+      }
+    },
+    
+    updateBoardTagRealTime: (state, action: PayloadAction<{ boardId: string; oldTagName: string; tag: { name: string; color: string } }>) => {
+      const { boardId, oldTagName, tag } = action.payload;
+      const boardIndex = state.boards.findIndex(board => board._id === boardId);
+      if (boardIndex !== -1 && state.boards[boardIndex].tags) {
+        const tagIndex = state.boards[boardIndex].tags.findIndex(t => t.name === oldTagName);
+        if (tagIndex !== -1) {
+          state.boards[boardIndex].tags[tagIndex] = tag;
+        }
+      }
+      if (state.currentBoard?._id === boardId && state.currentBoard.tags) {
+        const tagIndex = state.currentBoard.tags.findIndex(t => t.name === oldTagName);
+        if (tagIndex !== -1) {
+          state.currentBoard.tags[tagIndex] = tag;
+        }
+      }
+    },
+    
+    removeBoardTagRealTime: (state, action: PayloadAction<{ boardId: string; tagName: string }>) => {
+      const { boardId, tagName } = action.payload;
+      const boardIndex = state.boards.findIndex(board => board._id === boardId);
+      if (boardIndex !== -1 && state.boards[boardIndex].tags) {
+        state.boards[boardIndex].tags = state.boards[boardIndex].tags.filter(t => t.name !== tagName);
+      }
+      if (state.currentBoard?._id === boardId && state.currentBoard.tags) {
+        state.currentBoard.tags = state.currentBoard.tags.filter(t => t.name !== tagName);
       }
     },
     
@@ -203,6 +283,39 @@ const boardSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to delete board';
       });
+    
+    // Tag operations
+    builder
+      .addCase(addTagToBoard.fulfilled, (state, action) => {
+        const updatedBoard = action.payload;
+        const index = state.boards.findIndex(board => board._id === updatedBoard._id);
+        if (index !== -1) {
+          state.boards[index] = updatedBoard;
+        }
+        if (state.currentBoard?._id === updatedBoard._id) {
+          state.currentBoard = updatedBoard;
+        }
+      })
+      .addCase(updateBoardTag.fulfilled, (state, action) => {
+        const updatedBoard = action.payload;
+        const index = state.boards.findIndex(board => board._id === updatedBoard._id);
+        if (index !== -1) {
+          state.boards[index] = updatedBoard;
+        }
+        if (state.currentBoard?._id === updatedBoard._id) {
+          state.currentBoard = updatedBoard;
+        }
+      })
+      .addCase(removeTagFromBoard.fulfilled, (state, action) => {
+        const updatedBoard = action.payload;
+        const index = state.boards.findIndex(board => board._id === updatedBoard._id);
+        if (index !== -1) {
+          state.boards[index] = updatedBoard;
+        }
+        if (state.currentBoard?._id === updatedBoard._id) {
+          state.currentBoard = updatedBoard;
+        }
+      });
   }
 });
 
@@ -212,7 +325,10 @@ export const {
   setSocketConnected,
   updateBoardRealTime,
   addBoardRealTime,
-  removeBoardRealTime
+  removeBoardRealTime,
+  addBoardTagRealTime,
+  updateBoardTagRealTime,
+  removeBoardTagRealTime
 } = boardSlice.actions;
 
 // Export reducer
