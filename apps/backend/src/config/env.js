@@ -24,23 +24,24 @@ module.exports = {
     'http://localhost:5174',
     'http://localhost:5175',
     'http://localhost:5176',
-    
-    // Auto-detected network IPs
-    `http://${networkConfig.localIP}:5173`,
-    `http://${networkConfig.localIP}:5174`,
-    `http://${networkConfig.localIP}:5175`,
-    `http://${networkConfig.localIP}:5176`,
-    `http://${networkConfig.localIP}:3001`,
-    
-    // Expo protocol URLs
-    `exp://${networkConfig.localIP}:8081`,
-    `exp://${networkConfig.localIP}:8082`,
-    `exp://${networkConfig.localIP}:8083`,
-    `exp://${networkConfig.localIP}:8084`,
-    
-    // Android emulator
-    networkConfig.androidEmulatorURL,
-    
+
+//     'http://192.168.1.12:8081', // Expo dev server
+//     'http://192.168.1.12:8082', // Expo dev server port 8082
+//     'http://192.168.1.12:8083', // Expo dev server port 8083
+//     'http://192.168.1.12:8084', // Expo dev server port 8084
+//     'http://192.168.1.12:3001', // Mobile app direct connection
+//     'exp://192.168.1.12:8081', // Expo protocol
+//     'exp://192.168.1.12:8082', // Expo protocol port 8082
+//     'exp://192.168.1.12:8083', // Expo protocol port 8083
+//     'exp://192.168.1.12:8084', // Expo protocol port 8084
+
+//     // 'http://192.168.1.14:3001', // Mobile app direct connection
+//     // 'http://192.168.1.14:8081', // Mobile app direct connection
+//     // 'exp://192.168.1.14:8081', // Alternative Expo protocol
+//     'http://192.168.1.64:8081', // Expo dev server
+//     'http://192.168.1.64:3001', 
+//     'exp://192.168.1.64:8081', // Alternative Expo protocol
+
     // Allow all origins in development (be careful in production)
     ...(process.env.NODE_ENV === 'development' ? ['*'] : [])
   ],
