@@ -57,18 +57,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="tasks"
-        options={{
-          title: 'Tasks',
-          tabBarIcon: ({ color }) => <TabBarIcon name="tasks" color={color} />,
-          headerShown: false,
-        }}
-      />
-      <Tabs.Screen
         name="workspace"
         options={{
           href: null, // Hide from tab bar
           headerShown: false, // Use custom header instead
+          tabBarIcon: ({ color }) => <TabBarIcon name="columns" color={color} />,
         }}
       />
       <Tabs.Screen
