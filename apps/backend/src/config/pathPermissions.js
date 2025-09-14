@@ -108,6 +108,11 @@ const SPACE_PERMISSIONS = {
         PUT: ['owner', 'admin'],
         DELETE: ['owner', 'admin']
     },
+    '/space/:id/members/:memberId': {
+        GET: ['owner', 'admin', 'member', 'viewer'],
+        PUT: ['owner', 'admin'],
+        DELETE: ['owner', 'admin']
+    },
     '/space/:id/boards': {
         GET: ['owner', 'admin', 'member', 'viewer'],
         POST: ['owner', 'admin', 'member']
