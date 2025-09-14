@@ -1,4 +1,5 @@
 export * from './useAuth';
+export * from './useOAuth';
 export * from './useClickOutside';
 export * from './useDebounce';
 export * from './useLocalStorage';
