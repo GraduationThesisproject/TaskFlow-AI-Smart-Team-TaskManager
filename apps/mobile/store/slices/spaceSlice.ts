@@ -235,7 +235,7 @@ const spaceSlice = createSlice({
           state.spaces[index] = { ...state.spaces[index], ...action.payload };
         }
         if (state.currentSpace?._id === action.payload._id) {
-          state.currentSpace = { ...state.currentSpace, ...action.payload };
+          state.currentSpace = { ...state.currentSpace, ...action.payload } as any;
         }
       })
       .addCase(archiveSpace.rejected, (state, action) => {
@@ -256,12 +256,101 @@ const spaceSlice = createSlice({
           state.spaces[index] = { ...state.spaces[index], ...action.payload };
         }
         if (state.currentSpace?._id === action.payload._id) {
-          state.currentSpace = { ...state.currentSpace, ...action.payload };
+          state.currentSpace = { ...state.currentSpace, ...action.payload } as any;
         }
       })
       .addCase(unarchiveSpace.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to unarchive space';
+      });
+    
+    // Members: get list
+    builder
+      .addCase(getSpaceMembers.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(getSpaceMembers.fulfilled, (state, action) => {
+        const payload: any = action.payload;
+        console.log('=== GET SPACE MEMBERS REDUCER ===');
+        console.log('Full action:', action);
+        console.log('Payload:', payload);
+        console.log('Payload data:', payload?.data);
+        console.log('Payload members:', payload?.members);
+        
+        const members = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload?.members)
+          ? payload.members
+          : [];
+        
+        console.log('Extracted members:', members);
+        console.log('Members count:', members.length);
+        
+        if (state.currentSpace) {
+          (state.currentSpace as any).members = members;
+          console.log('Updated currentSpace.members');
+        }
+        console.log('=== END GET SPACE MEMBERS REDUCER ===');
+      })
+      .addCase(getSpaceMembers.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to load space members';
+      });
+    
+    // Members: add one
+    builder
+      .addCase(addSpaceMember.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(addSpaceMember.fulfilled, (state, action) => {
+        const payload: any = action.payload;
+        console.log('=== ADD SPACE MEMBER REDUCER ===');
+        console.log('Payload:', payload);
+        console.log('Payload data:', payload?.data);
+        console.log('Payload member:', payload?.member);
+        
+        // The backend only returns success message, not the member data
+        // We need to refresh the space members to get the updated list
+        console.log('Backend only returns success message, will refresh members');
+        console.log('=== END ADD SPACE MEMBER REDUCER ===');
+      })
+      .addCase(addSpaceMember.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to add space member';
+      });
+    
+    // Members: remove one
+    builder
+      .addCase(removeSpaceMember.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(removeSpaceMember.fulfilled, (state, action) => {
+        const { memberId } = action.payload as any;
+        console.log('=== REMOVE SPACE MEMBER REDUCER ===');
+        console.log('Member ID to remove (user ID):', memberId);
+        if (!memberId) {
+          console.log('No member ID provided');
+          return;
+        }
+        if (state.currentSpace && Array.isArray((state.currentSpace as any).members)) {
+          const membersBefore = (state.currentSpace as any).members.length;
+          console.log('Members count before removal:', membersBefore);
+          (state.currentSpace as any).members = (state.currentSpace as any).members.filter(
+            (m: any) => {
+              // Remove by user ID, not space membership record ID
+              const userId = String(m?.user?._id || m?.user?.id || '');
+              const shouldKeep = userId !== String(memberId);
+              console.log(`Member ${userId} (${m?.user?.name || m?.name}): ${shouldKeep ? 'KEEP' : 'REMOVE'}`);
+              return shouldKeep;
+            }
+          );
+          const membersAfter = (state.currentSpace as any).members.length;
+          console.log('Members count after removal:', membersAfter);
+        }
+        console.log('=== END REMOVE SPACE MEMBER REDUCER ===');
+      })
+      .addCase(removeSpaceMember.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to remove space member';
       });
   }
 });

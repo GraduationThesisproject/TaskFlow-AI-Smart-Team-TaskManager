@@ -330,6 +330,10 @@ exports.addMember = async (req, res) => {
         // Get new member info for logging
         const newMember = await User.findById(newMemberId);
 
+        if (!newMember) {
+            return sendResponse(res, 404, false, 'User not found');
+        }
+
         // Add member to space
         await space.addMember(newMemberId, role, currentUserId);
 
@@ -352,6 +356,92 @@ exports.addMember = async (req, res) => {
     } catch (error) {
         logger.error('Add space member error:', error);
         sendResponse(res, 500, false, 'Server error adding member to space');
+    }
+};
+
+// Remove member from space
+exports.removeMember = async (req, res) => {
+    try {
+        const { id: spaceId, memberId } = req.params;
+        const currentUserId = req.user.id;
+
+        console.log('=== REMOVE MEMBER DEBUG (Backend) ===');
+        console.log('spaceId:', spaceId);
+        console.log('memberId (user ID):', memberId);
+        console.log('currentUserId:', currentUserId);
+
+        const space = await Space.findById(spaceId);
+        if (!space) {
+            console.log('Space not found');
+            return sendResponse(res, 404, false, 'Space not found');
+        }
+
+        console.log('Space found:', space.name);
+        console.log('Space members count:', space.members.length);
+        console.log('Space members:', space.members.map(m => ({
+            membershipId: m._id,
+            userId: m.user.toString(),
+            role: m.role,
+            userName: m.user?.name || 'Unknown'
+        })));
+
+        // Check if member exists in space
+        const member = space.members.find(m => m.user.toString() === memberId.toString());
+        if (!member) {
+            console.log('Member not found in space members array');
+            console.log('Looking for user ID:', memberId);
+            console.log('Available user IDs:', space.members.map(m => m.user.toString()));
+            
+            // Check if the user exists at all
+            const userExists = await User.findById(memberId);
+            if (!userExists) {
+                console.log('User does not exist in database');
+                return sendResponse(res, 404, false, 'User not found');
+            }
+            
+            // User exists but not in this space - might have been already removed
+            console.log('User exists but not in this space - might have been already removed');
+            return sendResponse(res, 200, true, 'Member was already removed from space');
+        }
+
+        console.log('Member found:', {
+            membershipId: member._id,
+            userId: member.user.toString(),
+            role: member.role
+        });
+
+        // Get member info for logging
+        const memberUser = await User.findById(memberId);
+        console.log('Member user found:', memberUser ? {
+            id: memberUser._id,
+            name: memberUser.name,
+            email: memberUser.email
+        } : 'User not found');
+
+        // Remove member from space
+        console.log('Calling space.removeMember with user ID:', memberId);
+        await space.removeMember(memberId);
+        console.log('Member removed successfully');
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId: currentUserId,
+            action: 'space_member_remove',
+            description: `Removed member from space: ${space.name}`,
+            entity: { type: 'Space', id: spaceId, name: space.name },
+            relatedEntities: [{ type: 'User', id: memberId, name: memberUser?.name || 'Unknown User' }],
+            workspaceId: space.workspace,
+            spaceId,
+            metadata: {
+                memberRole: member.role,
+                ipAddress: req.ip
+            }
+        });
+
+        sendResponse(res, 200, true, 'Member removed from space successfully');
+    } catch (error) {
+        logger.error('Remove space member error:', error);
+        sendResponse(res, 500, false, 'Server error removing member from space');
     }
 };
 

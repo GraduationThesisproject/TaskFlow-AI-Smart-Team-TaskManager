@@ -1,0 +1,786 @@
+[
+  {
+    "_id": "68c65462f227919764395994",
+    "name": "Refactoring",
+    "color": "#EF4444",
+    "textColor": "#FFFFFF",
+    "scope": "workspace",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c6545cf2279197643956e0",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Research and investigation tasks.",
+    "category": "type",
+    "icon": "check",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": true,
+        "onRemove": true,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "admins",
+        "canEdit": "creator",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Development",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.564Z",
+    "updatedAt": "2025-09-14T05:36:34.564Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f227919764395996",
+    "name": "Pending Review",
+    "color": "#F59E0B",
+    "textColor": "#FFFFFF",
+    "scope": "workspace",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c6545ef227919764395728",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Items temporarily paused or waiting for dependencies.",
+    "category": "status",
+    "icon": "star",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": true,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "admins",
+        "canEdit": "admins",
+        "canDelete": "creator"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Development",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.569Z",
+    "updatedAt": "2025-09-14T05:36:34.569Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f227919764395998",
+    "name": "Ready for Testing",
+    "color": "#6B7280",
+    "textColor": "#FFFFFF",
+    "scope": "global",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c6545df22791976439571c",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Completed tasks and deliverables.",
+    "category": "status",
+    "icon": "check",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": true,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "creator",
+        "canEdit": "creator",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Documentation",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.573Z",
+    "updatedAt": "2025-09-14T05:36:34.573Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f22791976439599a",
+    "name": "Performance",
+    "color": "#064E3B",
+    "textColor": "#FFFFFF",
+    "scope": "space",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c6545df227919764395704",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Testing and validation activities.",
+    "category": "quality",
+    "icon": "bug",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "admins",
+        "canEdit": "admins",
+        "canDelete": "creator"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Development",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.577Z",
+    "updatedAt": "2025-09-14T05:36:34.577Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f22791976439599c",
+    "name": "Completed",
+    "color": "#3B82F6",
+    "textColor": "#FFFFFF",
+    "scope": "global",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c6545df22791976439571c",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Completed tasks and deliverables.",
+    "category": "status",
+    "icon": "star",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": true,
+        "onRemove": true,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "members",
+        "canEdit": "everyone",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Development",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.581Z",
+    "updatedAt": "2025-09-14T05:36:34.581Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f22791976439599e",
+    "name": "Design",
+    "color": "#8B5CF6",
+    "textColor": "#FFFFFF",
+    "scope": "space",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c65461f2279197643957a0",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Marketing and promotion activities.",
+    "category": "department",
+    "icon": "pin",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": true,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "creator",
+        "canEdit": "everyone",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Design",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.585Z",
+    "updatedAt": "2025-09-14T05:36:34.585Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f2279197643959a0",
+    "name": "In Progress",
+    "color": "#6B7280",
+    "textColor": "#FFFFFF",
+    "scope": "space",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c6545cf2279197643956e0",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Work items currently being worked on.",
+    "category": "status",
+    "icon": "check",
+    "settings": {
+      "isSystemTag": true,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": true,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "members",
+        "canEdit": "creator",
+        "canDelete": "creator"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Documentation",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.589Z",
+    "updatedAt": "2025-09-14T05:36:34.589Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f2279197643959a2",
+    "name": "Nice to Have",
+    "color": "#EF4444",
+    "textColor": "#FFFFFF",
+    "scope": "workspace",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c6545ef227919764395734",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Important features for user experience.",
+    "category": "priority",
+    "icon": "bug",
+    "settings": {
+      "isSystemTag": true,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": true,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "members",
+        "canEdit": "everyone",
+        "canDelete": "creator"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Management",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.593Z",
+    "updatedAt": "2025-09-14T05:36:34.593Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f2279197643959a4",
+    "name": "High Priority",
+    "color": "#EF4444",
+    "textColor": "#FFFFFF",
+    "scope": "workspace",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c65460f22791976439577c",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Important features for user experience.",
+    "category": "priority",
+    "icon": "label",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": true,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "everyone",
+        "canEdit": "admins",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Documentation",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.597Z",
+    "updatedAt": "2025-09-14T05:36:34.597Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f2279197643959a6",
+    "name": "Enhancement",
+    "color": "#10B981",
+    "textColor": "#FFFFFF",
+    "scope": "workspace",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c6545bf2279197643956d4",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Improvements to existing features.",
+    "category": "type",
+    "icon": "pin",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": true,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "admins",
+        "canEdit": "creator",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Design",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.613Z",
+    "updatedAt": "2025-09-14T05:36:34.613Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f2279197643959a8",
+    "name": "Pending Review",
+    "color": "#F59E0B",
+    "textColor": "#FFFFFF",
+    "scope": "workspace",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c6545ef227919764395728",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Items temporarily paused or waiting for dependencies.",
+    "category": "status",
+    "icon": "label",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": true,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": true,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "members",
+        "canEdit": "everyone",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Testing",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.617Z",
+    "updatedAt": "2025-09-14T05:36:34.617Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f2279197643959aa",
+    "name": "Refactoring",
+    "color": "#8B5CF6",
+    "textColor": "#FFFFFF",
+    "scope": "workspace",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c6545ef227919764395740",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Improvements to existing features.",
+    "category": "type",
+    "icon": "flag",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "admins",
+        "canEdit": "everyone",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Development",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.622Z",
+    "updatedAt": "2025-09-14T05:36:34.622Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f2279197643959ac",
+    "name": "Python",
+    "color": "#3B82F6",
+    "textColor": "#FFFFFF",
+    "scope": "workspace",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c6545ef227919764395728",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Expertise and specialization areas.",
+    "category": "skill",
+    "icon": "label",
+    "settings": {
+      "isSystemTag": true,
+      "autoAssign": {
+        "enabled": false,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "creator",
+        "canEdit": "admins",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Management",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.626Z",
+    "updatedAt": "2025-09-14T05:36:34.626Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c65462f2279197643959ae",
+    "name": "Testing",
+    "color": "#10B981",
+    "textColor": "#FFFFFF",
+    "scope": "space",
+    "workspace": null,
+    "space": null,
+    "board": null,
+    "createdBy": "68c65460f22791976439577c",
+    "assignedTasks": [],
+    "assignedComments": [],
+    "assignedAttachments": [],
+    "assignedChecklists": [],
+    "description": "Skills and expertise required for this work.",
+    "category": "skill",
+    "icon": "label",
+    "settings": {
+      "isSystemTag": false,
+      "autoAssign": {
+        "enabled": true,
+        "rules": []
+      },
+      "notifications": {
+        "onAssign": false,
+        "onRemove": false,
+        "notifyUsers": []
+      },
+      "permissions": {
+        "canUse": "everyone",
+        "canEdit": "admins",
+        "canDelete": "admins"
+      }
+    },
+    "stats": {
+      "totalUsage": 0,
+      "taskUsage": 0,
+      "commentUsage": 0,
+      "attachmentUsage": 0,
+      "checklistUsage": 0,
+      "lastUsed": null,
+      "popularityScore": 0,
+      "usedBy": []
+    },
+    "isActive": true,
+    "isArchived": false,
+    "archivedAt": null,
+    "archivedBy": null,
+    "group": "Testing",
+    "parentTag": null,
+    "childTags": [],
+    "relatedTags": [],
+    "createdAt": "2025-09-14T05:36:34.630Z",
+    "updatedAt": "2025-09-14T05:36:34.630Z",
+    "__v": 0
+  }
+]
