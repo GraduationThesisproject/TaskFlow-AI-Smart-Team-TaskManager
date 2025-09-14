@@ -9,7 +9,7 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
-import { setCurrentWorkspaceId, setSelectedSpace, fetchMembers, removeMember } from '@/store/slices/workspaceSlice';
+import { setCurrentWorkspaceId, setSelectedSpace, fetchMembers, removeMember, clearWorkspaceData } from '@/store/slices/workspaceSlice';
 import { archiveSpace, unarchiveSpace, setCurrentSpace } from '@/store/slices/spaceSlice';
 import { SpaceService } from '@/services/spaceService';
 import CreateSpaceModal from '@/components/common/CreateSpaceModal';
@@ -21,33 +21,6 @@ import Sidebar from '@/components/navigation/Sidebar';
 import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
 
-// Toggle this to quickly demo with mock data
-const USE_MOCK = false;
-
-const MOCK_WORKSPACE = {
-  _id: 'mock-ws-1',
-  id: 'mock-ws-1',
-  name: 'Demo Workspace',
-  description: 'This is a demo workspace used to preview the mobile UI.',
-  members: [{ id: 'u1' }, { id: 'u2' }, { id: 'u3' }],
-};
-
-const MOCK_SPACES = [
-  {
-    _id: 'mock-space-1',
-    name: 'Engineering',
-    description: 'All engineering related work and sprints',
-    members: [{ id: 'u1' }, { id: 'u2' }],
-    stats: { totalBoards: 4 },
-  },
-  {
-    _id: 'mock-space-2',
-    name: 'Design',
-    description: 'Design tasks, assets and reviews',
-    members: [{ id: 'u3' }],
-    stats: { totalBoards: 2 },
-  },
-];
 
 function WorkspaceScreenContent() {
   const colors = useThemeColors();
@@ -72,25 +45,38 @@ function WorkspaceScreenContent() {
 
   const { workspaces: wsList, currentWorkspace: ws, spaces, loading, error, refetchWorkspaces, loadSpaces, inviteNewMember } = useWorkspaces({ autoFetch: true, workspaceId: selectedWorkspaceId });
 
-  const realWorkspaceId = (currentWorkspace as any)?._id || (currentWorkspace as any)?.id || null;
-  const effectiveWorkspace = realWorkspaceId ? currentWorkspace : (USE_MOCK ? (MOCK_WORKSPACE as any) : null);
-  const workspaceId = realWorkspaceId || (selectedWorkspaceId || null);
+  // Use selectedWorkspaceId as the primary workspace ID to prevent stale data
+  const workspaceId = selectedWorkspaceId;
+  const effectiveWorkspace = currentWorkspace;
+
+  // Clear spaces data when workspace changes to prevent stale data from previous workspace
+  useEffect(() => {
+    if (workspaceId && currentWorkspaceId && workspaceId !== currentWorkspaceId) {
+      // Clear spaces data when switching workspaces
+      dispatch(clearWorkspaceData());
+    }
+  }, [workspaceId, currentWorkspaceId, dispatch]);
 
   // Also refresh members when this screen gains focus (helps after invite acceptance)
   useFocusEffect(
     useCallback(() => {
-      if (!USE_MOCK && workspaceId) {
+      if (workspaceId) {
         // Refresh both members and spaces when screen focuses so counts stay current
         dispatch(fetchMembers({ id: workspaceId }));
         loadSpaces(workspaceId);
       }
       // No cleanup needed
       return undefined;
-    }, [workspaceId, dispatch, loadSpaces])
+    }, [workspaceId]) // Remove dispatch and loadSpaces from dependencies to prevent infinite loops
   );
 
   // Optimized: Combine all space processing into a single useMemo to avoid dependency chains
   const processedSpaces = useMemo(() => {
+    // Only process spaces if we have a valid workspace ID to prevent showing spaces from wrong workspace
+    if (!workspaceId) {
+      return [];
+    }
+
     // Resolve spaces from hook or fallback to the workspace object returned by the hook
     let spacesSource: any[] = [];
     if (Array.isArray(spaces) && spaces.length > 0) {
@@ -113,9 +99,9 @@ function WorkspaceScreenContent() {
       uniqueSpaces.push(s);
     }
 
-    // Return effective spaces (use mock if no real spaces)
-    return uniqueSpaces.length > 0 ? uniqueSpaces : (USE_MOCK ? MOCK_SPACES : []);
-  }, [spaces, ws]);
+    // Return effective spaces
+    return uniqueSpaces;
+  }, [spaces, ws, workspaceId]);
 
   const filteredSpaces = useMemo(() => {
     const q = spaceSearch.trim().toLowerCase();
@@ -140,47 +126,51 @@ function WorkspaceScreenContent() {
   // Workspace should count unique members (including owner via server data)
   const membersCount = Array.isArray(uniqueMembers) ? uniqueMembers.length : 0;
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await Promise.all([
         refetchWorkspaces(),
-        workspaceId && !USE_MOCK ? loadSpaces(workspaceId) : Promise.resolve(),
-        workspaceId && !USE_MOCK ? dispatch(fetchMembers({ id: workspaceId })) : Promise.resolve(),
+        workspaceId ? loadSpaces(workspaceId) : Promise.resolve(),
+        workspaceId ? dispatch(fetchMembers({ id: workspaceId })) : Promise.resolve(),
       ]);
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [refetchWorkspaces, workspaceId, loadSpaces, dispatch]);
 
   // If there is exactly one workspace and none selected, auto-select it
   useEffect(() => {
-    if (!USE_MOCK && !selectedWorkspaceId && Array.isArray(workspaces) && workspaces.length === 1) {
+    if (!selectedWorkspaceId && Array.isArray(workspaces) && workspaces.length === 1) {
       const only = workspaces[0];
       const id = (only as any)?._id || (only as any)?.id;
       if (id) {
+        // Clear previous workspace data before auto-selecting
+        dispatch(clearWorkspaceData());
         dispatch(setCurrentWorkspaceId(id));
         loadSpaces(id);
       }
     }
-  }, [selectedWorkspaceId, workspaces, dispatch, loadSpaces]);
+  }, [selectedWorkspaceId, workspaces]); // Remove dispatch and loadSpaces to prevent infinite loops
 
-  const handleSelectWorkspace = (ws: any) => {
+  const handleSelectWorkspace = useCallback((ws: any) => {
     const id = ws?._id || ws?.id;
     if (!id) return;
+    // Clear previous workspace data before switching
+    dispatch(clearWorkspaceData());
     dispatch(setCurrentWorkspaceId(id));
     loadSpaces(id);
-  };
+  }, [dispatch, loadSpaces]);
 
-  const handleOpenSpace = (space: any) => {
+  const handleOpenSpace = useCallback((space: any) => {
     dispatch(setSelectedSpace(space));
     // FIXED: Also update currentSpace in spaceSlice to keep both slices in sync
     dispatch(setCurrentSpace(space));
     router.push('/workspace/space/boards');
-  };
+  }, [dispatch, router]);
 
 
-  const handleInvite = async () => {
+  const handleInvite = useCallback(async () => {
     if (!inviteEmail.trim()) return;
     try {
       await inviteNewMember(inviteEmail.trim(), inviteRole);
@@ -193,7 +183,7 @@ function WorkspaceScreenContent() {
       // Show an error banner for visibility
       showError(e?.message || 'Failed to send invitation');
     }
-  };
+  }, [inviteEmail, inviteRole, inviteNewMember, showSuccess, showError]);
 
   // Legacy alert state (keeping for backward compatibility)
   const [alertVisible, setAlertVisible] = useState(false);
@@ -206,7 +196,7 @@ function WorkspaceScreenContent() {
 
   // Member removal state removed - now using MobileAlert showConfirm
 
-  const handleRemoveMember = async (member: any) => {
+  const handleRemoveMember = useCallback(async (member: any) => {
     if (!workspaceId) return;
     // Prevent removing the owner
     if (member?.role === 'owner') return;
@@ -227,9 +217,9 @@ function WorkspaceScreenContent() {
       console.warn('Failed to remove member', e);
       showError(`Failed to remove member: ${e?.message || 'Unknown error'}`);
     }
-  };
+  }, [workspaceId, dispatch, showSuccess, showError]);
 
-  const handleArchiveSpace = async (spaceId: string, spaceName: string, isArchived: boolean) => {
+  const handleArchiveSpace = useCallback(async (spaceId: string, spaceName: string, isArchived: boolean) => {
     const action = isArchived ? 'restore' : 'archive';
     const actionText = isArchived ? 'restore' : 'archive';
     
@@ -260,9 +250,9 @@ function WorkspaceScreenContent() {
         }
       ]
     );
-  };
+  }, [dispatch, showSuccess, showError, workspaceId, loadSpaces]);
 
-  const handleSubmitCreate = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+  const handleSubmitCreate = useCallback(async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
     if (!workspaceId) return;
     const MAX_SPACES = 5;
     const canCreateMoreSpaces = (processedSpaces?.length || 0) < MAX_SPACES;
@@ -281,27 +271,27 @@ function WorkspaceScreenContent() {
       await loadSpaces(workspaceId);
       setShowCreateSpace(false);
       showSuccess('Space created successfully!');
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Failed to create space', e);
       showError(e?.message || 'Failed to create space');
     } finally {
       setCreatingSpace(false);
     }
-  };
+  }, [workspaceId, processedSpaces, loadSpaces, showSuccess, showError]);
 
   // Helpers to compute unique, non-owner member count per space
-  const getId = (m: any): string => String(m?._id || m?.id || m?.user?._id || m?.user?.id || m?.userId || '').trim();
-  const getOwnerIds = (space: any): Set<string> => {
+  const getId = useCallback((m: any): string => String(m?._id || m?.id || m?.user?._id || m?.user?.id || m?.userId || '').trim(), []);
+  const getOwnerIds = useCallback((space: any): Set<string> => {
     const ids: string[] = [];
     const push = (v: any) => { const s = String(v || '').trim(); if (s) ids.push(s); };
     if (space?.owner) { const o = space.owner as any; push(o?._id || o?.id || o); }
     if (space?.ownerId) push(space.ownerId);
     if (space?.createdBy) { const c = space.createdBy as any; push(c?._id || c?.id || c); }
     return new Set(ids);
-  };
+  }, []);
   
   // Calculate individual space member count (same logic as spaces.tsx)
-  const getSpaceMemberCount = (space: any): number => {
+  const getSpaceMemberCount = useCallback((space: any): number => {
     const ownerIds = getOwnerIds(space);
     const list = Array.isArray(space?.members) ? space.members.filter(Boolean) : [];
     const unique = new Set<string>();
@@ -314,14 +304,14 @@ function WorkspaceScreenContent() {
       unique.add(key);
     }
     return unique.size;
-  };
+  }, [getId, getOwnerIds]);
 
   // Determine if a space should be locked (premium feature)
-  const isSpaceLocked = (space: any, index: number): boolean => {
+  const isSpaceLocked = useCallback((space: any, index: number): boolean => {
     // Free users can only access the first 5 spaces (index 0-4)
     // All spaces beyond index 4 require Premium
     return index >= 5;
-  };
+  }, []);
   
 
 
@@ -353,7 +343,7 @@ function WorkspaceScreenContent() {
         useNativeDriver: true,
       }).start();
     }
-  }, [membersSidebarOpen, slideAnim]);
+  }, [membersSidebarOpen]); // Remove slideAnim from dependencies as it's stable
 
   // Only owners should see the Edit Rules button
   const isOwner = useMemo(() => {
@@ -372,7 +362,7 @@ function WorkspaceScreenContent() {
     });
   }, [authUser, currentWorkspace, members, ws]);
 
-  const handleCreateSpacePress = () => {
+  const handleCreateSpacePress = useCallback(() => {
     const MAX_SPACES = 5;
     const canCreateMoreSpaces = (processedSpaces?.length || 0) < MAX_SPACES;
     if (!canCreateMoreSpaces) {
@@ -380,7 +370,7 @@ function WorkspaceScreenContent() {
       return;
     }
     setShowCreateSpace(true);
-  };
+  }, [processedSpaces]);
 
   return (
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
@@ -472,7 +462,7 @@ function WorkspaceScreenContent() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
         {/* Error */}
-        {!USE_MOCK && error && (
+        {error && (
           <Card style={[styles.errorCard, { backgroundColor: colors.destructive }]}>
             <Text style={[TextStyles.body.medium, { color: colors['destructive-foreground'] }]}>Failed to load workspace data. Pull to refresh.</Text>
           </Card>
@@ -514,7 +504,7 @@ function WorkspaceScreenContent() {
         </Card>
 
         {/* Show selector ONLY if no selected id and no current workspace, and multiple workspaces exist */}
-        {!USE_MOCK && !workspaceId && Array.isArray(wsList) && wsList.length > 1 && (
+        {!workspaceId && Array.isArray(wsList) && wsList.length > 1 && (
           <Card style={styles.sectionCard}>
             <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Select a Workspace</Text>
             <View style={styles.workspaceList}>
@@ -1042,8 +1032,8 @@ const styles = StyleSheet.create({
   content: { flex: 1, padding: 16 },
   errorCard: { padding: 16, marginBottom: 16, borderRadius: 12 },
   sectionCard: { padding: 20, marginBottom: 20 },
-  statsContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  statCard: { flex: 1, padding: 16, marginHorizontal: 4, alignItems: 'center', borderRadius: 12 },
+  statsContainerAlt: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  statCardAlt: { flex: 1, padding: 16, marginHorizontal: 4, alignItems: 'center', borderRadius: 12 },
   workspaceList: { gap: 12 },
   workspaceItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12 },
   workspaceInfo: { flex: 1, marginLeft: 12 },
@@ -1068,7 +1058,7 @@ const styles = StyleSheet.create({
   },
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
   pill: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 999, borderWidth: 1 },
-  spacesHeader: {
+  spacesHeaderAlt: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
