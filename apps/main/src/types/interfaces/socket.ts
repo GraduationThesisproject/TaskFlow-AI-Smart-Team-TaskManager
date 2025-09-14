@@ -94,6 +94,11 @@ export interface SocketContextType {
   deleteColumn(columnId: string, boardId: string): void;
   reorderColumns(boardId: string, columnIds: string[]): void;
   
+  // Socket-based board tag operations
+  createBoardTag(boardId: string, tag: { name: string; color: string }): void;
+  updateBoardTag(boardId: string, tagName: string, updates: { name?: string; color?: string }): void;
+  deleteBoardTag(boardId: string, tagName: string): void;
+  
   // Namespace management
   getNamespace(name: string): SocketNamespace | null;
   createNamespace(name: string): SocketNamespace;

@@ -1,20 +1,8 @@
-import type { Task as BackendTask, TaskPriority as BackendPriority, TaskStatus as BackendStatus } from '../types/task.types';
+import type { Task as BackendTask, TaskPriority as BackendPriority } from '../types/task.types';
 import type { Task } from '../types/task.types';
 import type { Subtask } from '../types/interfaces/ui';
 
-const statusMapBackendToUI: Record<BackendStatus, Task['status']> = {
-  'todo': 'To Do',
-  'in_progress': 'In Progress',
-  'review': 'In Review',
-  'done': 'Completed',
-};
-
-const statusMapUIToBackend: Record<Task['status'], BackendStatus> = {
-  'To Do': 'todo',
-  'In Progress': 'in_progress',
-  'In Review': 'review',
-  'Completed': 'done',
-};
+// Status is now determined by column, no mapping needed
 
 const priorityMapBackendToUI = (p: BackendPriority | 'critical'): Task['priority'] => {
   const value = String(p);
@@ -55,7 +43,7 @@ export function backendTaskToUI(task: BackendTask): Task {
     id: task.id,
     title: task.title,
     description: task.description,
-    status: statusMapBackendToUI[task.status],
+    // Status is now determined by the column the task is in
     priority: priorityMapBackendToUI(task.priority as any),
     progress: 0,
     category: 'General',
@@ -80,7 +68,7 @@ export function uiTaskToBackend(ui: Partial<Task>): Partial<BackendTask> {
     id: ui.id,
     title: ui.title!,
     description: ui.description,
-    status: ui.status ? statusMapUIToBackend[ui.status] : undefined,
+    // Status is handled by column assignment, not as a separate field
     priority: ui.priority ? (priorityMapUIToBackend(ui.priority) as any) : undefined,
     dueDate: ui.dueDate ? new Date(ui.dueDate) : undefined,
     tags: ui.labels,

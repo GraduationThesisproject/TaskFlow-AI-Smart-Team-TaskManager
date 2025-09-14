@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Draggable } from '@hello-pangea/dnd';
 import {
   Card,
@@ -11,15 +10,7 @@ import {
   getInitials,
   getAvatarColor
 } from '@taskflow/ui';
-import { useTheme } from '../../hooks';
 import type { DraggableTaskProps } from '../../types/interfaces/ui';
-
-// Portal component for dragging
-const Portal = ({ children }: { children: React.ReactNode }) => {
-  if (typeof window === "undefined") return null;
-  const portalRoot = document.body;
-  return createPortal(children, portalRoot);
-};
 
 export const DraggableTask: React.FC<DraggableTaskProps> = ({
   task,
@@ -27,47 +18,62 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
   onClick,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const { theme } = useTheme();
-  
-
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'text-red-500';
-      case 'high': return 'text-orange-500';
-      case 'medium': return 'text-yellow-500';
-      case 'low': return 'text-green-500';
-      default: return 'text-gray-500';
-    }
-  };
-
-  const getPriorityBars = (priority: string) => {
-    const bars = [];
-    const count = priority === 'critical' ? 5 : priority === 'high' ? 4 : priority === 'medium' ? 3 : 2;
-    for (let i = 0; i < count; i++) {
-      bars.push(
-        <div key={i} className={`w-1 h-4 rounded-full ${getPriorityColor(priority).replace('text-', 'bg-')}`} />
-      );
-    }
-    return bars;
-  };
 
   const getLabelColor = (tag: string) => {
-    const colors = theme === 'dark' ? [
-      'bg-blue-900/30 text-blue-200', 
-      'bg-green-900/30 text-green-200', 
-      'bg-orange-900/30 text-orange-200', 
-      'bg-red-900/30 text-red-200', 
-      'bg-purple-900/30 text-purple-200'
-    ] : [
-      'bg-blue-100 text-blue-800', 
-      'bg-green-100 text-green-800', 
-      'bg-orange-100 text-orange-800', 
-      'bg-red-100 text-red-800', 
-      'bg-purple-100 text-purple-800'
-    ];
+    const colors = ['bg-blue-100 text-blue-800', 'bg-green-100 text-green-800', 'bg-orange-100 text-orange-800', 'bg-red-100 text-red-800', 'bg-purple-100 text-purple-800'];
     const index = tag.length % colors.length;
     return colors[index];
+  };
+
+  const getTagColor = (tag: string) => {
+    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#6366F1', '#84CC16', '#F97316'];
+    const index = tag.length % colors.length;
+    return colors[index];
+  };
+
+  const getPriorityIndicator = (priority: string) => {
+    switch (priority) {
+      case 'urgent':
+      case 'critical':
+        return '|||';
+      case 'high':
+      case 'medium':
+        return '||';
+      case 'low':
+      case 'normal':
+      default:
+        return '|';
+    }
+  };
+
+  const getTimeRemaining = () => {
+    if (!task.startDate && !task.dueDate) return null;
+    
+    const now = new Date();
+    const startDate = task.startDate ? new Date(task.startDate) : null;
+    const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+    
+    // If task hasn't started yet
+    if (startDate && now < startDate) {
+      const diffTime = startDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return `Starts in ${diffDays}d`;
+    }
+    
+    // If task has started and has due date
+    if (dueDate && now >= (startDate || now)) {
+      const diffTime = dueDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays > 0) {
+        return `${diffDays}d left`;
+      } else if (diffDays === 0) {
+        return 'Due today';
+      } else {
+        return `${Math.abs(diffDays)}d overdue`;
+      }
+    }
+    
+    return null;
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -82,141 +88,96 @@ export const DraggableTask: React.FC<DraggableTaskProps> = ({
     return `${Math.floor(diffInDays / 30)} months`;
   };
 
-  const progressPercentage = (task.estimatedHours || 0) > 0 ? (task.actualHours / (task.estimatedHours || 1)) * 100 : 0;
-
   const handleClick = () => {
-    // Prevent click during drag operations
     if (!isDragging) {
       onClick(task);
     }
   };
 
-    return (
+  return (
     <Draggable draggableId={task._id} index={index}>
       {(provided, snapshot) => {
-        // Update dragging state
         if (snapshot.isDragging !== isDragging) {
           setIsDragging(snapshot.isDragging);
         }
 
-        const child = (
+        return (
           <div
             ref={provided.innerRef}
             {...provided.draggableProps}
             {...provided.dragHandleProps}
-            className={`mb-3 transition-all duration-200 ${
-              snapshot.isDragging ? 'opacity-50 scale-95 rotate-2' : ''
+            className={`mb-2 transition-all duration-200 ${
+              snapshot.isDragging ? 'opacity-50 scale-95 rotate-1' : ''
             }`}
             onClick={handleClick}
-            style={{
-              ...provided.draggableProps.style,
-              userSelect: 'none',
-            }}
           >
-                         <Card className={`cursor-pointer hover:shadow-md transition-shadow duration-200 border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
-              <CardContent className="p-4">
-                {/* Header with Label and Priority */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex flex-wrap gap-1">
-                    {task.tags && task.tags.slice(0, 2).map((tag, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className={`text-xs px-2 py-1 ${getLabelColor(tag)}`}
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
+            <Card 
+              className="cursor-pointer hover:border-primary/30 transition-all duration-200 bg-card/95 backdrop-blur-sm rounded-lg overflow-hidden group"
+              style={{
+                border: `3px solid ${task.color || '#D1D5DB'}`,
+                borderColor: task.color || '#D1D5DB'
+              }}
+            >
+              <CardContent className="p-3">
+                {/* Top row with priority and time remaining */}
+                <div className="flex items-center justify-between mb-2">
+                  {/* Priority indicator */}
+                  <div className="flex items-center gap-1">
+                    <span className="text-green-600 font-mono text-sm">
+                      {getPriorityIndicator(task.priority || 'normal')}
+                    </span>
                   </div>
-                  <div className="flex gap-1">
-                    {getPriorityBars(task.priority)}
-                  </div>
+                  
+                  {/* Time remaining */}
+                  {getTimeRemaining() && (
+                    <div className="text-xs text-muted-foreground">
+                      {getTimeRemaining()}
+                    </div>
+                  )}
                 </div>
 
                 {/* Task Title */}
-                <Typography variant="body-medium" className="font-semibold mb-2 line-clamp-2">
+                <Typography variant="body-small" className="font-medium mb-2 line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-200">
                   {task.title}
                 </Typography>
 
-                {/* Progress Bar */}
-                {(task.estimatedHours || 0) > 0 && (
-                  <div className="mb-3">
-                    <div className="flex justify-between items-center mb-1">
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        Progress
-                      </Typography>
-                      <Typography variant="body-small" className="text-muted-foreground">
-                        {Math.round(progressPercentage)}%
-                      </Typography>
-                    </div>
-                                         <div className={`w-full rounded-full h-2 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                      <div
-                        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(progressPercentage, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Task Details */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    {task.attachments && task.attachments.length > 0 && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-lg">📎</span>
-                        <span>{task.attachments.length}</span>
-                      </div>
-                    )}
-                    {task.dueDate && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-lg">⏰</span>
-                        <span>{formatTimeAgo(task.dueDate)}</span>
+                {/* Bottom row with checklist count and tags */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {/* Checklist count - only show if > 0 */}
+                    {task.checklist && task.checklist.length > 0 && (
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <span className="text-xs">✓</span>
+                        <span className="text-xs">{task.checklist.length}</span>
                       </div>
                     )}
                   </div>
-                </div>
 
-                {/* Assignees */}
-                {task.assignees && task.assignees.length > 0 && (
-                  <div className="flex items-center justify-between">
+                  {/* Tag colors as dots */}
+                  {task.tags && task.tags.length > 0 && (
                     <div className="flex items-center gap-1">
-                      {task.assignees.slice(0, 3).map((assignee, index) => (
-                                                 <Avatar key={index} size="sm" className={`border-2 ${theme === 'dark' ? 'border-gray-800' : 'border-white'}`}>
-                          <AvatarFallback
-                            className={`text-xs ${getAvatarColor(assignee)}`}
-                          >
-                            {getInitials(assignee)}
-                          </AvatarFallback>
-                        </Avatar>
+                      {task.tags.slice(0, 3).map((tag: string, index: number) => (
+                        <div
+                          key={index}
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: getTagColor(tag) }}
+                        />
                       ))}
-                      {task.assignees.length > 3 && (
-                                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${theme === 'dark' ? 'bg-gray-700 border-gray-800' : 'bg-gray-200 border-white'}`}>
-                          <Typography variant="body-small" className="text-muted-foreground">
-                            +{task.assignees.length - 3}
-                          </Typography>
+                      {task.tags.length > 3 && (
+                        <div className="w-2 h-2 rounded-full bg-gray-400 flex items-center justify-center">
+                          <span className="text-xs text-white">+</span>
                         </div>
                       )}
                     </div>
-                    
-                    {/* Completion Status */}
-                    {task.status === 'done' && (
-                      <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-                        <span className="text-white text-sm">✓</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
         );
-
-        // 🚀 Move dragging item to body to avoid weird positioning
-        if (snapshot.isDragging) {
-          return <Portal>{child}</Portal>;
-        }
-        return child;
       }}
     </Draggable>
   );
 };
+
+
