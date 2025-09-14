@@ -1,11 +1,15 @@
 require('dotenv').config();
+const { getNetworkConfig } = require('../utils/network-detector');
+
+// Get automatic network configuration
+const networkConfig = getNetworkConfig();
 
 module.exports = {
   // Server Configuration
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: parseInt(process.env.PORT || '3001', 10),
-  // Frontend URL
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  // Frontend URL - Auto-detected
+  FRONTEND_URL: process.env.FRONTEND_URL || networkConfig.frontendURL,
   // Database Configuration
   DATABASE_URL: process.env.DATABASE_URL || 'mongodb://localhost:27017/taskflow',
 
@@ -13,8 +17,9 @@ module.exports = {
   JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key-here',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
 
-  // CORS Configuration
+  // CORS Configuration - Auto-detected
   CORS_ORIGIN: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()) : [
+    // Local development
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',
@@ -50,8 +55,8 @@ module.exports = {
   // AI Configuration
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'your-openai-api-key',
 
-  // File Upload Configuration
-  BASE_URL: process.env.BASE_URL || 'http://localhost:3001',
+  // File Upload Configuration - Auto-detected
+  BASE_URL: process.env.BASE_URL || networkConfig.baseURL,
   UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10),
 
@@ -62,6 +67,10 @@ module.exports = {
   GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID || 'Ov23liwZN5YwJ4eZvffU',
   GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || '1b3a20e1252907cce61a9e382c33f90142a8e73b',
   GITHUB_CALLBACK_URL: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/auth/github/callback',
+  
+  // GitHub App Configuration
+  GITHUB_APP_ID: process.env.GITHUB_APP_ID || '123456',
+  GITHUB_PRIVATE_KEY: process.env.GITHUB_PRIVATE_KEY || '',
 
   // Power BI Configuration
   POWERBI_CLIENT_ID: process.env.POWERBI_CLIENT_ID || '',

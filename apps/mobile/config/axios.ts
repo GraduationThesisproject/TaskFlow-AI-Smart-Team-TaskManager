@@ -4,23 +4,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { env } from './env';
 import { Platform } from 'react-native';
 
-// Create axios instance
-// Normalize base URL to ensure it targets the backend API prefix
-let rawBase = (env.API_BASE_URL || env.API_URL || env.BASE_URL || 'http://192.168.1.64:3001').trim();
+// Create axios instance with auto-detected network configuration
+const baseURL = env.API_BASE_URL;
 
-// On Android emulator, localhost should point to the host machine via 10.0.2.2
-if (env.IS_ANDROID && __DEV__) {
-  rawBase = rawBase
-    .replace('http://localhost', 'http://10.0.2.2')
-    .replace('http://127.0.0.1', 'http://10.0.2.2');
-}
-
-const trimmed = rawBase.replace(/\/$/, '');
-const baseURL = /\/api$/.test(trimmed) ? trimmed : `${trimmed}/api`;
-
-// In development, log the resolved base URL to catch stale configs
+// Log network configuration for debugging
 if (__DEV__) {
-  console.log('🛠️ Axios base URL resolved to:', baseURL);
+  console.log('🌐 Network Configuration:', {
+    platform: Platform.OS,
+    apiBaseUrl: env.API_BASE_URL,
+    baseUrl: env.BASE_URL,
+    socketUrl: env.SOCKET_URL,
+  });
 }
 
 // Ensure we have a stable device id for session tracking

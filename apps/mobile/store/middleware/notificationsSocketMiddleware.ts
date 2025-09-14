@@ -389,7 +389,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       
       // Remove the notification from local state
       const currentNotifications = stateNow.notifications.notifications;
-      const notificationExists = currentNotifications.find(n => n._id === notificationId);
+      const notificationExists = currentNotifications.find((n: any) => n._id === notificationId);
       
       if (notificationExists) {
         // Dispatch a local action to remove the notification
@@ -458,7 +458,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       return result;
     }
 
-    // Handle workspace creation - emit socket event only (no notification to avoid duplicate success messages)
+    // Handle workspace creation - emit socket event and create notification
     if (actionAny.type === createWorkspace.fulfilled.type && socket?.connected) {
       const workspace = actionAny.payload;
       const currentUser = state.auth.user;
@@ -471,8 +471,24 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
           timestamp: new Date().toISOString()
         });
 
-        // Don't create notification since workspace creation already shows local success messages
-        // This prevents duplicate success banners/toasts
+        // Create local notification
+        store.dispatch(addNotification({
+          _id: `workspace-created-${Date.now()}`,
+          title: 'Workspace Created',
+          message: `Successfully created workspace "${workspace.name}"`,
+          type: 'success',
+          recipientId: currentUser.user._id,
+          relatedEntity: {
+            type: 'workspace',
+            id: workspace._id || workspace.id,
+            name: workspace.name
+          },
+          priority: 'low',
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          clientOnly: true,
+        } as any));
       }
     }
 
