@@ -45,21 +45,31 @@ export const useTasks = () => {
   const safeTasks = Array.isArray(tasks) ? tasks : [];
   
   
-  // Safety check ensures tasks is always an array
+  // Helper function to determine task status from column name
+  const getTaskStatusFromColumn = (task: any) => {
+    if (!task.column?.name) return 'todo';
+    const columnName = task.column.name.toLowerCase();
+    if (columnName.includes('done') || columnName.includes('complete')) return 'done';
+    if (columnName.includes('review') || columnName.includes('testing')) return 'review';
+    if (columnName.includes('progress') || columnName.includes('doing')) return 'in_progress';
+    return 'todo';
+  };
+
+  // Group tasks by column-based status
   const tasksByStatus = {
-    'col1': safeTasks.filter(t => t.status === 'todo'),
-    'col2': safeTasks.filter(t => t.status === 'in_progress'),
-    'col3': safeTasks.filter(t => t.status === 'review'),
-    'col4': safeTasks.filter(t => t.status === 'done'),
+    'col1': safeTasks.filter(t => getTaskStatusFromColumn(t) === 'todo'),
+    'col2': safeTasks.filter(t => getTaskStatusFromColumn(t) === 'in_progress'),
+    'col3': safeTasks.filter(t => getTaskStatusFromColumn(t) === 'review'),
+    'col4': safeTasks.filter(t => getTaskStatusFromColumn(t) === 'done'),
   };
 
   const taskStats = {
     total: safeTasks.length,
-    completed: safeTasks.filter(t => t.status === 'done').length,
-    inProgress: safeTasks.filter(t => t.status === 'in_progress').length,
-    inReview: safeTasks.filter(t => t.status === 'review').length,
-    toDo: safeTasks.filter(t => t.status === 'todo').length,
-    completionRate: safeTasks.length > 0 ? Math.round((safeTasks.filter(t => t.status === 'done').length / safeTasks.length) * 100) : 0,
+    completed: safeTasks.filter(t => getTaskStatusFromColumn(t) === 'done').length,
+    inProgress: safeTasks.filter(t => getTaskStatusFromColumn(t) === 'in_progress').length,
+    inReview: safeTasks.filter(t => getTaskStatusFromColumn(t) === 'review').length,
+    toDo: safeTasks.filter(t => getTaskStatusFromColumn(t) === 'todo').length,
+    completionRate: safeTasks.length > 0 ? Math.round((safeTasks.filter(t => getTaskStatusFromColumn(t) === 'done').length / safeTasks.length) * 100) : 0,
   };
 
   const uniqueCategories = Array.from(new Set(safeTasks.flatMap(t => t.tags || [])));

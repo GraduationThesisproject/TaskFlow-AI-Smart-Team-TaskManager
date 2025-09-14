@@ -195,7 +195,7 @@ export class TaskService {
 
   static async updateComment(commentId: string, commentData: { content: string }): Promise<ApiResponse<Comment>> {
     try {
-      const response = await axiosInstance.put(`/comments/${commentId}`, commentData);
+      const response = await axiosInstance.put(`/tasks/comments/${commentId}`, commentData);
       return response.data;
     } catch (error) {
       console.error('Error updating comment:', error);
@@ -205,7 +205,7 @@ export class TaskService {
 
   static async deleteComment(commentId: string): Promise<ApiResponse<any>> {
     try {
-      const response = await axiosInstance.delete(`/comments/${commentId}`);
+      const response = await axiosInstance.delete(`/tasks/comments/${commentId}`);
       return response.data;
     } catch (error) {
       console.error('Error deleting comment:', error);
@@ -215,7 +215,7 @@ export class TaskService {
 
   static async addCommentReaction(commentId: string, reactionData: { emoji: string }): Promise<ApiResponse<Comment>> {
     try {
-      const response = await axiosInstance.post(`/comments/${commentId}/reactions`, reactionData);
+      const response = await axiosInstance.post(`/tasks/comments/${commentId}/reactions`, reactionData);
       return response.data;
     } catch (error) {
       console.error('Error adding comment reaction:', error);
@@ -225,7 +225,7 @@ export class TaskService {
 
   static async removeCommentReaction(commentId: string, emoji: string): Promise<ApiResponse<any>> {
     try {
-      const response = await axiosInstance.delete(`/comments/${commentId}/reactions`, { data: { emoji } });
+      const response = await axiosInstance.delete(`/tasks/comments/${commentId}/reactions`, { data: { emoji } });
       return response.data;
     } catch (error) {
       console.error('Error removing comment reaction:', error);
@@ -235,7 +235,7 @@ export class TaskService {
 
   static async toggleCommentPin(commentId: string): Promise<ApiResponse<Comment>> {
     try {
-      const response = await axiosInstance.post(`/comments/${commentId}/pin`);
+      const response = await axiosInstance.post(`/tasks/comments/${commentId}/pin`);
       return response.data;
     } catch (error) {
       console.error('Error toggling comment pin:', error);
@@ -245,7 +245,7 @@ export class TaskService {
 
   static async toggleCommentResolve(commentId: string): Promise<ApiResponse<Comment>> {
     try {
-      const response = await axiosInstance.post(`/comments/${commentId}/resolve`);
+      const response = await axiosInstance.post(`/tasks/comments/${commentId}/resolve`);
       return response.data;
     } catch (error) {
       console.error('Error toggling comment resolve:', error);
