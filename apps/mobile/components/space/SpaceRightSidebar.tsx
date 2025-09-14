@@ -1,8 +1,10 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { View as RNView, TouchableOpacity, Image, ScrollView, StyleSheet, Animated, Alert } from 'react-native';
+import { View as RNView, TouchableOpacity, Image, ScrollView, StyleSheet, Animated } from 'react-native';
 import { View, Text, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
+import { useMobileAlert } from '@/components/common/MobileAlertProvider';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 export type SpaceRightSidebarProps = {
   space: any;
@@ -40,6 +42,7 @@ export default function SpaceRightSidebar({
   loading = false
 }: SpaceRightSidebarProps) {
   const colors = useThemeColors();
+  const { showConfirm } = useMobileAlert();
   const slideAnim = useRef(new Animated.Value(width)).current;
   
   // Animation effect
@@ -204,7 +207,7 @@ export default function SpaceRightSidebar({
     return filtered;
   }, [availableMembers, existingMemberIds, computedOwnerIds]);
 
-  // Add member handler
+  // Add member handler - adds member to THIS SPECIFIC SPACE only
   const handleAddMember = async (memberId: string, role: string = 'viewer') => {
     if (!memberId || memberId === 'undefined' || memberId === 'null' || memberId === '') {
       console.error('Invalid memberId for addMember:', memberId);
@@ -212,19 +215,17 @@ export default function SpaceRightSidebar({
     }
     
     if (onAddMember) {
+      // This will add the member to the current space only, not all spaces
       await onAddMember(memberId, role);
     }
   };
 
   const handleRemoveMember = (member: any) => {
     const displayName = member?.user?.name || member?.name || member?.user?.email || member?.email || 'this member';
-    Alert.alert(
+    showConfirm(
       'Remove Member',
       `Are you sure you want to remove ${displayName} from the space?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => confirmRemoveMember(member) },
-      ]
+      () => confirmRemoveMember(member)
     );
   };
 
@@ -275,13 +276,25 @@ export default function SpaceRightSidebar({
           ]}
         >
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Space Members</Text>
-        {!!onClose && (
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={[TextStyles.body.small, { color: colors.primary }]}>Close</Text>
-          </TouchableOpacity>
-        )}
+      <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <View style={[styles.headerIcon, { backgroundColor: colors.primary + '15' }]}>
+              <FontAwesome name="users" size={18} color={colors.primary} />
+            </View>
+            <View>
+              <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Space Members</Text>
+              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                {visibleMembersUnique.length} member{visibleMembersUnique.length !== 1 ? 's' : ''}
+              </Text>
+            </View>
+          </View>
+          {!!onClose && (
+            <TouchableOpacity onPress={onClose} style={[styles.closeButton, { backgroundColor: colors.background }]}>
+              <FontAwesome name="times" size={16} color={colors.foreground} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Content */}
@@ -289,16 +302,22 @@ export default function SpaceRightSidebar({
         {/* Current Space Members */}
         <Card style={[styles.section, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[TextStyles.heading.h4, { color: colors.foreground }]}>
-              Space Members ({visibleMembersUnique.length})
-            </Text>
+            <View style={styles.sectionTitle}>
+              <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '15' }]}>
+                <FontAwesome name="users" size={14} color={colors.primary} />
+              </View>
+              <Text style={[TextStyles.heading.h4, { color: colors.foreground }]}>
+                Current Members
+              </Text>
+            </View>
             <View style={styles.headerButtons}>
               {canManageMembers && onCleanupInvalidMembers && (
                 <TouchableOpacity
                   onPress={onCleanupInvalidMembers}
-                  style={[styles.cleanupButton, { backgroundColor: colors.destructive }]}
+                  style={[styles.cleanupButton, { backgroundColor: colors.destructive + '15', borderColor: colors.destructive + '30' }]}
                 >
-                  <Text style={[TextStyles.caption.small, { color: colors['destructive-foreground'] }]}>Cleanup</Text>
+                  <FontAwesome name="broom" size={12} color={colors.destructive} />
+                  <Text style={[TextStyles.caption.small, { color: colors.destructive, marginLeft: 4, fontWeight: '500' }]}>Cleanup</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -349,7 +368,8 @@ export default function SpaceRightSidebar({
                         onPress={() => handleRemoveMember(m)}
                         style={[styles.removeButton, { backgroundColor: colors.destructive }]}
                       >
-                        <Text style={[TextStyles.caption.small, { color: colors['destructive-foreground'] }]}>Remove</Text>
+                        <FontAwesome name="user-times" size={12} color={colors['destructive-foreground']} />
+                        <Text style={[TextStyles.caption.small, { color: colors['destructive-foreground'], fontWeight: '500' }]}>Remove</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -362,10 +382,19 @@ export default function SpaceRightSidebar({
         {/* Available Workspace Members */}
         {canManageMembers && (
           <Card style={[styles.section, { backgroundColor: colors.card }]}>
-            <Text style={[TextStyles.heading.h4, { color: colors.foreground, marginBottom: 8 }]}>Available Members</Text>
-            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginBottom: 12 }]}>
-              {candidates.length} workspace member{candidates.length !== 1 ? 's' : ''} available to add
-            </Text>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitle}>
+                <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '15' }]}>
+                  <FontAwesome name="user-plus" size={14} color={colors.primary} />
+                </View>
+                <View>
+                  <Text style={[TextStyles.heading.h4, { color: colors.foreground }]}>Available Members</Text>
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                    {candidates.length} workspace member{candidates.length !== 1 ? 's' : ''} available
+                  </Text>
+                </View>
+              </View>
+            </View>
             
             {candidates.length === 0 ? (
               <View style={styles.emptyState}>
@@ -403,7 +432,8 @@ export default function SpaceRightSidebar({
                         onPress={() => handleAddMember(userId, 'viewer')}
                         style={[styles.addButton, { backgroundColor: colors.primary }]}
                       >
-                        <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'] }]}>+ Add</Text>
+                        <FontAwesome name="user-plus" size={12} color={colors['primary-foreground']} />
+                        <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'], fontWeight: '500' }]}>Add to Space</Text>
                       </TouchableOpacity>
                     </View>
                   );
@@ -441,54 +471,85 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     height: '100%',
     zIndex: 1001,
+    shadowColor: '#000',
+    shadowOffset: { width: -4, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   closeButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   section: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   memberList: {
-    gap: 8,
+    gap: 12,
   },
   memberItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
     gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   memberInfo: {
     flex: 1,
   },
   candidateList: {
     maxHeight: 200,
-    gap: 8,
+    gap: 12,
   },
   candidateItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    borderRadius: 12,
     borderWidth: 1,
     gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   searchInput: {
     borderWidth: 1,
@@ -532,27 +593,82 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  sectionIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   addButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   cleanupButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   removeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   avatarPlaceholder: {
     alignItems: 'center',

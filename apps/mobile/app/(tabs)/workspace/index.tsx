@@ -10,12 +10,13 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { setCurrentWorkspaceId, setSelectedSpace, fetchMembers, removeMember } from '@/store/slices/workspaceSlice';
-import { archiveSpace, unarchiveSpace } from '@/store/slices/spaceSlice';
+import { archiveSpace, unarchiveSpace, setCurrentSpace } from '@/store/slices/spaceSlice';
 import { SpaceService } from '@/services/spaceService';
 import CreateSpaceModal from '@/components/common/CreateSpaceModal';
-import MobileAlert from '@/components/common/Alert';
-import ConfirmationDialog from '@/components/common/ConfirmationDialog';
+import { MobileAlertProvider, useMobileAlert } from '@/components/common/MobileAlertProvider';
 import SpaceCard from '@/components/common/SpaceCard';
+import PremiumSpaceCard from '@/components/common/PremiumSpaceCard';
+import PremiumSpaceLimitModal from '@/components/common/PremiumSpaceLimitModal';
 import Sidebar from '@/components/navigation/Sidebar';
 import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
@@ -54,6 +55,7 @@ function WorkspaceScreenContent() {
   const params = useLocalSearchParams<{ id?: string; workspaceId?: string }>();
   const dispatch = useAppDispatch();
   const { showSuccess, showError, showWarning, showInfo } = useBanner();
+  const { showModal, showBanner: showMobileBanner, showConfirm } = useMobileAlert();
   const [refreshing, setRefreshing] = useState(false);
   const [spaceSearch, setSpaceSearch] = useState('');
   const [showCreateSpace, setShowCreateSpace] = useState(false);
@@ -61,6 +63,7 @@ function WorkspaceScreenContent() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member');
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [showPremiumSpaceModal, setShowPremiumSpaceModal] = useState(false);
 
   const { currentWorkspaceId, workspaces } = useAppSelector((s: any) => s.workspace);
   const { members, isLoading: membersLoading, error: membersError, currentWorkspace } = useAppSelector((s: any) => s.workspace);
@@ -171,6 +174,8 @@ function WorkspaceScreenContent() {
 
   const handleOpenSpace = (space: any) => {
     dispatch(setSelectedSpace(space));
+    // FIXED: Also update currentSpace in spaceSlice to keep both slices in sync
+    dispatch(setCurrentSpace(space));
     router.push('/workspace/space/boards');
   };
 
@@ -180,23 +185,17 @@ function WorkspaceScreenContent() {
     try {
       await inviteNewMember(inviteEmail.trim(), inviteRole);
      setInviteEmail('');
-     // Show success banner alert
-     setAlertVariant('success');
-     setAlertTitle('Invitation sent');
-     setAlertDescription(`We sent an invite to ${inviteEmail.trim()}.`);
-     setAlertVisible(true);
+     // Show success banner
+     showSuccess(`Invitation sent to ${inviteEmail.trim()}`);
      // Close the mobile sidebar modal after success (optional)
      setMembersSidebarOpen(false);
     } catch (e: any) {
       // Show an error banner for visibility
-      setAlertVariant('error');
-      setAlertTitle('Failed to send invite');
-      setAlertDescription(e?.message || 'Please try again.');
-      setAlertVisible(true);
+      showError(e?.message || 'Failed to send invitation');
     }
   };
 
-  // Banner alert state
+  // Legacy alert state (keeping for backward compatibility)
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertTitle, setAlertTitle] = useState<string | undefined>(undefined);
   const [alertDescription, setAlertDescription] = useState<string | undefined>(undefined);
@@ -205,9 +204,7 @@ function WorkspaceScreenContent() {
   const [alertConfirmText, setAlertConfirmText] = useState<string>('Confirm');
   const [alertCancelText, setAlertCancelText] = useState<string>('Cancel');
 
-  // Confirm removal dialog state
-  const [confirmVisible, setConfirmVisible] = useState(false);
-  const [memberToRemove, setMemberToRemove] = useState<any | null>(null);
+  // Member removal state removed - now using MobileAlert showConfirm
 
   const handleRemoveMember = async (member: any) => {
     if (!workspaceId) return;
@@ -224,11 +221,8 @@ function WorkspaceScreenContent() {
       await dispatch(removeMember({ workspaceId, memberId })).unwrap();
       // Ensure local state matches backend by refetching members
       await dispatch(fetchMembers({ id: workspaceId }));
-      // Show success banner alert
-      setAlertVariant('success');
-      setAlertTitle('Member removed');
-      setAlertDescription('The member was removed successfully.');
-      setAlertVisible(true);
+      // Show success using MobileAlert
+      showSuccess('Member removed successfully');
     } catch (e: any) {
       console.warn('Failed to remove member', e);
       showError(`Failed to remove member: ${e?.message || 'Unknown error'}`);
@@ -273,13 +267,7 @@ function WorkspaceScreenContent() {
     const MAX_SPACES = 5;
     const canCreateMoreSpaces = (processedSpaces?.length || 0) < MAX_SPACES;
     if (!canCreateMoreSpaces) {
-      setAlertVariant('warning');
-      setAlertTitle('Space limit reached');
-      setAlertDescription("You've reached the limit of 5 spaces. Upgrade to Premium to create more.");
-      setAlertIsConfirmable(true);
-      setAlertConfirmText('Upgrade');
-      setAlertCancelText('Cancel');
-      setAlertVisible(true);
+      setShowPremiumSpaceModal(true);
       return;
     }
     try {
@@ -292,8 +280,10 @@ function WorkspaceScreenContent() {
       });
       await loadSpaces(workspaceId);
       setShowCreateSpace(false);
+      showSuccess('Space created successfully!');
     } catch (e) {
       console.warn('Failed to create space', e);
+      showError(e?.message || 'Failed to create space');
     } finally {
       setCreatingSpace(false);
     }
@@ -308,6 +298,29 @@ function WorkspaceScreenContent() {
     if (space?.ownerId) push(space.ownerId);
     if (space?.createdBy) { const c = space.createdBy as any; push(c?._id || c?.id || c); }
     return new Set(ids);
+  };
+  
+  // Calculate individual space member count (same logic as spaces.tsx)
+  const getSpaceMemberCount = (space: any): number => {
+    const ownerIds = getOwnerIds(space);
+    const list = Array.isArray(space?.members) ? space.members.filter(Boolean) : [];
+    const unique = new Set<string>();
+    for (const m of list) {
+      const id = getId(m);
+      if (id && ownerIds.has(id)) continue; // exclude owner by id
+      // build a stable composite key when id is missing or unreliable
+      const key = id || `${String(m?.user?.email || m?.email || '').trim().toLowerCase()}|${String(m?.user?.name || m?.name || '').trim().toLowerCase()}`;
+      if (!key) continue;
+      unique.add(key);
+    }
+    return unique.size;
+  };
+
+  // Determine if a space should be locked (premium feature)
+  const isSpaceLocked = (space: any, index: number): boolean => {
+    // Free users can only access the first 5 spaces (index 0-4)
+    // All spaces beyond index 4 require Premium
+    return index >= 5;
   };
   
 
@@ -363,13 +376,7 @@ function WorkspaceScreenContent() {
     const MAX_SPACES = 5;
     const canCreateMoreSpaces = (processedSpaces?.length || 0) < MAX_SPACES;
     if (!canCreateMoreSpaces) {
-      setAlertVariant('warning');
-      setAlertTitle('Space limit reached');
-      setAlertDescription("You've reached the limit of 5 spaces. Upgrade to Premium to create more.");
-      setAlertIsConfirmable(true);
-      setAlertConfirmText('Upgrade');
-      setAlertCancelText('Cancel');
-      setAlertVisible(true);
+      setShowPremiumSpaceModal(true);
       return;
     }
     setShowCreateSpace(true);
@@ -378,44 +385,86 @@ function WorkspaceScreenContent() {
   return (
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
       <View style={{ flex: 1 }}>
-        {/* Inline banner alert */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-          <MobileAlert
-            variant={alertVariant}
-            title={alertTitle}
-            description={alertDescription}
-            visible={alertVisible}
-            onClose={() => { setAlertVisible(false); setAlertIsConfirmable(false); }}
-            onCancel={alertIsConfirmable ? () => { setAlertVisible(false); setAlertIsConfirmable(false); } : undefined}
-            onConfirm={alertIsConfirmable ? () => { setAlertVisible(false); setAlertIsConfirmable(false); router.push('/(tabs)/settings?section=upgrade'); } : undefined}
-            cancelText={alertIsConfirmable ? alertCancelText : undefined}
-            confirmText={alertIsConfirmable ? alertConfirmText : undefined}
-          />
-
-        </View>
+        {/* Legacy banner alert - keeping for backward compatibility */}
+        {alertVisible && (
+          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+            <View style={{
+              backgroundColor: alertVariant === 'success' ? '#10B981' : alertVariant === 'error' ? '#EF4444' : alertVariant === 'warning' ? '#F59E0B' : '#3B82F6',
+              padding: 16,
+              borderRadius: 12,
+              marginBottom: 16,
+            }}>
+              <Text style={{ color: '#FFFFFF', fontWeight: '600', marginBottom: 4 }}>
+                {alertTitle}
+              </Text>
+              <Text style={{ color: '#FFFFFF', opacity: 0.9 }}>
+                {alertDescription}
+              </Text>
+              {alertIsConfirmable && (
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12, gap: 8 }}>
+                  <TouchableOpacity
+                    onPress={() => { setAlertVisible(false); setAlertIsConfirmable(false); }}
+                    style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                  >
+                    <Text style={{ color: '#FFFFFF' }}>{alertCancelText}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => { setAlertVisible(false); setAlertIsConfirmable(false); router.push('/(tabs)/settings?section=upgrade'); }}
+                    style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
+                  >
+                    <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>{alertConfirmText}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Header */}
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
           <View style={styles.headerLeft}>
             <TouchableOpacity
-              style={styles.backButton}
+              style={[styles.backButton, { backgroundColor: colors.background }]}
               onPress={() => router.push('/(tabs)')}
               accessibilityRole="button"
-              accessibilityLabel="Back"
+              accessibilityLabel="Back to dashboard"
             >
-              <FontAwesome name="arrow-left" size={24} color={colors.primary} />
+              <FontAwesome name="arrow-left" size={18} color={colors.primary} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.sidebarButton}
+              style={[styles.sidebarButton, { backgroundColor: colors.background }]}
               onPress={() => setSidebarVisible(true)}
+              accessibilityLabel="Open menu"
             >
-              <FontAwesome name="bars" size={24} color={colors.primary} />
+              <FontAwesome name="bars" size={18} color={colors.primary} />
             </TouchableOpacity>
           </View>
           <View style={styles.headerCenter}>
-            <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>Workspace</Text>
+            <View style={styles.headerTitleContainer}>
+              <View style={[styles.headerIcon, { backgroundColor: colors.primary + '15' }]}>
+                <FontAwesome name="building" size={20} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>Workspace</Text>
+                {effectiveWorkspace && (
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                    {effectiveWorkspace.name || 'Untitled Workspace'}
+                  </Text>
+                )}
+              </View>
+            </View>
           </View>
-          <View style={styles.headerRight} />
+          <View style={styles.headerRight}>
+            {!isWide && (
+              <TouchableOpacity 
+                onPress={() => setMembersSidebarOpen(true)} 
+                style={[styles.membersButton, { backgroundColor: colors.primary }]}
+                accessibilityLabel="View members"
+              >
+                <FontAwesome name="users" size={16} color={colors['primary-foreground']} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         <ScrollView
@@ -430,23 +479,37 @@ function WorkspaceScreenContent() {
         )}
 
         {/* Spaces toolbar: Search + Create */}
-        <Card style={styles.sectionCard}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <TextInput
-              value={spaceSearch}
-              onChangeText={setSpaceSearch}
-              placeholder="Search spaces..."
-              placeholderTextColor={colors['muted-foreground']}
-              style={[styles.input, { flex: 1, color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
-            />
-            <TouchableOpacity onPress={handleCreateSpacePress} style={[styles.secondaryBtn, { backgroundColor: colors.secondary }]}>
-              <Text style={{ color: colors['secondary-foreground'] }}>Create Space</Text>
+        <Card style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <View style={styles.toolbarContainer}>
+            <View style={styles.searchContainer}>
+              <View style={[styles.searchIcon, { backgroundColor: colors.background }]}>
+                <FontAwesome name="search" size={16} color={colors['muted-foreground']} />
+              </View>
+              <TextInput
+                value={spaceSearch}
+                onChangeText={setSpaceSearch}
+                placeholder="Search spaces..."
+                placeholderTextColor={colors['muted-foreground']}
+                style={[styles.searchInput, { color: colors.foreground, backgroundColor: colors.background }]}
+              />
+              {spaceSearch.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSpaceSearch('')}
+                  style={[styles.clearButton, { backgroundColor: colors.muted }]}
+                >
+                  <FontAwesome name="times" size={12} color={colors['muted-foreground']} />
+                </TouchableOpacity>
+              )}
+            </View>
+            <TouchableOpacity 
+              onPress={handleCreateSpacePress} 
+              style={[styles.createButton, { backgroundColor: colors.primary }]}
+            >
+              <FontAwesome name="plus" size={16} color={colors['primary-foreground']} />
+              <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'], fontWeight: '600', marginLeft: 6 }]}>
+                Create Space
+              </Text>
             </TouchableOpacity>
-            {!isWide && (
-              <TouchableOpacity onPress={() => setMembersSidebarOpen(true)} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}>
-                <Text style={{ color: colors['primary-foreground'] }}>Members</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </Card>
 
@@ -476,12 +539,22 @@ function WorkspaceScreenContent() {
           <>
             <View style={styles.statsContainer}>
               <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
-                <Text style={[TextStyles.heading.h3, { color: colors.primary }]}>{membersCount}</Text>
-                <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Members</Text>
+                <View style={[styles.statIcon, { backgroundColor: colors.primary + '15' }]}>
+                  <FontAwesome name="users" size={20} color={colors.primary} />
+                </View>
+                <View style={styles.statContent}>
+                  <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{membersCount}</Text>
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Members</Text>
+                </View>
               </Card>
               <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
-                <Text style={[TextStyles.heading.h3, { color: colors.accent }]}>{processedSpaces.length}</Text>
-                <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Active Spaces</Text>
+                <View style={[styles.statIcon, { backgroundColor: colors.accent + '15' }]}>
+                  <FontAwesome name="th-large" size={20} color={colors.accent} />
+                </View>
+                <View style={styles.statContent}>
+                  <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{processedSpaces.length}</Text>
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Active Spaces</Text>
+                </View>
               </Card>
             </View>
 
@@ -489,26 +562,75 @@ function WorkspaceScreenContent() {
         )}
         {/* Spaces List */}
         {!!(processedSpaces && processedSpaces.length) && (
-          <Card style={styles.sectionCard}>
-            <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 16 }]}>Spaces</Text>
+          <Card style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+            <View style={styles.spacesHeader}>
+              <View style={styles.spacesTitleContainer}>
+                <View style={[styles.spacesIcon, { backgroundColor: colors.primary + '15' }]}>
+                  <FontAwesome name="folder" size={18} color={colors.primary} />
+                </View>
+                <View>
+                  <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Spaces</Text>
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                    {processedSpaces.length} space{processedSpaces.length !== 1 ? 's' : ''} available
+                  </Text>
+                </View>
+              </View>
+              {processedSpaces.length > 5 && (
+                <View style={[styles.premiumBadge, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}>
+                  <FontAwesome name="star" size={12} color={colors.primary} />
+                  <Text style={[TextStyles.caption.small, { color: colors.primary, marginLeft: 4, fontWeight: '600' }]}>
+                    {processedSpaces.length - 5} more with Premium
+                  </Text>
+                </View>
+              )}
+            </View>
             <View
               style={[styles.spaceList, { flexDirection: 'row', flexWrap: 'wrap', gap: PREVIEW_GAP, backgroundColor: colors.background }]}
               onLayout={(e) => setPreviewGridW(e.nativeEvent.layout.width)}
             >
-              {filteredSpaces.map((space: any) => (
-                <SpaceCard
-                  key={space._id || space.id}
-                  name={space.name}
-                  description={space.description}
-                  membersCount={membersCount}
-                  icon={space.icon || '📂'}
-                  isArchived={!!space.isArchived}
-                  createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
-                  tileSize={previewTile}
-                  onPress={() => handleOpenSpace(space)}
-                  onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, space.isArchived)}
-                />
-              ))}
+              {filteredSpaces.map((space: any, index: number) => {
+                const isLocked = isSpaceLocked(space, index);
+                
+                if (isLocked) {
+                  return (
+                    <PremiumSpaceCard
+                      key={space._id || space.id}
+                      name={space.name}
+                      description={space.description}
+                      membersCount={getSpaceMemberCount(space)}
+                      icon={space.icon || '📂'}
+                      isArchived={!!space.isArchived}
+                      createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
+                      tileSize={previewTile}
+                      onPress={() => handleOpenSpace(space)}
+                      onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, space.isArchived)}
+                      isLocked={isLocked}
+                      lockReason="This space requires Premium"
+                      benefits={[
+                        "Unlimited spaces (currently limited to 5)",
+                        "Advanced analytics",
+                        "Priority support",
+                        "Custom integrations"
+                      ]}
+                    />
+                  );
+                }
+                
+                return (
+                  <SpaceCard
+                    key={space._id || space.id}
+                    name={space.name}
+                    description={space.description}
+                    membersCount={getSpaceMemberCount(space)}
+                      icon={space.icon || '📂'}
+                    isArchived={!!space.isArchived}
+                    createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
+                    tileSize={previewTile}
+                    onPress={() => handleOpenSpace(space)}
+                    onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, space.isArchived)}
+                  />
+                );
+              })}
             </View>
           </Card>
         )}
@@ -536,93 +658,176 @@ function WorkspaceScreenContent() {
               }
             ]}
           >
-          {/* Invite */}
-          {workspaceId && effectiveWorkspace && (
-            <Card style={styles.sectionCard}>
-              <Text style={[TextStyles.heading.h2, { color: colors.foreground, marginBottom: 12 }]}>Invite Members</Text>
-              <View style={{ gap: 8 }}>
-                <TextInput
-                  value={inviteEmail}
-                  onChangeText={setInviteEmail}
-                  placeholder="email@example.com"
-                  placeholderTextColor={colors['muted-foreground']}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  textContentType="emailAddress"
-                  keyboardType="email-address"
-                  style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
-                />
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TouchableOpacity onPress={() => setInviteRole(inviteRole === 'member' ? 'admin' : 'member')} style={[styles.pill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>{inviteRole}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={handleInvite} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}> 
-                    <Text style={{ color: colors['primary-foreground'] }}>Invite</Text>
-                  </TouchableOpacity>
+          {/* Header */}
+          <View style={[styles.sidebarHeader, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+            <View style={styles.sidebarHeaderContent}>
+              <View style={styles.sidebarHeaderLeft}>
+                <View style={[styles.sidebarHeaderIcon, { backgroundColor: colors.primary + '15' }]}>
+                  <FontAwesome name="users" size={18} color={colors.primary} />
+                </View>
+                <View>
+                  <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Workspace Members</Text>
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
+                    {membersCount} member{membersCount !== 1 ? 's' : ''}
+                  </Text>
                 </View>
               </View>
-            </Card>
-          )}
-          {/* Members */}
-          {workspaceId && (
-            <Card style={styles.sectionCard}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Members ({membersCount})</Text>
-                <TouchableOpacity onPress={() => setMembersSidebarOpen(false)} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
-                  <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Close</Text>
-                </TouchableOpacity>
-              </View>
-              {membersLoading ? (
-                <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading members...</Text>
-              ) : membersError ? (
-                <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>{membersError}</Text>
-              ) : (Array.isArray(uniqueMembers) && uniqueMembers.length > 0 ? (
-                <View style={{ gap: 8 }}>
-                  {uniqueMembers.map((m: any) => {
-                    const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
-                    const email = m?.user?.email || m?.email || '';
-                    const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
-                    const letter = String(displayName).charAt(0).toUpperCase();
-                    return (
-                      <View key={m._id || m.id || m.email} style={[styles.memberItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                        {avatarUrl ? (
-                          <Image source={{ uri: avatarUrl }} style={styles.memberAvatar} />
-                        ) : (
-                          <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder, { backgroundColor: colors.muted }]}> 
-                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
-                          </View>
-                        )}
-                        <View style={{ flex: 1 }}>
-                          <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>{displayName}</Text>
-                          {!!email && (
-                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
+              <TouchableOpacity 
+                onPress={() => setMembersSidebarOpen(false)} 
+                style={[styles.sidebarCloseButton, { backgroundColor: colors.background }]}
+                accessibilityLabel="Close sidebar"
+              >
+                <FontAwesome name="times" size={16} color={colors.foreground} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <ScrollView style={styles.sidebarContent} showsVerticalScrollIndicator={false}>
+            {/* Invite Section */}
+            {workspaceId && effectiveWorkspace && (
+              <Card style={[styles.sidebarSection, { backgroundColor: colors.card }]}>
+                <View style={styles.sidebarSectionHeader}>
+                  <View style={styles.sidebarSectionTitle}>
+                    <View style={[styles.sidebarSectionIcon, { backgroundColor: colors.primary + '15' }]}>
+                      <FontAwesome name="user-plus" size={14} color={colors.primary} />
+                    </View>
+                    <Text style={[TextStyles.heading.h4, { color: colors.foreground }]}>Invite Members</Text>
+                  </View>
+                </View>
+                <View style={styles.inviteContainer}>
+                  <View style={styles.inviteInputContainer}>
+                    <View style={[styles.inviteInputIcon, { backgroundColor: colors.background }]}>
+                      <FontAwesome name="envelope" size={14} color={colors['muted-foreground']} />
+                    </View>
+                    <TextInput
+                      value={inviteEmail}
+                      onChangeText={setInviteEmail}
+                      placeholder="email@example.com"
+                      placeholderTextColor={colors['muted-foreground']}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      textContentType="emailAddress"
+                      keyboardType="email-address"
+                      style={[styles.inviteInput, { color: colors.foreground, backgroundColor: colors.background }]}
+                    />
+                  </View>
+                  <View style={styles.inviteControls}>
+                    <TouchableOpacity 
+                      onPress={() => setInviteRole(inviteRole === 'member' ? 'admin' : 'member')} 
+                      style={[styles.roleButton, { backgroundColor: colors.background, borderColor: colors.border }]}
+                    >
+                      <FontAwesome name="user" size={12} color={colors.primary} />
+                      <Text style={[TextStyles.caption.small, { color: colors.foreground, marginLeft: 4, fontWeight: '500' }]}>
+                        {inviteRole}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      onPress={handleInvite} 
+                      style={[styles.inviteButton, { backgroundColor: colors.primary }]}
+                    >
+                      <FontAwesome name="paper-plane" size={12} color={colors['primary-foreground']} />
+                      <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'], marginLeft: 4, fontWeight: '500' }]}>
+                        Invite
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Card>
+            )}
+
+            {/* Members Section */}
+            {workspaceId && (
+              <Card style={[styles.sidebarSection, { backgroundColor: colors.card }]}>
+                <View style={styles.sidebarSectionHeader}>
+                  <View style={styles.sidebarSectionTitle}>
+                    <View style={[styles.sidebarSectionIcon, { backgroundColor: colors.primary + '15' }]}>
+                      <FontAwesome name="users" size={14} color={colors.primary} />
+                    </View>
+                    <Text style={[TextStyles.heading.h4, { color: colors.foreground }]}>Current Members</Text>
+                  </View>
+                </View>
+                {membersLoading ? (
+                  <View style={styles.sidebarEmptyState}>
+                    <FontAwesome name="spinner" size={24} color={colors['muted-foreground']} />
+                    <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading members...</Text>
+                  </View>
+                ) : membersError ? (
+                  <View style={styles.sidebarEmptyState}>
+                    <FontAwesome name="exclamation-triangle" size={24} color={colors.destructive} />
+                    <Text style={[TextStyles.body.medium, { color: colors.destructive }]}>{membersError}</Text>
+                  </View>
+                ) : (Array.isArray(uniqueMembers) && uniqueMembers.length > 0 ? (
+                  <View style={styles.membersList}>
+                    {uniqueMembers.map((m: any) => {
+                      const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
+                      const email = m?.user?.email || m?.email || '';
+                      const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
+                      const letter = String(displayName).charAt(0).toUpperCase();
+                      const isOwner = m.role === 'owner';
+                      return (
+                        <View key={m._id || m.id || m.email} style={[styles.sidebarMemberItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                          {avatarUrl ? (
+                            <Image source={{ uri: avatarUrl }} style={styles.sidebarMemberAvatar} />
+                          ) : (
+                            <View style={[styles.sidebarMemberAvatar, styles.sidebarMemberAvatarPlaceholder, { backgroundColor: colors.muted }]}> 
+                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{letter}</Text>
+                            </View>
                           )}
-                          <View style={styles.memberMetaRow}>
-                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.role || 'member'}</Text>
-                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>•</Text>
-                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>{m.status || 'active'}</Text>
-                          </View>
-                        </View>
-                        {m.role !== 'owner' && (
-                          <TouchableOpacity
-                            onPress={() => { setMemberToRemove(m); setConfirmVisible(true); }}
-                            disabled={!!membersLoading}
-                            style={[styles.destructiveBtn, { backgroundColor: colors.destructive }, membersLoading ? { opacity: 0.6 } : null]}
-                          >
-                            <Text style={{ color: colors['destructive-foreground'] }}>
-                              {membersLoading ? 'Removing…' : 'Remove'}
+                          <View style={styles.sidebarMemberInfo}>
+                            <Text style={[TextStyles.body.medium, { color: colors.foreground }]} numberOfLines={1}>
+                              {displayName} {isOwner && '👑'}
                             </Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    );
-                  })}
-                </View>
-              ) : (
-                <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No members yet.</Text>
-              ))}
-            </Card>
-          )}
+                            {!!email && (
+                              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]} numberOfLines={1}>{email}</Text>
+                            )}
+                            <View style={styles.sidebarMemberMeta}>
+                              <View style={[styles.sidebarRoleBadge, { backgroundColor: isOwner ? colors.primary + '15' : colors.muted + '15' }]}>
+                                <Text style={[TextStyles.caption.small, { color: isOwner ? colors.primary : colors['muted-foreground'], fontWeight: '500' }]}>
+                                  {m.role || 'member'}
+                                </Text>
+                              </View>
+                              <View style={[styles.sidebarStatusBadge, { backgroundColor: colors.success + '15' }]}>
+                                <Text style={[TextStyles.caption.small, { color: colors.success, fontWeight: '500' }]}>
+                                  {m.status || 'active'}
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                          {!isOwner && (
+                            <TouchableOpacity
+                              onPress={() => {
+                                const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'this member';
+                                showConfirm(
+                                  'Remove Member',
+                                  `Are you sure you want to remove ${displayName} from the workspace?`,
+                                  () => handleRemoveMember(m)
+                                );
+                              }}
+                              disabled={!!membersLoading}
+                              style={[styles.sidebarRemoveButton, { backgroundColor: colors.destructive }, membersLoading ? { opacity: 0.6 } : null]}
+                            >
+                              <FontAwesome name="user-times" size={12} color={colors['destructive-foreground']} />
+                              <Text style={[TextStyles.caption.small, { color: colors['destructive-foreground'], marginLeft: 4, fontWeight: '500' }]}>
+                                {membersLoading ? 'Removing…' : 'Remove'}
+                              </Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : (
+                  <View style={styles.sidebarEmptyState}>
+                    <FontAwesome name="users" size={32} color={colors['muted-foreground']} />
+                    <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>No members yet</Text>
+                    <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], textAlign: 'center' }]}>
+                      Invite members to collaborate on this workspace
+                    </Text>
+                  </View>
+                ))}
+              </Card>
+            )}
+          </ScrollView>
           </Animated.View>
         </>
       )}
@@ -635,31 +840,15 @@ function WorkspaceScreenContent() {
         submitting={creatingSpace}
       />
 
-      {/* Confirm remove member */}
-      <ConfirmationDialog
-        visible={confirmVisible}
-        title="Remove member?"
-        message={
-          memberToRemove
-            ? `Are you sure you want to remove ${memberToRemove?.user?.name || memberToRemove?.name || 'this member'} from the workspace?`
-            : 'Are you sure you want to remove this member from the workspace?'
-        }
-        confirmText="Remove"
-        cancelText="Cancel"
-        onConfirm={async () => {
-          const target = memberToRemove;
-          setConfirmVisible(false);
-          setMemberToRemove(null);
-          if (target) {
-            await handleRemoveMember(target);
-          }
-        }}
-        onCancel={() => {
-          setConfirmVisible(false);
-          setMemberToRemove(null);
-        }}
-        variant="danger"
+      {/* Premium Space Limit Modal */}
+      <PremiumSpaceLimitModal
+        visible={showPremiumSpaceModal}
+        onClose={() => setShowPremiumSpaceModal(false)}
+        currentSpacesCount={processedSpaces.length}
+        maxFreeSpaces={5}
       />
+
+      {/* Member removal confirmation now handled by MobileAlert showConfirm */}
 
       {/* Sidebar */}
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="workspace" />
@@ -667,11 +856,13 @@ function WorkspaceScreenContent() {
   );
 }
 
-// Wrapper component with BannerProvider
+// Wrapper component with both providers
 export default function WorkspaceScreen() {
   return (
     <BannerProvider>
-      <WorkspaceScreenContent />
+      <MobileAlertProvider>
+        <WorkspaceScreenContent />
+      </MobileAlertProvider>
     </BannerProvider>
   );
 }
@@ -681,17 +872,24 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
+    minHeight: 72,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
     flex: 1,
   },
   headerCenter: {
-    flex: 1,
+    flex: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -699,15 +897,146 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'flex-end',
   },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   backButton: {
-    padding: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   sidebarButton: {
-    padding: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  membersButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  toolbarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  searchIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 4,
+  },
+  clearButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  spacesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  spacesTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  spacesIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  statCard: {
+    flex: 1,
+    padding: 20,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  statIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statContent: {
+    flex: 1,
   },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { flex: 1, padding: 16 },
@@ -739,6 +1068,20 @@ const styles = StyleSheet.create({
   },
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
   pill: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 999, borderWidth: 1 },
+  spacesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  premiumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
   primaryBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10 },
   secondaryBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10 },
   memberItem: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 10, borderWidth: 1 },
@@ -747,6 +1090,201 @@ const styles = StyleSheet.create({
   memberAvatar: { width: 36, height: 36, borderRadius: 18 },
   memberAvatarPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   modalBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#00000088', zIndex: 1000 },
-  modalPanel: { position: 'absolute', top: 0, right: 0, bottom: 0, width: 320, borderLeftWidth: StyleSheet.hairlineWidth, padding: 16, zIndex: 1001 },
+  modalPanel: { 
+    position: 'absolute', 
+    top: 0, 
+    right: 0, 
+    bottom: 0, 
+    width: 320, 
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000',
+    shadowOffset: { width: -4, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 1001 
+  },
+  sidebarHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sidebarHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  sidebarHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  sidebarHeaderIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sidebarCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  sidebarContent: {
+    flex: 1,
+    padding: 20,
+  },
+  sidebarSection: {
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sidebarSectionHeader: {
+    marginBottom: 16,
+  },
+  sidebarSectionTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  sidebarSectionIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inviteContainer: {
+    gap: 16,
+  },
+  inviteInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  inviteInputIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inviteInput: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 4,
+  },
+  inviteControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  roleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  inviteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  membersList: {
+    gap: 12,
+  },
+  sidebarMemberItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  sidebarMemberAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  sidebarMemberAvatarPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sidebarMemberInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  sidebarMemberMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sidebarRoleBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  sidebarStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  sidebarRemoveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  sidebarEmptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+    gap: 12,
+  },
   ghostBtn: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, alignItems: 'center' },
 });

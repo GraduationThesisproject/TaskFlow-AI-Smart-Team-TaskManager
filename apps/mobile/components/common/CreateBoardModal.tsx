@@ -7,26 +7,34 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-export type Visibility = 'private' | 'public';
+export type BoardType = 'kanban' | 'list' | 'calendar' | 'timeline';
+export type BoardVisibility = 'private' | 'public';
 
-interface CreateSpaceModalProps {
+interface CreateBoardModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (payload: { name: string; description?: string; visibility: Visibility }) => Promise<void> | void;
+  onSubmit: (payload: { 
+    name: string; 
+    description?: string; 
+    type: BoardType; 
+    visibility: BoardVisibility 
+  }) => Promise<void> | void;
   submitting?: boolean;
 }
 
-export default function CreateSpaceModal({ visible, onClose, onSubmit, submitting }: CreateSpaceModalProps) {
+export default function CreateBoardModal({ visible, onClose, onSubmit, submitting }: CreateBoardModalProps) {
   const colors = useThemeColors();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [visibility, setVisibility] = useState<Visibility>('private');
+  const [type, setType] = useState<BoardType>('kanban');
+  const [visibility, setVisibility] = useState<BoardVisibility>('public');
 
   useEffect(() => {
     if (!visible) {
       setName('');
       setDescription('');
-      setVisibility('private');
+      setType('kanban');
+      setVisibility('public');
     }
   }, [visible]);
 
@@ -34,8 +42,20 @@ export default function CreateSpaceModal({ visible, onClose, onSubmit, submittin
 
   const handleSubmit = async () => {
     if (!canCreate) return;
-    await onSubmit({ name: name.trim(), description: description.trim() || undefined, visibility });
+    await onSubmit({ 
+      name: name.trim(), 
+      description: description.trim() || undefined, 
+      type,
+      visibility 
+    });
   };
+
+  const boardTypes = [
+    { id: 'kanban', name: 'Kanban', icon: 'columns', description: 'Visual workflow with columns' },
+    { id: 'list', name: 'List', icon: 'list', description: 'Simple task list' },
+    { id: 'calendar', name: 'Calendar', icon: 'calendar', description: 'Time-based view' },
+    { id: 'timeline', name: 'Timeline', icon: 'clock-o', description: 'Project timeline' },
+  ] as const;
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
@@ -49,12 +69,12 @@ export default function CreateSpaceModal({ visible, onClose, onSubmit, submittin
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
               <View style={styles.headerLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
-                  <FontAwesome name="folder" size={20} color={colors.primary} />
+                  <FontAwesome name="plus-square" size={20} color={colors.primary} />
                 </View>
                 <View>
-                  <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Create Space</Text>
+                  <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Create Board</Text>
                   <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                    Organize your projects and tasks
+                    Set up a new board for your tasks
                   </Text>
                 </View>
               </View>
@@ -71,15 +91,15 @@ export default function CreateSpaceModal({ visible, onClose, onSubmit, submittin
               keyboardShouldPersistTaps="handled"
             >
               <View style={styles.content}>
-                {/* Space Name */}
+                {/* Board Name */}
                 <View style={styles.inputGroup}>
                   <Text style={[TextStyles.body.medium, { color: colors.foreground, marginBottom: 8, fontWeight: '600' }]}>
-                    Space Name *
+                    Board Name *
                   </Text>
                   <TextInput
                     value={name}
                     onChangeText={setName}
-                    placeholder="e.g. Engineering, Marketing, Design"
+                    placeholder="e.g. Sprint Planning, Bug Fixes, Feature Development"
                     placeholderTextColor={colors['muted-foreground']}
                     style={[styles.input, { 
                       borderColor: colors.border, 
@@ -96,12 +116,12 @@ export default function CreateSpaceModal({ visible, onClose, onSubmit, submittin
                     Description
                   </Text>
                   <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginBottom: 8 }]}>
-                    Optional: Brief description of what this space is for
+                    Optional: Brief description of what this board is for
                   </Text>
                   <TextInput
                     value={description}
                     onChangeText={setDescription}
-                    placeholder="e.g. All engineering projects, sprints, and technical discussions"
+                    placeholder="e.g. Track all bug reports and their resolution status"
                     placeholderTextColor={colors['muted-foreground']}
                     multiline
                     numberOfLines={3}
@@ -113,13 +133,62 @@ export default function CreateSpaceModal({ visible, onClose, onSubmit, submittin
                   />
                 </View>
 
+                {/* Board Type */}
+                <View style={styles.inputGroup}>
+                  <Text style={[TextStyles.body.medium, { color: colors.foreground, marginBottom: 8, fontWeight: '600' }]}>
+                    Board Type
+                  </Text>
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginBottom: 12 }]}>
+                    Choose the layout that works best for your workflow
+                  </Text>
+                  <View style={styles.typeContainer}>
+                    {boardTypes.map((boardType) => (
+                      <TouchableOpacity
+                        key={boardType.id}
+                        onPress={() => setType(boardType.id)}
+                        style={[
+                          styles.typeOption,
+                          { 
+                            borderColor: colors.border,
+                            backgroundColor: type === boardType.id ? colors.primary + '10' : colors.background 
+                          }
+                        ]}
+                      >
+                        <View style={styles.typeHeader}>
+                          <FontAwesome 
+                            name={boardType.icon as any} 
+                            size={16} 
+                            color={type === boardType.id ? colors.primary : colors['muted-foreground']} 
+                          />
+                          <Text style={[
+                            TextStyles.body.medium, 
+                            { 
+                              color: type === boardType.id ? colors.primary : colors.foreground,
+                              fontWeight: '600',
+                              marginLeft: 8
+                            }
+                          ]}>
+                            {boardType.name}
+                          </Text>
+                          {type === boardType.id && (
+                            <FontAwesome name="check-circle" size={16} color={colors.primary} style={{ marginLeft: 'auto' }} />
+                          )}
+                        </View>
+                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 4 }]}>
+                          {boardType.description}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
                 {/* Visibility */}
                 <View style={styles.inputGroup}>
                   <Text style={[TextStyles.body.medium, { color: colors.foreground, marginBottom: 8, fontWeight: '600' }]}>
                     Visibility
                   </Text>
                   <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginBottom: 12 }]}>
-                    Control who can see and access this space
+                    Control who can see and access this board
                   </Text>
                   <View style={styles.visibilityContainer}>
                     <TouchableOpacity
@@ -153,7 +222,7 @@ export default function CreateSpaceModal({ visible, onClose, onSubmit, submittin
                         )}
                       </View>
                       <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 4 }]}>
-                        Only workspace members can see and access this space
+                        Only space members can see this board
                       </Text>
                     </TouchableOpacity>
 
@@ -188,7 +257,7 @@ export default function CreateSpaceModal({ visible, onClose, onSubmit, submittin
                         )}
                       </View>
                       <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 4 }]}>
-                        Anyone with the link can view this space
+                        Anyone with space access can see this board
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -220,7 +289,7 @@ export default function CreateSpaceModal({ visible, onClose, onSubmit, submittin
                   ]}
                 >
                   <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'], fontWeight: '700', textAlign: 'center' }]}>
-                    {submitting ? 'Creating...' : 'Create Space'}
+                    {submitting ? 'Creating...' : 'Create Board'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -316,6 +385,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 80,
     textAlignVertical: 'top',
+  },
+  typeContainer: {
+    gap: 12,
+  },
+  typeOption: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+  },
+  typeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   visibilityContainer: {
     gap: 12,

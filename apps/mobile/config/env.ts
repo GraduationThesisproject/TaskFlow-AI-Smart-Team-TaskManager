@@ -1,9 +1,44 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
-import { getApiConfig, logNetworkConfig } from '../utils/network-detector';
 
-// Get automatic network configuration
-const networkConfig = getApiConfig();
+// Simple network configuration
+const getNetworkConfig = () => {
+  const isDev = __DEV__;
+  const isAndroid = Platform.OS === 'android';
+  const isIOS = Platform.OS === 'ios';
+  
+  if (isDev) {
+    if (isAndroid) {
+      // Android - use development machine IP
+      return {
+        apiBaseUrl: 'http://192.168.1.14:3001/api',
+        baseUrl: 'http://192.168.1.14:3001',
+        socketUrl: 'http://192.168.1.14:3001',
+        frontendUrl: 'http://192.168.1.14:5173',
+      };
+    }
+    
+    if (isIOS || Platform.OS === 'web') {
+      // iOS simulator and web - use localhost
+      return {
+        apiBaseUrl: 'http://localhost:3001/api',
+        baseUrl: 'http://localhost:3001',
+        socketUrl: 'http://localhost:3001',
+        frontendUrl: 'http://localhost:5173',
+      };
+    }
+  }
+  
+  // Production URLs
+  return {
+    apiBaseUrl: 'https://api.taskflow.com/api',
+    baseUrl: 'https://api.taskflow.com',
+    socketUrl: 'https://api.taskflow.com',
+    frontendUrl: 'https://taskflow.com',
+  };
+};
+
+const networkConfig = getNetworkConfig();
 
 // Environment configuration for React Native/Expo
 export const env = {
@@ -11,11 +46,11 @@ export const env = {
   NODE_ENV: __DEV__ ? 'development' : 'production',
   PORT: 3001,
     
-  // API Configuration - Auto-detected
-  API_BASE_URL: networkConfig.API_BASE_URL,
-  API_URL: networkConfig.API_URL,
-  SOCKET_URL: networkConfig.SOCKET_URL,
-  BASE_URL: networkConfig.BASE_URL,
+  // API Configuration
+  API_BASE_URL: networkConfig.apiBaseUrl,
+  API_URL: networkConfig.apiBaseUrl,
+  SOCKET_URL: networkConfig.socketUrl,
+  BASE_URL: networkConfig.baseUrl,
   
   // App Configuration
   APP_NAME: Constants.expoConfig?.name || 'TaskFlow',
@@ -77,9 +112,9 @@ export const env = {
   PERFORMANCE_MONITORING_ENABLED: process.env.EXPO_PUBLIC_PERFORMANCE_MONITORING_ENABLED === 'true' || Constants.expoConfig?.extra?.performanceMonitoringEnabled === true,
   
   // Environment specific URLs
-  DEVELOPMENT_API_URL: process.env.EXPO_PUBLIC_DEV_API_URL || 'http://localhost:3001/api',
-  STAGING_API_URL: process.env.EXPO_PUBLIC_STAGING_API_URL || 'https://staging-api.taskflow.com/api',
-  PRODUCTION_API_URL: process.env.EXPO_PUBLIC_PROD_API_URL || 'https://api.taskflow.com/api',
+  DEVELOPMENT_API_URL: networkConfig.apiBaseUrl,
+  STAGING_API_URL: 'https://staging-api.taskflow.com/api',
+  PRODUCTION_API_URL: 'https://api.taskflow.com/api',
   
   // Feature toggles
   ENABLE_PUSH_NOTIFICATIONS: process.env.EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS === 'true' || Constants.expoConfig?.extra?.enablePushNotifications === true,
@@ -233,5 +268,13 @@ if (__DEV__) {
   }
   
   // Log network configuration for debugging
-  logNetworkConfig();
+  if (__DEV__) {
+    console.log('🌐 Network Configuration:', {
+      platform: Platform.OS,
+      isDev: __DEV__,
+      apiBaseUrl: env.API_BASE_URL,
+      baseUrl: env.BASE_URL,
+      socketUrl: env.SOCKET_URL,
+    });
+  }
 }
