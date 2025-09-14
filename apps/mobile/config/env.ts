@@ -61,7 +61,7 @@ export const env = {
   ENABLE_DEBUG: __DEV__,
   
   // OAuth Configuration
-  GOOGLE_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || Constants.expoConfig?.extra?.googleClientId || '823340430443-hmc2puv4ffap7sgo0jc79bm5juivkvvf.apps.googleusercontent.com',
+  GOOGLE_CLIENT_ID: '823340430443-hmc2puv4ffap7sgo0jc79bm5juivkvvf.apps.googleusercontent.com', // Web client ID for Expo Go
   GOOGLE_CLIENT_SECRET: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_SECRET || Constants.expoConfig?.extra?.googleClientSecret || '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',
   GOOGLE_CALLBACK_URL: process.env.EXPO_PUBLIC_GOOGLE_CALLBACK_URL || Constants.expoConfig?.extra?.googleCallbackUrl || 'taskflow://auth/google/callback',
   GITHUB_CLIENT_ID: process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID || Constants.expoConfig?.extra?.githubClientId || 'Ov23liwZN5YwJ4eZvffU',

@@ -215,8 +215,9 @@ export const checkAuthStatus = createAsyncThunk(
 export const logoutUser = createAsyncThunk(
   'auth/logout',
   async (params: { allDevices?: boolean, navigate?: (path: string) => void } = {}, { rejectWithValue }) => {
+    const { allDevices = false, navigate } = params;
+    
     try {
-      const { allDevices = false, navigate } = params;
       const deviceId = await getDeviceId();
       
       await AuthService.logout(deviceId, allDevices);
