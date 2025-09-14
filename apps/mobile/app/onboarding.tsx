@@ -86,7 +86,7 @@ export default function OnboardingScreen() {
 
   const renderItem = ({ item }: { item: Slide }) => (
     <View style={[styles.slide, { width }]}> 
-      <View style={[styles.card, styles.shadow, { backgroundColor: theme.card || '#FFFFFF' }]}> 
+      <View style={styles.contentContainer}>
         <View style={styles.illustrationWrapper}>
           <LottieView
             source={item.animation}
@@ -96,24 +96,33 @@ export default function OnboardingScreen() {
             resizeMode="contain"
           />
         </View>
-        <Text style={[styles.title, { color: theme.foreground }]}>{item.title}</Text>
-        <Text style={[styles.description, { color: theme['muted-foreground'] }]}>{item.description}</Text>
+        <View style={styles.textContainer}>
+          <Text style={[styles.title, { color: theme.foreground }]}>{item.title}</Text>
+          <Text style={[styles.description, { color: theme['muted-foreground'] }]}>{item.description}</Text>
+        </View>
       </View>
     </View>
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.muted || theme.background }]}> 
+    <View style={[styles.container, { backgroundColor: theme.background }]}> 
       <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
-      <TouchableOpacity
-        onPress={handleSkip}
-        style={styles.skipButton}
-        accessibilityRole="button"
-        accessibilityLabel="Skip onboarding"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Text style={styles.skipText}>Skip</Text>
-      </TouchableOpacity>
+      
+      {/* Professional Header */}
+      <View style={styles.header}>
+        <View style={styles.logoContainer}>
+          <Text style={[styles.logoText, { color: theme.primary }]}>TaskFlow</Text>
+        </View>
+        <TouchableOpacity
+          onPress={handleSkip}
+          style={[styles.skipButton, { backgroundColor: theme.primary + '10' }]}
+          accessibilityRole="button"
+          accessibilityLabel="Skip onboarding"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={[styles.skipText, { color: theme.primary }]}>Skip</Text>
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         ref={listRef}
@@ -127,7 +136,7 @@ export default function OnboardingScreen() {
           const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
           setIndex(newIndex);
         }}
-        contentContainerStyle={{ alignItems: 'center', paddingVertical: 24 }}
+        contentContainerStyle={{ alignItems: 'center', paddingVertical: 40 }}
       />
 
       <View style={styles.bottomBar}>
@@ -192,102 +201,111 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  // Professional Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  logoContainer: {
+    flex: 1,
+  },
+  logoText: {
+    fontFamily: Fonts.secondary.bold,
+    fontSize: FontSizes['2xl'],
+    fontWeight: '700',
+  },
   skipButton: {
-    position: 'absolute',
-    top: 24,
-    right: 16,
-    zIndex: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   skipText: {
-    ...({} as any),
-    fontFamily: Fonts.secondary.semiBold,
-    fontSize: FontSizes.base,
-    color: '#000',
-    textDecorationLine: 'underline',
+    fontFamily: Fonts.secondary.medium,
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
   },
   slide: {
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    alignItems: 'center',
-  },
-  card: {
-    width: width * 0.88,
-    borderRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 28,
-    alignItems: 'center',
-  },
-  shadow: {
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  illustrationWrapper: {
-    width: width * 0.7,
-    aspectRatio: 1,
-    borderRadius: 24,
+    paddingHorizontal: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
-    marginBottom: 20,
   },
-  emoji: {
-    fontSize: 88,
+  contentContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  illustrationWrapper: {
+    width: width * 0.75,
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 40,
+  },
+  textContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   title: {
     textAlign: 'center',
-    fontFamily: Fonts.secondary.semiBold,
-    fontSize: FontSizes['2xl'],
+    fontFamily: Fonts.secondary.bold,
+    fontSize: FontSizes['3xl'],
+    fontWeight: '700',
+    lineHeight: 36,
+    marginBottom: 16,
   },
   description: {
-    marginTop: 8,
     textAlign: 'center',
     fontFamily: Fonts.primary.regular,
-    fontSize: FontSizes.base,
-    opacity: 0.9,
+    fontSize: FontSizes.lg,
+    lineHeight: 24,
+    opacity: 0.8,
+    maxWidth: width * 0.8,
   },
   bottomBar: {
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 18,
-    paddingHorizontal: 24,
+    bottom: 40,
+    paddingHorizontal: 32,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   bottomAction: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    minWidth: 44,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minWidth: 60,
     alignItems: 'center',
+    borderRadius: 12,
   },
   bottomText: {
-    fontFamily: Fonts.secondary.medium,
-    fontSize: FontSizes.sm,
+    fontFamily: Fonts.secondary.semiBold,
+    fontSize: FontSizes.base,
+    fontWeight: '600',
   },
   paginationText: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
   },
   primaryButton: {
     flex: 1,
-    marginHorizontal: 8,
-    paddingVertical: 14,
-    borderRadius: 14,
+    marginHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryButtonText: {
-    fontFamily: Fonts.secondary.semiBold,
-    fontSize: FontSizes.base,
+    fontFamily: Fonts.secondary.bold,
+    fontSize: FontSizes.lg,
+    fontWeight: '700',
   },
 });
 
