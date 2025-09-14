@@ -1,0 +1,2353 @@
+[
+  {
+    "_id": "68a5bba5695eaed0b3b717e1",
+    "userId": "68a5bba5695eaed0b3b717df",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T12:12:21.830Z",
+    "updatedAt": "2025-08-20T12:12:21.830Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5f03dad8f72c5de8dbc3c",
+    "userId": "68a5f03cad8f72c5de8dbc3a",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T15:56:45.011Z",
+    "updatedAt": "2025-08-20T15:56:45.011Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5f20a8d24f4868e79cad5",
+    "userId": "68a5f20a8d24f4868e79cad3",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:04:26.375Z",
+    "updatedAt": "2025-08-20T16:04:26.375Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5f2528d24f4868e79cae3",
+    "userId": "68a5f2518d24f4868e79cae1",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:05:38.275Z",
+    "updatedAt": "2025-08-20T16:05:38.275Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5f6a38d24f4868e79caf2",
+    "userId": "68a5f6a28d24f4868e79caf0",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:24:03.097Z",
+    "updatedAt": "2025-08-20T16:24:03.097Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc048a7b1bd27300b10f",
+    "userId": "68a5fc038a7b1bd27300b10d",
+    "theme": {
+      "mode": "auto",
+      "primaryColor": "#281017",
+      "sidebarCollapsed": true
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": false
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": false,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "daily"
+    },
+    "dashboard": {
+      "defaultView": "calendar",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": true
+          },
+          "_id": "68a5fc048a7b1bd27300b110"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 16
+          },
+          "_id": "68a5fc048a7b1bd27300b111"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:00.303Z",
+    "updatedAt": "2025-08-20T16:47:00.303Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc048a7b1bd27300b11b",
+    "userId": "68a5fc048a7b1bd27300b119",
+    "theme": {
+      "mode": "auto",
+      "primaryColor": "#773c2e",
+      "sidebarCollapsed": true
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": false,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": false
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": false,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "tasks",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": true
+          },
+          "_id": "68a5fc048a7b1bd27300b11c"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 17
+          },
+          "_id": "68a5fc048a7b1bd27300b11d"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:00.636Z",
+    "updatedAt": "2025-08-20T16:47:00.636Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc048a7b1bd27300b127",
+    "userId": "68a5fc048a7b1bd27300b125",
+    "theme": {
+      "mode": "dark",
+      "primaryColor": "#68590c",
+      "sidebarCollapsed": true
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": false,
+      "enableAutoDescription": true,
+      "suggestionFrequency": "never"
+    },
+    "dashboard": {
+      "defaultView": "calendar",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": true
+          },
+          "_id": "68a5fc048a7b1bd27300b128"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 7
+          },
+          "_id": "68a5fc048a7b1bd27300b129"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:00.974Z",
+    "updatedAt": "2025-08-20T16:47:00.974Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc058a7b1bd27300b133",
+    "userId": "68a5fc048a7b1bd27300b131",
+    "theme": {
+      "mode": "dark",
+      "primaryColor": "#661878",
+      "sidebarCollapsed": true
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": false
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": false,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "never"
+    },
+    "dashboard": {
+      "defaultView": "tasks",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": true
+          },
+          "_id": "68a5fc058a7b1bd27300b134"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 10
+          },
+          "_id": "68a5fc058a7b1bd27300b135"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:01.297Z",
+    "updatedAt": "2025-08-20T16:47:01.297Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc058a7b1bd27300b13f",
+    "userId": "68a5fc058a7b1bd27300b13d",
+    "theme": {
+      "mode": "dark",
+      "primaryColor": "#5c532f",
+      "sidebarCollapsed": true
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "analytics",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": false
+          },
+          "_id": "68a5fc058a7b1bd27300b140"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 18
+          },
+          "_id": "68a5fc058a7b1bd27300b141"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:01.608Z",
+    "updatedAt": "2025-08-20T16:47:01.608Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc058a7b1bd27300b14b",
+    "userId": "68a5fc058a7b1bd27300b149",
+    "theme": {
+      "mode": "auto",
+      "primaryColor": "#6b2007",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": false,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": false,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "weekly"
+    },
+    "dashboard": {
+      "defaultView": "tasks",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": true
+          },
+          "_id": "68a5fc058a7b1bd27300b14c"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 20
+          },
+          "_id": "68a5fc058a7b1bd27300b14d"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:01.935Z",
+    "updatedAt": "2025-08-20T16:47:01.935Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc068a7b1bd27300b157",
+    "userId": "68a5fc058a7b1bd27300b155",
+    "theme": {
+      "mode": "auto",
+      "primaryColor": "#396509",
+      "sidebarCollapsed": true
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": false
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": true,
+      "suggestionFrequency": "never"
+    },
+    "dashboard": {
+      "defaultView": "analytics",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": true
+          },
+          "_id": "68a5fc068a7b1bd27300b158"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 9
+          },
+          "_id": "68a5fc068a7b1bd27300b159"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:02.245Z",
+    "updatedAt": "2025-08-20T16:47:02.245Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc068a7b1bd27300b163",
+    "userId": "68a5fc068a7b1bd27300b161",
+    "theme": {
+      "mode": "dark",
+      "primaryColor": "#6e567c",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "weeklyDigest": false
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "never"
+    },
+    "dashboard": {
+      "defaultView": "analytics",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": false
+          },
+          "_id": "68a5fc068a7b1bd27300b164"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 6
+          },
+          "_id": "68a5fc068a7b1bd27300b165"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:02.578Z",
+    "updatedAt": "2025-08-20T16:47:02.578Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc068a7b1bd27300b16f",
+    "userId": "68a5fc068a7b1bd27300b16d",
+    "theme": {
+      "mode": "auto",
+      "primaryColor": "#75137f",
+      "sidebarCollapsed": true
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": false,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": true,
+      "suggestionFrequency": "weekly"
+    },
+    "dashboard": {
+      "defaultView": "tasks",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": false
+          },
+          "_id": "68a5fc068a7b1bd27300b170"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 17
+          },
+          "_id": "68a5fc068a7b1bd27300b171"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:02.839Z",
+    "updatedAt": "2025-08-20T16:47:02.839Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc078a7b1bd27300b17b",
+    "userId": "68a5fc068a7b1bd27300b179",
+    "theme": {
+      "mode": "dark",
+      "primaryColor": "#621944",
+      "sidebarCollapsed": true
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": false,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": true,
+      "suggestionFrequency": "weekly"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": true
+          },
+          "_id": "68a5fc078a7b1bd27300b17c"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 10
+          },
+          "_id": "68a5fc078a7b1bd27300b17d"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:03.122Z",
+    "updatedAt": "2025-08-20T16:47:03.122Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc078a7b1bd27300b187",
+    "userId": "68a5fc078a7b1bd27300b185",
+    "theme": {
+      "mode": "auto",
+      "primaryColor": "#59481f",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": false,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "never"
+    },
+    "dashboard": {
+      "defaultView": "tasks",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": true
+          },
+          "_id": "68a5fc078a7b1bd27300b188"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 9
+          },
+          "_id": "68a5fc078a7b1bd27300b189"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:03.445Z",
+    "updatedAt": "2025-08-20T16:47:03.445Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc078a7b1bd27300b193",
+    "userId": "68a5fc078a7b1bd27300b191",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#4d5a40",
+      "sidebarCollapsed": true
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": true,
+      "suggestionFrequency": "never"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": false
+          },
+          "_id": "68a5fc078a7b1bd27300b194"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 15
+          },
+          "_id": "68a5fc078a7b1bd27300b195"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:03.721Z",
+    "updatedAt": "2025-08-20T16:47:03.721Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc088a7b1bd27300b19f",
+    "userId": "68a5fc078a7b1bd27300b19d",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#052650",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "never"
+    },
+    "dashboard": {
+      "defaultView": "analytics",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": false
+          },
+          "_id": "68a5fc088a7b1bd27300b1a0"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 10
+          },
+          "_id": "68a5fc088a7b1bd27300b1a1"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:04.037Z",
+    "updatedAt": "2025-08-20T16:47:04.037Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc088a7b1bd27300b1ab",
+    "userId": "68a5fc088a7b1bd27300b1a9",
+    "theme": {
+      "mode": "auto",
+      "primaryColor": "#1c3e76",
+      "sidebarCollapsed": true
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": false,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": true,
+      "suggestionFrequency": "daily"
+    },
+    "dashboard": {
+      "defaultView": "analytics",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": false
+          },
+          "_id": "68a5fc088a7b1bd27300b1ac"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 12
+          },
+          "_id": "68a5fc088a7b1bd27300b1ad"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:04.320Z",
+    "updatedAt": "2025-08-20T16:47:04.320Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc088a7b1bd27300b1b7",
+    "userId": "68a5fc088a7b1bd27300b1b5",
+    "theme": {
+      "mode": "auto",
+      "primaryColor": "#56433e",
+      "sidebarCollapsed": true
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": false,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "weeklyDigest": false
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": false,
+      "enableAutoDescription": true,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "analytics",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": true
+          },
+          "_id": "68a5fc088a7b1bd27300b1b8"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 15
+          },
+          "_id": "68a5fc088a7b1bd27300b1b9"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:04.591Z",
+    "updatedAt": "2025-08-20T16:47:04.591Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc088a7b1bd27300b1c3",
+    "userId": "68a5fc088a7b1bd27300b1c1",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#5d7e7b",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": false
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": true,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "analytics",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": true
+          },
+          "_id": "68a5fc088a7b1bd27300b1c4"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 13
+          },
+          "_id": "68a5fc088a7b1bd27300b1c5"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:04.911Z",
+    "updatedAt": "2025-08-20T16:47:04.911Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc098a7b1bd27300b1cf",
+    "userId": "68a5fc088a7b1bd27300b1cd",
+    "theme": {
+      "mode": "dark",
+      "primaryColor": "#611b5a",
+      "sidebarCollapsed": true
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": false
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": false,
+      "enableAutoDescription": true,
+      "suggestionFrequency": "weekly"
+    },
+    "dashboard": {
+      "defaultView": "tasks",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": true
+          },
+          "_id": "68a5fc098a7b1bd27300b1d0"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 5
+          },
+          "_id": "68a5fc098a7b1bd27300b1d1"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:05.206Z",
+    "updatedAt": "2025-08-20T16:47:05.206Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc098a7b1bd27300b1db",
+    "userId": "68a5fc098a7b1bd27300b1d9",
+    "theme": {
+      "mode": "dark",
+      "primaryColor": "#724912",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": true,
+      "suggestionFrequency": "never"
+    },
+    "dashboard": {
+      "defaultView": "calendar",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": false
+          },
+          "_id": "68a5fc098a7b1bd27300b1dc"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 20
+          },
+          "_id": "68a5fc098a7b1bd27300b1dd"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:05.506Z",
+    "updatedAt": "2025-08-20T16:47:05.506Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc098a7b1bd27300b1e7",
+    "userId": "68a5fc098a7b1bd27300b1e5",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#00074d",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": false,
+      "enableRiskAnalysis": false,
+      "enableAutoDescription": true,
+      "suggestionFrequency": "never"
+    },
+    "dashboard": {
+      "defaultView": "tasks",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": false
+          },
+          "_id": "68a5fc098a7b1bd27300b1e8"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 13
+          },
+          "_id": "68a5fc098a7b1bd27300b1e9"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:05.779Z",
+    "updatedAt": "2025-08-20T16:47:05.779Z",
+    "__v": 0
+  },
+  {
+    "_id": "68a5fc0a8a7b1bd27300b1f3",
+    "userId": "68a5fc098a7b1bd27300b1f1",
+    "theme": {
+      "mode": "dark",
+      "primaryColor": "#72572c",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": false,
+        "taskCompleted": false,
+        "taskOverdue": false,
+        "commentAdded": false,
+        "mentionReceived": false,
+        "spaceUpdates": false,
+        "weeklyDigest": false
+      },
+      "push": {
+        "taskAssigned": false,
+        "taskCompleted": false,
+        "taskOverdue": false,
+        "commentAdded": false,
+        "mentionReceived": false,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "realTime": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "workspaceCreated": true,
+        "workspaceArchived": true,
+        "workspaceRestored": true,
+        "workspaceDeleted": true,
+        "templateCreated": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": false,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "never"
+    },
+    "dashboard": {
+      "defaultView": "calendar",
+      "widgets": [
+        {
+          "type": "tasks_overview",
+          "position": 0,
+          "settings": {
+            "showCompleted": false
+          },
+          "_id": "68a5fc0a8a7b1bd27300b1f4"
+        },
+        {
+          "type": "recent_activity",
+          "position": 1,
+          "settings": {
+            "limit": 6
+          },
+          "_id": "68a5fc0a8a7b1bd27300b1f5"
+        }
+      ]
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-20T16:47:06.070Z",
+    "updatedAt": "2025-09-01T08:00:10.218Z",
+    "__v": 0
+  },
+  {
+    "_id": "68ac286d8d2a0ff1fb8d80d2",
+    "userId": "68ac286d8d2a0ff1fb8d80d0",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-25T09:10:05.915Z",
+    "updatedAt": "2025-08-25T09:10:05.915Z",
+    "__v": 0
+  },
+  {
+    "_id": "68ad7c0f0a120b8030b11e0f",
+    "userId": "68ad7c0e0a120b8030b11e0d",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "realTime": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "workspaceCreated": true,
+        "workspaceArchived": true,
+        "workspaceRestored": true,
+        "workspaceDeleted": true,
+        "templateCreated": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-26T09:19:11.113Z",
+    "updatedAt": "2025-08-29T14:27:25.204Z",
+    "__v": 0
+  },
+  {
+    "_id": "68ae73d347b9e4faa9ed9856",
+    "userId": "68ae73d347b9e4faa9ed9854",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-27T02:56:19.284Z",
+    "updatedAt": "2025-08-27T02:56:19.284Z",
+    "__v": 0
+  },
+  {
+    "_id": "68afe335fbe5b196f422cff7",
+    "userId": "68afe335fbe5b196f422cff5",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": false,
+        "taskCompleted": false,
+        "taskOverdue": false,
+        "commentAdded": false,
+        "mentionReceived": false,
+        "spaceUpdates": false
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "realTime": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "workspaceCreated": true,
+        "workspaceArchived": true,
+        "workspaceRestored": true,
+        "workspaceDeleted": true,
+        "templateCreated": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-08-28T05:03:49.840Z",
+    "updatedAt": "2025-08-29T14:13:46.827Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bb015e18317116a2ceae63",
+    "userId": "68bb015e18317116a2ceae60",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "realTime": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "workspaceCreated": true,
+        "workspaceArchived": true,
+        "workspaceRestored": true,
+        "workspaceDeleted": true,
+        "templateCreated": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-09-05T15:27:26.300Z",
+    "updatedAt": "2025-09-05T15:27:26.300Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bc300a8445b7204c2093ca",
+    "userId": "68bc30098445b7204c2093c8",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "realTime": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "workspaceCreated": true,
+        "workspaceArchived": true,
+        "workspaceRestored": true,
+        "workspaceDeleted": true,
+        "templateCreated": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      }
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-09-06T12:58:50.194Z",
+    "updatedAt": "2025-09-06T12:58:50.194Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bedbe08dad39bb0238d2b0",
+    "userId": "68bedbdf8dad39bb0238d2ae",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "realTime": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "workspaceCreated": true,
+        "workspaceArchived": true,
+        "workspaceRestored": true,
+        "workspaceDeleted": true,
+        "templateCreated": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "marketing": false
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-09-08T13:36:32.145Z",
+    "updatedAt": "2025-09-08T13:36:32.145Z",
+    "__v": 0
+  },
+  {
+    "_id": "68beef2f8dad39bb023aa223",
+    "userId": "68beef2f8dad39bb023aa221",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "realTime": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "workspaceCreated": true,
+        "workspaceArchived": true,
+        "workspaceRestored": true,
+        "workspaceDeleted": true,
+        "templateCreated": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "marketing": false
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-09-08T14:58:55.477Z",
+    "updatedAt": "2025-09-08T14:58:55.477Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c25e12e13caafeefe6bb3d",
+    "userId": "68c25e12e13caafeefe6bb3b",
+    "theme": {
+      "mode": "light",
+      "primaryColor": "#3B82F6",
+      "sidebarCollapsed": false
+    },
+    "notifications": {
+      "email": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": false,
+        "weeklyDigest": true
+      },
+      "push": {
+        "taskAssigned": true,
+        "taskCompleted": false,
+        "taskOverdue": true,
+        "commentAdded": false,
+        "mentionReceived": true,
+        "spaceUpdates": false
+      },
+      "realTime": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true,
+        "workspaceCreated": true,
+        "workspaceArchived": true,
+        "workspaceRestored": true,
+        "workspaceDeleted": true,
+        "templateCreated": true
+      },
+      "inApp": {
+        "taskAssigned": true,
+        "taskCompleted": true,
+        "taskOverdue": true,
+        "commentAdded": true,
+        "mentionReceived": true,
+        "spaceUpdates": true
+      },
+      "marketing": false
+    },
+    "ai": {
+      "enableSuggestions": true,
+      "enableRiskAnalysis": true,
+      "enableAutoDescription": false,
+      "suggestionFrequency": "realtime"
+    },
+    "dashboard": {
+      "defaultView": "overview",
+      "widgets": []
+    },
+    "privacy": {
+      "profileVisibility": "team_only",
+      "showOnlineStatus": true,
+      "allowDirectMessages": true,
+      "shareActivityData": false
+    },
+    "connectedApps": [],
+    "createdAt": "2025-09-11T05:28:50.448Z",
+    "updatedAt": "2025-09-11T05:28:50.448Z",
+    "__v": 0
+  }
+]
