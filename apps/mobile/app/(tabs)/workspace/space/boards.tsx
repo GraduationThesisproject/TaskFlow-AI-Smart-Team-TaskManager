@@ -14,15 +14,20 @@ import { useSpaces as useSpacesHook } from '@/hooks/useSpaces';
 import SpaceHeader from '@/components/space/SpaceHeader';
 import SpaceRightSidebar from '@/components/space/SpaceRightSidebar';
 import Sidebar from '@/components/navigation/Sidebar';
-import Banner from '@/components/common/Banner';
+import { MobileAlertProvider, useMobileAlert } from '@/components/common/MobileAlertProvider';
+import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
+import CreateSpaceModal from '@/components/common/CreateSpaceModal';
+import CreateBoardModal from '@/components/common/CreateBoardModal';
 
-export default function SpaceBoardsScreen() {
+function SpaceBoardsScreenContent() {
   const colors = useThemeColors();
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
   const dispatch = useAppDispatch();
   const { width } = useWindowDimensions();
   const isWide = width >= 768; // show right sidebar on tablets/landscape
+  const { showSuccess, showError, showWarning, showInfo, showConfirm } = useMobileAlert();
+  const { showSuccess: showBannerSuccess, showError: showBannerError, showWarning: showBannerWarning, showInfo: showBannerInfo } = useBanner();
 
   const { selectedSpace, members: workspaceMembers, currentWorkspace } = useAppSelector((s: any) => s.workspace);
   const { user: authUser } = useAppSelector((s: any) => s.auth);
@@ -38,9 +43,13 @@ export default function SpaceBoardsScreen() {
     // console.log('Final userId:', userId);
     return String(userId || '');
   }, [authUser]);
-  const space = selectedSpace;
-  const { loadSpaces } = useWorkspaces({ autoFetch: false });
+  
+  // FIXED: Use currentSpace from spaceSlice instead of selectedSpace from workspaceSlice
+  // This ensures UI and member operations use the same space data
   const { loadSpaceMembers, addMember, removeMember, currentSpace, loadSpace } = useSpacesHook();
+  const space = currentSpace; // Use currentSpace instead of selectedSpace
+  
+  const { loadSpaces } = useWorkspaces({ autoFetch: false });
 
   // Include all members (including owner). We'll prevent adding yourself via UI guards.
   const displayMembers = useMemo(() => {
@@ -163,7 +172,7 @@ export default function SpaceBoardsScreen() {
     return enrichedSpaceMembers;
   }, [currentSpace]);
 
-  // Members that can be added to a board (exclude workspace owners and already added members)
+  // Members that can be added to THIS SPECIFIC SPACE (exclude workspace owners and already added members)
   const addableMembers = useMemo(() => {
     const list = Array.isArray(displayMembers) ? displayMembers : [];
     const spaceMembersList = Array.isArray(currentSpace?.members) ? currentSpace.members : [];
@@ -173,7 +182,7 @@ export default function SpaceBoardsScreen() {
       const isSelf = currentUserId && memberId === currentUserId;
       const isOwner = ownerIds.has(memberId);
       
-      // Check if member is already in space (using the raw space members data)
+      // Check if member is already in THIS SPECIFIC SPACE
       const isAlreadyInSpace = spaceMembersList.some((spaceMember: any) => {
         const spaceMemberId = String(spaceMember?.user?._id || spaceMember?.user?.id || spaceMember?._id || spaceMember?.id || '');
         return spaceMemberId === memberId;
@@ -215,7 +224,7 @@ export default function SpaceBoardsScreen() {
       });
       
       if (currentUserInSpace) {
-        effectiveUserId = String(currentUserInSpace?.user?._id || currentUserInSpace?.user?.id || currentUserInSpace?._id || currentUserInSpace?.id || '');
+        effectiveUserId = String((currentUserInSpace as any)?.user?._id || (currentUserInSpace as any)?.user?.id || (currentUserInSpace as any)?._id || (currentUserInSpace as any)?.id || '');
         // console.log('Found current user in space members, using ID:', effectiveUserId);
       }
     }
@@ -256,17 +265,20 @@ export default function SpaceBoardsScreen() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState<'viewer' | 'editor' | 'admin'>('viewer');
-  const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   
-  // Show banner helper
+  // Legacy banner function - keeping for backward compatibility
   const showBanner = useCallback((type: 'success' | 'error', message: string) => {
-    setBanner({ type, message });
-  }, []);
+    if (type === 'success') {
+      showBannerSuccess(message);
+    } else {
+      showBannerError(message);
+    }
+  }, [showBannerSuccess, showBannerError]);
   
-  // Hide banner helper
+  // Hide banner helper - keeping for backward compatibility
   const hideBanner = useCallback(() => {
-    setBanner(null);
+    // No-op since Banner handles its own hiding
   }, []);
 
   // Grid sizing for 3 columns
@@ -291,6 +303,10 @@ export default function SpaceBoardsScreen() {
   const [boardDesc, setBoardDesc] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
   const [boardType, setBoardType] = useState<'kanban' | 'list' | 'calendar' | 'timeline'>('kanban');
+
+  // Create Space modal state
+  const [createSpaceVisible, setCreateSpaceVisible] = useState(false);
+  const [creatingSpace, setCreatingSpace] = useState(false);
 
 
   // If navigated directly with an id param and no selectedSpace in store, fetch it.
@@ -359,28 +375,66 @@ export default function SpaceBoardsScreen() {
     }
   };
 
-  const openCreateBoard = () => setCreateVisible(true);
+  const openCreateBoard = () => {
+    console.log('🎯 openCreateBoard called');
+    setCreateVisible(true);
+  };
   const resetCreateState = () => {
     setBoardName('');
     setBoardDesc('');
     setIsPrivate(false);
     setBoardType('kanban');
   };
-  const submitCreateBoard = async () => {
-    if (!space?._id && !space?.id) return;
-    if (!boardName.trim()) {
-      // Non-intrusive validation: show banner instead of alert
-      showBanner('error', 'Board name required');
-      return;
+
+  // Create Space handlers
+  const openCreateSpace = () => setCreateSpaceVisible(true);
+  const handleCreateSpace = async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+    if (!space?.workspaceId && !space?.workspace?._id && !space?.workspace?.id) return;
+    
+    try {
+      setCreatingSpace(true);
+      const workspaceId = space.workspaceId || space.workspace?._id || space.workspace?.id;
+      
+      // Import SpaceService dynamically to avoid circular dependency
+      const { SpaceService } = await import('@/services/spaceService');
+      
+      await SpaceService.createSpace({
+        name,
+        description,
+        workspaceId,
+        settings: { isPrivate: visibility === 'private' },
+      });
+      
+      // Refresh spaces in workspace
+      if (workspaceId) {
+        await loadSpaces(workspaceId);
+      }
+      
+      setCreateSpaceVisible(false);
+      showBannerSuccess('Space created successfully!');
+    } catch (e: any) {
+      console.warn('Failed to create space', e);
+      showBannerError(e?.message || 'Failed to create space');
+    } finally {
+      setCreatingSpace(false);
     }
+  };
+  const submitCreateBoard = async ({ name, description, type, visibility }: { 
+    name: string; 
+    description?: string; 
+    type: 'kanban' | 'list' | 'calendar' | 'timeline'; 
+    visibility: 'private' | 'public' 
+  }) => {
+    if (!space?._id && !space?.id) return;
+    
     try {
       setCreating(true);
       const spaceId = space._id || space.id;
       const createResp = await BoardService.createBoard({
-        name: boardName.trim(),
-        description: boardDesc.trim() || undefined,
-        type: boardType,
-        visibility: isPrivate ? 'private' : 'public',
+        name: name.trim(),
+        description: description?.trim() || undefined,
+        type,
+        visibility,
         spaceId,
       });
       // Try to extract the created board for an optimistic UI update
@@ -398,10 +452,11 @@ export default function SpaceBoardsScreen() {
       if (wsId) {
         loadSpaces(wsId);
       }
+      showBannerSuccess('Board created successfully!');
     } catch (e: any) {
       console.warn('Failed to create board:', e?.response?.data || e);
       // Non-intrusive error banner
-      showBanner('error', e?.response?.data?.message || e?.message || 'Failed to create board');
+      showBannerError(e?.response?.data?.message || e?.message || 'Failed to create board');
     } finally {
       setCreating(false);
     }
@@ -409,12 +464,16 @@ export default function SpaceBoardsScreen() {
 
   // Simple handlers used by SpaceHeader/Sidebar
   const goMembers = () => {
+    console.log('🎯 goMembers called');
     // Toggle the space members sidebar
     setSidebarVisible(!sidebarVisible);
   };
-  const goSettings = () => router.push('/workspace/space/settings');
+  const goSettings = () => {
+    console.log('🎯 goSettings called');
+    router.push('/workspace/space/settings');
+  };
 
-  // Member management functions
+  // Member management functions - adds member to THIS SPECIFIC SPACE only
   const handleAddMember = async (memberId: string, role: string = 'member') => {
     if (!space?._id && !space?.id) return;
     
@@ -426,22 +485,27 @@ export default function SpaceBoardsScreen() {
     
     try {
       const spaceId = space._id || space.id;
-      await addMember(spaceId, memberId, role);
+      const spaceName = space.name;
       
-      // console.log('✅ Member added successfully via API');
+      // Add member to THIS SPECIFIC SPACE only
+      await addMember(spaceId, memberId, role);
       
       // Small delay to ensure backend processing
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Refresh space members
+      // Refresh space members for THIS SPACE
       await loadSpaceMembers(spaceId);
       
-      // console.log('✅ Space members refreshed');
+      // FIXED: Also refresh the spaces list to update member counts in workspace
+      if (space?.workspace) {
+        await loadSpaces(space.workspace);
+      }
       
-      showBanner('success', 'Member added successfully');
+      // Show success message with space name for clarity
+      showSuccess(`Member added to "${spaceName}" successfully`);
     } catch (error: any) {
       console.error('❌ Failed to add member:', error);
-      showBanner('error', error?.message || 'Failed to add member');
+      showError(error?.message || 'Failed to add member');
     }
   };
 
@@ -460,7 +524,12 @@ export default function SpaceBoardsScreen() {
       // Refresh space members
       await loadSpaceMembers(spaceId);
       
-      showBanner('success', 'Member removed successfully');
+      // FIXED: Also refresh the spaces list to update member counts in workspace
+      if (space?.workspace) {
+        await loadSpaces(space.workspace);
+      }
+      
+      showSuccess('Member removed successfully');
     } catch (error: any) {
       console.error('Failed to remove member:', error);
       console.error('Error details:', {
@@ -473,7 +542,7 @@ export default function SpaceBoardsScreen() {
       // If it's a 404 error, the member doesn't exist on the backend
       if (error?.response?.status === 404) {
         console.log('Member not found on backend (404), refreshing data to sync with server');
-        showBanner('success', 'Member was already removed from the server');
+        showSuccess('Member was already removed from the server');
         
         // Force refresh to get the latest state from backend
         const spaceId = space._id || space.id;
@@ -481,7 +550,7 @@ export default function SpaceBoardsScreen() {
         await loadSpace(spaceId);
       } else {
         console.error('Unexpected error removing member:', error);
-        showBanner('error', error?.message || 'Failed to remove member');
+        showError(error?.message || 'Failed to remove member');
       }
     }
   };
@@ -511,7 +580,7 @@ export default function SpaceBoardsScreen() {
       });
       
       if (invalidMembers.length === 0) {
-        showBanner('success', 'No invalid members found');
+        showBannerSuccess('No invalid members found');
         return;
       }
       
@@ -557,13 +626,13 @@ export default function SpaceBoardsScreen() {
       await loadSpace(spaceId);
       
       if (errorCount > 0) {
-        showBanner('success', `Cleaned up ${successCount} member(s). ${errorCount} member(s) were already removed from backend.`);
+        showBannerSuccess(`Cleaned up ${successCount} member(s). ${errorCount} member(s) were already removed from backend.`);
       } else {
-        showBanner('success', `Cleaned up ${successCount} invalid member(s)`);
+        showBannerSuccess(`Cleaned up ${successCount} invalid member(s)`);
       }
     } catch (error: any) {
       console.error('Failed to cleanup invalid members:', error);
-      showBanner('error', error?.message || 'Failed to cleanup invalid members');
+      showBannerError(error?.message || 'Failed to cleanup invalid members');
     }
   };
 
@@ -583,11 +652,17 @@ export default function SpaceBoardsScreen() {
       });
       // Refresh members from server
       await loadSpaceMembers(spaceId);
+      
+      // FIXED: Also refresh the spaces list to update member counts in workspace
+      if (space?.workspace) {
+        await loadSpaces(space.workspace);
+      }
+      
       // After server state is in, clear temporary IDs
       setTempAddedIds(new Set());
       // Member added successfully - no notification needed
     } catch (e: any) {
-      showBanner('error', e?.response?.data?.message || e?.message || 'Failed to add members');
+      showBannerError(e?.response?.data?.message || e?.message || 'Failed to add members');
     }
   };
 
@@ -596,13 +671,28 @@ export default function SpaceBoardsScreen() {
     if (!spaceId || !memberId) return;
     // Prevent removing owners or yourself via UI guards, but double-check here too
     if (ownerIds.has(memberId) || (currentUserId && memberId === currentUserId)) return;
-    try {
-      await removeMember(spaceId, memberId);
-      await loadSpaceMembers(spaceId);
-      // Member removed successfully - no notification needed
-    } catch (e: any) {
-      showBanner('error', e?.response?.data?.message || e?.message || 'Failed to remove member');
-    }
+    
+    // Find the member to get their display name
+    const member = spaceMembers.find((m: any) => {
+      const id = String(m?.user?._id || m?.user?.id || m?._id || m?.id || '');
+      return id === memberId;
+    });
+    
+    const displayName = member?.user?.name || member?.name || member?.user?.email || member?.email || 'this member';
+    
+    showConfirm(
+      'Remove Member',
+      `Are you sure you want to remove ${displayName} from the space?`,
+      async () => {
+        try {
+          await removeMember(spaceId, memberId);
+          await loadSpaceMembers(spaceId);
+          showBannerSuccess(`Member removed successfully from space`);
+        } catch (e: any) {
+          showBannerError(e?.response?.data?.message || e?.message || 'Failed to remove member');
+        }
+      }
+    );
   };
 
   const toggleMemberSelection = (id: string) => {
@@ -644,6 +734,7 @@ export default function SpaceBoardsScreen() {
           <SpaceHeader
             space={{
               ...space,
+              members: spaceMembers,
               totalBoards: Array.isArray(boards) ? boards.length : (space?.totalBoards || space?.stats?.totalBoards || 0),
               stats: { ...(space?.stats || {}), totalBoards: Array.isArray(boards) ? boards.length : (space?.stats?.totalBoards || 0) },
             }}
@@ -761,7 +852,7 @@ export default function SpaceBoardsScreen() {
                           }
                         ]}
                       >
-                        <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'] }]}>+ Add</Text>
+                        <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'] }]}>+ Add to Space</Text>
                       </TouchableOpacity>
                     </View>
                   );
@@ -813,6 +904,22 @@ export default function SpaceBoardsScreen() {
             </Card>
           )}
         </View>
+        
+        {/* Create Space Modal */}
+        <CreateSpaceModal
+          visible={createSpaceVisible}
+          onClose={() => setCreateSpaceVisible(false)}
+          onSubmit={handleCreateSpace}
+          submitting={creatingSpace}
+        />
+        
+        {/* Create Board Modal */}
+        <CreateBoardModal
+          visible={createVisible}
+          onClose={() => setCreateVisible(false)}
+          onSubmit={submitCreateBoard}
+          submitting={creating}
+        />
       </RNView>
     );
   }
@@ -821,19 +928,11 @@ export default function SpaceBoardsScreen() {
   return (
     <RNView style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
       <View style={{ flex: 1 }}>
-        {/* Professional in-app notification banner */}
-        <Banner
-          visible={!!banner}
-          type={banner?.type || 'info'}
-          message={banner?.message || ''}
-          onClose={hideBanner}
-          position="bottom"
-          duration={banner?.type === 'error' ? 4000 : 3000}
-          animationDuration={400}
-        />
+        {/* MobileAlert notifications are handled by the provider */}
         <SpaceHeader
           space={{
             ...space,
+            members: spaceMembers,
             totalBoards: Array.isArray(boards) ? boards.length : (space?.totalBoards || space?.stats?.totalBoards || 0),
             stats: { ...(space?.stats || {}), totalBoards: Array.isArray(boards) ? boards.length : (space?.stats?.totalBoards || 0) },
           }}
@@ -917,6 +1016,22 @@ export default function SpaceBoardsScreen() {
         loading={loading}
       />
 
+      {/* Create Space Modal */}
+      <CreateSpaceModal
+        visible={createSpaceVisible}
+        onClose={() => setCreateSpaceVisible(false)}
+        onSubmit={handleCreateSpace}
+        submitting={creatingSpace}
+      />
+
+      {/* Create Board Modal */}
+      <CreateBoardModal
+        visible={createVisible}
+        onClose={() => setCreateVisible(false)}
+        onSubmit={submitCreateBoard}
+        submitting={creating}
+      />
+
     </RNView>
   );
 }
@@ -954,3 +1069,14 @@ const styles = StyleSheet.create({
   removeButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   emptyState: { padding: 16, borderRadius: 8, alignItems: 'center' },
 });
+
+// Wrapper component with MobileAlertProvider
+export default function SpaceBoardsScreen() {
+  return (
+    <BannerProvider>
+      <MobileAlertProvider>
+        <SpaceBoardsScreenContent />
+      </MobileAlertProvider>
+    </BannerProvider>
+  );
+}

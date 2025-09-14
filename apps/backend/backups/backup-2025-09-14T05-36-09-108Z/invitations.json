@@ -1,0 +1,1365 @@
+[
+  {
+    "_id": "68bc45169d379efcb4188e45",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfed22@gmail.com",
+      "userId": "68bc30098445b7204c2093c8"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b07278a3c7a8e1b798d9e1",
+      "name": "sssssss"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "0cb737763d83caa817876b351702b4418d1616d680673add5cfc2a25a4632cba",
+    "status": "pending",
+    "expiresAt": "2025-09-13T14:28:38.070Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-06T14:28:38.072Z",
+    "updatedAt": "2025-09-06T14:28:38.072Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bda9e2f8a8718c2221a15f",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfed@gmail.com",
+      "userId": "68afe335fbe5b196f422cff5"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b06f8102fea373776954ee",
+      "name": "wxxxxx"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "dfbf7a0103630e7e66f58834d255438d2be6cdf7061db423b0c72229f1c74d03",
+    "status": "pending",
+    "expiresAt": "2025-09-14T15:50:58.954Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-07T15:50:58.956Z",
+    "updatedAt": "2025-09-07T15:50:58.956Z",
+    "__v": 0
+  },
+  {
+    "_id": "68be946bdadfbc7b575e1991",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfed@gmail.com",
+      "userId": "68afe335fbe5b196f422cff5"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b07278a3c7a8e1b798d9e1",
+      "name": "workspace 1"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "ce005d9c656089f6762e876d73183247e8a169c3a2ffe6605f9d58f211314b83",
+    "status": "pending",
+    "expiresAt": "2025-09-15T08:31:39.424Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T08:31:39.426Z",
+    "updatedAt": "2025-09-08T08:31:39.426Z",
+    "__v": 0
+  },
+  {
+    "_id": "68be9490dadfbc7b575e1c7d",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfed@gmail.com",
+      "userId": "68afe335fbe5b196f422cff5"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b07278a3c7a8e1b798d9e1",
+      "name": "workspace 1"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "e5baaf219782cda66c66d137c708c5aad362a14e66c37356c62fcd94de563ca7",
+    "status": "pending",
+    "expiresAt": "2025-09-15T08:32:16.189Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T08:32:16.190Z",
+    "updatedAt": "2025-09-08T08:32:16.190Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bebe27b21e81122745e22d",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfed@gmail.com",
+      "userId": "68afe335fbe5b196f422cff5"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b0859c8242c4b72d9f2c7c",
+      "name": "ssssss"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "d16b2651e822ec4874d65846c931a6a8e16167105242645693bdb0e0b191a592",
+    "status": "pending",
+    "expiresAt": "2025-09-15T11:29:43.214Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T11:29:43.223Z",
+    "updatedAt": "2025-09-08T11:29:43.223Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bebe8cb21e81122745e526",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfedchaibi@gmail.com",
+      "userId": null
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b0859c8242c4b72d9f2c7c",
+      "name": "ssssss"
+    },
+    "role": "admin",
+    "permissions": {},
+    "token": "bae733ac4c4827efa0d643f641b7aa2ad17da64866510d13b2ba511bc1840bbb",
+    "status": "pending",
+    "expiresAt": "2025-09-15T11:31:24.114Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T11:31:24.114Z",
+    "updatedAt": "2025-09-08T11:31:24.114Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bebef9b21e81122745e820",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfedchaibi@gmail.com",
+      "userId": null
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b0859c8242c4b72d9f2c7c",
+      "name": "ssssss"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "c112ecd47b5c511155bad2e6b4a178d3cc9d8d2f6a468a65482bb37e9cb52a45",
+    "status": "pending",
+    "expiresAt": "2025-09-15T11:33:13.730Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T11:33:13.731Z",
+    "updatedAt": "2025-09-08T11:33:13.731Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bec16fda8de92e634b4db6",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfedchaibi@gmail.com",
+      "userId": null
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b0859c8242c4b72d9f2c7c",
+      "name": "ssssss"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "f550253a7714c8a85c242b949bfbac3cf30cf92a7150cb64e5a1acad35e6b7ea",
+    "status": "pending",
+    "expiresAt": "2025-09-15T11:43:43.729Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T11:43:43.735Z",
+    "updatedAt": "2025-09-08T11:43:43.735Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bec238da8de92e634b59f0",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfedchaibi@gmail.com",
+      "userId": null
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b0859c8242c4b72d9f2c7c",
+      "name": "ssssss"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "db86607caab020c386a8e46730c70a8699341912810bff02126b0bb237a9cad6",
+    "status": "pending",
+    "expiresAt": "2025-09-15T11:47:04.743Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T11:47:04.744Z",
+    "updatedAt": "2025-09-08T11:47:04.744Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bec328da8de92e634b5d04",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfedchaibi@gail.com",
+      "userId": null
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b0859c8242c4b72d9f2c7c",
+      "name": "ssssss"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "d0f8ef1441eecd98fed1ae600aa2a9ef5339afceb2d71a3ca3f5e590c354a0b6",
+    "status": "pending",
+    "expiresAt": "2025-09-15T11:51:04.953Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T11:51:04.953Z",
+    "updatedAt": "2025-09-08T11:51:04.953Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bec344da8de92e634b5fed",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfedchaibi@gmail.com",
+      "userId": null
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b0859c8242c4b72d9f2c7c",
+      "name": "ssssss"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "4168e7c1fc913c1acdbb9bfcf682ba9bacdaa0a0db15ea849c4f68cf22eb4bc8",
+    "status": "pending",
+    "expiresAt": "2025-09-15T11:51:32.739Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T11:51:32.740Z",
+    "updatedAt": "2025-09-08T11:51:32.740Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bed6948dad39bb02383b25",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfedchaibi@gmail.com",
+      "userId": null
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b0859c8242c4b72d9f2c7c",
+      "name": "ssssss"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "64e1847e8350428b137d1bada0cf5ae12994d3d9550a393df3779d16bed4d868",
+    "status": "pending",
+    "expiresAt": "2025-09-15T13:13:56.372Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T13:13:56.378Z",
+    "updatedAt": "2025-09-08T13:13:56.378Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bed7928dad39bb0238494a",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfedchaibi@gmail.com",
+      "userId": null
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b0859c8242c4b72d9f2c7c",
+      "name": "ssssss"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "7416c23ef9c7b9814f4015dee5b3194f9ec7450ce84c63a1db5d3a69cfaae49a",
+    "status": "pending",
+    "expiresAt": "2025-09-15T13:18:10.441Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T13:18:10.442Z",
+    "updatedAt": "2025-09-08T13:18:10.442Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bed7fe8dad39bb0238685d",
+    "type": "workspace",
+    "invitedBy": "68a5fc048a7b1bd27300b125",
+    "invitedUser": {
+      "email": "charfedchaibi@gmail.com",
+      "userId": null
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68b0859c8242c4b72d9f2c7c",
+      "name": "ssssss"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "4816d166efe2e490b6163228e6fb0b50a7a8733240abec4e974253ae0caa2cbd",
+    "status": "pending",
+    "expiresAt": "2025-09-15T13:19:58.737Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T13:19:58.739Z",
+    "updatedAt": "2025-09-08T13:19:58.739Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bef2bc8dad39bb023aa3dd",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "ddddddddd"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "26007370f66a32eea75767e012876a3aca6f89b8a5d72224a4b8341bdb6e3a0c",
+    "status": "accepted",
+    "expiresAt": "2025-09-15T15:14:04.803Z",
+    "acceptedAt": "2025-09-08T15:16:19.306Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T15:14:04.805Z",
+    "updatedAt": "2025-09-08T15:16:19.307Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bf3d5d6c1e858e310f04f2",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "ddddddddd"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "a9ae1c91fcb50f42df8f606ac671bef0fdddbbc29f0b8286573786c4f881dade",
+    "status": "pending",
+    "expiresAt": "2025-09-15T20:32:29.274Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-08T20:32:29.275Z",
+    "updatedAt": "2025-09-08T20:32:29.275Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bf82d416557ec994c98eb0",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "ddddddddd"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "80008b9b169158340d4e6b9ed938c6dae127bb552a0e6c0fb5933d0ea219e63f",
+    "status": "accepted",
+    "expiresAt": "2025-09-16T01:28:52.197Z",
+    "acceptedAt": "2025-09-09T01:29:52.543Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T01:28:52.203Z",
+    "updatedAt": "2025-09-09T01:29:52.543Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bff40fc305ffea9663c1eb",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68bf74a0d374abc9f86a9cfb",
+      "name": "my workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "10c346ead47b052bef228d4bbbb89b013e0f2a35c265622a7241969dcb1ce22c",
+    "status": "pending",
+    "expiresAt": "2025-09-16T09:31:59.489Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T09:31:59.502Z",
+    "updatedAt": "2025-09-09T09:31:59.502Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bff505c305ffea9664681a",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68bf74a0d374abc9f86a9cfb",
+      "name": "my workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "22f6983a1bbbc637de8ff7fa3590d01b4ed3640ea639ad1d0e7d6c6d67e004f3",
+    "status": "accepted",
+    "expiresAt": "2025-09-16T09:36:05.940Z",
+    "acceptedAt": "2025-09-09T09:36:32.543Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T09:36:05.942Z",
+    "updatedAt": "2025-09-09T09:36:32.544Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bff962c305ffea9664b635",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68bf74a0d374abc9f86a9cfb",
+      "name": "my workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "daa292258c3db8d9346d9a165d2c4a40cf160d8d12af815fef363b6df6cc32be",
+    "status": "accepted",
+    "expiresAt": "2025-09-16T09:54:42.296Z",
+    "acceptedAt": "2025-09-09T09:54:52.222Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T09:54:42.297Z",
+    "updatedAt": "2025-09-09T09:54:52.222Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bffa89ac285daa50128871",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68bf74a0d374abc9f86a9cfb",
+      "name": "my workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "797a5d87b76c30f12f08d7b0d6097c83a0fb39faf87e62ac75680818e3dd1f44",
+    "status": "accepted",
+    "expiresAt": "2025-09-16T09:59:37.912Z",
+    "acceptedAt": "2025-09-09T10:01:29.045Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T09:59:37.919Z",
+    "updatedAt": "2025-09-09T10:01:29.045Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bffdca2d2516b1efc72a5d",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68bf74a0d374abc9f86a9cfb",
+      "name": "my workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "3449bb121d6834b4ba6e5fb91bc5c83ef216fb94bd72161686f96dbf200576de",
+    "status": "accepted",
+    "expiresAt": "2025-09-16T10:13:30.451Z",
+    "acceptedAt": "2025-09-09T10:14:28.620Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T10:13:30.453Z",
+    "updatedAt": "2025-09-09T10:14:28.621Z",
+    "__v": 0
+  },
+  {
+    "_id": "68bfff682d2516b1efc7321f",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68bf74a0d374abc9f86a9cfb",
+      "name": "my workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "074fa69caf8a5e6984158ec1246c8a331a924fe731951c9a60fbfb996f6e9ccb",
+    "status": "accepted",
+    "expiresAt": "2025-09-16T10:20:24.228Z",
+    "acceptedAt": "2025-09-09T10:20:37.326Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T10:20:24.230Z",
+    "updatedAt": "2025-09-09T10:20:37.327Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c000fe2d2516b1efc742ab",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68bf74a0d374abc9f86a9cfb",
+      "name": "my workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "942be27cc530188f76c96ae3d425f95e8a3cbde540c0082c9406d0602236563b",
+    "status": "accepted",
+    "expiresAt": "2025-09-16T10:27:10.902Z",
+    "acceptedAt": "2025-09-09T10:27:44.911Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T10:27:10.903Z",
+    "updatedAt": "2025-09-09T10:27:44.911Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c004b32d2516b1efc7535d",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68bf74a0d374abc9f86a9cfb",
+      "name": "my workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "f6b47237e726fdac63c99b53385bf3c88a080b55711bc36513df2f55fac732e9",
+    "status": "accepted",
+    "expiresAt": "2025-09-16T10:42:59.745Z",
+    "acceptedAt": "2025-09-09T10:43:10.666Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T10:42:59.746Z",
+    "updatedAt": "2025-09-09T10:43:10.667Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c0069d0a5cc3721fefa781",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68bf74a0d374abc9f86a9cfb",
+      "name": "my workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "7864358a027db43c6dce1c809e4a5be6a2cbe93c345e19a53b2a60076907e5c1",
+    "status": "pending",
+    "expiresAt": "2025-09-16T10:51:09.156Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T10:51:09.157Z",
+    "updatedAt": "2025-09-09T10:51:09.157Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c0070c0a5cc3721fefa8ea",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68bf74a0d374abc9f86a9cfb",
+      "name": "my workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "90ae592a766a1e8a2c3447ff66ba0f3ef065ce14de9f824963fffa90b1fc30c3",
+    "status": "accepted",
+    "expiresAt": "2025-09-16T10:53:00.133Z",
+    "acceptedAt": "2025-09-09T10:53:19.502Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T10:53:00.133Z",
+    "updatedAt": "2025-09-09T10:53:19.502Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c007760a5cc3721fefb013",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68bf74a0d374abc9f86a9cfb",
+      "name": "my workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "ff896627cee0028b795049a18114f8286b82470d622351e89c25a27a7c2fac63",
+    "status": "accepted",
+    "expiresAt": "2025-09-16T10:54:46.498Z",
+    "acceptedAt": "2025-09-09T10:55:12.640Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T10:54:46.499Z",
+    "updatedAt": "2025-09-09T10:55:12.640Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c00955562a0b8bab408dc3",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68bf74a0d374abc9f86a9cfb",
+      "name": "my workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "e266e4a6e64aadaff319e87e898d8b917f4cea457c2e65152407896657c7ee67",
+    "status": "accepted",
+    "expiresAt": "2025-09-16T11:02:45.228Z",
+    "acceptedAt": "2025-09-09T11:02:59.847Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-09T11:02:45.238Z",
+    "updatedAt": "2025-09-09T11:02:59.848Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c18b2688e1e991c8c8d127",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "2162586dae7a9bcf1d4f257fc7b674f81b9f7078813ac1eff5d9208fc5f7cd94",
+    "status": "pending",
+    "expiresAt": "2025-09-17T14:28:54.191Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T14:28:54.194Z",
+    "updatedAt": "2025-09-10T14:28:54.194Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c18b6188e1e991c8c8d187",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "9008a35e3fd986e311576670ebb65a95e0c6807d1213a3b6247f1dd42b1e24cb",
+    "status": "pending",
+    "expiresAt": "2025-09-17T14:29:53.252Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T14:29:53.253Z",
+    "updatedAt": "2025-09-10T14:29:53.253Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c18d9988e1e991c8c8f804",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "da125629f17a284be5b41b63ca347257f4b2522795f03f5f04b38213300ce929",
+    "status": "pending",
+    "expiresAt": "2025-09-17T14:39:21.266Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T14:39:21.267Z",
+    "updatedAt": "2025-09-10T14:39:21.267Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c18fed2fb83ae2fcae11f1",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "8644e2347c89f4c657c8abc47f737dbe1aa9cfbcd96f29fc177e0aeaa5ef4823",
+    "status": "pending",
+    "expiresAt": "2025-09-17T14:49:17.166Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T14:49:17.170Z",
+    "updatedAt": "2025-09-10T14:49:17.170Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c1901c2fb83ae2fcae1255",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "12d8089054ed18a413b1bbca8c2a2fab31a2cc0586cff280c7dddfbdd0d1320b",
+    "status": "pending",
+    "expiresAt": "2025-09-17T14:50:04.662Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T14:50:04.663Z",
+    "updatedAt": "2025-09-10T14:50:04.663Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c190492fb83ae2fcae12b8",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "791224a5c486366678c8c018f6d2bc251987cf4201d19f63f61375baf9cebf22",
+    "status": "pending",
+    "expiresAt": "2025-09-17T14:50:49.115Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T14:50:49.115Z",
+    "updatedAt": "2025-09-10T14:50:49.115Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c196842fb83ae2fcae1451",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "0851ae77633845a54fe6ad9a73a795462b1a61a803f13094d8a35c8e469e6418",
+    "status": "pending",
+    "expiresAt": "2025-09-17T15:17:24.585Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T15:17:24.586Z",
+    "updatedAt": "2025-09-10T15:17:24.586Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c197db2fb83ae2fcae286b",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "8277af3f93130c44a2cc20a3b37504f4825788af79894cb65f5d558948730618",
+    "status": "pending",
+    "expiresAt": "2025-09-17T15:23:07.160Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T15:23:07.161Z",
+    "updatedAt": "2025-09-10T15:23:07.161Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c19afdf1cc5e7c894c20b4",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "67f8504a12a84e6b16d8ed8cec6d270d3615dfab545597101506c52795cc73c2",
+    "status": "pending",
+    "expiresAt": "2025-09-17T15:36:29.323Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T15:36:29.333Z",
+    "updatedAt": "2025-09-10T15:36:29.333Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c19c0df1cc5e7c894c222e",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "8e3d70c914cd966c5527a9cecc6c6f368b964162183b281dac94d780c9852c2c",
+    "status": "pending",
+    "expiresAt": "2025-09-17T15:41:01.991Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T15:41:01.992Z",
+    "updatedAt": "2025-09-10T15:41:01.992Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c19c62f1cc5e7c894c2d1d",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "b174484603012f04e42a2ac6f7ba3689197dd4d5071306586c6842a3bf6c0c2d",
+    "status": "pending",
+    "expiresAt": "2025-09-17T15:42:26.125Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T15:42:26.128Z",
+    "updatedAt": "2025-09-10T15:42:26.128Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c19cecaafd09204d7e008d",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "d1d99d2b21584036c4661cd9e66904f4b74a76bb1ec1068f8809515470422d3d",
+    "status": "pending",
+    "expiresAt": "2025-09-17T15:44:44.772Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T15:44:44.781Z",
+    "updatedAt": "2025-09-10T15:44:44.781Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c19d77aafd09204d7e01ed",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "77f86dac917819b65fc8c1189b3a4619050eb78b9f36c685e579c923ae07e242",
+    "status": "pending",
+    "expiresAt": "2025-09-17T15:47:03.031Z",
+    "acceptedAt": null,
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T15:47:03.032Z",
+    "updatedAt": "2025-09-10T15:47:03.032Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c1a5b736697fabc9f259cd",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68beec138dad39bb023a9d23",
+      "name": "Workspace Mn"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "087be64a02d1a45bc5d9a1ceefdcb27f498264949bfde64ce20d0a88bfcb5fe5",
+    "status": "accepted",
+    "expiresAt": "2025-09-17T16:22:15.704Z",
+    "acceptedAt": "2025-09-10T16:22:31.500Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-10T16:22:15.711Z",
+    "updatedAt": "2025-09-10T16:22:31.501Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c24ff0e13caafeefe5b3e8",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68c24fb5e13caafeefe5af0e",
+      "name": "dsadsadsaddsad"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "7c07df947055f9ed10df3f144956e61922062a55100e834719053dc20e636eed",
+    "status": "accepted",
+    "expiresAt": "2025-09-18T04:28:32.398Z",
+    "acceptedAt": "2025-09-11T04:30:55.468Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-11T04:28:32.399Z",
+    "updatedAt": "2025-09-11T04:30:55.469Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c25178e13caafeefe5c702",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "chaibicharfed@gmail.com",
+      "userId": "68beef2f8dad39bb023aa221"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68c24fb5e13caafeefe5af0e",
+      "name": "dsadsadsaddsad"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "d5aac5a1276b13da4abd377e1c6da105f38ffb4321aa2af0ab97e23583bd643f",
+    "status": "accepted",
+    "expiresAt": "2025-09-18T04:35:04.416Z",
+    "acceptedAt": "2025-09-11T04:35:22.213Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-11T04:35:04.418Z",
+    "updatedAt": "2025-09-11T04:35:22.214Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c25e57e13caafeefe6c8e0",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "charfed6@gmail.com",
+      "userId": "68c25e12e13caafeefe6bb3b"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68c24fb5e13caafeefe5af0e",
+      "name": "My workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "ff2ceadf8f37bb11902355cf3e7b9fab46435d3773a2827aee8487fa02d3688f",
+    "status": "accepted",
+    "expiresAt": "2025-09-18T05:29:59.337Z",
+    "acceptedAt": "2025-09-11T05:31:49.426Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-11T05:29:59.338Z",
+    "updatedAt": "2025-09-11T05:31:49.426Z",
+    "__v": 0
+  },
+  {
+    "_id": "68c3db017699ceca8af32a90",
+    "type": "workspace",
+    "invitedBy": "68bedbdf8dad39bb0238d2ae",
+    "invitedUser": {
+      "email": "charfed6@gmail.com",
+      "userId": "68c25e12e13caafeefe6bb3b"
+    },
+    "targetEntity": {
+      "type": "Workspace",
+      "id": "68c24fb5e13caafeefe5af0e",
+      "name": "My workspace"
+    },
+    "role": "member",
+    "permissions": {},
+    "token": "7fe3fc7b6a79e6db502d36ef378de81127b307fe8a7c25821858d614094aa1da",
+    "status": "accepted",
+    "expiresAt": "2025-09-19T08:34:09.980Z",
+    "acceptedAt": "2025-09-12T08:34:22.938Z",
+    "declinedAt": null,
+    "remindersSent": 0,
+    "lastReminderAt": null,
+    "metadata": {
+      "invitationMethod": "email"
+    },
+    "createdAt": "2025-09-12T08:34:09.982Z",
+    "updatedAt": "2025-09-12T08:34:22.938Z",
+    "__v": 0
+  }
+]

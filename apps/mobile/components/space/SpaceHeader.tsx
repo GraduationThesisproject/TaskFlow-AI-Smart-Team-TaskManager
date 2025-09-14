@@ -24,32 +24,41 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
 
   if (!space) {
     return (
-      <View style={{ padding: 16, backgroundColor: colors.card, borderBottomColor: colors.border, borderBottomWidth: 1 }}>
-        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Loading space...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <View style={styles.loadingContent}>
+          <View style={[styles.loadingIcon, { backgroundColor: colors.muted }]} />
+          <View style={styles.loadingText}>
+            <View style={[styles.loadingLine, { backgroundColor: colors.muted, width: '60%' }]} />
+            <View style={[styles.loadingLine, { backgroundColor: colors.muted, width: '40%', marginTop: 4 }]} />
+          </View>
+        </View>
       </View>
     );
   }
 
-  const bgTint = `${space.color || '#3B82F6'}20`;
+  const bgTint = `${space.color || '#3B82F6'}15`;
   const members = Array.isArray(space.members) ? space.members.filter((m: any) => !!m && !!m.name) : [];
+  const boardCount = space.totalBoards || space?.stats?.totalBoards || 0;
+  const taskCount = space.totalTasks || 0;
+  const progress = getProgressPercentage(space.completedTasks || 0, taskCount);
 
   return (
     <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
       <View style={styles.headerLeft}>
         {!!onBackToWorkspace && (
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: colors.background }]}
             onPress={onBackToWorkspace}
             accessibilityRole="button"
             accessibilityLabel="Back to workspace"
           >
-            <FontAwesome name="arrow-left" size={24} color={colors.primary} />
+            <FontAwesome name="arrow-left" size={18} color={colors.primary} />
           </TouchableOpacity>
         )}
-        <View style={[styles.iconBox, { backgroundColor: bgTint }]}>
-          <Text style={{ fontSize: 22 }}>{space.icon || '🏠'}</Text>
+        <View style={[styles.iconBox, { backgroundColor: bgTint, borderColor: `${space.color || '#3B82F6'}30` }]}>
+          <Text style={styles.spaceIcon}>{space.icon || '🏠'}</Text>
         </View>
-        <View style={{ flex: 1 }}>
+        <View style={styles.spaceInfo}>
           <Text style={[TextStyles.heading.h2, { color: colors.foreground }]} numberOfLines={1}>
             {space.name || 'Untitled Space'}
           </Text>
@@ -58,29 +67,52 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
               {space.description}
             </Text>
           )}
+          <View style={styles.spaceStats}>
+            <View style={[styles.statBadge, { backgroundColor: colors.background }]}>
+              <FontAwesome name="users" size={12} color={colors.primary} />
+              <Text style={[TextStyles.caption.small, { color: colors.foreground, marginLeft: 4, fontWeight: '500' }]}>
+                {members.length}
+              </Text>
+            </View>
+            <View style={[styles.statBadge, { backgroundColor: colors.background }]}>
+              <FontAwesome name="th-large" size={12} color={colors.primary} />
+              <Text style={[TextStyles.caption.small, { color: colors.foreground, marginLeft: 4, fontWeight: '500' }]}>
+                {boardCount}
+              </Text>
+            </View>
+            {taskCount > 0 && (
+              <View style={[styles.statBadge, { backgroundColor: colors.background }]}>
+                <FontAwesome name="check-circle" size={12} color={colors.primary} />
+                <Text style={[TextStyles.caption.small, { color: colors.foreground, marginLeft: 4, fontWeight: '500' }]}>
+                  {progress}%
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
-      <View style={styles.headerCenter}>
-        {/* Stats for mobile */}
-        {!isWide && (
-          <View style={styles.mobileStats}>
-            <View style={styles.statRow}>
-              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Boards: {space.totalBoards || space?.stats?.totalBoards || 0}</Text>
-              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Tasks: {space.totalTasks || 0}</Text>
-              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Progress: {getProgressPercentage(space.completedTasks || 0, space.totalTasks || 0)}%</Text>
-            </View>
-          </View>
-        )}
-      </View>
+      
       <View style={styles.headerRight}>
         <View style={styles.actionButtons}>
-          <TouchableOpacity onPress={onSettings} style={[styles.actionButton, { borderColor: colors.border }]}> 
+          <TouchableOpacity 
+            onPress={onSettings} 
+            style={[styles.actionButton, { backgroundColor: colors.background, borderColor: colors.border }]}
+            accessibilityLabel="Space settings"
+          > 
             <FontAwesome name="cog" size={16} color={colors.foreground} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={onMembers} style={[styles.actionButton, { borderColor: colors.border }]}> 
+          <TouchableOpacity 
+            onPress={onMembers} 
+            style={[styles.actionButton, { backgroundColor: colors.background, borderColor: colors.border }]}
+            accessibilityLabel="Manage members"
+          > 
             <FontAwesome name="users" size={16} color={colors.foreground} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={onCreateBoard} style={[styles.primaryButton, { backgroundColor: colors.primary }]}> 
+          <TouchableOpacity 
+            onPress={onCreateBoard} 
+            style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+            accessibilityLabel="Create new board"
+          > 
             <FontAwesome name="plus" size={16} color={colors['primary-foreground']} />
           </TouchableOpacity>
         </View>
@@ -93,68 +125,126 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    minHeight: 60,
+    minHeight: 72,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    gap: 12,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
+    gap: 16,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  loadingContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    minHeight: 72,
+  },
+  loadingContent: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 16,
   },
-  iconBox: {
+  loadingIcon: {
     width: 48,
     height: 48,
     borderRadius: 12,
+  },
+  loadingText: {
+    flex: 1,
+  },
+  loadingLine: {
+    height: 12,
+    borderRadius: 6,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  iconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  spaceIcon: {
+    fontSize: 24,
+    fontWeight: '600',
+  },
+  spaceInfo: {
+    flex: 1,
+    gap: 8,
+  },
+  spaceStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  statBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   actionButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   actionButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   primaryButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  mobileStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  statRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });
