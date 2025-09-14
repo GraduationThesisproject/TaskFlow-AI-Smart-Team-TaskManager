@@ -40,22 +40,25 @@ function WorkspaceSettingsScreenContent() {
   const [showGithubModal, setShowGithubModal] = useState<boolean>(false);
 
   useEffect(() => {
-    // Only resync toggle state when switching to a different workspace
-    setWsIsPublic(!!(currentWorkspace as any)?.isPublic);
-    setWsAllowGuestAccess(!!(currentWorkspace as any)?.settings?.allowGuestAccess);
-    setWsRestrictBoardCreation(!!(currentWorkspace as any)?.settings?.restrictBoardCreation);
-    setWsRestrictBoardDeletion(!!(currentWorkspace as any)?.settings?.restrictBoardDeletion);
-    setWsSlackRestricted(!!(currentWorkspace as any)?.settings?.slackRestricted);
-    
-    // GitHub integration state
-    setGithubConnected(!!(currentWorkspace as any)?.githubOrg?.login);
-    setGithubOrganization((currentWorkspace as any)?.githubOrg?.login || '');
-  }, [workspaceId]);
+    // Only initialize state when workspace changes, not when navigating away
+    if (currentWorkspace) {
+      setWsIsPublic(!!(currentWorkspace as any)?.isPublic);
+      setWsAllowGuestAccess(!!(currentWorkspace as any)?.settings?.allowGuestAccess);
+      setWsRestrictBoardCreation(!!(currentWorkspace as any)?.settings?.restrictBoardCreation);
+      setWsRestrictBoardDeletion(!!(currentWorkspace as any)?.settings?.restrictBoardDeletion);
+      setWsSlackRestricted(!!(currentWorkspace as any)?.settings?.slackRestricted);
+      
+      // GitHub integration state
+      setGithubConnected(!!(currentWorkspace as any)?.githubOrg?.login);
+      setGithubOrganization((currentWorkspace as any)?.githubOrg?.login || '');
+    }
+  }, [currentWorkspace]);
 
   const safeUpdateWorkspace = async (updates: any, revert: () => void, section: 'settings' | 'visibility' | 'general' | 'github' = 'settings') => {
     if (!workspaceId) return;
     try {
       await dispatch(updateWorkspaceSettings({ id: workspaceId, section, updates }) as any).unwrap();
+      showSuccess('Settings updated successfully');
     } catch (e: any) {
       revert();
       showError(`Failed to update workspace settings: ${e?.message || 'Unknown error'}`);
