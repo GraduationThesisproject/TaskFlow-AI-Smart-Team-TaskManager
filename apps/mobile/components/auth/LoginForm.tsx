@@ -137,7 +137,7 @@ export default function LoginForm({
     <View style={[styles.container, { backgroundColor: '#f8f9fa' }]}>
       <StatusBar barStyle="dark-content" />
       
-      {/* Subtle Background Elements */}
+      Subtle Background Elements
       <View style={[styles.backgroundLeaf1, { backgroundColor: colors.primary + '15' }]} />
       <View style={[styles.backgroundLeaf2, { backgroundColor: colors.accent + '10' }]} />
       
@@ -153,7 +153,7 @@ export default function LoginForm({
         )}
       </View>
 
-      {/* App Header */}
+      App Header
       <View style={styles.appHeader}>
         <View style={[styles.appIcon, { backgroundColor: colors.primary }]}>
           <MaterialIcons name="security" size={32} color="white" />
