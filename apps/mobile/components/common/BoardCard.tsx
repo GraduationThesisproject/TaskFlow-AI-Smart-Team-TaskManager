@@ -38,6 +38,35 @@ export default function BoardCard({ board, onPress, style }: BoardCardProps) {
     }
   };
 
+  const formatCreatedDate = (dateString: string) => {
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (diffInDays === 0) {
+        return 'Today';
+      } else if (diffInDays === 1) {
+        return 'Yesterday';
+      } else if (diffInDays < 7) {
+        return `${diffInDays} days ago`;
+      } else if (diffInDays < 30) {
+        const weeks = Math.floor(diffInDays / 7);
+        return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+      } else if (diffInDays < 365) {
+        const months = Math.floor(diffInDays / 30);
+        return months === 1 ? '1 month ago' : `${months} months ago`;
+      } else {
+        const years = Math.floor(diffInDays / 365);
+        return years === 1 ? '1 year ago' : `${years} years ago`;
+      }
+    } catch (error) {
+      return '';
+    }
+  };
+
   return (
     <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={style}>
       <Card style={[styles.boardTile, { backgroundColor: colors.card, borderColor: colors.border }]}> 
@@ -65,12 +94,6 @@ export default function BoardCard({ board, onPress, style }: BoardCardProps) {
           <Text style={[TextStyles.body.medium, { color: colors.foreground, fontWeight: '700' }]} numberOfLines={2}>
             {board?.name || 'Untitled Board'}
           </Text>
-          
-          {!!board?.description && (
-            <Text style={[TextStyles.caption.small, { color: colors.mutedForeground, marginTop: 6, lineHeight: 16 }]} numberOfLines={2}>
-              {board.description}
-            </Text>
-          )}
 
           {/* Enhanced Meta Section */}
           <RNView style={[styles.tileMeta, { borderTopColor: colors.border + '40' }]}> 
@@ -88,8 +111,22 @@ export default function BoardCard({ board, onPress, style }: BoardCardProps) {
             
             {board?.taskCount !== undefined && (
               <RNView style={[styles.taskChip, { backgroundColor: colors.muted + '30' }]}>
-                <Text style={[TextStyles.caption.small, { color: colors.mutedForeground, fontWeight: '500' }]}>
+                <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], fontWeight: '500' }]}>
                   📋 {board.taskCount} tasks
+                </Text>
+              </RNView>
+            )}
+            
+            {board?.createdAt && (
+              <RNView style={[styles.timeChip, { backgroundColor: colors.muted + '30' }]}>
+                <FontAwesome
+                  name="clock-o"
+                  size={10}
+                  color={colors['muted-foreground']}
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], fontWeight: '500' }]}>
+                  {formatCreatedDate(board.createdAt)}
                 </Text>
               </RNView>
             )}
@@ -167,6 +204,15 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     minHeight: 24,
+    justifyContent: 'center',
+  },
+  timeChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minHeight: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
   },
 });
