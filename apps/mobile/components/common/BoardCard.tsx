@@ -111,7 +111,7 @@ export default function BoardCard({ board, onPress, style }: BoardCardProps) {
             
             {board?.taskCount !== undefined && (
               <RNView style={[styles.taskChip, { backgroundColor: colors.muted + '30' }]}>
-                <Text style={[TextStyles.caption.small, { color: colors.mutedForeground, fontWeight: '500' }]}>
+                <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], fontWeight: '500' }]}>
                   📋 {board.taskCount} tasks
                 </Text>
               </RNView>
@@ -122,10 +122,10 @@ export default function BoardCard({ board, onPress, style }: BoardCardProps) {
                 <FontAwesome
                   name="clock-o"
                   size={10}
-                  color={colors.mutedForeground}
+                  color={colors['muted-foreground']}
                   style={{ marginRight: 4 }}
                 />
-                <Text style={[TextStyles.caption.small, { color: colors.mutedForeground, fontWeight: '500' }]}>
+                <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], fontWeight: '500' }]}>
                   {formatCreatedDate(board.createdAt)}
                 </Text>
               </RNView>

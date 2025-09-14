@@ -279,24 +279,25 @@ function SpaceBoardsScreenContent() {
   const [gridWidth, setGridWidth] = useState(0);
   const COLUMNS = 3;
   const GRID_GAP = 12; // must match styles.boardGrid gap
-  // Fallback estimate uses screen width minus content padding (16 * 2)
-  const estimatedContainer = Math.max(0, width - 32);
-  const containerW = gridWidth > 0 ? gridWidth : estimatedContainer;
-  const itemWidth = containerW > 0
-    ? Math.floor((containerW - GRID_GAP * (COLUMNS - 1)) / COLUMNS)
-    : undefined;
+  
+  const itemWidth = useMemo(() => {
+    // Fallback estimate uses screen width minus content padding (16 * 2)
+    const estimatedContainer = Math.max(0, width - 32);
+    const containerW = gridWidth > 0 ? gridWidth : estimatedContainer;
+    return containerW > 0
+      ? Math.floor((containerW - GRID_GAP * (COLUMNS - 1)) / COLUMNS)
+      : undefined;
+  }, [gridWidth, width]);
 
   // Only show first 12 boards here; show full list in allboards screen
   const VISIBLE_MAX = 12;
-  const visibleBoards = Array.isArray(boards) ? boards.slice(0, VISIBLE_MAX) : [];
+  const visibleBoards = useMemo(() => {
+    return Array.isArray(boards) ? boards.slice(0, VISIBLE_MAX) : [];
+  }, [boards]);
 
   // Create Board modal state
   const [createVisible, setCreateVisible] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [boardName, setBoardName] = useState('');
-  const [boardDesc, setBoardDesc] = useState('');
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [boardType, setBoardType] = useState<'kanban' | 'list' | 'calendar' | 'timeline'>('kanban');
 
   // Create Space modal state
   const [createSpaceVisible, setCreateSpaceVisible] = useState(false);
@@ -375,10 +376,7 @@ function SpaceBoardsScreenContent() {
   }, []);
   
   const resetCreateState = useCallback(() => {
-    setBoardName('');
-    setBoardDesc('');
-    setIsPrivate(false);
-    setBoardType('kanban');
+    // Reset handled by modal component
   }, []);
 
   // Create Space handlers
