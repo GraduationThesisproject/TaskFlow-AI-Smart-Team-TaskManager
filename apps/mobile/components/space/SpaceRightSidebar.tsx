@@ -119,25 +119,26 @@ export default function SpaceRightSidebar({
       // Include if it's the owner
       const isOwner = computedOwnerIds.has(id) || spaceMemberOwnerIds.has(id);
       if (isOwner) {
-        console.log('✅ SPACE MEMBER (Owner):', id, m?.user?.name || m?.name);
+        // console.log('✅ SPACE MEMBER (Owner):', id, m?.user?.name || m?.name);
         return true;
       }
       
       // Include if they're in the space members list (regardless of membership record structure)
       // This means they were added to the space somehow
-      console.log('✅ SPACE MEMBER (In Space):', id, m?.user?.name || m?.name, 'membershipId:', m?._id || m?.id || 'none');
+      // console.log('✅ SPACE MEMBER (In Space):', id, m?.user?.name || m?.name, 'membershipId:', m?._id || m?.id || 'none');
       return true;
     });
     
-    console.log('=== SPACE MEMBERS FINAL ===');
-    console.log('Total space members:', filtered.length);
-    console.log('Space members:', filtered.map(m => ({
-      id: getMemberId(m) || 'unknown',
-      name: m?.user?.name || m?.name || 'unknown',
-      isOwner: computedOwnerIds.has(getMemberId(m) || '') || spaceMemberOwnerIds.has(getMemberId(m) || ''),
-      hasMembership: !!(m?._id || m?.id)
-    })));
-    console.log('=== END SPACE MEMBERS ===');
+    // Debug logging (commented out for performance)
+    // console.log('=== SPACE MEMBERS FINAL ===');
+    // console.log('Total space members:', filtered.length);
+    // console.log('Space members:', filtered.map(m => ({
+    //   id: getMemberId(m) || 'unknown',
+    //   name: m?.user?.name || m?.name || 'unknown',
+    //   isOwner: computedOwnerIds.has(getMemberId(m) || '') || spaceMemberOwnerIds.has(getMemberId(m) || ''),
+    //   hasMembership: !!(m?._id || m?.id)
+    // })));
+    // console.log('=== END SPACE MEMBERS ===');
     
     return filtered;
   }, [members, computedOwnerIds, spaceMemberOwnerIds]);
@@ -171,38 +172,45 @@ export default function SpaceRightSidebar({
       ? availableMembers
           .filter(Boolean)
           .filter((m: any) => {
-            const id = String(m?._id || m?.id || m?.user?._id || m?.user?.id);
-            const isAlreadyInSpace = existingMemberIds.has(id);
-            const isOwner = computedOwnerIds.has(id);
+            // For available members (workspace members), use user ID for comparison
+            const userId = String(m?.user?._id || m?.user?.id || '');
+            const isAlreadyInSpace = existingMemberIds.has(userId);
+            const isOwner = computedOwnerIds.has(userId);
             
             if (isAlreadyInSpace) {
-              console.log('❌ FILTERED OUT from Available (Already in Space):', id, m?.user?.name || m?.name);
+              // console.log('❌ FILTERED OUT from Available (Already in Space):', userId, m?.user?.name || m?.name);
               return false;
             }
             
             if (isOwner) {
-              console.log('❌ FILTERED OUT from Available (Owner):', id, m?.user?.name || m?.name);
+              // console.log('❌ FILTERED OUT from Available (Owner):', userId, m?.user?.name || m?.name);
               return false;
             }
             
-            console.log('✅ AVAILABLE MEMBER:', id, m?.user?.name || m?.name);
+            // console.log('✅ AVAILABLE MEMBER:', userId, m?.user?.name || m?.name);
             return true;
           })
       : [];
     
-    console.log('=== AVAILABLE MEMBERS FINAL ===');
-    console.log('Total available members:', filtered.length);
-    console.log('Available members:', filtered.map(m => ({
-      id: String(m?._id || m?.id || m?.user?._id || m?.user?.id),
-      name: m?.user?.name || m?.name
-    })));
-    console.log('=== END AVAILABLE MEMBERS ===');
+    // Debug logging (commented out for performance)
+    // console.log('=== AVAILABLE MEMBERS FINAL ===');
+    // console.log('Total available members:', filtered.length);
+    // console.log('Available members:', filtered.map(m => ({
+    //   id: String(m?.user?._id || m?.user?.id || ''),
+    //   name: m?.user?.name || m?.name
+    // })));
+    // console.log('=== END AVAILABLE MEMBERS ===');
     
     return filtered;
   }, [availableMembers, existingMemberIds, computedOwnerIds]);
 
   // Add member handler
   const handleAddMember = async (memberId: string, role: string = 'viewer') => {
+    if (!memberId || memberId === 'undefined' || memberId === 'null' || memberId === '') {
+      console.error('Invalid memberId for addMember:', memberId);
+      return;
+    }
+    
     if (onAddMember) {
       await onAddMember(memberId, role);
     }
@@ -222,22 +230,14 @@ export default function SpaceRightSidebar({
 
   const confirmRemoveMember = async (member: any) => {
     if (member && onRemoveMember) {
-      // Use the space membership record ID (_id), not the user ID
-      const memberId = String(member?._id || member?.id || '');
+      // Use the user ID, not the space membership record ID
+      const memberId = String(member?.user?._id || member?.user?.id || '');
       console.log('=== REMOVE MEMBER DEBUG (Sidebar) ===');
       console.log('member object:', member);
-      console.log('extracted memberId:', memberId);
-      console.log('member._id:', member?._id);
-      console.log('member.id:', member?.id);
-      console.log('member.user:', member?.user);
-      console.log('member.user._id:', member?.user?._id);
-      console.log('member.user.id:', member?.user?.id);
-      
+      console.log('extracted memberId (user ID):', memberId);
+      console.log('space membership record ID:', member?._id || member?.id);
       if (memberId) {
-        console.log('Calling onRemoveMember with ID:', memberId);
         await onRemoveMember(memberId);
-      } else {
-        console.error('No valid member ID found for removal');
       }
     }
   };
@@ -376,14 +376,15 @@ export default function SpaceRightSidebar({
             ) : (
               <View style={styles.candidateList}>
                 {candidates.slice(0, 5).map((m: any, index: number) => {
-                  const id = String(m?._id || m?.id || m?.user?._id || m?.user?.id || `candidate-${index}`);
+                  const memberId = String(m?._id || m?.id || `candidate-${index}`); // Member record ID for key
+                  const userId = String(m?.user?._id || m?.user?.id || ''); // User ID for API call
                   const name = m?.name || m?.user?.name || 'User';
                   const email = m?.user?.email || m?.email || '';
                   const avatar = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
                   const letter = String(name).charAt(0).toUpperCase();
                   
                   return (
-                    <View key={id} style={[styles.candidateItem, { backgroundColor: colors.background, borderColor: colors.border }]}> 
+                    <View key={memberId} style={[styles.candidateItem, { backgroundColor: colors.background, borderColor: colors.border }]}> 
                       {avatar ? (
                         <Image source={{ uri: avatar }} style={styles.avatarImg} />
                       ) : (
@@ -399,7 +400,7 @@ export default function SpaceRightSidebar({
                         <Text style={[TextStyles.caption.small, { color: colors.primary }]}>{m.role || 'member'}</Text>
                       </View>
                       <TouchableOpacity
-                        onPress={() => handleAddMember(id, 'viewer')}
+                        onPress={() => handleAddMember(userId, 'viewer')}
                         style={[styles.addButton, { backgroundColor: colors.primary }]}
                       >
                         <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'] }]}>+ Add</Text>
@@ -560,7 +561,9 @@ const styles = StyleSheet.create({
 });
 
 function getMemberId(m: any): string | undefined {
-  return String(m?._id || m?.id || m?.user?._id || m?.user?.id);
+  // For space members, prefer user ID over membership record ID
+  // For workspace members, use user ID directly
+  return String(m?.user?._id || m?.user?.id || m?._id || m?.id);
 }
 
 function isOwnerMember(m: any, ownerIds: Set<string>): boolean {

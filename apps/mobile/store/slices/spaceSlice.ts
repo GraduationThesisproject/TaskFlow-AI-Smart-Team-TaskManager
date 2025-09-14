@@ -133,22 +133,6 @@ const spaceSlice = createSlice({
       if (state.currentSpace?._id === action.payload) {
         state.currentSpace = null;
       }
-    },
-    
-    // Optimistically remove member from space (for 404 error handling)
-    removeMemberOptimistically: (state, action: PayloadAction<string>) => {
-      const memberId = action.payload;
-      if (state.currentSpace && Array.isArray((state.currentSpace as any).members)) {
-        const beforeCount = (state.currentSpace as any).members.length;
-        (state.currentSpace as any).members = (state.currentSpace as any).members.filter(
-          (m: any) => {
-            const membershipId = String(m?._id || m?.id || '');
-            return membershipId !== memberId;
-          }
-        );
-        const afterCount = (state.currentSpace as any).members.length;
-        console.log(`Optimistically removed member ${memberId}. Count: ${beforeCount} -> ${afterCount}`);
-      }
     }
   },
   extraReducers: (builder) => {
@@ -287,6 +271,12 @@ const spaceSlice = createSlice({
       })
       .addCase(getSpaceMembers.fulfilled, (state, action) => {
         const payload: any = action.payload;
+        console.log('=== GET SPACE MEMBERS REDUCER ===');
+        console.log('Full action:', action);
+        console.log('Payload:', payload);
+        console.log('Payload data:', payload?.data);
+        console.log('Payload members:', payload?.members);
+        
         const members = Array.isArray(payload)
           ? payload
           : Array.isArray(payload?.data)
@@ -294,9 +284,15 @@ const spaceSlice = createSlice({
           : Array.isArray(payload?.members)
           ? payload.members
           : [];
+        
+        console.log('Extracted members:', members);
+        console.log('Members count:', members.length);
+        
         if (state.currentSpace) {
           (state.currentSpace as any).members = members;
+          console.log('Updated currentSpace.members');
         }
+        console.log('=== END GET SPACE MEMBERS REDUCER ===');
       })
       .addCase(getSpaceMembers.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to load space members';
@@ -309,30 +305,14 @@ const spaceSlice = createSlice({
       })
       .addCase(addSpaceMember.fulfilled, (state, action) => {
         const payload: any = action.payload;
-        const added = payload?.member ?? payload?.data ?? payload;
         console.log('=== ADD SPACE MEMBER REDUCER ===');
         console.log('Payload:', payload);
-        console.log('Added member:', added);
-        if (!added) {
-          console.log('No added member found in payload');
-          return;
-        }
-        if (state.currentSpace) {
-          const members: any[] = Array.isArray((state.currentSpace as any).members)
-            ? (state.currentSpace as any).members
-            : ((state.currentSpace as any).members = []);
-          const addedId = String(added?.user?._id || added?.user?.id || added?._id || added?.id || '');
-          const exists = members.some((m) => String(m?.user?._id || m?.user?.id || m?._id || m?.id || '') === addedId);
-          console.log('Added member ID:', addedId);
-          console.log('Already exists:', exists);
-          console.log('Current members count before:', members.length);
-          if (!exists) {
-            members.push(added);
-            console.log('Member added to state. New count:', members.length);
-          } else {
-            console.log('Member already exists, not adding');
-          }
-        }
+        console.log('Payload data:', payload?.data);
+        console.log('Payload member:', payload?.member);
+        
+        // The backend only returns success message, not the member data
+        // We need to refresh the space members to get the updated list
+        console.log('Backend only returns success message, will refresh members');
         console.log('=== END ADD SPACE MEMBER REDUCER ===');
       })
       .addCase(addSpaceMember.rejected, (state, action) => {
@@ -347,7 +327,7 @@ const spaceSlice = createSlice({
       .addCase(removeSpaceMember.fulfilled, (state, action) => {
         const { memberId } = action.payload as any;
         console.log('=== REMOVE SPACE MEMBER REDUCER ===');
-        console.log('Member ID to remove:', memberId);
+        console.log('Member ID to remove (user ID):', memberId);
         if (!memberId) {
           console.log('No member ID provided');
           return;
@@ -357,10 +337,10 @@ const spaceSlice = createSlice({
           console.log('Members count before removal:', membersBefore);
           (state.currentSpace as any).members = (state.currentSpace as any).members.filter(
             (m: any) => {
-              // Remove by space membership record ID (_id), not user ID
-              const membershipId = String(m?._id || m?.id || '');
-              const shouldKeep = membershipId !== String(memberId);
-              console.log(`Member ${membershipId} (${m?.user?.name || m?.name}): ${shouldKeep ? 'KEEP' : 'REMOVE'}`);
+              // Remove by user ID, not space membership record ID
+              const userId = String(m?.user?._id || m?.user?.id || '');
+              const shouldKeep = userId !== String(memberId);
+              console.log(`Member ${userId} (${m?.user?.name || m?.name}): ${shouldKeep ? 'KEEP' : 'REMOVE'}`);
               return shouldKeep;
             }
           );
@@ -381,8 +361,7 @@ export const {
   setSocketConnected,
   updateSpaceRealTime,
   addSpaceRealTime,
-  removeSpaceRealTime,
-  removeMemberOptimistically
+  removeSpaceRealTime
 } = spaceSlice.actions;
 
 // Export reducer

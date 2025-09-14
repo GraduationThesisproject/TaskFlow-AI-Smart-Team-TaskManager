@@ -10,12 +10,14 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { updateWorkspaceSettings } from '@/store/slices/workspaceSlice';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthToken } from '@/hooks/useLocalStorage';
+import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
-export default function WorkspaceSettingsScreen() {
+function WorkspaceSettingsScreenContent() {
   const colors = useThemeColors();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { token } = useAuth();
+  const { showSuccess, showError, showWarning, showInfo } = useBanner();
 
   const { currentWorkspace, loading } = useAppSelector((state: any) => state.workspace);
   const workspaceId = (currentWorkspace as any)?._id || (currentWorkspace as any)?.id;
@@ -56,7 +58,7 @@ export default function WorkspaceSettingsScreen() {
       await dispatch(updateWorkspaceSettings({ id: workspaceId, section, updates }) as any).unwrap();
     } catch (e: any) {
       revert();
-      Alert.alert('Workspace Settings', e?.message || 'Failed to update workspace settings');
+      showError(`Failed to update workspace settings: ${e?.message || 'Unknown error'}`);
     }
   };
 
@@ -404,6 +406,15 @@ export default function WorkspaceSettingsScreen() {
         </View>
       </Modal>
     </View>
+  );
+}
+
+// Wrapper component with BannerProvider
+export default function WorkspaceSettingsScreen() {
+  return (
+    <BannerProvider>
+      <WorkspaceSettingsScreenContent />
+    </BannerProvider>
   );
 }
 

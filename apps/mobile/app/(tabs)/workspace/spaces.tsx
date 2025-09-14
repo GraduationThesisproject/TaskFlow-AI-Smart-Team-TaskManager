@@ -13,11 +13,13 @@ import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { SpaceService } from '@/services/spaceService';
 import SpaceCard from '@/components/common/SpaceCard';
 import Sidebar from '@/components/navigation/Sidebar';
+import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
-export default function SpacesScreen() {
+function SpacesScreenContent() {
   const colors = useThemeColors();
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { showSuccess, showError, showWarning, showInfo } = useBanner();
 
   const params = useLocalSearchParams<{ id?: string; workspaceId?: string }>();
   const { currentWorkspaceId, selectedSpace } = useAppSelector((s: any) => s.workspace);
@@ -251,6 +253,15 @@ export default function SpacesScreen() {
       {/* Sidebar */}
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="workspace" />
     </View>
+  );
+}
+
+// Wrapper component with BannerProvider
+export default function SpacesScreen() {
+  return (
+    <BannerProvider>
+      <SpacesScreenContent />
+    </BannerProvider>
   );
 }
 
