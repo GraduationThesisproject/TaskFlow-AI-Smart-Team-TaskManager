@@ -197,6 +197,15 @@ exports.updateWorkspace = async (req, res) => {
         const { id: workspaceId } = req.params;
         const { name, description, settings, githubOrg, limits } = req.body;
         const userId = req.user.id;
+        
+        console.log('Update workspace request:', {
+            workspaceId,
+            userId,
+            body: req.body,
+            settings,
+            githubOrg,
+            limits
+        });
         // SECURITY FIX: Use verified roles from auth middleware
         const userRoles = req.user.roles;
         
@@ -229,10 +238,20 @@ exports.updateWorkspace = async (req, res) => {
 
         // Update settings if provided
         if (settings) {
+            console.log('Updating workspace settings:', settings);
+            // Initialize settings object if it doesn't exist
+            if (!workspace.settings) {
+                workspace.settings = {};
+            }
+            
             Object.entries(settings).forEach(([section, updates]) => {
-                if (workspace.settings[section]) {
-                    Object.assign(workspace.settings[section], updates);
+                console.log(`Updating settings section '${section}' with:`, updates);
+                // Initialize section if it doesn't exist
+                if (!workspace.settings[section]) {
+                    workspace.settings[section] = {};
                 }
+                Object.assign(workspace.settings[section], updates);
+                console.log(`Settings section '${section}' after update:`, workspace.settings[section]);
             });
         }
 
