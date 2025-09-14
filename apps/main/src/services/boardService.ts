@@ -1,5 +1,5 @@
 import axiosInstance from '../config/axios';
-import type { Board, Column } from '../types/board.types';
+import type { Board, Column, BoardTag } from '../types/board.types';
 import type { ApiResponse } from '../types/task.types';
 
 export interface CreateBoardData {
@@ -160,6 +160,47 @@ export class BoardService {
       return response.data;
     } catch (error) {
       console.error('Error reordering columns:', error);
+      throw error;
+    }
+  }
+
+  // Tag operations
+  static async addTagToBoard(boardId: string, tag: { name: string; color: string }): Promise<ApiResponse<Board>> {
+    try {
+      const response = await axiosInstance.post(`/boards/${boardId}/tags`, tag);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding tag to board:', error);
+      throw error;
+    }
+  }
+
+  static async updateBoardTag(boardId: string, tagName: string, updates: { name?: string; color?: string }): Promise<ApiResponse<Board>> {
+    try {
+      const response = await axiosInstance.put(`/boards/${boardId}/tags/${encodeURIComponent(tagName)}`, updates);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating board tag:', error);
+      throw error;
+    }
+  }
+
+  static async removeTagFromBoard(boardId: string, tagName: string): Promise<ApiResponse<Board>> {
+    try {
+      const response = await axiosInstance.delete(`/boards/${boardId}/tags/${encodeURIComponent(tagName)}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error removing tag from board:', error);
+      throw error;
+    }
+  }
+
+  static async getBoardTags(boardId: string): Promise<ApiResponse<BoardTag[]>> {
+    try {
+      const response = await axiosInstance.get(`/boards/${boardId}/tags`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching board tags:', error);
       throw error;
     }
   }
