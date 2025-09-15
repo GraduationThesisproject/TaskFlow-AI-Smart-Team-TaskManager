@@ -97,11 +97,18 @@ axiosInstance.interceptors.response.use(
   },
   async (error) => {
     console.error('❌ API request error:', error?.message || error);
+    console.error('❌ Request URL:', error?.config?.url);
+    console.error('❌ Request method:', error?.config?.method);
+    console.error('❌ Base URL:', error?.config?.baseURL);
+    console.error('❌ Full URL:', `${error?.config?.baseURL}${error?.config?.url}`);
+    
     const originalRequest = error?.config;
 
     // Handle common errors
     if (error.response) {
       const { status, data } = error.response;
+      console.error('❌ Response status:', status);
+      console.error('❌ Response data:', data);
 
       switch (status) {
         case 401: {
