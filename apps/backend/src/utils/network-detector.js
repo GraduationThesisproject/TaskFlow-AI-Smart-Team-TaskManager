@@ -6,41 +6,32 @@ const os = require('os');
  */
 function getLocalIP() {
   const interfaces = os.networkInterfaces();
-  
-  // Common network interface names to check
-  const preferredInterfaces = ['Wi-Fi', 'Ethernet', 'en0', 'eth0', 'wlan0'];
-  
-  // First, try to find the preferred interfaces
-  for (const interfaceName of preferredInterfaces) {
-    const networkInterface = interfaces[interfaceName];
-    if (networkInterface) {
-      for (const alias of networkInterface) {
-        if (alias.family === 'IPv4' && !alias.internal) {
-          return alias.address;
-        }
-      }
-    }
-  }
-  
-  // If no preferred interface found, check all interfaces
+
+  // Gather all IPv4 candidates (non-internal, non-link-local, non-loopback)
+  const candidates = [];
   for (const interfaceName in interfaces) {
-    const networkInterface = interfaces[interfaceName];
+    const networkInterface = interfaces[interfaceName] || [];
     for (const alias of networkInterface) {
-      if (alias.family === 'IPv4' && !alias.internal) {
-        // Skip common virtual/loopback addresses
-        if (!alias.address.startsWith('169.254.') && 
-            !alias.address.startsWith('127.') && 
-            !alias.address.startsWith('10.0.2.2') &&
-            !alias.address.startsWith('192.168.1.') &&
-            !alias.address.startsWith('192.168.1.1')) {
-          return alias.address;
+      if (alias && alias.family === 'IPv4' && !alias.internal) {
+        const ip = alias.address || '';
+        if (!ip.startsWith('127.') && !ip.startsWith('169.254.')) {
+          candidates.push(ip);
         }
       }
     }
   }
-  
-  // Fallback to localhost
-  return 'localhost';
+
+  if (candidates.length === 0) return 'localhost';
+
+  // Prefer common LAN ranges: 192.168.x.x, then 10.x.x.x, then 172.16-31.x.x
+  const pick = (regex) => candidates.find((ip) => regex.test(ip));
+  return (
+    pick(/^192\.168\./) ||
+    pick(/^10\./) ||
+    pick(/^172\.(1[6-9]|2\d|3[0-1])\./) ||
+    // Fallback to the first candidate
+    candidates[0]
+  );
 }
 
 /**

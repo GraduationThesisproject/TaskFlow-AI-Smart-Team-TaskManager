@@ -10,13 +10,16 @@ export interface BoardCardProps {
   board: any;
   onPress?: () => void;
   style?: any;
+  onToggleArchive?: (board: any) => void;
 }
 
-export default function BoardCard({ board, onPress, style }: BoardCardProps) {
+export default function BoardCard({ board, onPress, style, onToggleArchive }: BoardCardProps) {
   const colors = useThemeColors();
   const themeColor = board?.theme?.color || colors.primary;
   const bgImage = board?.theme?.background?.url;
   const boardType = board?.type || 'kanban';
+  const status = String(board?.status || '').toLowerCase();
+  const isArchived = board?.archived === true || board?.isArchived === true || status === 'archived' || status === 'inactive';
   
   const getBoardIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -86,6 +89,15 @@ export default function BoardCard({ board, onPress, style }: BoardCardProps) {
               />
             </RNView>
             {!!bgImage && <RNView style={styles.headerOverlay} />}
+            {!!onToggleArchive && (
+              <TouchableOpacity
+                onPress={() => onToggleArchive(board)}
+                style={[styles.headerActionBtn, { backgroundColor: 'rgba(0,0,0,0.25)', borderColor: 'rgba(255,255,255,0.35)' }]}
+                accessibilityLabel={isArchived ? 'Restore board' : 'Archive board'}
+              >
+                <FontAwesome name={isArchived ? 'undo' : 'archive'} size={12} color="#fff" />
+              </TouchableOpacity>
+            )}
           </RNView>
         </LinearGradient>
 
@@ -130,6 +142,19 @@ export default function BoardCard({ board, onPress, style }: BoardCardProps) {
                 </Text>
               </RNView>
             )}
+
+            {/* Status Chip (Active / Archived) */}
+            <RNView style={[styles.statusChip, { backgroundColor: (isArchived ? colors.warning : colors.success) + '15' }]}>
+              <FontAwesome
+                name={isArchived ? 'archive' : 'check'}
+                size={10}
+                color={isArchived ? colors.warning : colors.success}
+                style={{ marginRight: 4 }}
+              />
+              <Text style={[TextStyles.caption.small, { color: isArchived ? colors.warning : colors.success, fontWeight: '600' }]}> 
+                {isArchived ? 'Archived' : 'Active'}
+              </Text>
+            </RNView>
           </RNView>
         </RNView>
       </Card>
@@ -178,6 +203,15 @@ const styles = StyleSheet.create({
     borderRadius: 16, 
     opacity: 0.15 
   },
+  headerActionBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   contentContainer: {
     flex: 1,
     justifyContent: 'space-between',
@@ -214,5 +248,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  statusChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    minHeight: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

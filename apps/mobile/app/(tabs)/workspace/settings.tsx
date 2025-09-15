@@ -40,31 +40,26 @@ function WorkspaceSettingsScreenContent() {
   const [showGithubModal, setShowGithubModal] = useState<boolean>(false);
 
   useEffect(() => {
-    // Only initialize state when workspace changes, not when navigating away
+    // Initialize state only when the active workspace changes
     if (currentWorkspace) {
       setWsIsPublic(!!(currentWorkspace as any)?.isPublic);
       setWsAllowGuestAccess(!!(currentWorkspace as any)?.settings?.allowGuestAccess);
       setWsRestrictBoardCreation(!!(currentWorkspace as any)?.settings?.restrictBoardCreation);
       setWsRestrictBoardDeletion(!!(currentWorkspace as any)?.settings?.restrictBoardDeletion);
       setWsSlackRestricted(!!(currentWorkspace as any)?.settings?.slackRestricted);
-      
+
       // GitHub integration state
       setGithubConnected(!!(currentWorkspace as any)?.githubOrg?.login);
       setGithubOrganization((currentWorkspace as any)?.githubOrg?.login || '');
     }
-  }, [currentWorkspace]);
+  }, [workspaceId]);
 
   const safeUpdateWorkspace = async (updates: any, revert: () => void, section: 'settings' | 'visibility' | 'general' | 'github' = 'settings') => {
     if (!workspaceId) return;
     try {
-      const result = await dispatch(updateWorkspaceSettings({ id: workspaceId, section, updates }) as any).unwrap();
-      
-      // Only show success if the update was actually successful
-      if (result) {
-        showSuccess('Settings updated successfully');
-      } else {
-        throw new Error('No response from server');
-      }
+      // If the thunk resolves without throwing, treat it as success, even if it returns undefined
+      await dispatch(updateWorkspaceSettings({ id: workspaceId, section, updates }) as any).unwrap();
+      showSuccess('Settings updated successfully');
     } catch (e: any) {
       console.error('Failed to update workspace settings:', e);
       revert();
