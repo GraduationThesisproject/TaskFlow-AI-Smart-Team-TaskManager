@@ -5,12 +5,13 @@
 /**
  * Formats the remaining time until permanent deletion
  * @param archiveExpiresAt - ISO string of when the archive expires
+ * @param currentTime - Optional current time in milliseconds (defaults to Date.now())
  * @returns Formatted time string (e.g., "2d 5h 30m", "1h 15m 30s", "45s")
  */
-export const formatArchiveCountdown = (archiveExpiresAt?: string): string => {
+export const formatArchiveCountdown = (archiveExpiresAt?: string, currentTime?: number): string => {
   if (!archiveExpiresAt) return '';
   
-  const now = Date.now();
+  const now = currentTime || Date.now();
   const end = new Date(archiveExpiresAt).getTime();
   const diffMs = Math.max(0, end - now);
   
@@ -29,12 +30,13 @@ export const formatArchiveCountdown = (archiveExpiresAt?: string): string => {
 /**
  * Gets the appropriate styling classes for archive countdown based on urgency
  * @param archiveExpiresAt - ISO string of when the archive expires
+ * @param currentTime - Optional current time in milliseconds (defaults to Date.now())
  * @returns Object with color and styling information
  */
-export const getArchiveCountdownStyle = (archiveExpiresAt?: string) => {
+export const getArchiveCountdownStyle = (archiveExpiresAt?: string, currentTime?: number) => {
   if (!archiveExpiresAt) return { color: '#6b7280', backgroundColor: '#f3f4f6' };
   
-  const now = Date.now();
+  const now = currentTime || Date.now();
   const end = new Date(archiveExpiresAt).getTime();
   const diffMs = Math.max(0, end - now);
   const hours = diffMs / (1000 * 60 * 60);
@@ -68,12 +70,13 @@ export const getArchiveCountdownStyle = (archiveExpiresAt?: string) => {
 /**
  * Checks if an archived item is ready for permanent deletion
  * @param archiveExpiresAt - ISO string of when the archive expires
+ * @param currentTime - Optional current time in milliseconds (defaults to Date.now())
  * @returns true if the item is ready for permanent deletion
  */
-export const isReadyForDeletion = (archiveExpiresAt?: string): boolean => {
+export const isReadyForDeletion = (archiveExpiresAt?: string, currentTime?: number): boolean => {
   if (!archiveExpiresAt) return false;
   
-  const now = Date.now();
+  const now = currentTime || Date.now();
   const end = new Date(archiveExpiresAt).getTime();
   return end <= now;
 };
@@ -81,14 +84,15 @@ export const isReadyForDeletion = (archiveExpiresAt?: string): boolean => {
 /**
  * Gets a human-readable message for the archive status
  * @param archiveExpiresAt - ISO string of when the archive expires
+ * @param currentTime - Optional current time in milliseconds (defaults to Date.now())
  * @returns Status message
  */
-export const getArchiveStatusMessage = (archiveExpiresAt?: string): string => {
+export const getArchiveStatusMessage = (archiveExpiresAt?: string, currentTime?: number): string => {
   if (!archiveExpiresAt) return 'Archived';
   
-  if (isReadyForDeletion(archiveExpiresAt)) {
+  if (isReadyForDeletion(archiveExpiresAt, currentTime)) {
     return 'Ready for deletion';
   }
   
-  return `Deletes in ${formatArchiveCountdown(archiveExpiresAt)}`;
+  return `Deletes in ${formatArchiveCountdown(archiveExpiresAt, currentTime)}`;
 };
