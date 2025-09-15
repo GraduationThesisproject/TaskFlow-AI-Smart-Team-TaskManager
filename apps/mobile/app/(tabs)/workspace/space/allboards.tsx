@@ -29,7 +29,6 @@ export default function AllBoardsScreen() {
   // Fetch space (defensive)
   useEffect(() => {
     const maybeFetchSpace = async () => {
-      console.log('maybeFetchSpace', space);
       if (!space?._id && !space?.id) {
         try {
           // If needed, you can fetch a default or recent space; here we no-op.
