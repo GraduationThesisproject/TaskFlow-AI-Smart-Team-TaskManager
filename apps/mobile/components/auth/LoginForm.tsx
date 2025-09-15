@@ -200,7 +200,7 @@ export default function LoginForm({
             <Text style={[styles.inputLabel, { color: colors.foreground }]}>Email Address</Text>
             <TextInput
               style={[styles.textInput, { 
-                color: colors.foreground,
+                color: '#000000', // Black text color
                 borderColor: emailError ? colors.error : colors.border
               }]}
               value={email}
@@ -223,7 +223,7 @@ export default function LoginForm({
             <View style={styles.passwordContainer}>
               <TextInput
                 style={[styles.textInput, { 
-                  color: colors.foreground,
+                  color: '#000000', // Black text color
                   borderColor: passwordError ? colors.error : colors.border,
                   flex: 1
                 }]}
