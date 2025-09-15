@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const env=require('../config/env');
+// Only initialize Stripe if the key is available
+const stripe = env.STRIPE_SECRET_KEY ? require("stripe")(env.STRIPE_SECRET_KEY) : null;
 const { sendEmail } = require('../utils/email');
 const User = require('../models/User');
 
 // Initialize Stripe only if API key is available
-let stripe = null;
 if (env.STRIPE_SECRET_KEY) {
   try {
     stripe = require("stripe")(env.STRIPE_SECRET_KEY);
