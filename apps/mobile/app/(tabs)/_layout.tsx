@@ -1,87 +1,65 @@
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Tabs } from 'expo-router';
+import { Stack } from 'expo-router';
 
 import { useThemeColors } from '@/components/ThemeProvider';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-import NotificationBell from '@/components/common/NotificationBell';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
-
-export default function TabLayout() {
+export default function StackLayout() {
   const colors = useThemeColors();
 
   return (
-    <Tabs
+    <Stack
       screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors['muted-foreground'],
-        tabBarStyle: {
-          display: 'none', // Hide the entire tab bar
-        },
         headerStyle: {
           backgroundColor: colors.background,
         },
         headerTintColor: colors.foreground,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
+        headerShown: false, // Hide headers by default
+        animation: 'slide_from_right', // Add smooth navigation animation
       }}>
-      <Tabs.Screen
+      <Stack.Screen
         name="index"
         options={{
-          href: null, // Hide from tab bar
-          headerShown: false, // Remove redundant header
+          headerShown: false,
         }}
       />
-      <Tabs.Screen
-        name="tasks"
+      <Stack.Screen
+        name="board"
         options={{
-          title: 'Tasks',
-          tabBarIcon: ({ color }) => <TabBarIcon name="tasks" color={color} />,
+          headerShown: false,
         }}
       />
-      <Tabs.Screen
+      <Stack.Screen
         name="workspace"
         options={{
-          href: null, // Hide from tab bar
-          headerShown: false, // Use custom header instead
+          headerShown: false,
         }}
       />
-      <Tabs.Screen
+      <Stack.Screen
         name="settings"
         options={{
-          href: null, // Hide from tab bar
-          headerShown: false, // Remove redundant header
+          headerShown: false,
         }}
       />
-      <Tabs.Screen
+      <Stack.Screen
         name="analytics"
         options={{
-          href: null, // Hide from tab bar
-          headerShown: false, // Remove redundant header
+          headerShown: false,
         }}
       />
-      <Tabs.Screen
+      <Stack.Screen
         name="workspaces"
         options={{
-          href: null, // Hide from tab bar
-          headerShown: true, // Remove redundant header
+          headerShown: true,
+          title: 'Workspaces',
         }}
       />
-      <Tabs.Screen
+      <Stack.Screen
         name="templates"
         options={{
-          href: null, // Hide from tab bar
-          headerShown: false, // Remove redundant header
+          headerShown: false,
         }}
       />
-    </Tabs>
+    </Stack>
   );
 }
