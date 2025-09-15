@@ -174,36 +174,52 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: '#f8f9fa' }]}>
-      <StatusBar barStyle="dark-content" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
       
-      {/* Subtle Background Elements */}
-      <View style={[styles.backgroundLeaf1, { backgroundColor: colors.accent + '15' }]} />
-      <View style={[styles.backgroundLeaf2, { backgroundColor: colors.primary + '10' }]} />
+      {/* Cool Professional Background */}
+      <View style={styles.backgroundGradient} />
+      <View style={styles.backgroundPattern} />
+      
+      {/* Floating Geometric Elements */}
+      <Animated.View style={[styles.floatingElement1, { transform: [{ scale: pulseAnim }] }]} />
+      <Animated.View style={[styles.floatingElement2, { transform: [{ scale: pulseAnim }] }]} />
+      <Animated.View style={[styles.floatingElement3, { transform: [{ scale: pulseAnim }] }]} />
+      <Animated.View style={[styles.floatingElement4, { transform: [{ scale: pulseAnim }] }]} />
+      <Animated.View style={[styles.floatingElement5, { transform: [{ scale: pulseAnim }] }]} />
+      <Animated.View style={[styles.floatingElement6, { transform: [{ scale: pulseAnim }] }]} />
+      
+      {/* Subtle Grid Pattern */}
+      <View style={styles.gridPattern} />
       
       {/* Navigation Header */}
       <View style={styles.navHeader}>
-        <TouchableOpacity style={styles.backButton} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={24} color={colors.foreground} />
+        <TouchableOpacity style={[styles.backButton, { backgroundColor: 'rgba(255,255,255,0.1)' }]} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         {onSignin && (
-          <TouchableOpacity onPress={onSignin} style={styles.signinLink} activeOpacity={0.7}>
-            <Text style={[styles.signinText, { color: colors.primary }]}>Sign In</Text>
+          <TouchableOpacity onPress={onSignin} style={[styles.signinLink, { backgroundColor: 'rgba(255,255,255,0.1)' }]} activeOpacity={0.7}>
+            <Text style={[styles.signinText, { color: 'white' }]}>Sign In</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      {/* App Header */}
-      <View style={styles.appHeader}>
-        <View style={[styles.appIcon, { backgroundColor: colors.accent }]}>
-          <MaterialIcons name="person-add" size={32} color="white" />
-        </View>
-        <Text style={[styles.appTitle, { color: colors.accent }]}>Join TaskFlow</Text>
-      </View>
-
       {/* Centered Form Card */}
       <View style={styles.formContainer}>
-        <View style={[styles.formCard, { backgroundColor: 'white', shadowColor: colors.foreground }]}>
+        <View style={[styles.formCard, { 
+          backgroundColor: 'rgba(255, 255, 255, 0.98)', 
+          shadowColor: '#000',
+          backdropFilter: 'blur(20px)'
+        }]}>
+          
+          {/* App Header Inside Form */}
+          <View style={styles.cardHeader}>
+            <View style={[styles.appIcon, { backgroundColor: '#007ADF' }]}>
+              <MaterialIcons name="person-add" size={24} color="white" />
+            </View>
+            <Text style={[styles.appTitle, { color: '#007ADF' }]}>Join TaskFlow</Text>
+            <Text style={styles.subtitleText}>Create your account to get started</Text>
+          </View>
 
           {error && (
             <View style={[styles.errorContainer, { 
@@ -285,7 +301,7 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
                 style={styles.showPasswordButton}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.showPasswordText, { color: colors.accent }]}>
+                <Text style={[styles.showPasswordText, { color: '#007ADF' }]}>
                   {showPassword ? 'Hide' : 'Show'}
                 </Text>
               </TouchableOpacity>
@@ -317,7 +333,7 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
                 style={styles.showPasswordButton}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.showPasswordText, { color: colors.accent }]}>
+                <Text style={[styles.showPasswordText, { color: '#007ADF' }]}>
                   {showConfirmPassword ? 'Hide' : 'Show'}
                 </Text>
               </TouchableOpacity>
@@ -331,7 +347,7 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
             style={[
               styles.registerButton, 
               { 
-                backgroundColor: colors.accent,
+                backgroundColor: '#007ADF',
                 opacity: isLoading ? 0.7 : 1 
               }
             ]}
@@ -341,6 +357,31 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
               {isLoading ? 'Creating Account...' : 'Create Account'}
             </Text>
           </TouchableOpacity>
+
+          {/* OAuth Buttons */}
+          <View style={styles.oauthContainer}>
+            <Text style={[styles.oauthDivider, { color: colors['muted-foreground'] }]}>
+              or continue with
+            </Text>
+            
+            <TouchableOpacity 
+              onPress={() => console.log('Google OAuth pressed')} 
+              style={styles.googleButton}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="logo-google" size={20} color="#007ADF" />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => console.log('GitHub OAuth pressed')} 
+              style={styles.githubButton}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="logo-github" size={20} color="white" />
+              <Text style={styles.githubButtonText}>Continue with GitHub</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </View>
@@ -350,25 +391,96 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    position: 'relative',
   },
-  // Subtle Background Elements
-  backgroundLeaf1: {
+  // Cool Professional Background
+  backgroundGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#007ADF',
+  },
+  backgroundPattern: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    opacity: 0.3,
+  },
+  // Floating Geometric Elements
+  floatingElement1: {
     position: 'absolute',
     top: 100,
-    left: -50,
+    right: -50,
     width: 200,
     height: 200,
     borderRadius: 100,
-    opacity: 0.1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    opacity: 0.6,
   },
-  backgroundLeaf2: {
+  floatingElement2: {
+    position: 'absolute',
+    top: 300,
+    left: -80,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    opacity: 0.5,
+  },
+  floatingElement3: {
+    position: 'absolute',
+    bottom: 200,
+    right: -60,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    opacity: 0.4,
+  },
+  floatingElement4: {
     position: 'absolute',
     bottom: 100,
-    right: -50,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    opacity: 0.08,
+    left: -40,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    opacity: 0.3,
+  },
+  floatingElement5: {
+    position: 'absolute',
+    top: 50,
+    left: 50,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    opacity: 0.4,
+  },
+  floatingElement6: {
+    position: 'absolute',
+    bottom: 300,
+    right: 30,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    opacity: 0.3,
+  },
+  // Subtle Grid Pattern
+  gridPattern: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    opacity: 0.1,
   },
   // Navigation Header
   navHeader: {
@@ -380,37 +492,46 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   backButton: {
-    padding: 8,
+    padding: 12,
+    borderRadius: 20,
   },
   signinLink: {
-    padding: 8,
+    padding: 12,
+    borderRadius: 20,
   },
   signinText: {
     fontSize: 16,
     fontWeight: FontWeights.medium,
   },
-  // App Header
-  appHeader: {
+  // Card Header Inside Form
+  cardHeader: {
     alignItems: 'center',
-    paddingVertical: 40,
+    marginBottom: 24,
   },
   appIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowRadius: 4,
+    elevation: 4,
   },
   appTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: FontWeights.bold,
     textAlign: 'center',
+  },
+  subtitleText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    textAlign: 'center',
+    marginTop: 8,
+    fontWeight: '400',
   },
   // Form Container
   formContainer: {
@@ -419,13 +540,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   formCard: {
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: 20,
+    padding: 32,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   // Input Styles
   inputContainer: {
@@ -486,5 +609,58 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: FontWeights.medium,
     flex: 1,
+  },
+  // OAuth Styles
+  oauthContainer: {
+    marginTop: 24,
+  },
+  oauthDivider: {
+    textAlign: 'center',
+    fontSize: 14,
+    marginBottom: 16,
+    fontWeight: FontWeights.medium,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#dadce0',
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  googleButtonText: {
+    color: '#3c4043',
+    fontSize: 16,
+    fontWeight: FontWeights.medium,
+    marginLeft: 12,
+  },
+  githubButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#24292e',
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  githubButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: FontWeights.medium,
+    marginLeft: 12,
   },
 });
