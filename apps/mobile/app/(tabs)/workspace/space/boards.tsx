@@ -3,6 +3,7 @@ import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, useWin
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { View, Text, Card } from '@/components/Themed';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import BoardCard from '@/components/common/BoardCard';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { useAppDispatch, useAppSelector } from '@/store';
@@ -260,6 +261,7 @@ function SpaceBoardsScreenContent() {
   const [refreshing, setRefreshing] = useState(false);
   const lastLoadedSpaceId = useRef<string | null>(null);
   const [boards, setBoards] = useState<any[]>([]);
+  const [boardSearch, setBoardSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
@@ -292,8 +294,13 @@ function SpaceBoardsScreenContent() {
   // Only show first 12 boards here; show full list in allboards screen
   const VISIBLE_MAX = 12;
   const visibleBoards = useMemo(() => {
-    return Array.isArray(boards) ? boards.slice(0, VISIBLE_MAX) : [];
-  }, [boards]);
+    const list = Array.isArray(boards) ? boards : [];
+    const q = (boardSearch || '').trim().toLowerCase();
+    const filtered = q
+      ? list.filter((b: any) => String(b?.name || '').toLowerCase().includes(q) || String(b?.description || '').toLowerCase().includes(q))
+      : list;
+    return filtered.slice(0, VISIBLE_MAX);
+  }, [boards, boardSearch]);
 
   // Create Board modal state
   const [createVisible, setCreateVisible] = useState(false);
@@ -936,6 +943,21 @@ function SpaceBoardsScreenContent() {
           onSettings={goSettings}
           onBackToWorkspace={() => router.push('/(tabs)/workspace')}
         />
+        {/* Board search (mobile + wide) */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}> 
+            <View style={{ width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+              <FontAwesome name="search" size={12} color={colors['muted-foreground']} />
+            </View>
+            <TextInput
+              value={boardSearch}
+              onChangeText={setBoardSearch}
+              placeholder="Search boards..."
+              placeholderTextColor={colors['muted-foreground']}
+              style={{ flex: 1, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, backgroundColor: colors.background, color: colors.foreground, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}
+            />
+          </View>
+        </View>
         <ScrollView
           style={styles.content}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -1064,6 +1086,8 @@ const styles = StyleSheet.create({
   addButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   removeButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   emptyState: { padding: 16, borderRadius: 8, alignItems: 'center' },
+  statsRow: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 4 },
+  statChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
 });
 
 // Wrapper component with MobileAlertProvider
