@@ -10,6 +10,7 @@ import {
   Dimensions,
   Switch,
   Alert,
+  SafeAreaView,
 } from 'react-native';
 import Animated, {
   FadeIn,
@@ -40,6 +41,8 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { DragTask, TaskAssignee, TaskPriority } from '@/types/dragBoard.types';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Calculate safe modal height based on platform
+const MODAL_HEIGHT = Platform.OS === 'ios' ? SCREEN_HEIGHT * 0.9 : SCREEN_HEIGHT * 0.85;
 
 interface TaskCreateModalProps {
   visible: boolean;
@@ -304,21 +307,23 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
         exiting={FadeOut.duration(200)}
         style={[styles.overlay, { backgroundColor: 'rgba(0, 0, 0, 0.7)' }]}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardAvoid}
-        >
-          <Animated.View
-            entering={SlideInDown.duration(300).springify()}
-            exiting={SlideOutDown.duration(300).springify()}
-            style={[
-              styles.modal,
-              {
-                backgroundColor: colors.card,
-                borderTopColor: colors.border,
-              },
-            ]}
+        <SafeAreaView style={styles.safeArea}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.keyboardAvoid}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
           >
+            <Animated.View
+              entering={SlideInDown.duration(300).springify()}
+              exiting={SlideOutDown.duration(300).springify()}
+              style={[
+                styles.modal,
+                {
+                  backgroundColor: colors.card,
+                  borderTopColor: colors.border,
+                },
+              ]}
+            >
             {/* Header */}
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
               <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
@@ -339,9 +344,10 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             <ScrollView
               ref={scrollViewRef}
               style={styles.content}
-              contentContainerStyle={{ paddingBottom: 20 }}
+              contentContainerStyle={{ paddingBottom: 100 }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              bounces={false}
             >
               {/* Title */}
               <View style={styles.titleSection}>
@@ -811,8 +817,9 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                 }]}>Create Task</Text>
               </TouchableOpacity>
             </View>
-          </Animated.View>
-        </KeyboardAvoidingView>
+            </Animated.View>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </Animated.View>
     </Modal>
   );
@@ -823,12 +830,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  safeArea: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
   keyboardAvoid: {
     flex: 1,
     justifyContent: 'flex-end',
   },
   modal: {
-    height: SCREEN_HEIGHT * 0.85,
+    maxHeight: MODAL_HEIGHT,
+    minHeight: SCREEN_HEIGHT * 0.5,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderTopWidth: 1,
@@ -840,6 +852,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
   },
   header: {
     flexDirection: 'row',
@@ -866,6 +879,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 8,
+    maxHeight: MODAL_HEIGHT - 200, // Reserve space for header and save button
   },
   titleSection: {
     paddingVertical: 16,
@@ -1187,15 +1201,19 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   saveButtonContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: 'transparent',
+    borderTopWidth: 1,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'inherit',
   },
   saveButton: {
-    padding: 16,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
