@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { Text, View, Card } from '@/components/Themed';
-import { useThemeColors, useTheme } from '@/components/ThemeProvider';
+import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
@@ -24,7 +24,8 @@ import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
 function WorkspaceScreenContent() {
   const colors = useThemeColors();
-  const { theme, toggleTheme } = useTheme();
+  
+  
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; workspaceId?: string }>();
   const dispatch = useAppDispatch();
@@ -120,6 +121,13 @@ function WorkspaceScreenContent() {
     };
     return Array.isArray(processedSpaces) ? processedSpaces.filter(isArchived).length : 0;
   }, [processedSpaces]);
+  
+  const activeSpacesCount = useMemo(() => {
+    const total = Array.isArray(processedSpaces) ? processedSpaces.length : 0;
+    return Math.max(0, total - archivedSpacesCount);
+  }, [processedSpaces, archivedSpacesCount]);
+
+  
 
   // Deduplicate members by user id to avoid duplicate renders
   const uniqueMembers = useMemo(() => {
@@ -175,11 +183,16 @@ function WorkspaceScreenContent() {
   }, [dispatch, loadSpaces]);
 
   const handleOpenSpace = useCallback((space: any) => {
+    const status = String(space?.status || '').toLowerCase();
+    const archived = space?.isArchived === true || space?.archived === true || status === 'archived' || status === 'inactive';
+    if (archived) {
+      showWarning('This space is archived. Restore it to access boards.');
+      return;
+    }
     dispatch(setSelectedSpace(space));
-    // FIXED: Also update currentSpace in spaceSlice to keep both slices in sync
     dispatch(setCurrentSpace(space));
     router.push('/workspace/space/boards');
-  }, [dispatch, router]);
+  }, [dispatch, router, showWarning]);
 
 
   const handleInvite = useCallback(async () => {
@@ -214,11 +227,6 @@ function WorkspaceScreenContent() {
     if (member?.role === 'owner') return;
     try {
       const memberId = member?.user?._id || member?.userId || member?._id || member?.id;
-      console.log('[Workspace] Removing member', {
-        workspaceId,
-        rawMember: member,
-        resolvedMemberId: memberId,
-      });
       if (!memberId) throw new Error('Could not determine member id');
       await dispatch(removeMember({ workspaceId, memberId })).unwrap();
       // Ensure local state matches backend by refetching members
@@ -471,17 +479,11 @@ function WorkspaceScreenContent() {
                 onPress={() => setMembersSidebarOpen(true)} 
                 style={[styles.membersButton, { backgroundColor: colors.primary }]}
                 accessibilityLabel="View members"
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               >
                 <FontAwesome name="users" size={16} color={colors['primary-foreground']} />
               </TouchableOpacity>
             )}
-            <TouchableOpacity 
-              onPress={toggleTheme} 
-              style={[styles.membersButton, { backgroundColor: colors.background, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, marginLeft: 8 }]} 
-              accessibilityLabel="Toggle theme"
-            >
-              <FontAwesome name={theme === 'light' ? 'moon-o' : 'sun-o'} size={16} color={colors.foreground} />
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -570,7 +572,7 @@ function WorkspaceScreenContent() {
                   <FontAwesome name="th-large" size={20} color={colors.accent} />
                 </View>
                 <View style={styles.statContent}>
-                  <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{processedSpaces.length}</Text>
+                  <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{activeSpacesCount}</Text>
                   <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Active Spaces</Text>
                 </View>
               </Card>
