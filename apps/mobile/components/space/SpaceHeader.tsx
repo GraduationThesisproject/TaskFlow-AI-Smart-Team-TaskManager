@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, useWindowDimensions } from 'react-native';
-import { useThemeColors, useTheme } from '@/components/ThemeProvider';
+import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { Card } from '@/components/Themed';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -21,7 +21,7 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
   const colors = useThemeColors();
   const { width } = useWindowDimensions();
   const isWide = width >= 768; // tablet/landscape breakpoint to show right sidebar
-  const { theme, toggleTheme } = useTheme();
+  
 
   if (!space) {
     return (
@@ -95,13 +95,7 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
       
       <View style={styles.headerRight}>
         <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            onPress={toggleTheme} 
-            style={[styles.actionButton, { backgroundColor: colors.background, borderColor: colors.border, marginRight: 8 }]} 
-            accessibilityLabel="Toggle theme"
-          >
-            <FontAwesome name={theme === 'light' ? 'moon-o' : 'sun-o'} size={16} color={colors.foreground} />
-          </TouchableOpacity>
+          
           <TouchableOpacity 
             onPress={onSettings} 
             style={[styles.actionButton, { backgroundColor: colors.background, borderColor: colors.border }]}

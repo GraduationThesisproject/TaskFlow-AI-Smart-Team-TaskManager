@@ -162,15 +162,45 @@ function SpaceBoardsScreenContent() {
         } : spaceMember?.user
       };
     });
+
+    // Ensure workspace owner appears as a member in this list even if not explicitly added
+    // Build a set of existing member user IDs to check for presence
+    const existingIds = new Set<string>(
+      enrichedSpaceMembers.map((m: any) => String(m?.user?._id || m?.user?.id || m?._id || m?.id || ''))
+    );
+    const finalMembers = [...enrichedSpaceMembers];
+    // Find owner members from workspace members list
+    const ownerWorkspaceMembers = (Array.isArray(displayMembers) ? displayMembers : []).filter((wm: any) => String(wm?.role || '').toLowerCase() === 'owner');
+    ownerWorkspaceMembers.forEach((owm: any) => {
+      const ownerId = String(owm?.user?._id || owm?.user?.id || owm?._id || owm?.id || '');
+      if (!ownerId) return;
+      if (existingIds.has(ownerId)) return;
+      // Synthesize an owner member entry with minimal required fields
+      const pseudoOwner = {
+        _id: ownerId,
+        id: ownerId,
+        role: 'owner',
+        user: {
+          _id: ownerId,
+          id: ownerId,
+          name: owm?.user?.name || owm?.name || 'Owner',
+          email: owm?.user?.email || owm?.email || '',
+          avatar: owm?.user?.avatar || owm?.avatar || undefined,
+          role: 'owner',
+        },
+      } as any;
+      finalMembers.unshift(pseudoOwner);
+      existingIds.add(ownerId);
+    });
     
     // Debug logging (commented out for performance)
     // console.log('=== SPACE MEMBERS FILTERING DEBUG ===');
     // console.log('Original space members count:', spaceMembersList.length);
     // console.log('Filtered space members count (owner + explicitly added):', filteredSpaceMembers.length);
-    // console.log('Final enriched space members count:', enrichedSpaceMembers.length);
+    // console.log('Final enriched space members count (with synthesized owner if missing):', finalMembers.length);
     // console.log('=== END FILTERING DEBUG ===');
     
-    return enrichedSpaceMembers;
+    return finalMembers;
   }, [currentSpace?.members]);
 
   // Members that can be added to THIS SPECIFIC SPACE (exclude workspace owners and already added members)
@@ -378,7 +408,7 @@ function SpaceBoardsScreenContent() {
   }, [space?._id, loadBoards, loadSpaceMembers]);
 
   const openCreateBoard = useCallback(() => {
-    console.log('🎯 openCreateBoard called');
+    // console.log('🎯 openCreateBoard called');
     setCreateVisible(true);
   }, []);
   
@@ -464,13 +494,13 @@ function SpaceBoardsScreenContent() {
 
   // Simple handlers used by SpaceHeader/Sidebar
   const goMembers = useCallback(() => {
-    console.log('🎯 goMembers called');
+    // console.log('🎯 goMembers called');
     // Toggle the space members sidebar
     setSidebarVisible(!sidebarVisible);
   }, [sidebarVisible]);
   
   const goSettings = useCallback(() => {
-    console.log('🎯 goSettings called');
+    // console.log('🎯 goSettings called');
     router.push('/workspace/space/settings');
   }, [router]);
 
@@ -515,10 +545,10 @@ function SpaceBoardsScreenContent() {
     
     try {
       const spaceId = space._id;
-      console.log('=== REMOVE MEMBER DEBUG (Frontend) ===');
-      console.log('spaceId:', spaceId);
-      console.log('memberId (user ID):', memberId);
-      console.log('API endpoint will be:', `/spaces/${spaceId}/members/${memberId}`);
+      // console.log('=== REMOVE MEMBER DEBUG (Frontend) ===');
+      // console.log('spaceId:', spaceId);
+      // console.log('memberId (user ID):', memberId);
+      // console.log('API endpoint will be:', `/spaces/${spaceId}/members/${memberId}`);
       
       await removeMember(spaceId, memberId);
       
@@ -542,7 +572,7 @@ function SpaceBoardsScreenContent() {
       
       // If it's a 404 error, the member doesn't exist on the backend
       if (error?.response?.status === 404) {
-        console.log('Member not found on backend (404), refreshing data to sync with server');
+        // console.log('Member not found on backend (404), refreshing data to sync with server');
         showSuccess('Member was already removed from the server');
         
         // Force refresh to get the latest state from backend
