@@ -107,8 +107,10 @@ const requireSpacePermission = (path = '') => {
 
             req.space = space;
 
-            if(userRoles.systemRole !== 'user') {
-                return sendResponse(res, 403, false, 'You are not a user');
+            // Allow all authenticated users with valid system roles
+            const validSystemRoles = ['user', 'moderator', 'admin', 'super_admin'];
+            if(userRoles.systemRole && !validSystemRoles.includes(userRoles.systemRole)) {
+                return sendResponse(res, 403, false, 'Invalid system role');
             }
 
             // Get user's role in the workspace that contains this space
@@ -166,8 +168,10 @@ const requireSpaceSpecificPermission = (path = '') => {
 
             req.space = space;
 
-            if(userRoles.systemRole !== 'user') {
-                return sendResponse(res, 403, false, 'You are not a user');
+            // Allow all authenticated users with valid system roles
+            const validSystemRoles = ['user', 'moderator', 'admin', 'super_admin'];
+            if(userRoles.systemRole && !validSystemRoles.includes(userRoles.systemRole)) {
+                return sendResponse(res, 403, false, 'Invalid system role');
             }
 
             // Get user's role in the workspace that contains this space
@@ -213,8 +217,10 @@ const requireBoardPermission = (path = '') => {
 
             req.board = board;
 
-            if(userRoles.systemRole !== 'user') {
-                return sendResponse(res, 403, false, 'You are not a user');
+            // Allow all authenticated users with valid system roles
+            const validSystemRoles = ['user', 'moderator', 'admin', 'super_admin'];
+            if(userRoles.systemRole && !validSystemRoles.includes(userRoles.systemRole)) {
+                return sendResponse(res, 403, false, 'Invalid system role');
             }
 
             // Get user's role in the workspace that contains this board
@@ -380,8 +386,10 @@ const requireTaskEditPermission = async (req, res, next) => {
             return sendResponse(res, 400, false, 'Task context required');
         }
 
-        if(userRoles.systemRole !== 'user') {
-            return sendResponse(res, 403, false, 'You are not a user');
+        // Allow all authenticated users with valid system roles
+        const validSystemRoles = ['user', 'moderator', 'admin', 'super_admin'];
+        if(userRoles.systemRole && !validSystemRoles.includes(userRoles.systemRole)) {
+            return sendResponse(res, 403, false, 'Invalid system role');
         }
 
         // Check if user can edit task directly

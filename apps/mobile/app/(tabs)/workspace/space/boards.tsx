@@ -787,6 +787,7 @@ function SpaceBoardsScreenContent() {
                     key={b._id || b.id}
                     board={b}
                     style={[styles.gridItem, itemWidth ? { width: itemWidth } : null]}
+                    onPress={() => router.push(`/(tabs)/board?boardId=${b._id || b.id}&boardName=${encodeURIComponent(b.name || 'Board')}`)}
                   />
                 ))}
               </View>
@@ -1000,6 +1001,7 @@ function SpaceBoardsScreenContent() {
                 key={b._id || b.id}
                 board={b}
                 style={[styles.gridItem, itemWidth ? { width: itemWidth } : null]}
+                onPress={() => router.push(`/(tabs)/board?boardId=${b._id || b.id}&boardName=${encodeURIComponent(b.name || 'Board')}`)}
               />
             ))}
           </View>
