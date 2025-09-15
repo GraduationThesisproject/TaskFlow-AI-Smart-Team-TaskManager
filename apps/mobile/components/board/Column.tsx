@@ -3,7 +3,7 @@
  * Includes drag-over detection and smooth animations
  */
 
-import React, { memo, useCallback, useMemo, useRef } from 'react';
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -28,7 +28,10 @@ import {
 import { View, Text } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TaskCard } from './TaskCard';
+import { TaskCreateModal } from './TaskCreateModal';
 import { ColumnProps, DragTask, LayoutInfo } from '@/types/dragBoard.types';
+import { useAppDispatch } from '@/store';
+import { addTask } from '@/store/slices/dragBoardSlice';
 
 const COLUMN_WIDTH = Dimensions.get('window').width - 32;
 const TASK_HEIGHT = 88; // TaskCard height + margin
@@ -44,6 +47,7 @@ export const Column = memo<ColumnProps>(({
   editable = true,
 }) => {
   const colors = useThemeColors();
+  const dispatch = useAppDispatch();
   const flatListRef = useRef<FlatList<DragTask>>(null);
   
   // Animation values
@@ -51,6 +55,7 @@ export const Column = memo<ColumnProps>(({
   const columnOpacity = useSharedValue(1);
   const borderWidth = useSharedValue(1);
   const [isCollapsed, setIsCollapsed] = React.useState(column.collapsed || false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Handle drag over animation
   React.useEffect(() => {
@@ -125,6 +130,24 @@ export const Column = memo<ColumnProps>(({
     columnOpacity.value = withSpring(isCollapsed ? 1 : 0.95);
   }, [isCollapsed, columnOpacity]);
 
+  // Handle task creation
+  const handleOpenCreateModal = useCallback(() => {
+    setShowCreateModal(true);
+  }, []);
+
+  const handleSaveTask = useCallback((task: Partial<DragTask>) => {
+    dispatch(addTask({
+      columnId: column._id,
+      task: {
+        ...task,
+        columnId: column._id,
+        position: tasks.length,
+        status: 'todo',
+      },
+    }));
+    setShowCreateModal(false);
+  }, [dispatch, column._id, tasks.length]);
+
   // List header component
   const ListHeaderComponent = useMemo(() => (
     <View style={styles.headerSpacer} />
@@ -142,7 +165,7 @@ export const Column = memo<ColumnProps>(({
               borderColor: colors.border,
             },
           ]}
-          onPress={onAddTask}
+          onPress={handleOpenCreateModal}
         >
           <Plus size={16} color={colors['muted-foreground']} />
           <Text style={[styles.addTaskText, { color: colors['muted-foreground'] }]}>
@@ -152,7 +175,7 @@ export const Column = memo<ColumnProps>(({
       )}
       <View style={styles.footerSpacer} />
     </>
-  ), [editable, colors, onAddTask, tasks.length]);
+  ), [editable, colors, handleOpenCreateModal, tasks.length]);
 
   // Empty component
   const ListEmptyComponent = useMemo(() => (
@@ -163,14 +186,14 @@ export const Column = memo<ColumnProps>(({
       {editable && (
         <TouchableOpacity
           style={[styles.emptyAddButton, { backgroundColor: colors.primary }]}
-          onPress={onAddTask}
+          onPress={handleOpenCreateModal}
         >
           <Plus size={18} color="white" />
           <Text style={styles.emptyAddText}>Add First Task</Text>
         </TouchableOpacity>
       )}
     </View>
-  ), [editable, colors, onAddTask]);
+  ), [editable, colors, handleOpenCreateModal]);
 
   return (
     <Animated.View
@@ -266,6 +289,15 @@ export const Column = memo<ColumnProps>(({
           </Text>
         </View>
       )}
+
+      {/* Task Create Modal */}
+      <TaskCreateModal
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleSaveTask}
+        columnId={column._id}
+        columnName={column.name}
+      />
     </Animated.View>
   );
 }, (prevProps, nextProps) => {

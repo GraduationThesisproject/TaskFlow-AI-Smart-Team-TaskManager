@@ -7,6 +7,7 @@ export { Board } from './Board';
 export { Column } from './Column';
 export { TaskCard } from './TaskCard';
 export { TaskDetails } from './TaskDetails';
+export { TaskCreateModal } from './TaskCreateModal';
 
 // Re-export types for convenience
 export type {
