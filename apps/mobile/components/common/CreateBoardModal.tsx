@@ -53,8 +53,8 @@ export default function CreateBoardModal({ visible, onClose, onSubmit, submittin
   const boardTypes = [
     { id: 'kanban', name: 'Kanban', icon: 'columns', description: 'Visual workflow with columns' },
     { id: 'list', name: 'List', icon: 'list', description: 'Simple task list' },
-    { id: 'calendar', name: 'Calendar', icon: 'calendar', description: 'Time-based view' },
-    { id: 'timeline', name: 'Timeline', icon: 'clock-o', description: 'Project timeline' },
+    { id: 'calendar', name: 'Calendar', icon: 'calendar', description: 'Time-based view (coming soon)' },
+    { id: 'timeline', name: 'Timeline', icon: 'clock-o', description: 'Project timeline (coming soon)' },
   ] as const;
 
   return (
@@ -142,43 +142,54 @@ export default function CreateBoardModal({ visible, onClose, onSubmit, submittin
                     Choose the layout that works best for your workflow
                   </Text>
                   <View style={styles.typeContainer}>
-                    {boardTypes.map((boardType) => (
-                      <TouchableOpacity
-                        key={boardType.id}
-                        onPress={() => setType(boardType.id)}
-                        style={[
-                          styles.typeOption,
-                          { 
-                            borderColor: colors.border,
-                            backgroundColor: type === boardType.id ? colors.primary + '10' : colors.background 
-                          }
-                        ]}
-                      >
-                        <View style={styles.typeHeader}>
-                          <FontAwesome 
-                            name={boardType.icon as any} 
-                            size={16} 
-                            color={type === boardType.id ? colors.primary : colors['muted-foreground']} 
-                          />
-                          <Text style={[
-                            TextStyles.body.medium, 
+                    {boardTypes.map((boardType) => {
+                      const isDisabled = boardType.id === 'calendar' || boardType.id === 'timeline';
+                      const isSelected = type === boardType.id;
+                      return (
+                        <TouchableOpacity
+                          key={boardType.id}
+                          onPress={() => {
+                            if (!isDisabled) setType(boardType.id as BoardType);
+                          }}
+                          disabled={isDisabled}
+                          style={[
+                            styles.typeOption,
                             { 
-                              color: type === boardType.id ? colors.primary : colors.foreground,
-                              fontWeight: '600',
-                              marginLeft: 8
+                              borderColor: colors.border,
+                              backgroundColor: isSelected ? colors.primary + '10' : colors.background,
+                              opacity: isDisabled ? 0.6 : 1
                             }
-                          ]}>
-                            {boardType.name}
+                          ]}
+                        >
+                          <View style={styles.typeHeader}>
+                            <FontAwesome 
+                              name={boardType.icon as any} 
+                              size={16} 
+                              color={isSelected ? colors.primary : colors['muted-foreground']} 
+                            />
+                            <Text style={[
+                              TextStyles.body.medium, 
+                              { 
+                                color: isSelected ? colors.primary : colors.foreground,
+                                fontWeight: '600',
+                                marginLeft: 8
+                              }
+                            ]}>
+                              {boardType.name}
+                            </Text>
+                            {isSelected && !isDisabled && (
+                              <FontAwesome name="check-circle" size={16} color={colors.primary} style={{ marginLeft: 'auto' }} />
+                            )}
+                          </View>
+                          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 4 }]}>
+                            {boardType.description}
                           </Text>
-                          {type === boardType.id && (
-                            <FontAwesome name="check-circle" size={16} color={colors.primary} style={{ marginLeft: 'auto' }} />
+                          {isDisabled && (
+                            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 6 }]}>Future feature</Text>
                           )}
-                        </View>
-                        <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 4 }]}>
-                          {boardType.description}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 </View>
 

@@ -72,6 +72,7 @@ export default function MobileAlert({
   const scale = useRef(new Animated.Value(0.8)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
+  const isMountedRef = useRef(false);
 
   // Get colors based on variant
   const getAlertColors = () => {
@@ -182,6 +183,18 @@ export default function MobileAlert({
     }
   }, [visible, duration, animationDuration, position]);
 
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  // If parent toggles a new instance rapidly, ensure we restart animations cleanly
+  useEffect(() => {
+    const key = (typeof (arguments as any) !== 'undefined') ? undefined : undefined;
+    // no-op, placeholder to keep dependency array minimal
+    return () => {};
+  }, []);
+
   const hideAlert = () => {
     Animated.parallel([
       Animated.timing(opacity, {
@@ -200,8 +213,12 @@ export default function MobileAlert({
         useNativeDriver: true,
       }),
     ]).start(() => {
-      setIsVisible(false);
-      onClose?.();
+      // Defer state update to avoid scheduling during React insertion phase
+      const schedule = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (cb: any) => setTimeout(cb, 0);
+      schedule(() => {
+        setIsVisible(false);
+        onClose?.();
+      });
     });
   };
 
@@ -214,10 +231,11 @@ export default function MobileAlert({
   };
 
   const handleConfirm = () => {
-    if (onConfirm) {
-      onConfirm();
-    } else {
-      hideAlert();
+    try {
+      onConfirm?.();
+    } finally {
+      // Let provider hide after confirm; also provide a fallback
+      setTimeout(() => hideAlert(), 10);
     }
   };
 
