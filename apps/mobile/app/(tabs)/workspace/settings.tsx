@@ -521,6 +521,7 @@ function WorkspaceSettingsScreenContent() {
                 </View>
               )}
             </Card>
+
           </>
         )}
       </ScrollView>

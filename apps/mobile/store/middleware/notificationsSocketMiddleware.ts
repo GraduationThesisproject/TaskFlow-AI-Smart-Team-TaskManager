@@ -100,8 +100,10 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
 
     try {
       // Connect to notifications namespace to match backend
+      // Send token via multiple channels to satisfy different server parsers
       socket = io(`${env.SOCKET_URL}/notifications`, {
         auth: { token },
+        query: { token },
         autoConnect: true,
         transports: ['websocket', 'polling'],
         upgrade: true,
@@ -115,7 +117,14 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         // Add additional options for better connection handling
         withCredentials: true,
         rejectUnauthorized: false, // For development only
-        path: '/socket.io'
+        path: '/socket.io',
+        transportOptions: {
+          polling: {
+            extraHeaders: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        },
       });
     } catch (error) {
       console.error('❌ [notificationsSocketMiddleware] Failed to create socket connection:', error);

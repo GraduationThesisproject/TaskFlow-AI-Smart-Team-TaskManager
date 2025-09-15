@@ -7,6 +7,7 @@ const { sendEmail } = require('../utils/email');
 const User = require('../models/User');
 
 // Initialize Stripe only if API key is available
+
 if (env.STRIPE_SECRET_KEY) {
   try {
     stripe = require("stripe")(env.STRIPE_SECRET_KEY);
