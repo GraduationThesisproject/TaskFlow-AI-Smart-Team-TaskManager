@@ -238,7 +238,7 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
             <Text style={[styles.inputLabel, { color: colors.foreground }]}>Full Name</Text>
             <TextInput
               style={[styles.textInput, { 
-                color: colors.foreground,
+                color: '#000000', // Black text color
                 borderColor: nameError ? colors.error : colors.border
               }]}
               value={name}
@@ -259,7 +259,7 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
             <Text style={[styles.inputLabel, { color: colors.foreground }]}>Email Address</Text>
             <TextInput
               style={[styles.textInput, { 
-                color: colors.foreground,
+                color: '#000000', // Black text color
                 borderColor: emailError ? colors.error : colors.border
               }]}
               value={email}
@@ -282,7 +282,7 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
             <View style={styles.passwordContainer}>
               <TextInput
                 style={[styles.textInput, { 
-                  color: colors.foreground,
+                  color: '#000000', // Black text color
                   borderColor: passwordError ? colors.error : colors.border,
                   flex: 1
                 }]}
@@ -314,7 +314,7 @@ export default function RegisterFrom({ onSignin, onSuccess }: RegisterFormProps)
             <View style={styles.passwordContainer}>
               <TextInput
                 style={[styles.textInput, { 
-                  color: colors.foreground,
+                  color: '#000000', // Black text color
                   borderColor: confirmPasswordError ? colors.error : colors.border,
                   flex: 1
                 }]}
