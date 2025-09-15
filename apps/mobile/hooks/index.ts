@@ -3,7 +3,6 @@ export * from './useOAuth';
 export * from './useClickOutside';
 export * from './useDebounce';
 export * from './useLocalStorage';
-export * from './useTextDirection';
 export * from './useTasks';
 export * from './useTheme';
 // Removed useSpaceTasks - was using mock data and not being used
