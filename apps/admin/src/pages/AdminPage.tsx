@@ -19,7 +19,8 @@ import {
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
-  ChatBubbleLeftIcon
+  ChatBubbleLeftIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 
 // Import NotificationBell component
@@ -391,8 +392,8 @@ const AdminPage: React.FC = () => {
             
             <Dropdown
               trigger={
-                <div className="flex items-center space-x-2 hover:bg-muted p-2 rounded-lg transition-colors cursor-pointer">
-                  <Avatar size="sm" className="bg-primary text-primary-foreground flex-shrink-0">
+                <div className="flex items-center space-x-3 hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 cursor-pointer border border-transparent hover:border-border/50">
+                  <Avatar size="sm" className="bg-primary text-primary-foreground flex-shrink-0 ring-2 ring-primary/20">
                     {currentAdmin?.avatar ? (
                       <img 
                         src={getAvatarUrl(currentAdmin.avatar)} 
@@ -410,16 +411,22 @@ const AdminPage: React.FC = () => {
                       {currentAdmin?.name?.charAt(0).toUpperCase() || 'A'}
                     </span>
                   </Avatar>
-                  <div className="hidden lg:flex flex-col items-start space-y-1 min-w-0">
-                    <Typography variant="body-medium" className="text-foreground font-medium truncate">
+                  <div className="hidden lg:flex flex-col items-start space-y-0.5 min-w-0">
+                    <Typography variant="body-medium" className="text-foreground font-semibold truncate text-sm">
                       {currentAdmin?.name || currentAdmin?.email || 'Admin User'}
                     </Typography>
-                    <Typography variant="body-small" className="text-muted-foreground truncate">
+                    <Typography variant="body-small" className="text-muted-foreground truncate text-xs">
                       {currentAdmin?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
                     </Typography>
                   </div>
+                  <div className="flex-shrink-0">
+                    <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
+                  </div>
                 </div>
               }
+              side="bottom"
+              align="end"
+              contentClassName="w-56 shadow-lg border border-border/50 bg-popover backdrop-blur-sm"
             >
               {userMenuItems.map((item, index) => {
                 const Icon = item.icon;
@@ -428,10 +435,16 @@ const AdminPage: React.FC = () => {
                     key={index}
                     onClick={item.action}
                     variant={item.variant === 'destructive' ? 'destructive' : 'default'}
-                    className="flex items-center space-x-2"
+                    className={`flex items-center space-x-3 px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                      item.variant === 'destructive' 
+                        ? 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/20' 
+                        : 'text-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.label}</span>
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${
+                      item.variant === 'destructive' ? 'text-red-500' : 'text-muted-foreground'
+                    }`} />
+                    <span className="flex-1">{item.label}</span>
                   </DropdownItem>
                 );
               })}
