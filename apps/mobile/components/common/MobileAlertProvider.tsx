@@ -21,6 +21,7 @@ interface AlertState {
   animationDuration?: number;
   backdropOpacity?: number;
   allowBackdropClose?: boolean;
+  instanceKey?: number;
 }
 
 interface MobileAlertContextType {
@@ -49,12 +50,28 @@ export function MobileAlertProvider({ children }: MobileAlertProviderProps) {
     type: 'modal',
     message: '',
   });
+  // Unique key per alert to force re-render when same content shown twice quickly
+  const seqRef = React.useRef<number>(0);
+  const lastShowAtRef = React.useRef<number>(0);
 
   const showAlert = useCallback((props: Omit<AlertState, 'visible'>) => {
-    setAlertState({
+    const now = Date.now();
+    if (now - lastShowAtRef.current < 250) {
+      // ignore rapid duplicate calls that cause double popups
+      return;
+    }
+    lastShowAtRef.current = now;
+
+    const next: AlertState = {
       ...props,
+      animationDuration: props.animationDuration ?? 220,
+      position: props.position ?? 'center',
       visible: true,
-    });
+      instanceKey: ++seqRef.current,
+    } as AlertState;
+    // Defer to next frame to avoid committing state during insertion phase
+    const schedule = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (cb: any) => setTimeout(cb, 0);
+    schedule(() => setAlertState(next));
   }, []);
 
   const hideAlert = useCallback(() => {
@@ -112,13 +129,21 @@ export function MobileAlertProvider({ children }: MobileAlertProviderProps) {
     showBanner('info', message, { duration: 3000, ...options });
   }, [showBanner]);
 
-  const showConfirm = useCallback((title: string, message: string, onConfirm: () => void, options?: Partial<AlertState>) => {
+  const showConfirm = useCallback((title: string, message: string, onConfirm: () => void | Promise<void>, options?: Partial<AlertState>) => {
+    const wrappedConfirm = async () => {
+      try {
+        await onConfirm?.();
+      } finally {
+        // Defer hide to next tick to avoid scheduling during animations/insertions
+        setTimeout(() => hideAlert(), 0);
+      }
+    };
     showAlert({
       type: 'modal',
       title,
       message,
       variant: 'warning',
-      onConfirm,
+      onConfirm: wrappedConfirm,
       onCancel: hideAlert,
       confirmText: 'Confirm',
       cancelText: 'Cancel',

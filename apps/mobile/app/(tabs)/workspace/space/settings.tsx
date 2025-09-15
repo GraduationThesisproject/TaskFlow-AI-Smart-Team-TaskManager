@@ -233,13 +233,43 @@ export default function SpaceSettingsScreen() {
     try {
       const id = space._id || space.id;
       await SpaceService.deleteSpace(id);
-      Alert.alert('Space deleted', 'The space has been deleted.');
+      Alert.alert('Space permanently deleted', 'The space has been permanently deleted.');
       setShowDeleteConfirm(false);
       // Navigate back to workspace
       router.replace('/workspace');
     } catch (e: any) {
-      console.log('Delete space failed:', e?.response?.status, e?.response?.data || e?.message);
-      Alert.alert('Failed to delete', e?.message || 'Unknown error');
+      const status = e?.response?.status;
+      const serverMsg = e?.response?.data?.message || e?.response?.data?.error;
+      console.log('Delete space failed:', status, e?.response?.data || e?.message);
+      // If backend requires archiving first, offer to archive automatically and retry
+      if (status === 400 && (serverMsg || '').toLowerCase().includes('archived')) {
+        const id = space._id || space.id;
+        Alert.alert(
+          'Archive Required',
+          'This space must be archived before permanent deletion. Archive now and proceed to delete?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Archive & Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await SpaceService.archiveSpace(id);
+                  await SpaceService.deleteSpace(id);
+                  Alert.alert('Space permanently deleted', 'The space has been permanently deleted.');
+                  setShowDeleteConfirm(false);
+                  router.replace('/workspace');
+                } catch (err: any) {
+                  const m = err?.response?.data?.message || err?.message || 'Unknown error';
+                  Alert.alert('Failed to permanently delete', m);
+                }
+              }
+            }
+          ]
+        );
+        return;
+      }
+      Alert.alert('Failed to permanently delete', serverMsg || e?.message || 'Unknown error');
     }
   };
 
@@ -433,25 +463,25 @@ export default function SpaceSettingsScreen() {
         {/* Danger Zone */}
         <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.destructive, borderWidth: 1 }]}> 
           <Text style={[TextStyles.heading.h3, { color: colors.destructive, marginBottom: 10 }]}>Danger Zone</Text>
-          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginBottom: 12 }]}>Once you delete a space, there is no going back. Please be certain.</Text>
+          <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginBottom: 12 }]}>This will permanently delete the space and its data. This action cannot be undone.</Text>
           <TouchableOpacity onPress={() => setShowDeleteConfirm(true)} style={[styles.dangerBtn, { backgroundColor: colors.destructive }]}>
-            <Text style={{ color: colors['destructive-foreground'], fontWeight: '700' }}>Delete Space</Text>
+            <Text style={{ color: colors['destructive-foreground'], fontWeight: '700' }}>Permanently Delete Space</Text>
           </TouchableOpacity>
         </Card>
       </ScrollView>
 
-      {/* Delete Confirmation Modal */}
+      {/* Permanent Delete Confirmation Modal */}
       <Modal animationType="fade" transparent visible={showDeleteConfirm} onRequestClose={() => setShowDeleteConfirm(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
-            <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 8 }]}>Delete Space</Text>
-            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginBottom: 16 }]}>Are you sure you want to delete "{space.name}"? This action cannot be undone.</Text>
+            <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 8 }]}>Permanently Delete Space</Text>
+            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginBottom: 16 }]}>Are you sure you want to permanently delete "{space.name}"? This action cannot be undone.</Text>
             <RNView style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10 }}>
               <TouchableOpacity onPress={() => setShowDeleteConfirm(false)} style={[styles.ghostBtn, { borderColor: colors.border }]}>
                 <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleDelete} style={[styles.dangerBtn, { backgroundColor: colors.destructive }]}>
-                <Text style={{ color: colors['destructive-foreground'], fontWeight: '700' }}>Delete Space</Text>
+                <Text style={{ color: colors['destructive-foreground'], fontWeight: '700' }}>Permanently Delete</Text>
               </TouchableOpacity>
             </RNView>
           </View>

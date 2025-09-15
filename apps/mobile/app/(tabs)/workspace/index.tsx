@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { Text, View, Card } from '@/components/Themed';
-import { useThemeColors } from '@/components/ThemeProvider';
+import { useThemeColors, useTheme } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
@@ -24,6 +24,7 @@ import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
 function WorkspaceScreenContent() {
   const colors = useThemeColors();
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; workspaceId?: string }>();
   const dispatch = useAppDispatch();
@@ -86,20 +87,23 @@ function WorkspaceScreenContent() {
       spacesSource = Array.isArray(wsSpaces) ? wsSpaces : [];
     }
 
-    // Filter active spaces
-    const activeSpaces = spacesSource.filter((s: any) => s?.status !== 'archived');
-
     // Deduplicate spaces by id to avoid duplicate renders when multiple fetches race
     const seen = new Set<string>();
     const uniqueSpaces: any[] = [];
-    for (const s of activeSpaces) {
+    for (const s of spacesSource) {
       const id = String((s as any)?._id || (s as any)?.id || '');
       if (!id || seen.has(id)) continue;
       seen.add(id);
       uniqueSpaces.push(s);
     }
 
-    // Return effective spaces
+    // Sort so active spaces appear first, archived after
+    const isArchived = (s: any): boolean => {
+      const status = String(s?.status || '').toLowerCase();
+      return s?.isArchived === true || s?.archived === true || status === 'archived' || status === 'inactive';
+    };
+    uniqueSpaces.sort((a, b) => Number(isArchived(a)) - Number(isArchived(b)));
+
     return uniqueSpaces;
   }, [spaces, ws, workspaceId]);
 
@@ -108,6 +112,14 @@ function WorkspaceScreenContent() {
     if (!q) return processedSpaces;
     return (processedSpaces || []).filter((s: any) => (s?.name || '').toLowerCase().includes(q) || (s?.description || '').toLowerCase().includes(q));
   }, [spaceSearch, processedSpaces]);
+
+  const archivedSpacesCount = useMemo(() => {
+    const isArchived = (s: any): boolean => {
+      const status = String(s?.status || '').toLowerCase();
+      return s?.isArchived === true || s?.archived === true || status === 'archived' || status === 'inactive';
+    };
+    return Array.isArray(processedSpaces) ? processedSpaces.filter(isArchived).length : 0;
+  }, [processedSpaces]);
 
   // Deduplicate members by user id to avoid duplicate renders
   const uniqueMembers = useMemo(() => {
@@ -220,37 +232,46 @@ function WorkspaceScreenContent() {
   }, [workspaceId, dispatch, showSuccess, showError]);
 
   const handleArchiveSpace = useCallback(async (spaceId: string, spaceName: string, isArchived: boolean) => {
-    const action = isArchived ? 'restore' : 'archive';
-    const actionText = isArchived ? 'restore' : 'archive';
-    
-    Alert.alert(
-      `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} Space`,
-      `Are you sure you want to ${actionText} "${spaceName}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: actionText.charAt(0).toUpperCase() + actionText.slice(1),
-          onPress: async () => {
-            try {
-              if (isArchived) {
-                await dispatch(unarchiveSpace(spaceId));
-                showSuccess('Space restored successfully!');
-              } else {
-                await dispatch(archiveSpace(spaceId));
-                showSuccess('Space archived successfully!');
-              }
-              // Refresh spaces after archiving/unarchiving
-              if (workspaceId) {
-                loadSpaces(workspaceId);
-              }
-            } catch (error) {
-              showError(`Failed to ${actionText} space`);
-            }
-          }
+    const nextAction = isArchived ? 'restore' : 'archive';
+    const title = `${nextAction.charAt(0).toUpperCase() + nextAction.slice(1)} Space`;
+    const message = `Are you sure you want to ${nextAction} "${spaceName}"?`;
+
+    showConfirm(title, message, async () => {
+      try {
+        if (isArchived) {
+          await dispatch(unarchiveSpace(spaceId));
+          showSuccess('Space restored successfully!');
+        } else {
+          await dispatch(archiveSpace(spaceId));
+          showSuccess('Space archived successfully!');
         }
-      ]
+        if (workspaceId) {
+          loadSpaces(workspaceId);
+        }
+      } catch (error) {
+        showError(`Failed to ${nextAction} space`);
+      }
+    });
+  }, [dispatch, showConfirm, showSuccess, showError, workspaceId, loadSpaces]);
+
+  // Optional: reusable permanent delete confirm using common MobileAlert UI
+  const confirmPermanentDelete = useCallback((spaceId: string, spaceName: string, onConfirmed: () => Promise<void>) => {
+    showConfirm(
+      'Permanently Delete Space',
+      `This will permanently delete "${spaceName}" and its data. This action cannot be undone.`,
+      async () => {
+        try {
+          await onConfirmed();
+          showSuccess('Space permanently deleted');
+          if (workspaceId) {
+            loadSpaces(workspaceId);
+          }
+        } catch (error: any) {
+          showError(error?.message || 'Failed to permanently delete');
+        }
+      }
     );
-  }, [dispatch, showSuccess, showError, workspaceId, loadSpaces]);
+  }, [showConfirm, showSuccess, showError, workspaceId, loadSpaces]);
 
   const handleSubmitCreate = useCallback(async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
     if (!workspaceId) return;
@@ -454,6 +475,13 @@ function WorkspaceScreenContent() {
                 <FontAwesome name="users" size={16} color={colors['primary-foreground']} />
               </TouchableOpacity>
             )}
+            <TouchableOpacity 
+              onPress={toggleTheme} 
+              style={[styles.membersButton, { backgroundColor: colors.background, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, marginLeft: 8 }]} 
+              accessibilityLabel="Toggle theme"
+            >
+              <FontAwesome name={theme === 'light' ? 'moon-o' : 'sun-o'} size={16} color={colors.foreground} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -546,6 +574,15 @@ function WorkspaceScreenContent() {
                   <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Active Spaces</Text>
                 </View>
               </Card>
+              <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
+                <View style={[styles.statIcon, { backgroundColor: colors.warning + '15' }]}>
+                  <FontAwesome name="archive" size={20} color={colors.warning} />
+                </View>
+                <View style={styles.statContent}>
+                  <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{archivedSpacesCount}</Text>
+                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Archived Spaces</Text>
+                </View>
+              </Card>
             </View>
 
           </>
@@ -561,7 +598,7 @@ function WorkspaceScreenContent() {
                 <View>
                   <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Spaces</Text>
                   <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                    {processedSpaces.length} space{processedSpaces.length !== 1 ? 's' : ''} available
+                    {processedSpaces.length} space{processedSpaces.length !== 1 ? 's' : ''} • {archivedSpacesCount} archived
                   </Text>
                 </View>
               </View>
@@ -580,6 +617,11 @@ function WorkspaceScreenContent() {
             >
               {filteredSpaces.map((space: any, index: number) => {
                 const isLocked = isSpaceLocked(space, index);
+                const computeArchived = (s: any): boolean => {
+                  const status = String(s?.status || '').toLowerCase();
+                  return s?.isArchived === true || s?.archived === true || status === 'archived' || status === 'inactive';
+                };
+                const archived = computeArchived(space);
                 
                 if (isLocked) {
                   return (
@@ -589,11 +631,11 @@ function WorkspaceScreenContent() {
                       description={space.description}
                       membersCount={getSpaceMemberCount(space)}
                       icon={space.icon || '📂'}
-                      isArchived={!!space.isArchived}
+                      isArchived={archived}
                       createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
                       tileSize={previewTile}
                       onPress={() => handleOpenSpace(space)}
-                      onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, space.isArchived)}
+                      onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, archived)}
                       isLocked={isLocked}
                       lockReason="This space requires Premium"
                       benefits={[
@@ -612,12 +654,13 @@ function WorkspaceScreenContent() {
                     name={space.name}
                     description={space.description}
                     membersCount={getSpaceMemberCount(space)}
-                      icon={space.icon || '📂'}
-                    isArchived={!!space.isArchived}
+                    icon={space.icon || '📂'}
+                    isArchived={archived}
                     createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
                     tileSize={previewTile}
+                    boardsCount={Array.isArray((space as any)?.boards) ? (space as any).boards.length : ((space as any)?.stats?.totalBoards || 0)}
                     onPress={() => handleOpenSpace(space)}
-                    onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, space.isArchived)}
+                    onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, archived)}
                   />
                 );
               })}

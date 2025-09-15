@@ -11,10 +11,10 @@ const getNetworkConfig = () => {
     if (isAndroid) {
       // Android - use development machine IP
       return {
-        apiBaseUrl: 'http://192.168.1.14:3001/api',
-        baseUrl: 'http://192.168.1.14:3001',
-        socketUrl: 'http://192.168.1.14:3001',
-        frontendUrl: 'http://192.168.1.14:5173',
+        apiBaseUrl: 'http://192.168.1.13:3001/api',
+        baseUrl: 'http://192.168.1.13:3001',
+        socketUrl: 'http://192.168.1.13:3001',
+        frontendUrl: 'http://192.168.1.13:5173',
       };
     }
     
