@@ -3,8 +3,6 @@ const router = express.Router();
 const env=require('../config/env');
 // Only initialize Stripe if the key is available
 const stripe = env.STRIPE_SECRET_KEY ? require("stripe")(env.STRIPE_SECRET_KEY) : null;
-// Only initialize Stripe if the key is available
-const stripe = env.STRIPE_SECRET_KEY ? require("stripe")(env.STRIPE_SECRET_KEY) : null;
 const { sendEmail } = require('../utils/email');
 const User = require('../models/User');
 
