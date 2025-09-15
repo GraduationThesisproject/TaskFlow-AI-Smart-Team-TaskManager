@@ -17,6 +17,7 @@ export type SpaceCardProps = {
   style?: any;
   createdAt?: string | number | Date;
   tileSize?: number;
+  boardsCount?: number;
 };
 
 const SpaceCard: React.FC<SpaceCardProps> = ({
@@ -30,6 +31,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
   style,
   createdAt,
   tileSize = 160,
+  boardsCount = 0,
 }) => {
   const colors = useThemeColors();
 
@@ -38,7 +40,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
     try {
       const d = new Date(createdAt);
       if (isNaN(d.getTime())) return undefined;
-      return d.toLocaleDateString();
+      return d.toLocaleString();
     } catch {
       return undefined;
     }
@@ -48,7 +50,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
-      style={[style, tileSize ? { width: tileSize, height: tileSize } : null]}
+      style={[style, tileSize ? { width: tileSize } : null]}
     >
       <Card
         style={[
@@ -85,7 +87,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
           )}
         </LinearGradient>
 
-        {/* Enhanced Content */}
+        {/* Content */}
         <RNView style={styles.bottomBox}>
           <Text
             style={[TextStyles.body.medium, { color: colors.foreground, fontWeight: '700' }]}
@@ -94,9 +96,9 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
             {name}
           </Text>
           
-          {/* Enhanced Meta chips */}
-          <RNView style={[styles.metaRow, { borderTopColor: colors.border + '40' }]}>
-            <RNView style={[styles.chip, { backgroundColor: colors.primary + '15' }]}>
+          {/* Meta chips */}
+          <RNView style={[styles.metaRow, { borderTopColor: colors.border + '40' }]}> 
+            <RNView style={[styles.chip, { backgroundColor: colors.primary + '15' }]}> 
               <Text
                 style={[
                   TextStyles.caption.small,
@@ -104,6 +106,26 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
                 ]}
               >
                 👥 {membersCount}
+              </Text>
+            </RNView>
+            <RNView style={[styles.chip, { backgroundColor: colors.accent + '15' }]}> 
+              <Text
+                style={[
+                  TextStyles.caption.small,
+                  { color: colors.accent, fontWeight: '600' },
+                ]}
+              >
+                🗂️ {boardsCount}
+              </Text>
+            </RNView>
+            <RNView style={[styles.chip, { backgroundColor: (isArchived ? colors.warning : colors.success) + '15' }]}> 
+              <Text
+                style={[
+                  TextStyles.caption.small,
+                  { color: isArchived ? colors.warning : colors.success, fontWeight: '600' },
+                ]}
+              >
+                {isArchived ? 'Archived' : 'Active'}
               </Text>
             </RNView>
             {createdLabel && (
@@ -129,10 +151,9 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
+    borderRadius: 20,
     padding: 16,
     overflow: 'hidden',
-    aspectRatio: 1,
     justifyContent: 'space-between',
     shadowOpacity: 0.12,
     shadowRadius: 12,
@@ -141,7 +162,7 @@ const styles = StyleSheet.create({
   },
   headerCap: {
     height: 70,
-    borderRadius: 20,
+    borderRadius: 16,
     marginBottom: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -186,8 +207,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 8,
-    paddingTop: 8,
+    marginTop: 12,
+    paddingTop: 12,
     flexWrap: 'wrap',
   },
   chip: {
