@@ -16,7 +16,6 @@ import { checkAuthStatus } from '@/store/slices/authSlice';
 import { clearWorkspaceCreationNotifications } from '@/utils/notificationUtils';
 import { SocketProvider } from '@/contexts/SocketContext';
 import { ToastProvider } from '@/components/common/ToastProvider';
-import { LanguageProvider } from '@/contexts/LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export {
@@ -83,15 +82,13 @@ function RootLayoutNav() {
     <GestureHandlerRootView style={{ flex: 1 }}>
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <LanguageProvider>
-          <SocketProvider>
-            <ThemeProvider>
-              <ToastProvider>
-                <AuthGate />
-              </ToastProvider>
-            </ThemeProvider>
-          </SocketProvider>
-        </LanguageProvider>
+        <SocketProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <AuthGate />
+            </ToastProvider>
+          </ThemeProvider>
+        </SocketProvider>
       </PersistGate>
     </Provider>
     </GestureHandlerRootView>

@@ -11,8 +11,6 @@ import { updateWorkspaceSettings } from '@/store/slices/workspaceSlice';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthToken } from '@/hooks/useLocalStorage';
 import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
-import LanguageSelector from '@/components/settings/LanguageSelector';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 function WorkspaceSettingsScreenContent() {
   const colors = useThemeColors();
@@ -20,7 +18,6 @@ function WorkspaceSettingsScreenContent() {
   const dispatch = useAppDispatch();
   const { token } = useAuth();
   const { showSuccess, showError, showWarning, showInfo } = useBanner();
-  const { language, isRTL } = useLanguage();
 
   const { currentWorkspace, loading } = useAppSelector((state: any) => state.workspace);
   const workspaceId = (currentWorkspace as any)?._id || (currentWorkspace as any)?.id;
@@ -525,44 +522,6 @@ function WorkspaceSettingsScreenContent() {
               )}
             </Card>
 
-            {/* Language Settings */}
-            <Card style={[styles.sectionCard, { backgroundColor: colors.card }]}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionTitleContainer}>
-                  <View style={[styles.sectionIcon, { backgroundColor: colors.accent + '15' }]}>
-                    <FontAwesome name="globe" size={16} color={colors.accent} />
-                  </View>
-                  <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Language & Region</Text>
-                </View>
-              </View>
-              
-              <View style={styles.languageSection}>
-                <View style={styles.languageInfo}>
-                  <Text style={[TextStyles.body.medium, { color: colors.foreground, fontWeight: '500', marginBottom: 8 }]}>
-                    Display Language
-                  </Text>
-                  <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], marginBottom: 16 }]}>
-                    Choose your preferred language for the interface
-                  </Text>
-                </View>
-                
-                <LanguageSelector 
-                  onLanguageChange={(newLanguage) => {
-                    console.log('Language changed to:', newLanguage);
-                    showSuccess('Language updated successfully');
-                  }}
-                />
-                
-                {isRTL && (
-                  <View style={[styles.rtlNotice, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
-                    <FontAwesome name="info-circle" size={14} color={colors.primary} />
-                    <Text style={[TextStyles.caption.small, { color: colors.primary, marginLeft: 8 }]}>
-                      Right-to-left layout is now active
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </Card>
           </>
         )}
       </ScrollView>
@@ -877,21 +836,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 1,
-  },
-  
-  // Language Settings Styles
-  languageSection: {
-    gap: 16,
-  },
-  languageInfo: {
-    gap: 4,
-  },
-  rtlNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginTop: 8,
   },
 });
