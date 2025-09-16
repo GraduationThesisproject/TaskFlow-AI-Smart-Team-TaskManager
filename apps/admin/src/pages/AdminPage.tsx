@@ -419,9 +419,9 @@ const AdminPage: React.FC = () => {
                       {currentAdmin?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
                     </Typography>
                   </div>
-                  <div className="flex-shrink-0">
+                  {/* <div className="flex-shrink-0">
                     <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
-                  </div>
+                  </div> */}
                 </div>
               }
               side="bottom"
