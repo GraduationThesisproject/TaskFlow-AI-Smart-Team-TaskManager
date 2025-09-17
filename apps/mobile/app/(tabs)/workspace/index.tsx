@@ -16,6 +16,7 @@ import CreateSpaceModal from '@/components/common/CreateSpaceModal';
 import { MobileAlertProvider, useMobileAlert } from '@/components/common/MobileAlertProvider';
 import SpaceCard from '@/components/common/SpaceCard';
 import PremiumSpaceCard from '@/components/common/PremiumSpaceCard';
+import GridSpaces from '@/components/workspace/GridSpaces';
 import PremiumSpaceLimitModal from '@/components/common/PremiumSpaceLimitModal';
 import Sidebar from '@/components/navigation/Sidebar';
 import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
@@ -186,12 +187,12 @@ function WorkspaceScreenContent() {
     const status = String(space?.status || '').toLowerCase();
     const archived = space?.isArchived === true || space?.archived === true || status === 'archived' || status === 'inactive';
     if (archived) {
-      showWarning('This space is archived. Restore it to access boards.');
+      showWarning('This space is archived. Restore it to access main.');
       return;
     }
     dispatch(setSelectedSpace(space));
     dispatch(setCurrentSpace(space));
-    router.push('/workspace/space/boards');
+    router.replace('/(tabs)/workspace/space/main');
   }, [dispatch, router, showWarning]);
 
 
@@ -617,55 +618,14 @@ function WorkspaceScreenContent() {
               style={[styles.spaceList, { flexDirection: 'row', flexWrap: 'wrap', gap: PREVIEW_GAP, backgroundColor: colors.background }]}
               onLayout={(e) => setPreviewGridW(e.nativeEvent.layout.width)}
             >
-              {filteredSpaces.map((space: any, index: number) => {
-                const isLocked = isSpaceLocked(space, index);
-                const computeArchived = (s: any): boolean => {
-                  const status = String(s?.status || '').toLowerCase();
-                  return s?.isArchived === true || s?.archived === true || status === 'archived' || status === 'inactive';
-                };
-                const archived = computeArchived(space);
-                
-                if (isLocked) {
-                  return (
-                    <PremiumSpaceCard
-                      key={space._id || space.id}
-                      name={space.name}
-                      description={space.description}
-                      membersCount={getSpaceMemberCount(space)}
-                      icon={space.icon || '📂'}
-                      isArchived={archived}
-                      createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
-                      tileSize={previewTile}
-                      onPress={() => handleOpenSpace(space)}
-                      onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, archived)}
-                      isLocked={isLocked}
-                      lockReason="This space requires Premium"
-                      benefits={[
-                        "Unlimited spaces (currently limited to 5)",
-                        "Advanced analytics",
-                        "Priority support",
-                        "Custom integrations"
-                      ]}
-                    />
-                  );
-                }
-                
-                return (
-                  <SpaceCard
-                    key={space._id || space.id}
-                    name={space.name}
-                    description={space.description}
-                    membersCount={getSpaceMemberCount(space)}
-                    icon={space.icon || '📂'}
-                    isArchived={archived}
-                    createdAt={space.createdAt || space.created_at || space.createdOn || space.created || space.createdDate}
-                    tileSize={previewTile}
-                    boardsCount={Array.isArray((space as any)?.boards) ? (space as any).boards.length : ((space as any)?.stats?.totalBoards || 0)}
-                    onPress={() => handleOpenSpace(space)}
-                    onToggleArchive={() => handleArchiveSpace(space._id || space.id, space.name, archived)}
-                  />
-                );
-              })}
+              <GridSpaces
+                spaces={filteredSpaces}
+                previewTile={previewTile}
+                isSpaceLocked={isSpaceLocked}
+                getSpaceMemberCount={getSpaceMemberCount}
+                onOpenSpace={handleOpenSpace}
+                onToggleArchive={handleArchiveSpace}
+              />
             </View>
           </Card>
         )}
