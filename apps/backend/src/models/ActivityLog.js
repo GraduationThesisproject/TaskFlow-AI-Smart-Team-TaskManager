@@ -67,9 +67,18 @@ const activityLogSchema = new mongoose.Schema({
     ipAddress: String,
     userAgent: String,
     deviceInfo: {
-      type: String,
-      os: String,
-      browser: String
+      type: {
+        type: String,
+        default: 'web'
+      },
+      os: {
+        type: String,
+        default: 'unknown'
+      },
+      browser: {
+        type: String,
+        default: 'unknown'
+      }
     },
     oldValues: {
       type: Map,

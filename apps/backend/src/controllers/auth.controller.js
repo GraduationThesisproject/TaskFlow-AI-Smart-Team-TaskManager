@@ -38,11 +38,22 @@ exports.register = async (req, res) => {
         try {
             const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
             const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+            
+            // Console log the verification code for debugging
+            console.log('🔐 EMAIL VERIFICATION CODE GENERATED:', {
+                email: email,
+                code: verificationCode,
+                expiresAt: new Date(expiresAt).toISOString(),
+                expiresIn: '10 minutes'
+            });
+            
+            // Normalize email to lowercase for consistent storage
+            const normalizedEmail = email.toLowerCase();
 
             // Store pending registration data (user will be created only after verification)
-            pendingRegistrations.set(email, {
+            pendingRegistrations.set(normalizedEmail, {
                 name,
-                email,
+                email: normalizedEmail,
                 password,
                 deviceId: deviceId || 'web-' + Date.now(),
                 deviceInfo: deviceInfo || { type: 'web' },
@@ -52,7 +63,7 @@ exports.register = async (req, res) => {
             });
 
             // Store verification code in memory (in production, use Redis)
-            emailVerifyCodes.set(email, {
+            emailVerifyCodes.set(normalizedEmail, {
                 code: verificationCode,
                 expiresAt,
                 attempts: 0
@@ -297,7 +308,12 @@ exports.login = async (req, res) => {
             action: 'user_login',
             description: `User logged in: ${email}`,
             entity: { type: 'User', id: user._id, name: user.name },
-            metadata: { ipAddress: req.ip, userAgent: req.get('User-Agent'), deviceInfo, rememberMe }
+            metadata: { 
+                ipAddress: req.ip, 
+                userAgent: req.get('User-Agent'), 
+                deviceInfo: deviceInfo || { type: 'web', os: 'unknown', browser: 'unknown' },
+                rememberMe 
+            }
         });
 
         sendResponse(res, 200, true, 'Login successful', {
@@ -1171,8 +1187,11 @@ exports.resendVerificationCode = async (req, res) => {
             return sendResponse(res, 400, false, 'Email is required');
         }
 
+        // Normalize email to lowercase for consistent lookup
+        const normalizedEmail = email.toLowerCase();
+
         // Check if there's a pending registration
-        const pendingData = pendingRegistrations.get(email);
+        const pendingData = pendingRegistrations.get(normalizedEmail);
         if (!pendingData) {
             // Do not reveal existence
             return sendResponse(res, 200, true, 'If a registration with that email exists, a code has been sent');
@@ -1181,13 +1200,21 @@ exports.resendVerificationCode = async (req, res) => {
         // Check if registration data is not too old
         const maxAge = 24 * 60 * 60 * 1000; // 24 hours
         if (Date.now() - pendingData.createdAt.getTime() > maxAge) {
-            pendingRegistrations.delete(email);
+            pendingRegistrations.delete(normalizedEmail);
             return sendResponse(res, 400, false, 'Registration data has expired. Please register again.');
         }
 
         const code = Math.floor(1000 + Math.random() * 9000).toString();
         const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
-        emailVerifyCodes.set(email, { code, expiresAt, attempts: 0 });
+        emailVerifyCodes.set(normalizedEmail, { code, expiresAt, attempts: 0 });
+
+        // Console log the resend verification code for debugging
+        console.log('🔐 EMAIL VERIFICATION CODE RESENT:', {
+            email: email,
+            code: code,
+            expiresAt: new Date(expiresAt).toISOString(),
+            expiresIn: '10 minutes'
+        });
 
         try {
             await sendEmail({
@@ -1215,36 +1242,49 @@ exports.verifyEmailCode = async (req, res) => {
             return sendResponse(res, 400, false, 'Email and code are required');
         }
 
-        const record = emailVerifyCodes.get(email);
+        // Normalize email to lowercase for consistent lookup
+        const normalizedEmail = email.toLowerCase();
+        
+        // Debug logging
+        console.log('🔍 Verification attempt:', {
+            originalEmail: email,
+            normalizedEmail: normalizedEmail,
+            code: code,
+            storedCodes: Array.from(emailVerifyCodes.keys()),
+            pendingRegistrations: Array.from(pendingRegistrations.keys())
+        });
+
+        const record = emailVerifyCodes.get(normalizedEmail);
         if (!record) {
+            console.log('❌ No verification code found for email:', normalizedEmail);
             return sendResponse(res, 400, false, 'Invalid or expired verification code');
         }
         if (Date.now() > record.expiresAt) {
-            emailVerifyCodes.delete(email);
+            emailVerifyCodes.delete(normalizedEmail);
             return sendResponse(res, 400, false, 'Verification code has expired');
         }
         if (record.attempts >= 5) {
-            emailVerifyCodes.delete(email);
+            emailVerifyCodes.delete(normalizedEmail);
             return sendResponse(res, 400, false, 'Too many failed attempts');
         }
         if (record.code !== code) {
             record.attempts += 1;
-            emailVerifyCodes.set(email, record);
+            emailVerifyCodes.set(normalizedEmail, record);
             return sendResponse(res, 400, false, 'Invalid verification code');
         }
 
         // Get pending registration data
-        const pendingData = pendingRegistrations.get(email);
+        const pendingData = pendingRegistrations.get(normalizedEmail);
         if (!pendingData) {
-            emailVerifyCodes.delete(email);
+            emailVerifyCodes.delete(normalizedEmail);
             return sendResponse(res, 404, false, 'No pending registration found for this email');
         }
 
         // Check if registration data is not too old (e.g., 24 hours)
         const maxAge = 24 * 60 * 60 * 1000; // 24 hours
         if (Date.now() - pendingData.createdAt.getTime() > maxAge) {
-            pendingRegistrations.delete(email);
-            emailVerifyCodes.delete(email);
+            pendingRegistrations.delete(normalizedEmail);
+            emailVerifyCodes.delete(normalizedEmail);
             return sendResponse(res, 400, false, 'Registration data has expired. Please register again.');
         }
 
@@ -1289,9 +1329,19 @@ exports.verifyEmailCode = async (req, res) => {
             action: 'user_register',
             description: `User registered and verified: ${email}`,
             entity: { type: 'User', id: user._id, name: user.name },
-            metadata: { ipAddress: pendingData.ipAddress, userAgent: req.get('User-Agent'), deviceInfo: pendingData.deviceInfo, hasInvitation: !!pendingData.invitation, via: 'code' },
+            metadata: { 
+                ipAddress: pendingData.ipAddress, 
+                userAgent: req.get('User-Agent'), 
+                deviceInfo: pendingData.deviceInfo || { type: 'web', os: 'unknown', browser: 'unknown' }, 
+                hasInvitation: !!pendingData.invitation, 
+                via: 'code' 
+            },
             severity: 'info'
         });
+
+        // Clean up verification data after successful verification
+        emailVerifyCodes.delete(normalizedEmail);
+        pendingRegistrations.delete(normalizedEmail);
 
         return sendResponse(res, 200, true, 'Email verified successfully. Please login to continue.', {
             user: user.getPublicProfile()
