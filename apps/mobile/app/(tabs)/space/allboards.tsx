@@ -9,7 +9,7 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import BoardCard from '@/components/common/BoardCard';
 import { BoardService } from '@/services/boardService';
-import SpaceHeader from '@/components/space/SpaceHeader';
+import SpaceHeader from '@/app/(tabs)/space/components/SpaceHeader';
 
 export default function AllBoardsScreen() {
   const colors = useThemeColors();

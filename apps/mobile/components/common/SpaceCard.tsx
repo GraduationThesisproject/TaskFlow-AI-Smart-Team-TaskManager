@@ -46,6 +46,11 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
     }
   }, [createdAt]);
 
+  const displayName = useMemo(() => {
+    if (typeof name !== 'string') return '';
+    return name.length > 5 ? name.slice(0, 5) : name;
+  }, [name]);
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -91,9 +96,9 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
         <RNView style={styles.bottomBox}>
           <Text
             style={[TextStyles.body.medium, { color: colors.foreground, fontWeight: '700' }]}
-            numberOfLines={2}
+            numberOfLines={1}
           >
-            {name}
+            {displayName}
           </Text>
           
           {/* Meta chips */}

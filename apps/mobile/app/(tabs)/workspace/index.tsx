@@ -16,10 +16,12 @@ import CreateSpaceModal from '@/components/common/CreateSpaceModal';
 import { MobileAlertProvider, useMobileAlert } from '@/components/common/MobileAlertProvider';
 import SpaceCard from '@/components/common/SpaceCard';
 import PremiumSpaceCard from '@/components/common/PremiumSpaceCard';
-import GridSpaces from '@/components/workspace/GridSpaces';
+import GridSpaces from '@/components/space/GridSpaces';
 import PremiumSpaceLimitModal from '@/components/common/PremiumSpaceLimitModal';
+import WorkspaceStats from './components/WorkspaceStats';
 import Sidebar from '@/components/navigation/Sidebar';
 import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
+import WorkspaceHeader from './components/WorkspaceHeader';
 
 
 
@@ -347,13 +349,13 @@ function WorkspaceScreenContent() {
 
   // Grid sizing for 3 columns in Spaces
   const [previewGridW, setPreviewGridW] = useState(0);
-  const PREVIEW_COLS = 3;
-  const PREVIEW_GAP = 12;
+  const { width } = useWindowDimensions();
+  const PREVIEW_COLS = (width < 768) ? 2 : 3; // ensure at least 2 columns on phones/tablets
+  const PREVIEW_GAP = (width < 380) ? 8 : 12;
   const previewTile = previewGridW > 0
     ? Math.floor((previewGridW - PREVIEW_GAP * (PREVIEW_COLS - 1)) / PREVIEW_COLS)
     : undefined;
 
-  const { width } = useWindowDimensions();
   const isWide = width >= 768;
   const [membersSidebarOpen, setMembersSidebarOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(320)).current;
@@ -441,52 +443,13 @@ function WorkspaceScreenContent() {
         )}
 
         {/* Header */}
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity
-              style={[styles.backButton, { backgroundColor: colors.background }]}
-              onPress={() => router.push('/(tabs)')}
-              accessibilityRole="button"
-              accessibilityLabel="Back to dashboard"
-            >
-              <FontAwesome name="arrow-left" size={18} color={colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.sidebarButton, { backgroundColor: colors.background }]}
-              onPress={() => setSidebarVisible(true)}
-              accessibilityLabel="Open menu"
-            >
-              <FontAwesome name="bars" size={18} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.headerCenter}>
-            <View style={styles.headerTitleContainer}>
-              <View style={[styles.headerIcon, { backgroundColor: colors.primary + '15' }]}>
-                <FontAwesome name="building" size={20} color={colors.primary} />
-              </View>
-              <View>
-                <Text style={[TextStyles.heading.h1, { color: colors.foreground }]}>Workspace</Text>
-                {effectiveWorkspace && (
-                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                    {effectiveWorkspace.name || 'Untitled Workspace'}
-                  </Text>
-                )}
-              </View>
-            </View>
-          </View>
-          <View style={styles.headerRight}>
-            {!isWide && (
-              <TouchableOpacity 
-                onPress={() => setMembersSidebarOpen(true)} 
-                style={[styles.membersButton, { backgroundColor: colors.primary }]}
-                accessibilityLabel="View members"
-                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-              >
-                <FontAwesome name="users" size={16} color={colors['primary-foreground']} />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+        <WorkspaceHeader
+          title={effectiveWorkspace?.name || 'Workspace'}
+          onBack={() => router.push('/(tabs)')}
+          onOpenSidebar={() => setSidebarVisible(true)}
+          onOpenMembers={() => setMembersSidebarOpen(true)}
+          showMembersButton={!isWide}
+        />
 
         <ScrollView
           style={styles.content}
@@ -558,35 +521,11 @@ function WorkspaceScreenContent() {
         {/* Overview + Actions only when workspace details are loaded */}
         {workspaceId && effectiveWorkspace && (
           <>
-            <View style={styles.statsContainer}>
-              <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
-                <View style={[styles.statIcon, { backgroundColor: colors.primary + '15' }]}>
-                  <FontAwesome name="users" size={20} color={colors.primary} />
-                </View>
-                <View style={styles.statContent}>
-                  <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{membersCount}</Text>
-                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Members</Text>
-                </View>
-              </Card>
-              <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
-                <View style={[styles.statIcon, { backgroundColor: colors.accent + '15' }]}>
-                  <FontAwesome name="th-large" size={20} color={colors.accent} />
-                </View>
-                <View style={styles.statContent}>
-                  <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{activeSpacesCount}</Text>
-                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Active Spaces</Text>
-                </View>
-              </Card>
-              <Card style={[styles.statCard, { backgroundColor: colors.card }]}>
-                <View style={[styles.statIcon, { backgroundColor: colors.warning + '15' }]}>
-                  <FontAwesome name="archive" size={20} color={colors.warning} />
-                </View>
-                <View style={styles.statContent}>
-                  <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>{archivedSpacesCount}</Text>
-                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Archived Spaces</Text>
-                </View>
-              </Card>
-            </View>
+            <WorkspaceStats
+              membersCount={membersCount}
+              activeSpacesCount={activeSpacesCount}
+              archivedSpacesCount={archivedSpacesCount}
+            />
 
           </>
         )}
