@@ -12,7 +12,7 @@ import { fetchMembers } from '@/store/slices/workspaceSlice';
 import { TextStyles } from '@/constants/Fonts';
 import { BoardService } from '@/services/boardService';
 import { useBoards } from '@/hooks/useBoards';
-import { useBoards as useBoardsShared } from '../../../../../main/src/hooks/useBoards';
+import { useBoards as useBoardsShared } from '../../../../main/src/hooks/useBoards';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useSpaces as useSpacesHook } from '@/hooks/useSpaces';
 import SpaceHeader from '@/components/space/SpaceHeader';
@@ -312,10 +312,11 @@ function SpaceMainScreenContent() {
     }
   }, [showBannerSuccess, showBannerError]);
 
-  // Grid sizing for 3 columns
+  // Grid sizing - responsive columns for phones
   const [gridWidth, setGridWidth] = useState(0);
-  const COLUMNS = 3;
-  const GRID_GAP = 12; // must match styles.boardGrid gap
+  const isPhone = width < 380;
+  const COLUMNS = isPhone ? 2 : 3;
+  const GRID_GAP = isPhone ? 8 : 12; // must match styles.boardGrid gap
   
   const itemWidth = useMemo(() => {
     // Fallback estimate uses screen width minus content padding (16 * 2)
