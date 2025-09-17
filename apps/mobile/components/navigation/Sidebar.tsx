@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Modal } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -65,7 +65,7 @@ const settingsItems: NavItem[] = [
 ];
 
 const workspaceItems: NavItem[] = [
-  { id: 'ws-spaces', label: 'Spaces', icon: 'folder-open', route: '/(tabs)/workspace/spaces', section: 'workspace', disabled: true, onPress: () => {} },
+  { id: 'ws-spaces', label: 'Spaces', icon: 'folder-open', route: '/(tabs)/workspace/spaces', section: 'workspace' },
   { id: 'ws-rules', label: 'Rules', icon: 'book', route: '/(tabs)/workspace/rules', section: 'workspace' },
   { id: 'ws-reports', label: 'Reports', icon: 'line-chart', route: '/(tabs)/workspace/reports', section: 'workspace' },
   { id: 'ws-settings', label: 'Settings', icon: 'cog', route: '/(tabs)/workspace/settings', section: 'workspace' },
@@ -96,7 +96,6 @@ export default function Sidebar({
   const slideAnim = React.useRef(new Animated.Value(-300)).current;
   const dispatch = useAppDispatch();
   const { spaces, currentWorkspace } = useAppSelector((s: any) => s.workspace);
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   React.useEffect(() => {
     if (isVisible) {
@@ -131,12 +130,6 @@ export default function Sidebar({
   if (!isVisible) return null;
 
   const handleNavigation = (item: NavItem) => {
-    // Check if this is a premium locked item
-    if (item.disabled && item.id === 'ws-spaces') {
-      setShowPremiumModal(true);
-      return;
-    }
-
     // Call custom onItemPress if provided
     if (onItemPress) {
       onItemPress(item);
@@ -167,12 +160,12 @@ export default function Sidebar({
         { 
           backgroundColor: colors.card,
           borderBottomColor: colors.border,
-          opacity: item.disabled ? 0.7 : 1,
+          opacity: item.disabled ? 0.5 : 1,
         },
         navItemStyle,
       ]}
-      onPress={() => handleNavigation(item)}
-      disabled={false} // Allow clicking to show premium modal
+      onPress={() => !item.disabled && handleNavigation(item)}
+      disabled={item.disabled}
     >
       <View style={styles.navItemContent}>
         <FontAwesome 
@@ -196,19 +189,11 @@ export default function Sidebar({
             </Text>
           </View>
         )}
-        {item.disabled && (
-          <View style={[styles.premiumBadge, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}>
-            <FontAwesome name="lock" size={12} color={colors.primary} />
-            <Text style={[TextStyles.caption.small, { color: colors.primary, marginLeft: 4, fontWeight: '600' }]}>
-              Premium
-            </Text>
-          </View>
-        )}
       </View>
       <FontAwesome 
-        name={item.disabled ? "lock" : "chevron-right"} 
+        name="chevron-right" 
         size={16} 
-        color={item.disabled ? colors.primary : colors['muted-foreground']} 
+        color={colors['muted-foreground']} 
       />
     </TouchableOpacity>
   );
@@ -305,88 +290,6 @@ export default function Sidebar({
           )
         )}
       </Animated.View>
-
-      {/* Premium Lock Modal */}
-      <Modal
-        visible={showPremiumModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowPremiumModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modal, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {/* Header */}
-            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-              <View style={[styles.modalIcon, { backgroundColor: colors.primary + '20' }]}>
-                <FontAwesome name="lock" size={24} color={colors.primary} />
-              </View>
-              <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
-                Premium Feature
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowPremiumModal(false)}
-                style={[styles.modalCloseButton, { backgroundColor: colors.muted }]}
-              >
-                <FontAwesome name="times" size={16} color={colors['muted-foreground']} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Content */}
-            <View style={styles.modalContent}>
-              <Text style={[TextStyles.body.large, { color: colors.foreground, textAlign: 'center', marginBottom: 8 }]}>
-                Spaces Management
-              </Text>
-              <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'], textAlign: 'center', marginBottom: 24 }]}>
-                Access all spaces and advanced management features with Premium
-              </Text>
-
-              {/* Benefits */}
-              <View style={styles.modalBenefits}>
-                <Text style={[TextStyles.body.medium, { color: colors.foreground, marginBottom: 12, fontWeight: '600' }]}>
-                  Premium includes:
-                </Text>
-                {[
-                  "Unlimited spaces (currently limited to 5)",
-                  "Advanced space management",
-                  "Priority support",
-                  "Custom integrations"
-                ].map((benefit, index) => (
-                  <View key={index} style={styles.modalBenefitItem}>
-                    <FontAwesome name="check" size={16} color={colors.success} style={styles.modalCheckIcon} />
-                    <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>
-                      {benefit}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            {/* Actions */}
-            <View style={[styles.modalActions, { borderTopColor: colors.border }]}>
-              <TouchableOpacity
-                onPress={() => setShowPremiumModal(false)}
-                style={[styles.modalButton, styles.modalCancelButton, { borderColor: colors.border }]}
-              >
-                <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
-                  Maybe Later
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowPremiumModal(false);
-                  router.push('/(tabs)/settings?section=upgrade');
-                }}
-                style={[styles.modalButton, styles.modalUpgradeButton, { backgroundColor: colors.primary }]}
-              >
-                <FontAwesome name="star" size={16} color={colors['primary-foreground']} style={styles.modalUpgradeIcon} />
-                <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'], fontWeight: '600' }]}>
-                  Upgrade to Premium
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </>
   );
 }
@@ -467,90 +370,5 @@ const styles = StyleSheet.create({
     padding: 20,
     borderTopWidth: 1,
     alignItems: 'center',
-  },
-  premiumBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginLeft: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modal: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    position: 'relative',
-  },
-  modalIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  modalCloseButton: {
-    position: 'absolute',
-    right: 20,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    padding: 20,
-  },
-  modalBenefits: {
-    marginTop: 8,
-  },
-  modalBenefitItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  modalCheckIcon: {
-    marginRight: 12,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    padding: 20,
-    borderTopWidth: 1,
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  modalCancelButton: {
-    borderWidth: 1,
-  },
-  modalUpgradeButton: {
-    // backgroundColor set dynamically
-  },
-  modalUpgradeIcon: {
-    marginRight: 8,
   },
 });

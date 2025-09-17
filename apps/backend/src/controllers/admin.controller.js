@@ -16,7 +16,8 @@ const login = async (req, res) => {
     console.log('=== ADMIN LOGIN ATTEMPT ===');
     console.log('Email:', email);
     console.log('Remember me:', rememberMe);
-
+    const testAdmin = await Admin.findOne({  isActive: true });
+    console.log('Test admin:', testAdmin);
     // Find admin user
     const admin = await Admin.findOne({ userEmail: email, isActive: true }).select('+password');
     

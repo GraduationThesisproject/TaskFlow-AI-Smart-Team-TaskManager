@@ -9,17 +9,17 @@ interface GitHubOrgBadgeProps {
 }
 
 export const GitHubOrgBadge: React.FC<GitHubOrgBadgeProps> = ({ workspace, className = '' }) => {
-  if (!workspace.githubOrg) {
-    return (
-      <Badge 
-        variant="outline" 
-        className={`flex items-center gap-2 px-3 py-1 text-xs font-medium text-muted-foreground border-muted-foreground/20 hover:bg-muted/50 transition-colors ${className}`}
-      >
-        <Github className="h-3 w-3" />
-        <span>Not linked to GitHub</span>
-      </Badge>
-    );
+  // Only show the badge if the workspace is actually linked to a GitHub organization
+  // Check if githubOrg exists and has valid data (not just null values)
+  if (!workspace.githubOrg || 
+      !workspace.githubOrg.id || 
+      !workspace.githubOrg.login || 
+      !workspace.githubOrg.name) {
+    return null;
   }
+
+  // Construct the proper GitHub organization page URL
+  const githubOrgUrl = `https://github.com/${workspace.githubOrg.login}`;
 
   return (
     <Badge 
@@ -29,7 +29,7 @@ export const GitHubOrgBadge: React.FC<GitHubOrgBadgeProps> = ({ workspace, class
       <Github className="h-3 w-3" />
       <span>Linked to {workspace.githubOrg.name || workspace.githubOrg.login}</span>
       <button
-        onClick={() => window.open(workspace.githubOrg?.url, '_blank')}
+        onClick={() => window.open(githubOrgUrl, '_blank')}
         className="ml-1 hover:bg-green-200 rounded-full p-0.5 transition-colors"
         title="View on GitHub"
       >

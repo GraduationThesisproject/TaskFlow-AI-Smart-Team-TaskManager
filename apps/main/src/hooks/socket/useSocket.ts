@@ -125,6 +125,13 @@ export function useSocket(options: UseSocketOptions) {
         
         setError(errorMessage);
         
+        // Don't attempt reconnection for authentication errors
+        if (err.message?.includes('Authentication') || err.message?.includes('Invalid token')) {
+          console.error('❌ Authentication error - stopping reconnection attempts');
+          setError('Authentication failed - please refresh the page');
+          return;
+        }
+        
         // Attempt reconnection if we haven't exceeded max attempts
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
@@ -188,6 +195,14 @@ export function useSocket(options: UseSocketOptions) {
     setError(null);
     reconnectAttemptsRef.current = 0;
   }, []);
+
+  // Recreate socket when auth options change
+  useEffect(() => {
+    if (socketRef.current) {
+      socketRef.current.close();
+      socketRef.current = null;
+    }
+  }, [options.auth]);
 
   const emit = useCallback((event: string, data: any) => {
     if (socketRef.current?.connected) {

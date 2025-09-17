@@ -81,6 +81,13 @@ export function SocketProvider({ children }: SocketProviderProps) {
     auth: authConfig,
   });
 
+  const aiSocket = useSocket({
+    url: env.SOCKET_URL,
+    autoConnect: false,
+    namespace: '/ai',
+    auth: authConfig,
+  });
+
   // Create namespace objects
   const createNamespaceObject = (name: string, socketHook: ReturnType<typeof useSocket>): SocketNamespace => {
     return {
@@ -118,9 +125,12 @@ export function SocketProvider({ children }: SocketProviderProps) {
     if (workspaceSocket.socket) {
       newNamespaces.set('workspace', createNamespaceObject('workspace', workspaceSocket));
     }
+    if (aiSocket.socket) {
+      newNamespaces.set('ai', createNamespaceObject('ai', aiSocket));
+    }
     
     setNamespaces(newNamespaces);
-  }, [boardSocket.socket, notificationSocket.socket, systemSocket.socket, chatSocket.socket, workspaceSocket.socket]);
+  }, [boardSocket.socket, notificationSocket.socket, systemSocket.socket, chatSocket.socket, workspaceSocket.socket, aiSocket.socket]);
 
   // Set up real-time event listeners for column operations
   useEffect(() => {
@@ -320,6 +330,15 @@ export function SocketProvider({ children }: SocketProviderProps) {
       chatSocket.connect();
       workspaceSocket.connect();
       
+      // Only connect AI socket if user is authenticated and has valid token
+      if (token && isAuthenticated && !aiSocket.error && typeof token === 'string' && token.length > 0) {
+        try {
+          aiSocket.connect();
+        } catch (error) {
+          console.warn('Failed to connect AI socket:', error);
+        }
+      }
+      
       // Only connect to system socket if user has admin privileges
       if (user?.roles?.global?.includes('admin') || user?.roles?.permissions?.includes('system:monitor')) {
         systemSocket.connect();
@@ -333,18 +352,88 @@ export function SocketProvider({ children }: SocketProviderProps) {
       systemSocket.disconnect();
       chatSocket.disconnect();
       workspaceSocket.disconnect();
+      aiSocket.disconnect();
     }
   }, [isAuthenticated, token, authLoading, isReadyToConnect, user?.roles?.global, user?.roles?.permissions]);
 
+  // Handle AI socket connection when token becomes available
+  useEffect(() => {
+    if (token && isAuthenticated && !aiSocket.isConnected && !aiSocket.isConnecting) {
+      // Only connect if we have a valid token format
+      if (typeof token === 'string' && token.length > 0) {
+        try {
+          console.log('🔌 Connecting AI socket...');
+          aiSocket.connect();
+        } catch (error) {
+          console.warn('Failed to connect AI socket:', error);
+        }
+      }
+    }
+  }, [token, isAuthenticated]); // Removed aiSocket from dependencies to prevent infinite loop
+
+  // Retry AI socket connection on authentication errors (with limit)
+  const [aiRetryCount, setAiRetryCount] = useState(0);
+  const maxAiRetries = 3;
+  
+  useEffect(() => {
+    if (aiSocket.error && aiSocket.error.includes('Authentication failed') && aiRetryCount < maxAiRetries) {
+      console.log(`🔄 AI socket auth error detected, retrying in 2 seconds... (${aiRetryCount + 1}/${maxAiRetries})`);
+      const retryTimeout = setTimeout(() => {
+        if (token && isAuthenticated && typeof token === 'string' && token.length > 0) {
+          console.log('🔄 Retrying AI socket connection...');
+          setAiRetryCount(prev => prev + 1);
+          aiSocket.connect();
+        }
+      }, 2000);
+      
+      return () => clearTimeout(retryTimeout);
+    }
+  }, [aiSocket.error, token, isAuthenticated, aiRetryCount, maxAiRetries]); // Removed aiSocket from dependencies
+
+  // Reset retry count when AI socket connects successfully
+  useEffect(() => {
+    if (aiSocket.isConnected) {
+      setAiRetryCount(0);
+    }
+  }, [aiSocket.isConnected]);
+
+  // Force AI socket reconnection when auth changes
+  useEffect(() => {
+    if (token && isAuthenticated && aiSocket.isConnected) {
+      // Disconnect and reconnect to ensure fresh auth
+      console.log('🔄 Reconnecting AI socket with fresh auth...');
+      aiSocket.disconnect();
+      setTimeout(() => {
+        if (typeof token === 'string' && token.length > 0) {
+          console.log('🔌 Reconnecting AI socket...');
+          aiSocket.connect();
+        }
+      }, 500); // Increased delay to ensure proper cleanup
+    }
+  }, [token, isAuthenticated]); // Removed aiSocket from dependencies to prevent infinite loop
+
   // Global connection status
   const isAnyConnected = boardSocket.isConnected || notificationSocket.isConnected || 
-                        systemSocket.isConnected || chatSocket.isConnected || workspaceSocket.isConnected;
+                        systemSocket.isConnected || chatSocket.isConnected || workspaceSocket.isConnected || aiSocket.isConnected;
+
+  // Debug AI socket status (only when there's an error)
+  if (aiSocket.error) {
+    console.log('AI Socket Debug:', {
+      isConnected: aiSocket.isConnected,
+      isConnecting: aiSocket.isConnecting,
+      error: aiSocket.error,
+      hasAuth: !!authConfig,
+      token: !!token,
+      isAuthenticated,
+      retryCount: aiRetryCount
+    });
+  }
   
   const isAnyConnecting = boardSocket.isConnecting || notificationSocket.isConnecting || 
-                         systemSocket.isConnecting || chatSocket.isConnecting || workspaceSocket.isConnecting;
+                         systemSocket.isConnecting || chatSocket.isConnecting || workspaceSocket.isConnecting || aiSocket.isConnecting;
   
   const hasErrors = !!(boardSocket.error || notificationSocket.error || 
-                      systemSocket.error || chatSocket.error || workspaceSocket.error);
+                      systemSocket.error || chatSocket.error || workspaceSocket.error || aiSocket.error);
 
   // Connection methods
   const connect = () => {
@@ -355,6 +444,15 @@ export function SocketProvider({ children }: SocketProviderProps) {
         notificationSocket.connect();
         chatSocket.connect();
         workspaceSocket.connect();
+        
+        // Only connect AI socket if user is authenticated and has valid token
+        if (token && isAuthenticated && !aiSocket.error && typeof token === 'string' && token.length > 0) {
+          try {
+            aiSocket.connect();
+          } catch (error) {
+            console.warn('Failed to connect AI socket:', error);
+          }
+        }
         
         if (user?.roles?.global?.includes('admin') || user?.roles?.permissions?.includes('system:monitor')) {
           systemSocket.connect();
@@ -370,6 +468,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     systemSocket.disconnect();
     chatSocket.disconnect();
     workspaceSocket.disconnect();
+    aiSocket.disconnect();
   };
 
   const reconnect = () => {
@@ -594,6 +693,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     notificationSocket: notificationSocket.socket,
     systemSocket: systemSocket.socket,
     workspaceSocket: workspaceSocket.socket,
+    aiSocket: aiSocket.socket,
     
     // Connection status
     isConnected: isAnyConnected,
@@ -685,6 +785,12 @@ export function useChatSocket() {
 export function useWorkspaceSocket() {
   const context = useSocketContext();
   return context.workspaceSocket;
+}
+
+// Hook for components that need AI socket functionality
+export function useAISocket() {
+  const context = useSocketContext();
+  return context.aiSocket;
 }
 
 // Hook for components that need any socket connection

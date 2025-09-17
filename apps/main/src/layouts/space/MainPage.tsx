@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { useWorkspace } from '../../hooks/useWorkspace';
 import { useBoard } from '../../hooks/useBoard';
+import { useBoardGenerator } from '../../hooks/useBoardGenerator';
 import { Button, Card, CardContent } from '@taskflow/ui';
 import { 
   Users, 
@@ -17,10 +18,12 @@ import {
   Globe,
   Building2,
   UserPlus,
-  Search
+  Search,
+  Bot
 } from 'lucide-react';
 import type { Space } from '../../types/space.types';
 import { SpaceService } from '../../services/spaceService';
+import { AIChat } from '../../components/ai/AIChat';
 
 interface MainPageProps {
   currentSpace: Space;
@@ -73,6 +76,9 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
   
   // Board data
   const { selectBoard } = useBoard();
+  
+  // AI Board Generator
+  const { generateBoardWithConfirmation } = useBoardGenerator();
   // Local UI state
   const [newBoardName, setNewBoardName] = useState('');
   const [isCreatingBoardLoading, setIsCreatingBoardLoading] = useState(false);
@@ -82,6 +88,9 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
   const [isAddMemberSidebarOpen, setIsAddMemberSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddingMember, setIsAddingMember] = useState(false);
+  
+  // AI Chat state
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   
   // Member data
   const [spaceMembers, setSpaceMembers] = useState<any[]>([]);
@@ -247,6 +256,28 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
       showError(error instanceof Error ? error.message : 'Failed to add member to space');
     } finally {
       setIsAddingMember(false);
+    }
+  };
+
+  // AI Board Generation Handler
+  const handleAIBoardGenerated = async (boardData: any) => {
+    try {
+      if (!spaceId) {
+        console.error('No current space available for board creation');
+        return;
+      }
+      
+      const result = await generateBoardWithConfirmation(boardData, spaceId);
+      
+      if (result) {
+        success('AI Board created successfully!');
+        setIsAIChatOpen(false);
+        // Reload boards to show the new one
+        loadBoardsBySpace(spaceId);
+      }
+    } catch (error) {
+      console.error('Failed to create AI board:', error);
+      showError('Failed to create AI board');
     }
   };
 
@@ -421,6 +452,17 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
             <p className="text-sm text-muted-foreground">Your project boards</p>
           </div>
           <div className="flex items-center gap-2">
+            {/* AI Generate Board Button */}
+            <Button
+              onClick={() => setIsAIChatOpen(true)}
+              variant="outline"
+              size="sm"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+            >
+              <Bot className="w-4 h-4 mr-2" />
+              AI Generate
+            </Button>
+            
             {!isCreatingBoard ? (
               <Button
                 onClick={() => setIsCreatingBoard(true)}
@@ -702,6 +744,16 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* AI Chat for Board Generation */}
+      {isAIChatOpen && (
+        <AIChat 
+          onBoardGenerated={handleAIBoardGenerated}
+          className="z-50"
+          isOpen={isAIChatOpen}
+          onClose={() => setIsAIChatOpen(false)}
+        />
       )}
 
     </div>

@@ -132,7 +132,7 @@ function AuthGate() {
     // If onboarding not completed, only show onboarding route
     if (devAlwaysShowOnboarding || !hasOnboardingValue) {
       return (
-        <Stack  screenOptions={{ headerShown: false }}>
+        <Stack>
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         </Stack>
       );
@@ -140,13 +140,12 @@ function AuthGate() {
 
     // Otherwise, show auth routes
     return (
-      <Stack  >
+      <Stack>
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
         <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
         <Stack.Screen name="verify-code" options={{ headerShown: false }} />
         <Stack.Screen name="reset-password" options={{ headerShown: false }} />
-        <Stack.Screen name="verify-email" options={{ headerShown: false }} />
       </Stack>
     );
   }
@@ -155,7 +154,7 @@ function AuthGate() {
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> 
-      <Stack.Screen name="modal" options={{ headerShown: false, presentation: 'modal' }} />
+      <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

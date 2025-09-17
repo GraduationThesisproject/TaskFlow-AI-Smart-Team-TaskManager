@@ -19,6 +19,7 @@ require('./Analytics');
 require('./ActivityLog');
 require('./Admin');
 require('./AIJob');
+require('./IntegrationAiToken');
 require('./Template');
 require('./BoardTemplate');
 require('./Quota');
@@ -45,6 +46,7 @@ module.exports = {
   ActivityLog: require('./ActivityLog'),
   Admin: require('./Admin'),
   AIJob: require('./AIJob'),
+  IntegrationAiToken: require('./IntegrationAiToken'),
   Template: require('./Template'),
   BoardTemplate: require('./BoardTemplate'),
   Quota: require('./Quota'),

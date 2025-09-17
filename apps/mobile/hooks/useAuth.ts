@@ -154,8 +154,7 @@ export const useAuth = () => {
 
   const resendVerificationCodeEmail = useCallback(
     async (resendData: ResendVerificationData) => {
-      // Return the action result without throwing on reject
-      return await dispatch(resendVerificationCode(resendData));
+      return await dispatch(resendVerificationCode(resendData)).unwrap();
     },
     [dispatch]
   );
@@ -205,8 +204,6 @@ export const useAuth = () => {
     signupWithOAuth,
     handleOAuthCallback,
     verifyEmail: verifyUserEmail,
-    // Alias used by some components
-    verifyEmailCode: verifyUserEmail,
     resendVerification: resendVerificationCodeEmail,
     requestPasswordReset: requestPasswordResetHandler,
     resetPassword: resetPasswordHandler,

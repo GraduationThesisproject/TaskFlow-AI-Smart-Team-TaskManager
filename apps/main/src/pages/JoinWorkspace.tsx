@@ -42,7 +42,7 @@ const JoinWorkspace: React.FC = () => {
 
   const requireAuthAndReturn = () => {
     const currentUrl = window.location.href;
-    navigate('/signin', { 
+    navigate('/', { 
       state: { 
         returnTo: currentUrl,
         message: 'Please sign in to accept this invitation'
