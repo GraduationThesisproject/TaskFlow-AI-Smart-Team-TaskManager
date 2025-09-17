@@ -10,7 +10,9 @@ const getNetworkConfig = () => {
   if (isDev) {
     if (isAndroid) {
       // Android - use development machine IP (update this to your LAN IP)
-      const LAN_IP = '192.168.1.64';
+      const LAN_array = ['192.168.1.14', '192.168.1.101', '192.168.1.64'];
+      const LAN_IP = LAN_array[0]
+      
       return {
         apiBaseUrl: `http://${LAN_IP}:3001/api`,
         baseUrl: `http://${LAN_IP}:3001`,

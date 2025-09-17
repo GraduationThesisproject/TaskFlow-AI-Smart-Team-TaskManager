@@ -11,13 +11,16 @@ export type SpaceHeaderProps = {
   onSettings?: () => void;
   onMembers?: () => void;
   onBackToWorkspace?: () => void;
+  boardCount?: number; // optional override for board count
+  membersCount?: number; // optional override for members count
+  tasksCount?: number; // optional override for tasks count across boards
 };
 
 const getProgressPercentage = (completed: number, total: number) => {
   return total > 0 ? Math.round((completed / total) * 100) : 0;
 };
 
-export default function SpaceHeader({ space, onCreateBoard, onSettings, onMembers, onBackToWorkspace }: SpaceHeaderProps) {
+export default function SpaceHeader({ space, onCreateBoard, onSettings, onMembers, onBackToWorkspace, boardCount: boardCountProp, membersCount: membersCountProp, tasksCount: tasksCountProp }: SpaceHeaderProps) {
   const colors = useThemeColors();
   const { width } = useWindowDimensions();
   const isWide = width >= 768; // tablet/landscape breakpoint to show right sidebar
@@ -38,8 +41,24 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
   }
 
   const bgTint = `${space.color || '#3B82F6'}15`;
-  const members = Array.isArray(space.members) ? space.members.filter((m: any) => !!m && !!m.name) : [];
-  const boardCount = space.totalBoards || space?.stats?.totalBoards || 0;
+  const members = Array.isArray(space.members) ? space.members.filter((m: any) => !!m) : [];
+  const membersCount =
+    (typeof membersCountProp === 'number' ? membersCountProp : undefined) ??
+    (Array.isArray(members) ? members.length : 0);
+  const boardCount =
+    (typeof boardCountProp === 'number' ? boardCountProp : undefined) ??
+    (typeof space?.totalBoards === 'number' ? space.totalBoards : undefined) ??
+    (typeof space?.stats?.totalBoards === 'number' ? space.stats.totalBoards : undefined) ??
+    (Array.isArray((space as any)?.boards) ? (space as any).boards.length : 0);
+
+  // Tasks count across all boards
+  const tasksCount =
+    (typeof tasksCountProp === 'number' ? tasksCountProp : undefined) ??
+    (typeof (space as any)?.totalTasks === 'number' ? (space as any).totalTasks : undefined) ??
+    (typeof space?.stats?.totalTasks === 'number' ? space.stats.totalTasks : undefined) ??
+    (Array.isArray((space as any)?.boards)
+      ? ((space as any).boards as any[]).reduce((sum, b) => sum + (Number((b as any)?.tasksCount || (b as any)?.totalTasks || 0) || 0), 0)
+      : 0);
   const taskCount = space.totalTasks || 0;
   const progress = getProgressPercentage(space.completedTasks || 0, taskCount);
 
@@ -72,7 +91,7 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
             <View style={[styles.statBadge, { backgroundColor: colors.background }]}>
               <FontAwesome name="users" size={12} color={colors.primary} />
               <Text style={[TextStyles.caption.small, { color: colors.foreground, marginLeft: 4, fontWeight: '500' }]}>
-                {members.length}
+                {membersCount}
               </Text>
             </View>
             <View style={[styles.statBadge, { backgroundColor: colors.background }]}>
@@ -81,6 +100,14 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
                 {boardCount}
               </Text>
             </View>
+            {tasksCount > 0 && (
+              <View style={[styles.statBadge, { backgroundColor: colors.background }]}> 
+                <FontAwesome name="tasks" size={12} color={colors.primary} />
+                <Text style={[TextStyles.caption.small, { color: colors.foreground, marginLeft: 4, fontWeight: '500' }]}> 
+                  {tasksCount}
+                </Text>
+              </View>
+            )}
             {taskCount > 0 && (
               <View style={[styles.statBadge, { backgroundColor: colors.background }]}>
                 <FontAwesome name="check-circle" size={12} color={colors.primary} />
