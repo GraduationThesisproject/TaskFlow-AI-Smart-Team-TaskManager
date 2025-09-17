@@ -6,50 +6,23 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector, useAppDispatch } from '@/store';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Sidebar from '@/components/navigation/Sidebar';
-import { fetchWorkspaces, createWorkspace, deleteWorkspace, permanentDeleteWorkspace, restoreWorkspace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
+import { fetchWorkspaces, createWorkspace, deleteWorkspace, restoreWorkspace, setCurrentWorkspaceId } from '@/store/slices/workspaceSlice';
 import { useRouter } from 'expo-router';
 import { formatArchiveCountdown, getArchiveCountdownStyle, getArchiveStatusMessage } from '@/utils/archiveTimeUtils';
-import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
-function WorkspacesScreenContent() {
+export default function WorkspacesScreen() {
   const colors = useThemeColors();
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { showSuccess, showError } = useBanner();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
-  const [currentTime, setCurrentTime] = useState(Date.now()); // For countdown timer updates
 
-  const { workspaces: rawWorkspaces, loading, error } = useAppSelector(state => state.workspace);
-
-  // Deduplicate workspaces by id to avoid duplicate renders
-  const workspaces = useMemo(() => {
-    if (!Array.isArray(rawWorkspaces)) return [];
-    
-    const seen = new Set<string>();
-    const uniqueWorkspaces: any[] = [];
-    for (const workspace of rawWorkspaces) {
-      const id = String(workspace?._id || workspace?.id || '');
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-      uniqueWorkspaces.push(workspace);
-    }
-    return uniqueWorkspaces;
-  }, [rawWorkspaces]);
+  const { workspaces, loading, error } = useAppSelector(state => state.workspace);
 
   useEffect(() => {
     loadWorkspaces();
-  }, []);
-
-  // Update countdown timer every second
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 1000);
-
-    return () => clearInterval(interval);
   }, []);
 
   const loadWorkspaces = async () => {
@@ -85,10 +58,9 @@ function WorkspacesScreenContent() {
       }));
       setNewWorkspaceName('');
       setIsCreating(false);
-      showSuccess('Workspace created successfully!');
     } catch (error: any) {
       console.error('Failed to create workspace:', error);
-      showError(error?.message || 'Failed to create workspace');
+      Alert.alert('Error', error?.message || 'Failed to create workspace');
     }
   };
 
@@ -97,50 +69,26 @@ function WorkspacesScreenContent() {
     setIsCreating(false);
   };
 
-  const handleDeleteWorkspace = (workspaceId: string, workspaceName: string, isArchived: boolean = false) => {
-    if (isArchived) {
-      // Second delete - permanent deletion
-      Alert.alert(
-        'Permanently Delete Workspace',
-        `Are you sure you want to permanently delete "${workspaceName}"? This action cannot be undone and will remove all data permanently.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete Permanently',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await dispatch(permanentDeleteWorkspace({ id: workspaceId }));
-                showSuccess('Workspace permanently deleted!');
-              } catch (error) {
-                showError('Failed to permanently delete workspace');
-              }
+  const handleDeleteWorkspace = (workspaceId: string, workspaceName: string) => {
+    Alert.alert(
+      'Delete Workspace',
+      `Are you sure you want to delete "${workspaceName}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await dispatch(deleteWorkspace({ id: workspaceId }));
+              Alert.alert('Success', 'Workspace archived successfully!');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to archive workspace');
             }
           }
-        ]
-      );
-    } else {
-      // First delete - archive workspace
-      Alert.alert(
-        'Archive Workspace',
-        `Are you sure you want to archive "${workspaceName}"? It will be moved to archived workspaces and can be restored later.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Archive',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await dispatch(deleteWorkspace({ id: workspaceId }));
-                showSuccess('Workspace archived successfully!');
-              } catch (error) {
-                showError('Failed to archive workspace');
-              }
-            }
-          }
-        ]
-      );
-    }
+        }
+      ]
+    );
   };
 
   const handleArchiveWorkspace = (workspaceId: string, workspaceName: string, isArchived: boolean) => {
@@ -247,13 +195,7 @@ function WorkspacesScreenContent() {
                 activeOpacity={0.85}
                 onPress={() => goToWorkspace(workspace)}
               >
-                <Card style={[
-                  styles.workspaceCard, 
-                  { 
-                    backgroundColor: workspace.status === 'archived' ? colors.muted : colors.card,
-                    opacity: workspace.status === 'archived' ? 0.8 : 1
-                  }
-                ]}>
+                <Card style={[styles.workspaceCard, { backgroundColor: colors.card }]}>
                   <View style={styles.workspaceHeader}>
                     <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>
                       {workspace.name}
@@ -270,14 +212,10 @@ function WorkspacesScreenContent() {
                         />
                       </TouchableOpacity>
                       <TouchableOpacity 
-                        onPress={() => handleDeleteWorkspace(workspace._id, workspace.name, workspace.status === 'archived')}
+                        onPress={() => handleDeleteWorkspace(workspace._id, workspace.name)}
                         style={styles.deleteButton}
                       >
-                        <FontAwesome 
-                          name={workspace.status === 'archived' ? 'trash' : 'trash-o'} 
-                          size={16} 
-                          color={workspace.status === 'archived' ? colors.destructive : colors['muted-foreground']} 
-                        />
+                        <FontAwesome name="trash" size={16} color={colors.destructive} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -334,21 +272,21 @@ function WorkspacesScreenContent() {
                         <View style={[
                           styles.countdownBadge,
                           { 
-                            backgroundColor: getArchiveCountdownStyle(workspace.archiveExpiresAt, currentTime).backgroundColor,
-                            borderColor: getArchiveCountdownStyle(workspace.archiveExpiresAt, currentTime).borderColor,
+                            backgroundColor: getArchiveCountdownStyle(workspace.archiveExpiresAt).backgroundColor,
+                            borderColor: getArchiveCountdownStyle(workspace.archiveExpiresAt).borderColor,
                             borderWidth: 1
                           }
                         ]}>
                           <FontAwesome 
                             name="clock-o" 
                             size={12} 
-                            color={getArchiveCountdownStyle(workspace.archiveExpiresAt, currentTime).color} 
+                            color={getArchiveCountdownStyle(workspace.archiveExpiresAt).color} 
                           />
                           <Text style={[
                             TextStyles.caption.small, 
-                            { color: getArchiveCountdownStyle(workspace.archiveExpiresAt, currentTime).color }
+                            { color: getArchiveCountdownStyle(workspace.archiveExpiresAt).color }
                           ]}>
-                            {getArchiveStatusMessage(workspace.archiveExpiresAt, currentTime)}
+                            {getArchiveStatusMessage(workspace.archiveExpiresAt)}
                           </Text>
                         </View>
                       </View>
@@ -383,14 +321,6 @@ function WorkspacesScreenContent() {
 
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="dashboard" />
     </View>
-  );
-}
-
-export default function WorkspacesScreen() {
-  return (
-    <BannerProvider>
-      <WorkspacesScreenContent />
-    </BannerProvider>
   );
 }
 

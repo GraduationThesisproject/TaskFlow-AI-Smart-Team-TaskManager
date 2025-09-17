@@ -33,7 +33,8 @@
     "import:analytics": "node import-analytics.js",
     "seed:backup": "node -e \"const seeder = require('./src/seeders'); const s = new seeder(); s.listBackups().then(console.log)\"",
     "seed:rollback": "node -e \"const seeder = require('./src/seeders'); const s = new seeder(); s.rollback().then(() => console.log('Rollback completed'))\"",
-    "seed:validate": "node -e \"const seeder = require('./src/seeders'); const s = new seeder(); console.log(s.validateConfiguration())\""
+    "seed:validate": "node -e \"const seeder = require('./src/seeders'); const s = new seeder(); console.log(s.validateConfiguration())\"",
+    "admin:create": "node scripts/create-admin.js"
   },
   "keywords": [
     "taskflow",
@@ -45,12 +46,13 @@
   "dependencies": {
     "@azure/identity": "^4.11.1",
     "@faker-js/faker": "^8.4.1",
+    "@google/generative-ai": "^0.24.1",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@taskflow/utils": "*",
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
     "file-type": "^19.0.0",

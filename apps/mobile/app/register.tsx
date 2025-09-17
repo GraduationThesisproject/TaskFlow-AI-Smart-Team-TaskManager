@@ -1,7 +1,8 @@
 import React from 'react';
-import { ScrollView, StatusBar } from 'react-native';
-import { View } from '@/components/Themed';
+import { ScrollView } from 'react-native';
+import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
+import { TextStyles } from '@/constants/Fonts';
 import RegisterFrom from '@/components/auth/RegisterFrom';
 import { router } from 'expo-router';
 
@@ -9,17 +10,13 @@ export default function RegisterScreen() {
   const colors = useThemeColors();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.accent} />
-      <ScrollView 
-        contentContainerStyle={{ flexGrow: 1 }} 
-        style={{ flex: 1 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-      >
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ flex: 1, padding: 16, justifyContent: 'center' }}>
+        <Card style={{ padding: 16, marginBottom: 16 }}>
+          <Text style={[TextStyles.heading.h1, { color: colors.foreground, textAlign: 'center' }]}>Sign Up</Text>
+        </Card>
         <RegisterFrom onSignin={() => router.replace('/login')} />
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }

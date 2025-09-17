@@ -1,5 +1,5 @@
 import { useAppSelector, useAppDispatch } from '../store';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useMemo } from 'react';
 import type { Space } from '../types/space.types';
 import {
   fetchSpace,
@@ -172,8 +172,14 @@ export const useSpaces = () => {
   };
 
   // Computed values
-  const activeSpaces = safeSpaces.filter(space => space.isActive && !space.isArchived);
-  const archivedSpaces = safeSpaces.filter(space => space.isArchived);
+  const activeSpaces = useMemo(() => 
+    safeSpaces.filter(space => space.isActive && !space.isArchived), 
+    [safeSpaces]
+  );
+  const archivedSpaces = useMemo(() => 
+    safeSpaces.filter(space => space.isArchived), 
+    [safeSpaces]
+  );
 
   const getSpacesByWorkspace = useCallback((workspaceId: string) => {
     return safeSpaces.filter(space => space.workspace === workspaceId);

@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@taskflow/ui';
 import { Typography } from '@taskflow/ui';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@taskflow/ui';
-import { LogOut, AlertTriangle } from 'lucide-react';
+import { LogOut, AlertTriangle, Monitor } from 'lucide-react';
+import { SessionListModal } from './SessionListModal';
+import { useSessions } from '../../hooks/useSessions';
 
 interface LogoutConfirmDialogProps {
   isOpen: boolean;
@@ -17,9 +19,26 @@ export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
   onConfirm,
   userName = 'User'
 }) => {
+  const [showSessionList, setShowSessionList] = useState(false);
+  const { sessions, isLoading, error, endSession, endAllSessions } = useSessions();
+
   const handleConfirm = (allDevices: boolean = false) => {
-    onConfirm(allDevices);
+    if (allDevices) {
+      setShowSessionList(true);
+    } else {
+      onConfirm(false);
+      onClose();
+    }
+  };
+
+  const handleEndAllSessions = async () => {
+    await endAllSessions();
+    onConfirm(true);
     onClose();
+  };
+
+  const handleEndSession = async (sessionId: string) => {
+    await endSession(sessionId);
   };
 
   return (
@@ -59,6 +78,15 @@ export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
               <Typography variant="body" className="text-slate-700">
                 <strong>{userName}</strong>, please choose your logout preference:
               </Typography>
+              
+              {sessions.length > 1 && (
+                <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <Monitor className="w-4 h-4 text-amber-600" />
+                  <Typography variant="body" className="text-amber-800 text-sm">
+                    You have <strong>{sessions.length - 1} other active session{sessions.length - 1 !== 1 ? 's' : ''}</strong> on different devices
+                  </Typography>
+                </div>
+              )}
             </div>
           </div>
         </ModalBody>
@@ -88,6 +116,17 @@ export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
           </div>
         </ModalFooter>
       </ModalContent>
+      
+      {/* Session List Modal */}
+      <SessionListModal
+        isOpen={showSessionList}
+        onClose={() => setShowSessionList(false)}
+        onEndAllSessions={handleEndAllSessions}
+        sessions={sessions}
+        isLoading={isLoading}
+        error={error}
+        onEndSession={handleEndSession}
+      />
     </Modal>
   );
 };

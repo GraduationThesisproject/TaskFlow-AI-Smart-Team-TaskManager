@@ -4,17 +4,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { env } from './env';
 import { Platform } from 'react-native';
 
-// Create axios instance with auto-detected network configuration
-const baseURL = env.API_BASE_URL;
+// Create axios instance
+// Normalize base URL to ensure it targets the backend API prefix
+let rawBase = (env.API_BASE_URL || env.API_URL || env.BASE_URL || 'http://192.168.1.64:3001').trim();
 
-// Log network configuration for debugging
+// On Android emulator, localhost should point to the host machine via 10.0.2.2
+if (env.IS_ANDROID && __DEV__) {
+  rawBase = rawBase
+    .replace('http://localhost', 'http://10.0.2.2')
+    .replace('http://127.0.0.1', 'http://10.0.2.2');
+}
+
+const trimmed = rawBase.replace(/\/$/, '');
+const baseURL = /\/api$/.test(trimmed) ? trimmed : `${trimmed}/api`;
+
+// In development, log the resolved base URL to catch stale configs
 if (__DEV__) {
-  console.log('🌐 Network Configuration:', {
-    platform: Platform.OS,
-    apiBaseUrl: env.API_BASE_URL,
-    baseUrl: env.BASE_URL,
-    socketUrl: env.SOCKET_URL,
-  });
+  console.log('🛠️ Axios base URL resolved to:', baseURL);
 }
 
 // Ensure we have a stable device id for session tracking
@@ -87,28 +93,15 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log('✅ API response:', {
-      url: response.config.url,
-      method: response.config.method,
-      status: response.status,
-      data: response.data,
-    });
+
     return response;
   },
   async (error) => {
-    console.error('❌ API request error:', error?.message || error);
-    console.error('❌ Request URL:', error?.config?.url);
-    console.error('❌ Request method:', error?.config?.method);
-    console.error('❌ Base URL:', error?.config?.baseURL);
-    console.error('❌ Full URL:', `${error?.config?.baseURL}${error?.config?.url}`);
-    
     const originalRequest = error?.config;
 
     // Handle common errors
     if (error.response) {
       const { status, data } = error.response;
-      console.error('❌ Response status:', status);
-      console.error('❌ Response data:', data);
 
       switch (status) {
         case 401: {

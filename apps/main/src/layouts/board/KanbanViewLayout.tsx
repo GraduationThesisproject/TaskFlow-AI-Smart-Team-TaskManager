@@ -98,95 +98,11 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
   const tagDropdownTimeoutRef = useRef<number | null>(null);
 
 
+
   // Enhanced CSS for better scrolling and design
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
-      /* Column Task List Scrollbar Design */
-      .column-task-scroll {
-        scrollbar-width: thin;
-        scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted) / 0.1);
-        scroll-behavior: smooth;
-      }
-      
-      .column-task-scroll::-webkit-scrollbar {
-        width: 8px;
-      }
-      
-      .column-task-scroll::-webkit-scrollbar-track {
-        background: hsl(var(--muted) / 0.05);
-        border-radius: 4px;
-        margin: 4px 0;
-      }
-      
-      .column-task-scroll::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, hsl(var(--primary) / 0.4), hsl(var(--primary) / 0.6));
-        border-radius: 4px;
-        border: 1px solid hsl(var(--background));
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      
-      .column-task-scroll::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(180deg, hsl(var(--primary) / 0.6), hsl(var(--primary) / 0.8));
-        transform: scaleX(1.1);
-      }
-      
-      .column-task-scroll::-webkit-scrollbar-thumb:active {
-        background: hsl(var(--primary) / 0.8);
-        transform: scaleX(1.2);
-      }
-
-      /* Professional Horizontal Scrollbar Design */
-      .kanban-horizontal-scroll {
-        scrollbar-width: thin;
-        scrollbar-color: hsl(var(--primary) / 0.3) transparent;
-        scroll-behavior: smooth;
-      }
-      
-      .kanban-horizontal-scroll::-webkit-scrollbar {
-        height: 8px;
-      }
-      
-      .kanban-horizontal-scroll::-webkit-scrollbar-track {
-        background: hsl(var(--muted) / 0.1);
-        border-radius: 4px;
-        margin: 0 4px;
-      }
-      
-      .kanban-horizontal-scroll::-webkit-scrollbar-thumb {
-        background: linear-gradient(90deg, hsl(var(--primary) / 0.3), hsl(var(--primary) / 0.5));
-        border-radius: 4px;
-        border: 1px solid hsl(var(--background));
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      
-      .kanban-horizontal-scroll::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(90deg, hsl(var(--primary) / 0.5), hsl(var(--primary) / 0.7));
-        transform: scaleY(1.1);
-      }
-      
-      .kanban-horizontal-scroll::-webkit-scrollbar-thumb:active {
-        background: hsl(var(--primary) / 0.7);
-        transform: scaleY(1.2);
-      }
-
-      /* Top Scrollbar Indicator */
-      .top-scroll-indicator {
-        background: linear-gradient(90deg, 
-          hsl(var(--primary) / 0.1) 0%, 
-          hsl(var(--primary) / 0.2) 50%, 
-          hsl(var(--primary) / 0.1) 100%);
-        border-radius: 2px;
-        transition: all 0.3s ease;
-      }
-      
-      .top-scroll-indicator:hover {
-        background: linear-gradient(90deg, 
-          hsl(var(--primary) / 0.2) 0%, 
-          hsl(var(--primary) / 0.3) 50%, 
-          hsl(var(--primary) / 0.2) 100%);
-      }
-
       /* Professional Column Animations */
       .column-container {
         transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -823,6 +739,7 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                         </div>
                       </div>
                     </div>
+
                   </div>
                 </div>
               </div>
@@ -836,18 +753,18 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
                   {/* Top Scrollbar Indicator */}
                   <div 
                     ref={topScrollRef}
-                    className="kanban-horizontal-scroll overflow-x-auto mb-2"
+                    className="overflow-x-auto mb-2"
                     style={{ height: '10px' }}
                   >
                     <div className="h-2 bg-transparent" style={{ width: contentWidth || '100%' }}>
-                      <div className="top-scroll-indicator h-full" style={{ width: '100%' }}></div>
+                      <div className="h-full" style={{ width: '100%' }}></div>
                     </div>
                   </div>
                   
                   {/* Main Scrollable Content */}
                   <div 
                     ref={mainScrollRef}
-                    className="kanban-horizontal-scroll overflow-x-auto"
+                    className="overflow-x-hidden"
                   >
               <Droppable droppableId="board" type="COLUMN" direction="horizontal">
                 {(provided, snapshot) => (
@@ -975,6 +892,7 @@ export const KanbanViewLayout: React.FC<KanbanViewLayoutProps> = ({
             </ErrorBoundaryWrapper>
           </div>
         </div>
+
       </DragDropContext>
     </ErrorBoundaryWrapper>
   );

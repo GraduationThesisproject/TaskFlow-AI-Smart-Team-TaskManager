@@ -46,11 +46,6 @@ router.post('/:id/members',
     spaceController.addMember
 );
 
-router.delete('/:id/members/:memberId',
-    requireSpacePermission('/:id/members/:memberId'),
-    spaceController.removeMember
-);
-
 router.post('/:id/archive',
     requireSpacePermission('/:id/archive'),
     spaceController.archiveSpace

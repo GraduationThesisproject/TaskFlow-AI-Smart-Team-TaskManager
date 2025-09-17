@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middlewares/auth.middleware');
-const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
 
 // Test endpoint to create notifications for testing real-time functionality
@@ -188,52 +187,6 @@ router.get('/socket-status', authMiddleware, (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to get socket status',
-      error: error.message
-    });
-  }
-});
-
-// Test endpoint to send email
-router.post('/test-email', async (req, res) => {
-  try {
-    const { to, template = 'email-verification-code', data = {} } = req.body;
-    
-    if (!to) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email address is required'
-      });
-    }
-
-    // Generate a test verification code
-    const testData = {
-      name: data.name || 'Test User',
-      code: data.code || Math.floor(1000 + Math.random() * 9000).toString(),
-      expiresIn: data.expiresIn || '10 minutes',
-      ...data
-    };
-
-    const result = await sendEmail({
-      to,
-      template,
-      subject: 'Test Email - TaskFlow',
-      data: testData
-    });
-
-    logger.info(`Test email sent to ${to}:`, result);
-
-    res.status(200).json({
-      success: true,
-      message: 'Test email sent successfully',
-      result,
-      testData
-    });
-
-  } catch (error) {
-    logger.error('Test email error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to send test email',
       error: error.message
     });
   }

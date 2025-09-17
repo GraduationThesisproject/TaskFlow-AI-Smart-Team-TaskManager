@@ -468,7 +468,6 @@ const SpacesLayout: React.FC<SpacesLayoutProps> = React.memo(({ currentWorkspace
                   isLoading={spacesLoading}
                   error={spacesError}
                   onRemove={() => {}}
-                  onAddSpace={() => setIsCreatingSpace(true)}
                   onArchive={handleArchiveSpace}
                   onUnarchive={handleUnarchiveSpace}
                   onPermanentDelete={permanentDeleteSpaceById}

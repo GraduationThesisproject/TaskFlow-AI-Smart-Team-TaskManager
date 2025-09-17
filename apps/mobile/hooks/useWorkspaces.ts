@@ -116,12 +116,11 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
   const createNewWorkspace = useCallback(async (workspaceData: {
     name: string;
     description?: string;
-    visibility: 'private' | 'public';
   }) => {
     
     
     try {
-      await dispatch(createWorkspace(workspaceData) as any).unwrap();
+      await dispatch(createWorkspace({ ...workspaceData, isPublic: false }) as any).unwrap();
       // Refetch all workspaces after creation
       refetchWorkspaces();
     } catch (error) {
