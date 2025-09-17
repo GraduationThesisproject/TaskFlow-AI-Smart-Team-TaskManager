@@ -17,7 +17,7 @@ export default function SpaceSettingsScreen() {
   const dispatch = useAppDispatch();
   const { token } = useAuth();
 
-  const { selectedSpace } = useAppSelector((s: any) => s.workspace);
+  const { selectedSpace, currentWorkspace } = useAppSelector((s: any) => s.workspace);
   const space = selectedSpace;
 
   const [isEditing, setIsEditing] = useState(false);
@@ -50,13 +50,23 @@ export default function SpaceSettingsScreen() {
   }, [space]);
 
   const info = useMemo(() => {
+    const ownerName =
+      (space as any)?.owner?.name ||
+      (space as any)?.owner?.user?.name ||
+      (space as any)?.createdBy?.name ||
+      (space as any)?.createdBy?.user?.name ||
+      (currentWorkspace as any)?.owner?.name ||
+      (currentWorkspace as any)?.owner?.user?.name ||
+      (space as any)?.owner?.email ||
+      (currentWorkspace as any)?.owner?.email ||
+      'Unknown';
     return {
-      id: space?._id || space?.id || 'N/A',
+      ownerName,
       createdAt: space?.createdAt ? new Date(space.createdAt).toLocaleDateString() : 'N/A',
       updatedAt: space?.updatedAt ? new Date(space.updatedAt).toLocaleDateString() : 'N/A',
       status: space?.isActive ? 'Active' : 'Inactive',
     };
-  }, [space]);
+  }, [space, currentWorkspace]);
 
   const handleSave = async () => {
     if (!space?._id && !space?.id) return;
@@ -79,7 +89,7 @@ export default function SpaceSettingsScreen() {
       setSaving(true);
       setSaveError(null);
       setSaveOk(false);
-      console.log('[SpaceSettings] Submitting payload:', payload);
+      // console.log('[SpaceSettings] Submitting payload:', payload);
 
       // Perform update
       const resp = await SpaceService.updateSpace(id, payload);
@@ -95,7 +105,7 @@ export default function SpaceSettingsScreen() {
           nextSelected = freshEntity;
         }
       } catch (fetchErr) {
-        console.log('[SpaceSettings] Fetch after update failed, falling back to merge:', fetchErr);
+        // console.log('[SpaceSettings] Fetch after update failed, falling back to merge:', fetchErr);
       }
 
       // Fallbacks: prefer full entity, otherwise merge only known changed fields
@@ -118,7 +128,7 @@ export default function SpaceSettingsScreen() {
     } catch (e: any) {
       const status = e?.response?.status;
       const data = e?.response?.data;
-      console.log('Save space failed:', status, data || e?.message);
+      // console.log('Save space failed:', status, data || e?.message);
       const msg = (typeof data === 'string' ? data : data?.message) || e?.message || 'Unknown error';
       setSaveError(`${status || ''} ${msg}`.trim());
       Alert.alert('Failed to save', msg);
@@ -240,7 +250,7 @@ export default function SpaceSettingsScreen() {
     } catch (e: any) {
       const status = e?.response?.status;
       const serverMsg = e?.response?.data?.message || e?.response?.data?.error;
-      console.log('Delete space failed:', status, e?.response?.data || e?.message);
+      // console.log('Delete space failed:', status, e?.response?.data || e?.message);
       // If backend requires archiving first, offer to archive automatically and retry
       if (status === 400 && (serverMsg || '').toLowerCase().includes('archived')) {
         const id = space._id || space.id;
@@ -400,8 +410,8 @@ export default function SpaceSettingsScreen() {
           <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 10 }]}>Space Information</Text>
           <RNView style={styles.infoGrid}>
             <View style={styles.infoItem}>
-              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Space ID</Text>
-              <Text style={[TextStyles.body.small, { color: colors.foreground }]} selectable>{info.id}</Text>
+              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Owner</Text>
+              <Text style={[TextStyles.body.small, { color: colors.foreground }]} numberOfLines={1}>{info.ownerName}</Text>
             </View>
             <View style={styles.infoItem}>
               <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>Created</Text>
