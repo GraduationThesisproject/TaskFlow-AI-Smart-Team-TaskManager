@@ -10,6 +10,8 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchMembers } from '@/store/slices/workspaceSlice';
 import { TextStyles } from '@/constants/Fonts';
 import { BoardService } from '@/services/boardService';
+import { useBoards } from '@/hooks/useBoards';
+import { useBoards as useBoardsShared } from '../../../../../main/src/hooks/useBoards';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useSpaces as useSpacesHook } from '@/hooks/useSpaces';
 import SpaceHeader from '@/components/space/SpaceHeader';
@@ -51,6 +53,7 @@ function SpaceBoardsScreenContent() {
   const space = currentSpace; // Use currentSpace instead of selectedSpace
   
   const { loadSpaces } = useWorkspaces({ autoFetch: false });
+  const { boards: boardsFromHook, loadBoardsBySpace, editBoard } = useBoards();
 
   // Include all members (including owner). We'll prevent adding yourself via UI guards.
   const displayMembers = useMemo(() => {
@@ -162,15 +165,45 @@ function SpaceBoardsScreenContent() {
         } : spaceMember?.user
       };
     });
+
+    // Ensure workspace owner appears as a member in this list even if not explicitly added
+    // Build a set of existing member user IDs to check for presence
+    const existingIds = new Set<string>(
+      enrichedSpaceMembers.map((m: any) => String(m?.user?._id || m?.user?.id || m?._id || m?.id || ''))
+    );
+    const finalMembers = [...enrichedSpaceMembers];
+    // Find owner members from workspace members list
+    const ownerWorkspaceMembers = (Array.isArray(displayMembers) ? displayMembers : []).filter((wm: any) => String(wm?.role || '').toLowerCase() === 'owner');
+    ownerWorkspaceMembers.forEach((owm: any) => {
+      const ownerId = String(owm?.user?._id || owm?.user?.id || owm?._id || owm?.id || '');
+      if (!ownerId) return;
+      if (existingIds.has(ownerId)) return;
+      // Synthesize an owner member entry with minimal required fields
+      const pseudoOwner = {
+        _id: ownerId,
+        id: ownerId,
+        role: 'owner',
+        user: {
+          _id: ownerId,
+          id: ownerId,
+          name: owm?.user?.name || owm?.name || 'Owner',
+          email: owm?.user?.email || owm?.email || '',
+          avatar: owm?.user?.avatar || owm?.avatar || undefined,
+          role: 'owner',
+        },
+      } as any;
+      finalMembers.unshift(pseudoOwner);
+      existingIds.add(ownerId);
+    });
     
     // Debug logging (commented out for performance)
     // console.log('=== SPACE MEMBERS FILTERING DEBUG ===');
     // console.log('Original space members count:', spaceMembersList.length);
     // console.log('Filtered space members count (owner + explicitly added):', filteredSpaceMembers.length);
-    // console.log('Final enriched space members count:', enrichedSpaceMembers.length);
+    // console.log('Final enriched space members count (with synthesized owner if missing):', finalMembers.length);
     // console.log('=== END FILTERING DEBUG ===');
     
-    return enrichedSpaceMembers;
+    return finalMembers;
   }, [currentSpace?.members]);
 
   // Members that can be added to THIS SPECIFIC SPACE (exclude workspace owners and already added members)
@@ -260,7 +293,8 @@ function SpaceBoardsScreenContent() {
 
   const [refreshing, setRefreshing] = useState(false);
   const lastLoadedSpaceId = useRef<string | null>(null);
-  const [boards, setBoards] = useState<any[]>([]);
+  // Use shared boards list
+  const boards = (boardsFromHook as any[]) || [];
   const [boardSearch, setBoardSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -302,6 +336,38 @@ function SpaceBoardsScreenContent() {
     return filtered.slice(0, VISIBLE_MAX);
   }, [boards, boardSearch]);
 
+  // Helpers for board archive state
+  const isBoardArchived = useCallback((b: any): boolean => {
+    const status = String(b?.status || '').toLowerCase();
+    return b?.archived === true || b?.isArchived === true || status === 'archived' || status === 'inactive';
+  }, []);
+
+  const handleArchiveBoard = useCallback((board: any) => {
+    const id = board?._id || board?.id;
+    if (!id) return;
+    const archived = isBoardArchived(board);
+    const nextAction = archived ? 'restore' : 'archive';
+    showConfirm(
+      `${archived ? 'Restore' : 'Archive'} Board`,
+      `Are you sure you want to ${nextAction} "${board?.name || 'this board'}"?`,
+      async () => {
+        try {
+          await editBoard(id as string, { archived: !archived } as any);
+          showBannerSuccess(archived ? 'Board restored successfully!' : 'Board archived successfully!');
+          await loadBoards(true);
+        } catch (e: any) {
+          showBannerError(e?.response?.data?.message || e?.message || `Failed to ${nextAction} board`);
+        }
+      }
+    );
+  }, [isBoardArchived, showConfirm, showBannerSuccess, showBannerError, loadBoards, editBoard]);
+
+  const preventOpenIfArchived = useCallback((board: any) => {
+    if (isBoardArchived(board)) {
+      showWarning('This board is archived. Restore it to access.');
+    }
+  }, [isBoardArchived, showWarning]);
+
   // Create Board modal state
   const [createVisible, setCreateVisible] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -321,18 +387,7 @@ function SpaceBoardsScreenContent() {
     setLoading(true);
     setError(null);
     try {
-      const resp = await BoardService.getBoardsBySpace(spaceId);
-      const payload: any = resp;
-      const list = Array.isArray(payload)
-        ? payload
-        : Array.isArray(payload?.data?.boards)
-        ? payload.data.boards
-        : Array.isArray(payload?.data)
-        ? payload.data
-        : Array.isArray(payload?.boards)
-        ? payload.boards
-        : [];
-      setBoards(list || []);
+      await loadBoardsBySpace(spaceId);
       // Also refresh spaces in workspace via hook so counts stay in sync when navigating back
       const wsId = String(space?.workspace || '').trim();
       if (wsId) {
@@ -378,7 +433,7 @@ function SpaceBoardsScreenContent() {
   }, [space?._id, loadBoards, loadSpaceMembers]);
 
   const openCreateBoard = useCallback(() => {
-    console.log('🎯 openCreateBoard called');
+    // console.log('🎯 openCreateBoard called');
     setCreateVisible(true);
   }, []);
   
@@ -464,13 +519,13 @@ function SpaceBoardsScreenContent() {
 
   // Simple handlers used by SpaceHeader/Sidebar
   const goMembers = useCallback(() => {
-    console.log('🎯 goMembers called');
+    // console.log('🎯 goMembers called');
     // Toggle the space members sidebar
     setSidebarVisible(!sidebarVisible);
   }, [sidebarVisible]);
   
   const goSettings = useCallback(() => {
-    console.log('🎯 goSettings called');
+    // console.log('🎯 goSettings called');
     router.push('/workspace/space/settings');
   }, [router]);
 
@@ -515,10 +570,10 @@ function SpaceBoardsScreenContent() {
     
     try {
       const spaceId = space._id;
-      console.log('=== REMOVE MEMBER DEBUG (Frontend) ===');
-      console.log('spaceId:', spaceId);
-      console.log('memberId (user ID):', memberId);
-      console.log('API endpoint will be:', `/spaces/${spaceId}/members/${memberId}`);
+      // console.log('=== REMOVE MEMBER DEBUG (Frontend) ===');
+      // console.log('spaceId:', spaceId);
+      // console.log('memberId (user ID):', memberId);
+      // console.log('API endpoint will be:', `/spaces/${spaceId}/members/${memberId}`);
       
       await removeMember(spaceId, memberId);
       
@@ -542,7 +597,7 @@ function SpaceBoardsScreenContent() {
       
       // If it's a 404 error, the member doesn't exist on the backend
       if (error?.response?.status === 404) {
-        console.log('Member not found on backend (404), refreshing data to sync with server');
+        // console.log('Member not found on backend (404), refreshing data to sync with server');
         showSuccess('Member was already removed from the server');
         
         // Force refresh to get the latest state from backend
@@ -782,14 +837,38 @@ function SpaceBoardsScreenContent() {
                 style={styles.boardGrid}
                 onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}
               >
-                {visibleBoards.map((b: any) => (
-                  <BoardCard
-                    key={b._id || b.id}
-                    board={b}
-                    style={[styles.gridItem, itemWidth ? { width: itemWidth } : null]}
-                    onPress={() => router.push(`/(tabs)/board?boardId=${b._id || b.id}&boardName=${encodeURIComponent(b.name || 'Board')}`)}
-                  />
-                ))}
+                {visibleBoards.map((b: any) => {
+                  const archived = isBoardArchived(b);
+                  const go = () => {
+                    if (archived) {
+                      showWarning('This board is archived. Restore it to access.');
+                      return;
+                    }
+                    router.push(`/(tabs)/board?boardId=${b._id || b.id}&boardName=${encodeURIComponent(b.name || 'Board')}`);
+                  };
+                  return (
+                    <RNView key={b._id || b.id} style={[styles.gridItem, itemWidth ? { width: itemWidth } : null, { position: 'relative' }]}> 
+                      <BoardCard
+                        board={b}
+                        onPress={go}
+                      />
+                      <RNView style={{ position: 'absolute', top: 6, right: 6, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        {archived && (
+                          <RNView style={[styles.boardBadge, { backgroundColor: colors.warning + '20', borderColor: colors.warning + '55' }]}> 
+                            <FontAwesome name="archive" size={10} color={colors.warning} />
+                            <Text style={[TextStyles.caption.small, { color: colors.warning, marginLeft: 4 }]}>Archived</Text>
+                          </RNView>
+                        )}
+                        <TouchableOpacity
+                          onPress={() => handleArchiveBoard(b)}
+                          style={[styles.boardQuickBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
+                        >
+                          <FontAwesome name={archived ? 'undo' : 'archive'} size={12} color={archived ? colors.success : colors.warning} />
+                        </TouchableOpacity>
+                      </RNView>
+                    </RNView>
+                  );
+                })}
               </View>
             )}
             {/* View more button */}
@@ -996,14 +1075,26 @@ function SpaceBoardsScreenContent() {
             style={styles.boardGrid}
             onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}
           >
-            {visibleBoards.map((b: any) => (
-              <BoardCard
-                key={b._id || b.id}
-                board={b}
-                style={[styles.gridItem, itemWidth ? { width: itemWidth } : null]}
-                onPress={() => router.push(`/(tabs)/board?boardId=${b._id || b.id}&boardName=${encodeURIComponent(b.name || 'Board')}`)}
-              />
-            ))}
+            {visibleBoards.map((b: any) => {
+              const archived = isBoardArchived(b);
+              const go = () => {
+                if (archived) {
+                  showWarning('This board is archived. Restore it to access.');
+                  return;
+                }
+                router.push(`/(tabs)/board?boardId=${b._id || b.id}&boardName=${encodeURIComponent(b.name || 'Board')}`);
+              };
+              return (
+                <RNView key={b._id || b.id} style={[styles.gridItem, itemWidth ? { width: itemWidth } : null, { position: 'relative' }]}> 
+                  <BoardCard
+                    board={b}
+                    onPress={go}
+                    onToggleArchive={handleArchiveBoard}
+                  />
+                  {/* Status and archive controls moved into BoardCard; list overlay removed */}
+                </RNView>
+              );
+            })}
           </View>
         )}
         {/* View more button (phone) */}
@@ -1088,6 +1179,8 @@ const styles = StyleSheet.create({
   emptyState: { padding: 16, borderRadius: 8, alignItems: 'center' },
   statsRow: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 4 },
   statChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
+  boardQuickBtn: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
+  boardBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
 });
 
 // Wrapper component with MobileAlertProvider
