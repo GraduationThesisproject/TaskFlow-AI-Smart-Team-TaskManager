@@ -25,16 +25,16 @@ module.exports = {
     'http://localhost:5175',
     'http://localhost:5176',
 
-    // Mobile app connections
-    'http://192.168.1.101:8081', // Expo dev server
-    'http://192.168.1.101:8082', // Expo dev server port 8082
-    'http://192.168.1.101:8083', // Expo dev server port 8083
-    'http://192.168.1.101:8084', // Expo dev server port 8084
-    'http://192.168.1.101:3001', // Mobile app direct connection
-    'exp://192.168.1.101:8081', // Expo protocol
-    'exp://192.168.1.101:8082', // Expo protocol port 8082
-    'exp://192.168.1.101:8083', // Expo protocol port 8083
-    'exp://192.168.1.101:8084', // Expo protocol port 8084
+    // // Mobile app connections
+    // 'http://192.168.1.101:8081', // Expo dev server
+    // 'http://192.168.1.101:8082', // Expo dev server port 8082
+    // 'http://192.168.1.101:8083', // Expo dev server port 8083
+    // 'http://192.168.1.101:8084', // Expo dev server port 8084
+    // 'http://192.168.1.101:3001', // Mobile app direct connection
+    // 'exp://192.168.1.101:8081', // Expo protocol
+    // 'exp://192.168.1.101:8082', // Expo protocol port 8082
+    // 'exp://192.168.1.101:8083', // Expo protocol port 8083
+    // 'exp://192.168.1.101:8084', // Expo protocol port 8084
 
     // Allow all origins in development (be careful in production)
     ...(process.env.NODE_ENV === 'development' ? ['*'] : [])

@@ -732,6 +732,15 @@ class EmailService {
                         resetUrl: data.resetUrl || 'N/A'
                     });
                     
+                    // For verification codes, log the code prominently
+                    if (template === 'email-verification-code' && data.code) {
+                        console.log('\n🔐 EMAIL VERIFICATION CODE (for testing):');
+                        console.log('   Email:', to);
+                        console.log('   Code:', data.code);
+                        console.log('   Expires in:', data.expiresIn || '10 minutes');
+                        console.log('   Use this code in the mobile app\n');
+                    }
+                    
                     // For password reset, log the reset URL prominently
                     if (template === 'password-reset' && data.resetUrl) {
                         console.log('\n🔗 PASSWORD RESET URL (for testing):');
