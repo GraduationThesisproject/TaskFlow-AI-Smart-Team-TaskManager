@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { WorkspacesSection } from '../../components/dashboard/home/WorkspacesSection';
-import { Button } from '@taskflow/ui';
+import { ArchivedWorkspacesSection } from '../../components/dashboard/home/ArchivedWorkspacesSection';
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from '@taskflow/ui';
+import { useWorkspace } from '../../hooks/useWorkspace';
 
 type ViewMode = 'cards' | 'list' | 'list-detail';
 
 const Workspaces: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  const [activeTab, setActiveTab] = useState('active');
+  
+  const { archivedWorkspaces } = useWorkspace({ includeArchived: true });
 
   return (
     <div className="space-y-6">
@@ -63,7 +68,27 @@ const Workspaces: React.FC = () => {
         </div>
       </div>
 
-      <WorkspacesSection viewMode={viewMode} />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="active">Active Workspaces</TabsTrigger>
+          <TabsTrigger value="archived">
+            Archived Workspaces
+            {archivedWorkspaces.length > 0 && (
+              <span className="ml-2 bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full">
+                {archivedWorkspaces.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="active" className="mt-6">
+          <WorkspacesSection viewMode={viewMode} />
+        </TabsContent>
+        
+        <TabsContent value="archived" className="mt-6">
+          <ArchivedWorkspacesSection viewMode={viewMode} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

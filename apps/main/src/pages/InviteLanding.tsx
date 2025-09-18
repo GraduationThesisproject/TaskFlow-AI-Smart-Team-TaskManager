@@ -38,7 +38,7 @@ const InviteLanding: React.FC = () => {
   }, [token]);
 
   const requireAuthAndReturn = () => {
-    navigate('/signin', { 
+    navigate('/', { 
       state: { 
         returnTo: `/invite/${token}`,
         message: 'Please sign in to accept this invitation'

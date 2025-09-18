@@ -88,7 +88,6 @@ export default function InputField({
           onSubmitEditing={onSubmitEditing}
           style={[
             styles.input,
-            { color: '#000000' }, // Black text color
             ...(leftIcon ? [styles.inputWithLeftIcon as any] : []),
             ...(rightIcon ? [styles.inputWithRightIcon as any] : []),
             ...(error ? [{ borderColor: colors.error } as any] : []),

@@ -13,6 +13,7 @@ import Logo from "../Logo";
 import { AvatarWithFallback, ThemeToggle } from "@taskflow/ui";
 import { useAuth } from "../../../hooks";
 import { useNotifications } from "../../../hooks/useNotifications";
+import { InvitationModal } from "../../modals/InvitationModal";
 interface User {
   user?: {
     name?: string;
@@ -26,20 +27,27 @@ interface UniversalNavbarProps {
   onLogout?: () => void;
   className?: string;
   onChatClick?: () => void;
+  onSignInClick?: () => void;
+  onSignUpClick?: () => void;
 }
 
 const UniversalNavbar: React.FC<UniversalNavbarProps> = ({
+  user,
   onLogout,
   className = "",
   onChatClick,
+  onSignInClick,
+  onSignUpClick,
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
-  const { notifications, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications } = useNotifications();
+  const { isAuthenticated } = useAuth();
+  const { notifications, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications, fetchNotifications } = useNotifications();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
+
 
   const formatTime = (timestamp: string | Date) => {
     const date = new Date(timestamp);
@@ -189,11 +197,25 @@ const UniversalNavbar: React.FC<UniversalNavbarProps> = ({
                           {notifications.map((notification, index) => (
                             <div
                               key={notification._id}
-                              className={`group relative p-3 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
+                              className={`group relative p-3 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] cursor-pointer ${
                                 notification.isRead 
                                   ? 'bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700' 
                                   : 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-950/50 border-l-4 border-l-blue-500 border border-blue-200 dark:border-blue-800'
                               }`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                
+                                // Handle invitation notifications
+                                const isInvitation = notification.type === 'workspace_invitation' || notification.type === 'space_invitation';
+                                
+                                if (isInvitation) {
+                                  // Mark as read first
+                                  markAsRead(notification._id);
+                                  // Open modal
+                                  setIsInvitationModalOpen(true);
+                                }
+                              }}
                             >
                               {/* Unread indicator */}
                               {!notification.isRead && (
@@ -449,14 +471,13 @@ const UniversalNavbar: React.FC<UniversalNavbarProps> = ({
                 </div>
               </div>
             ) : (
-              location.pathname !== "/signin" &&
-              location.pathname !== "/signup" && (
+              (
                 <div className="flex items-center space-x-3">
                   <ThemeToggle variant="ghost" size="sm" />
-                  <Button variant="ghost" size="sm" onClick={() => navigate("/signin")} className="h-8 px-3 text-sm">
+                  <Button variant="ghost" size="sm" onClick={onSignInClick} className="h-8 px-3 text-sm">
                     Sign In
                   </Button>
-                  <Button size="sm" onClick={() => navigate("/signup")} className="h-8 px-3 text-sm">
+                  <Button size="sm" onClick={onSignUpClick} className="h-8 px-3 text-sm">
                     Get Started
                   </Button>
                 </div>
@@ -539,14 +560,14 @@ const UniversalNavbar: React.FC<UniversalNavbarProps> = ({
                       variant="ghost"
                       size="sm"
                       className="w-full justify-start h-8 text-sm"
-                      onClick={() => navigate("/signin")}
+                      onClick={onSignInClick}
                     >
                       Sign In
                     </Button>
                     <Button
                       size="sm"
                       className="w-full h-8 text-sm"
-                      onClick={() => navigate("/signup")}
+                      onClick={onSignUpClick}
                     >
                       Get Started
                     </Button>
@@ -557,6 +578,15 @@ const UniversalNavbar: React.FC<UniversalNavbarProps> = ({
           </div>
         )}
       </div>
+
+      {/* Invitation Modal */}
+      <InvitationModal
+        isOpen={isInvitationModalOpen}
+        onClose={() => setIsInvitationModalOpen(false)}
+        onInvitationHandled={() => {
+          fetchNotifications();
+        }}
+      />
     </nav>
   );
 };

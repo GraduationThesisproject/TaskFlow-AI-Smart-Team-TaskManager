@@ -17,7 +17,7 @@ interface RouteGuardProps {
 export const RouteGuard: React.FC<RouteGuardProps> = ({
   children,
   requiredWorkspaceAccess = false,
-  redirectTo = '/signin',
+  redirectTo = '/',
   fallback,
   showLoading = true,
   allowUnauthenticated = false,

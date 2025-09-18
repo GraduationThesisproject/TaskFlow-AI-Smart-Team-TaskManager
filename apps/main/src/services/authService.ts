@@ -236,9 +236,13 @@ static async updateProfile({
     }
   }
 
-  static async getSessions(): Promise<ApiResponse<any>> {
+  static async getSessions(currentDeviceId?: string): Promise<ApiResponse<any>> {
     try {
-      const response = await axiosInstance.get('/auth/sessions');
+      const headers = currentDeviceId ? { 'x-device-id': currentDeviceId } : {};
+      
+      const response = await axiosInstance.get('/auth/sessions', {
+        headers
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching sessions:', error);

@@ -15,8 +15,10 @@ export default function WorkspaceStackLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Workspace' }} />
-      {/* Nesting note: child routes under `space/` are declared in `space/_layout.tsx` */}
-      <Stack.Screen name="main" options={{ title: 'Space' }} />
+      <Stack.Screen name="space/main" options={{ title: 'Space' }} />
+      <Stack.Screen name="space/boards" options={{ title: 'Boards' }} />
+      <Stack.Screen name="space/allboards" options={{ title: 'All Boards' }} />
+      <Stack.Screen name="space/settings" options={{ title: 'Space Settings' }} />
     </Stack>
   );
 }

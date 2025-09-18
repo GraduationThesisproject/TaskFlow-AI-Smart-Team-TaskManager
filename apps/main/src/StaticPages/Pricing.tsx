@@ -127,7 +127,7 @@ const Pricing = () => {
         description="Choose the perfect plan for your team. All plans include our core AI features and can be upgraded anytime."
         primaryButton={{
           text: "Start Free Trial",
-          href: "/signup"
+          onClick: () => console.log("Start Free Trial clicked - handled by parent")
         }}
         secondaryButton={{
           text: "Contact Sales",
@@ -323,7 +323,7 @@ const Pricing = () => {
         description="Join thousands of teams who've already transformed their workflow with TaskFlow"
         primaryButton={{
           text: "Start Free Trial",
-          href: "/signup"
+          onClick: () => console.log("Start Free Trial clicked - handled by parent")
         }}
         secondaryButton={{
           text: "Schedule Demo",

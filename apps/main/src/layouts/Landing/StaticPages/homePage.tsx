@@ -37,7 +37,11 @@ import {
 // Animated components using HOC
 const AnimatedFeatureCard = withAnimation(FeatureCard, 'animate-fade-in-up');
 
-const LandingPageHome = () => {
+interface LandingPageHomeProps {
+  onSignUpClick?: () => void;
+}
+
+const LandingPageHome = ({ onSignUpClick }: LandingPageHomeProps) => {
   // Memoized data to prevent unnecessary re-renders
   const features = useMemo(() => [
     {
@@ -101,7 +105,7 @@ const LandingPageHome = () => {
   ], []);
 
   // Intersection observer for animations
-  const [setStatsRef, isStatsVisible] = useIntersectionObserver({
+  const [setStatsRef] = useIntersectionObserver({
     threshold: 0.1,
     rootMargin: '0px 0px -50px 0px'
   });
@@ -129,6 +133,9 @@ const LandingPageHome = () => {
     </div>
   ), []);
 
+  // Use the handlers passed from parent or fallback to console.log
+  const handleSignUpClick = onSignUpClick || (() => console.log("Sign up clicked"));
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gradient-to-br from-background via-card to-muted/30 text-foreground">
@@ -139,7 +146,7 @@ const LandingPageHome = () => {
           description="Experience the future of task management with intelligent automation, seamless collaboration, and AI insights that help your team achieve more in less time."
           primaryButton={{
             text: "Start Free Trial",
-            href: "/signup"
+            onClick: handleSignUpClick
           }}
           secondaryButton={{
             text: "Watch Demo",
@@ -386,7 +393,7 @@ const LandingPageHome = () => {
           description="Join thousands of teams who've already discovered the power of AI-powered task management"
           primaryButton={{
             text: "Start Free Trial",
-            href: "/signup"
+            onClick: handleSignUpClick
           }}
           secondaryButton={{
             text: "Schedule Demo",
@@ -458,6 +465,7 @@ const LandingPageHome = () => {
             </div>
           </Container>
         </footer>
+
       </div>
     </ErrorBoundary>
   );

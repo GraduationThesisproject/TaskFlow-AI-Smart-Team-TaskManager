@@ -66,20 +66,7 @@ const activityLogSchema = new mongoose.Schema({
   metadata: {
     ipAddress: String,
     userAgent: String,
-    deviceInfo: {
-      type: {
-        type: String,
-        default: 'web'
-      },
-      os: {
-        type: String,
-        default: 'unknown'
-      },
-      browser: {
-        type: String,
-        default: 'unknown'
-      }
-    },
+    deviceInfo: mongoose.Schema.Types.Mixed,
     oldValues: {
       type: Map,
       of: mongoose.Schema.Types.Mixed

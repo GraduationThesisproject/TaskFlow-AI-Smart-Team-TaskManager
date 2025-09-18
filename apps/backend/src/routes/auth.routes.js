@@ -59,22 +59,16 @@ router.post('/forgot-password/reset',
     authController.resetPasswordWithCode
 );
 
-// Email Verification (support both path param and query param)
-router.get('/verify-email', authController.verifyEmail);
-router.get('/verify-email/:token', authController.verifyEmail);
-// 4-digit code email verification flow (API used by mobile app)
-router.post('/resend-verification', authController.resendVerificationCode);
-router.post('/verify-email', authController.verifyEmailCode);
+// Email Verification
+router.get('/verify-email/:token',
+    authController.verifyEmail
+);
 
 // OAuth Authentication
 router.get('/google', authController.googleLogin);
 router.get('/google/callback', authController.googleCallback);
 router.get('/github', authController.githubLogin);
 router.get('/github/callback', authController.githubCallback);
-
-// Mobile OAuth Authentication
-router.post('/google/mobile', authController.googleMobile);
-router.post('/github/mobile', authController.githubMobile);
 
 // ============================================================================
 // PROTECTED ROUTES (Authentication Required)

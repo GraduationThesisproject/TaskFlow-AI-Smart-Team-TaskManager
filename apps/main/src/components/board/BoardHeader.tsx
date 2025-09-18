@@ -6,12 +6,14 @@ interface BoardHeaderProps {
   className?: string;
   currentBoard: Board | null;
   loading: boolean;
+  onArchiveBoard?: () => void;
 }
 
 export const BoardHeader: React.FC<BoardHeaderProps> = ({ 
   className = '', 
   currentBoard, 
-  loading 
+  loading,
+  onArchiveBoard
 }) => {
   const [activeSidebar, setActiveSidebar] = useState<'settings' | 'members' | null>(null);
   const [isSidebarAnimating, setIsSidebarAnimating] = useState(false);
@@ -74,13 +76,31 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
                 </span>
               </div>
               <div className="flex items-center gap-4">
-                <div>
-                  <h1 className="text-base font-semibold text-gray-900 leading-tight">
-                    {currentBoard.name || 'Untitled Board'}
-                  </h1>
-                  <p className="text-xs text-gray-500 leading-tight">
-                    {currentBoard.description || 'No description'}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h1 className="text-base font-semibold text-gray-900 leading-tight">
+                      {currentBoard.name || 'Untitled Board'}
+                    </h1>
+                    <p className="text-xs text-gray-500 leading-tight">
+                      {currentBoard.description || 'No description'}
+                    </p>
+                  </div>
+                  
+                  {/* AI Assistant Toggle Button */}
+                  <button 
+                    onClick={() => {
+                      // Trigger AI chat toggle - this will be handled by the parent component
+                      const event = new CustomEvent('toggleAIChat');
+                      window.dispatchEvent(event);
+                    }}
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-md transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-1.5"
+                    title="Toggle AI Assistant"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    AI
+                  </button>
                 </div>
                 
                 {/* Members */}
@@ -138,6 +158,15 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+              </button>
+              <button 
+                onClick={onArchiveBoard}
+                className="w-7 h-7 rounded-md bg-gray-50 hover:bg-orange-100 text-gray-600 hover:text-orange-600 flex items-center justify-center transition-colors"
+                title="Archive Board"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8" />
                 </svg>
               </button>
             </div>

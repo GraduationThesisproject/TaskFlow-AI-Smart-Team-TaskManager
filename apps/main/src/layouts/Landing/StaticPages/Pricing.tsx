@@ -379,7 +379,7 @@ const Pricing = () => {
         description="Join thousands of teams who've already transformed their workflow with TaskFlow"
         primaryButton={{
           text: "Start Free Trial",
-          href: "/signup"
+          onClick: () => console.log("Start Free Trial clicked - handled by parent")
         }}
         secondaryButton={{
           text: "Contact Sales",
