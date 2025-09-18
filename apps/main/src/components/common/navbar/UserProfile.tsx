@@ -3,7 +3,7 @@ import { Button, Avatar, AvatarImage, AvatarFallback, Dropdown, Typography, Badg
 import { LogOut, UserCog, Bell, Trash2, AlertCircle, CheckCircle, Info, AlertTriangle, UserPlus } from 'lucide-react';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
-import type { User as UserType } from '../../../types/navbar';
+import { InvitationModal } from '../../modals/InvitationModal';
 import type { UserProfileProps } from '../../../types/interfaces/ui';
 
 export const UserProfile: React.FC<UserProfileProps> = ({ 
@@ -18,7 +18,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       <Button
         variant="default"
         size="sm"
-        onClick={() => (window.location.href = '/signin')}
+        onClick={() => (window.location.href = '/')}
         className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm hover:shadow-md"
       >
         Sign In
@@ -87,19 +87,21 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 };
 
 // Inline NotificationBell moved here for global access
-const NotificationBell: React.FC = () => {
-  const {
-    notifications,
-    stats,
-    loading,
-    error,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
-    clearReadNotifications,
-    clearError,
-    fetchNotifications,
-  } = useNotifications();
+  const NotificationBell: React.FC = () => {
+    const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
+    const {
+      notifications,
+      stats,
+      loading,
+      error,
+      markAsRead,
+      markAllAsRead,
+      deleteNotification,
+      clearReadNotifications,
+      clearError,
+      fetchNotifications,
+    } = useNotifications();
+
 
   const unreadCount = stats?.unread || 0;
   const hasNotifications = notifications.length > 0;
@@ -113,6 +115,7 @@ const NotificationBell: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [error, clearError]);
+
 
   const NotificationIcon: React.FC<{ type: string }> = ({ type }) => {
     const iconProps = { size: 16, className: 'flex-shrink-0' } as const;
@@ -156,7 +159,6 @@ const NotificationBell: React.FC = () => {
       size="sm"
       align="end"
       contentClassName="w-80"
-      triggerIsButton={false}
     >
       <div className="p-3 border-b border-border">
         <div className="flex items-center justify-between">
@@ -219,7 +221,22 @@ const NotificationBell: React.FC = () => {
             {notifications.slice(0, 10).map((n) => (
               <div 
                 key={n._id}
-                className={`p-3 border-b border-border hover:bg-muted/50 transition-colors ${!n.isRead ? 'bg-blue-50/50' : ''}`}
+                className={`p-3 border-b border-border hover:bg-muted/50 transition-colors cursor-pointer group ${!n.isRead ? 'bg-blue-50/50' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  
+                  // Handle invitation notifications
+                  const isInvitation = n.type === 'workspace_invitation' || n.type === 'space_invitation';
+                  
+                  if (isInvitation) {
+                    // Mark as read first
+                    markAsRead(n._id);
+                    // Open modal
+                    setIsInvitationModalOpen(true);
+                  }
+                }}
+                style={{ pointerEvents: 'auto' }}
               >
                 <div className="flex items-start gap-3">
                   <NotificationIcon type={n.type} />
@@ -231,6 +248,11 @@ const NotificationBell: React.FC = () => {
                           className={`font-medium truncate ${!n.isRead ? 'text-foreground' : 'text-muted-foreground'}`}
                         >
                           {n.title}
+                          {(n.type === 'workspace_invitation' || n.type === 'space_invitation') && (
+                            <span className="ml-2 text-xs text-blue-600 group-hover:text-blue-700">
+                              Click to view →
+                            </span>
+                          )}
                         </Typography>
                         <Typography variant="caption" className="text-muted-foreground mt-1 line-clamp-2">
                           {n.message}
@@ -241,7 +263,11 @@ const NotificationBell: React.FC = () => {
                               variant="ghost"
                               size="sm"
                               className="text-xs h-6 px-2"
-                              onClick={() => { markAsRead(n._id); window.location.href = '/dashboard/settings'; }}
+                              onClick={(e) => { 
+                                e.stopPropagation(); // Prevent triggering the parent click
+                                markAsRead(n._id); 
+                                setIsInvitationModalOpen(true);
+                              }}
                             >
                               View invitations
                             </Button>
@@ -258,7 +284,10 @@ const NotificationBell: React.FC = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => markAsRead(n._id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markAsRead(n._id);
+                              }}
                               disabled={loading}
                               className="h-6 px-1 text-green-600 hover:text-green-700"
                               title="Mark as read"
@@ -269,7 +298,10 @@ const NotificationBell: React.FC = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => deleteNotification(n._id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteNotification(n._id);
+                            }}
                             disabled={loading}
                             className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                           >
@@ -284,7 +316,12 @@ const NotificationBell: React.FC = () => {
             ))}
             {notifications.length > 10 && (
               <div className="p-3 border-t border-border text-center">
-                <Button variant="ghost" size="sm" className="text-xs">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs"
+                  onClick={() => window.location.href = '/notifications'}
+                >
                   View all notifications
                 </Button>
               </div>
@@ -292,6 +329,15 @@ const NotificationBell: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Invitation Modal */}
+      <InvitationModal
+        isOpen={isInvitationModalOpen}
+        onClose={() => setIsInvitationModalOpen(false)}
+        onInvitationHandled={() => {
+          fetchNotifications();
+        }}
+      />
     </Dropdown>
   );
 };

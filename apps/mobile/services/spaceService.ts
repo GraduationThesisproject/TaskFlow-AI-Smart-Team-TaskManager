@@ -81,9 +81,7 @@ export class SpaceService {
   // Delete space
   static async deleteSpace(id: string): Promise<ApiResponse<any>> {
     try {
-      // Backend supports permanent deletion at /spaces/:id/permanent,
-      // and only after the space has been archived and the countdown elapsed.
-      const response = await axiosInstance.delete(`/spaces/${id}/permanent`);
+      const response = await axiosInstance.delete(`/spaces/${id}`);
       return response.data;
     } catch (error) {
       console.warn('Error deleting space:', error);

@@ -37,7 +37,7 @@ export default function ForgotPassword() {
 
   const handleBackToSignIn = () => {
     clearError();
-    navigate('/signin');
+    navigate('/');
   };
 
   if (isSuccess) {

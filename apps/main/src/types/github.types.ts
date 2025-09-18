@@ -38,6 +38,20 @@ export interface GitHubBranch {
   };
 }
 
+export interface GitHubMember {
+  id: number;
+  login: string;
+  name?: string;
+  email?: string;
+  avatar: string;
+  url: string;
+  htmlUrl: string;
+  type: 'User' | 'Bot';
+  siteAdmin: boolean;
+  userId?: string; // Added for app user mapping
+  isAppUser?: boolean; // Added to indicate if user is in our app
+}
+
 export interface GitHubStatus {
   linked: boolean;
   username?: string;
@@ -105,6 +119,7 @@ export interface UseGitHubReturn {
   organizations: GitHubOrg[];
   repositories: GitHubRepo[];
   branches: GitHubBranch[];
+  members: GitHubMember[];
   isLoading: boolean;
   error: string;
   
@@ -113,8 +128,11 @@ export interface UseGitHubReturn {
   fetchOrganizations: () => Promise<GitHubOrg[]>;
   fetchRepositories: (orgLogin: string) => Promise<GitHubRepo[]>;
   fetchBranches: (orgLogin: string, repoName: string) => Promise<GitHubBranch[]>;
+  fetchMembers: (orgLogin: string) => Promise<GitHubMember[]>;
+  fetchMembersWithEmails: (orgLogin: string) => Promise<GitHubMember[]>;
   syncGitHubData: () => Promise<boolean>;
   linkGitHubAccount: () => void;
+  linkGitHubAccountPopup: () => Promise<boolean>;
   unlinkGitHubAccount: () => Promise<boolean>;
   forceReAuth: () => Promise<boolean>;
   

@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardTitle, CardContent, Typography, Button, Badge, EmptyState, Skeleton, Input, AvatarWithFallback } from "@taskflow/ui";
-import { Plus, Users, Trash, AlertTriangle, Check, X } from "lucide-react";
+import { Plus, Users, Trash, AlertTriangle, Check, X, Archive, ArchiveRestore } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMemo, useState, useEffect } from "react";
 import { DeleteWorkspaceModal } from "../../../components/dashboard/home/modals/DeleteWorkspaceModal";
@@ -18,6 +18,7 @@ export const WorkspacesSection = ({ viewMode = 'cards' }: WorkspacesSectionProps
     sortedWorkspaces,
     navigateToWorkspace,
     createNewWorkspace,
+    deleteWorkspaceById,
   } = useWorkspace({ includeArchived: false });
 
   const [isCreating, setIsCreating] = useState(false);
@@ -61,6 +62,14 @@ export const WorkspacesSection = ({ viewMode = 'cards' }: WorkspacesSectionProps
   const handleCancelCreate = () => {
     setNewWorkspaceName('');
     setIsCreating(false);
+  };
+
+  const handleArchiveWorkspace = async (workspaceId: string) => {
+    try {
+      await deleteWorkspaceById(workspaceId);
+    } catch (error) {
+      console.error('Failed to archive workspace:', error);
+    }
   };
 
   // Live ticking timestamp only when needed (archived with expiry)
@@ -168,8 +177,8 @@ export const WorkspacesSection = ({ viewMode = 'cards' }: WorkspacesSectionProps
           ) : sortedWorkspaces.length > 0 ? (
             <div className="space-y-2">
               {viewMode === 'cards' && (
-                <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
-                  {sortedWorkspaces.slice(0, 3).map((ws: any) => (
+                <div className="grid gap-3 grid-cols-4">
+                  {sortedWorkspaces.slice(0, 4).map((ws: any) => (
                 <div
                   key={ws._id}
                   className="relative overflow-hidden group border rounded-md p-3 cursor-pointer flex flex-col ring-1 ring-accent/10 border-[hsl(var(--accent))]/20 shadow-[0_0_8px_hsl(var(--accent)/0.06)] hover:shadow-[0_0_16px_hsl(var(--accent)/0.12)] transition-all"
@@ -189,30 +198,42 @@ export const WorkspacesSection = ({ viewMode = 'cards' }: WorkspacesSectionProps
                         {ws.name}
                       </Typography>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10 h-6 w-6 p-0 -mt-1 -mr-1 flex-shrink-0"
-                      onClick={(e) => { e.stopPropagation(); setToDelete({ id: ws._id, name: ws.name }); setIsDeleteOpen(true);  }}
-                      title="Delete workspace"
-                      aria-label="Delete workspace"
-                    >
-                      <Trash className="h-3 w-3" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-amber-600 hover:bg-amber-50 h-6 w-6 p-0 -mt-1 -mr-1 flex-shrink-0"
+                        onClick={(e) => { e.stopPropagation(); handleArchiveWorkspace(ws._id); }}
+                        title="Archive workspace"
+                        aria-label="Archive workspace"
+                      >
+                        <Archive className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10 h-6 w-6 p-0 -mt-1 -mr-1 flex-shrink-0"
+                        onClick={(e) => { e.stopPropagation(); setToDelete({ id: ws._id, name: ws.name }); setIsDeleteOpen(true);  }}
+                        title="Delete workspace"
+                        aria-label="Delete workspace"
+                      >
+                        <Trash className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                   
-                  {/* Badges row */}
-                  <div className="flex items-center flex-wrap gap-2 mb-3">
-                      {/* Visibility badge */}
-                      <Badge
-                        variant="secondary"
-                        className={ws?.isPublic === true
-                          ? 'bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-1'
-                          : 'bg-muted text-foreground/80 border border-border text-xs px-2 py-1'}
-                        title={ws?.isPublic === true ? 'Public workspace' : 'Private workspace'}
-                      >
-                        {ws?.isPublic === true ? 'Public' : 'Private'}
-                      </Badge>
+                    {/* Badges row */}
+                    <div className="flex items-center flex-wrap gap-2 mb-3">
+                        {/* Visibility badge - only show if public */}
+                        {ws?.isPublic === true && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-1"
+                            title="Public workspace"
+                          >
+                            Public
+                          </Badge>
+                        )}
                       {/* Status badge */}
                       <Badge
                         variant="secondary"
@@ -253,7 +274,7 @@ export const WorkspacesSection = ({ viewMode = 'cards' }: WorkspacesSectionProps
               {viewMode === 'list' && (
                 <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                   <div className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {sortedWorkspaces.slice(0, 3).map((ws: any) => (
+                    {sortedWorkspaces.slice(0, 4).map((ws: any) => (
                       <div
                         key={ws._id}
                         className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-200 cursor-pointer"
@@ -273,14 +294,14 @@ export const WorkspacesSection = ({ viewMode = 'cards' }: WorkspacesSectionProps
                                 {ws.name}
                               </Typography>
                               <div className="flex items-center gap-2 mt-1">
-                                <Badge
-                                  variant="secondary"
-                                  className={ws?.isPublic === true
-                                    ? 'bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-1'
-                                    : 'bg-muted text-foreground/80 border border-border text-xs px-2 py-1'}
-                                >
-                                  {ws?.isPublic === true ? 'Public' : 'Private'}
-                                </Badge>
+                                {ws?.isPublic === true && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-1"
+                                  >
+                                    Public
+                                  </Badge>
+                                )}
                                 <Badge
                                   variant="secondary"
                                   className={(ws?.status ?? (ws?.isActive === false ? 'archived' : 'active')) === 'archived'
@@ -302,6 +323,16 @@ export const WorkspacesSection = ({ viewMode = 'cards' }: WorkspacesSectionProps
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity text-amber-600 hover:bg-amber-50 h-6 w-6 p-0"
+                              onClick={(e) => { e.stopPropagation(); handleArchiveWorkspace(ws._id); }}
+                              title="Archive workspace"
+                              aria-label="Archive workspace"
+                            >
+                              <Archive className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10 h-6 w-6 p-0"
                               onClick={(e) => { e.stopPropagation(); setToDelete({ id: ws._id, name: ws.name }); setIsDeleteOpen(true);  }}
                               title="Delete workspace"
@@ -319,7 +350,7 @@ export const WorkspacesSection = ({ viewMode = 'cards' }: WorkspacesSectionProps
 
               {viewMode === 'list-detail' && (
                 <div className="space-y-4">
-                  {sortedWorkspaces.slice(0, 3).map((ws: any) => (
+                  {sortedWorkspaces.slice(0, 4).map((ws: any) => (
                     <div
                       key={ws._id}
                       className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 hover:shadow-lg transition-shadow duration-200 cursor-pointer"
@@ -340,14 +371,14 @@ export const WorkspacesSection = ({ viewMode = 'cards' }: WorkspacesSectionProps
                                 {ws.name}
                               </Typography>
                               <div className="flex items-center gap-2 mt-2">
-                                <Badge
-                                  variant="secondary"
-                                  className={ws?.isPublic === true
-                                    ? 'bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-1'
-                                    : 'bg-muted text-foreground/80 border border-border text-xs px-2 py-1'}
-                                >
-                                  {ws?.isPublic === true ? 'Public' : 'Private'}
-                                </Badge>
+                                {ws?.isPublic === true && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-1"
+                                  >
+                                    Public
+                                  </Badge>
+                                )}
                                 <Badge
                                   variant="secondary"
                                   className={(ws?.status ?? (ws?.isActive === false ? 'archived' : 'active')) === 'archived'
@@ -378,6 +409,16 @@ export const WorkspacesSection = ({ viewMode = 'cards' }: WorkspacesSectionProps
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-amber-600 hover:bg-amber-50 h-6 w-6 p-0"
+                            onClick={(e) => { e.stopPropagation(); handleArchiveWorkspace(ws._id); }}
+                            title="Archive workspace"
+                            aria-label="Archive workspace"
+                          >
+                            <Archive className="h-3 w-3" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

@@ -7,3 +7,6 @@ export {
   ConditionalRouteGuard as ConditionalPublicGuard,
   RouteGuard as PublicRouteGuard 
 } from './PublicOnlyRoute';
+
+// Modal Components
+export { InvitationModal } from '../modals/InvitationModal';

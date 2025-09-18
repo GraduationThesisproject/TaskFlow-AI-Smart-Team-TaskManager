@@ -244,7 +244,7 @@ export const useNotifications = (): UseNotificationsReturn => {
         fetchNotificationsHandler();
       }
     }
-  }, [token, realTimeEnabled, notificationSocket, isConnected, fetchNotificationsHandler]);
+  }, [token, realTimeEnabled, notificationSocket, isConnected]); // Remove fetchNotificationsHandler dependency
 
   return {
     notifications,

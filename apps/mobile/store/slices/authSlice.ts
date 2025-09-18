@@ -95,7 +95,6 @@ export const loginUser = createAsyncThunk(
     try {
       console.log('🔧 authSlice.loginUser called with:', credentials);
       const response = await AuthService.login(credentials);
-      console.log('---------------------------------------------------',response);
       const token = (response as any)?.data?.token || (response as any)?.data?.data?.token;
       if (!token) {
         throw new Error('No token received from server');
@@ -131,14 +130,18 @@ export const registerUser = createAsyncThunk(
   async (userData: RegisterData, { rejectWithValue }) => {
     try {
       const response = await AuthService.register(userData);
-      // Registration only initiates the process; user is created only after verification
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
+      }
+      const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
+      
       return {
         ...(response as any).data,
-        user: null,
-        token: null,
-        requiresVerification: true,
-        email: userData.email,
-      } as any;
+        user: safeSerializeUser(profileData),
+        token
+      };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
       return rejectWithValue(errorMessage);
@@ -215,9 +218,8 @@ export const checkAuthStatus = createAsyncThunk(
 export const logoutUser = createAsyncThunk(
   'auth/logout',
   async (params: { allDevices?: boolean, navigate?: (path: string) => void } = {}, { rejectWithValue }) => {
-    const { allDevices = false, navigate } = params;
-    
     try {
+      const { allDevices = false, navigate } = params;
       const deviceId = await getDeviceId();
       
       await AuthService.logout(deviceId, allDevices);
@@ -370,12 +372,17 @@ export const verifyEmail = createAsyncThunk(
   async (verificationData: EmailVerificationData, { rejectWithValue }) => {
     try {
       const response = await AuthService.verifyEmail(verificationData);
-      // Do not auto-login after verification; user must login separately
+      const token = (response as any)?.data?.data?.token;
+      if (token) {
+        await setAuthToken(token);
+      }
+      const profileResponse = await AuthService.getProfile();
+      const profileData = (profileResponse as any)?.data?.data;
+      
       return {
         ...(response as any).data,
-        user: null,
-        token: null,
-        verified: true
+        user: safeSerializeUser(profileData),
+        token
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Email verification failed';
@@ -619,10 +626,9 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        // Do not set user or token; user must verify email first
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isAuthenticated = true;
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -682,23 +688,6 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(oauthRegister.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
-      // Verify Email (4-digit code)
-      .addCase(verifyEmail.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(verifyEmail.fulfilled, (state, action) => {
-        state.isLoading = false;
-        // Do not set user/token; user must login separately after verification
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-        state.error = null;
-      })
-      .addCase(verifyEmail.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
