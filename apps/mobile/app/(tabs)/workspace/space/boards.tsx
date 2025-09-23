@@ -29,7 +29,6 @@ export default function SpaceBoardsScreen() {
   const displayMembers = useMemo(() => (
     Array.isArray(workspaceMembers) ? workspaceMembers : []
   ), [workspaceMembers]);
-
   // Precompute owner IDs for disable logic
   const ownerIds = useMemo(() => {
     const ids = new Set<string>();
