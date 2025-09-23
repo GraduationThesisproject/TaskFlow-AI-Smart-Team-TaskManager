@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { Board } from '@/components/board';
+import { Board } from '@/components/board'
 
 export default function BoardScreen() {
   const params = useLocalSearchParams();
