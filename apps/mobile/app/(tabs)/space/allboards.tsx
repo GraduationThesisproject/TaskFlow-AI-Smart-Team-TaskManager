@@ -106,7 +106,7 @@ function AllBoardsContent() {
           archivingIdsRef.current.add(String(id));
           const resp = archived ? await BoardService.unarchiveBoard(id) : await BoardService.archiveBoard(id);
           showSuccess(archived ? 'Board restored successfully!' : 'Board archived successfully!');
-          await loadBoards();
+          // Keep current list order; avoid refetching that may reorder
         } catch (e: any) {
           showError(e?.response?.data?.message || e?.message || `Failed to ${nextAction} board`);
         } finally {

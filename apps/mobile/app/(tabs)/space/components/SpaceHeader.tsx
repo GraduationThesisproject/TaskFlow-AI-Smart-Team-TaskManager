@@ -5,6 +5,8 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { Card } from '@/components/Themed';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { MobileAlertProvider, useMobileAlert } from '@/components/common/MobileAlertProvider';
+import { useAuth } from '@/hooks/useAuth';
 
 export type SpaceHeaderProps = {
   space: any;
@@ -26,12 +28,25 @@ function SpaceHeaderComp({ space, onCreateBoard, onSettings, onMembers, onBackTo
   const colors = useThemeColors();
   const { width } = useWindowDimensions();
   const router = useRouter();
+  const { user } = useAuth();
+  const { showModal, hideAlert } = useMobileAlert();
   const handleGoBoards = useCallback(() => {
+    // Premium gate: All Boards accessible only for premium
+    const plan = String(user?.subscription?.plan || '').toLowerCase();
+    const isPremium = plan === 'premium' || plan === 'enterprise';
+    if (!isPremium) {
+      // Ensure modal can be shown repeatedly by hiding any previous instance first
+      hideAlert();
+      setTimeout(() => {
+        showModal('Premium Feature', 'Viewing all boards is a Premium feature. Upgrade to unlock.');
+      }, 0);
+      return;
+    }
     if (typeof onGoBoards === 'function') {
       return onGoBoards();
     }
     router.push('/(tabs)/space/allboards');
-  }, [onGoBoards, router]);
+  }, [onGoBoards, router, user?.subscription?.plan, showModal, hideAlert]);
   const isWide = width >= 768; // tablet/landscape breakpoint to show right sidebar
   const topInset = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
   const isSmall = width < 360;
