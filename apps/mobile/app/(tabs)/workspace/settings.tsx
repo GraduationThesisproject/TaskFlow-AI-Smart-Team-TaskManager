@@ -524,7 +524,7 @@ function WorkspaceSettingsScreenContent() {
       {/* GitHub Connection Modal */}
       <Modal
         visible={showGithubModal}
-        animationType="slide"
+        animationType="none"
         transparent
         onRequestClose={() => setShowGithubModal(false)}
       >

@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, useWindowDimensions } from 'react-native';
+import React, { useCallback, memo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, useWindowDimensions, Platform, StatusBar } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { Card } from '@/components/Themed';
@@ -11,6 +12,7 @@ export type SpaceHeaderProps = {
   onSettings?: () => void;
   onMembers?: () => void;
   onBackToWorkspace?: () => void;
+  onGoBoards?: () => void;
   boardCount?: number; // optional override for board count
   membersCount?: number; // optional override for members count
   tasksCount?: number; // optional override for tasks count across boards
@@ -20,10 +22,21 @@ const getProgressPercentage = (completed: number, total: number) => {
   return total > 0 ? Math.round((completed / total) * 100) : 0;
 };
 
-export default function SpaceHeader({ space, onCreateBoard, onSettings, onMembers, onBackToWorkspace, boardCount: boardCountProp, membersCount: membersCountProp, tasksCount: tasksCountProp }: SpaceHeaderProps) {
+function SpaceHeaderComp({ space, onCreateBoard, onSettings, onMembers, onBackToWorkspace, onGoBoards, boardCount: boardCountProp, membersCount: membersCountProp, tasksCount: tasksCountProp }: SpaceHeaderProps) {
   const colors = useThemeColors();
   const { width } = useWindowDimensions();
+  const router = useRouter();
+  const handleGoBoards = useCallback(() => {
+    if (typeof onGoBoards === 'function') {
+      return onGoBoards();
+    }
+    router.push('/(tabs)/space/allboards');
+  }, [onGoBoards, router]);
   const isWide = width >= 768; // tablet/landscape breakpoint to show right sidebar
+  const topInset = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
+  const isSmall = width < 360;
+  // Ensure stats area is NOT clickable; always use View
+  const InfoWrapper: any = View;
   
 
   if (!space) {
@@ -63,7 +76,7 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
   const progress = getProgressPercentage(space.completedTasks || 0, taskCount);
 
   return (
-    <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+    <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border, paddingTop: 28 + topInset, paddingBottom: 16 }]}>
       <View style={styles.headerLeft}>
         {!!onBackToWorkspace && (
           <TouchableOpacity
@@ -75,15 +88,20 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
             <FontAwesome name="arrow-left" size={18} color={colors.primary} />
           </TouchableOpacity>
         )}
-        <View style={[styles.iconBox, { backgroundColor: bgTint, borderColor: `${space.color || '#3B82F6'}30` }]}>
-          <Text style={styles.spaceIcon}>{space.icon || '🏠'}</Text>
-        </View>
-        <View style={styles.spaceInfo}>
-          <Text style={[TextStyles.heading.h2, { color: colors.foreground }]} numberOfLines={1}>
+        <InfoWrapper style={styles.spaceInfo}>
+        {/* Title: show only on tablets/desktops to avoid camera overlap on phones */}
+        {isWide && (
+          <Text
+            style={[TextStyles.heading.h2, { color: colors.foreground, fontSize: isSmall ? 18 : undefined }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {space.name || 'Untitled Space'}
           </Text>
-          {!!space.description && (
-            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 2 }]} numberOfLines={2}>
+        )}
+
+          {isWide && !!space.description && (
+            <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], marginTop: 2 }]} numberOfLines={1}>
               {space.description}
             </Text>
           )}
@@ -117,12 +135,20 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
               </View>
             )}
           </View>
-        </View>
+
+          {/* Removed compact sub-navigation to keep single-line header */}
+        </InfoWrapper>
       </View>
       
-      <View style={styles.headerRight}>
-        <View style={styles.actionButtons}>
-          
+        <View style={styles.headerRight}>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              onPress={handleGoBoards}
+              style={[styles.actionButton, { backgroundColor: colors.background, borderColor: colors.border }]}
+              accessibilityLabel="Boards"
+            >
+              <FontAwesome name="th-large" size={16} color={colors.foreground} />
+            </TouchableOpacity>
           <TouchableOpacity 
             onPress={onSettings} 
             style={[styles.actionButton, { backgroundColor: colors.background, borderColor: colors.border }]}
@@ -149,6 +175,8 @@ export default function SpaceHeader({ space, onCreateBoard, onSettings, onMember
     </View>
   );
 }
+
+export default memo(SpaceHeaderComp);
 
 const styles = StyleSheet.create({
   header: {

@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, Image, Alert, useWindowDimensions, Modal, Pressable, Animated } from 'react-native';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, Image, Alert, useWindowDimensions, Modal, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -14,11 +14,10 @@ import { archiveSpace, unarchiveSpace, setCurrentSpace } from '@/store/slices/sp
 import { SpaceService } from '@/services/spaceService';
 import CreateSpaceModal from '@/components/common/CreateSpaceModal';
 import { MobileAlertProvider, useMobileAlert } from '@/components/common/MobileAlertProvider';
-import SpaceCard from '@/components/common/SpaceCard';
-import PremiumSpaceCard from '@/components/common/PremiumSpaceCard';
-import GridSpaces from '@/components/space/GridSpaces';
+import GridSpaces from './components/GridSpaces';
 import PremiumSpaceLimitModal from '@/components/common/PremiumSpaceLimitModal';
 import WorkspaceStats from './components/WorkspaceStats';
+import WorkspaceToolbar from './components/WorkspaceToolbar';
 import Sidebar from '@/components/navigation/Sidebar';
 import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 import WorkspaceHeader from './components/WorkspaceHeader';
@@ -194,7 +193,7 @@ function WorkspaceScreenContent() {
     }
     dispatch(setSelectedSpace(space));
     dispatch(setCurrentSpace(space));
-    router.replace('/(tabs)/workspace/space/main');
+    router.replace('/(tabs)/space/main');
   }, [dispatch, router, showWarning]);
 
 
@@ -358,24 +357,6 @@ function WorkspaceScreenContent() {
 
   const isWide = width >= 768;
   const [membersSidebarOpen, setMembersSidebarOpen] = useState(false);
-  const slideAnim = useRef(new Animated.Value(320)).current;
-
-  // Animation effect for members sidebar
-  useEffect(() => {
-    if (membersSidebarOpen) {
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(slideAnim, {
-        toValue: 320,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [membersSidebarOpen]); // Remove slideAnim from dependencies as it's stable
 
   // Only owners should see the Edit Rules button
   const isOwner = useMemo(() => {
@@ -444,7 +425,7 @@ function WorkspaceScreenContent() {
 
         {/* Header */}
         <WorkspaceHeader
-          title={effectiveWorkspace?.name || 'Workspace'}
+          title={String(effectiveWorkspace?.name || 'Workspace').slice(0, 5)}
           onBack={() => router.push('/(tabs)')}
           onOpenSidebar={() => setSidebarVisible(true)}
           onOpenMembers={() => setMembersSidebarOpen(true)}
@@ -463,39 +444,12 @@ function WorkspaceScreenContent() {
         )}
 
         {/* Spaces toolbar: Search + Create */}
-        <Card style={[styles.sectionCard, { backgroundColor: colors.card }]}>
-          <View style={styles.toolbarContainer}>
-            <View style={styles.searchContainer}>
-              <View style={[styles.searchIcon, { backgroundColor: colors.background }]}>
-                <FontAwesome name="search" size={16} color={colors['muted-foreground']} />
-              </View>
-              <TextInput
-                value={spaceSearch}
-                onChangeText={setSpaceSearch}
-                placeholder="Search spaces..."
-                placeholderTextColor={colors['muted-foreground']}
-                style={[styles.searchInput, { color: colors.foreground, backgroundColor: colors.background }]}
-              />
-              {spaceSearch.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => setSpaceSearch('')}
-                  style={[styles.clearButton, { backgroundColor: colors.muted }]}
-                >
-                  <FontAwesome name="times" size={12} color={colors['muted-foreground']} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <TouchableOpacity 
-              onPress={handleCreateSpacePress} 
-              style={[styles.createButton, { backgroundColor: colors.primary }]}
-            >
-              <FontAwesome name="plus" size={16} color={colors['primary-foreground']} />
-              <Text style={[TextStyles.body.medium, { color: colors['primary-foreground'], fontWeight: '600', marginLeft: 6 }]}>
-                Create Space
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
+        <WorkspaceToolbar
+          value={spaceSearch}
+          onChange={setSpaceSearch}
+          onClear={() => setSpaceSearch('')}
+          onCreate={handleCreateSpacePress}
+        />
 
         {/* Show selector ONLY if no selected id and no current workspace, and multiple workspaces exist */}
         {!workspaceId && Array.isArray(wsList) && wsList.length > 1 && (
@@ -582,13 +536,12 @@ function WorkspaceScreenContent() {
           />
           
           {/* Sidebar */}
-          <Animated.View 
+          <View 
             style={[
               styles.modalPanel, 
               { 
                 backgroundColor: colors.background, 
                 borderLeftColor: colors.border,
-                transform: [{ translateX: slideAnim }],
               }
             ]}
           >
@@ -762,7 +715,7 @@ function WorkspaceScreenContent() {
               </Card>
             )}
           </ScrollView>
-          </Animated.View>
+          </View>
         </>
       )}
 

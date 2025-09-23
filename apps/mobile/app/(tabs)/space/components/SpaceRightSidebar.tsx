@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { View as RNView, TouchableOpacity, Image, ScrollView, StyleSheet, Animated } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View as RNView, TouchableOpacity, Image, ScrollView, StyleSheet, Platform, StatusBar } from 'react-native';
 import { View, Text, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
@@ -18,7 +18,6 @@ export type SpaceRightSidebarProps = {
   onCleanupInvalidMembers?: () => void; // cleanup invalid members
   onClose?: () => void; // close sidebar
   isVisible?: boolean; // whether sidebar is visible
-  animationDuration?: number; // animation duration in ms
   width?: number; // sidebar width
   canManageMembers?: boolean; // whether current user can manage members
   loading?: boolean; // loading state
@@ -36,31 +35,13 @@ export default function SpaceRightSidebar({
   onCleanupInvalidMembers,
   onClose, 
   isVisible = true,
-  animationDuration = 250,
   width = 320,
   canManageMembers = false,
   loading = false
 }: SpaceRightSidebarProps) {
   const colors = useThemeColors();
   const { showConfirm } = useMobileAlert();
-  const slideAnim = useRef(new Animated.Value(width)).current;
-  
-  // Animation effect
-  useEffect(() => {
-    if (isVisible) {
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: animationDuration,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(slideAnim, {
-        toValue: width,
-        duration: animationDuration,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [isVisible, slideAnim, width, animationDuration]);
+  const topInset = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
 
   // existing space members list (use passed spaceMembers or fallback to space?.members)
   const members: any[] = useMemo(
@@ -207,8 +188,11 @@ export default function SpaceRightSidebar({
     return filtered;
   }, [availableMembers, existingMemberIds, computedOwnerIds]);
 
+  // Local role selection for adding members
+  const [addRole, setAddRole] = React.useState<'viewer' | 'editor' | 'admin'>('viewer');
+
   // Add member handler - adds member to THIS SPECIFIC SPACE only
-  const handleAddMember = async (memberId: string, role: string = 'viewer') => {
+  const handleAddMember = async (memberId: string, role: string = addRole) => {
     if (!memberId || memberId === 'undefined' || memberId === 'null' || memberId === '') {
       console.error('Invalid memberId for addMember:', memberId);
       return;
@@ -266,12 +250,13 @@ export default function SpaceRightSidebar({
       
       {/* Sidebar */}
       {isVisible && (
-        <Animated.View 
+        <RNView 
           style={[
             styles.container,
             {
               width,
-              transform: [{ translateX: slideAnim }],
+              top: topInset + 8,
+              bottom: 0,
             }
           ]}
         >
@@ -316,7 +301,7 @@ export default function SpaceRightSidebar({
                   onPress={onCleanupInvalidMembers}
                   style={[styles.cleanupButton, { backgroundColor: colors.destructive + '15', borderColor: colors.destructive + '30' }]}
                 >
-                  <FontAwesome name="broom" size={12} color={colors.destructive} />
+                  <FontAwesome name="trash" size={12} color={colors.destructive} />
                   <Text style={[TextStyles.caption.small, { color: colors.destructive, marginLeft: 4, fontWeight: '500' }]}>Cleanup</Text>
                 </TouchableOpacity>
               )}
@@ -337,16 +322,17 @@ export default function SpaceRightSidebar({
           ) : (
             <View style={styles.memberList}>
               {visibleMembersUnique.map((m: any, index: number) => {
-                const id = getMemberId(m) || `member-${index}`;
+                const uid = getMemberId(m);
+                const reactKey = `member-${uid || index}`;
                 const name = m?.name || m?.user?.name || 'User';
                 const email = m?.user?.email || m?.email || '';
                 const avatar = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
-                const isOwner = computedOwnerIds.has(id) || spaceMemberOwnerIds.has(id);
+                const isOwner = uid ? (computedOwnerIds.has(uid) || spaceMemberOwnerIds.has(uid)) : false;
                 const role = isOwner ? 'owner' : (m?.role || 'member');
                 const letter = String(name).charAt(0).toUpperCase();
                 
                 return (
-                  <View key={id} style={[styles.memberItem, { backgroundColor: colors.background, borderColor: colors.border }]}> 
+                  <View key={reactKey} style={[styles.memberItem, { backgroundColor: colors.background, borderColor: colors.border }]}> 
                     {avatar ? (
                       <Image source={{ uri: avatar }} style={styles.avatarImg} />
                     ) : (
@@ -363,7 +349,7 @@ export default function SpaceRightSidebar({
                       )}
                       <Text style={[TextStyles.caption.small, { color: colors.primary }]}>{role}</Text>
                     </View>
-                    {canManageMembers && !isOwner && id !== currentUserId && (
+                    {canManageMembers && !isOwner && uid && uid !== currentUserId && (
                       <TouchableOpacity
                         onPress={() => handleRemoveMember(m)}
                         style={[styles.removeButton, { backgroundColor: colors.destructive }]}
@@ -404,16 +390,31 @@ export default function SpaceRightSidebar({
               </View>
             ) : (
               <View style={styles.candidateList}>
+                {/* Role selection row */}
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                  {(['viewer','editor','admin'] as const).map(r => (
+                    <TouchableOpacity
+                      key={r}
+                      onPress={() => setAddRole(r)}
+                      style={[styles.pill, { borderColor: colors.border, backgroundColor: addRole === r ? colors.primary + '15' : colors.background }]}
+                    >
+                      <Text style={[TextStyles.caption.small, { color: addRole === r ? colors.primary : colors['muted-foreground'], fontWeight: '600' }]}>
+                        {r}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
                 {candidates.slice(0, 5).map((m: any, index: number) => {
-                  const memberId = String(m?._id || m?.id || `candidate-${index}`); // Member record ID for key
+                  const memberRecordId = m?._id || m?.id;
                   const userId = String(m?.user?._id || m?.user?.id || ''); // User ID for API call
+                  const reactKey = `candidate-${userId || memberRecordId || index}`;
                   const name = m?.name || m?.user?.name || 'User';
                   const email = m?.user?.email || m?.email || '';
                   const avatar = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
                   const letter = String(name).charAt(0).toUpperCase();
                   
                   return (
-                    <View key={memberId} style={[styles.candidateItem, { backgroundColor: colors.background, borderColor: colors.border }]}> 
+                    <View key={reactKey} style={[styles.candidateItem, { backgroundColor: colors.background, borderColor: colors.border }]}> 
                       {avatar ? (
                         <Image source={{ uri: avatar }} style={styles.avatarImg} />
                       ) : (
@@ -429,11 +430,11 @@ export default function SpaceRightSidebar({
                         <Text style={[TextStyles.caption.small, { color: colors.primary }]}>{m.role || 'member'}</Text>
                       </View>
                       <TouchableOpacity
-                        onPress={() => handleAddMember(userId, 'viewer')}
+                        onPress={() => handleAddMember(userId)}
                         style={[styles.addButton, { backgroundColor: colors.primary }]}
                       >
                         <FontAwesome name="user-plus" size={12} color={colors['primary-foreground']} />
-                        <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'], fontWeight: '500' }]}>Add to Space</Text>
+                        <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'], fontWeight: '500' }]}>Add as {addRole}</Text>
                       </TouchableOpacity>
                     </View>
                   );
@@ -448,7 +449,7 @@ export default function SpaceRightSidebar({
           </Card>
         )}
       </ScrollView>
-        </Animated.View>
+        </RNView>
       )}
 
     </>
@@ -469,7 +470,7 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     backgroundColor: 'transparent',
-    height: '100%',
+    height: 'auto',
     zIndex: 1001,
     shadowColor: '#000',
     shadowOffset: { width: -4, height: 0 },

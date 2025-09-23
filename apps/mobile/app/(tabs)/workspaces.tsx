@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, TextInput } from 'react-native';
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
@@ -31,7 +31,7 @@ function WorkspacesScreenContent() {
     const seen = new Set<string>();
     const uniqueWorkspaces: any[] = [];
     for (const workspace of rawWorkspaces) {
-      const id = String(workspace?._id || workspace?.id || '');
+      const id = String((workspace as any)?._id || (workspace as any)?.id || '');
       if (!id || seen.has(id)) continue;
       seen.add(id);
       uniqueWorkspaces.push(workspace);

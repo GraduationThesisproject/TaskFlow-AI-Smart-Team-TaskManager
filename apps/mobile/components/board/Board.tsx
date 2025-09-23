@@ -24,7 +24,9 @@ import {
   Grid3X3,
   Filter,
   Search,
+  ArrowLeft,
 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { View, Text } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { useAppDispatch, useAppSelector } from '@/store';
@@ -65,6 +67,7 @@ export const Board: React.FC<BoardProps> = ({
   const dispatch = useAppDispatch();
   const colors = useThemeColors();
   const scrollViewRef = useRef<ScrollView>(null);
+  const router = useRouter();
 
   // Redux state
   const board = useAppSelector(selectBoard);
@@ -169,13 +172,13 @@ export const Board: React.FC<BoardProps> = ({
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Add',
-            onPress: (title) => {
-              if (title) {
+            onPress: (title?: string) => {
+              if (typeof title === 'string' && title.trim().length > 0) {
                 dispatch(
                   addTask({
                     columnId,
                     task: {
-                      title,
+                      title: title.trim(),
                       status: 'todo',
                       priority: 'medium',
                       assignees: [],
@@ -281,6 +284,9 @@ export const Board: React.FC<BoardProps> = ({
           </View>
 
           <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.iconButton} onPress={() => router.replace('/(tabs)/space/main')} accessibilityLabel="Back to space">
+              <ArrowLeft size={20} color={colors['muted-foreground']} />
+            </TouchableOpacity>
             {showFilters && (
               <TouchableOpacity style={styles.iconButton}>
                 <Filter size={20} color={colors['muted-foreground']} />

@@ -84,16 +84,23 @@ export default function BoardCard({ board, onPress, style, onToggleArchive }: Bo
             <RNView style={styles.iconContainer}>
               <FontAwesome
                 name={getBoardIcon(boardType)}
-                size={24}
+                size={22}
                 color="white"
               />
             </RNView>
-            {!!bgImage && <RNView style={styles.headerOverlay} />}
+            {!!bgImage && <RNView pointerEvents="none" style={styles.headerOverlay} />}
             {!!onToggleArchive && (
               <TouchableOpacity
-                onPress={() => onToggleArchive(board)}
+                onPress={(e: any) => {
+                  // Prevent parent TouchableOpacity from firing
+                  if (e && typeof e.stopPropagation === 'function') {
+                    e.stopPropagation();
+                  }
+                  onToggleArchive(board);
+                }}
                 style={[styles.headerActionBtn, { backgroundColor: 'rgba(0,0,0,0.25)', borderColor: 'rgba(255,255,255,0.35)' }]}
                 accessibilityLabel={isArchived ? 'Restore board' : 'Archive board'}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <FontAwesome name={isArchived ? 'undo' : 'archive'} size={12} color="#fff" />
               </TouchableOpacity>
@@ -103,9 +110,27 @@ export default function BoardCard({ board, onPress, style, onToggleArchive }: Bo
 
         {/* Enhanced Content */}
         <RNView style={styles.contentContainer}>
-          <Text style={[TextStyles.body.medium, { color: colors.foreground, fontWeight: '700' }]} numberOfLines={2}>
-            {board?.name || 'Untitled Board'}
-          </Text>
+          {/* Title row with status */}
+          <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text
+              style={[TextStyles.body.medium, { color: colors.foreground, fontWeight: '700' }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {(board?.name ? String(board.name) : 'Untitled Board').slice(0, 5)}{(board?.name && String(board.name).length > 5) ? '…' : ''}
+            </Text>
+            <RNView style={[styles.statusChipInline, { backgroundColor: (isArchived ? colors.warning : colors.success) + '15' }]}> 
+              <FontAwesome
+                name={isArchived ? 'archive' : 'check'}
+                size={10}
+                color={isArchived ? colors.warning : colors.success}
+                style={{ marginRight: 4 }}
+              />
+              <Text style={[TextStyles.caption.small, { color: isArchived ? colors.warning : colors.success, fontWeight: '600' }]}> 
+                {isArchived ? 'Archived' : 'Active'}
+              </Text>
+            </RNView>
+          </RNView>
 
           {/* Enhanced Meta Section */}
           <RNView style={[styles.tileMeta, { borderTopColor: colors.border + '40' }]}> 
@@ -121,7 +146,7 @@ export default function BoardCard({ board, onPress, style, onToggleArchive }: Bo
               </Text>
             </RNView>
             
-            {board?.taskCount !== undefined && (
+            {typeof board?.taskCount === 'number' && (
               <RNView style={[styles.taskChip, { backgroundColor: colors.muted + '30' }]}>
                 <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], fontWeight: '500' }]}>
                   📋 {board.taskCount} tasks
@@ -143,18 +168,7 @@ export default function BoardCard({ board, onPress, style, onToggleArchive }: Bo
               </RNView>
             )}
 
-            {/* Status Chip (Active / Archived) */}
-            <RNView style={[styles.statusChip, { backgroundColor: (isArchived ? colors.warning : colors.success) + '15' }]}>
-              <FontAwesome
-                name={isArchived ? 'archive' : 'check'}
-                size={10}
-                color={isArchived ? colors.warning : colors.success}
-                style={{ marginRight: 4 }}
-              />
-              <Text style={[TextStyles.caption.small, { color: isArchived ? colors.warning : colors.success, fontWeight: '600' }]}> 
-                {isArchived ? 'Archived' : 'Active'}
-              </Text>
-            </RNView>
+            
           </RNView>
         </RNView>
       </Card>
@@ -186,9 +200,9 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -254,6 +268,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 10,
     minHeight: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusChipInline: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    minHeight: 20,
     flexDirection: 'row',
     alignItems: 'center',
   },

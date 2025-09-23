@@ -104,10 +104,12 @@ testNamespace.on('connection', (socket) => {
 
 // Start server
 server.listen(PORT, '0.0.0.0', () => {
+    const { getNetworkConfig } = require('./utils/network-detector');
+    const net = getNetworkConfig();
     logger.info(`🚀 TaskFlow API server running on port ${PORT}`);
     logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
     logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
-    logger.info(`🌐 Network access: http://10.208.47.13:${PORT}/health`);
+    logger.info(`🌐 Network access: http://${net.localIP}:${PORT}/health`);
 });
 
 // Periodic cleanup: permanently delete archived workspaces whose countdown reached 0

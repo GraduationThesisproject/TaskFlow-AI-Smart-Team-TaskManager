@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, View as RNView } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { StyleSheet, ScrollView, TouchableOpacity, View as RNView, Platform, StatusBar } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { View, Text, Card } from '@/components/Themed';
@@ -9,22 +9,29 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import BoardCard from '@/components/common/BoardCard';
 import { BoardService } from '@/services/boardService';
-import SpaceHeader from '@/app/(tabs)/space/components/SpaceHeader';
+import { MobileAlertProvider, useMobileAlert } from '@/components/common/MobileAlertProvider';
+import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import BoardSearch from './components/BoardSearch';
+import GridBoards from './components/GridBoards';
 
-export default function AllBoardsScreen() {
+function AllBoardsContent() {
   const colors = useThemeColors();
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
   const dispatch = useAppDispatch();
   const { loadSpaces } = useWorkspaces({ autoFetch: false });
+  const { showConfirm } = useMobileAlert();
+  const { showSuccess, showError, showWarning } = useBanner();
+  
+  const topInset = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
 
   const { selectedSpace } = useAppSelector((s: any) => s.workspace);
   const space = selectedSpace;
 
-  const [refreshing, setRefreshing] = useState(false);
   const [boards, setBoards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [boardSearch, setBoardSearch] = useState('');
 
   // Fetch space (defensive)
   useEffect(() => {
@@ -42,7 +49,6 @@ export default function AllBoardsScreen() {
     const sid = String(space?._id || space?.id || params?.id || '').trim();
     if (!sid) return;
     setLoading(true);
-    setError(null);
     try {
       const resp = await BoardService.getBoardsBySpace(sid);
       const payload: any = resp;
@@ -57,7 +63,7 @@ export default function AllBoardsScreen() {
         : [];
       setBoards(list || []);
     } catch (e: any) {
-      setError(e?.message || 'Failed to load boards');
+      // Ignore errors in UI per requirements
     } finally {
       setLoading(false);
     }
@@ -67,10 +73,48 @@ export default function AllBoardsScreen() {
     loadBoards();
   }, [loadBoards]);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    try { await loadBoards(); } finally { setRefreshing(false); }
-  };
+  const filteredBoards = useMemo(() => {
+    const q = (boardSearch || '').trim().toLowerCase();
+    if (!q) return boards;
+    return boards.filter((b: any) => String(b?.name || '').toLowerCase().includes(q) || String(b?.description || '').toLowerCase().includes(q));
+  }, [boardSearch, boards]);
+
+  const handlePressBoard = useCallback((board: any) => {
+    router.push(`/(tabs)/board?boardId=${board._id || board.id}&boardName=${encodeURIComponent(board.name || 'Board')}`);
+  }, [router]);
+
+  const isBoardArchived = useCallback((b: any): boolean => {
+    const status = String(b?.status || '').toLowerCase();
+    return b?.archived === true || b?.isArchived === true || status === 'archived' || status === 'inactive';
+  }, []);
+
+  const archivingIdsRef = React.useRef<Set<string>>(new Set());
+
+  const handleToggleArchive = useCallback((board: any) => {
+    const id = board?._id || board?.id;
+    if (!id) return;
+    if (archivingIdsRef.current.has(String(id))) {
+      return;
+    }
+    const archived = isBoardArchived(board);
+    const nextAction = archived ? 'restore' : 'archive';
+    showConfirm(
+      `${archived ? 'Restore' : 'Archive'} Board`,
+      `Are you sure you want to ${nextAction} "${board?.name || 'this board'}"?`,
+      async () => {
+        try {
+          archivingIdsRef.current.add(String(id));
+          const resp = archived ? await BoardService.unarchiveBoard(id) : await BoardService.archiveBoard(id);
+          showSuccess(archived ? 'Board restored successfully!' : 'Board archived successfully!');
+          await loadBoards();
+        } catch (e: any) {
+          showError(e?.response?.data?.message || e?.message || `Failed to ${nextAction} board`);
+        } finally {
+          archivingIdsRef.current.delete(String(id));
+        }
+      }
+    );
+  }, [isBoardArchived, showConfirm, showSuccess, showError, loadBoards]);
 
   // 3-column grid sizing
   const [gridWidth, setGridWidth] = useState(0);
@@ -82,67 +126,51 @@ export default function AllBoardsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}> 
-      {/* Match SpaceBoardsScreen header */}
-      <SpaceHeader
-        space={{
-          ...space,
-          totalBoards: Array.isArray(boards) ? boards.length : (space?.totalBoards || space?.stats?.totalBoards || 0),
-          stats: { ...(space?.stats || {}), totalBoards: Array.isArray(boards) ? boards.length : (space?.stats?.totalBoards || 0) },
-        }}
-        onBackToWorkspace={() => router.push('/(tabs)/workspace')}
-        onSettings={() => router.push('/workspace/space/settings')}
-      />
+      {/* Minimal header: back only */}
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border, paddingTop: 28 + topInset }]}>
+        <TouchableOpacity
+          onPress={() => router.push('/(tabs)/space/main')}
+          style={[styles.backBtn, { backgroundColor: colors.background }]}
+          accessibilityLabel="Back to space"
+        >
+          <FontAwesome name="arrow-left" size={18} color={colors.primary} />
+        </TouchableOpacity>
+        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>All Boards</Text>
+        <RNView style={{ width: 44 }} />
+      </View>
 
-      <ScrollView
-        style={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {!!error && (
-          <Card style={[styles.errorCard, { backgroundColor: colors.destructive }]}> 
-            <Text style={[TextStyles.body.medium, { color: colors['destructive-foreground'] }]}>{error}</Text>
-          </Card>
-        )}
-        {loading && !refreshing ? (
-          <View style={styles.centerBox}>
-            <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading boards…</Text>
-          </View>
-        ) : null}
+      {/* Search */}
+      <BoardSearch value={boardSearch} onChange={setBoardSearch} />
 
-        {!loading && (!boards || boards.length === 0) ? (
-          <Card style={[styles.emptyCard, { backgroundColor: colors.card }]}> 
-            <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'], marginBottom: 12 }]}>No boards yet. Here is a preview of how your board will look.</Text>
-            {/* Preview board UI (match SpaceBoardsScreen) */}
-            <RNView style={[styles.previewBoard, { borderColor: colors.border, backgroundColor: colors.background }]}> 
-              {['To do', 'In progress', 'Done'].map((col) => (
-                <RNView key={col} style={styles.previewColumn}> 
-                  <Text style={[TextStyles.caption.small, { color: colors.foreground, marginBottom: 6 }]} numberOfLines={1}>{col}</Text>
-                  <RNView style={[styles.previewCard, { backgroundColor: colors.card, borderColor: colors.border }]} />
-                  <RNView style={[styles.previewCard, { backgroundColor: colors.card, borderColor: colors.border }]} />
-                </RNView>
-              ))}
-            </RNView>
-          </Card>
-        ) : (
-          <RNView
-            style={styles.boardGrid}
-            onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}
-          >
-            {boards.map((b: any) => (
-              <BoardCard
-                key={b._id || b.id}
-                board={b}
-                style={[styles.gridItem, itemWidth ? { width: itemWidth } : null]}
-              />
-            ))}
-          </RNView>
-        )}
+      {/* Boards Grid */}
+      <ScrollView style={styles.content}>
+        <RNView onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
+          <GridBoards
+            boards={filteredBoards}
+            itemWidth={itemWidth}
+            onPressBoard={handlePressBoard}
+            onToggleArchive={handleToggleArchive}
+          />
+        </RNView>
       </ScrollView>
     </View>
   );
 }
 
+export default function AllBoardsScreen() {
+  return (
+    <BannerProvider>
+      <MobileAlertProvider>
+        <AllBoardsContent />
+      </MobileAlertProvider>
+    </BannerProvider>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+  backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   content: { flex: 1, padding: 16 },
   centerBox: { padding: 24, alignItems: 'center', justifyContent: 'center' },
   errorCard: { padding: 16, margin: 16, borderRadius: 12 },

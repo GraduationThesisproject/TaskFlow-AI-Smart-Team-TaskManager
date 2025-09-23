@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, useWindowDimensions, View as RNView, Modal, Pressable, TextInput, Switch, ActivityIndicator, Image, Animated } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, useWindowDimensions, View as RNView, Modal, Pressable, TextInput, Switch, ActivityIndicator, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { View, Text, Card } from '@/components/Themed';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import GridBoards from '@/components/space/GridBoards';
-import BoardSearch from '@/components/space/BoardSearch';
+import GridBoards from './components/GridBoards';
+import BoardSearch from './components/BoardSearch';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchMembers } from '@/store/slices/workspaceSlice';
@@ -15,13 +15,15 @@ import { useBoards } from '@/hooks/useBoards';
 import { useBoards as useBoardsShared } from '../../../../main/src/hooks/useBoards';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useSpaces as useSpacesHook } from '@/hooks/useSpaces';
-import SpaceHeader from '@/components/space/SpaceHeader';
-import SpaceRightSidebar from '@/components/space/SpaceRightSidebar';
+import SpaceHeader from './components/SpaceHeader';
+import SpaceRightSidebar from './components/SpaceRightSidebar';
 import Sidebar from '@/components/navigation/Sidebar';
 import { MobileAlertProvider, useMobileAlert } from '@/components/common/MobileAlertProvider';
 import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 import CreateSpaceModal from '@/components/common/CreateSpaceModal';
 import CreateBoardModal from '@/components/common/CreateBoardModal';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import EmptyState from '@/components/common/EmptyState';
 
 function SpaceMainScreenContent() {
   const colors = useThemeColors();
@@ -55,6 +57,8 @@ function SpaceMainScreenContent() {
   
   const { loadSpaces } = useWorkspaces({ autoFetch: false });
   const { boards: boardsFromHook, loadBoardsBySpace, editBoard } = useBoards();
+  const stableEditBoard = useCallback(editBoard, [editBoard]);
+  const stableLoadBoards = useCallback((force: boolean) => loadBoards(force), []);
 
   // Include all members (including owner). We'll prevent adding yourself via UI guards.
   const displayMembers = useMemo(() => {
@@ -334,10 +338,12 @@ function SpaceMainScreenContent() {
       ? boardsFromHook
       : (Array.isArray(boards) ? boards : []);
     const q = (boardSearch || '').trim().toLowerCase();
-    const filtered = q
-      ? list.filter((b: any) => String(b?.name || '').toLowerCase().includes(q) || String(b?.description || '').toLowerCase().includes(q))
-      : list;
-    return filtered;
+    if (!q) return list;
+    return list.filter((b: any) => {
+      const name = String(b?.name || '').toLowerCase();
+      const desc = String(b?.description || '').toLowerCase();
+      return name.includes(q) || desc.includes(q);
+    });
   }, [boardsFromHook, boards, boardSearch]);
 
   const totalBoardsCount = useMemo(() => {
@@ -362,9 +368,16 @@ function SpaceMainScreenContent() {
     return b?.archived === true || b?.isArchived === true || status === 'archived' || status === 'inactive';
   }, []);
 
+  // Prevent double submissions per board
+  const archivingIdsRef = useRef<Set<string>>(new Set());
+
   const handleArchiveBoard = useCallback((board: any) => {
     const id = board?._id || board?.id;
     if (!id) return;
+    // Skip if already processing this board
+    if (archivingIdsRef.current.has(String(id))) {
+      return;
+    }
     const archived = isBoardArchived(board);
     const nextAction = archived ? 'restore' : 'archive';
     showConfirm(
@@ -372,15 +385,18 @@ function SpaceMainScreenContent() {
       `Are you sure you want to ${nextAction} "${board?.name || 'this board'}"?`,
       async () => {
         try {
-          await editBoard(id as string, { archived: !archived } as any);
+          archivingIdsRef.current.add(String(id));
+          await stableEditBoard(id as string, { archived: !archived } as any);
           showBannerSuccess(archived ? 'Board restored successfully!' : 'Board archived successfully!');
-          await loadBoards(true);
+          await stableLoadBoards(true);
         } catch (e: any) {
           showBannerError(e?.response?.data?.message || e?.message || `Failed to ${nextAction} board`);
+        } finally {
+          archivingIdsRef.current.delete(String(id));
         }
       }
     );
-  }, [isBoardArchived, showConfirm, showBannerSuccess, showBannerError, loadBoardsBySpace, editBoard]);
+  }, [isBoardArchived, showConfirm, showBannerSuccess, showBannerError, stableLoadBoards, stableEditBoard]);
 
   const preventOpenIfArchived = useCallback((board: any) => {
     if (isBoardArchived(board)) {
@@ -539,14 +555,15 @@ function SpaceMainScreenContent() {
 
   // Simple handlers used by SpaceHeader/Sidebar
   const goMembers = useCallback(() => {
-    // console.log('🎯 goMembers called');
-    // Toggle the space members sidebar
-    setSidebarVisible(!sidebarVisible);
-  }, [sidebarVisible]);
+    setSidebarVisible((prev) => !prev);
+  }, []);
   
   const goSettings = useCallback(() => {
-    // console.log('🎯 goSettings called');
-    router.push('/workspace/space/settings');
+    router.replace('/(tabs)/space/settings');
+  }, [router]);
+
+  const goBoards = useCallback(() => {
+    router.push('/(tabs)/space/allboards');
   }, [router]);
 
   // Member management functions - adds member to THIS SPECIFIC SPACE only
@@ -829,29 +846,15 @@ function SpaceMainScreenContent() {
               </Card>
             )}
             {loading && !refreshing ? (
-              <View style={styles.centerBox}>
-                <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading boards…</Text>
-              </View>
+              <LoadingSpinner fullScreen={false} text="Loading boards…" />
             ) : null}
             {!loading && (!boards || boards.length === 0) ? (
-              <Card style={[styles.emptyCard, { backgroundColor: colors.card }]}> 
-                <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'], marginBottom: 12 }]}>No boards yet. Here is a preview of how your board will look.</Text>
-                {/* Preview board UI */}
-                <RNView style={[styles.previewBoard, { borderColor: colors.border, backgroundColor: colors.background }]}> 
-                  {/* Columns */}
-                  {['To do', 'In progress', 'Done'].map((col) => (
-                    <RNView key={col} style={styles.previewColumn}> 
-                      <Text style={[TextStyles.caption.small, { color: colors.foreground, marginBottom: 6 }]} numberOfLines={1}>{col}</Text>
-                      {/* Cards */}
-                      <RNView style={[styles.previewCard, { backgroundColor: colors.card, borderColor: colors.border }]} />
-                      <RNView style={[styles.previewCard, { backgroundColor: colors.card, borderColor: colors.border }]} />
-                    </RNView>
-                  ))}
-                </RNView>
-                <TouchableOpacity onPress={openCreateBoard} style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 16 }]}> 
-                  <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>Create your first board</Text>
-                </TouchableOpacity>
-              </Card>
+              <EmptyState
+                title="No boards yet"
+                description="Create your first board to get started."
+                actionText="Create board"
+                onAction={openCreateBoard}
+              />
             ) : null}
           </ScrollView>
         </View>
@@ -999,6 +1002,7 @@ function SpaceMainScreenContent() {
           onCreateBoard={openCreateBoard}
           onMembers={goMembers}
           onSettings={goSettings}
+          onGoBoards={goBoards}
           onBackToWorkspace={() => router.push('/(tabs)/workspace')}
         />
         <BoardSearch value={boardSearch} onChange={setBoardSearch} />
@@ -1022,7 +1026,7 @@ function SpaceMainScreenContent() {
                 <GridBoards
                   boards={filteredBoards}
                   itemWidth={itemWidth}
-                  onPressBoard={(b) => {
+                  onPressBoard={(b: any) => {
                     const archived = isBoardArchived(b);
                     if (archived) {
                       showWarning('This board is archived. Restore it to access.');
@@ -1056,7 +1060,7 @@ function SpaceMainScreenContent() {
         )}
         {/* View more button (phone) */}
         {!loading && Array.isArray(boards) && boards.length > VISIBLE_MAX && (
-          <TouchableOpacity onPress={() => router.push('/(tabs)/workspace/space/allboards')} style={[styles.viewMoreBtn, { borderColor: colors.border, alignSelf: 'center', marginTop: 12 }]}> 
+          <TouchableOpacity onPress={() => router.push('/(tabs)/space/allboards')} style={[styles.viewMoreBtn, { borderColor: colors.border, alignSelf: 'center', marginTop: 12 }]}> 
             <Text style={[TextStyles.body.medium, { color: colors.primary }]}>View more</Text>
           </TouchableOpacity>
         )}
@@ -1076,7 +1080,6 @@ function SpaceMainScreenContent() {
         onCleanupInvalidMembers={cleanupInvalidMembers}
         onClose={() => setSidebarVisible(false)}
         isVisible={sidebarVisible}
-        animationDuration={250}
         width={320}
         canManageMembers={canManageMembers}
         loading={loading}
