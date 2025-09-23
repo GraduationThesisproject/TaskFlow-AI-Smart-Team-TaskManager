@@ -16,7 +16,7 @@ interface SpacesLayoutProps {
 const SpacesLayout: React.FC<SpacesLayoutProps> = React.memo(({ currentWorkspace }) => {
   const workspaceId = currentWorkspace?._id;
   const navigate = useNavigate();
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, user } = useAuth();
   const { success, error: showError } = useToast();
 
   // Workspace data
@@ -58,34 +58,111 @@ const SpacesLayout: React.FC<SpacesLayoutProps> = React.memo(({ currentWorkspace
 
   // Get current user's role in this workspace from Redux state
   const currentUserRole = useMemo(() => {
-    return (currentWorkspace as any)?.userRole || null;
+    const role = (currentWorkspace as any)?.userRole || null;
+    console.log('🔍 Current user role:', { role, currentWorkspace: currentWorkspace?.name });
+    return role;
   }, [currentWorkspace?._id, (currentWorkspace as any)?.userRole]);
 
   // Check if user can edit workspace (owner or admin)
   const canEditWorkspace = useMemo(() => {
-    return currentUserRole === 'owner' || currentUserRole === 'admin';
+    const canEdit = currentUserRole === 'owner' || currentUserRole === 'admin';
+    console.log('🔍 Can edit workspace:', { canEdit, currentUserRole });
+    return canEdit;
   }, [currentUserRole]);
+
+  // Function to check if user can edit a specific space
+  const canEditSpace = useCallback((space: any) => {
+    if (!space || !user?.id) return false;
+    
+    // Workspace owners can edit all spaces
+    if (currentUserRole === 'owner') {
+      return true;
+    }
+    
+    // Workspace admins can edit spaces they're members of
+    if (currentUserRole === 'admin') {
+      const isSpaceMember = space.members?.some((member: any) => {
+        const memberUserId = typeof member.user === 'string' ? member.user : member.user?._id;
+        return memberUserId === user.id;
+      });
+      return isSpaceMember;
+    }
+    
+    // Regular users can only edit spaces they're members of
+    const isSpaceMember = space.members?.some((member: any) => {
+      const memberUserId = typeof member.user === 'string' ? member.user : member.user?._id;
+      return memberUserId === user.id;
+    });
+    
+    return isSpaceMember;
+  }, [user?.id, currentUserRole]);
+
+  // Function to check if user can view a specific space
+  const canViewSpace = useCallback((space: any) => {
+    if (!space || !user?.id) return false;
+    
+    console.log('🔍 canViewSpace debug:', {
+      spaceId: space._id,
+      spaceName: space.name,
+      userId: user.id,
+      currentUserRole,
+      workspaceId: currentWorkspace?._id,
+      workspaceRole: currentWorkspace?.userRole
+    });
+    
+    // Workspace owners and admins can view all spaces
+    if (currentUserRole === 'owner' || currentUserRole === 'admin') {
+      console.log('🔍 User is workspace owner/admin - granting view access');
+      return true;
+    }
+    
+    // Regular users can only view spaces they're members of
+    const isSpaceMember = space.members?.some((member: any) => {
+      const memberUserId = typeof member.user === 'string' ? member.user : member.user?._id;
+      return memberUserId === user.id;
+    });
+    
+    console.log('🔍 Space member check:', { isSpaceMember, spaceMembers: space.members?.length });
+    return isSpaceMember;
+  }, [user?.id, currentUserRole, currentWorkspace?._id, currentWorkspace?.userRole]);
 
   // Get spaces based on current tab and workspace
   const currentSpaces = useMemo(() => {
     if (!workspaceId) return [];
     if (activeTab === 'active') {
-      return getActiveSpacesByWorkspace(workspaceId);
+      const activeSpaces = getActiveSpacesByWorkspace(workspaceId);
+      console.log('🔍 Active spaces:', activeSpaces.map(s => ({ id: s._id, name: s.name, isArchived: s.isArchived })));
+      return activeSpaces;
     } else {
-      return getArchivedSpacesByWorkspace(workspaceId);
+      const archivedSpaces = getArchivedSpacesByWorkspace(workspaceId);
+      console.log('🔍 Archived spaces:', archivedSpaces.map(s => ({ id: s._id, name: s.name, isArchived: s.isArchived })));
+      return archivedSpaces;
     }
   }, [workspaceId, activeTab, getActiveSpacesByWorkspace, getArchivedSpacesByWorkspace]);
 
   const filteredSpaces = useMemo(() => {
     if (!currentSpaces || !Array.isArray(currentSpaces)) return [];
-    return currentSpaces.filter(space =>
+    const filtered = currentSpaces.filter(space =>
       space.name && space.name.toLowerCase().includes(search.toLowerCase())
     );
-  }, [currentSpaces, search]);
+    console.log('🔍 Filtered spaces:', {
+      activeTab,
+      currentSpacesLength: currentSpaces.length,
+      filteredLength: filtered.length,
+      spaces: filtered.map(s => ({ id: s._id, name: s.name, isArchived: s.isArchived, isActive: s.isActive }))
+    });
+    return filtered;
+  }, [currentSpaces, search, activeTab]);
 
   // Handlers
   const handleCreateSpace = useCallback(async () => {
     if (!newSpaceName.trim() || !workspaceId) return;
+    
+    // Check if user has permission to create spaces
+    if (!canEditWorkspace) {
+      showError('Only workspace owners and admins can create spaces');
+      return;
+    }
     
     setIsCreatingSpaceLoading(true);
     try {
@@ -105,7 +182,7 @@ const SpacesLayout: React.FC<SpacesLayoutProps> = React.memo(({ currentWorkspace
     } finally {
       setIsCreatingSpaceLoading(false);
     }
-  }, [newSpaceName, workspaceId, addSpace, loadSpacesByWorkspace, success, showError]);
+  }, [newSpaceName, workspaceId, addSpace, loadSpacesByWorkspace, success, showError, canEditWorkspace]);
 
   const handleCancelCreateSpace = useCallback(() => {
     setNewSpaceName('');
@@ -113,37 +190,160 @@ const SpacesLayout: React.FC<SpacesLayoutProps> = React.memo(({ currentWorkspace
   }, []);
 
   const handleArchiveSpace = useCallback(async (spaceId: string) => {
+    // Check if user has permission to archive spaces
+    if (!canEditWorkspace) {
+      showError('Only workspace owners and admins can archive spaces');
+      return;
+    }
+    
     try {
       await archiveSpaceById(spaceId);
       // Refresh spaces after archiving
       if (workspaceId) {
         loadSpacesByWorkspace(workspaceId);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to archive space:', error);
+      
+      // Handle specific error types
+      if (error.response?.status === 403) {
+        showError('Access denied. You do not have permission to archive this space.');
+      } else if (error.response?.status === 404) {
+        showError('Space not found.');
+      } else {
+        showError(`Failed to archive space: ${error.message || 'Unknown error'}`);
+      }
+      
       throw error;
     }
-  }, [archiveSpaceById, workspaceId, loadSpacesByWorkspace]);
+  }, [archiveSpaceById, workspaceId, loadSpacesByWorkspace, showError, canEditWorkspace]);
 
   const handleUnarchiveSpace = useCallback(async (spaceId: string) => {
+    // Check if user has permission to unarchive spaces
+    if (!canEditWorkspace) {
+      showError('Only workspace owners and admins can unarchive spaces');
+      return;
+    }
+    
     try {
       await unarchiveSpaceById(spaceId);
       // Refresh spaces after unarchiving
       if (workspaceId) {
         loadSpacesByWorkspace(workspaceId);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to unarchive space:', error);
+      
+      // Handle specific error types
+      if (error.response?.status === 403) {
+        showError('Access denied. You do not have permission to unarchive this space.');
+      } else if (error.response?.status === 404) {
+        showError('Space not found.');
+      } else {
+        showError(`Failed to unarchive space: ${error.message || 'Unknown error'}`);
+      }
+      
       throw error;
     }
-  }, [unarchiveSpaceById, workspaceId, loadSpacesByWorkspace]);
+  }, [unarchiveSpaceById, workspaceId, loadSpacesByWorkspace, showError, canEditWorkspace]);
 
-  const handleSpaceClick = useCallback((space: any) => {
+  const handleDeleteSpace = useCallback(async (spaceId: string) => {
+    // Check if user has permission to delete spaces
+    if (!canEditWorkspace) {
+      showError('Only workspace owners and admins can delete spaces');
+      return;
+    }
+    
+    try {
+      await permanentDeleteSpaceById(spaceId);
+      // Refresh spaces after deleting
+      if (workspaceId) {
+        loadSpacesByWorkspace(workspaceId);
+      }
+    } catch (error: any) {
+      console.error('Failed to delete space:', error);
+      
+      // Handle specific error types
+      if (error.response?.status === 403) {
+        showError('Access denied. You do not have permission to delete this space.');
+      } else if (error.response?.status === 404) {
+        showError('Space not found.');
+      } else {
+        showError(`Failed to delete space: ${error.message || 'Unknown error'}`);
+      }
+      
+      throw error;
+    }
+  }, [permanentDeleteSpaceById, workspaceId, loadSpacesByWorkspace, showError, canEditWorkspace]);
+
+  const handleSpaceClick = useCallback(async (space: any) => {
+    console.log('🔍 Space click debug:', {
+      spaceId: space._id,
+      spaceName: space.name,
+      userId: user?.id,
+      spaceMembers: space.members,
+      membersLength: space.members?.length,
+      currentWorkspaceRole: currentWorkspace?.userRole,
+      currentWorkspaceId: currentWorkspace?._id
+    });
+    
+    // Check if user can view this space
+    const hasViewPermission = canViewSpace(space);
+    console.log('🔍 View permission check:', { 
+      hasViewPermission, 
+      spaceId: space._id, 
+      spaceName: space.name,
+      userRole: currentUserRole,
+      workspaceRole: currentWorkspace?.userRole,
+      workspaceId: currentWorkspace?._id
+    });
+    
+    try {
+      // If user doesn't have view permission, try API check as fallback
+      let hasPermission = hasViewPermission;
+      
+      if (!hasPermission) {
+        console.log('🔍 No view permission found, checking via API...');
+        try {
+          const { SpaceService } = await import('../../services/spaceService');
+          await SpaceService.getSpace(space._id);
+          // If we get here, user has permission
+          hasPermission = true;
+          console.log('🔍 Permission check passed via API call');
+        } catch (apiError: any) {
+          console.log('🔍 Permission check failed via API call:', apiError);
+          hasPermission = false;
+        }
+      }
+        
+      // If user doesn't have permission, show error and return early
+      if (!hasPermission) {
+        console.log('🔍 No permission - showing error and staying on workspace page');
+        showError('Access denied. You do not have permission to view this space.');
+        return; // Don't navigate, stay on workspace page
+      }
+      
+      // Double-check: Only proceed if user has permission
+      if (hasPermission) {
+        console.log('🔍 Permission granted - proceeding with navigation');
+        
     // Set the current space in Redux state
     selectSpace(space);
+        
     // Navigate to the space page
     navigate('/space');
-  }, [selectSpace, navigate]);
+      } else {
+        console.log('🔍 Permission denied - staying on workspace page');
+        showError('Access denied. You do not have permission to view this space.');
+        return;
+      }
+      
+    } catch (error: any) {
+      console.error('Failed to access space:', error);
+      showError('Access denied. You do not have permission to view this space.');
+      // Don't navigate, stay on workspace page
+    }
+  }, [selectSpace, navigate, showError, user?.id]);
 
   // Clear spaces data when workspace changes
   React.useEffect(() => {
@@ -359,7 +559,7 @@ const SpacesLayout: React.FC<SpacesLayoutProps> = React.memo(({ currentWorkspace
               </Button>
             )}
 
-            {isCreatingSpace && (
+            {isCreatingSpace && canEditWorkspace && (
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -405,6 +605,18 @@ const SpacesLayout: React.FC<SpacesLayoutProps> = React.memo(({ currentWorkspace
               </div>
             )}
           </div>
+
+          {/* Permission Notice for Regular Members */}
+          {!canEditWorkspace && (
+            <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 text-sm">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <span>You have view-only access. Only workspace owners and admins can create, archive, or delete spaces.</span>
+              </div>
+            </div>
+          )}
 
           {/* Spaces Tabs */}
           <div className="w-full">
@@ -453,8 +665,10 @@ const SpacesLayout: React.FC<SpacesLayoutProps> = React.memo(({ currentWorkspace
                   onAddSpace={() => setIsCreatingSpace(true)}
                   onArchive={handleArchiveSpace}
                   onUnarchive={handleUnarchiveSpace}
-                  onPermanentDelete={permanentDeleteSpaceById}
+                  onPermanentDelete={handleDeleteSpace}
                   showArchiveActions={canEditWorkspace}
+                  canEditSpace={canEditSpace}
+                  canViewSpace={canViewSpace}
                   onSpaceClick={handleSpaceClick}
                   viewMode={viewMode}
                 />
@@ -463,6 +677,12 @@ const SpacesLayout: React.FC<SpacesLayoutProps> = React.memo(({ currentWorkspace
 
             {activeTab === 'archived' && (
               <div className="mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                {console.log('🔍 Archived tab props:', {
+                  activeTab,
+                  canEditWorkspace,
+                  filteredSpacesLength: filteredSpaces.length,
+                  currentUserRole
+                })}
                 <SpaceTable
                   filteredSpaces={filteredSpaces}
                   isLoading={spacesLoading}
@@ -470,8 +690,10 @@ const SpacesLayout: React.FC<SpacesLayoutProps> = React.memo(({ currentWorkspace
                   onRemove={() => {}}
                   onArchive={handleArchiveSpace}
                   onUnarchive={handleUnarchiveSpace}
-                  onPermanentDelete={permanentDeleteSpaceById}
+                  onPermanentDelete={handleDeleteSpace}
                   showArchiveActions={canEditWorkspace}
+                  canEditSpace={canEditSpace}
+                  canViewSpace={canViewSpace}
                   onSpaceClick={handleSpaceClick}
                   viewMode={viewMode}
                 />

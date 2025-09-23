@@ -76,7 +76,11 @@ export const store = configureStore({
         // Warn about non-serializable values in development
         warnAfter: 128,
       },
-    }).concat(notificationsSocketMiddleware, columnSocketMiddleware),
+    }).concat(
+      // Temporarily disabled socket middleware to prevent conflicts with SocketContext
+      // notificationsSocketMiddleware, 
+      // columnSocketMiddleware
+    ),
   devTools: process.env.NODE_ENV !== 'production' ? {
     name: 'TaskFlow Store',
     trace: true,

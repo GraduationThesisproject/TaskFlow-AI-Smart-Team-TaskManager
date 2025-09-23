@@ -1,5 +1,4 @@
 const jwt = require('../utils/jwt');
-const Workspace = require('../models/Workspace');
 const User = require('../models/User');
 const logger = require('../config/logger');
 
@@ -27,16 +26,13 @@ const authenticateSocket = async (socket, next) => {
             avatar: user.avatar
         };
 
-        logger.info(`Socket authenticated: ${user.email}`);
         next();
-        
     } catch (error) {
-        logger.error('Socket authentication error:', error);
+        logger.error('Workspace socket authentication error:', error);
         next(new Error('Authentication failed'));
     }
 };
 
-// Handle workspace socket events with dedicated namespace
 const handleWorkspaceSocket = (io) => {
     // Create workspace namespace
     const workspaceNamespace = io.of('/workspace');
@@ -45,174 +41,64 @@ const handleWorkspaceSocket = (io) => {
     workspaceNamespace.use(authenticateSocket);
     
     workspaceNamespace.on('connection', (socket) => {
-        logger.info(`User connected: ${socket.user.name} (${socket.id})`);
+        logger.info(`User connected to workspace namespace: ${socket.user?.email || 'Unknown'} (${socket.id})`);
 
-        // Join user's personal room for notifications
-        socket.join(`user:${socket.userId}`);
-
-        // Join workspace rooms
-        socket.on('workspace:join', async (data) => {
-            try {
-                const { workspaceId } = data;
+        // Join workspace room when user joins a workspace
+        socket.on('join_workspace', (workspaceId) => {
+            if (workspaceId) {
+                socket.join(workspaceId);
+                logger.info(`User ${socket.user?.email} joined workspace room: ${workspaceId}`);
+                console.log(`🔔 User ${socket.user?.email} joined workspace room: ${workspaceId}`);
                 
-                // Verify user has access to workspace
-                const user = await User.findById(socket.userId);
-                const userRoles = await user.getRoles();
-                
-                if (!userRoles.hasWorkspaceRole(workspaceId)) {
-                    socket.emit('error', { message: 'Access denied to workspace' });
-                    return;
-                }
-
-                socket.join(`workspace:${workspaceId}`);
-                
-                // Notify other workspace members
-                socket.to(`workspace:${workspaceId}`).emit('workspace:user-joined', {
-                    user: socket.user,
-                    timestamp: new Date()
-                });
-
-                logger.info(`User ${socket.user.name} joined workspace ${workspaceId}`);
-                
-            } catch (error) {
-                logger.error('Join workspace error:', error);
-                socket.emit('error', { message: 'Failed to join workspace' });
+                // Send confirmation back to client
+                socket.emit('workspace_joined', { workspaceId, success: true });
             }
         });
 
-        // Leave workspace room
-        socket.on('workspace:leave', (data) => {
-            const { workspaceId } = data;
-            socket.leave(`workspace:${workspaceId}`);
-            
-            socket.to(`workspace:${workspaceId}`).emit('workspace:user-left', {
-                user: socket.user,
-                timestamp: new Date()
-            });
-        });
-
-        // Workspace member updates
-        socket.on('workspace:member-update', async (data) => {
-            try {
-                const { workspaceId, memberId, updates } = data;
-                
-                // Verify permissions
-                const user = await User.findById(socket.userId);
-                const userRoles = await user.getRoles();
-                
-                if (!userRoles.hasWorkspaceRole(workspaceId, 'admin')) {
-                    socket.emit('error', { message: 'Admin permissions required' });
-                    return;
-                }
-
-                // Broadcast member update
-                workspaceNamespace.to(`workspace:${workspaceId}`).emit('workspace:member-updated', {
-                    memberId,
-                    updates,
-                    updatedBy: socket.user,
-                    timestamp: new Date()
-                });
-
-            } catch (error) {
-                logger.error('Workspace member update error:', error);
-                socket.emit('error', { message: 'Failed to update member' });
+        // Leave workspace room when user leaves a workspace
+        socket.on('leave_workspace', (workspaceId) => {
+            if (workspaceId) {
+                socket.leave(workspaceId);
+                logger.info(`User ${socket.user?.email} left workspace room: ${workspaceId}`);
+                console.log(`🔔 User ${socket.user?.email} left workspace room: ${workspaceId}`);
             }
         });
 
-        // Workspace settings updates
-        socket.on('workspace:settings-update', async (data) => {
-            try {
-                const { workspaceId, settings } = data;
-                
-                // Verify permissions
-                const user = await User.findById(socket.userId);
-                const userRoles = await user.getRoles();
-                
-                if (!userRoles.hasWorkspaceRole(workspaceId, 'admin')) {
-                    socket.emit('error', { message: 'Admin permissions required' });
-                    return;
-                }
-
-                // Broadcast settings update
-                workspaceNamespace.to(`workspace:${workspaceId}`).emit('workspace:settings-updated', {
-                    settings,
-                    updatedBy: socket.user,
-                    timestamp: new Date()
-                });
-
-            } catch (error) {
-                logger.error('Workspace settings update error:', error);
-                socket.emit('error', { message: 'Failed to update settings' });
-            }
+        // Handle workspace updates
+        socket.on('workspace_update', (data) => {
+            logger.info(`Workspace update from ${socket.user?.email}:`, data);
+            console.log(`🔔 Backend received workspace_update event:`, data);
         });
 
-        // Usage limit notifications
-        socket.on('workspace:check-limits', async (data) => {
-            try {
-                const { workspaceId } = data;
-                
-                const workspace = await Workspace.findById(workspaceId);
-                if (!workspace) {
-                    socket.emit('error', { message: 'Workspace not found' });
-                    return;
-                }
+        // Debug: Listen for any event
+        socket.onAny((eventName, ...args) => {
+            console.log(`🔔 Workspace socket received event: ${eventName}`, args);
+        });
 
-                const warnings = [];
-                
-                // Check various limits
-                if (workspace.usage.membersCount >= workspace.limits.maxMembers * 0.9) {
-                    warnings.push({
-                        type: 'member_limit',
-                        message: 'Approaching member limit',
-                        current: workspace.usage.membersCount,
-                        limit: workspace.limits.maxMembers
-                    });
-                }
-
-                if (workspace.usage.storageUsed >= workspace.limits.maxStorage * 0.9) {
-                    warnings.push({
-                        type: 'storage_limit',
-                        message: 'Approaching storage limit',
-                        current: workspace.usage.storageUsed,
-                        limit: workspace.limits.maxStorage
-                    });
-                }
-
-                if (warnings.length > 0) {
-                    socket.emit('workspace:limit-warnings', { warnings });
-                }
-
-            } catch (error) {
-                logger.error('Check workspace limits error:', error);
-                socket.emit('error', { message: 'Failed to check workspace limits' });
-            }
+        socket.on('disconnect', (reason) => {
+            logger.info(`User disconnected from workspace namespace: ${socket.user?.email || 'Unknown'} (${reason})`);
         });
     });
 
-    // Global workspace utilities
-    workspaceNamespace.notifyWorkspace = (workspaceId, event, data) => {
-        workspaceNamespace.to(`workspace:${workspaceId}`).emit(event, data);
-    };
-
-    workspaceNamespace.notifyWorkspaceAdmins = async (workspaceId, event, data) => {
-        try {
-            const workspace = await Workspace.findById(workspaceId)
-                .populate('owner', '_id')
-                .populate('members.user', '_id');
-
-            // Notify owner
-            workspaceNamespace.to(`notifications:${workspace.owner._id}`).emit(event, data);
-
-            // Notify admin members
-            const adminMembers = workspace.members.filter(member => member.role === 'admin');
-            adminMembers.forEach(member => {
-                workspaceNamespace.to(`notifications:${member.user._id}`).emit(event, data);
-            });
-
-        } catch (error) {
-            logger.error('Notify workspace admins error:', error);
+    // Add workspace-specific methods
+    workspaceNamespace.joinWorkspace = (socketId, workspaceId) => {
+        const socket = workspaceNamespace.sockets.get(socketId);
+        if (socket) {
+            socket.join(workspaceId);
+            logger.info(`Socket ${socketId} joined workspace room: ${workspaceId}`);
         }
     };
+
+    workspaceNamespace.leaveWorkspace = (socketId, workspaceId) => {
+        const socket = workspaceNamespace.sockets.get(socketId);
+        if (socket) {
+            socket.leave(workspaceId);
+            logger.info(`Socket ${socketId} left workspace room: ${workspaceId}`);
+        }
+    };
+
+    // Make workspace namespace available globally
+    global.workspaceNamespace = workspaceNamespace;
 
     return workspaceNamespace;
 };

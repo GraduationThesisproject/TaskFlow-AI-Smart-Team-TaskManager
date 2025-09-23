@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import type { Space } from '../types/space.types';
 import type { Board } from '../types/board.types';
 import type { RootState } from '../store';
+import { useToast } from './useToast';
 import {
   fetchSpace,
   fetchSpacesByWorkspace,
@@ -27,6 +28,7 @@ import {
 
 export const useSpaceManager = () => {
   const dispatch = useDispatch();
+  const { error: showError, warning } = useToast();
   
   // Select state from Redux store
   const {
@@ -121,9 +123,24 @@ export const useSpaceManager = () => {
     });
   }, [dispatch]);
 
-  const loadBoardsBySpace = useCallback((spaceId: string) => {
-    dispatch(fetchBoardsBySpace(spaceId) as any);
-  }, [dispatch]);
+  const loadBoardsBySpace = useCallback(async (spaceId: string) => {
+    try {
+      await dispatch(fetchBoardsBySpace(spaceId) as any).unwrap();
+    } catch (error: any) {
+      console.error('Failed to load boards for space:', error);
+      
+      // Handle specific error types with appropriate toast messages
+      if (error.code === 'PERMISSION_DENIED' || error.status === 403) {
+        showError('Access denied. You do not have permission to view this space.');
+      } else if (error.code === 'SPACE_NOT_FOUND' || error.status === 404) {
+        showError('Space not found.');
+      } else {
+        showError('Failed to load boards. Please try again.');
+      }
+      
+      // Don't re-throw the error to prevent full-page error display
+    }
+  }, [dispatch, showError]);
 
   const addBoard = async (boardData: any) => {
     try {

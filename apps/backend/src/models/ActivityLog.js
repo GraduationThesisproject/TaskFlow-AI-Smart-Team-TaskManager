@@ -16,7 +16,7 @@ const activityLogSchema = new mongoose.Schema({
       'project_member_add', 'project_member_remove', 'project_member_role_change',
       // Workspace actions
       'workspace_create', 'workspace_update', 'workspace_delete', 'workspace_restore',
-      'workspace_member_add', 'workspace_member_remove',
+      'workspace_member_add', 'workspace_member_remove', 'workspace_member_role_change',
       // Space actions
       'space_create', 'space_update', 'space_delete', 'space_archive', 'space_restore', 'space_permanent_delete',
       'space_member_add', 'space_member_remove',

@@ -7,7 +7,7 @@ const InvitationService = require('../services/invitation.service');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
-const { getNamespace } = require('../sockets');
+const { emitInvitationReceived, emitWorkspaceEvent } = require('../utils/socketManager');
 
 // Create invitation
 exports.createInvitation = async (req, res) => {
@@ -26,10 +26,22 @@ exports.createInvitation = async (req, res) => {
             return sendResponse(res, 400, false, 'Invalid role specified');
         }
 
-        // Check if user exists
+        // Check if user exists (but don't block invitation creation)
         const existingUser = await User.findOne({ email: email.toLowerCase() });
         if (existingUser) {
-            return sendResponse(res, 400, false, 'User with this email already exists');
+            // User already exists, check if they're already a member
+            if (targetEntity.type === 'Workspace') {
+                const workspace = await Workspace.findById(targetEntity.id);
+                if (workspace) {
+                    const isAlreadyMember = workspace.members.some(member => 
+                        member.user.toString() === existingUser._id.toString()
+                    );
+                    if (isAlreadyMember) {
+                        return sendResponse(res, 400, false, 'User is already a member of this workspace');
+                    }
+                }
+            }
+            // Allow invitation creation for existing users who aren't members
         }
 
         // Check if invitation already exists
@@ -154,6 +166,77 @@ exports.createInvitation = async (req, res) => {
             });
         }
 
+        // Emit invitation-specific event for real-time updates
+        logger.info(`Socket.IO notification namespace available: ${!!io}`);
+        if (io) {
+            // Notify the inviter
+            io.to(userId).emit('invitation:created', {
+                invitation: {
+                    id: invitation._id,
+                    type: invitation.type,
+                    targetEntity: invitation.targetEntity,
+                    invitedUser: invitation.invitedUser,
+                    role: invitation.role,
+                    status: invitation.status,
+                    createdAt: invitation.createdAt,
+                    expiresAt: invitation.expiresAt
+                }
+            });
+
+            // Notify the invited user if they exist and are online
+            try {
+                const invitedUser = await User.findOne({ email: email.toLowerCase() });
+                logger.info(`Invitation notification - Invited user found: ${!!invitedUser}, Email: ${email}`);
+                
+                if (invitedUser) {
+                    logger.info(`Emitting invitation:received to user ${invitedUser._id} (${invitedUser.email})`);
+                    logger.info(`Socket.IO namespace connected clients: ${io.sockets.sockets.size}`);
+                    
+                    // Also try emitting to the user's personal room
+                    io.to(`notifications:${invitedUser._id}`).emit('invitation:received', {
+                        invitation: {
+                            id: invitation._id,
+                            type: invitation.type,
+                            targetEntity: invitation.targetEntity,
+                            invitedBy: {
+                                id: inviter._id,
+                                name: inviter.name,
+                                email: inviter.email
+                            },
+                            role: invitation.role,
+                            status: invitation.status,
+                            message: invitation.message,
+                            createdAt: invitation.createdAt,
+                            expiresAt: invitation.expiresAt
+                        }
+                    });
+                    
+                    io.to(invitedUser._id.toString()).emit('invitation:received', {
+                        invitation: {
+                            id: invitation._id,
+                            type: invitation.type,
+                            targetEntity: invitation.targetEntity,
+                            invitedBy: {
+                                id: inviter._id,
+                                name: inviter.name,
+                                email: inviter.email
+                            },
+                            role: invitation.role,
+                            status: invitation.status,
+                            message: invitation.message,
+                            createdAt: invitation.createdAt,
+                            expiresAt: invitation.expiresAt
+                        }
+                    });
+                    logger.info(`Invitation:received event emitted successfully to user ${invitedUser._id}`);
+                } else {
+                    logger.info(`No user found with email ${email}, invitation will be sent via email only`);
+                }
+            } catch (error) {
+                logger.error('Error notifying invited user:', error);
+            }
+        }
+
         sendResponse(res, 201, true, 'Invitation created successfully', {
             invitation: {
                 id: invitation._id,
@@ -199,13 +282,47 @@ exports.acceptInvitation = async (req, res) => {
 
         const invitation = await InvitationService.acceptInvitation(invitationId, userId);
 
-        // Emit real-time notification
+        // Emit real-time notifications
         const io = getNamespace('notifications');
+        const workspaceIo = getNamespace('workspace');
+        
         if (io) {
+            // Notify inviter about acceptance
             io.to(invitation.invitedBy.toString()).emit('notification', {
                 title: `Invitation accepted: ${invitation.targetEntity.name}`,
                 message: `Your invitation to join ${invitation.targetEntity.name} was accepted`,
                 type: 'invitation_accepted'
+            });
+
+            // Emit invitation update event
+            io.to(invitation.invitedBy.toString()).emit('invitation:updated', {
+                invitation: {
+                    id: invitation._id,
+                    status: invitation.status,
+                    acceptedAt: invitation.acceptedAt
+                }
+            });
+        }
+
+        // Emit workspace updates for real-time member list updates
+        if (workspaceIo && invitation.targetEntity.type === 'Workspace') {
+            // Notify all workspace members about new member
+            workspaceIo.to(invitation.targetEntity.id).emit('workspace:member_added', {
+                workspaceId: invitation.targetEntity.id,
+                member: {
+                    id: req.user.id,
+                    name: req.user.name,
+                    email: req.user.email,
+                    role: invitation.role,
+                    joinedAt: new Date()
+                }
+            });
+
+            // Notify the new member about workspace access
+            workspaceIo.to(req.user.id.toString()).emit('workspace:access_granted', {
+                workspaceId: invitation.targetEntity.id,
+                workspaceName: invitation.targetEntity.name,
+                role: invitation.role
             });
         }
 
@@ -233,16 +350,32 @@ exports.declineInvitation = async (req, res) => {
         const { invitationId } = req.params;
         const userId = req.user.id;
 
+        logger.info('Declining invitation:', { invitationId, userId });
+
         const invitation = await InvitationService.declineInvitation(invitationId, userId);
+        
+        logger.info('Invitation declined successfully:', { 
+            invitationId: invitation._id, 
+            status: invitation.status,
+            declinedAt: invitation.declinedAt 
+        });
 
         // Emit real-time notification
-        const io = getNamespace('notifications');
-        if (io) {
-            io.to(invitation.invitedBy.toString()).emit('notification', {
-                title: `Invitation declined: ${invitation.targetEntity.name}`,
-                message: `Your invitation to join ${invitation.targetEntity.name} was declined`,
-                type: 'invitation_declined'
+        try {
+            // Emit invitation update event to the inviter
+            emitInvitationReceived(invitation.invitedBy, {
+                invitation: {
+                    id: invitation._id,
+                    status: invitation.status,
+                    declinedAt: invitation.declinedAt,
+                    type: invitation.type,
+                    targetEntity: invitation.targetEntity
+                }
             });
+            
+            logger.info('Socket.IO invitation declined event emitted to inviter:', invitation.invitedBy);
+        } catch (socketError) {
+            logger.error('Failed to emit Socket.IO events for declined invitation:', socketError);
         }
 
         sendResponse(res, 200, true, 'Invitation declined successfully', {

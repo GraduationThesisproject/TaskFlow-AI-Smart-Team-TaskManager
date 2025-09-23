@@ -45,6 +45,8 @@ if (GoogleStrategy && googleConfig.available) {
         console.log('🔵 Profile emails:', profile.emails);
         console.log('🔵 Profile display name:', profile.displayName);
         console.log('🔵 Profile photos:', profile.photos);
+        console.log('🔵 Access token present:', !!accessToken);
+        console.log('🔵 Refresh token present:', !!refreshToken);
         
         try {
             // Check if user already exists
@@ -85,6 +87,7 @@ if (GoogleStrategy && googleConfig.available) {
                 avatar: profile.photos[0]?.value,
                 googleId: profile.id,
                 oauthProviders: ['google'],
+                hasOAuthProviders: true,
                 emailVerified: true, // OAuth users are pre-verified
                 password: null // No password for OAuth users
             };

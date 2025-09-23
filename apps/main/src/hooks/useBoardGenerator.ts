@@ -245,20 +245,18 @@ export function useBoardGenerator() {
   }, [addBoard, addColumn, addTask, createBoardTag, toast, user?.id]);
 
   const generateBoardWithConfirmation = useCallback(async (aiBoardData: AIGeneratedBoard, workspaceId?: string) => {
-    // Show confirmation dialog with board preview
-    const confirmed = window.confirm(
-      `Create board "${aiBoardData.board.name}" with ${aiBoardData.columns.length} columns and ${aiBoardData.tasks.length} tasks?`
-    );
-    
-    if (!confirmed) {
-      return null;
-    }
+    // This function now returns the data for preview modal
+    // The actual generation will be handled by the preview modal
+    return aiBoardData;
+  }, []);
 
+  const generateBoardFromPreview = useCallback(async (aiBoardData: AIGeneratedBoard, workspaceId?: string) => {
     return await generateBoardFromAI(aiBoardData, workspaceId);
   }, [generateBoardFromAI]);
 
   return {
     generateBoardFromAI,
-    generateBoardWithConfirmation
+    generateBoardWithConfirmation,
+    generateBoardFromPreview
   };
 }

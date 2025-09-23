@@ -314,6 +314,48 @@ export const removeWorkspaceAvatar = createAsyncThunk<{ workspace: Workspace }, 
   }
 );
 
+// Update member role
+export const updateMemberRole = createAsyncThunk<{ member: any }, { workspaceId: string; memberId: string; role: string }>(
+  'workspace/updateMemberRole',
+  async ({ workspaceId, memberId, role }, { rejectWithValue }) => {
+    try {
+      const response = await WorkspaceService.updateMemberRole(workspaceId, memberId, role);
+      return response;
+    } catch (error: any) {
+      console.error('Error updating member role:', error);
+      return rejectWithValue(error.message || 'Failed to update member role');
+    }
+  }
+);
+
+// Transfer workspace ownership
+export const transferOwnership = createAsyncThunk<{ workspace: Workspace }, { workspaceId: string; newOwnerId: string }>(
+  'workspace/transferOwnership',
+  async ({ workspaceId, newOwnerId }, { rejectWithValue }) => {
+    try {
+      const response = await WorkspaceService.transferOwnership(workspaceId, newOwnerId);
+      return response;
+    } catch (error: any) {
+      console.error('Error transferring ownership:', error);
+      return rejectWithValue(error.message || 'Failed to transfer ownership');
+    }
+  }
+);
+
+// Remove workspace member
+export const removeMember = createAsyncThunk<{ message: string }, { workspaceId: string; memberId: string }>(
+  'workspace/removeMember',
+  async ({ workspaceId, memberId }, { rejectWithValue }) => {
+    try {
+      const response = await WorkspaceService.removeMember(workspaceId, memberId);
+      return response;
+    } catch (error: any) {
+      console.error('Error removing member:', error);
+      return rejectWithValue(error.message || 'Failed to remove member');
+    }
+  }
+);
+
 // Dev-only: force current user as owner for a workspace (repairs old data)
 
 export const forceOwnerDev = createAsyncThunk<{ id: string; message: string }, { id: string }>(
@@ -379,6 +421,45 @@ const workspaceSlice = createSlice({
     },
     setCurrentWorkspace(state, action: PayloadAction<Workspace | null>) {
       state.currentWorkspace = action.payload;
+    },
+    // Real-time role change update
+    updateMemberRoleRealTime(state, action: PayloadAction<{ memberId: string; newRole: string; workspaceId: string }>) {
+      const { memberId, newRole, workspaceId } = action.payload;
+      
+      console.log('🔄 Redux updateMemberRoleRealTime called with:', { memberId, newRole, workspaceId });
+      console.log('🔄 Current workspace ID:', state.currentWorkspace?._id);
+      console.log('🔄 Workspace match:', state.currentWorkspace?._id === workspaceId);
+      
+      // Update in currentWorkspace if it matches
+      if (state.currentWorkspace && state.currentWorkspace._id === workspaceId) {
+        console.log('🔄 Updating currentWorkspace members');
+        const memberIndex = state.currentWorkspace.members.findIndex(member => 
+          member.user?._id?.toString() === memberId ||
+          member.user?.toString() === memberId
+        );
+        console.log('🔄 Member index found:', memberIndex);
+        if (memberIndex !== -1) {
+          console.log('🔄 Old role:', state.currentWorkspace.members[memberIndex].role);
+          state.currentWorkspace.members[memberIndex].role = newRole;
+          console.log('🔄 New role:', state.currentWorkspace.members[memberIndex].role);
+        }
+      }
+      
+      // Update in workspaces list
+      const workspaceIndex = state.workspaces.findIndex(w => w._id === workspaceId);
+      console.log('🔄 Workspace index in list:', workspaceIndex);
+      if (workspaceIndex !== -1) {
+        const memberIndex = state.workspaces[workspaceIndex].members.findIndex(member => 
+          member.user?._id?.toString() === memberId ||
+          member.user?.toString() === memberId
+        );
+        console.log('🔄 Member index in workspaces list:', memberIndex);
+        if (memberIndex !== -1) {
+          console.log('🔄 Old role in workspaces list:', state.workspaces[workspaceIndex].members[memberIndex].role);
+          state.workspaces[workspaceIndex].members[memberIndex].role = newRole;
+          console.log('🔄 New role in workspaces list:', state.workspaces[workspaceIndex].members[memberIndex].role);
+        }
+      }
     },
     removeWorkspaceById(state, action: PayloadAction<string>) {
       const id = action.payload;
@@ -518,6 +599,79 @@ const workspaceSlice = createSlice({
       .addCase(updateWorkspace.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to update workspace';
+      })
+      // Update member role
+      .addCase(updateMemberRole.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateMemberRole.fulfilled, (state, action) => {
+        state.loading = false;
+        // Update the member in the members array
+        const memberIndex = state.members.findIndex(member => 
+          member.user?._id?.toString() === action.payload.member.id ||
+          member.user?.toString() === action.payload.member.id
+        );
+        if (memberIndex !== -1) {
+          state.members[memberIndex].role = action.payload.member.role;
+        }
+        // Also update in currentWorkspace if it exists
+        if (state.currentWorkspace) {
+          const workspaceMemberIndex = state.currentWorkspace.members.findIndex(member => 
+            member.user?._id?.toString() === action.payload.member.id ||
+            member.user?.toString() === action.payload.member.id
+          );
+          if (workspaceMemberIndex !== -1) {
+            state.currentWorkspace.members[workspaceMemberIndex].role = action.payload.member.role;
+          }
+        }
+        state.error = null;
+      })
+      .addCase(updateMemberRole.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to update member role';
+      })
+      // Transfer ownership
+      .addCase(transferOwnership.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(transferOwnership.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentWorkspace = action.payload.workspace;
+        // Update the workspaces list
+        const idx = state.workspaces.findIndex((w) => w._id === action.payload.workspace._id);
+        if (idx >= 0) state.workspaces[idx] = action.payload.workspace;
+        state.error = null;
+      })
+      .addCase(transferOwnership.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to transfer ownership';
+      })
+      // Remove member
+      .addCase(removeMember.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(removeMember.fulfilled, (state, action) => {
+        state.loading = false;
+        // Remove the member from the members array
+        state.members = state.members.filter(member => 
+          member.user?._id?.toString() !== action.meta.arg.memberId &&
+          member.user?.toString() !== action.meta.arg.memberId
+        );
+        // Also remove from currentWorkspace if it exists
+        if (state.currentWorkspace) {
+          state.currentWorkspace.members = state.currentWorkspace.members.filter(member => 
+            member.user?._id?.toString() !== action.meta.arg.memberId &&
+            member.user?.toString() !== action.meta.arg.memberId
+          );
+        }
+        state.error = null;
+      })
+      .addCase(removeMember.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to remove member';
       })
       // Delete workspace
       .addCase(deleteWorkspace.pending, (state) => {
@@ -752,7 +906,8 @@ const workspaceSlice = createSlice({
         state.rulesLoading = false;
         state.error = action.error.message || 'Failed to delete workspace rules';
       });
-   }});
+  }
+});
 
 export const {
   setSelectedSpace,
@@ -760,6 +915,8 @@ export const {
   setLoading,
   clearError,
   setCurrentWorkspaceId,
+  setCurrentWorkspace,
+  updateMemberRoleRealTime,
   removeWorkspaceById,
   upsertWorkspaceStatus,
   resetWorkspaceState,

@@ -200,6 +200,39 @@ export class WorkspaceService {
     }
   }
 
+  // Update member role
+  static async updateMemberRole(workspaceId: string, memberId: string, role: string): Promise<{ member: any }> {
+    try {
+      const response = await axiosInstance.put(`/workspaces/${workspaceId}/members/${memberId}/role`, { role });
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Error updating member role:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to update member role');
+    }
+  }
+
+  // Transfer workspace ownership
+  static async transferOwnership(workspaceId: string, newOwnerId: string): Promise<{ workspace: Workspace }> {
+    try {
+      const response = await axiosInstance.post(`/workspaces/${workspaceId}/transfer-ownership`, { newOwnerId });
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Error transferring ownership:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to transfer ownership');
+    }
+  }
+
+  // Remove workspace member
+  static async removeMember(workspaceId: string, memberId: string): Promise<{ message: string }> {
+    try {
+      const response = await axiosInstance.delete(`/workspaces/${workspaceId}/members/${memberId}`);
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Error removing member:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to remove member');
+    }
+  }
+
   // Dev-only: force owner
   static async forceOwnerDev(id: string): Promise<{ message: string }> {
     try {
