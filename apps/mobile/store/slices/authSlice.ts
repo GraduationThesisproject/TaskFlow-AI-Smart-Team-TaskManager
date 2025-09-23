@@ -426,6 +426,25 @@ export const resetPassword = createAsyncThunk(
   }
 );
 
+// Basic profile update (multipart form-data, no password required)
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (
+    payload: { name?: string; avatar?: File | null },
+    thunkAPI
+  ) => {
+    try {
+      const resp = await AuthService.updateProfile(payload);
+      // AuthService.updateProfile returns the parsed API payload (sendResponse):
+      // { success, message, data: { user: PublicUser } }
+      const user = (resp as any)?.data?.user || (resp as any)?.user;
+      return user;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data || { message: error.message });
+    }
+  }
+);
+
 // Secure profile update (multipart form-data)
 export const updateProfileSecure = createAsyncThunk(
   'auth/updateProfileSecure',
@@ -434,8 +453,8 @@ export const updateProfileSecure = createAsyncThunk(
     thunkAPI
   ) => {
     try {
-      const resp = await AuthService.updateProfile(payload);
-      // AuthService.updateProfile returns the parsed API payload (sendResponse):
+      const resp = await AuthService.updateProfileSecure(payload);
+      // AuthService.updateProfileSecure returns the parsed API payload (sendResponse):
       // { success, message, data: { user: PublicUser } }
       const user = (resp as any)?.data?.user || (resp as any)?.user;
       return user;
@@ -699,6 +718,21 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(verifyEmail.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Update Profile (Basic)
+      .addCase(updateProfile.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // payload is the updated basic user object; wrap/serialize to state shape
+        state.user = safeSerializeUser(action.payload) as any;
+        state.error = null;
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })

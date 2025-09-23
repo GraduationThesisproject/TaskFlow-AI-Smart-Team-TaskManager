@@ -4,6 +4,7 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router } from 'expo-router';
+import { FREE_PLAN_LIMITS, getUpgradeMessage } from '@/utils/planLimits';
 
 export interface PremiumSpaceLimitModalProps {
   visible: boolean;
@@ -18,7 +19,7 @@ export default function PremiumSpaceLimitModal({
   visible,
   onClose,
   currentSpacesCount,
-  maxFreeSpaces = 5
+  maxFreeSpaces = FREE_PLAN_LIMITS.MAX_SPACES_PER_WORKSPACE
 }: PremiumSpaceLimitModalProps) {
   const colors = useThemeColors();
 
