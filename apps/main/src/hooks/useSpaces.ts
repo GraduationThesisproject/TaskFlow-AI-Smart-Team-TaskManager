@@ -190,7 +190,15 @@ export const useSpaces = () => {
   }, [getSpacesByWorkspace]);
 
   const getArchivedSpacesByWorkspace = useCallback((workspaceId: string) => {
-    return getSpacesByWorkspace(workspaceId).filter(space => space.isArchived);
+    const spaces = getSpacesByWorkspace(workspaceId);
+    const archived = spaces.filter(space => space.isArchived);
+    console.log('🔍 getArchivedSpacesByWorkspace:', {
+      workspaceId,
+      totalSpaces: spaces.length,
+      archivedSpaces: archived.length,
+      spaces: spaces.map(s => ({ id: s._id, name: s.name, isArchived: s.isArchived, isActive: s.isActive }))
+    });
+    return archived;
   }, [getSpacesByWorkspace]);
 
   return {

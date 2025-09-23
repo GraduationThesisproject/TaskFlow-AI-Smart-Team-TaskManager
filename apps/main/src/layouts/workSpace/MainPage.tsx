@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Check, X, Archive } from 'lucide-react';
+import { useAppDispatch } from '../../store';
 import { useWorkspace } from '../../hooks/useWorkspace';
 import { useSpaces } from '../../hooks/useSpaces';
 import { useSpaceManager } from '../../hooks/useSpaceManager';
@@ -21,8 +22,9 @@ interface MainPageProps {
 }
 
 const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
+  const dispatch = useAppDispatch();
   const workspaceId = currentWorkspace?._id;
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, user } = useAuth();
   const { success, error: showError, warning } = useToast();
   const navigate = useNavigate();
 
@@ -32,11 +34,15 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
     loading,
     error: apiError,
     removeWorkspaceMember,
+    updateMemberRole,
+    transferOwnership,
     createInviteLink,
     inviteNewMember,
     updateWorkspaceData,
     uploadWorkspaceAvatar,
-    removeWorkspaceAvatar
+    removeWorkspaceAvatar,
+    refetchWorkspaces,
+    loadWorkspace
   } = useWorkspace({
     autoFetch: true, // Let the hook handle data loading
     workspaceId
@@ -76,7 +82,6 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
 
   // Local UI state
   const [search, setSearch] = useState('');
-  const [role, setRole] = useState('all');
   const [memberToRemove, setMemberToRemove] = useState<{
     id: string;
     role: string;
@@ -111,10 +116,13 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
 
   // Get current user's role in this workspace from Redux state
   const currentUserRole = useMemo(() => {
-    // The Redux state already contains userRole for the current user
-    // Using type assertion since the backend response includes these properties
+    // Check if current user is the workspace owner
+    if (currentWorkspace?.owner?._id === user?._id) {
+      return 'owner';
+    }
+    // Otherwise use the userRole from Redux state
     return (currentWorkspace as any)?.userRole || null;
-  }, [currentWorkspace?._id, (currentWorkspace as any)?.userRole]);
+  }, [currentWorkspace?.owner?._id, user?._id, (currentWorkspace as any)?.userRole]);
 
   // Check if user can edit workspace (owner or admin)
   const canEditWorkspace = useMemo(() => {
@@ -124,42 +132,46 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
   // Transform WorkspaceMember to Member type for MembersTable
   const transformedMembers = useMemo(() => {
     if (!members) return [];
-    return members.map(member => ({
-      id: (member as any)._id || member.id || member.userId,
+    return members.map(member => {
+      // Check if this member is the workspace owner
+      const isOwner = currentWorkspace?.owner?._id === member.user?._id;
+      
+      return {
+        id: member.user?._id || member.user, // Use the actual user ID as string, not the member record ID
       name: member.user?.name || 'Unknown User',
       handle: member.user?.email?.split('@')[0] || 'user',
       email: member.user?.email || 'No email',
-      role: member.role,
+        role: isOwner ? 'owner' : member.role, // Show owner role for workspace owner
       status: 'active' as const, // Default to active since workspace members are active
       lastActive: member.joinedAt ? 
         (typeof member.joinedAt === 'string' ? member.joinedAt : member.joinedAt.toISOString()) : 
         'Never'
-    }));
-  }, [members]);
+      };
+    });
+  }, [members, currentWorkspace?.owner]);
 
   // Filtered and sorted data
   const filteredMembers = useMemo(() => {
     if (!transformedMembers) return [];
     
-    // First filter by search and role
+    // Filter by search only
     const filtered = transformedMembers.filter(member => {
       const memberName = member.name || '';
       const memberEmail = member.email || '';
       const matchesSearch = search === '' ||
         memberName.toLowerCase().includes(search.toLowerCase()) ||
         memberEmail.toLowerCase().includes(search.toLowerCase());
-      const matchesRole = role === 'all' || member.role?.toLowerCase() === role.toLowerCase();
-      return matchesSearch && matchesRole;
+      return matchesSearch;
     });
 
-    // Then sort by role priority: owner > admin > member > viewer
+    // Sort by role priority: owner > admin > member > viewer
     return filtered.sort((a, b) => {
       const rolePriority = { owner: 4, admin: 3, member: 2, viewer: 1 };
       const aPriority = rolePriority[a.role as keyof typeof rolePriority] || 0;
       const bPriority = rolePriority[b.role as keyof typeof rolePriority] || 0;
       return bPriority - aPriority;
     });
-  }, [transformedMembers, search, role]);
+  }, [transformedMembers, search]);
 
   // Get active spaces for the workspace
   const activeSpaces = useMemo(() => {
@@ -203,19 +215,39 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
     ).length;
   }, [tasks]);
 
+  // Real-time workspace event listeners
+
   // Handlers
   const handleRemoveMember = useCallback(async (memberId: string, _role: string, _password: string) => {
     try {
       if (!workspaceId) throw new Error('Workspace ID is required');
+      
+      // Check if member still exists in the current members list
+      const memberExists = members?.some(member => 
+        member.user?._id === memberId || member.user === memberId
+      );
+      
+      if (!memberExists) {
+        console.log('Member not found in current members list, skipping removal');
+        setMemberToRemove(null);
+        success('Member is no longer in the workspace');
+        return;
+      }
+      
+      console.log('Removing member with ID:', memberId, 'Type:', typeof memberId);
       await removeWorkspaceMember(memberId);
       setMemberToRemove(null);
+      success('Member removed successfully!');
+      
+      // Refresh workspace data to get updated member list
+      refetchWorkspaces();
     } catch (error) {
       const errorMessage = error instanceof Error 
         ? `Failed to remove member: ${error.message}`
         : 'Failed to remove member: Unknown error';
       throw new Error(errorMessage);
     }
-  }, [workspaceId, removeWorkspaceMember]);
+  }, [workspaceId, removeWorkspaceMember, success, members]);
 
   const handleGenerateInvite = useCallback(async () => {
     try {
@@ -229,16 +261,31 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
 
   const handleRoleChange = useCallback(async (memberId: string, newRole: string) => {
     try {
-      // Here you would call your API to change the member's role
-      // For now, we'll just close the editing state
-      console.log(`Changing role for member ${memberId} to ${newRole}`);
+      await updateMemberRole(memberId, newRole);
       setEditingMemberId(null);
-      // You can add the actual API call here
-      // await changeMemberRole(memberId, newRole);
+      success(`Member role updated to ${newRole} successfully!`);
+      
+      // Refresh workspace data to get updated member list
+      refetchWorkspaces();
     } catch (error) {
       console.error('Failed to change member role:', error);
+      showError(`Failed to update member role: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }, []);
+  }, [updateMemberRole, success, showError, refetchWorkspaces]);
+
+  const handleTransferOwnership = useCallback(async (newOwnerId: string) => {
+    try {
+      await transferOwnership(newOwnerId);
+      setTransferOwnershipMember(null);
+      success('Workspace ownership transferred successfully!');
+      
+      // Refresh workspace data to get updated member list
+      refetchWorkspaces();
+    } catch (error) {
+      console.error('Failed to transfer ownership:', error);
+      showError(`Failed to transfer ownership: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }, [transferOwnership, success, showError, refetchWorkspaces]);
 
   // Workspace editing handlers
   const handleEditWorkspace = useCallback(() => {
@@ -319,6 +366,12 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
   const handleCreateSpace = useCallback(async () => {
     if (!newSpaceName.trim() || !workspaceId) return;
     
+    // Check if user has permission to create spaces
+    if (!canEditWorkspace) {
+      showError('Only workspace owners and admins can create spaces');
+      return;
+    }
+    
     try {
       console.log('MainPage - Creating space:', {
         name: newSpaceName.trim(),
@@ -362,7 +415,7 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
       setNewSpaceName('');
       setIsCreatingSpace(false);
     }
-  }, [newSpaceName, workspaceId, addSpace, allActiveSpaces, success, showError]);
+  }, [newSpaceName, workspaceId, addSpace, allActiveSpaces, success, showError, canEditWorkspace]);
 
   const handleCancelCreateSpace = useCallback(() => {
     setNewSpaceName('');
@@ -371,6 +424,12 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
 
   // Space archive and delete handlers
   const handleArchiveSpace = useCallback(async (spaceId: string) => {
+    // Check if user has permission to archive spaces
+    if (!canEditWorkspace) {
+      showError('Only workspace owners and admins can archive spaces');
+      return;
+    }
+    
     try {
       await archiveSpaceById(spaceId);
       success('Space archived successfully!');
@@ -378,9 +437,15 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
       console.error('Failed to archive space:', error);
       showError('Failed to archive space');
     }
-  }, [archiveSpaceById, success, showError]);
+  }, [archiveSpaceById, success, showError, canEditWorkspace]);
 
   const handleDeleteSpace = useCallback(async (spaceId: string) => {
+    // Check if user has permission to delete spaces
+    if (!canEditWorkspace) {
+      showError('Only workspace owners and admins can delete spaces');
+      return;
+    }
+    
     try {
       // First archive the space, then permanently delete it
       await archiveSpaceById(spaceId);
@@ -392,20 +457,19 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
       console.error('Failed to delete space:', error);
       showError('Failed to delete space');
     }
-  }, [archiveSpaceById, permanentDeleteSpaceById, success, showError]);
+  }, [archiveSpaceById, permanentDeleteSpaceById, success, showError, canEditWorkspace]);
 
   // Close dropdown when clicking outside
-  const handleClickOutside = useCallback((event: MouseEvent) => {
-    if (editingMemberId && !(event.target as Element).closest('.role-dropdown')) {
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (editingMemberId && !(event.target as Element).closest('.member-dropdown')) {
       setEditingMemberId(null);
     }
-  }, [editingMemberId]);
+    };
 
-  // Add click outside listener
-  React.useEffect(() => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [handleClickOutside]);
+  }, [editingMemberId]);
 
   // Clear spaces data when workspace changes
   React.useEffect(() => {
@@ -892,7 +956,7 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
           </div>
 
           {/* Right Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 flex flex-col h-fit">
                          {/* Invite Section */}
              {workspaceId && currentWorkspace && (
                <Card className="border-0 bg-gradient-to-br from-primary/5 to-primary/10 shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -906,186 +970,157 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
                </Card>
              )}
 
-             {/* Team Members Section - Compact */}
-             <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
-               <CardHeader className="pb-4">
-                 <div className="flex items-center justify-between">
-                   <CardTitle className="text-lg font-semibold text-foreground">Team Members</CardTitle>
-                   <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                     {filteredMembers.length}
-                   </span>
-                 </div>
-               </CardHeader>
-              <CardContent className="space-y-4">
-                                 {/* Compact Search */}
-                 <div className="space-y-3">
+             {/* Simple Team Members List */}
+             <div className="bg-white border border-gray-200 rounded-lg p-4">
+               <h3 className="text-lg font-semibold mb-4">Team Members</h3>
+               
+               {/* Search */}
+               <div className="mb-4">
                    <input
                      type="text"
                      placeholder="Search members..."
                      value={search}
                      onChange={(e) => setSearch(e.target.value)}
-                     className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-200"
-                   />
-                   <select
-                     value={role}
-                     onChange={(e) => setRole(e.target.value)}
-                     className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-200"
-                   >
-                     <option value="all">All Roles</option>
-                     <option value="admin">Admin</option>
-                     <option value="member">Member</option>
-                     <option value="viewer">Viewer</option>
-                   </select>
+                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 />
                  </div>
 
-                                 {/* Compact Members List */}
-                 {filteredMembers.length === 0 ? (
-                   <div className="text-center py-8">
-                     <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                       <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                       </svg>
-                     </div>
-                     <p className="text-sm text-muted-foreground">
-                       {search || role !== 'all' 
-                         ? 'No members found'
-                         : 'No members yet'
-                       }
-                     </p>
-                   </div>
-                 ) : (
-                                       <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {filteredMembers.slice(0, 8).map((member) => (
-                        <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors duration-200">
-                          <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-medium text-muted-foreground">
-                              {member.name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                                                     <div className="flex-1 min-w-0">
+               {/* Members List */}
+               <div className="space-y-2">
+                 {filteredMembers.map((member) => (
+                   <div key={member.id} data-member-id={member.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                              <div className="flex items-center gap-2">
-                               <div className="flex items-center gap-1">
-                                 <p className="text-sm font-medium text-foreground truncate">{member.name}</p>
-                                 {member.role === 'owner' && (
-                                   <svg className="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
-                                     <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                                   </svg>
-                                 )}
-                               </div>
-                               {member.id === token && (
-                                 <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                                   You
-                                 </span>
-                               )}
-                             </div>
-                            <div className="flex items-center gap-1">
-                              <span className={`text-xs px-1.5 py-0.5 rounded-full capitalize ${
+                       <span className="text-sm font-medium">{member.name}</span>
+                       
+                       {/* Role Badge */}
+                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                 member.role === 'owner' 
-                                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400'
+                           ? 'bg-orange-100 text-orange-700'
                                   : member.role === 'admin'
-                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                           ? 'bg-blue-100 text-blue-700'
                                   : member.role === 'member'
-                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                                  : 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400'
+                           ? 'bg-green-100 text-green-700'
+                           : 'bg-gray-100 text-gray-700'
                               }`}>
                                 {member.role}
                               </span>
-                            </div>
+                       
+                       {/* "You" indicator */}
+                       {member.id === user?._id && (
+                         <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                           You
+                         </span>
+                       )}
                           </div>
                           
-                                                     {/* Role Change Dropdown - Only for owners and admins */}
+                     {/* Simple Dropdown */}
                            {(currentUserRole === 'owner' || currentUserRole === 'admin') && (
-                             <div className="relative">
-                               {editingMemberId === member.id ? (
-                                 <div className="role-dropdown absolute right-0 top-8 z-10 bg-background border border-border rounded-lg shadow-lg p-2 min-w-32">
-                                   <div className="space-y-1">
-                                     {/* Owner can promote members to admin */}
-                                     {currentUserRole === 'owner' && member.role === 'member' && (
+                       <div className="relative member-dropdown">
                                        <button
-                                         onClick={() => handleRoleChange(member.id, 'admin')}
-                                         className="w-full text-left px-2 py-1 text-xs hover:bg-muted rounded transition-colors"
+                           onClick={() => setEditingMemberId(editingMemberId === member.id ? null : member.id)}
+                           className="p-1 hover:bg-gray-200 rounded"
                                        >
-                                         Promote to Admin
+                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                           </svg>
                                        </button>
-                                     )}
-                                     
-                                     {/* Owner can demote admins to member */}
-                                     {currentUserRole === 'owner' && member.role === 'admin' && (
+                         
+                         {/* Smart Dropdown Menu */}
+                         {editingMemberId === member.id && (
+                           <div 
+                             className="absolute right-0 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-32"
+                             style={{
+                               top: (() => {
+                                 const button = document.querySelector(`[data-member-id="${member.id}"] .member-dropdown button`);
+                                 if (button) {
+                                   const rect = button.getBoundingClientRect();
+                                   const viewportHeight = window.innerHeight;
+                                   const dropdownHeight = 120; // Approximate dropdown height
+                                   const spaceBelow = viewportHeight - rect.bottom;
+                                   
+                                   // If not enough space below, position above
+                                   if (spaceBelow < dropdownHeight) {
+                                     return `${-dropdownHeight - 8}px`;
+                                   }
+                                 }
+                                 return '32px'; // Default position below
+                               })()
+                             }}
+                           >
+                             <div className="py-1">
+                               {/* Change to Admin - More prominent option */}
+                                     {(currentUserRole === 'owner' || currentUserRole === 'admin') && member.role === 'member' && member.id !== user?._id && (
                                        <button
-                                         onClick={() => handleRoleChange(member.id, 'member')}
-                                         className="w-full text-left px-2 py-1 text-xs hover:bg-muted rounded transition-colors"
+                                         onClick={() => {
+                                     handleRoleChange(member.id, 'admin');
+                                           setEditingMemberId(null);
+                                         }}
+                                   className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-green-600 font-medium"
                                        >
-                                         Demote to Member
+                                         Change to Admin
                                        </button>
                                        )}
                                      
-                                     {/* Owner can transfer ownership (except to themselves) */}
-                                     {currentUserRole === 'owner' && member.id !== token && (
+                               {/* Demote to Member */}
+                                     {(currentUserRole === 'owner' || currentUserRole === 'admin') && member.role === 'admin' && member.id !== user?._id && (
+                                       <button
+                                         onClick={() => {
+                                     handleRoleChange(member.id, 'member');
+                                           setEditingMemberId(null);
+                                         }}
+                                   className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-orange-600"
+                                       >
+                                         Change to Member
+                                       </button>
+                                     )}
+                                     
+                               {/* Demote Owner to Member (Owner only) */}
+                                     {currentUserRole === 'owner' && member.role === 'owner' && member.id !== user?._id && (
+                                       <button
+                                   onClick={() => {
+                                     handleRoleChange(member.id, 'member');
+                                     setEditingMemberId(null);
+                                   }}
+                                   className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-red-600"
+                                       >
+                                         Demote to Member
+                                       </button>
+                                     )}
+                                     
+                               {/* Transfer Ownership */}
+                                     {currentUserRole === 'owner' && member.id !== user?._id && (
                                        <button
                                          onClick={() => {
                                            setTransferOwnershipMember({ id: member.id, name: member.name });
                                            setEditingMemberId(null);
                                          }}
-                                         className="w-full text-left px-2 py-1 text-xs hover:bg-muted rounded transition-colors text-primary"
+                                   className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-blue-600"
                                        >
                                          Transfer Ownership
                                        </button>
                                      )}
                                      
-                                     {/* Admin can promote members to admin */}
-                                     {currentUserRole === 'admin' && member.role === 'member' && (
-                                       <button
-                                         onClick={() => handleRoleChange(member.id, 'admin')}
-                                         className="w-full text-left px-2 py-1 text-xs hover:bg-muted rounded transition-colors"
-                                       >
-                                         Promote to Admin
-                                       </button>
-                                     )}
-                                     
-                                     {/* Admin can demote other admins to member */}
-                                     {currentUserRole === 'admin' && member.role === 'admin' && member.id !== token && (
-                                       <button
-                                         onClick={() => handleRoleChange(member.id, 'member')}
-                                         className="w-full text-left px-2 py-1 text-xs hover:bg-muted rounded transition-colors"
-                                       >
-                                         Demote to Member
-                                       </button>
-                                     )}
-                                     
+                               {/* Remove Member */}
+                                     {(currentUserRole === 'owner' || currentUserRole === 'admin') && member.id !== user?._id && (
                                      <button
-                                       onClick={() => setEditingMemberId(null)}
-                                       className="w-full text-left px-2 py-1 text-xs hover:bg-muted rounded transition-colors text-muted-foreground"
-                                     >
-                                       Cancel
+                                 onClick={() => {
+                                   setMemberToRemove({ id: member.id, role: member.role, name: member.name });
+                                   setEditingMemberId(null);
+                                 }}
+                                 className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-red-600"
+                               >
+                                 Remove Member
                                      </button>
+                                     )}
                                    </div>
                                  </div>
-                               ) : (
-                                 <button
-                                   onClick={() => setEditingMemberId(member.id)}
-                                   className="p-1 hover:bg-muted rounded transition-colors"
-                                   title="Change role"
-                                 >
-                                   <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                   </svg>
-                                 </button>
                                )}
                              </div>
                            )}
                         </div>
                       ))}
-                      {filteredMembers.length > 8 && (
-                        <div className="text-center py-2">
-                          <p className="text-xs text-muted-foreground">
-                            +{filteredMembers.length - 8} more members
-                          </p>
                         </div>
-                      )}
                     </div>
-                 )}
-              </CardContent>
-            </Card>
 
             
           </div>
@@ -1096,7 +1131,8 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
         <ConfirmRemoveMemberDialog
          isOpen={!!memberToRemove}
          onClose={() => setMemberToRemove(null)}
-         member={memberToRemove}
+         memberName={memberToRemove?.name || ''}
+         isOwner={memberToRemove?.role === 'owner'}
          onConfirm={async (password: string) => {
            if (!memberToRemove) return;
            try {
@@ -1130,8 +1166,7 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentWorkspace }) => {
                <Button
                  variant="destructive"
                  onClick={() => {
-                   handleRoleChange(transferOwnershipMember.id, 'owner');
-                   setTransferOwnershipMember(null);
+                   handleTransferOwnership(transferOwnershipMember.id);
                  }}
                >
                  Transfer Ownership

@@ -13,6 +13,9 @@ const chatSocket = require('./chat.socket');
 const aiSocket = require('./ai.socket');
 const PermissionSocket = require('./permission.socket');
 
+// Import socket manager to set Socket.IO instance
+const { setSocketIO } = require('../utils/socketManager');
+
 /**
  * Initialize all socket handlers
  * @param {Object} io - Socket.IO server instance
@@ -34,6 +37,9 @@ const initializeSockets = (io) => {
 
     // Store namespaces locally for getNamespace function
     socketNamespaces = namespaces;
+
+    // Set Socket.IO instance in workspace controller for real-time events
+    setSocketIO(io, namespaces.workspace);
 
     // Log socket initialization
     const logger = require('../config/logger');

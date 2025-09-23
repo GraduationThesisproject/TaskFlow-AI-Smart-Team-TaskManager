@@ -44,46 +44,70 @@ export function SocketProvider({ children }: SocketProviderProps) {
     [token]
   );
 
-  // Create socket connections for each namespace
+  // Create socket connections for each namespace - only when authenticated
   const boardSocket = useSocket({
     url: env.SOCKET_URL,
-    autoConnect: false,
+    autoConnect: isAuthenticated && !authLoading,
     namespace: '/board',
     auth: authConfig,
   });
 
-
   const notificationSocket = useSocket({
     url: env.SOCKET_URL,
-    autoConnect: false,
+    autoConnect: isAuthenticated && !authLoading,
     namespace: '/notifications',
     auth: authConfig,
   });
 
-  const systemSocket = useSocket({
-    url: env.SOCKET_URL,
-    autoConnect: false,
-    namespace: '/system',
-    auth: authConfig,
-  });
+  // Temporarily disable system socket to fix authentication issues
+  // const systemSocket = useSocket({
+  //   url: env.SOCKET_URL,
+  //   autoConnect: isAuthenticated && !authLoading,
+  //   namespace: '/system',
+  //   auth: authConfig,
+  // });
+  
+  // Create a mock system socket object
+  const systemSocket = {
+    socket: null,
+    isConnected: false,
+    isConnecting: false,
+    error: null,
+    connect: () => {},
+    disconnect: () => {},
+    on: () => {},
+    off: () => {},
+    emit: () => {}
+  };
 
   const chatSocket = useSocket({
     url: env.SOCKET_URL,
-    autoConnect: false,
+    autoConnect: isAuthenticated && !authLoading,
     namespace: '/chat',
     auth: authConfig,
   });
 
   const workspaceSocket = useSocket({
     url: env.SOCKET_URL,
-    autoConnect: false,
+    autoConnect: isAuthenticated && !authLoading,
     namespace: '/workspace',
     auth: authConfig,
   });
 
+  // Debug workspace socket connection
+  useEffect(() => {
+    console.log('🔌 SocketContext: Workspace socket status', {
+      isConnected: workspaceSocket.isConnected,
+      isConnecting: workspaceSocket.isConnecting,
+      error: workspaceSocket.error,
+      hasSocket: !!workspaceSocket.socket,
+      socketId: workspaceSocket.socket?.id
+    });
+  }, [workspaceSocket.isConnected, workspaceSocket.isConnecting, workspaceSocket.error]);
+
   const aiSocket = useSocket({
     url: env.SOCKET_URL,
-    autoConnect: false,
+    autoConnect: isAuthenticated && !authLoading,
     namespace: '/ai',
     auth: authConfig,
   });
@@ -122,15 +146,35 @@ export function SocketProvider({ children }: SocketProviderProps) {
     if (chatSocket.socket) {
       newNamespaces.set('chat', createNamespaceObject('chat', chatSocket));
     }
-    if (workspaceSocket.socket) {
-      newNamespaces.set('workspace', createNamespaceObject('workspace', workspaceSocket));
-    }
+    // Always add workspace socket to namespaces, even if not connected yet
+    newNamespaces.set('workspace', createNamespaceObject('workspace', workspaceSocket));
     if (aiSocket.socket) {
       newNamespaces.set('ai', createNamespaceObject('ai', aiSocket));
     }
     
     setNamespaces(newNamespaces);
   }, [boardSocket.socket, notificationSocket.socket, systemSocket.socket, chatSocket.socket, workspaceSocket.socket, aiSocket.socket]);
+
+  // Connection management - prevent multiple connections
+  useEffect(() => {
+    if (isAuthenticated && !authLoading && token) {
+      console.log('🔌 SocketContext: User authenticated, setting up socket connections...');
+      setIsReady(true);
+    } else if (!isAuthenticated) {
+      console.log('🔌 SocketContext: User not authenticated, cleaning up socket connections...');
+      setIsReady(false);
+    }
+  }, [isAuthenticated, authLoading, token]);
+
+  // Auto-join notification room when notification socket connects
+  useEffect(() => {
+    if (notificationSocket.socket && notificationSocket.isConnected && user?.id) {
+      console.log('🔌 Auto-joining notification room for user:', user.id);
+      const roomName = `notifications:${user.id}`;
+      notificationSocket.socket.emit('join_room', { room: roomName });
+      console.log('🔌 Joined notification room:', roomName);
+    }
+  }, [notificationSocket.socket, notificationSocket.isConnected, user?.id]);
 
   // Set up real-time event listeners for column operations
   useEffect(() => {
@@ -341,7 +385,11 @@ export function SocketProvider({ children }: SocketProviderProps) {
       
       // Only connect to system socket if user has admin privileges
       if (user?.roles?.global?.includes('admin') || user?.roles?.permissions?.includes('system:monitor')) {
-        systemSocket.connect();
+        try {
+          systemSocket.connect();
+        } catch (error) {
+          console.warn('Failed to connect system socket:', error);
+        }
       }
     } else if (!authLoading && (!isAuthenticated || !token)) {
       setIsReady(false);
@@ -356,20 +404,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     }
   }, [isAuthenticated, token, authLoading, isReadyToConnect, user?.roles?.global, user?.roles?.permissions]);
 
-  // Handle AI socket connection when token becomes available
-  useEffect(() => {
-    if (token && isAuthenticated && !aiSocket.isConnected && !aiSocket.isConnecting) {
-      // Only connect if we have a valid token format
-      if (typeof token === 'string' && token.length > 0) {
-        try {
-          console.log('🔌 Connecting AI socket...');
-          aiSocket.connect();
-        } catch (error) {
-          console.warn('Failed to connect AI socket:', error);
-        }
-      }
-    }
-  }, [token, isAuthenticated]); // Removed aiSocket from dependencies to prevent infinite loop
+  // AI socket connection is now handled in the main useEffect above
 
   // Retry AI socket connection on authentication errors (with limit)
   const [aiRetryCount, setAiRetryCount] = useState(0);
@@ -416,18 +451,29 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const isAnyConnected = boardSocket.isConnected || notificationSocket.isConnected || 
                         systemSocket.isConnected || chatSocket.isConnected || workspaceSocket.isConnected || aiSocket.isConnected;
 
-  // Debug AI socket status (only when there's an error)
-  if (aiSocket.error) {
-    console.log('AI Socket Debug:', {
-      isConnected: aiSocket.isConnected,
-      isConnecting: aiSocket.isConnecting,
-      error: aiSocket.error,
-      hasAuth: !!authConfig,
-      token: !!token,
-      isAuthenticated,
-      retryCount: aiRetryCount
-    });
-  }
+  // Debug AI socket status (always show for debugging)
+  console.log('🔌 AI Socket Debug:', {
+    isConnected: aiSocket.isConnected,
+    isConnecting: aiSocket.isConnecting,
+    error: aiSocket.error,
+    hasAuth: !!authConfig,
+    token: !!token,
+    isAuthenticated,
+    retryCount: aiRetryCount,
+    hasSocket: !!aiSocket.socket,
+    socketId: aiSocket.socket?.id
+  });
+
+  // Debug notification socket status
+  console.log('🔌 Notification Socket Debug:', {
+    isConnected: notificationSocket.isConnected,
+    isConnecting: notificationSocket.isConnecting,
+    error: notificationSocket.error,
+    hasSocket: !!notificationSocket.socket,
+    socketId: notificationSocket.socket?.id,
+    isAuthenticated,
+    hasToken: !!token
+  });
   
   const isAnyConnecting = boardSocket.isConnecting || notificationSocket.isConnecting || 
                          systemSocket.isConnecting || chatSocket.isConnecting || workspaceSocket.isConnecting || aiSocket.isConnecting;
@@ -692,13 +738,14 @@ export function SocketProvider({ children }: SocketProviderProps) {
     chatSocket: chatSocket.socket,
     notificationSocket: notificationSocket.socket,
     systemSocket: systemSocket.socket,
-    workspaceSocket: workspaceSocket.socket,
+    workspaceSocket: workspaceSocket,
     aiSocket: aiSocket.socket,
     
     // Connection status
     isConnected: isAnyConnected,
     isConnecting: isAnyConnecting,
     connectionError: hasErrors ? 'One or more socket connections have errors' : null,
+    isNotificationConnected: notificationSocket.isConnected,
     
     // Connection methods
     connect,

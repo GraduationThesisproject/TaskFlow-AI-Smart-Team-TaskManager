@@ -42,6 +42,10 @@ const updateWorkspaceRulesSchema = {
     content: { required: true, string: true, maxLength: 10000 }
 };
 
+const updateMemberRoleSchema = {
+    role: { required: true, enum: ['member', 'admin'] }
+};
+
 module.exports = {
     createWorkspaceSchema,
     updateWorkspaceSchema,
@@ -49,5 +53,6 @@ module.exports = {
     updateSettingsSchema,
     transferOwnershipSchema,
     updateVisibilitySchema,
-    updateWorkspaceRulesSchema
+    updateWorkspaceRulesSchema,
+    updateMemberRoleSchema
 };

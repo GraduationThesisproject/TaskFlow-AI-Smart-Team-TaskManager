@@ -12,6 +12,8 @@ const SpaceTable: React.FC<SpaceTableProps> = ({
   onUnarchive,
   onPermanentDelete,
   showArchiveActions = true,
+  canEditSpace,
+  canViewSpace,
   onSpaceClick,
   viewMode = 'cards',
 }) => {
@@ -193,7 +195,7 @@ const SpaceTable: React.FC<SpaceTableProps> = ({
                       
                       {/* Space Actions */}
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        {!space.isArchived && showArchiveActions && (
+                        {!space.isArchived && showArchiveActions && canEditSpace && canEditSpace(space) && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -209,7 +211,7 @@ const SpaceTable: React.FC<SpaceTableProps> = ({
                             </svg>
                           </Button>
                         )}
-                        {space.isArchived && showArchiveActions && (
+                        {space.isArchived && showArchiveActions && canEditSpace && canEditSpace(space) && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -225,7 +227,7 @@ const SpaceTable: React.FC<SpaceTableProps> = ({
                             </svg>
                           </Button>
                         )}
-                        {space.isArchived && showArchiveActions && (
+                        {space.isArchived && showArchiveActions && canEditSpace && canEditSpace(space) && (
                           <Button
                             variant="ghost"
                             size="sm"

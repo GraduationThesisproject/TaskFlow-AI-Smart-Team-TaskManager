@@ -226,14 +226,29 @@ export function useAISocket() {
     options: BoardGenerationOptions = {}
   ): Promise<BoardGenerationResult> => {
     return new Promise((resolve, reject) => {
+      console.log('🔌 generateBoard called:', { 
+        prompt: prompt.substring(0, 50) + '...', 
+        hasAISocket: !!aiSocket,
+        aiSocketConnected: aiSocket?.connected,
+        aiSocketId: aiSocket?.id
+      });
+
       if (!aiSocket) {
+        console.log('❌ generateBoard failed: AI socket not available');
         reject(new Error('AI socket not available'));
+        return;
+      }
+
+      if (!aiSocket.connected) {
+        console.log('❌ generateBoard failed: AI socket not connected');
+        reject(new Error('AI socket not connected'));
         return;
       }
 
       setIsGenerating(true);
 
       const handleSuccess = (response: AISocketResponse<BoardGenerationResult>) => {
+        console.log('✅ generateBoard success:', response);
         setIsGenerating(false);
         if (response.success && response.data) {
           resolve(response.data);
@@ -243,6 +258,7 @@ export function useAISocket() {
       };
 
       const handleError = (response: AISocketResponse) => {
+        console.log('❌ generateBoard error:', response);
         setIsGenerating(false);
         reject(new Error(response.error || 'Board generation failed'));
       };
@@ -252,6 +268,7 @@ export function useAISocket() {
       aiSocket.on('board_generation_error', handleError);
 
       // Emit the request
+      console.log('🔌 Emitting generate_board event to AI socket');
       aiSocket.emit('generate_board', { prompt, options });
 
       // Cleanup listeners after 30 seconds
@@ -576,16 +593,34 @@ export function useAISocket() {
 
   // Listen for board generation progress
   useEffect(() => {
-    if (!aiSocket) return;
+    if (!aiSocket) {
+      console.log('🔌 useAISocket: No AI socket available');
+      return;
+    }
+
+    console.log('🔌 useAISocket: Setting up event listeners for socket:', aiSocket.id);
 
     const handleGenerationStarted = (data: { prompt: string; timestamp: string }) => {
+      console.log('🔌 AI generation started:', data);
       toast.info('AI is generating your board...', 'Board Generation Started');
     };
 
+    const handleConnected = (data: any) => {
+      console.log('🔌 AI socket connected event received:', data);
+    };
+
+    const handleError = (error: any) => {
+      console.log('🔌 AI socket error event received:', error);
+    };
+
     aiSocket.on('board_generation_started', handleGenerationStarted);
+    aiSocket.on('connected', handleConnected);
+    aiSocket.on('error', handleError);
 
     return () => {
       aiSocket.off('board_generation_started', handleGenerationStarted);
+      aiSocket.off('connected', handleConnected);
+      aiSocket.off('error', handleError);
     };
   }, [aiSocket, toast]);
 
@@ -593,6 +628,16 @@ export function useAISocket() {
   const isConnected = aiSocket?.connected || false;
   const isConnecting = aiSocket?.connecting || false;
   const connectionError = aiSocket?.error || null;
+
+  // Debug AI socket connection
+  console.log('🔌 useAISocket Debug:', {
+    hasAISocket: !!aiSocket,
+    isConnected,
+    isConnecting,
+    connectionError,
+    socketId: aiSocket?.id,
+    socketConnected: aiSocket?.connected
+  });
 
   return {
     // Connection status
