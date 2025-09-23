@@ -1,7 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { PageTransition, AnimatedPage, usePageTransition } from '../components/common/PageTransition';
-import SignIn from "../layouts/Landing/SignIn";
-import SignUp from "../layouts/Landing/SignUP";
 import EmailVerification from "../layouts/Landing/EmailVerif";
 import RecoverPassword from "../layouts/Landing/RecoverPass";
 import ForgotPassword from "../layouts/Landing/ForgotPassword";
@@ -12,7 +10,11 @@ import About from '../layouts/Landing/StaticPages/About';
 import Contact from '../layouts/Landing/StaticPages/Contact';
 import SupportPage from '../layouts/Landing/StaticPages/SupportPage';
 
-export const LandingPage = () => {
+interface LandingPageProps {
+  onSignUpClick?: () => void;
+}
+
+export const LandingPage = ({ onSignUpClick }: LandingPageProps) => {
     const location = useLocation();
     const { handleAnimationStart, handleAnimationComplete } = usePageTransition();
 
@@ -26,25 +28,9 @@ export const LandingPage = () => {
                           onAnimationStart={handleAnimationStart}
                           onAnimationComplete={handleAnimationComplete}
                         >
-                            <LandingPageHome />
-                        </AnimatedPage>
-                    } />
-                    <Route path="/signin" element={
-                        <AnimatedPage 
-                          animationType="slide"
-                          onAnimationStart={handleAnimationStart}
-                          onAnimationComplete={handleAnimationComplete}
-                        >
-                            <SignIn />
-                        </AnimatedPage>
-                    } />
-                    <Route path="/signup" element={
-                        <AnimatedPage 
-                          animationType="slide"
-                          onAnimationStart={handleAnimationStart}
-                          onAnimationComplete={handleAnimationComplete}
-                        >
-                            <SignUp />
+                            <LandingPageHome 
+                              onSignUpClick={onSignUpClick}
+                            />
                         </AnimatedPage>
                     } />
                     <Route path="/verify-email" element={

@@ -127,7 +127,7 @@ const About = () => {
         description="We're on a mission to make work more intelligent, collaborative, and enjoyable. By combining cutting-edge AI with thoughtful design, we're helping teams achieve more together."
         primaryButton={{
           text: "Join Our Mission",
-          href: "/signup"
+          onClick: () => console.log("Start Free Trial clicked - handled by parent")
         }}
         secondaryButton={{
           text: "Watch Our Story",
@@ -338,7 +338,7 @@ const About = () => {
         description="Be part of the revolution in how teams work together"
         primaryButton={{
           text: "Start Free Trial",
-          href: "/signup"
+          onClick: () => console.log("Start Free Trial clicked - handled by parent")
         }}
         secondaryButton={{
           text: "Get in Touch",

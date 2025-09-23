@@ -22,6 +22,13 @@ const bulkInviteSchema = {
     message: { maxLength: 500 }
 };
 
+const inviteGitHubMembersSchema = {
+    workspaceId: { required: true, objectId: true },
+    memberEmails: { required: true, array: true, arrayOf: 'email', minItems: 1, maxItems: 50 },
+    role: { enum: ['viewer', 'member', 'contributor', 'admin'], default: 'member' },
+    message: { maxLength: 500 }
+};
+
 const extendInvitationSchema = {
     days: { number: true, min: 1, max: 30 }
 };
@@ -29,5 +36,6 @@ const extendInvitationSchema = {
 module.exports = {
     createInvitationSchema,
     bulkInviteSchema,
+    inviteGitHubMembersSchema,
     extendInvitationSchema
 };

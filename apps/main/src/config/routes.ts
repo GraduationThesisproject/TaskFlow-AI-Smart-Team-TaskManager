@@ -11,8 +11,6 @@ export interface RouteConfig {
 export const ROUTES = {
   // Public routes (no authentication required)
   LANDING: { path: '/*', isPublic: true },
-  SIGNIN: { path: '/signin', isPublic: true },
-  SIGNUP: { path: '/signup', isPublic: true },
 
   // Protected routes (authentication required)
   DASHBOARD: { path: '/dashboard/*', requiredRole: 'member' },

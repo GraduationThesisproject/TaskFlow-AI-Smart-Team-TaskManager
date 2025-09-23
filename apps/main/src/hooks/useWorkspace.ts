@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo, useState } from 'react';
+import { useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
 import { 
   fetchWorkspaces,
@@ -117,6 +117,9 @@ export const useWorkspace = (params?: UseWorkspaceParams | string): UseWorkspace
     }
     return params || { autoFetch: true, global: false, includeArchived: true };
   }, [params]);
+
+  // Track if fetch has been initiated to prevent multiple simultaneous fetches
+  const fetchInitiated = useRef(false);
   
   const {
     workspaces,
@@ -479,14 +482,24 @@ export const useWorkspace = (params?: UseWorkspaceParams | string): UseWorkspace
 
   // Auto-fetch on mount - only run once
   useEffect(() => {
-    if (autoFetch && workspaces.length === 0 && !loading && !isLoading) {
+    // Only fetch if we haven't fetched yet and no fetch is in progress
+    if (autoFetch && workspaces.length === 0 && !loading && !isLoading && !fetchInitiated.current) {
+      console.log('🔄 useWorkspace: Fetching workspaces', { global, workspacesLength: workspaces.length, loading, isLoading });
+      fetchInitiated.current = true;
       if (global) {
         loadGlobalWorkspaces();
       } else {
         loadWorkspaces();
       }
     }
-  }, [autoFetch, workspaces.length, loading, isLoading, global, loadGlobalWorkspaces, loadWorkspaces]); // Add loading states to prevent unnecessary refetches
+  }, [autoFetch, workspaces.length, loading, isLoading, global]); // Remove function dependencies to prevent infinite loop
+
+  // Reset fetch initiated flag when workspaces are loaded
+  useEffect(() => {
+    if (workspaces.length > 0) {
+      fetchInitiated.current = false;
+    }
+  }, [workspaces.length]);
 
   // Load workspace data when workspaceId changes - only if we have a workspaceId
   useEffect(() => {
@@ -494,7 +507,7 @@ export const useWorkspace = (params?: UseWorkspaceParams | string): UseWorkspace
       loadWorkspace(workspaceId);
       // Remove loadWorkspaceMembers call since members are already included in workspace data
     }
-  }, [autoFetch, workspaceId, currentWorkspace?._id, loading, isLoading, loadWorkspace]); // Add loadWorkspace to dependencies
+  }, [autoFetch, workspaceId, currentWorkspace?._id, loading, isLoading]); // Remove function dependencies to prevent infinite loop
 
   return {
     // State

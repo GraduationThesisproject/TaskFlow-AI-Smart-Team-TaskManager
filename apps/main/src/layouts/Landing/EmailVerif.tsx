@@ -83,7 +83,7 @@ export default function EmailVerification() {
   };
 
   const handleBackToSignIn = () => {
-    navigate('/signin');
+    navigate('/');
   };
 
   return (

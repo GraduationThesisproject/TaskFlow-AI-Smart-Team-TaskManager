@@ -34,7 +34,7 @@ export default function RecoverPassword() {
     setIsResetting(true);
     try {
       await resetPassword({ token, email, newPassword });
-      navigate('/signin?message=Password reset successful');
+      navigate('/?message=Password reset successful');
     } catch (error) {
       console.error('Password reset error:', error);
     } finally {
@@ -43,7 +43,7 @@ export default function RecoverPassword() {
   };
 
   const handleBackToSignIn = () => {
-    navigate('/signin');
+    navigate('/');
   };
 
   return (

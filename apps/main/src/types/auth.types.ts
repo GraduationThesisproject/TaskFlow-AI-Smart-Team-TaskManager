@@ -97,6 +97,14 @@ export interface LoginCredentials {
   email: string;
   password: string;
   rememberMe?: boolean;
+  device?: {
+    deviceId?: string;
+    deviceInfo?: {
+      type: 'web' | 'mobile' | 'desktop';
+      os?: string;
+      browser?: string;
+    };
+  };
 }
 
 // Register data interface
@@ -104,6 +112,14 @@ export interface RegisterData {
   email: string;
   password: string;
   name: string;
+  device?: {
+    deviceId?: string;
+    deviceInfo?: {
+      type: 'web' | 'mobile' | 'desktop';
+      os?: string;
+      browser?: string;
+    };
+  };
 }
 
 // Auth response from backend

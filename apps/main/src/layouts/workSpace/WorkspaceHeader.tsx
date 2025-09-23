@@ -27,9 +27,11 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({ workspace }) =
           <Typography variant="body-small" className="text-muted-foreground">
             {workspace.description || 'No description'}
           </Typography>
-          <div className="mt-2">
-            <GitHubOrgBadge workspace={workspace} />
-          </div>
+          {workspace.githubOrg && (
+            <div className="mt-2">
+              <GitHubOrgBadge workspace={workspace} />
+            </div>
+          )}
         </div>
       </div>
     </div>

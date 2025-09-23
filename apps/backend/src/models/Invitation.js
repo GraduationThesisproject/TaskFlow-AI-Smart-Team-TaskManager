@@ -70,7 +70,7 @@ const invitationSchema = new mongoose.Schema({
     type: Date,
     required: true,
     default: function() {
-      return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
     }
   },
   acceptedAt: {
@@ -110,6 +110,20 @@ invitationSchema.index({ invitedBy: 1 });
 invitationSchema.index({ 'targetEntity.type': 1, 'targetEntity.id': 1 });
 invitationSchema.index({ status: 1 });
 invitationSchema.index({ expiresAt: 1 });
+
+// Compound unique index to prevent duplicate invitations
+invitationSchema.index(
+  { 
+    'invitedUser.email': 1, 
+    'targetEntity.type': 1, 
+    'targetEntity.id': 1, 
+    status: 1 
+  }, 
+  { 
+    unique: true, 
+    partialFilterExpression: { status: 'pending' }
+  }
+);
 
 // Pre-save middleware to generate token
 invitationSchema.pre('save', function(next) {

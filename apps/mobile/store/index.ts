@@ -23,7 +23,6 @@ import notificationReducer from './slices/notificationSlice';
 import templatesReducer from './slices/templatesSlice';
 import analyticsReducer from './slices/analyticsSlice';
 import permissionReducer from './slices/permissionSlice';
-import dragBoardReducer from './slices/dragBoardSlice';
 
 const rootReducer = combineReducers({
   app: appReducer,
@@ -38,7 +37,6 @@ const rootReducer = combineReducers({
   templates: templatesReducer,
   analytics: analyticsReducer,
   permissions: permissionReducer,
-  dragBoard: dragBoardReducer,
 });
 
 const persistConfig = {

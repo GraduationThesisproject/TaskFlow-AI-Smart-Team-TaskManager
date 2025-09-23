@@ -27,6 +27,16 @@ import {
 } from '@heroicons/react/24/outline';
 import integrationService, { Integration } from '../services/integrationService';
 import AddIntegrationModal from '../components/AddIntegrationModal';
+import useAiTokens from '../hooks/useAiTokens';
+import { CreateAiTokenData } from '../services/aiTokenService';
+import { 
+  CpuChipIcon,
+  KeyIcon as KeyIconSolid,
+  CheckCircleIcon as CheckCircleIconSolid,
+  ExclamationTriangleIcon as ExclamationTriangleIconSolid
+} from '@heroicons/react/24/solid';
+
+// AiToken interface is now imported from the service
 
 const IntegrationsLayout: React.FC = () => {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
@@ -37,6 +47,31 @@ const IntegrationsLayout: React.FC = () => {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAiTokenModal, setShowAiTokenModal] = useState(false);
+  const [aiTokenForm, setAiTokenForm] = useState<CreateAiTokenData>({
+    name: '',
+    description: '',
+    token: '',
+    provider: 'google',
+    config: {
+      model: 'gemini-1.5-flash',
+      maxTokens: 2000,
+      temperature: 0.3,
+      timeout: 30000
+    }
+  });
+
+  // Use the AI tokens hook
+  const {
+    tokens: aiTokens,
+    loading: aiTokensLoading,
+    error: aiTokensError,
+    createToken,
+    activateToken,
+    archiveToken,
+    testToken,
+    clearError: clearAiTokensError
+  } = useAiTokens();
 
   const filteredIntegrations = (integrations || []).filter(integration => {
     const matchesSearch = 
@@ -130,8 +165,8 @@ const IntegrationsLayout: React.FC = () => {
         integration.id === integrationId 
           ? { 
               ...integration, 
-              status: result.status || integration.status,
-              syncStatus: result.syncStatus || integration.syncStatus
+              status: (result.status as Integration['status']) || integration.status,
+              syncStatus: (result.syncStatus as Integration['syncStatus']) || integration.syncStatus
             }
           : integration
       ));
@@ -147,6 +182,42 @@ const IntegrationsLayout: React.FC = () => {
     }
   };
 
+  const handleCreateAiToken = async () => {
+    const success = await createToken(aiTokenForm);
+    if (success) {
+      setShowAiTokenModal(false);
+      setAiTokenForm({
+        name: '',
+        description: '',
+        token: '',
+        provider: 'google',
+        config: {
+          model: 'gemini-1.5-flash',
+          maxTokens: 2000,
+          temperature: 0.3,
+          timeout: 30000
+        }
+      });
+    }
+  };
+
+  const handleCloseAiTokenModal = () => {
+    setShowAiTokenModal(false);
+    clearAiTokensError();
+  };
+
+  const handleActivateToken = async (tokenId: string) => {
+    await activateToken(tokenId);
+  };
+
+  const handleArchiveToken = async (tokenId: string) => {
+    await archiveToken(tokenId);
+  };
+
+  const handleTestToken = async (tokenId: string) => {
+    await testToken(tokenId);
+  };
+
   const getStatusBadge = (status: string) => {
     const variant = integrationService.getStatusBadgeVariant(status);
     return <Badge variant={variant}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
@@ -155,6 +226,21 @@ const IntegrationsLayout: React.FC = () => {
   const getCategoryBadge = (category: string) => {
     const variant = integrationService.getCategoryBadgeVariant(category);
     return <Badge variant={variant}>{category.charAt(0).toUpperCase() + category.slice(1)}</Badge>;
+  };
+
+  const getAiTokenStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="success">Active</Badge>;
+      case 'inactive':
+        return <Badge variant="warning">Inactive</Badge>;
+      case 'archived':
+        return <Badge variant="secondary">Archived</Badge>;
+      case 'invalid':
+        return <Badge variant="error">Invalid</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
   };
 
   const getSyncStatusIcon = (status: string) => {
@@ -200,17 +286,23 @@ const IntegrationsLayout: React.FC = () => {
               Manage third-party integrations and API connections
             </Typography>
           </div>
-          <Button onClick={() => setShowAddModal(true)}>
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add Integration
-          </Button>
+          <div className="flex space-x-3">
+            <Button onClick={() => setShowAiTokenModal(true)}>
+              <CpuChipIcon className="h-4 w-4 mr-2" />
+              Manage AI Tokens
+            </Button>
+            <Button onClick={() => setShowAddModal(true)}>
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Add Integration
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Error Alert */}
-      {error && (
+      {(error || aiTokensError) && (
         <Alert variant="error" className="mb-6">
-          {error}
+          {error || aiTokensError}
         </Alert>
       )}
 
@@ -244,7 +336,7 @@ const IntegrationsLayout: React.FC = () => {
       </Card>
 
       {/* Loading State */}
-      {loading && (
+      {(loading || aiTokensLoading) && (
         <div className="flex items-center justify-center py-12">
           <Spinner size="lg" />
           <Typography variant="body-medium" className="ml-3 text-muted-foreground">
@@ -254,7 +346,7 @@ const IntegrationsLayout: React.FC = () => {
       )}
 
       {/* Integrations Grid */}
-      {!loading && (
+      {!loading && !aiTokensLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {filteredIntegrations.map((integration) => (
           <Card key={integration.id} className="hover:shadow-md transition-shadow">
@@ -355,7 +447,7 @@ const IntegrationsLayout: React.FC = () => {
       )}
 
       {/* No Results */}
-      {!loading && filteredIntegrations.length === 0 && (
+      {!loading && !aiTokensLoading && filteredIntegrations.length === 0 && (
         <Card className="mt-6">
           <CardContent className="text-center py-12">
             <PuzzlePieceIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -369,12 +461,219 @@ const IntegrationsLayout: React.FC = () => {
         </Card>
       )}
 
+      {/* AI Token Management Section */}
+      <div className="mt-12">
+        <div className="mb-6">
+          <Typography variant="heading-large" className="text-foreground mb-2">
+            AI Token Management
+          </Typography>
+          <Typography variant="body-medium" className="text-muted-foreground">
+            Manage AI provider tokens for board generation and AI features
+          </Typography>
+        </div>
+
+        {/* AI Tokens Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+          {aiTokens.map((token) => (
+            <Card key={token.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-2 min-w-0 flex-1">
+                    <CpuChipIcon className="h-5 w-5 text-blue-500" />
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-lg truncate">{token.name}</CardTitle>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant="outline">{token.provider}</Badge>
+                        {getAiTokenStatusBadge(token.status)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {token.description && (
+                  <Typography variant="body-medium" className="text-muted-foreground mb-4">
+                    {token.description}
+                  </Typography>
+                )}
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Typography variant="body-small" className="text-muted-foreground">
+                      Token
+                    </Typography>
+                    <Typography variant="body-small" className="font-mono text-xs">
+                      {token.maskedToken}
+                    </Typography>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Typography variant="body-small" className="text-muted-foreground">
+                      Model
+                    </Typography>
+                    <Typography variant="body-small">
+                      {token.config.model}
+                    </Typography>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Typography variant="body-small" className="text-muted-foreground">
+                      Usage
+                    </Typography>
+                    <Typography variant="body-small">
+                      {token.usageCount} calls
+                    </Typography>
+                  </div>
+                  
+                  {token.lastUsedAt && (
+                    <div className="flex items-center justify-between">
+                      <Typography variant="body-small" className="text-muted-foreground">
+                        Last Used
+                      </Typography>
+                      <Typography variant="body-small">
+                        {new Date(token.lastUsedAt).toLocaleDateString()}
+                      </Typography>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
+                  {!token.isActive && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 min-w-0"
+                      onClick={() => handleActivateToken(token.id)}
+                    >
+                      <CheckCircleIconSolid className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">Activate</span>
+                    </Button>
+                  )}
+                  
+                  {token.isActive && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 min-w-0"
+                      onClick={() => handleArchiveToken(token.id)}
+                    >
+                      <ExclamationTriangleIconSolid className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">Archive</span>
+                    </Button>
+                  )}
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 min-w-0"
+                    onClick={() => handleTestToken(token.id)}
+                  >
+                    <CheckCircleIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <span className="truncate">Test</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* No AI Tokens */}
+        {aiTokens.length === 0 && (
+          <Card className="mt-6">
+            <CardContent className="text-center py-12">
+              <CpuChipIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <Typography variant="h3" className="text-muted-foreground mb-2">
+                No AI tokens configured
+              </Typography>
+              <Typography variant="body-medium" className="text-muted-foreground mb-4">
+                Add an AI token to enable board generation and AI features
+              </Typography>
+              <Button onClick={() => setShowAiTokenModal(true)}>
+                <CpuChipIcon className="h-4 w-4 mr-2" />
+                Add AI Token
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
       {/* Add Integration Modal */}
       <AddIntegrationModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSuccess={loadIntegrations}
       />
+
+      {/* AI Token Modal */}
+      {showAiTokenModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle>Add AI Token</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Name</label>
+                <Input
+                  value={aiTokenForm.name}
+                  onChange={(e) => setAiTokenForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Token name"
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Description</label>
+                <Input
+                  value={aiTokenForm.description}
+                  onChange={(e) => setAiTokenForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Token description"
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Provider</label>
+                <select
+                  value={aiTokenForm.provider}
+                  onChange={(e) => setAiTokenForm(prev => ({ ...prev, provider: e.target.value }))}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                >
+                  <option value="google">Google (Gemini)</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="azure">Azure OpenAI</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">API Token</label>
+                <Input
+                  type="password"
+                  value={aiTokenForm.token}
+                  onChange={(e) => setAiTokenForm(prev => ({ ...prev, token: e.target.value }))}
+                  placeholder="Enter your API token"
+                />
+              </div>
+              
+              <div className="flex space-x-2 pt-4">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={handleCloseAiTokenModal}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="flex-1"
+                  onClick={handleCreateAiToken}
+                  disabled={!aiTokenForm.name || !aiTokenForm.token}
+                >
+                  Add Token
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </Container>
   );
 };

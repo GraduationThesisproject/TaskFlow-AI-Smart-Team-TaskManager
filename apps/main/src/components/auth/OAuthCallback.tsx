@@ -10,7 +10,6 @@ const OAuthCallback: React.FC = () => {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   
-  const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,7 +43,6 @@ const OAuthCallback: React.FC = () => {
       console.log('❌ Token:', token);
       console.log('❌ Provider:', provider);
       setError('Authentication failed. Missing required parameters.');
-      setStatus('error');
     }
   }, [searchParams]);
 
@@ -109,27 +107,21 @@ const OAuthCallback: React.FC = () => {
         }));
         console.log('✅ Redux state updated with user data');
 
-        // Set success status
-        setStatus('success');
-
-        // Navigate to dashboard after a short delay
-        setTimeout(() => {
-          console.log('🔄 Navigating to dashboard...');
-          navigate('/dashboard');
-        }, 2000);
+        // Navigate to dashboard immediately
+        console.log('🔄 Navigating to dashboard immediately...');
+        navigate('/dashboard');
       } else {
         throw new Error('Invalid user data response');
       }
     } catch (error) {
       console.error('❌ Error fetching user data:', error);
       setError(error instanceof Error ? error.message : 'Failed to fetch user data');
-      setStatus('error');
     }
   };
 
-  console.log('🔄 OAuthCallback Render - Status:', status);
+  console.log('🔄 OAuthCallback Render');
 
-  if (status === 'processing') {
+  if (!error) {
     return (
       <AuthCard
         title="TaskFlow"
@@ -146,7 +138,7 @@ const OAuthCallback: React.FC = () => {
     );
   }
 
-  if (status === 'error') {
+  if (error) {
     return (
       <AuthCard
         title="TaskFlow"
@@ -162,7 +154,7 @@ const OAuthCallback: React.FC = () => {
           
           <div className="space-y-2">
             <Button
-              onClick={() => navigate('/signin')}
+              onClick={() => navigate('/')}
               className="w-full"
             >
               Back to Sign In
@@ -181,34 +173,7 @@ const OAuthCallback: React.FC = () => {
     );
   }
 
-  if (status === 'success') {
-    return (
-      <AuthCard
-        title="TaskFlow"
-        subtitle="Authentication Successful"
-        description="Redirecting to dashboard..."
-      >
-        <div className="text-center space-y-4">
-          <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-            <Typography variant="body-medium" className="text-green-800 dark:text-green-200">
-              Sign-in successful!
-            </Typography>
-          </div>
-          
-          <Typography variant="body-small" className="text-muted-foreground">
-            You will be redirected to the dashboard shortly.
-          </Typography>
-
-          <Button
-            onClick={() => navigate('/dashboard')}
-            className="w-full"
-          >
-            Go to Dashboard
-          </Button>
-        </div>
-      </AuthCard>
-    );
-  }
+  // No success page needed - redirect immediately
 
   return null;
 };

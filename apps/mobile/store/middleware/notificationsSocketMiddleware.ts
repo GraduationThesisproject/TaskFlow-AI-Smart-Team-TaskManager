@@ -100,10 +100,8 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
 
     try {
       // Connect to notifications namespace to match backend
-      // Send token via multiple channels to satisfy different server parsers
       socket = io(`${env.SOCKET_URL}/notifications`, {
         auth: { token },
-        query: { token },
         autoConnect: true,
         transports: ['websocket', 'polling'],
         upgrade: true,
@@ -117,14 +115,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
         // Add additional options for better connection handling
         withCredentials: true,
         rejectUnauthorized: false, // For development only
-        path: '/socket.io',
-        transportOptions: {
-          polling: {
-            extraHeaders: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        },
+        path: '/socket.io'
       });
     } catch (error) {
       console.error('❌ [notificationsSocketMiddleware] Failed to create socket connection:', error);
@@ -398,7 +389,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       
       // Remove the notification from local state
       const currentNotifications = stateNow.notifications.notifications;
-      const notificationExists = currentNotifications.find((n: any) => n._id === notificationId);
+      const notificationExists = currentNotifications.find(n => n._id === notificationId);
       
       if (notificationExists) {
         // Dispatch a local action to remove the notification
@@ -467,7 +458,7 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       return result;
     }
 
-    // Handle workspace creation - emit socket event and create notification
+    // Handle workspace creation - emit socket event only (no notification to avoid duplicate success messages)
     if (actionAny.type === createWorkspace.fulfilled.type && socket?.connected) {
       const workspace = actionAny.payload;
       const currentUser = state.auth.user;
@@ -480,24 +471,8 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
           timestamp: new Date().toISOString()
         });
 
-        // Create local notification
-        store.dispatch(addNotification({
-          _id: `workspace-created-${Date.now()}`,
-          title: 'Workspace Created',
-          message: `Successfully created workspace "${workspace.name}"`,
-          type: 'success',
-          recipientId: currentUser.user._id,
-          relatedEntity: {
-            type: 'workspace',
-            id: workspace._id || workspace.id,
-            name: workspace.name
-          },
-          priority: 'low',
-          isRead: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          clientOnly: true,
-        } as any));
+        // Don't create notification since workspace creation already shows local success messages
+        // This prevents duplicate success banners/toasts
       }
     }
 

@@ -156,30 +156,6 @@ export class AuthService {
     }
   }
 
-  // Google OAuth for mobile
-  static async googleLoginMobile(accessToken: string): Promise<ApiResponse<AuthResponse>> {
-    try {
-      const response = await axiosInstance.post('/auth/google/mobile', { access_token: accessToken });
-      if (response.data.data?.token) await setAuthToken(response.data.data.token);
-      return response.data;
-    } catch (error) {
-      console.error('Error with Google OAuth login:', error);
-      throw error;
-    }
-  }
-
-  // GitHub OAuth for mobile
-  static async githubLoginMobile(code: string): Promise<ApiResponse<AuthResponse>> {
-    try {
-      const response = await axiosInstance.post('/auth/github/mobile', { code });
-      if (response.data.data?.token) await setAuthToken(response.data.data.token);
-      return response.data;
-    } catch (error) {
-      console.error('Error with GitHub OAuth login:', error);
-      throw error;
-    }
-  }
-
   //------------------- Email Verification -------------------
   static async verifyEmail(verificationData: EmailVerificationData): Promise<ApiResponse<AuthResponse>> {
     try {

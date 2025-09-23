@@ -5,6 +5,7 @@ import type {
   GitHubOrg,
   GitHubRepo,
   GitHubBranch,
+  GitHubMember,
   GitHubStatus,
   GitHubSyncResult,
   GitHubApiResponse,
@@ -53,6 +54,28 @@ export class GitHubService {
       return response.data;
     } catch (error: any) {
       console.error('Error fetching GitHub branches:', error);
+      throw this.handleError(error);
+    }
+  }
+
+  // Fetch members of a specific organization
+  static async getOrganizationMembers(orgLogin: string): Promise<GitHubApiResponse<GitHubMember[]>> {
+    try {
+      const response = await axiosInstance.get(`/github/orgs/${orgLogin}/members`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching GitHub organization members:', error);
+      throw this.handleError(error);
+    }
+  }
+
+  // Fetch organization members with email mapping
+  static async getOrganizationMembersWithEmails(orgLogin: string): Promise<GitHubApiResponse<GitHubMember[]>> {
+    try {
+      const response = await axiosInstance.get(`/github/orgs/${orgLogin}/members-with-emails`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching GitHub organization members with emails:', error);
       throw this.handleError(error);
     }
   }
@@ -112,81 +135,50 @@ export class GitHubService {
     return `https://github.com/login/oauth/authorize?${params.toString()}`;
   }
 
-  // Handle API errors and convert to standardized format
-  private static handleError(error: any): GitHubError {
-    if (error.response?.data) {
-      const { data } = error.response;
-      
-      // Check for scope-related errors
-      if (data.message?.includes('read:org scope') || data.message?.includes('insufficient')) {
-        return {
-          message: data.message || 'Insufficient GitHub permissions',
-          status: error.response.status,
-          reason: 'insufficient_scopes',
-          missingScopes: data.data?.missingScopes || ['read:org', 'repo'],
-          action: 're_auth'
-        };
-      }
+  // Generate popup-based OAuth URL with popup callback
+  static generatePopupOAuthUrl(config: {
+    clientId: string;
+    scope?: string;
+    state?: string;
+  }): string {
+    const { clientId, scope = 'user:email read:org repo', state } = config;
+    
+    // Use the existing GitHub callback URL but with popup state
+    const redirectUri = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'}/auth/github/callback`;
+    
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      scope: scope,
+      state: 'popup-oauth' // Add popup state to distinguish from regular OAuth
+    });
 
-      // Check for organization access errors
-      if (data.message?.includes('Cannot access') || data.message?.includes('access denied')) {
-        return {
-          message: data.message || 'Cannot access GitHub organizations',
-          status: error.response.status,
-          reason: 'org_access_denied',
-          action: 're_auth'
-        };
-      }
-
-      // Check for token errors
-      if (data.message?.includes('token') || data.message?.includes('unauthorized')) {
-        return {
-          message: data.message || 'Invalid GitHub token',
-          status: error.response.status,
-          reason: 'token_invalid',
-          action: 're_auth'
-        };
-      }
-
-      return {
-        message: data.message || 'GitHub API error',
-        status: error.response.status,
-        reason: 'network_error'
-      };
-    }
-
-    // Network or other errors
-    return {
-      message: error.message || 'Network error',
-      reason: 'network_error'
-    };
+    return `https://github.com/login/oauth/authorize?${params.toString()}`;
   }
 
-  // Validate GitHub integration
-  static async validateIntegration(): Promise<{
-    isValid: boolean;
-    reason?: string;
-    missingScopes?: string[];
-  }> {
-    try {
-      const statusResponse = await this.getStatus();
-      
-      if (!statusResponse.success || !statusResponse.data?.linked) {
-        return { isValid: false, reason: 'not_linked' };
-      }
+  // Handle API errors and convert to standardized format
+  private static handleError(error: any): GitHubError {
+    const githubError: GitHubError = {
+      message: 'An unexpected error occurred',
+      status: 500,
+      code: 'UNKNOWN_ERROR'
+    };
 
-      if (!statusResponse.data.hasRequiredScopes) {
-        return {
-          isValid: false,
-          reason: 'insufficient_scopes',
-          missingScopes: statusResponse.data.missingScopes
-        };
-      }
-
-      return { isValid: true };
-    } catch (error) {
-      console.error('Error validating GitHub integration:', error);
-      return { isValid: false, reason: 'validation_failed' };
+    if (error.response) {
+      // Server responded with error status
+      githubError.status = error.response.status;
+      githubError.message = error.response.data?.message || error.response.statusText || 'Server error';
+      githubError.code = error.response.data?.code || 'SERVER_ERROR';
+    } else if (error.request) {
+      // Request was made but no response received
+      githubError.message = 'Network error - please check your connection';
+      githubError.code = 'NETWORK_ERROR';
+    } else {
+      // Something else happened
+      githubError.message = error.message || 'Unknown error occurred';
+      githubError.code = 'CLIENT_ERROR';
     }
+
+    return githubError;
   }
 }

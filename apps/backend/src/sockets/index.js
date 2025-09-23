@@ -10,6 +10,7 @@ const notificationSocket = require('./notification.socket');
 const systemSocket = require('./system.socket');
 const workspaceSocket = require('./workspace.socket');
 const chatSocket = require('./chat.socket');
+const aiSocket = require('./ai.socket');
 const PermissionSocket = require('./permission.socket');
 
 /**
@@ -27,7 +28,8 @@ const initializeSockets = (io) => {
         notification: notificationSocket(io),
         system: systemSocket(io),
         workspace: workspaceSocket(io),
-        chat: chatSocket(io)
+        chat: chatSocket(io),
+        ai: aiSocket(io)
     };
 
     // Store namespaces locally for getNamespace function
@@ -131,6 +133,7 @@ module.exports = {
     systemSocket,
     workspaceSocket,
     chatSocket,
+    aiSocket,
     
     // Initialization
     initializeSockets,

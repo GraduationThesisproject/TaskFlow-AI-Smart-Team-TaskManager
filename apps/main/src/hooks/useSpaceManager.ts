@@ -20,7 +20,9 @@ import {
   createBoard,
   updateBoard,
   deleteBoard,
-  setCurrentBoard
+  setCurrentBoard,
+  archiveBoard,
+  unarchiveBoard
 } from '../store/slices/boardSlice';
 
 export const useSpaceManager = () => {
@@ -154,6 +156,24 @@ export const useSpaceManager = () => {
     dispatch(setCurrentBoard(board));
   };
 
+  const archiveBoardById = async (boardId: string) => {
+    try {
+      await dispatch(archiveBoard(boardId) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to archive board:', error);
+      throw error;
+    }
+  };
+
+  const unarchiveBoardById = async (boardId: string) => {
+    try {
+      await dispatch(unarchiveBoard(boardId) as any).unwrap();
+    } catch (error) {
+      console.error('Failed to unarchive board:', error);
+      throw error;
+    }
+  };
+
   // Computed values
   const activeSpaces = spaces.filter(space => space.isActive && !space.isArchived);
   const archivedSpaces = spaces.filter(space => space.isArchived);
@@ -237,6 +257,8 @@ export const useSpaceManager = () => {
     editBoard,
     removeBoard,
     selectBoard,
+    archiveBoardById,
+    unarchiveBoardById,
 
     // Computed selectors
     getSpacesByWorkspace,

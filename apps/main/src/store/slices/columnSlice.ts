@@ -106,7 +106,7 @@ export const createColumn = createAsyncThunk(
   'columns/createColumn',
   async ({ boardId, columnData }: { boardId: string; columnData: any }) => {
     console.log('🔄 Creating column:', { boardId, columnData });
-    const response = await BoardService.createColumn({ ...columnData, board: boardId });
+    const response = await BoardService.createColumn({ ...columnData, boardId: boardId });
     console.log('✅ Column created:', response.data);
     return response.data;
   }

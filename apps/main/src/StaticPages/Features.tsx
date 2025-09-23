@@ -162,7 +162,7 @@ const Features = () => {
         description="Discover how TaskFlow's AI-powered features transform your workflow, boost productivity, and help your team achieve more together."
         primaryButton={{
           text: "Start Free Trial",
-          href: "/signup"
+          onClick: () => console.log("Start Free Trial clicked - handled by parent")
         }}
         secondaryButton={{
           text: "Watch Demo",
@@ -237,7 +237,7 @@ const Features = () => {
         description="Join thousands of teams who've already transformed their workflow with TaskFlow"
         primaryButton={{
           text: "Start Free Trial",
-          href: "/signup"
+          onClick: () => console.log("Start Free Trial clicked - handled by parent")
         }}
         secondaryButton={{
           text: "Schedule Demo",
