@@ -86,6 +86,16 @@ export default function SpacesScreen() {
       alert('Name is required.');
       return;
     }
+    
+    // Check plan limits
+    const { canCreateSpace } = await import('@/utils/planLimits');
+    const currentSpacesCount = spaces?.length || 0;
+    const canCreateMoreSpaces = canCreateSpace(user, currentSpacesCount);
+    
+    if (!canCreateMoreSpaces) {
+      alert('You\'ve reached your limit of 5 spaces per workspace. Upgrade to Premium for unlimited spaces.');
+      return;
+    }
     try {
       setCreating(true);
       await SpaceService.createSpace({

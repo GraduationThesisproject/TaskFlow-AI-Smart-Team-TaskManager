@@ -29,7 +29,6 @@ export default function SpaceBoardsScreen() {
   const displayMembers = useMemo(() => (
     Array.isArray(workspaceMembers) ? workspaceMembers : []
   ), [workspaceMembers]);
-
   // Precompute owner IDs for disable logic
   const ownerIds = useMemo(() => {
     const ids = new Set<string>();
@@ -123,6 +122,76 @@ export default function SpaceBoardsScreen() {
     }
   };
 
+  const openCreateBoard = useCallback(() => {
+    console.log('🎯 openCreateBoard called');
+    setCreateVisible(true);
+  }, []);
+  
+  const resetCreateState = useCallback(() => {
+    // Reset handled by modal component
+  }, []);
+
+  // Create Space handlers
+  const openCreateSpace = useCallback(() => setCreateSpaceVisible(true), []);
+  const handleCreateSpace = useCallback(async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
+    if (!space?.workspace) return;
+    
+    // Check plan limits for space creation
+    const { canCreateSpace } = await import('@/utils/planLimits');
+    const currentSpacesCount = spaces?.length || 0;
+    const canCreateMoreSpaces = canCreateSpace(user, currentSpacesCount);
+    
+    if (!canCreateMoreSpaces) {
+      showBannerError('You\'ve reached your limit of 5 spaces per workspace. Upgrade to Premium for unlimited spaces.');
+      return;
+    }
+    
+    try {
+      setCreatingSpace(true);
+      const workspaceId = space.workspace;
+      
+      // Import SpaceService dynamically to avoid circular dependency
+      const { SpaceService } = await import('@/services/spaceService');
+      
+      await SpaceService.createSpace({
+        name,
+        description,
+        workspaceId,
+        settings: { isPrivate: visibility === 'private' },
+      });
+      
+      // Refresh spaces in workspace
+      if (workspaceId) {
+        await loadSpaces(workspaceId);
+      }
+      
+      setCreateSpaceVisible(false);
+      showBannerSuccess('Space created successfully!');
+    } catch (e: any) {
+      console.warn('Failed to create space', e);
+      showBannerError(e?.message || 'Failed to create space');
+    } finally {
+      setCreatingSpace(false);
+    }
+  }, [space?.workspace, loadSpaces, showBannerSuccess, showBannerError]);
+  const submitCreateBoard = useCallback(async ({ name, description, type, visibility }: { 
+    name: string; 
+    description?: string; 
+    type: 'kanban' | 'list' | 'calendar' | 'timeline'; 
+    visibility: 'private' | 'public' 
+  }) => {
+    if (!space?._id) return;
+    
+    // Check plan limits for board creation
+    const { canCreateBoard } = await import('@/utils/planLimits');
+    const currentBoardsCount = boards?.length || 0;
+    const canCreateMoreBoards = canCreateBoard(user, currentBoardsCount);
+    
+    if (!canCreateMoreBoards) {
+      showBannerError('You\'ve reached your limit of 10 boards per space. Upgrade to Premium for unlimited boards.');
+      return;
+    }
+    
   const openCreateBoard = () => setCreateVisible(true);
   const resetCreateState = () => {
     setBoardName('');

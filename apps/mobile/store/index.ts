@@ -87,6 +87,15 @@ export const store = configureStore({
 
 export const persistor = persistStore(store);
 
+// Listen for rehydration completion to handle archived workspace persistence
+persistor.subscribe(() => {
+  const state = persistor.getState();
+  if (state.bootstrapped) {
+    // Dispatch rehydration handler to preserve archived workspace status
+    store.dispatch({ type: 'workspace/handleRehydration' });
+  }
+});
+
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 

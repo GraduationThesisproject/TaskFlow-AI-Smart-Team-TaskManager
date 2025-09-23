@@ -16,6 +16,7 @@ import {
   resendVerificationCode,
   requestPasswordReset,
   resetPassword,
+  updateProfile,
   updateProfileSecure,
   changePassword,
 } from '../store/slices/authSlice';
@@ -173,8 +174,15 @@ export const useAuth = () => {
     [dispatch]
   );
 
+  const updateProfileHandler = useCallback(
+    async (payload: { name?: string; avatar?: File | null }) => {
+      return await dispatch(updateProfile(payload)).unwrap();
+    },
+    [dispatch]
+  );
+
   const updateProfileSecureHandler = useCallback(
-    async (payload: { name?: string; avatar?: string | null; currentPassword?: string }) => {
+    async (payload: { name?: string; avatar?: File | null; currentPassword?: string }) => {
       return await dispatch(updateProfileSecure(payload as any)).unwrap();
     },
     [dispatch]
@@ -209,6 +217,7 @@ export const useAuth = () => {
     resetPassword: resetPasswordHandler,
     testConnection: testConnectionHandler,
     refreshToken: refreshTokenHandler,
+    updateProfile: updateProfileHandler,
     updateProfileSecure: updateProfileSecureHandler,
     changePassword: changePasswordHandler,
   };

@@ -365,6 +365,25 @@ const workspaceSlice = createSlice({
       });
     },
     resetWorkspaceState: () => initialState,
+    // Handle rehydration to preserve archived workspace status
+    handleRehydration: (state) => {
+      if (state.workspaces && Array.isArray(state.workspaces)) {
+        const now = Date.now();
+        state.workspaces = state.workspaces.map((workspace: any) => {
+          // Ensure archived workspaces stay archived during rehydration
+          if (workspace.status === 'archived') {
+            return {
+              ...workspace,
+              status: 'archived',
+              // Preserve archivedAt and archiveExpiresAt if they exist
+              archivedAt: workspace.archivedAt || new Date().toISOString(),
+              archiveExpiresAt: workspace.archiveExpiresAt || null,
+            };
+          }
+          return workspace;
+        });
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -663,6 +682,7 @@ export const {
   clearPendingInvitations,
   removePendingInvitationByEmail,
   resetWorkspaceState,
+  handleRehydration,
 } = workspaceSlice.actions;
 
 // Selectors
