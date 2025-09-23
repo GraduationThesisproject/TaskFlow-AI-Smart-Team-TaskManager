@@ -19,9 +19,27 @@ export function useSocket(options: UseSocketOptions) {
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastConnectionAttemptRef = useRef<number>(0);
+  const connectionDebounceMs = 500; // 500ms debounce (reduced from 2000ms)
+  const isConnectingRef = useRef(false); // Prevent multiple simultaneous connections
 
   const connect = useCallback(() => {
     if (socketRef.current?.connected) return;
+    
+    // Prevent multiple simultaneous connections
+    if (isConnectingRef.current) {
+      console.log('🔌 Connection already in progress, skipping...');
+      return;
+    }
+
+    // Debounce connection attempts
+    const now = Date.now();
+    if (now - lastConnectionAttemptRef.current < connectionDebounceMs) {
+      console.log('🔌 Connection attempt debounced, too soon since last attempt');
+      return;
+    }
+    lastConnectionAttemptRef.current = now;
+    isConnectingRef.current = true;
 
     // Clear any existing reconnection attempts
     if (reconnectTimeoutRef.current) {
@@ -71,10 +89,14 @@ export function useSocket(options: UseSocketOptions) {
 
       // Set up event listeners
       socketRef.current.on('connect', () => {
-        console.log('🔌 Socket connected successfully to:', socketUrl);
+        console.log('🔌 Socket connected successfully to:', socketUrl, {
+          namespace: options.namespace,
+          socketId: socketRef.current?.id
+        });
         setIsConnected(true);
         setIsConnecting(false);
         setError(null);
+        isConnectingRef.current = false; // Reset connection flag
         reconnectAttemptsRef.current = 0; // Reset reconnection attempts on successful connection
         
         // Clear connection timeout
@@ -88,6 +110,7 @@ export function useSocket(options: UseSocketOptions) {
         console.log('🔌 Socket disconnected:', reason);
         setIsConnected(false);
         setIsConnecting(false);
+        isConnectingRef.current = false; // Reset connection flag
 
         if (reason === 'io server disconnect') {
           setError('Server disconnected');
@@ -107,10 +130,19 @@ export function useSocket(options: UseSocketOptions) {
       });
 
       socketRef.current.on('connect_error', (err) => {
-        console.error('❌ Socket connection error:', err);
-        console.error('❌ Connection URL:', socketUrl);
+        console.error('❌ Socket connection error:', err, {
+          namespace: options.namespace,
+          url: socketUrl,
+          auth: options.auth,
+          errorType: err.type,
+          errorDescription: err.description,
+          errorContext: err.context,
+          errorTransport: err.transport
+        });
         console.error('❌ Auth token present:', !!options.auth?.token);
+        console.error('❌ Full error object:', err);
         setIsConnecting(false);
+        isConnectingRef.current = false; // Reset connection flag
         
         let errorMessage = err.message || 'Connection failed';
         
@@ -121,6 +153,8 @@ export function useSocket(options: UseSocketOptions) {
           errorMessage = 'CORS error - check server configuration';
         } else if (err.message?.includes('timeout')) {
           errorMessage = 'Connection timeout - server may be unavailable';
+        } else if (err.message?.includes('xhr poll error')) {
+          errorMessage = 'Network error - check if server is running';
         }
         
         setError(errorMessage);
@@ -168,6 +202,7 @@ export function useSocket(options: UseSocketOptions) {
     } catch (err) {
       // console.error('❌ Failed to create socket connection:', err);
       setIsConnecting(false);
+      isConnectingRef.current = false; // Reset connection flag
       setError('Failed to create socket connection');
     }
   }, [options.url, options.namespace, options.auth?.token]);
@@ -193,16 +228,13 @@ export function useSocket(options: UseSocketOptions) {
     setIsConnected(false);
     setIsConnecting(false);
     setError(null);
+    isConnectingRef.current = false; // Reset connection flag
     reconnectAttemptsRef.current = 0;
   }, []);
 
-  // Recreate socket when auth options change
-  useEffect(() => {
-    if (socketRef.current) {
-      socketRef.current.close();
-      socketRef.current = null;
-    }
-  }, [options.auth]);
+  // Recreate socket when auth token actually changes (not just object reference)
+  // Remove this useEffect as it was causing infinite loops
+  // The connect function already handles closing existing sockets
 
   const emit = useCallback((event: string, data: any) => {
     if (socketRef.current?.connected) {
@@ -243,11 +275,15 @@ export function useSocket(options: UseSocketOptions) {
   useEffect(() => {
     // Only connect if we have a token and autoConnect is enabled
     if (options.autoConnect && options.auth?.token) {
-      // Add a longer delay to ensure the backend is ready and auth is stable
+      // Add a short delay to ensure the backend is ready and auth is stable
       const connectTimeout = setTimeout(() => {
-        // console.log('🔄 Auto-connecting socket with token...');
+        console.log('🔄 Auto-connecting socket with token...', {
+          namespace: options.namespace,
+          hasToken: !!options.auth?.token,
+          autoConnect: options.autoConnect
+        });
         connect();
-      }, 500); // Increased delay to 500ms
+      }, 200); // Reduced delay to 200ms
 
       return () => {
         clearTimeout(connectTimeout);
@@ -256,12 +292,14 @@ export function useSocket(options: UseSocketOptions) {
     }
 
     return cleanup;
-  }, [connect, cleanup, options.autoConnect, options.auth?.token]);
+  }, [options.autoConnect, options.auth?.token]); // Removed connect and cleanup from dependencies
 
   // Cleanup on unmount
   useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
+    return () => {
+      cleanup();
+    };
+  }, []); // Empty dependency array for cleanup on unmount only
 
   return {
     socket: socketRef.current,

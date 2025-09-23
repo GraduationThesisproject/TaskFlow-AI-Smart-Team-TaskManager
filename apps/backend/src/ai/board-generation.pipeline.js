@@ -5,9 +5,7 @@ class BoardGenerationPipeline {
   constructor() {
     this.steps = [
       'validate_input',
-      'analyze_prompt',
-      'moderate_content',
-      'generate_board_data',
+      'generate_board_data', // Skip analyze_prompt and moderate_content to reduce API calls
       'validate_structure',
       'enhance_data',
       'finalize_output'
@@ -24,16 +22,18 @@ class BoardGenerationPipeline {
         maxTokens: 2000,
         includeChecklists: true,
         includeTags: true,
-        moderateContent: true,
+        moderateContent: false, // Disabled by default to reduce API calls
         ...options
       },
       results: {},
       errors: []
     };
 
-    logger.info('Starting board generation pipeline', { 
+    logger.info('Starting board generation pipeline (optimized - single API call)', { 
       prompt: userPrompt.substring(0, 100) + '...',
-      options: context.options 
+      options: context.options,
+      steps: this.steps.length,
+      apiCalls: 1 // Only one API call now
     });
 
     try {
@@ -51,12 +51,31 @@ class BoardGenerationPipeline {
       return this.formatOutput(context);
 
     } catch (error) {
-      logger.error('Board generation pipeline failed', { 
+      logger.error('Board generation pipeline failed, using fallback', { 
         error: error.message, 
         step: context.currentStep,
         errors: context.errors 
       });
-      throw new Error(`Board generation failed: ${error.message}`);
+      
+      // If pipeline fails completely, use fallback
+      const fallbackAnalysis = this.createFallbackAnalysis(userPrompt);
+      context.results.boardData = this.createFallbackBoardData(fallbackAnalysis);
+      context.results.finalOutput = {
+        board: context.results.boardData.board,
+        columns: context.results.boardData.columns || [],
+        tasks: context.results.boardData.tasks || [],
+        tags: context.results.boardData.tags || [],
+        checklists: context.results.boardData.checklists || [],
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          pipelineVersion: '1.0.0',
+          errors: context.errors,
+          warnings: [],
+          fallback: true
+        }
+      };
+      
+      return this.formatOutput(context);
     }
   }
 
@@ -164,12 +183,13 @@ class BoardGenerationPipeline {
   }
 
   /**
-   * Step 4: Generate board data
+   * Step 2: Generate board data (optimized - single API call)
    */
   async generateBoardData(context) {
     try {
+      // First try to get AI-generated board data with a single API call
       const boardData = await googleAIClient.generateBoardData(
-        context.results.analysis,
+        { userPrompt: context.userPrompt }, // Pass prompt directly instead of analysis
         context.options
       );
       context.results.boardData = boardData;
@@ -189,8 +209,9 @@ class BoardGenerationPipeline {
         isRetryable: error.status === 503 || error.status === 429
       });
       
-      // Fallback to basic board structure
-      context.results.boardData = this.createFallbackBoardData(context.results.analysis);
+      // Create fallback analysis and board data
+      const fallbackAnalysis = this.createFallbackAnalysis(context.userPrompt);
+      context.results.boardData = this.createFallbackBoardData(fallbackAnalysis);
     }
   }
 
@@ -320,28 +341,128 @@ class BoardGenerationPipeline {
    * Create fallback analysis when AI analysis fails
    */
   createFallbackAnalysis(prompt) {
+    const lowerPrompt = prompt.toLowerCase();
+    
+    // Detect project type from prompt
+    let boardName = 'Generated Board';
+    let description = 'AI-generated board based on user input';
+    let columns = [
+      { name: 'To Do', description: 'Tasks to be done', color: '#6B7280', order: 0 },
+      { name: 'In Progress', description: 'Tasks currently being worked on', color: '#3B82F6', order: 1 },
+      { name: 'Done', description: 'Completed tasks', color: '#10B981', order: 2 }
+    ];
+    let tasks = [];
+    let tags = [];
+
+    // E-commerce project detection
+    if (lowerPrompt.includes('e-commerce') || lowerPrompt.includes('ecommerce') || lowerPrompt.includes('online store') || lowerPrompt.includes('shop')) {
+      boardName = 'E-commerce Project Board';
+      description = 'Complete project management board for e-commerce development';
+      columns = [
+        { name: 'Planning', description: 'Project planning and research phase', color: '#8B5CF6', order: 0 },
+        { name: 'Development', description: 'Active development work', color: '#3B82F6', order: 1 },
+        { name: 'Testing', description: 'Quality assurance and testing', color: '#F59E0B', order: 2 },
+        { name: 'Deployment', description: 'Production deployment', color: '#10B981', order: 3 }
+      ];
+      tasks = [
+        { title: 'Market Research & Analysis', description: 'Research target market, competitors, and user needs', priority: 'high', estimatedHours: 8, tags: ['research', 'planning'], column: 'Planning' },
+        { title: 'Product Catalog Setup', description: 'Create product database and catalog structure', priority: 'high', estimatedHours: 12, tags: ['backend', 'database'], column: 'Development' },
+        { title: 'Payment Integration', description: 'Integrate payment gateways (Stripe, PayPal)', priority: 'high', estimatedHours: 16, tags: ['integration', 'payment'], column: 'Development' },
+        { title: 'User Authentication', description: 'Implement user registration and login system', priority: 'medium', estimatedHours: 10, tags: ['auth', 'security'], column: 'Development' },
+        { title: 'Shopping Cart Functionality', description: 'Build cart, checkout, and order management', priority: 'high', estimatedHours: 20, tags: ['frontend', 'cart'], column: 'Development' },
+        { title: 'Mobile Responsiveness', description: 'Ensure site works perfectly on mobile devices', priority: 'medium', estimatedHours: 8, tags: ['mobile', 'responsive'], column: 'Testing' },
+        { title: 'Security Testing', description: 'Test payment security and data protection', priority: 'high', estimatedHours: 6, tags: ['security', 'testing'], column: 'Testing' },
+        { title: 'Performance Optimization', description: 'Optimize site speed and loading times', priority: 'medium', estimatedHours: 4, tags: ['performance', 'optimization'], column: 'Testing' },
+        { title: 'Production Deployment', description: 'Deploy to production server and configure domain', priority: 'high', estimatedHours: 4, tags: ['deployment', 'production'], column: 'Deployment' }
+      ];
+      tags = [
+        { name: 'frontend', color: '#3B82F6', category: 'development' },
+        { name: 'backend', color: '#8B5CF6', category: 'development' },
+        { name: 'database', color: '#10B981', category: 'development' },
+        { name: 'integration', color: '#F59E0B', category: 'development' },
+        { name: 'testing', color: '#EF4444', category: 'quality' },
+        { name: 'deployment', color: '#6B7280', category: 'operations' }
+      ];
+    }
+    // Software development project detection
+    else if (lowerPrompt.includes('software') || lowerPrompt.includes('development') || lowerPrompt.includes('app') || lowerPrompt.includes('programming')) {
+      boardName = 'Software Development Board';
+      description = 'Comprehensive board for software development project';
+      columns = [
+        { name: 'Backlog', description: 'Planned features and tasks', color: '#6B7280', order: 0 },
+        { name: 'In Progress', description: 'Currently being developed', color: '#3B82F6', order: 1 },
+        { name: 'Code Review', description: 'Ready for code review', color: '#F59E0B', order: 2 },
+        { name: 'Testing', description: 'Quality assurance phase', color: '#EF4444', order: 3 },
+        { name: 'Done', description: 'Completed and deployed', color: '#10B981', order: 4 }
+      ];
+      tasks = [
+        { title: 'Project Setup & Architecture', description: 'Initialize project structure and define architecture', priority: 'high', estimatedHours: 8, tags: ['setup', 'architecture'], column: 'Backlog' },
+        { title: 'Core Feature Development', description: 'Implement main application features', priority: 'high', estimatedHours: 24, tags: ['feature', 'development'], column: 'In Progress' },
+        { title: 'Database Design & Implementation', description: 'Design and implement database schema', priority: 'high', estimatedHours: 12, tags: ['database', 'backend'], column: 'In Progress' },
+        { title: 'API Development', description: 'Create RESTful APIs for frontend communication', priority: 'medium', estimatedHours: 16, tags: ['api', 'backend'], column: 'In Progress' },
+        { title: 'Frontend Implementation', description: 'Build user interface and user experience', priority: 'medium', estimatedHours: 20, tags: ['frontend', 'ui'], column: 'In Progress' },
+        { title: 'Code Review Session', description: 'Review code quality and best practices', priority: 'medium', estimatedHours: 4, tags: ['review', 'quality'], column: 'Code Review' },
+        { title: 'Unit Testing', description: 'Write and execute unit tests', priority: 'medium', estimatedHours: 8, tags: ['testing', 'unit'], column: 'Testing' },
+        { title: 'Integration Testing', description: 'Test component integration and workflows', priority: 'medium', estimatedHours: 6, tags: ['testing', 'integration'], column: 'Testing' },
+        { title: 'Documentation', description: 'Create user and developer documentation', priority: 'low', estimatedHours: 4, tags: ['documentation', 'docs'], column: 'Done' }
+      ];
+      tags = [
+        { name: 'frontend', color: '#3B82F6', category: 'development' },
+        { name: 'backend', color: '#8B5CF6', category: 'development' },
+        { name: 'database', color: '#10B981', category: 'development' },
+        { name: 'testing', color: '#EF4444', category: 'quality' },
+        { name: 'documentation', color: '#6B7280', category: 'support' }
+      ];
+    }
+    // Marketing project detection
+    else if (lowerPrompt.includes('marketing') || lowerPrompt.includes('campaign') || lowerPrompt.includes('promotion') || lowerPrompt.includes('social media')) {
+      boardName = 'Marketing Campaign Board';
+      description = 'Complete marketing campaign management board';
+      columns = [
+        { name: 'Ideas', description: 'Creative ideas and concepts', color: '#8B5CF6', order: 0 },
+        { name: 'Planning', description: 'Campaign planning and strategy', color: '#3B82F6', order: 1 },
+        { name: 'In Progress', description: 'Content creation in progress', color: '#F59E0B', order: 2 },
+        { name: 'Review', description: 'Content review and approval', color: '#EF4444', order: 3 },
+        { name: 'Published', description: 'Live and published content', color: '#10B981', order: 4 }
+      ];
+      tasks = [
+        { title: 'Campaign Strategy Development', description: 'Define target audience and campaign objectives', priority: 'high', estimatedHours: 6, tags: ['strategy', 'planning'], column: 'Ideas' },
+        { title: 'Content Calendar Creation', description: 'Plan content schedule across all channels', priority: 'high', estimatedHours: 4, tags: ['content', 'calendar'], column: 'Planning' },
+        { title: 'Social Media Content', description: 'Create posts for Facebook, Instagram, Twitter', priority: 'medium', estimatedHours: 8, tags: ['social', 'content'], column: 'In Progress' },
+        { title: 'Email Marketing Campaign', description: 'Design and write email sequences', priority: 'medium', estimatedHours: 6, tags: ['email', 'campaign'], column: 'In Progress' },
+        { title: 'Video Production', description: 'Create promotional videos and ads', priority: 'high', estimatedHours: 12, tags: ['video', 'production'], column: 'In Progress' },
+        { title: 'Content Review', description: 'Review all content for brand consistency', priority: 'medium', estimatedHours: 3, tags: ['review', 'quality'], column: 'Review' },
+        { title: 'Analytics Setup', description: 'Configure tracking and analytics tools', priority: 'low', estimatedHours: 2, tags: ['analytics', 'tracking'], column: 'Published' }
+      ];
+      tags = [
+        { name: 'content', color: '#3B82F6', category: 'creation' },
+        { name: 'social', color: '#8B5CF6', category: 'channel' },
+        { name: 'email', color: '#10B981', category: 'channel' },
+        { name: 'video', color: '#EF4444', category: 'media' },
+        { name: 'analytics', color: '#6B7280', category: 'measurement' }
+      ];
+    }
+    // Default fallback
+    else {
+      tasks = [
+        { title: 'Project Planning', description: 'Define project scope and requirements', priority: 'high', estimatedHours: 4, tags: ['planning'], column: 'To Do' },
+        { title: 'Task Implementation', description: 'Work on main project tasks', priority: 'medium', estimatedHours: 8, tags: ['development'], column: 'In Progress' },
+        { title: 'Quality Assurance', description: 'Test and review completed work', priority: 'medium', estimatedHours: 3, tags: ['testing'], column: 'Done' }
+      ];
+      tags = [
+        { name: 'planning', color: '#8B5CF6', category: 'phase' },
+        { name: 'development', color: '#3B82F6', category: 'phase' },
+        { name: 'testing', color: '#10B981', category: 'phase' }
+      ];
+    }
+
     return {
       boardType: 'kanban',
-      boardName: 'Generated Board',
-      description: 'AI-generated board based on user input',
-      columns: [
-        { name: 'To Do', description: 'Tasks to be done', color: '#6B7280', order: 0 },
-        { name: 'In Progress', description: 'Tasks currently being worked on', color: '#3B82F6', order: 1 },
-        { name: 'Done', description: 'Completed tasks', color: '#10B981', order: 2 }
-      ],
-      tasks: [
-        {
-          title: 'Sample Task',
-          description: 'This is a sample task generated from your input',
-          priority: 'medium',
-          estimatedHours: 2,
-          tags: ['sample'],
-          column: 'To Do'
-        }
-      ],
-      tags: [
-        { name: 'sample', color: '#6B7280', category: 'custom' }
-      ],
+      boardName,
+      description,
+      columns,
+      tasks,
+      tags,
       checklists: [],
       settings: {
         allowComments: true,
@@ -360,15 +481,15 @@ class BoardGenerationPipeline {
    */
   getUserFriendlyErrorMessage(error) {
     if (error.status === 503) {
-      return 'AI service is temporarily overloaded. Please try again in a few minutes.';
+      return 'AI service is temporarily overloaded. Using intelligent fallback board template instead.';
     } else if (error.status === 429) {
-      return 'AI service rate limit exceeded. Please wait a moment before trying again.';
+      return 'AI service rate limit exceeded. Using intelligent fallback board template instead.';
     } else if (error.status === 500) {
-      return 'AI service is experiencing issues. Please try again later.';
+      return 'AI service is experiencing issues. Using intelligent fallback board template instead.';
     } else if (error.message && error.message.includes('overloaded')) {
-      return 'AI service is currently overloaded. Please try again in a few minutes.';
+      return 'AI service is currently overloaded. Using intelligent fallback board template instead.';
     } else {
-      return error.message || 'Unknown error occurred during board generation.';
+      return error.message || 'Unknown error occurred during board generation. Using intelligent fallback board template instead.';
     }
   }
 

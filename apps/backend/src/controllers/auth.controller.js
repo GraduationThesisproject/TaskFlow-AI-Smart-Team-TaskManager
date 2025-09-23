@@ -117,22 +117,40 @@ exports.googleLogin = (req, res, next) => {
 };
 
 exports.googleCallback = async (req, res, next) => {
+    console.log('🔵 Google OAuth callback received');
+    console.log('🔵 Query params:', req.query);
+    console.log('🔵 Google strategy available:', !!passport._strategies?.google);
+    
     if (!passport._strategies?.google) {
+        console.log('❌ Google OAuth strategy not available');
         return sendResponse(res, 503, false, 'Google OAuth is not configured');
     }
 
-    passport.authenticate('google', { session: false }, async (err, user) => {
-        if (err || !user) {
-            return sendResponse(res, err ? 500 : 401, false, 'Authentication failed');
+    passport.authenticate('google', { session: false }, async (err, user, info) => {
+        console.log('🔵 Google OAuth authentication result:', { err: !!err, user: !!user, info });
+        
+        if (err) {
+            console.log('❌ Google OAuth error:', err);
+            logger.error('Google OAuth error:', err);
+            return sendResponse(res, 500, false, `Authentication failed: ${err.message}`);
+        }
+        
+        if (!user) {
+            console.log('❌ Google OAuth user not found:', info);
+            logger.error('Google OAuth user not found:', info);
+            return sendResponse(res, 401, false, info?.message || 'Authentication failed');
         }
 
         try {
+            console.log('✅ Google OAuth user found:', { id: user._id, email: user.email });
             user.lastLogin = new Date();
             await user.save();
             const token = generateToken(user._id);
             const redirectUrl = `${env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}&provider=google`;
+            console.log('🔵 Redirecting to:', redirectUrl);
             res.redirect(redirectUrl);
         } catch (error) {
+            console.log('❌ Google callback error:', error);
             logger.error('Google callback error:', error);
             return sendResponse(res, 500, false, 'Authentication failed');
         }

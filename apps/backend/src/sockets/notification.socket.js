@@ -9,14 +9,19 @@ const authenticateSocket = async (socket, next) => {
     try {
         const token = socket.handshake.auth.token || socket.handshake.query.token;
         
+        logger.info(`Socket auth: Handshake auth:`, socket.handshake.auth);
+        logger.info(`Socket auth: Handshake query:`, socket.handshake.query);
+        logger.info(`Socket auth: Token found:`, !!token);
+        
         if (!token) {
+            logger.error('Socket auth: No token provided');
             return next(new Error('Authentication required'));
         }
 
         logger.info(`Socket auth: Verifying token: ${token.substring(0, 20)}...`);
         
         const decoded = jwt.verifyToken(token);
-        logger.info(`Socket auth: Token decoded:`, decoded);
+        logger.info(`Socket auth: Token decoded successfully:`, decoded);
         
         // Try to find user in User model first
         let user = await User.findById(decoded.id);
@@ -65,6 +70,11 @@ const authenticateSocket = async (socket, next) => {
         
     } catch (error) {
         logger.error('Notification socket authentication error:', error);
+        logger.error('Error details:', {
+            message: error.message,
+            name: error.name,
+            stack: error.stack
+        });
         next(new Error('Authentication failed'));
     }
 };
@@ -94,6 +104,12 @@ const handleNotificationSocket = (io) => {
         });
         socket.on('disconnect', (reason) => {
             logger.info(`Notification socket disconnected for ${socket.user.email}: ${reason}`);
+        });
+        
+        // Test event for debugging
+        socket.on('test:ping', (data) => {
+            logger.info(`Test ping received from ${socket.user.email}:`, data);
+            socket.emit('test:pong', { message: 'Socket is working!', timestamp: new Date() });
         });
         
         // Send unread notification count on connection

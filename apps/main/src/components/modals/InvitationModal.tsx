@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Modal, Typography, Avatar, Badge, Alert } from '@taskflow/ui';
+import { Button, Modal, Typography, Avatar, Badge } from '@taskflow/ui';
 import { X, CheckCircle, XCircle, Clock, Users, Calendar, AlertTriangle } from 'lucide-react';
 import { useInvitations } from '../../hooks/useInvitations';
+import { useAuth } from '../../hooks/useAuth';
 import { formatDistanceToNow, isAfter, addDays } from 'date-fns';
 
 interface InvitationModalProps {
@@ -15,6 +16,7 @@ export const InvitationModal: React.FC<InvitationModalProps> = ({
   onClose,
   onInvitationHandled
 }) => {
+  const { isAuthenticated } = useAuth();
   const {
     invitations,
     isLoading,
@@ -56,14 +58,14 @@ export const InvitationModal: React.FC<InvitationModalProps> = ({
   const uniquePendingInvitations = Object.values(groupedPendingInvitations);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && isAuthenticated) {
       fetchInvitations({ status: 'pending' });
     }
-  }, [isOpen]);
+  }, [isOpen, isAuthenticated, fetchInvitations]);
 
   // Clean up expired invitations - only run once when modal opens
   useEffect(() => {
-    if (isOpen && expiredInvitations.length > 0) {
+    if (isOpen && isAuthenticated && expiredInvitations.length > 0) {
       const cleanupExpired = async () => {
         for (const invitation of expiredInvitations) {
           try {
@@ -75,7 +77,7 @@ export const InvitationModal: React.FC<InvitationModalProps> = ({
       };
       cleanupExpired();
     }
-  }, [isOpen, expiredInvitations.length]);
+  }, [isOpen, isAuthenticated, expiredInvitations.length, cancelInvitation]);
 
   const handleAccept = async (invitationId: string) => {
     setProcessingInvitations(prev => new Set(prev).add(invitationId));
@@ -123,7 +125,7 @@ export const InvitationModal: React.FC<InvitationModalProps> = ({
     return type === 'Workspace' ? <Users size={16} /> : <Calendar size={16} />;
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !isAuthenticated) return null;
 
   return (
     <Modal
@@ -142,12 +144,12 @@ export const InvitationModal: React.FC<InvitationModalProps> = ({
             </Typography>
           </div>
         ) : error ? (
-          <Alert variant="destructive">
+          <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive">
             <AlertTriangle className="h-4 w-4" />
             <Typography variant="body-small">
               {error}
             </Typography>
-          </Alert>
+          </div>
         ) : uniquePendingInvitations.length === 0 && expiredInvitations.length === 0 ? (
           <div className="text-center py-8">
             <Users size={48} className="mx-auto text-muted-foreground mb-4" />
@@ -252,12 +254,12 @@ export const InvitationModal: React.FC<InvitationModalProps> = ({
                 <Typography variant="h4" className="font-semibold text-muted-foreground">
                   Expired Invitations ({expiredInvitations.length})
                 </Typography>
-                <Alert>
+                <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning/20 rounded-md text-warning-foreground">
                   <AlertTriangle className="h-4 w-4" />
                   <Typography variant="body-small">
                     These invitations have expired and will be automatically removed.
                   </Typography>
-                </Alert>
+                </div>
                 {expiredInvitations.map((invitation) => (
                   <div
                     key={`expired-${invitation.targetEntity.type}-${invitation.targetEntity.id}-${invitation.id}`}

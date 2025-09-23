@@ -57,12 +57,38 @@ const requireWorkspacePermission = (path) => {
                 workspaceId,
                 userRoles: userRoles.workspaces,
                 foundRole: wsRole,
-                workspaceOwner: workspace.owner?.toString()
+                workspaceOwner: workspace.owner?.toString(),
+                workspaceMembers: workspace.members?.map(m => ({
+                    user: m.user?.toString(),
+                    role: m.role
+                }))
             });
 
             // If no role found but user is workspace owner, create a temporary role object
             if (!wsRole && workspace.owner && workspace.owner.toString() === userId.toString()) {
                 logger.info(`User ${userId} is workspace owner, creating temporary role`);
+                wsRole = { role: 'owner' };
+            }
+
+            // If still no role found, check workspace members directly
+            if (!wsRole) {
+                const workspaceMember = workspace.members.find(member => 
+                    member.user.toString() === userId.toString()
+                );
+                if (workspaceMember) {
+                    logger.info(`User ${userId} found in workspace members with role: ${workspaceMember.role}`);
+                    // If user is workspace owner, treat as 'owner' regardless of member role
+                    if (workspace.owner && workspace.owner.toString() === userId.toString()) {
+                        wsRole = { role: 'owner' };
+                    } else {
+                        wsRole = { role: workspaceMember.role };
+                    }
+                }
+            }
+
+            // Final fallback: if user is owner but not found anywhere, grant owner access
+            if (!wsRole && workspace.owner && workspace.owner.toString() === userId.toString()) {
+                logger.info(`User ${userId} is workspace owner (final fallback), granting owner access`);
                 wsRole = { role: 'owner' };
             }
 
@@ -74,7 +100,27 @@ const requireWorkspacePermission = (path) => {
             const fullPath = `/workspace${path}`;
             logger.info(`Permission check: role=${wsRole.role}, path=${fullPath}, method=${req.method}`);
             
+            // Try exact path match first
             if(hasPermission(wsRole.role, fullPath, req.method)) {
+                return next();
+            }
+            
+            // Try pattern matching for dynamic paths
+            // Convert /workspace/123/members/456/role to /workspace/:id/members/:memberId/role
+            let pathPattern = fullPath;
+            const pathSegments = fullPath.split('/');
+            for (let i = 0; i < pathSegments.length; i++) {
+                const segment = pathSegments[i];
+                // If segment looks like an ID (24 character hex string or ObjectId), replace with parameter
+                if (segment && segment.length === 24 && /^[a-f0-9]+$/i.test(segment)) {
+                    if (i === 2) pathSegments[i] = ':id'; // workspace ID
+                    else if (i === 4) pathSegments[i] = ':memberId'; // member ID
+                    else pathSegments[i] = ':id'; // generic ID
+                }
+            }
+            pathPattern = pathSegments.join('/');
+            logger.info(`Trying pattern match: ${pathPattern}`);
+            if(hasPermission(wsRole.role, pathPattern, req.method)) {
                 return next();
             }
 
@@ -95,6 +141,17 @@ const requireSpacePermission = (path = '') => {
             const userRoles = await user.getRoles();
             const spaceId = req.params.id || req.params.spaceId || req.body.spaceId;
 
+            console.log('🔍 Space permission check debug:', {
+                userId,
+                spaceId,
+                path,
+                method: req.method,
+                userRoles: userRoles.workspaces?.map(ws => ({
+                    workspace: ws.workspace.toString(),
+                    role: ws.role
+                }))
+            });
+
             if (!spaceId) {
                 return sendResponse(res, 400, false, 'Space ID required');
             }
@@ -107,22 +164,80 @@ const requireSpacePermission = (path = '') => {
 
             req.space = space;
 
+            console.log('🔍 Space found:', {
+                spaceId: space._id,
+                workspaceId: space.workspace,
+                spaceName: space.name
+            });
+
             if(userRoles.systemRole !== 'user') {
                 return sendResponse(res, 403, false, 'You are not a user');
             }
 
             // Get user's role in the workspace that contains this space
             const workspaceId = space.workspace;
-            const wsRole = userRoles.workspaces.find(ws => 
+            const workspace = await Workspace.findById(workspaceId);
+            
+            let wsRole = userRoles.workspaces.find(ws => 
                 ws.workspace.toString() === workspaceId.toString()
             );
+
+            console.log('🔍 Workspace role check:', {
+                workspaceId: workspaceId.toString(),
+                foundRole: wsRole ? {
+                    workspace: wsRole.workspace.toString(),
+                    role: wsRole.role
+                } : null,
+                allWorkspaceRoles: userRoles.workspaces?.map(ws => ({
+                    workspace: ws.workspace.toString(),
+                    role: ws.role
+                })),
+                workspaceOwner: workspace?.owner?.toString(),
+                userId: userId.toString()
+            });
+
+            // If no role found but user is workspace owner, create a temporary role object
+            if (!wsRole && workspace?.owner && workspace.owner.toString() === userId.toString()) {
+                console.log('🔍 User is workspace owner, creating temporary role');
+                wsRole = { role: 'owner' };
+            }
+
+            // If still no role found, check workspace members directly
+            if (!wsRole && workspace) {
+                const workspaceMember = workspace.members.find(member => 
+                    member.user.toString() === userId.toString()
+                );
+                if (workspaceMember) {
+                    console.log('🔍 User found in workspace members with role:', workspaceMember.role);
+                    // If user is workspace owner, treat as 'owner' regardless of member role
+                    if (workspace.owner && workspace.owner.toString() === userId.toString()) {
+                        wsRole = { role: 'owner' };
+                    } else {
+                        wsRole = { role: workspaceMember.role };
+                    }
+                }
+            }
+
+            // Final fallback: if user is owner but not found anywhere, grant owner access
+            if (!wsRole && workspace?.owner && workspace.owner.toString() === userId.toString()) {
+                console.log('🔍 User is workspace owner (final fallback), granting owner access');
+                wsRole = { role: 'owner' };
+            }
 
             if (!wsRole) {
                 return sendResponse(res, 403, false, 'No workspace access found');
             }
 
             // Check if user has permission for this path and method
-            if(hasPermission(wsRole.role, `/space${path}`, req.method)) {
+            const hasAccess = hasPermission(wsRole.role, `/space${path}`, req.method);
+            console.log('🔍 Permission check result:', {
+                role: wsRole.role,
+                path: `/space${path}`,
+                method: req.method,
+                hasAccess
+            });
+
+            if(hasAccess) {
                 return next();
             }
 

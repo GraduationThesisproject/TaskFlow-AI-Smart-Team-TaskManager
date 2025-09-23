@@ -16,8 +16,38 @@ exports.getSpacesByWorkspace = async (req, res) => {
         
         const userId = req.user.id;
 
-        // Get both active and archived spaces
-        const spaces = await Space.find({ workspace: workspaceId, isActive: true })
+        // Check user's role in the workspace to determine space visibility
+        const Workspace = require('../models/Workspace');
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // Check if user is workspace owner or admin
+        const isWorkspaceOwner = workspace.owner.toString() === userId.toString();
+        const isWorkspaceAdmin = workspace.members.some(member => 
+            member.user.toString() === userId.toString() && 
+            (member.role === 'admin' || member.role === 'owner')
+        );
+
+        console.log('🔍 Space filtering check:', {
+            userId,
+            workspaceId,
+            isWorkspaceOwner,
+            isWorkspaceAdmin,
+            workspaceMembers: workspace.members.length
+        });
+
+        // Build query based on user role
+        let spaceQuery = { workspace: workspaceId, isActive: true };
+        
+        // If user is not workspace owner/admin, only show spaces they are members of
+        if (!isWorkspaceOwner && !isWorkspaceAdmin) {
+            spaceQuery['members.user'] = userId;
+        }
+
+        // Get spaces based on user role
+        const spaces = await Space.find(spaceQuery)
             .populate('members.user', 'name email avatar')
             .populate('boards', 'name type')
             .sort({ updatedAt: -1 });
@@ -78,8 +108,30 @@ exports.getSpaces = async (req, res) => {
         const { workspaceId } = req.params;
         const userId = req.user.id;
 
-        // Get both active and archived spaces
-        const spaces = await Space.find({ workspace: workspaceId, isActive: true })
+        // Check user's role in the workspace to determine space visibility
+        const Workspace = require('../models/Workspace');
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // Check if user is workspace owner or admin
+        const isWorkspaceOwner = workspace.owner.toString() === userId.toString();
+        const isWorkspaceAdmin = workspace.members.some(member => 
+            member.user.toString() === userId.toString() && 
+            (member.role === 'admin' || member.role === 'owner')
+        );
+
+        // Build query based on user role
+        let spaceQuery = { workspace: workspaceId, isActive: true };
+        
+        // If user is not workspace owner/admin, only show spaces they are members of
+        if (!isWorkspaceOwner && !isWorkspaceAdmin) {
+            spaceQuery['members.user'] = userId;
+        }
+
+        // Get spaces based on user role
+        const spaces = await Space.find(spaceQuery)
             .populate('members.user', 'name email avatar')
             .populate('boards', 'name type')
             .sort({ updatedAt: -1 });
@@ -184,11 +236,24 @@ exports.createSpace = async (req, res) => {
 
         // Enforce workspace space limit BEFORE creating the space
         try {
-            const current = Number(workspace?.usage?.spacesCount || 0);
+            // Count actual active spaces in the database instead of using cached count
+            const currentSpacesCount = await Space.countDocuments({ 
+                workspace: workspaceId, 
+                isActive: true 
+            });
             const maximum = Number(workspace?.limits?.maxSpaces || 0);
-            if (maximum && current >= maximum) {
+            
+            console.log('🔍 Space limit check:', {
+                workspaceId,
+                currentSpacesCount,
+                maximum,
+                workspaceUsage: workspace?.usage?.spacesCount,
+                workspaceLimits: workspace?.limits?.maxSpaces
+            });
+            
+            if (maximum && currentSpacesCount >= maximum) {
                 return sendResponse(res, 400, false, 'Workspace space limit reached', {
-                    limit: { current, maximum }
+                    limit: { current: currentSpacesCount, maximum }
                 });
             }
         } catch (limitErr) {
@@ -217,9 +282,13 @@ exports.createSpace = async (req, res) => {
             if (typeof workspace.addSpace === 'function') {
                 await workspace.addSpace(space._id);
             } else {
+                // Fallback: manually update spaces array and usage count
                 await Workspace.findByIdAndUpdate(
                     workspaceId,
-                    { $addToSet: { spaces: space._id } },
+                    { 
+                        $addToSet: { spaces: space._id },
+                        $inc: { 'usage.spacesCount': 1 }
+                    },
                     { new: true }
                 );
             }
@@ -234,6 +303,32 @@ exports.createSpace = async (req, res) => {
         }
 
         await space.populate('workspace', 'name');
+
+        // Emit real-time workspace space created event
+        const { getWorkspaceSocketIO } = require('../utils/socketManager');
+        const workspaceIo = getWorkspaceSocketIO();
+        if (workspaceIo) {
+            const eventData = {
+                workspaceId,
+                space: {
+                    id: space._id,
+                    name: space.name,
+                    description: space.description,
+                    settings: space.settings,
+                    permissions: space.permissions,
+                    createdAt: space.createdAt,
+                    updatedAt: space.updatedAt
+                },
+                createdBy: {
+                    id: userId,
+                    name: req.user.name,
+                    email: req.user.email
+                }
+            };
+            
+            console.log('🔔 Emitting workspace:space_created event:', eventData);
+            workspaceIo.to(workspaceId.toString()).emit('workspace:space_created', eventData);
+        }
 
         // Log activity
         await ActivityLog.logActivity({
@@ -310,6 +405,40 @@ exports.updateSpace = async (req, res) => {
         }
 
         await space.save();
+
+        // Emit real-time workspace space updated event
+        const { getWorkspaceSocketIO } = require('../utils/socketManager');
+        const workspaceIo = getWorkspaceSocketIO();
+        if (workspaceIo) {
+            const eventData = {
+                workspaceId: space.workspace,
+                space: {
+                    id: space._id,
+                    name: space.name,
+                    description: space.description,
+                    settings: space.settings,
+                    permissions: space.permissions,
+                    isArchived: space.isArchived,
+                    archivedAt: space.archivedAt,
+                    updatedAt: space.updatedAt
+                },
+                updatedBy: {
+                    id: userId,
+                    name: req.user.name,
+                    email: req.user.email
+                },
+                changes: {
+                    name: name ? { old: oldValues.name, new: name } : null,
+                    description: description ? { old: oldValues.description, new: description } : null,
+                    isArchived: typeof isArchived === 'boolean' ? { old: !isArchived, new: isArchived } : null,
+                    settings: settings ? { updated: true } : null,
+                    permissions: permissions ? { updated: true } : null
+                }
+            };
+            
+            console.log('🔔 Emitting workspace:space_updated event:', eventData);
+            workspaceIo.to(space.workspace.toString()).emit('workspace:space_updated', eventData);
+        }
 
         // Log activity
         let action = 'space_update';
@@ -389,6 +518,14 @@ exports.addMember = async (req, res) => {
         const { userId: newMemberId, role = 'member' } = req.body;
         const currentUserId = req.user.id;
 
+        console.log('🔍 Add member request:', {
+            spaceId,
+            newMemberId,
+            role,
+            currentUserId,
+            body: req.body
+        });
+
         const space = await Space.findById(spaceId);
         if (!space) {
             return sendResponse(res, 404, false, 'Space not found');
@@ -432,6 +569,59 @@ exports.addMember = async (req, res) => {
     } catch (error) {
         logger.error('Add space member error:', error);
         sendResponse(res, 500, false, 'Server error adding member to space');
+    }
+};
+
+// Remove member from space
+exports.removeMember = async (req, res) => {
+    try {
+        const { id: spaceId, memberId } = req.params;
+        const currentUserId = req.user.id;
+
+        console.log('🔍 Remove member request:', {
+            spaceId,
+            memberId,
+            currentUserId
+        });
+
+        const space = await Space.findById(spaceId);
+        if (!space) {
+            return sendResponse(res, 404, false, 'Space not found');
+        }
+
+        // Check if member exists in space
+        const memberToRemove = space.members.find(member => 
+            member.user.toString() === memberId.toString()
+        );
+        
+        if (!memberToRemove) {
+            return sendResponse(res, 404, false, 'Member not found in this space');
+        }
+
+        // Get member info for logging
+        const memberUser = await User.findById(memberId);
+
+        // Remove member from space
+        await space.removeMember(memberId);
+
+        // Log activity
+        await ActivityLog.logActivity({
+            userId: currentUserId,
+            action: 'space_member_remove',
+            description: `Removed member from space: ${space.name}`,
+            entity: { type: 'Space', id: spaceId, name: space.name },
+            relatedEntities: [{ type: 'User', id: memberId, name: memberUser?.name || 'Unknown User' }],
+            workspaceId: space.workspace,
+            spaceId,
+            metadata: {
+                ipAddress: req.ip
+            }
+        });
+
+        sendResponse(res, 200, true, 'Member removed from space successfully');
+    } catch (error) {
+        logger.error('Remove space member error:', error);
+        sendResponse(res, 500, false, 'Server error removing space member');
     }
 };
 

@@ -406,12 +406,12 @@ spaceSchema.methods.permanentDelete = async function(userId) {
     Tag.deleteMany({ space: spaceId })
   ]);
   
-  // Remove space from workspace
+  // Remove space from workspace and update usage count
   const Workspace = require('./Workspace');
-  await Workspace.findByIdAndUpdate(
-    this.workspace,
-    { $pull: { spaces: spaceId } }
-  );
+  const workspace = await Workspace.findById(this.workspace);
+  if (workspace) {
+    await workspace.removeSpace(spaceId);
+  }
   
   // Finally delete the space itself
   await this.deleteOne();

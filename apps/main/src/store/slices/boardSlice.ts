@@ -236,7 +236,20 @@ const boardSlice = createSlice({
       })
       .addCase(fetchBoardsBySpace.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Failed to fetch boards';
+        
+        // Handle specific error types
+        const error = action.error as any;
+        if (error.code === 'PERMISSION_DENIED') {
+          state.error = 'You do not have permission to access this space';
+        } else if (error.code === 'SPACE_NOT_FOUND') {
+          state.error = 'Space not found';
+        } else if (error.status === 403) {
+          state.error = 'Access denied. You do not have permission to view this space';
+        } else if (error.status === 404) {
+          state.error = 'Space not found';
+        } else {
+          state.error = action.error.message || 'Failed to fetch boards';
+        }
       });
     
     // Create board
