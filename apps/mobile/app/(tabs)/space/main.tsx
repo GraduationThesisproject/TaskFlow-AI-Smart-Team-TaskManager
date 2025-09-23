@@ -7,6 +7,8 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import GridBoards from './components/GridBoards';
 import BoardSearch from './components/BoardSearch';
 import { useThemeColors } from '@/components/ThemeProvider';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { fetchMembers } from '@/store/slices/workspaceSlice';
 import { TextStyles } from '@/constants/Fonts';
 import { BoardService } from '@/services/boardService';
 import { useBoards } from '@/hooks/useBoards';
@@ -295,6 +297,8 @@ function SpaceMainScreenContent() {
   }, [currentUserId, ownerIds, displayMembers, currentSpace?.members]);
 
   const [refreshing, setRefreshing] = useState(false);
+  const lastLoadedSpaceId = useRef<string | null>(null);
+  // Use shared boards list
   const [boards, setBoards] = useState<any[]>([]);
   const [boardSearch, setBoardSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -442,14 +446,27 @@ function SpaceMainScreenContent() {
     if (spaceId && spaceId !== lastLoadedSpaceId.current) {
       loadSpaceMembers(spaceId);
     }
-  }, [space?._id, space?.id]);
+  }, [space?._id]); // Remove loadSpaceMembers from dependencies
 
-  useEffect(() => { loadData(false); }, [loadData]);
+  // Also ensure workspace members are loaded when space changes
+  useEffect(() => {
+    const workspaceId = String(space?.workspace || '');
+    if (workspaceId) {
+      // Dispatch fetchMembers to ensure workspace members are loaded
+      dispatch(fetchMembers({ id: workspaceId }));
+    }
+  }, [space?.workspace]); // Remove dispatch from dependencies
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    try { await loadData(true); } finally { setRefreshing(false); }
-  };
+    try {
+      await loadBoards(true);
+      const spaceId = String(space?._id || '');
+      if (spaceId) await loadSpaceMembers(spaceId);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [space?._id, loadBoards, loadSpaceMembers]);
 
   const openCreateBoard = useCallback(() => {
     // console.log('🎯 openCreateBoard called');
@@ -796,7 +813,7 @@ function SpaceMainScreenContent() {
           <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Space</Text>
         </View>
         <View style={styles.centerBox}>
-          <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>No space selected.</Text>
+          <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>Loading space…</Text>
         </View>
       </View>
     );
@@ -1093,10 +1110,46 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderBottomWidth: 1 },
   content: { flex: 1, padding: 16 },
   centerBox: { padding: 24, alignItems: 'center', justifyContent: 'center' },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  statCard: { flex: 1, padding: 16, borderRadius: 12, alignItems: 'center' },
-  sectionCard: { padding: 16, borderRadius: 12, marginBottom: 16 },
+  errorCard: { padding: 16, margin: 16, borderRadius: 12 },
+  emptyCard: { padding: 16, borderRadius: 12 },
+  primaryBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10 },
+  boardGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  gridItem: { marginBottom: 12 },
+  boardItem: { padding: 16, borderRadius: 12 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  listGap: { gap: 8, marginTop: 12 },
-  boardItem: { padding: 12, borderRadius: 10 },
+  modalBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#00000088' },
+  modalPanel: { position: 'absolute', top: 0, right: 0, bottom: 0, width: 320, borderLeftWidth: StyleSheet.hairlineWidth, padding: 16 },
+  createModalCard: { position: 'absolute', left: 16, right: 16, top: '20%', borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, padding: 16 },
+  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginTop: 6 },
+  textarea: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginTop: 6, textAlignVertical: 'top' },
+  pill: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
+  ghostBtn: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, alignItems: 'center' },
+  previewBoard: { flexDirection: 'row', gap: 8, padding: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 10 },
+  previewColumn: { flex: 1 },
+  previewCard: { height: 36, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth, marginBottom: 6 },
+  viewMoreBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, marginTop: 8 },
+  backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
+  sidebarCard: { padding: 12, borderRadius: 12 },
+  memberItem: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: 10, borderWidth: 1 },
+  memberAvatar: { width: 32, height: 32, borderRadius: 16 },
+  memberAvatarPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  checkbox: { width: 18, height: 18, borderRadius: 4, borderWidth: StyleSheet.hairlineWidth },
+  addButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  removeButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  emptyState: { padding: 16, borderRadius: 8, alignItems: 'center' },
+  statsRow: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 4 },
+  statChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
+  boardQuickBtn: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
+  boardBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
 });
+
+// Wrapper component with MobileAlertProvider
+export default function SpaceBoardsScreen() {
+  return (
+    <BannerProvider>
+      <MobileAlertProvider>
+        <SpaceMainScreenContent />
+      </MobileAlertProvider>
+    </BannerProvider>
+  );
+}

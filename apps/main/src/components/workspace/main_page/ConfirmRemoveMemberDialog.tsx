@@ -10,21 +10,14 @@ const ConfirmRemoveMemberDialog: React.FC<ConfirmRemoveMemberDialogProps> = ({
   memberName,
   isOwner = false,
 }) => {
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!password.trim()) {
-      setError('Please enter your password');
-      return;
-    }
-
+  const handleConfirm = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      await onConfirm(password);
+      await onConfirm('');
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove member');
@@ -46,41 +39,26 @@ const ConfirmRemoveMemberDialog: React.FC<ConfirmRemoveMemberDialogProps> = ({
             : `Are you sure you want to remove ${memberName} from the workspace? This action cannot be undone.`}
         </p>
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
-              Enter your password to confirm
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md bg-background text-foreground"
-              placeholder="Your account password"
-              autoComplete="current-password"
-            />
-            {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-          </div>
+        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="destructive"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Processing...' : isOwner ? 'Leave Workspace' : 'Remove Member'}
-            </Button>
-          </div>
-        </form>
+        <div className="flex justify-end gap-3 mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleConfirm}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Processing...' : isOwner ? 'Leave Workspace' : 'Remove Member'}
+          </Button>
+        </div>
       </div>
     </Modal>
   );

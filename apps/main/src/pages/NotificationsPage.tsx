@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useInvitations } from '../hooks/useInvitations';
 import { useToast } from '../hooks/useToast';
+import { useWorkspaceSocket } from '../contexts/SocketContext';
 import InvitationNotification from '../components/notifications/InvitationNotification';
-import { Button, Card, Tabs, TabsContent, TabsList, TabsTrigger } from '@taskflow/ui';
+import { Button, Card, Tabs, TabsContent, TabsList, TabsTrigger, Badge } from '@taskflow/ui';
 import { Bell, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 
 const NotificationsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('pending');
   const [isResponding, setIsResponding] = useState<string | null>(null);
+  const [hasNewInvitations, setHasNewInvitations] = useState(false);
   
   const {
     invitations,
@@ -20,6 +22,7 @@ const NotificationsPage: React.FC = () => {
   } = useInvitations();
   
   const { success, error: showError } = useToast();
+  const workspaceSocket = useWorkspaceSocket();
 
   // Filter invitations by status
   const pendingInvitations = invitations.filter(inv => inv.status === 'pending');
@@ -107,7 +110,52 @@ const NotificationsPage: React.FC = () => {
 
   useEffect(() => {
     fetchInvitations();
-  }, [fetchInvitations]);
+  }, []); // Empty dependency array to run only on mount
+
+  // Track new invitations for real-time updates
+  useEffect(() => {
+    if (pendingInvitations.length > 0) {
+      setHasNewInvitations(true);
+    }
+  }, [pendingInvitations.length]);
+
+  // Clear new invitation indicator when user switches to pending tab
+  useEffect(() => {
+    if (activeTab === 'pending') {
+      setHasNewInvitations(false);
+    }
+  }, [activeTab]);
+
+  // Real-time workspace access events
+  useEffect(() => {
+    if (!workspaceSocket) return;
+
+    // Listen for workspace access granted (when user accepts invitation)
+    const handleAccessGranted = (data: any) => {
+      console.log('Workspace access granted:', data);
+      success(`You now have access to ${data.workspaceName} as ${data.role}`);
+      // Refresh invitations to update status
+      fetchInvitations();
+    };
+
+    // Listen for workspace access revoked (when user is removed)
+    const handleAccessRevoked = (data: any) => {
+      console.log('Workspace access revoked:', data);
+      showError(`Your access to ${data.workspaceName} has been revoked`);
+      // Refresh invitations to update status
+      fetchInvitations();
+    };
+
+    // Add event listeners
+    workspaceSocket.on('workspace:access_granted', handleAccessGranted);
+    workspaceSocket.on('workspace:access_revoked', handleAccessRevoked);
+
+    // Cleanup
+    return () => {
+      workspaceSocket.off('workspace:access_granted', handleAccessGranted);
+      workspaceSocket.off('workspace:access_revoked', handleAccessRevoked);
+    };
+  }, [workspaceSocket, success, showError, fetchInvitations]);
 
   if (error) {
     return (
@@ -140,6 +188,11 @@ const NotificationsPage: React.FC = () => {
               <span className="ml-1 px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full">
                 {getTabCount('pending')}
               </span>
+            )}
+            {hasNewInvitations && (
+              <Badge variant="destructive" className="ml-1 animate-pulse">
+                New
+              </Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="accepted" className="flex items-center gap-2">

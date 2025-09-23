@@ -9,7 +9,8 @@ const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
 const mongoose = require('mongoose');
-const env  = require('../config/env')
+const env  = require('../config/env');
+const { emitInvitationReceived, emitWorkspaceEvent } = require('../utils/socketManager');
 // Get all workspaces for a specific user (owner or member)
 exports.getAllWorkspaces = async (req, res) => {
     try {
@@ -128,7 +129,7 @@ exports.createWorkspace = async (req, res) => {
             owner: userId,
             plan,
             isPublic,
-            members: [], // Owner is not included in members array
+            members: [{ user: userId, role: 'admin' }], // Include owner in members array as admin
             usage: {
                 membersCount: 1 // Owner counts as 1
             },
@@ -245,6 +246,39 @@ exports.updateWorkspace = async (req, res) => {
         }
 
         await workspace.save();
+
+        // Emit real-time workspace update event
+        const { getWorkspaceSocketIO } = require('../utils/socketManager');
+        const workspaceIo = getWorkspaceSocketIO();
+        if (workspaceIo) {
+            const eventData = {
+                workspaceId,
+                workspace: {
+                    id: workspace._id,
+                    name: workspace.name,
+                    description: workspace.description,
+                    githubOrg: workspace.githubOrg,
+                    settings: workspace.settings,
+                    limits: workspace.limits,
+                    updatedAt: workspace.updatedAt
+                },
+                updatedBy: {
+                    id: userId,
+                    name: req.user.name,
+                    email: req.user.email
+                },
+                changes: {
+                    name: name ? { old: workspace.name, new: name } : null,
+                    description: description ? { old: workspace.description, new: description } : null,
+                    githubOrg: githubOrg !== undefined ? { old: workspace.githubOrg, new: githubOrg } : null,
+                    settings: settings ? { updated: true } : null,
+                    limits: limits ? { updated: true } : null
+                }
+            };
+            
+            console.log('🔔 Emitting workspace:updated event:', eventData);
+            workspaceIo.to(workspaceId).emit('workspace:updated', eventData);
+        }
 
         // Log activity
         await ActivityLog.logActivity({
@@ -461,6 +495,15 @@ exports.inviteMember = async (req, res) => {
         logger.info(`Invitation created - id: ${invitation._id}, token: ${invitation.token}, targetEntity: ${JSON.stringify(invitation.targetEntity)}`);
 
         // Send invitation email
+        try {
+            logger.info('Sending invitation email:', {
+                to: email,
+                inviterName: req.user.name,
+                workspaceName: workspace.name,
+                invitationUrl: invitation.inviteUrl,
+                supportUrl: `${env.FRONTEND_URL}/support`
+            });
+            
         await sendEmail({
             to: email,
             template: 'workspace-invitation',
@@ -475,10 +518,22 @@ exports.inviteMember = async (req, res) => {
                 docsUrl: `${env.FRONTEND_URL}/docs`
             }
         });
+            
+            logger.info('Invitation email sent successfully');
+        } catch (emailError) {
+            logger.error('Failed to send invitation email:', emailError);
+            // Don't fail the entire request if email fails
+        }
 
         // Notify invited user in-app if they already have an account
         try {
             if (existingUser) {
+                logger.info('Creating notification for existing user:', {
+                    recipient: existingUser._id,
+                    sender: userId,
+                    workspaceName: workspace.name
+                });
+                
                 await NotificationService.createNotification({
                     title: 'Workspace invitation',
                     message: `${req.user.name} invited you to join workspace "${workspace.name}" as ${role}`,
@@ -489,12 +544,32 @@ exports.inviteMember = async (req, res) => {
                     priority: 'medium',
                     deliveryMethods: { inApp: true }
                 });
+                
+                logger.info('Notification created successfully');
+                
+                // Emit Socket.IO events for real-time updates
+                emitInvitationReceived(existingUser._id, {
+                    invitation: {
+                        id: invitation._id,
+                        type: invitation.type,
+                        role: invitation.role,
+                        message: invitation.message,
+                        inviterName: req.user.name,
+                        workspaceName: workspace.name,
+                        workspaceId: workspace._id,
+                        expiresAt: invitation.expiresAt,
+                        createdAt: invitation.createdAt
+                    }
+                });
+            } else {
+                logger.info('No existing user found, skipping notification and Socket.IO events');
             }
         } catch (notifyErr) {
-            logger.warn('Invite member: notification not sent', { error: notifyErr?.message });
+            logger.error('Invite member: notification not sent', { error: notifyErr?.message, stack: notifyErr?.stack });
         }
 
         // Log activity
+        try {
         await ActivityLog.logActivity({
             userId,
             action: 'workspace_member_add',
@@ -508,6 +583,11 @@ exports.inviteMember = async (req, res) => {
                 ipAddress: req.ip
             }
         });
+            logger.info('Activity logged successfully');
+        } catch (activityError) {
+            logger.error('Failed to log activity:', activityError);
+            // Don't fail the entire request if activity logging fails
+        }
 
         sendResponse(res, 201, true, 'Invitation sent successfully', {
             invitation: {
@@ -570,6 +650,30 @@ exports.acceptInvitation = async (req, res) => {
             }
         } catch (notifyErr) {
             logger.warn('Accept invitation: notification not sent', { error: notifyErr?.message });
+        }
+
+        // Emit real-time workspace member added event
+        const { getWorkspaceSocketIO } = require('../utils/socketManager');
+        const workspaceIo = getWorkspaceSocketIO();
+        if (workspaceIo) {
+            const eventData = {
+                workspaceId: workspace._id,
+                member: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    avatar: user.avatar,
+                    role: invitation.role
+                },
+                addedBy: {
+                    id: invitation.invitedBy,
+                    name: req.user.name,
+                    email: req.user.email
+                }
+            };
+            
+            console.log('🔔 Emitting workspace:member_added event:', eventData);
+            workspaceIo.to(workspace._id.toString()).emit('workspace:member_added', eventData);
         }
 
         // Log activity
@@ -747,23 +851,40 @@ exports.removeMember = async (req, res) => {
         const { id: workspaceId, memberId } = req.params;
         const userId = req.user.id;
 
-        // Check permissions
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        if (!userRoles.hasWorkspaceRole(workspaceId, 'admin')) {
-            // return sendResponse(res, 403, false, 'Admin permissions required to remove members');
-        }
+        // Debug logging
+        logger.info(`RemoveMember - WorkspaceId: ${workspaceId}, MemberId: ${memberId}, MemberIdType: ${typeof memberId}, UserId: ${userId}`);
 
         const workspace = await Workspace.findById(workspaceId);
         if (!workspace) {
             return sendResponse(res, 404, false, 'Workspace not found');
         }
 
-        // Can't remove workspace owner
-        if (workspace.owner.toString() === memberId) {
-            // return sendResponse(res, 400, false, 'Cannot remove workspace owner');
+        // Check permissions - owner or admin can remove members
+        const isOwner = workspace.owner && workspace.owner.equals(userId);
+        const currentUserMember = workspace.members.find(m => 
+            m.user.equals(userId)
+        );
+        
+        if (!isOwner && (!currentUserMember || currentUserMember.role !== 'admin')) {
+            return sendResponse(res, 403, false, 'Only owners and admins can remove members');
         }
+
+        // Can't remove workspace owner
+        if (workspace.owner.equals(memberId)) {
+            return sendResponse(res, 400, false, 'Cannot remove workspace owner');
+        }
+
+        // Check if member still exists in workspace
+        const memberToRemove = workspace.members.find(m => 
+            m.user.equals(memberId)
+        );
+        
+        if (!memberToRemove) {
+            logger.info(`RemoveMember - Member ${memberId} not found in workspace ${workspaceId}`);
+            return sendResponse(res, 404, false, 'Member not found in workspace');
+        }
+
+        logger.info(`RemoveMember - Found member to remove: ${memberToRemove.user}, Role: ${memberToRemove.role}`);
 
         // Remove member from workspace
         await workspace.removeMember(memberId);
@@ -788,6 +909,25 @@ exports.removeMember = async (req, res) => {
             workspaceId,
             metadata: { ipAddress: req.ip }
         });
+
+        // Emit real-time workspace updates
+        const { getWorkspaceSocketIO } = require('../utils/socketManager');
+        const workspaceIo = getWorkspaceSocketIO();
+        if (workspaceIo) {
+            // Notify all workspace members about member removal
+            workspaceIo.to(workspaceId).emit('workspace:member_removed', {
+                workspaceId,
+                memberId,
+                memberName: member.name,
+                removedBy: userId
+            });
+
+            // Notify the removed member about access revocation
+            workspaceIo.to(memberId.toString()).emit('workspace:access_revoked', {
+                workspaceId,
+                workspaceName: workspace.name
+            });
+        }
 
         sendResponse(res, 200, true, 'Member removed successfully');
     } catch (error) {
@@ -891,8 +1031,8 @@ exports.transferOwnership = async (req, res) => {
         }
 
         // Only current owner can transfer ownership
-        if (workspace.owner.toString() !== userId) {
-            // return sendResponse(res, 403, false, 'Only workspace owner can transfer ownership');
+        if (!workspace.owner.equals(userId)) {
+            return sendResponse(res, 403, false, 'Only workspace owner can transfer ownership');
         }
 
         const newOwner = await User.findById(newOwnerId);
@@ -922,6 +1062,25 @@ exports.transferOwnership = async (req, res) => {
             metadata: { ipAddress: req.ip },
             severity: 'warning'
         });
+
+        // Emit real-time workspace updates
+        const { getWorkspaceSocketIO } = require('../utils/socketManager');
+        const workspaceIo = getWorkspaceSocketIO();
+        if (workspaceIo) {
+            // Notify all workspace members about ownership transfer
+            workspaceIo.to(workspaceId).emit('workspace:ownership_transferred', {
+                workspaceId,
+                workspaceName: workspace.name,
+                previousOwner: {
+                    id: userId,
+                    name: req.user.name
+                },
+                newOwner: {
+                    id: newOwnerId,
+                    name: newOwner.name
+                }
+            });
+        }
 
         sendResponse(res, 200, true, 'Ownership transferred successfully', {
             workspace: workspace.toObject(),
@@ -1236,6 +1395,130 @@ exports.deleteWorkspaceRules = async (req, res) => {
         sendResponse(res, 200, true, 'Workspace rules deleted successfully');
     } catch (error) {
         logger.error('Error deleting workspace rules:', error);
+        sendResponse(res, 500, false, 'Internal server error');
+    }
+};
+
+/**
+ * Update member role in workspace
+ */
+exports.updateMemberRole = async (req, res) => {
+    try {
+        const { id: workspaceId, memberId } = req.params;
+        const { role } = req.body;
+        const userId = req.user?.id;
+        
+        // Debug logging for userId
+        logger.info(`UpdateMemberRole - req.user: ${JSON.stringify(req.user)}, userId: ${userId}, userIdType: ${typeof userId}`);
+
+        // Validate role
+        const validRoles = ['member', 'admin'];
+        if (!validRoles.includes(role)) {
+            return sendResponse(res, 400, false, 'Invalid role. Must be "member" or "admin"');
+        }
+
+        // Get workspace
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        // Check if user is workspace owner or member with admin/owner role
+        const isOwner = workspace.owner && workspace.owner.equals(userId);
+        const currentUserMember = workspace.members.find(m => 
+            m.user.equals(userId)
+        );
+        
+        // Debug logging
+        logger.info(`UpdateMemberRole - User: ${userId}, Workspace: ${workspaceId}, IsOwner: ${isOwner}, MemberRole: ${currentUserMember?.role}`);
+        logger.info(`UpdateMemberRole - Owner: ${workspace.owner}, OwnerType: ${typeof workspace.owner}, UserType: ${typeof userId}`);
+        logger.info(`UpdateMemberRole - Owner.equals(userId): ${workspace.owner?.equals(userId)}`);
+        
+        if (!isOwner && !currentUserMember) {
+            return sendResponse(res, 403, false, 'You are not a member of this workspace');
+        }
+
+        if (!isOwner && currentUserMember && currentUserMember.role !== 'admin') {
+            return sendResponse(res, 403, false, 'Only owners and admins can change member roles');
+        }
+
+        // Find the member to update
+        const memberToUpdate = workspace.members.find(m => 
+            m.user.equals(memberId)
+        );
+
+        if (!memberToUpdate) {
+            return sendResponse(res, 404, false, 'Member not found in workspace');
+        }
+
+        // Prevent owner from changing their own role
+        if (memberToUpdate.user.equals(userId) && isOwner) {
+            return sendResponse(res, 400, false, 'Owner cannot change their own role');
+        }
+
+        // Prevent non-owners from changing admin roles
+        if (!isOwner && currentUserMember && currentUserMember.role === 'admin' && memberToUpdate.role === 'admin') {
+            return sendResponse(res, 403, false, 'Only owners can change admin roles');
+        }
+
+        // Update member role
+        const oldRole = memberToUpdate.role;
+        memberToUpdate.role = role;
+        await workspace.save();
+
+        // Log activity
+        await ActivityLog.create({
+            user: userId,
+            action: 'workspace_member_role_change',
+            entity: {
+                type: 'Workspace',
+                id: workspaceId
+            },
+            description: `Changed member role from ${oldRole} to ${role}`,
+            details: {
+                memberId,
+                oldRole,
+                newRole: role,
+                memberName: memberToUpdate.user.name || 'Unknown'
+            }
+        });
+
+        // Emit real-time workspace updates
+        const { getWorkspaceSocketIO } = require('../utils/socketManager');
+        const workspaceIo = getWorkspaceSocketIO();
+        console.log('🔔 Workspace IO namespace available:', !!workspaceIo);
+        if (workspaceIo) {
+            const eventData = {
+                workspaceId,
+                memberId,
+                memberName: memberToUpdate.user.name || 'Unknown',
+                oldRole,
+                newRole: role,
+                changedBy: userId
+            };
+            console.log('🔔 Emitting workspace:member_role_changed event:', eventData);
+            console.log('🔔 Workspace room members:', workspaceIo.adapter.rooms.get(workspaceId)?.size || 0);
+            
+            // Notify all workspace members about role change
+            workspaceIo.to(workspaceId).emit('workspace:member_role_changed', eventData);
+            console.log('🔔 Event emitted successfully');
+        } else {
+            console.log('🔔 Workspace IO namespace not available');
+        }
+
+        // Populate the updated member data
+        await workspace.populate('members.user', 'name email avatar');
+
+        sendResponse(res, 200, true, 'Member role updated successfully', {
+            member: {
+                id: memberToUpdate.user._id,
+                name: memberToUpdate.user.name,
+                email: memberToUpdate.user.email,
+                role: memberToUpdate.role
+            }
+        });
+    } catch (error) {
+        logger.error('Error updating member role:', error);
         sendResponse(res, 500, false, 'Internal server error');
     }
 };

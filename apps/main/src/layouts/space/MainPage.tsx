@@ -24,6 +24,7 @@ import {
 import type { Space } from '../../types/space.types';
 import { SpaceService } from '../../services/spaceService';
 import { AIChat } from '../../components/ai/AIChat';
+import BoardPreviewModal from '../../components/ai/BoardPreviewModal';
 
 interface MainPageProps {
   currentSpace: Space;
@@ -57,7 +58,7 @@ const getVisibilityInfo = (visibility: string) => {
 
 const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
   const spaceId = currentSpace?._id;
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, user } = useAuth();
   const { success, error: showError } = useToast();
   const navigate = useNavigate();
 
@@ -78,7 +79,7 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
   const { selectBoard } = useBoard();
   
   // AI Board Generator
-  const { generateBoardWithConfirmation } = useBoardGenerator();
+  const { generateBoardWithConfirmation, generateBoardFromPreview } = useBoardGenerator();
   // Local UI state
   const [newBoardName, setNewBoardName] = useState('');
   const [isCreatingBoardLoading, setIsCreatingBoardLoading] = useState(false);
@@ -91,6 +92,8 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
   
   // AI Chat state
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewBoardData, setPreviewBoardData] = useState<any>(null);
   
   // Member data
   const [spaceMembers, setSpaceMembers] = useState<any[]>([]);
@@ -100,6 +103,63 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
     if (!spaceId) return [];
     return getActiveBoardsBySpace(spaceId);
   }, [spaceId, getActiveBoardsBySpace, boards]);
+
+  // Check if user has view-only access (can view but not edit)
+  const hasViewOnlyAccess = useMemo(() => {
+    console.log('🔍 View-only access check START:', {
+      hasCurrentSpace: !!currentSpace,
+      hasUser: !!user?.id,
+      userId: user?.id,
+      spaceId: currentSpace?._id,
+      spaceMembers: currentSpace?.members?.length || 0,
+      workspaceRole: currentWorkspace?.userRole,
+      currentSpaceName: currentSpace?.name
+    });
+    
+    if (!currentSpace || !user?.id) {
+      console.log('🔍 Missing currentSpace or user, returning false');
+      return false;
+    }
+    
+    // Check if user is a member of the space
+    const isSpaceMember = currentSpace.members?.some((member: any) => {
+      const memberUserId = typeof member.user === 'string' ? member.user : member.user?._id;
+      const isMember = memberUserId === user.id;
+      console.log('🔍 Space member check:', {
+        memberUserId,
+        userId: user.id,
+        isMember,
+        memberUser: member.user
+      });
+      return isMember;
+    });
+    
+    // Check if user is workspace admin/owner
+    const isWorkspaceAdmin = currentWorkspace?.userRole === 'admin' || currentWorkspace?.userRole === 'owner';
+    
+    console.log('🔍 Permission check result:', {
+      isSpaceMember,
+      isWorkspaceAdmin,
+      workspaceRole: currentWorkspace?.userRole,
+      hasViewOnlyAccess: isWorkspaceAdmin && !isSpaceMember
+    });
+    
+    // If user is workspace admin but not space member, they have view-only access
+    if (isWorkspaceAdmin && !isSpaceMember) {
+      console.log('🔍 User has view-only access');
+      return true;
+    }
+    
+    // If user is a space member, they have full access
+    if (isSpaceMember) {
+      console.log('🔍 User has full access (space member)');
+      return false;
+    }
+    
+    // If user is not a space member and not workspace admin, they shouldn't have access at all
+    console.log('🔍 User has no access');
+    return false;
+  }, [currentSpace, user?.id, currentWorkspace?.userRole]);
 
   const filteredBoards = useMemo(() => {
     return activeBoards;
@@ -220,9 +280,10 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
       typeof member.user === 'string' ? member.user : member.user?._id || member.user?.id
     );
     
-    return workspaceMembers.filter(workspaceMember => 
-      !spaceMemberIds.includes(workspaceMember.userId || workspaceMember.id)
-    );
+    return workspaceMembers.filter(workspaceMember => {
+      const workspaceMemberId = workspaceMember.user?._id || workspaceMember.userId || workspaceMember.id;
+      return !spaceMemberIds.includes(workspaceMemberId);
+    });
   }, [workspaceMembers, spaceMembers]);
 
   // Filter available members based on search query
@@ -242,6 +303,13 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
   const handleAddMember = async (userId: string) => {
     if (!currentSpace) return;
     
+    console.log('🔍 Adding member to space:', {
+      spaceId: currentSpace._id,
+      userId,
+      userIdType: typeof userId,
+      userIdLength: userId?.length
+    });
+    
     setIsAddingMember(true);
     try {
       // Add member to space with default role
@@ -253,9 +321,64 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
       
       handleCloseAddMemberSidebar();
     } catch (error) {
+      console.error('🔍 Error adding member:', error);
       showError(error instanceof Error ? error.message : 'Failed to add member to space');
     } finally {
       setIsAddingMember(false);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string, memberName: string) => {
+    if (!currentSpace) return;
+    
+    console.log('🔍 Removing member from space:', {
+      spaceId: currentSpace._id,
+      userId,
+      memberName
+    });
+    
+    try {
+      // Remove member from space
+      await SpaceService.removeSpaceMember(currentSpace._id, userId);
+      success(`${memberName} removed from space successfully!`);
+      
+      // Reload space members
+      await loadSpaceMembers();
+    } catch (error) {
+      console.error('🔍 Error removing member:', error);
+      showError(error instanceof Error ? error.message : 'Failed to remove member from space');
+    }
+  };
+
+  const handleLeaveSpace = async () => {
+    console.log('🔍 handleLeaveSpace called with user object:', user);
+    
+    if (!currentSpace || !user?.user?._id) {
+      console.log('🔍 Cannot leave space - missing data:', {
+        currentSpace: !!currentSpace,
+        userId: user?.user?._id,
+        userObject: user,
+        userKeys: user ? Object.keys(user) : 'no user'
+      });
+      return;
+    }
+    
+    console.log('🔍 Leaving space:', {
+      spaceId: currentSpace._id,
+      userId: user.user._id,
+      userName: user.user.name
+    });
+    
+    try {
+      // Remove current user from space
+      await SpaceService.removeSpaceMember(currentSpace._id, user.user._id);
+      success('You have left the space successfully!');
+      
+      // Navigate back to workspace
+      navigate('/workspace');
+    } catch (error) {
+      console.error('🔍 Error leaving space:', error);
+      showError(error instanceof Error ? error.message : 'Failed to leave space');
     }
   };
 
@@ -267,11 +390,32 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
         return;
       }
       
-      const result = await generateBoardWithConfirmation(boardData, spaceId);
+      console.log('🔍 AI Board Generated Data:', boardData);
+      
+      // Show preview modal instead of confirmation dialog
+      setPreviewBoardData(boardData);
+      setIsPreviewModalOpen(true);
+      setIsAIChatOpen(false);
+    } catch (error) {
+      console.error('Failed to process AI board data:', error);
+      showError('Failed to process AI board data');
+    }
+  };
+
+  // Handle board creation from preview modal
+  const handleCreateBoardFromPreview = async (boardData: any) => {
+    try {
+      if (!spaceId) {
+        console.error('No current space available for board creation');
+        return;
+      }
+      
+      const result = await generateBoardFromPreview(boardData, spaceId);
       
       if (result) {
         success('AI Board created successfully!');
-        setIsAIChatOpen(false);
+        setIsPreviewModalOpen(false);
+        setPreviewBoardData(null);
         // Reload boards to show the new one
         loadBoardsBySpace(spaceId);
       }
@@ -365,7 +509,15 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
                   </span>
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground mb-1">{currentSpace.name}</h1>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h1 className="text-3xl font-bold text-foreground">{currentSpace.name}</h1>
+                    {hasViewOnlyAccess && (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-full text-amber-700 dark:text-amber-300 text-sm font-medium">
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>View Only</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     <span>Active Space</span>
@@ -428,13 +580,15 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
                     )}
                   </div>
                   {/* Add Member Button */}
-                  <button
-                    onClick={handleAddMemberClick}
-                    className="ml-2 w-8 h-8 bg-primary/10 hover:bg-primary/20 rounded-full flex items-center justify-center transition-colors"
-                    title="Add member to space"
-                  >
-                    <UserPlus className="w-4 h-4 text-primary" />
-                  </button>
+                  {!hasViewOnlyAccess && (
+                    <button
+                      onClick={handleAddMemberClick}
+                      className="ml-2 w-8 h-8 bg-primary/10 hover:bg-primary/20 rounded-full flex items-center justify-center transition-colors"
+                      title="Add member to space"
+                    >
+                      <UserPlus className="w-4 h-4 text-primary" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -448,8 +602,18 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
       <div className="container mx-auto px-6 pb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-semibold text-foreground mb-1">Boards</h2>
-            <p className="text-sm text-muted-foreground">Your project boards</p>
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-xl font-semibold text-foreground">Boards</h2>
+              {hasViewOnlyAccess && (
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded text-amber-600 dark:text-amber-400 text-xs font-medium">
+                  <Lock className="w-3 h-3" />
+                  <span>View Only</span>
+                </div>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {hasViewOnlyAccess ? 'View project boards (read-only access)' : 'Your project boards'}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {/* AI Generate Board Button */}
@@ -457,7 +621,9 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
               onClick={() => setIsAIChatOpen(true)}
               variant="outline"
               size="sm"
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+              disabled={hasViewOnlyAccess}
+              className={`bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 ${hasViewOnlyAccess ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={hasViewOnlyAccess ? 'You have view-only access to this space' : 'Generate content with AI'}
             >
               <Bot className="w-4 h-4 mr-2" />
               AI Generate
@@ -468,13 +634,21 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
                 onClick={() => setIsCreatingBoard(true)}
                 variant="default"
                 size="sm"
-                className="bg-primary hover:bg-primary/90"
+                disabled={hasViewOnlyAccess}
+                className={`bg-primary hover:bg-primary/90 ${hasViewOnlyAccess ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={hasViewOnlyAccess ? 'You have view-only access to this space' : 'Create a new board'}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Board
               </Button>
             ) : (
               <div className="flex items-center gap-2">
+                {hasViewOnlyAccess && (
+                  <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 px-3 py-1.5 rounded-md border border-amber-200 dark:border-amber-800">
+                    <Lock className="w-3.5 h-3.5 inline mr-1.5" />
+                    View-only access - cannot create boards
+                  </div>
+                )}
                 <input
                   type="text"
                   placeholder="Enter board name..."
@@ -487,7 +661,7 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
                       setNewBoardName('');
                     }
                   }}
-                  disabled={isCreatingBoardLoading}
+                  disabled={isCreatingBoardLoading || hasViewOnlyAccess}
                   className="h-8 w-48 text-sm border border-slate-200 rounded-md px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   autoFocus
                 />
@@ -495,9 +669,9 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
                   variant="ghost"
                   size="sm"
                   onClick={handleCreateBoard}
-                  disabled={!newBoardName.trim() || isCreatingBoardLoading}
+                  disabled={!newBoardName.trim() || isCreatingBoardLoading || hasViewOnlyAccess}
                   className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 transition-all duration-200"
-                  title="Create board"
+                  title={hasViewOnlyAccess ? 'You have view-only access to this space' : 'Create board'}
                 >
                   {isCreatingBoardLoading ? (
                     <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
@@ -538,6 +712,7 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
                   key={board._id}
                   className="group hover:shadow-lg transition-all duration-300 border-border hover:border-primary/30 cursor-pointer hover:-translate-y-1 overflow-hidden bg-white/50 backdrop-blur-sm"
                   onClick={() => handleBoardClick(board)}
+                  title={hasViewOnlyAccess ? 'View-only access - you can view but not edit this board' : 'Click to open board'}
                 >
                   {/* Theme Header */}
                   <div 
@@ -570,7 +745,14 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
                     <div className="space-y-2">
                       {/* Board Title */}
                       <div>
-                        <h4 className="font-semibold text-foreground truncate text-sm mb-1">{board.name}</h4>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-foreground truncate text-sm flex-1">{board.name}</h4>
+                          {hasViewOnlyAccess && (
+                            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded text-amber-600 dark:text-amber-400 text-xs font-medium">
+                              <Lock className="w-2.5 h-2.5" />
+                            </div>
+                          )}
+                        </div>
                         {board.description && (
                           <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed">
                             {board.description}
@@ -658,27 +840,117 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
                               {/* Current Space Members */}
                 <div className="mb-6">
                   <h4 className="text-sm font-medium text-foreground mb-3">Current Members ({Array.isArray(spaceMembers) ? spaceMembers.length : 0})</h4>
-                  <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto">
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
                     {Array.isArray(spaceMembers) && spaceMembers.map((member, index) => {
                       const user = member.user || member;
                       const name = user?.name || 'Unknown User';
                       const email = user?.email || '';
+                      const userId = user?._id || member.user?._id || member.userId || member.id;
+                      const role = member.role || 'member';
+                      const isCurrentUser = userId === user?.user?._id;
+                      
+                      // Debug current user detection
+                      if (index === 0) { // Only log for first member to avoid spam
+                        console.log('🔍 Current user detection:', {
+                          memberUserId: userId,
+                          currentUserId: user?.user?._id,
+                          currentUserObject: user,
+                          isCurrentUser,
+                          memberName: name
+                        });
+                      }
+                      
+                      // Get role badge styling
+                      const getRoleBadge = (role: string) => {
+                        switch (role) {
+                          case 'owner':
+                            return {
+                              text: 'Owner',
+                              className: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800'
+                            };
+                          case 'admin':
+                            return {
+                              text: 'Admin',
+                              className: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800'
+                            };
+                          case 'member':
+                            return {
+                              text: 'Member',
+                              className: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800'
+                            };
+                          case 'viewer':
+                            return {
+                              text: 'Viewer',
+                              className: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-300 dark:border-gray-800'
+                            };
+                          default:
+                            return {
+                              text: 'Member',
+                              className: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800'
+                            };
+                        }
+                      };
+                      
+                      const roleBadge = getRoleBadge(role);
                       
                       return (
                         <div
                           key={member._id || index}
-                          className="flex items-center gap-2 px-2 py-1 bg-muted rounded-md text-xs"
-                          title={`${name}${email ? ` (${email})` : ''}`}
+                          className="flex items-center justify-between gap-2 px-3 py-2 bg-muted rounded-md text-xs group hover:bg-muted/80 transition-colors"
+                          title={`${name}${email ? ` (${email})` : ''} - ${roleBadge.text}`}
                         >
-                          <div className="w-5 h-5 bg-primary/20 rounded-full flex items-center justify-center text-xs font-medium text-primary">
-                            {name.charAt(0).toUpperCase()}
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="w-5 h-5 bg-primary/20 rounded-full flex items-center justify-center text-xs font-medium text-primary flex-shrink-0">
+                              {name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="text-foreground truncate font-medium">{name}</div>
+                                <div className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border ${roleBadge.className}`}>
+                                  {roleBadge.text}
+                                </div>
+                              </div>
+                              {email && (
+                                <div className="text-muted-foreground truncate text-xs">{email}</div>
+                              )}
+                            </div>
                           </div>
-                          <span className="text-foreground truncate max-w-20">{name}</span>
+                          
+                          {/* Action Button */}
+                          <div className="flex items-center gap-1">
+                            {isCurrentUser ? (
+                              // Show Leave button only for current user
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleLeaveSpace();
+                                }}
+                                className="opacity-0 group-hover:opacity-100 px-2 py-1 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded transition-all duration-200 flex-shrink-0 border border-amber-200 dark:border-amber-800"
+                                title="Leave this space"
+                              >
+                                Leave
+                              </button>
+                            ) : (
+                              // Show Remove button only for admins/owners when viewing other users
+                              !hasViewOnlyAccess && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveMember(userId, name);
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-all duration-200 flex-shrink-0"
+                                  title={`Remove ${name} from space`}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )
+                            )}
+                          </div>
                         </div>
                       );
                     })}
                     {Array.isArray(spaceMembers) && spaceMembers.length === 0 && (
-                      <p className="text-xs text-muted-foreground">No members yet</p>
+                      <p className="text-xs text-muted-foreground text-center py-4">No members yet</p>
                     )}
                   </div>
                 </div>
@@ -705,7 +977,7 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
                   filteredAvailableMembers.map((member) => {
                     const name = member.user?.name || 'Unknown User';
                     const email = member.user?.email || '';
-                    const userId = member.userId || member.id;
+                    const userId = member.user?._id || member.userId || member.id;
                     
                     return (
                       <div
@@ -753,6 +1025,19 @@ const MainPage: React.FC<MainPageProps> = React.memo(({ currentSpace }) => {
           className="z-50"
           isOpen={isAIChatOpen}
           onClose={() => setIsAIChatOpen(false)}
+        />
+      )}
+
+      {/* Board Preview Modal */}
+      {isPreviewModalOpen && previewBoardData && (
+        <BoardPreviewModal
+          isOpen={isPreviewModalOpen}
+          onClose={() => {
+            setIsPreviewModalOpen(false);
+            setPreviewBoardData(null);
+          }}
+          onConfirm={handleCreateBoardFromPreview}
+          initialData={previewBoardData}
         />
       )}
 

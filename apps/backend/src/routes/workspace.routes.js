@@ -75,6 +75,12 @@ router.delete('/:id/members/:memberId',
     workspaceController.removeMember
 );
 
+router.put('/:id/members/:memberId/role',
+    requireWorkspacePermission('/:id/members/:memberId/role'),
+    validateMiddleware.validateBody(workspaceSchemas.updateMemberRoleSchema),
+    workspaceController.updateMemberRole
+);
+
 router.put('/:id/settings',
     requireWorkspacePermission('/:id/settings'),
     validateMiddleware.validateBody(workspaceSchemas.updateSettingsSchema),

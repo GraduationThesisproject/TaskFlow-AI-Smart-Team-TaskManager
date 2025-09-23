@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Modal, Pressable } from 'react-native';
 import { Text } from '../Themed';
 import { useThemeColors } from '../ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
@@ -13,6 +13,11 @@ export interface AlertProps {
   onClose?: () => void;
   visible?: boolean;
   testID?: string;
+  // Popup dialog actions (optional)
+  onConfirm?: () => void;
+  onCancel?: () => void;
+  confirmText?: string;
+  cancelText?: string;
 }
 
 export default function Alert({
@@ -22,10 +27,13 @@ export default function Alert({
   onClose,
   visible = true,
   testID,
+  onConfirm,
+  onCancel,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
 }: AlertProps) {
   const colors = useThemeColors();
 
-  // Early return after all hooks to avoid violating Rules of Hooks
   if (!visible) return null;
 
   const paletteByVariant = () => {
@@ -43,52 +51,100 @@ export default function Alert({
 
   const palette = paletteByVariant();
 
-    return (
-        <View style={[styles.container, { backgroundColor: palette.bg, borderColor: palette.border }]} testID={testID}>
-          <View style={styles.content}>
-            <View style={styles.texts}>
+  // Render as themed popup dialog
+  return (
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={onCancel || onClose}>
+      {/* Backdrop */}
+      <Pressable style={styles.backdrop} onPress={onCancel || onClose} />
+      {/* Centered dialog */}
+      <View style={styles.centerWrap} pointerEvents="box-none">
+        <View
+          testID={testID}
+          style={[styles.dialog, { backgroundColor: colors.card, borderColor: colors.border }]}
+        >
           {!!title && (
-            <Text style={[TextStyles.body.medium, { color: palette.fg }]} numberOfLines={2}>
-              {title}
-            </Text>
+            <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>{title}</Text>
           )}
           {!!description && (
-            <Text style={[TextStyles.caption.small, { color: palette.fg, opacity: 0.9, marginTop: 4 }]} numberOfLines={3}>
+            <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'], marginTop: 6 }]}>
               {description}
             </Text>
           )}
+          <View style={{ height: 14 }} />
+          {/* Actions */}
+          {onConfirm || onCancel ? (
+            <View style={styles.actionsRow}>
+              <TouchableOpacity
+                onPress={onCancel || onClose}
+                style={[styles.ghostBtn, { borderColor: colors.border }]}
+                accessibilityRole="button"
+              >
+                <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>{cancelText}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={onConfirm || onClose}
+                style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
+                accessibilityRole="button"
+              >
+                <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>{confirmText}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            onClose && (
+              <View style={styles.actionsRow}>
+                <TouchableOpacity
+                  onPress={onClose}
+                  style={[styles.primaryBtn, { backgroundColor: colors.primary, alignSelf: 'flex-end' }]}
+                  accessibilityRole="button"
+                >
+                  <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            )
+          )}
         </View>
-        {!!onClose && (
-          <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Text style={[TextStyles.body.small, { color: palette.fg }]}>✕</Text>
-          </TouchableOpacity>
-        )}
       </View>
-    </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 12,
+  // Modal-based popup styles
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#00000088',
   },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  texts: {
+  centerWrap: {
     flex: 1,
-    paddingRight: 12,
-  },
-  closeBtn: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 24,
+  },
+  dialog: {
+    width: '100%',
+    maxWidth: 420,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 14,
+    padding: 16,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  primaryBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  ghostBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
   },
 });

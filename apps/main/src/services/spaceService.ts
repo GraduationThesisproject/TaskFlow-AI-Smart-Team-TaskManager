@@ -32,8 +32,22 @@ export class SpaceService {
     try {
       const response = await axiosInstance.get(`/spaces/${id}`);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching space:', error);
+      
+      // Handle specific error types
+      if (error.response?.status === 403) {
+        const permissionError = new Error('You do not have permission to access this space');
+        (permissionError as any).code = 'PERMISSION_DENIED';
+        (permissionError as any).status = 403;
+        throw permissionError;
+      } else if (error.response?.status === 404) {
+        const notFoundError = new Error('Space not found');
+        (notFoundError as any).code = 'SPACE_NOT_FOUND';
+        (notFoundError as any).status = 404;
+        throw notFoundError;
+      }
+      
       throw error;
     }
   }
@@ -109,8 +123,22 @@ export class SpaceService {
     try {
       const response = await axiosInstance.post(`/spaces/${id}/archive`, {});
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error archiving space:', error);
+      
+      // Handle specific error types
+      if (error.response?.status === 403) {
+        const permissionError = new Error('You do not have permission to archive this space');
+        (permissionError as any).code = 'PERMISSION_DENIED';
+        (permissionError as any).status = 403;
+        throw permissionError;
+      } else if (error.response?.status === 404) {
+        const notFoundError = new Error('Space not found');
+        (notFoundError as any).code = 'SPACE_NOT_FOUND';
+        (notFoundError as any).status = 404;
+        throw notFoundError;
+      }
+      
       throw error;
     }
   }
@@ -120,8 +148,22 @@ export class SpaceService {
     try {
       const response = await axiosInstance.post(`/spaces/${id}/archive`, { unarchive: true });
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error unarchiving space:', error);
+      
+      // Handle specific error types
+      if (error.response?.status === 403) {
+        const permissionError = new Error('You do not have permission to unarchive this space');
+        (permissionError as any).code = 'PERMISSION_DENIED';
+        (permissionError as any).status = 403;
+        throw permissionError;
+      } else if (error.response?.status === 404) {
+        const notFoundError = new Error('Space not found');
+        (notFoundError as any).code = 'SPACE_NOT_FOUND';
+        (notFoundError as any).status = 404;
+        throw notFoundError;
+      }
+      
       throw error;
     }
   }
@@ -131,8 +173,22 @@ export class SpaceService {
     try {
       const response = await axiosInstance.delete(`/spaces/${id}/permanent`);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error permanently deleting space:', error);
+      
+      // Handle specific error types
+      if (error.response?.status === 403) {
+        const permissionError = new Error('You do not have permission to permanently delete this space');
+        (permissionError as any).code = 'PERMISSION_DENIED';
+        (permissionError as any).status = 403;
+        throw permissionError;
+      } else if (error.response?.status === 404) {
+        const notFoundError = new Error('Space not found');
+        (notFoundError as any).code = 'SPACE_NOT_FOUND';
+        (notFoundError as any).status = 404;
+        throw notFoundError;
+      }
+      
       throw error;
     }
   }

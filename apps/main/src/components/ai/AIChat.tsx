@@ -44,6 +44,16 @@ export const AIChat: React.FC<AIChatProps> = ({
   currentBoard
 }) => {
   const { generateBoard, autoComplete, getSuggestions, getTemplates, isLoading, isAvailable } = useAI();
+  
+  // Debug AI availability
+  console.log('🔌 AIChat Debug:', {
+    isAvailable,
+    isLoading,
+    hasGenerateBoard: !!generateBoard,
+    hasAutoComplete: !!autoComplete,
+    hasGetSuggestions: !!getSuggestions,
+    hasGetTemplates: !!getTemplates
+  });
   const toast = useToast();
   const [isOpen, setIsOpen] = useState(externalIsOpen || false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -139,8 +149,15 @@ export const AIChat: React.FC<AIChatProps> = ({
   };
 
   const handleSendMessage = async () => {
+    console.log('🔌 AIChat handleSendMessage called:', { 
+      inputValue: inputValue.trim(), 
+      isAvailable, 
+      isLoading 
+    });
+
     if (!inputValue.trim() || !isAvailable) {
       if (!isAvailable) {
+        console.log('❌ AIChat: AI not available');
         toast.error('AI assistant is currently offline. Please try again later.', 'Connection Error');
       }
       return;
@@ -160,9 +177,12 @@ export const AIChat: React.FC<AIChatProps> = ({
     );
 
     if (isBoardRequest) {
+      console.log('🔌 AIChat: Board generation request detected');
       await simulateTyping(async () => {
         try {
+          console.log('🔌 AIChat: Calling generateBoard with:', userMessage);
           const boardData = await generateBoard(userMessage);
+          console.log('✅ AIChat: Board generation successful:', boardData);
           
           addMessage({
             type: 'ai',
@@ -177,9 +197,11 @@ export const AIChat: React.FC<AIChatProps> = ({
 
           // Call the callback to handle board generation
           if (onBoardGenerated) {
+            console.log('🔌 AIChat: Calling onBoardGenerated callback');
             onBoardGenerated(boardData);
           }
         } catch (error) {
+          console.log('❌ AIChat: Board generation failed:', error);
           addMessage({
             type: 'ai',
             content: "I apologize, but I couldn't generate the board right now. Please try again or rephrase your request.",
@@ -483,6 +505,17 @@ export const AIChat: React.FC<AIChatProps> = ({
                 >
                   <Zap className="h-3 w-3 mr-1" />
                   Sprint
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    console.log('🔌 Test AI connection clicked');
+                    toast.info(`AI Status: ${isAvailable ? 'Available' : 'Unavailable'}`, 'Connection Test');
+                  }}
+                  className="text-xs"
+                >
+                  Test AI
                 </Button>
               </div>
             </div>

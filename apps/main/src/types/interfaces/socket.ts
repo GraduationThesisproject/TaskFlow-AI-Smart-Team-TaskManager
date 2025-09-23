@@ -65,6 +65,7 @@ export interface SocketContextType {
   isConnected: boolean;
   isConnecting: boolean;
   connectionError: string | null;
+  isNotificationConnected: boolean;
   
   // Connection methods
   connect(): void;

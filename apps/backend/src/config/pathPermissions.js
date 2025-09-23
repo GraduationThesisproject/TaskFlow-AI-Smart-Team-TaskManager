@@ -34,7 +34,13 @@ const WORKSPACE_PERMISSIONS = {
         GET: ['owner', 'admin'],
         PUT: ['owner', 'admin'],
         DELETE: ['owner', 'admin']
- },
+    },
+    '/workspace/:id/members/:memberId/role': {
+        PUT: ['owner', 'admin']
+    },
+    '/workspace/:id/transfer-ownership': {
+        POST: ['owner']
+    },
     '/workspace/:id/billing': {
         GET: ['owner', 'admin'],
         PUT: ['owner', 'admin']
