@@ -29,8 +29,16 @@ exports.linkGitHubAccount = async (req, res) => {
       });
     }
 
-    // Get GitHub user profile
-    const githubProfile = await githubService.getUserProfile(tokenData.accessToken);
+    // Get GitHub user profile and emails
+    const [githubProfile, userEmails] = await Promise.all([
+      githubService.getUserProfile(tokenData.accessToken),
+      githubService.getUserEmails(tokenData.accessToken)
+    ]);
+
+    // Find primary email from user emails
+    const primaryEmail = userEmails.find(email => email.primary && email.verified) || 
+                        userEmails.find(email => email.verified) || 
+                        userEmails[0];
 
     // Update user with GitHub information
     const user = await User.findById(userId);
@@ -43,7 +51,7 @@ exports.linkGitHubAccount = async (req, res) => {
       githubId: githubProfile.id,
       username: githubProfile.login,
       avatar: githubProfile.avatar,
-      email: githubProfile.email,
+      email: primaryEmail?.email || githubProfile.email,
       scope: tokenData.scope,
       lastSync: new Date()
     };
@@ -59,10 +67,11 @@ exports.linkGitHubAccount = async (req, res) => {
 
     await user.save();
 
-    logger.info(`GitHub account linked for user: ${userId}`);
+    logger.info(`GitHub account linked for user: ${userId} with email: ${user.github.email}`);
 
     sendResponse(res, 200, true, 'GitHub account linked successfully', {
       githubUsername: githubProfile.login,
+      githubEmail: user.github.email,
       scope: tokenData.scope,
       hasRequiredScopes: true
     });
@@ -108,7 +117,7 @@ exports.getUserOrganizations = async (req, res) => {
       }
     }
 
-    const organizations = await githubService.getUserOrganizations(accessToken);
+    const organizations = await githubService.getOrganizations(accessToken);
     sendResponse(res, 200, true, 'GitHub organizations fetched successfully', 
       organizations
     );
@@ -142,7 +151,7 @@ exports.getOrganizationRepositories = async (req, res) => {
       });
     }
 
-    const repositories = await githubService.getOrganizationRepositories(accessToken, org);
+    const repositories = await githubService.getRepositories(accessToken, org);
     
     sendResponse(res, 200, true, 'GitHub repositories fetched successfully', {
       organization: org,
@@ -188,6 +197,72 @@ exports.getRepositoryBranches = async (req, res) => {
   } catch (error) {
     logger.error('Error fetching GitHub branches:', error);
     sendResponse(res, 500, false, `Failed to fetch GitHub branches: ${error.message}`);
+  }
+};
+
+// Get members of a specific organization
+exports.getOrganizationMembers = async (req, res) => {
+  try {
+    const { org } = req.params;
+    const userId = req.user.id;
+    
+    const user = await User.findById(userId).select('+github.accessToken');
+    // Middleware already validated GitHub connection, just get token
+    const accessToken = decryptToken(user.github.accessToken);
+    if (!accessToken) {
+      return sendResponse(res, 400, false, 'Invalid GitHub token');
+    }
+
+    // Validate token and check scopes
+    const isValid = await githubService.validateToken(accessToken);
+    if (!isValid) {
+      return sendResponse(res, 400, false, 'GitHub token is invalid or expired');
+    }
+
+    const members = await githubService.getOrganizationMembers(accessToken, org);
+    
+    sendResponse(res, 200, true, 'GitHub organization members fetched successfully', {
+      organization: org,
+      members
+    });
+
+  } catch (error) {
+    logger.error('Error fetching GitHub organization members:', error);
+    sendResponse(res, 500, false, `Failed to fetch GitHub organization members: ${error.message}`);
+  }
+};
+
+// Get organization members with email mapping
+exports.getOrganizationMembersWithEmails = async (req, res) => {
+  try {
+    const { org } = req.params;
+    const userId = req.user.id;
+
+    const user = await User.findById(userId).select('+github.accessToken');
+    const accessToken = decryptToken(user.github.accessToken);
+    
+    if (!accessToken) {
+      return sendResponse(res, 400, false, 'Invalid GitHub token');
+    }
+
+    // Validate token and check scopes
+    const isValid = await githubService.validateToken(accessToken);
+    if (!isValid) {
+      return sendResponse(res, 400, false, 'GitHub token is invalid or expired');
+    }
+
+    const membersWithEmails = await githubService.mapOrgMembersToEmails(accessToken, org);
+
+    sendResponse(res, 200, true, 'GitHub organization members with email mapping fetched successfully', {
+      organization: org,
+      members: membersWithEmails,
+      totalMembers: membersWithEmails.length,
+      appUsers: membersWithEmails.filter(m => m.isAppUser).length
+    });
+
+  } catch (error) {
+    logger.error('Error fetching GitHub organization members with emails:', error);
+    sendResponse(res, 500, false, `Failed to fetch organization members with emails: ${error.message}`);
   }
 };
 

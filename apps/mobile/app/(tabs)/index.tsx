@@ -15,7 +15,6 @@ import { router } from 'expo-router';
 import CreateWorkspaceModal from '@/components/common/CreateWorkspaceModal';
 import { createWorkspace } from '@/store/slices/workspaceSlice';
 import NotificationBell from '@/components/common/NotificationBell';
-import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
 // Welcome Header Component
 const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
@@ -148,7 +147,6 @@ const WorkspacesSection: React.FC = () => {
   const colors = useThemeColors();
   const { workspaces, loading: workspacesLoading, error: workspacesError } = useAppSelector(state => state.workspace);
   const dispatch = useAppDispatch();
-  const { showSuccess, showError } = useBanner();
 
   const recentWorkspaces = workspaces?.slice(0, 3) || [];
 
@@ -162,6 +160,9 @@ const WorkspacesSection: React.FC = () => {
   const [creatingWs, setCreatingWs] = useState(false);
 
   const handleSubmitCreateWorkspace = async ({ name, description }: { name: string; description?: string }) => {
+    // Check plan limits for workspace creation (free plan has no limit, but we can add one later)
+    // For now, just proceed with creation
+    
     try {
       setCreatingWs(true);
       const action: any = await dispatch(createWorkspace({ name, description, isPublic: false } as any));
@@ -170,13 +171,10 @@ const WorkspacesSection: React.FC = () => {
       if (id) {
         dispatch(setCurrentWorkspaceId(id));
         router.push(`/(tabs)/workspace?workspaceId=${id}`);
-        showSuccess('Workspace created successfully!');
       }
       // refresh the dashboard list
       await dispatch(fetchWorkspaces());
       setShowCreateWs(false);
-    } catch (error: any) {
-      showError(error?.message || 'Failed to create workspace');
     } finally {
       setCreatingWs(false);
     }
@@ -376,7 +374,7 @@ const UpcomingDeadlines: React.FC = () => {
   );
 };
 
-function DashboardScreenContent() {
+export default function DashboardScreen() {
   const colors = useThemeColors();
   const dispatch = useAppDispatch();
   const { logout } = useAuth();
@@ -488,14 +486,6 @@ function DashboardScreenContent() {
 
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} context="dashboard" />
     </View>
-  );
-}
-
-export default function DashboardScreen() {
-  return (
-    <BannerProvider>
-      <DashboardScreenContent />
-    </BannerProvider>
   );
 }
 

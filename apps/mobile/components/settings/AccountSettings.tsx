@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AccountSettings: React.FC = () => {
   const colors = useThemeColors();
-  const { user, updateProfileSecure } = useAuth();
+  const { user, updateProfile } = useAuth();
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({ name: '', email: '' });
@@ -60,9 +60,17 @@ const AccountSettings: React.FC = () => {
 
     setIsSavingProfile(true);
     try {
-      await updateProfileSecure({
+      // Convert avatar URI to File object if selected
+      let avatarFile: File | undefined = undefined;
+      if (selectedAvatar) {
+        const response = await fetch(selectedAvatar);
+        const blob = await response.blob();
+        avatarFile = new File([blob], 'avatar.jpg', { type: blob.type });
+      }
+
+      await updateProfile({
         name: profileForm.name.trim(),
-        avatar: selectedAvatar || undefined,
+        avatar: avatarFile,
       });
       
       Alert.alert('Success', 'Profile updated successfully');

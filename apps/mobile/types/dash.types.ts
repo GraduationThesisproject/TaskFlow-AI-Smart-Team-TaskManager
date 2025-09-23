@@ -119,7 +119,6 @@ export interface CreateWorkspaceModalProps {
   onSubmit: (workspaceData: {
     name: string;
     description?: string;
-    visibility: 'private' | 'public';
   }) => Promise<void>;
 }
 export interface DeleteWorkspaceModalProps {

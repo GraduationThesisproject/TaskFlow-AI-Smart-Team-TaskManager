@@ -3,8 +3,6 @@ import { View as RNView, TouchableOpacity, Image, ScrollView, StyleSheet, Platfo
 import { View, Text, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
-import { useMobileAlert } from '@/components/common/MobileAlertProvider';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 export type SpaceRightSidebarProps = {
   space: any;
@@ -43,14 +41,11 @@ export default function SpaceRightSidebar({
   const { showConfirm } = useMobileAlert();
   const topInset = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
 
-  // existing space members list (use passed spaceMembers or fallback to space?.members)
+  // existing space members list (compact)
   const members: any[] = useMemo(
-    () => Array.isArray(spaceMembers) && spaceMembers.length > 0 
-      ? spaceMembers.filter(Boolean)
-      : (Array.isArray(space?.members) ? space.members.filter(Boolean) : []),
-    [spaceMembers, space?.members]
+    () => (Array.isArray(space?.members) ? space.members.filter(Boolean) : []),
+    [space?.members]
   );
-
 
   // derive available workspace member IDs for intersection
   const availableIds = useMemo(
@@ -62,11 +57,8 @@ export default function SpaceRightSidebar({
     [availableMembers]
   );
 
-  // use passed ownerIds or derive from space object as fallback
-  const computedOwnerIds = useMemo(() => {
-    if (ownerIds) return ownerIds;
-    
-    // fallback: derive owner ids (common shapes: space.owner{id,_id}, space.ownerId, space.createdBy{id,_id})
+  // derive owner ids (common shapes: space.owner{id,_id}, space.ownerId, space.createdBy{id,_id})
+  const ownerIds = useMemo(() => {
     const ids: string[] = [];
     const pushId = (val: any) => {
       const s = String(val || '').trim();
@@ -80,52 +72,16 @@ export default function SpaceRightSidebar({
       pushId((space.createdBy as any)?._id || (space.createdBy as any)?.id || space.createdBy);
     }
     return new Set(ids.filter(Boolean));
-  }, [ownerIds, space?.owner, space?.ownerId, space?.createdBy]);
+  }, [space?.owner, space?.ownerId, space?.createdBy]);
 
-  // Also check if space members have owner role from workspace
-  const spaceMemberOwnerIds = useMemo(() => {
-    const ids = new Set<string>();
-    members.forEach((m: any) => {
+  // only show members that are available in the workspace
+  const visibleMembers = useMemo(
+    () => members.filter((m: any) => {
       const id = getMemberId(m);
-      if (id && String(m?.role || '').toLowerCase() === 'owner') {
-        ids.add(id);
-      }
-    });
-    return ids;
-  }, [members]);
-
-  // show all space members (owner + any members that are in the space members list)
-  const visibleMembers = useMemo(() => {
-    const filtered = members.filter((m: any) => {
-      const id = getMemberId(m);
-      if (!id) return false;
-      
-      // Include if it's the owner
-      const isOwner = computedOwnerIds.has(id) || spaceMemberOwnerIds.has(id);
-      if (isOwner) {
-        // console.log('✅ SPACE MEMBER (Owner):', id, m?.user?.name || m?.name);
-        return true;
-      }
-      
-      // Include if they're in the space members list (regardless of membership record structure)
-      // This means they were added to the space somehow
-      // console.log('✅ SPACE MEMBER (In Space):', id, m?.user?.name || m?.name, 'membershipId:', m?._id || m?.id || 'none');
-      return true;
-    });
-    
-    // Debug logging (commented out for performance)
-    // console.log('=== SPACE MEMBERS FINAL ===');
-    // console.log('Total space members:', filtered.length);
-    // console.log('Space members:', filtered.map(m => ({
-    //   id: getMemberId(m) || 'unknown',
-    //   name: m?.user?.name || m?.name || 'unknown',
-    //   isOwner: computedOwnerIds.has(getMemberId(m) || '') || spaceMemberOwnerIds.has(getMemberId(m) || ''),
-    //   hasMembership: !!(m?._id || m?.id)
-    // })));
-    // console.log('=== END SPACE MEMBERS ===');
-    
-    return filtered;
-  }, [members, computedOwnerIds, spaceMemberOwnerIds]);
+      return availableIds.has(id || '') && !isOwnerMember(m);
+    }),
+    [members, availableIds, ownerIds]
+  );
 
   // dedupe by member id so the same person doesn't appear twice
   const visibleMembersUnique = useMemo(() => {
@@ -140,19 +96,10 @@ export default function SpaceRightSidebar({
     return out;
   }, [visibleMembers]);
 
-  // invite candidates (exclude already-in-space and owners)
-  // Use the same filtering logic as visibleMembers to ensure consistency
-  const existingMemberIds = useMemo(() => {
-    const ids = new Set<string>();
-    visibleMembersUnique.forEach((m: any) => {
-      const id = getMemberId(m);
-      if (id) ids.add(id);
-    });
-    return ids;
-  }, [visibleMembersUnique]);
-  
-  const candidates = useMemo(() => {
-    const filtered = Array.isArray(availableMembers)
+  // invite candidates (exclude already-in-space)
+  const existingIds = useMemo(() => new Set(members.map((m: any) => String(m?._id || m?.id || m?.user?._id || m?.user?.id))), [members]);
+  const candidates = useMemo(
+    () => (Array.isArray(availableMembers)
       ? availableMembers
           .filter(Boolean)
           .filter((m: any) => {
@@ -325,7 +272,6 @@ export default function SpaceRightSidebar({
                 const uid = getMemberId(m);
                 const reactKey = `member-${uid || index}`;
                 const name = m?.name || m?.user?.name || 'User';
-                const email = m?.user?.email || m?.email || '';
                 const avatar = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
                 const isOwner = uid ? (computedOwnerIds.has(uid) || spaceMemberOwnerIds.has(uid)) : false;
                 const role = isOwner ? 'owner' : (m?.role || 'member');
@@ -678,12 +624,10 @@ const styles = StyleSheet.create({
 });
 
 function getMemberId(m: any): string | undefined {
-  // For space members, prefer user ID over membership record ID
-  // For workspace members, use user ID directly
-  return String(m?.user?._id || m?.user?.id || m?._id || m?.id);
+  return String(m?._id || m?.id || m?.user?._id || m?.user?.id);
 }
 
-function isOwnerMember(m: any, ownerIds: Set<string>): boolean {
+function isOwnerMember(m: any): boolean {
   const id = getMemberId(m);
-  return !!(id && ownerIds.has(id));
+  return id && ownerIds.has(id);
 }

@@ -3,6 +3,7 @@ const Workspace = require('../models/Workspace');
 const Space = require('../models/Space');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const InvitationService = require('../services/invitation.service');
 const { sendResponse } = require('../utils/response');
 const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
@@ -40,7 +41,26 @@ exports.createInvitation = async (req, res) => {
         });
 
         if (existingInvitation) {
-            return sendResponse(res, 400, false, 'Invitation already exists for this user');
+            // Extend the existing invitation instead of creating a new one
+            existingInvitation.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+            existingInvitation.message = message || existingInvitation.message;
+            existingInvitation.role = role || existingInvitation.role;
+            await existingInvitation.save();
+            
+            return sendResponse(res, 200, true, 'Invitation extended successfully', {
+                invitation: {
+                    id: existingInvitation._id,
+                    type: existingInvitation.type,
+                    invitedBy: existingInvitation.invitedBy,
+                    invitedUser: existingInvitation.invitedUser,
+                    targetEntity: existingInvitation.targetEntity,
+                    role: existingInvitation.role,
+                    message: existingInvitation.message,
+                    status: existingInvitation.status,
+                    createdAt: existingInvitation.createdAt,
+                    expiresAt: existingInvitation.expiresAt
+                }
+            });
         }
 
         // SECURITY FIX: Use verified roles from auth middleware
@@ -49,62 +69,53 @@ exports.createInvitation = async (req, res) => {
         let hasPermission = false;
         let userEntityRole = null;
 
-        switch (targetEntity.type) {
-            case 'Workspace':
-                targetEntityDoc = await Workspace.findById(targetEntity.id);
-                if (targetEntityDoc) {
-                    userEntityRole = userRoles.workspaces.find(ws => 
-                        ws.workspace.toString() === targetEntity.id
-                    );
-                    hasPermission = userEntityRole && (userEntityRole.role === 'admin' || userEntityRole.role === 'owner') || 
-                                   targetEntityDoc.owner.toString() === userId;
-                }
-                break;
-            case 'Space':
-                targetEntityDoc = await Space.findById(targetEntity.id);
-                if (targetEntityDoc) {
-                    userEntityRole = userRoles.spaces.find(s => 
-                        s.space.toString() === targetEntity.id
-                    );
-                    hasPermission = userEntityRole && (userEntityRole.role === 'admin') || 
-                                   targetEntityDoc.owner.toString() === userId;
-                }
-                break;
-        }
+        if (targetEntity.type === 'Workspace') {
+            targetEntityDoc = await Workspace.findById(targetEntity.id);
+            if (!targetEntityDoc) {
+                return sendResponse(res, 404, false, 'Workspace not found');
+            }
 
-        if (!targetEntityDoc) {
-            return sendResponse(res, 404, false, `${targetEntity.type} not found`);
+            // Check if user is owner or admin
+            if (targetEntityDoc.owner.toString() === userId) {
+                hasPermission = true;
+                userEntityRole = 'owner';
+            } else {
+                const member = targetEntityDoc.members.find(m => m.user.toString() === userId);
+                if (member && ['admin', 'owner'].includes(member.role)) {
+                    hasPermission = true;
+                    userEntityRole = member.role;
+                }
+            }
+        } else if (targetEntity.type === 'Space') {
+            targetEntityDoc = await Space.findById(targetEntity.id);
+            if (!targetEntityDoc) {
+                return sendResponse(res, 404, false, 'Space not found');
+            }
+
+            // Check if user is owner or admin
+            if (targetEntityDoc.owner.toString() === userId) {
+                hasPermission = true;
+                userEntityRole = 'owner';
+            } else {
+                const member = targetEntityDoc.members.find(m => m.user.toString() === userId);
+                if (member && ['admin', 'owner'].includes(member.role)) {
+                    hasPermission = true;
+                    userEntityRole = member.role;
+                }
+            }
         }
 
         if (!hasPermission) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to send invitations');
-        }
-
-        // SECURITY FIX: Validate role assignment permissions
-        if (targetEntity.type === 'Workspace') {
-            // Only workspace owners can assign admin roles
-            if (role === 'admin' && userEntityRole && userEntityRole.role !== 'owner') {
-                return sendResponse(res, 403, false, 'Only workspace owners can assign admin roles');
-            }
-            
-            // Cannot assign owner role through invitation
-            if (role === 'owner') {
-                return sendResponse(res, 403, false, 'Cannot assign owner role through invitation');
-            }
-        } else if (targetEntity.type === 'Space') {
-            // Only space admins can assign admin roles
-            if (role === 'admin' && userEntityRole && userEntityRole.role !== 'admin') {
-                return sendResponse(res, 403, false, 'Only space admins can assign admin roles');
-            }
+            return sendResponse(res, 403, false, 'Insufficient permissions to create invitation');
         }
 
         // Create invitation
-        const invitation = new Invitation({
+        const invitation = await Invitation.create({
             type: targetEntity.type.toLowerCase(),
             invitedBy: userId,
             invitedUser: {
-                email,
-                name
+                email: email.toLowerCase(),
+                name: name || email.split('@')[0]
             },
             targetEntity: {
                 type: targetEntity.type,
@@ -112,247 +123,126 @@ exports.createInvitation = async (req, res) => {
                 name: targetEntityDoc.name
             },
             role,
-            message
+            message,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
         });
-
-        await invitation.save();
 
         // Send invitation email
-        await sendEmail({
-            to: email,
-            template: `${targetEntity.type.toLowerCase()}-invitation`,
-            data: {
-                inviterName: req.user.name,
-                entityName: targetEntityDoc.name,
-                entityType: targetEntity.type,
-                role,
-                message,
-                invitationUrl: invitation.inviteUrl
-            }
+        const inviter = await User.findById(userId);
+        await InvitationService.sendInvitationEmail(invitation, inviter, targetEntityDoc);
+
+        // Create notification for inviter
+        await Notification.create({
+            title: `Invitation sent to ${email}`,
+            message: `You invited ${name || email} to join ${targetEntityDoc.name}`,
+            type: 'invitation_sent',
+            recipient: userId,
+            relatedEntity: {
+                entityType: targetEntity.type.toLowerCase(),
+                entityId: targetEntity.id
+            },
+            deliveryMethods: { inApp: true }
         });
 
-        logger.info(`Invitation created: ${invitation._id} for ${email}`);
+        // Emit real-time notification
+        const io = getNamespace('notifications');
+        if (io) {
+            io.to(userId).emit('notification', {
+                title: `Invitation sent to ${email}`,
+                message: `You invited ${name || email} to join ${targetEntityDoc.name}`,
+                type: 'invitation_sent'
+            });
+        }
 
-        sendResponse(res, 201, true, 'Invitation sent successfully', {
+        sendResponse(res, 201, true, 'Invitation created successfully', {
             invitation: {
                 id: invitation._id,
-                invitedUser: invitation.invitedUser,
-                targetEntity: invitation.targetEntity,
+                email: invitation.invitedUser.email,
+                name: invitation.invitedUser.name,
                 role: invitation.role,
                 status: invitation.status,
-                token: invitation.token,
-                inviteUrl: invitation.inviteUrl
+                expiresAt: invitation.expiresAt
             }
         });
+
     } catch (error) {
         logger.error('Create invitation error:', error);
         sendResponse(res, 500, false, 'Server error creating invitation');
     }
 };
 
-// Get invitation by token
-exports.getInvitation = async (req, res) => {
+// Get user invitations
+exports.getUserInvitations = async (req, res) => {
     try {
-        const { token } = req.params;
+        const userId = req.user.id;
+        const { status = 'pending', limit = 50, skip = 0 } = req.query;
 
-        const invitation = await Invitation.findByToken(token);
-        if (!invitation) {
-            return sendResponse(res, 404, false, 'Invitation not found or expired');
-        }
-
-        if (invitation.status !== 'pending') {
-            return sendResponse(res, 400, false, `Invitation has been ${invitation.status}`);
-        }
-
-        if (invitation.isExpired) {
-            await invitation.updateOne({ status: 'expired' });
-            return sendResponse(res, 400, false, 'Invitation has expired');
-        }
-
-        sendResponse(res, 200, true, 'Invitation retrieved successfully', {
-            invitation: {
-                id: invitation._id,
-                type: invitation.type,
-                invitedBy: invitation.invitedBy,
-                targetEntity: invitation.targetEntity,
-                role: invitation.role,
-                message: invitation.message,
-                expiresAt: invitation.expiresAt,
-                createdAt: invitation.createdAt
-            }
+        const result = await InvitationService.getUserInvitations(userId, {
+            status,
+            limit: parseInt(limit),
+            skip: parseInt(skip)
         });
+
+        sendResponse(res, 200, true, 'User invitations retrieved successfully', result);
+
     } catch (error) {
-        logger.error('Get invitation error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving invitation');
+        logger.error('Get user invitations error:', error);
+        sendResponse(res, 500, false, 'Server error retrieving invitations');
     }
 };
 
 // Accept invitation
 exports.acceptInvitation = async (req, res) => {
     try {
-        const { token } = req.params;
+        const { invitationId } = req.params;
         const userId = req.user.id;
 
-        const invitation = await Invitation.findByToken(token);
-        if (!invitation) {
-            return sendResponse(res, 404, false, 'Invitation not found or expired');
-        }
+        const invitation = await InvitationService.acceptInvitation(invitationId, userId);
 
-        if (invitation.status !== 'pending') {
-            return sendResponse(res, 400, false, `Invitation has been ${invitation.status}`);
-        }
-
-        // Check if the user accepting is the one who was invited
-        // For invite links, the email might be null initially, so we allow any authenticated user
-        if (invitation.invitedUser.email && invitation.invitedUser.email !== req.user.email) {
-            return sendResponse(res, 400, false, 'Only the invited user can accept this invitation');
-        }
-
-        // Check if invitation is expired
-        if (invitation.expiresAt < new Date()) {
-            await invitation.updateOne({ status: 'expired' });
-            return sendResponse(res, 400, false, 'Invitation has expired');
-        }
-
-        // Check if targetEntity exists
-        if (!invitation.targetEntity) {
-            logger.error(`Invitation ${invitation._id} has no targetEntity`);
-            return sendResponse(res, 500, false, 'Invalid invitation: missing target entity');
-        }
-
-        if (!invitation.targetEntity.id) {
-            logger.error(`Invitation ${invitation._id} has no targetEntity.id`);
-            return sendResponse(res, 500, false, 'Invalid invitation: missing target entity ID');
-        }
-
-        // Get user and roles
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-
-        // Add role based on invitation type and add to entity membership
-        if (invitation.targetEntity.type === 'Workspace') {
-            await userRoles.addWorkspaceRole(invitation.targetEntity.id, invitation.role);
-            const workspace = await Workspace.findById(invitation.targetEntity.id);
-            if (workspace) {
-                await workspace.addMember(userId, invitation.role, invitation.invitedBy);
-            }
-        } else if (invitation.targetEntity.type === 'Space') {
-            await userRoles.addSpaceRole(invitation.targetEntity.id, invitation.role);
-            const SpaceModel = require('../models/Space');
-            const space = await SpaceModel.findById(invitation.targetEntity.id);
-            if (space) {
-                const isMember = (space.members || []).some(m => 
-                    m.user.toString() === userId.toString());
-                if (!isMember) {
-                    space.members.push({ user: userId, role: invitation.role });
-                    await space.save();
-                }
-            }
-        }
-
-        // Accept invitation
-        await invitation.accept(userId);
-        
-        // Update invitation with user info for invite links
-        if (!invitation.invitedUser.email) {
-            await invitation.updateOne({
-                'invitedUser.email': req.user.email,
-                'invitedUser.userId': userId
+        // Emit real-time notification
+        const io = getNamespace('notifications');
+        if (io) {
+            io.to(invitation.invitedBy.toString()).emit('notification', {
+                title: `Invitation accepted: ${invitation.targetEntity.name}`,
+                message: `Your invitation to join ${invitation.targetEntity.name} was accepted`,
+                type: 'invitation_accepted'
             });
-        }
-
-        // Emit real-time events so clients refresh immediately
-        try {
-            const notificationNS = getNamespace && getNamespace('notification');
-            if (notificationNS && invitation?.targetEntity?.type === 'Workspace') {
-                const workspaceId = invitation.targetEntity.id;
-                const memberPayload = { userId, role: invitation.role };
-                // Fire a few helpful events; frontend listens to any of these
-                notificationNS.emit('workspace:member-added', { workspaceId, member: memberPayload });
-                notificationNS.emit('workspace:members-updated', { workspaceId });
-                notificationNS.emit('invitation:accepted', { workspaceId, userId });
-            }
-        } catch (e) {
-            logger.warn('Socket emit failed on invitation accept', { error: e?.message, invitationId: invitation?._id?.toString?.() });
-        }
-
-        // Create notifications that comply with Notification schema
-        // 1) Notify inviter that their invitation was accepted
-        try {
-            const entityType = invitation.targetEntity.type === 'Workspace' ? 'workspace' : 'space';
-            const inviterNotification = new Notification({
-                recipient: invitation.invitedBy, // inviter gets notified
-                sender: userId,                  // accepting user is the sender
-                type: 'invitation_accepted',
-                title: 'Invitation accepted',
-                message: `${user?.name || 'A user'} accepted your invitation to ${invitation.targetEntity.name}`,
-                relatedEntity: {
-                    entityType,
-                    entityId: invitation.targetEntity.id
-                },
-                priority: 'low'
-            });
-            await inviterNotification.save();
-        } catch (e) {
-            logger.warn('Failed to create inviter notification on invitation accept', { error: e?.message, invitationId: invitation?._id?.toString?.() });
-        }
-
-        // 2) Optionally notify the accepting user that they joined (non-blocking)
-        try {
-            const entityType = invitation.targetEntity.type === 'Workspace' ? 'workspace' : 'space';
-            const accepterNotification = new Notification({
-                recipient: userId,
-                sender: invitation.invitedBy,
-                type: entityType === 'workspace' ? 'workspace_invitation' : 'space_invitation',
-                title: `Joined ${invitation.targetEntity.type}`,
-                message: `You have joined ${invitation.targetEntity.name} as ${invitation.role}`,
-                relatedEntity: {
-                    entityType,
-                    entityId: invitation.targetEntity.id
-                },
-                priority: 'low'
-            });
-            await accepterNotification.save();
-        } catch (e) {
-            logger.warn('Failed to create accepter notification on invitation accept', { error: e?.message, invitationId: invitation?._id?.toString?.() });
         }
 
         sendResponse(res, 200, true, 'Invitation accepted successfully', {
-            invitation: invitation
+            invitation: {
+                id: invitation._id,
+                status: invitation.status,
+                acceptedAt: invitation.acceptedAt
+            }
         });
+
     } catch (error) {
         logger.error('Accept invitation error:', error);
-        sendResponse(res, 500, false, 'Failed to accept invitation');
+        if (error.message.includes('not found') || error.message.includes('expired') || error.message.includes('no longer pending')) {
+            sendResponse(res, 400, false, error.message);
+        } else {
+            sendResponse(res, 500, false, 'Server error accepting invitation');
+        }
     }
 };
 
 // Decline invitation
 exports.declineInvitation = async (req, res) => {
     try {
-        const { token } = req.params;
-        const { reason } = req.body;
+        const { invitationId } = req.params;
+        const userId = req.user.id;
 
-        const invitation = await Invitation.findByToken(token);
-        if (!invitation) {
-            return sendResponse(res, 404, false, 'Invitation not found or expired');
-        }
+        const invitation = await InvitationService.declineInvitation(invitationId, userId);
 
-        if (invitation.status !== 'pending') {
-            return sendResponse(res, 400, false, `Invitation has been ${invitation.status}`);
-        }
-
-        await invitation.decline();
-
-        // Emit real-time events so clients can refresh invite lists
-        try {
-            const notificationNS = getNamespace && getNamespace('notification');
-            if (notificationNS && invitation?.targetEntity?.type === 'Workspace') {
-                const workspaceId = invitation.targetEntity.id;
-                notificationNS.emit('invitation:declined', { workspaceId, invitationId: invitation._id });
-                notificationNS.emit('workspace:members-updated', { workspaceId });
-            }
-        } catch (e) {
-            logger.warn('Socket emit failed on invitation decline', { error: e?.message, invitationId: invitation?._id?.toString?.() });
+        // Emit real-time notification
+        const io = getNamespace('notifications');
+        if (io) {
+            io.to(invitation.invitedBy.toString()).emit('notification', {
+                title: `Invitation declined: ${invitation.targetEntity.name}`,
+                message: `Your invitation to join ${invitation.targetEntity.name} was declined`,
+                type: 'invitation_declined'
+            });
         }
 
         sendResponse(res, 200, true, 'Invitation declined successfully', {
@@ -362,241 +252,106 @@ exports.declineInvitation = async (req, res) => {
                 declinedAt: invitation.declinedAt
             }
         });
+
     } catch (error) {
         logger.error('Decline invitation error:', error);
-        sendResponse(res, 500, false, 'Server error declining invitation');
+        if (error.message.includes('not found') || error.message.includes('no longer pending')) {
+            sendResponse(res, 400, false, error.message);
+        } else {
+            sendResponse(res, 500, false, 'Server error declining invitation');
+        }
     }
 };
 
-// Get user's sent invitations
-exports.getUserInvitations = async (req, res) => {
+// Get invitation by ID
+exports.getInvitationById = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const { status, entityType } = req.query;
-
-        let query = { invitedBy: userId };
-        
-        if (status) {
-            query.status = status;
-        }
-        
-        if (entityType) {
-            query['targetEntity.type'] = entityType;
-        }
-
-        const invitations = await Invitation.find(query)
-            .populate('invitedBy', 'name avatar')
-            .populate('invitedUser.userId', 'name avatar')
-            .sort({ createdAt: -1 });
-
-        sendResponse(res, 200, true, 'Invitations retrieved successfully', {
-            invitations,
-            count: invitations.length
-        });
-    } catch (error) {
-        logger.error('Get user invitations error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving invitations');
-    }
-};
-
-// Get entity invitations (for admins)
-exports.getEntityInvitations = async (req, res) => {
-    try {
-        const { entityType, entityId } = req.params;
-        const { status } = req.query;
+        const { invitationId } = req.params;
         const userId = req.user.id;
 
-        // Check permissions
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        let hasPermission = false;
+        const invitation = await InvitationService.getInvitationById(invitationId);
 
-        switch (entityType) {
-            case 'workspace':
-                hasPermission = userRoles.hasWorkspaceRole(entityId, 'admin');
-                break;
-            case 'space':
-                hasPermission = userRoles.hasSpacePermission(entityId, 'canManageMembers');
-                break;
+        // Verify user has access to this invitation
+        if (invitation.invitedUser.email !== req.user.email) {
+            return sendResponse(res, 403, false, 'Access denied to this invitation');
         }
 
-        if (!hasPermission) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to view invitations');
-        }
-
-        // Build query with status filter if provided
-        let query = {
-            'targetEntity.type': entityType.charAt(0).toUpperCase() + entityType.slice(1),
-            'targetEntity.id': entityId
-        };
-
-        if (status) {
-            query.status = status;
-        }
-
-        const invitations = await Invitation.find(query)
-            .populate('invitedBy', 'name avatar')
-            .populate('invitedUser.userId', 'name avatar')
-            .sort({ createdAt: -1 });
-
-        sendResponse(res, 200, true, 'Entity invitations retrieved successfully', {
-            invitations,
-            count: invitations.length
-        });
-    } catch (error) {
-        logger.error('Get entity invitations error:', error);
-        sendResponse(res, 500, false, 'Server error retrieving entity invitations');
-    }
-};
-
-// Cancel invitation
-exports.cancelInvitation = async (req, res) => {
-    try {
-        const { id: invitationId } = req.params;
-        const userId = req.user.id;
-
-        const invitation = await Invitation.findById(invitationId);
-        if (!invitation) {
-            return sendResponse(res, 404, false, 'Invitation not found');
-        }
-
-        // Check permissions - only inviter or entity admin can cancel
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        let canCancel = invitation.invitedBy.toString() === userId;
-
-        if (!canCancel) {
-            switch (invitation.targetEntity.type) {
-                case 'Workspace':
-                    canCancel = userRoles.hasWorkspaceRole(invitation.targetEntity.id, 'admin');
-                    break;
-                case 'Space':
-                    canCancel = userRoles.hasSpacePermission(invitation.targetEntity.id, 'canManageMembers');
-                    break;
-            }
-        }
-
-        if (!canCancel) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to cancel this invitation');
-        }
-
-        await invitation.cancel();
-
-        sendResponse(res, 200, true, 'Invitation cancelled successfully');
-    } catch (error) {
-        logger.error('Cancel invitation error:', error);
-        sendResponse(res, 500, false, 'Server error cancelling invitation');
-    }
-};
-
-// Resend invitation
-exports.resendInvitation = async (req, res) => {
-    try {
-        const { id: invitationId } = req.params;
-        const userId = req.user.id;
-
-        const invitation = await Invitation.findById(invitationId)
-            .populate('invitedBy', 'name');
-
-        if (!invitation) {
-            return sendResponse(res, 404, false, 'Invitation not found');
-        }
-
-        if (invitation.status !== 'pending') {
-            return sendResponse(res, 400, false, 'Can only resend pending invitations');
-        }
-
-        // Check permissions
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        let canResend = invitation.invitedBy._id.toString() === userId;
-
-        if (!canResend) {
-            switch (invitation.targetEntity.type) {
-                case 'Workspace':
-                    canResend = userRoles.hasWorkspaceRole(invitation.targetEntity.id, 'admin');
-                    break;
-            }
-        }
-
-        if (!canResend) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to resend this invitation');
-        }
-
-        // Send invitation email
-        const emailTemplate = `${invitation.targetEntity.type.toLowerCase()}-invitation`;
-        await sendEmail({
-            to: invitation.invitedUser.email,
-            template: emailTemplate,
-            data: {
-                inviterName: invitation.invitedBy.name,
-                entityName: invitation.targetEntity.name,
+        sendResponse(res, 200, true, 'Invitation retrieved successfully', {
+            invitation: {
+                id: invitation._id,
+                type: invitation.type,
+                invitedBy: invitation.invitedBy,
+                invitedUser: invitation.invitedUser,
+                targetEntity: invitation.targetEntity,
                 role: invitation.role,
                 message: invitation.message,
-                invitationUrl: invitation.inviteUrl
+                status: invitation.status,
+                createdAt: invitation.createdAt,
+                expiresAt: invitation.expiresAt,
+                acceptedAt: invitation.acceptedAt,
+                declinedAt: invitation.declinedAt
             }
         });
 
-        // Update reminder tracking
-        await invitation.sendReminder();
-
-        sendResponse(res, 200, true, 'Invitation resent successfully', {
-            invitation: {
-                id: invitation._id,
-                resentAt: invitation.lastReminderAt,
-                resentCount: invitation.remindersSent
-            }
-        });
     } catch (error) {
-        logger.error('Resend invitation error:', error);
-        sendResponse(res, 500, false, 'Server error resending invitation');
+        logger.error('Get invitation by ID error:', error);
+        if (error.message.includes('not found')) {
+            sendResponse(res, 404, false, error.message);
+        } else {
+            sendResponse(res, 500, false, 'Server error retrieving invitation');
+        }
     }
 };
 
-// Extend invitation expiration
-exports.extendInvitation = async (req, res) => {
+// Get invitation by token
+exports.getByToken = async (req, res) => {
     try {
-        const { id: invitationId } = req.params;
-        const { days = 7 } = req.body;
+        const { token } = req.params;
         const userId = req.user.id;
 
-        const invitation = await Invitation.findById(invitationId);
+        const invitation = await Invitation.findByToken(token);
+
         if (!invitation) {
             return sendResponse(res, 404, false, 'Invitation not found');
         }
 
-        // Check permissions - only inviter or entity admin can extend
-        const user = await User.findById(userId);
-        const userRoles = await user.getRoles();
-        
-        let canExtend = invitation.invitedBy.toString() === userId;
-
-        if (!canExtend) {
-            switch (invitation.targetEntity.type) {
-                case 'Workspace':
-                    canExtend = userRoles.hasWorkspaceRole(invitation.targetEntity.id, 'admin');
-                    break;
-            }
+        // Check if invitation is expired
+        if (invitation.expiresAt < new Date()) {
+            return sendResponse(res, 400, false, 'Invitation has expired');
         }
 
-        if (!canExtend) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to extend this invitation');
+        // Check if invitation is already processed
+        if (invitation.status !== 'pending') {
+            return sendResponse(res, 400, false, 'Invitation has already been processed');
         }
 
-        await invitation.extendExpiration(days);
+        // Verify user has access to this invitation
+        if (invitation.invitedUser.email !== req.user.email) {
+            return sendResponse(res, 403, false, 'Access denied to this invitation');
+        }
 
-        sendResponse(res, 200, true, 'Invitation expiration extended successfully', {
+        sendResponse(res, 200, true, 'Invitation retrieved successfully', {
             invitation: {
                 id: invitation._id,
-                newExpiresAt: invitation.expiresAt
+                type: invitation.type,
+                invitedBy: invitation.invitedBy,
+                invitedUser: invitation.invitedUser,
+                targetEntity: invitation.targetEntity,
+                role: invitation.role,
+                message: invitation.message,
+                status: invitation.status,
+                createdAt: invitation.createdAt,
+                expiresAt: invitation.expiresAt
             }
         });
+
     } catch (error) {
-        logger.error('Extend invitation error:', error);
-        sendResponse(res, 500, false, 'Server error extending invitation');
+        logger.error('Get invitation by token error:', error);
+        if (error.message.includes('not found')) {
+            sendResponse(res, 404, false, error.message);
+        } else {
+            sendResponse(res, 500, false, 'Server error retrieving invitation');
+        }
     }
 };
 
@@ -607,176 +362,189 @@ exports.bulkInvite = async (req, res) => {
         const userId = req.user.id;
 
         if (!Array.isArray(emails) || emails.length === 0) {
-            return sendResponse(res, 400, false, 'Emails array is required');
+            return sendResponse(res, 400, false, 'Emails array is required and must not be empty');
         }
 
-        // SECURITY FIX: Validate role parameter
+        if (emails.length > 50) {
+            return sendResponse(res, 400, false, 'Cannot invite more than 50 users at once');
+        }
+
+        // Validate entity type
+        if (!['workspace', 'space'].includes(entityType)) {
+            return sendResponse(res, 400, false, 'Invalid entity type');
+        }
+
+        // Validate role
         const allowedRoles = ['member', 'admin', 'viewer'];
         if (!allowedRoles.includes(role)) {
             return sendResponse(res, 400, false, 'Invalid role specified');
         }
 
-        // SECURITY FIX: Use verified roles from auth middleware
-        const userRoles = req.user.roles;
-        
-        let hasPermission = false;
-        let targetEntity;
-        let userEntityRole = null;
+        const result = await InvitationService.bulkInvite(emails, entityType, entityId, role, userId, {
+            message,
+            expiresInDays: 7
+        });
 
-        switch (entityType) {
-            case 'workspace':
-                targetEntity = await Workspace.findById(entityId);
-                if (targetEntity) {
-                    userEntityRole = userRoles.workspaces.find(ws => 
-                        ws.workspace.toString() === entityId
-                    );
-                    hasPermission = userEntityRole && (userEntityRole.role === 'admin' || userEntityRole.role === 'owner');
-                }
-                break;
-            case 'space':
-                targetEntity = await Space.findById(entityId);
-                if (targetEntity) {
-                    userEntityRole = userRoles.spaces.find(s => 
-                        s.space.toString() === entityId
-                    );
-                    hasPermission = userEntityRole && userEntityRole.role === 'admin';
-                }
-                break;
+        sendResponse(res, 201, true, 'Bulk invitation completed', result);
+
+    } catch (error) {
+        logger.error('Bulk invite error:', error);
+        sendResponse(res, 500, false, 'Server error processing bulk invitation');
+    }
+};
+
+// Invite GitHub organization members
+exports.inviteGitHubMembers = async (req, res) => {
+    try {
+        const { workspaceId, memberEmails, role = 'member', message } = req.body;
+        const userId = req.user.id;
+
+        if (!workspaceId) {
+            return sendResponse(res, 400, false, 'Workspace ID is required');
         }
 
-        if (!targetEntity) {
-            return sendResponse(res, 404, false, `${entityType} not found`);
+        if (!Array.isArray(memberEmails) || memberEmails.length === 0) {
+            return sendResponse(res, 400, false, 'Member emails array is required and must not be empty');
+        }
+
+        if (memberEmails.length > 50) {
+            return sendResponse(res, 400, false, 'Cannot invite more than 50 members at once');
+        }
+
+        // Validate role
+        const allowedRoles = ['member', 'admin', 'viewer'];
+        if (!allowedRoles.includes(role)) {
+            return sendResponse(res, 400, false, 'Invalid role specified');
+        }
+
+        // Check if user has permission to invite to this workspace
+        const workspace = await Workspace.findById(workspaceId);
+        if (!workspace) {
+            return sendResponse(res, 404, false, 'Workspace not found');
+        }
+
+        const isOwner = workspace.owner.toString() === userId;
+        const isAdmin = workspace.members.some(member => 
+            member.user.toString() === userId && ['admin', 'owner'].includes(member.role)
+        );
+
+        if (!isOwner && !isAdmin) {
+            return sendResponse(res, 403, false, 'Insufficient permissions to invite members to this workspace');
+        }
+
+        const result = await InvitationService.inviteGitHubMembers(workspaceId, memberEmails, role, userId, {
+            message,
+            expiresInDays: 7
+        });
+
+        sendResponse(res, 201, true, 'GitHub member invitations completed', result);
+
+    } catch (error) {
+        logger.error('Invite GitHub members error:', error);
+        sendResponse(res, 500, false, 'Server error processing GitHub member invitations');
+    }
+};
+
+// Get invitation statistics
+exports.getInvitationStats = async (req, res) => {
+    try {
+        const { entityType, entityId } = req.params;
+        const userId = req.user.id;
+
+        // Validate entity type
+        if (!['workspace', 'space'].includes(entityType)) {
+            return sendResponse(res, 400, false, 'Invalid entity type');
+        }
+
+        // Check if user has permission to view stats
+        let hasPermission = false;
+        if (entityType === 'workspace') {
+            const workspace = await Workspace.findById(entityId);
+            if (workspace) {
+                hasPermission = workspace.owner.toString() === userId || 
+                    workspace.members.some(member => 
+                        member.user.toString() === userId && ['admin', 'owner'].includes(member.role)
+                    );
+            }
+        } else if (entityType === 'space') {
+            const space = await Space.findById(entityId);
+            if (space) {
+                hasPermission = space.owner.toString() === userId || 
+                    space.members.some(member => 
+                        member.user.toString() === userId && ['admin', 'owner'].includes(member.role)
+                    );
+            }
         }
 
         if (!hasPermission) {
-            return sendResponse(res, 403, false, 'Insufficient permissions to send invitations');
+            return sendResponse(res, 403, false, 'Insufficient permissions to view invitation statistics');
         }
 
-        // SECURITY FIX: Validate role assignment permissions
-        if (entityType === 'workspace') {
-            // Only workspace owners can assign admin roles
-            if (role === 'admin' && userEntityRole && userEntityRole.role !== 'owner') {
-                return sendResponse(res, 403, false, 'Only workspace owners can assign admin roles');
-            }
-            
-            // Cannot assign owner role through invitation
-            if (role === 'owner') {
-                return sendResponse(res, 403, false, 'Cannot assign owner role through invitation');
-            }
-        } else if (entityType === 'space') {
-            // Only space admins can assign admin roles
-            if (role === 'admin' && userEntityRole && userEntityRole.role !== 'admin') {
-                return sendResponse(res, 403, false, 'Only space admins can assign admin roles');
-            }
-        }
+        const stats = await InvitationService.getInvitationStats(entityType, entityId);
 
-        // Process each email
-        const results = [];
-        const errors = [];
+        sendResponse(res, 200, true, 'Invitation statistics retrieved successfully', stats);
 
-        for (const email of emails) {
-            try {
-                // Check if user already exists and is member
-                const existingUser = await User.findOne({ email });
-                let isAlreadyMember = false;
-
-                if (existingUser) {
-                    switch (entityType) {
-                        case 'workspace':
-                            isAlreadyMember = targetEntity.members.some(m => 
-                                m.user.toString() === existingUser._id.toString()
-                            ) || targetEntity.owner.toString() === existingUser._id.toString();
-                            break;
-                        case 'space':
-                            isAlreadyMember = targetEntity.members.some(m => 
-                                m.user.toString() === existingUser._id.toString()
-                            );
-                            break;
-                    }
-                }
-
-                if (isAlreadyMember) {
-                    errors.push({ email, error: 'User is already a member' });
-                    continue;
-                }
-
-                // Check if invitation already exists
-                const existingInvitation = await Invitation.findOne({
-                    'invitedUser.email': email.toLowerCase(),
-                    'targetEntity.id': entityId,
-                    'targetEntity.type': entityType === 'workspace' ? 'Workspace' : 'Space',
-                    status: 'pending'
-                });
-
-                if (existingInvitation) {
-                    errors.push({ email, error: 'Invitation already exists' });
-                    continue;
-                }
-
-                // Create invitation
-                const invitation = new Invitation({
-                    type: entityType,
-                    invitedBy: userId,
-                    invitedUser: {
-                        email,
-                        userId: existingUser ? existingUser._id : null
-                    },
-                    targetEntity: {
-                        type: entityType === 'workspace' ? 'Workspace' : 'Space',
-                        id: entityId,
-                        name: targetEntity.name
-                    },
-                    role,
-                    message
-                });
-
-                await invitation.save();
-                results.push({ email, invitationId: invitation._id });
-
-            } catch (error) {
-                logger.error(`Error processing email ${email}:`, error);
-                errors.push({ email, error: 'Failed to create invitation' });
-            }
-        }
-
-        // Send invitation emails
-        for (const result of results) {
-            try {
-                await sendEmail({
-                    to: result.email,
-                    template: `${entityType}-invitation`,
-                    data: {
-                        inviterName: req.user.name,
-                        entityName: targetEntity.name,
-                        entityType: entityType === 'workspace' ? 'Workspace' : 'Space',
-                        role,
-                        message
-                    }
-                });
-            } catch (error) {
-                logger.error(`Error sending email to ${result.email}:`, error);
-            }
-        }
-
-        sendResponse(res, 200, true, 'Bulk invitations processed', {
-            results,
-            errors,
-            totalProcessed: results.length,
-            totalErrors: errors.length
-        });
     } catch (error) {
-        logger.error('Bulk invite error:', error);
-        sendResponse(res, 500, false, 'Server error processing bulk invitations');
+        logger.error('Get invitation stats error:', error);
+        sendResponse(res, 500, false, 'Server error retrieving invitation statistics');
+    }
+};
+
+// Cancel invitation
+exports.cancelInvitation = async (req, res) => {
+    try {
+        const { invitationId } = req.params;
+        const userId = req.user.id;
+
+        const invitation = await Invitation.findById(invitationId);
+        if (!invitation) {
+            return sendResponse(res, 404, false, 'Invitation not found');
+        }
+
+        // Check if user has permission to cancel this invitation
+        if (invitation.invitedBy.toString() !== userId) {
+            return sendResponse(res, 403, false, 'Insufficient permissions to cancel this invitation');
+        }
+
+        if (invitation.status !== 'pending') {
+            return sendResponse(res, 400, false, 'Only pending invitations can be cancelled');
+        }
+
+        invitation.status = 'cancelled';
+        invitation.cancelledAt = new Date();
+        await invitation.save();
+
+        sendResponse(res, 200, true, 'Invitation cancelled successfully', {
+            invitation: {
+                id: invitation._id,
+                status: invitation.status,
+                cancelledAt: invitation.cancelledAt
+            }
+        });
+
+    } catch (error) {
+        logger.error('Cancel invitation error:', error);
+        sendResponse(res, 500, false, 'Server error cancelling invitation');
     }
 };
 
 // Cleanup expired invitations
-exports.cleanupExpired = async (req, res) => {
+exports.cleanupExpiredInvitations = async (req, res) => {
     try {
-        const result = await Invitation.cleanupExpired();
+        const result = await Invitation.updateMany(
+            {
+                status: 'pending',
+                expiresAt: { $lt: new Date() }
+            },
+            {
+                status: 'expired'
+            }
+        );
 
-        sendResponse(res, 200, true, 'Expired invitations cleaned up', {
-            modifiedCount: result.modifiedCount
+        logger.info(`Cleaned up ${result.modifiedCount} expired invitations`);
+
+        sendResponse(res, 200, true, 'Expired invitations cleaned up successfully', {
+            cleanedCount: result.modifiedCount
         });
     } catch (error) {
         logger.error('Cleanup expired invitations error:', error);

@@ -80,6 +80,24 @@ export const fetchBoardTags = createAsyncThunk(
   }
 );
 
+// Archive board
+export const archiveBoard = createAsyncThunk(
+  'boards/archiveBoard',
+  async (boardId: string) => {
+    const response = await BoardService.archiveBoard(boardId);
+    return response.data;
+  }
+);
+
+// Unarchive board
+export const unarchiveBoard = createAsyncThunk(
+  'boards/unarchiveBoard',
+  async (boardId: string) => {
+    const response = await BoardService.unarchiveBoard(boardId);
+    return response.data;
+  }
+);
+
 // Initial state
 const initialState: BoardState = {
   boards: [],
@@ -315,6 +333,50 @@ const boardSlice = createSlice({
         if (state.currentBoard?._id === updatedBoard._id) {
           state.currentBoard = updatedBoard;
         }
+      });
+
+    // Archive board
+    builder
+      .addCase(archiveBoard.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(archiveBoard.fulfilled, (state, action) => {
+        state.loading = false;
+        const updatedBoard = action.payload;
+        const index = state.boards.findIndex(board => board._id === updatedBoard._id);
+        if (index !== -1) {
+          state.boards[index] = updatedBoard;
+        }
+        if (state.currentBoard?._id === updatedBoard._id) {
+          state.currentBoard = updatedBoard;
+        }
+      })
+      .addCase(archiveBoard.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to archive board';
+      });
+
+    // Unarchive board
+    builder
+      .addCase(unarchiveBoard.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(unarchiveBoard.fulfilled, (state, action) => {
+        state.loading = false;
+        const updatedBoard = action.payload;
+        const index = state.boards.findIndex(board => board._id === updatedBoard._id);
+        if (index !== -1) {
+          state.boards[index] = updatedBoard;
+        }
+        if (state.currentBoard?._id === updatedBoard._id) {
+          state.currentBoard = updatedBoard;
+        }
+      })
+      .addCase(unarchiveBoard.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to unarchive board';
       });
   }
 });

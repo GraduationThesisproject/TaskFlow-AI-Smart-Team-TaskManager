@@ -7,12 +7,8 @@ const { invitation: invitationSchemas } = require('./validator');
 
 const router = express.Router();
 
-
-
-// Public routes (no auth required)
-router.get('/token/:token', invitationController.getInvitation);
-
 // Protected routes that require authentication
+router.get('/token/:token', authMiddleware, invitationController.getByToken);
 router.post('/token/:token/accept', authMiddleware, invitationController.acceptInvitation);
 router.post('/token/:token/decline', authMiddleware, invitationController.declineInvitation);
 
@@ -27,32 +23,33 @@ router.get('/', authMiddleware, invitationController.getUserInvitations);
 
 router.get('/user/pending', authMiddleware, invitationController.getUserInvitations);
 
-router.get('/entity/:entityType/:entityId', 
-    authMiddleware,
-    invitationController.getEntityInvitations
-);
-
 router.post('/bulk-invite',
     authMiddleware,
     validateMiddleware.validateBody(invitationSchemas.bulkInviteSchema),
     invitationController.bulkInvite
 );
 
-router.delete('/:id', authMiddleware, invitationController.cancelInvitation);
-
-router.post('/:id/resend', authMiddleware, invitationController.resendInvitation);
-
-router.patch('/:id/extend',
+// GitHub member invitation routes
+router.post('/github-members',
     authMiddleware,
-    validateMiddleware.validateBody(invitationSchemas.extendInvitationSchema),
-    invitationController.extendInvitation
+    validateMiddleware.validateBody(invitationSchemas.inviteGitHubMembersSchema),
+    invitationController.inviteGitHubMembers
 );
+
+// Invitation management routes
+router.get('/:invitationId', authMiddleware, invitationController.getInvitationById);
+router.post('/:invitationId/accept', authMiddleware, invitationController.acceptInvitation);
+router.post('/:invitationId/decline', authMiddleware, invitationController.declineInvitation);
+router.delete('/:invitationId', authMiddleware, invitationController.cancelInvitation);
+
+// Statistics routes
+router.get('/stats/:entityType/:entityId', authMiddleware, invitationController.getInvitationStats);
 
 // Admin routes
 router.post('/cleanup-expired',
     authMiddleware,
     requireSystemAdmin,
-    invitationController.cleanupExpired
+    invitationController.cleanupExpiredInvitations
 );
 
 module.exports = router;

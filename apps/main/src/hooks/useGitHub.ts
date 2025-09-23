@@ -5,6 +5,7 @@ import type {
   GitHubOrg,
   GitHubRepo,
   GitHubBranch,
+  GitHubMember,
   GitHubStatus,
   UseGitHubReturn,
   GitHubError
@@ -15,6 +16,7 @@ export const useGitHub = (): UseGitHubReturn => {
   const [organizations, setOrganizations] = useState<GitHubOrg[]>([]);
   const [repositories, setRepositories] = useState<GitHubRepo[]>([]);
   const [branches, setBranches] = useState<GitHubBranch[]>([]);
+  const [members, setMembers] = useState<GitHubMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
@@ -60,27 +62,22 @@ export const useGitHub = (): UseGitHubReturn => {
         setOrganizations(response.data);
         return response.data;
       } else {
-        // Handle specific error cases
-        if (response.error?.reason === 'insufficient_scopes') {
-          setError(`Insufficient GitHub permissions: ${response.error.missingScopes?.join(', ')}. Please re-authenticate to grant access.`);
-        } else if (response.error?.reason === 'org_access_denied') {
-          setError('Cannot access GitHub organizations. Please re-authenticate to grant required permissions.');
-        } else {
-          setError(response.message || 'Failed to fetch organizations');
-        }
+        setError(response.message || 'Failed to fetch organizations');
+        setOrganizations([]);
         return [];
       }
     } catch (error: any) {
-      console.error('Error fetching organizations:', error);
+      console.error('Error fetching GitHub organizations:', error);
       const githubError = error as GitHubError;
       setError(githubError.message || 'Failed to fetch organizations');
+      setOrganizations([]);
       return [];
     } finally {
       setIsLoading(false);
     }
   }, [clearError]);
 
-  // Fetch repositories for an organization
+  // Fetch repositories for a specific organization
   const fetchRepositories = useCallback(async (orgLogin: string): Promise<GitHubRepo[]> => {
     try {
       setIsLoading(true);
@@ -93,19 +90,21 @@ export const useGitHub = (): UseGitHubReturn => {
         return response.data;
       } else {
         setError(response.message || 'Failed to fetch repositories');
+        setRepositories([]);
         return [];
       }
     } catch (error: any) {
-      console.error('Error fetching repositories:', error);
+      console.error('Error fetching GitHub repositories:', error);
       const githubError = error as GitHubError;
       setError(githubError.message || 'Failed to fetch repositories');
+      setRepositories([]);
       return [];
     } finally {
       setIsLoading(false);
     }
   }, [clearError]);
 
-  // Fetch branches for a repository
+  // Fetch branches for a specific repository
   const fetchBranches = useCallback(async (orgLogin: string, repoName: string): Promise<GitHubBranch[]> => {
     try {
       setIsLoading(true);
@@ -118,12 +117,74 @@ export const useGitHub = (): UseGitHubReturn => {
         return response.data;
       } else {
         setError(response.message || 'Failed to fetch branches');
+        setBranches([]);
         return [];
       }
     } catch (error: any) {
-      console.error('Error fetching branches:', error);
+      console.error('Error fetching GitHub branches:', error);
       const githubError = error as GitHubError;
       setError(githubError.message || 'Failed to fetch branches');
+      setBranches([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clearError]);
+
+  // Fetch members of a specific organization
+  const fetchMembers = useCallback(async (orgLogin: string): Promise<GitHubMember[]> => {
+    try {
+      setIsLoading(true);
+      clearError();
+      
+      const response = await GitHubService.getOrganizationMembers(orgLogin);
+      
+      if (response.success && response.data) {
+        // Handle nested structure: { organization: org, members: [...] }
+        const membersData = response.data.members || response.data;
+        const membersArray = Array.isArray(membersData) ? membersData : [];
+        setMembers(membersArray);
+        return membersArray;
+      } else {
+        setError(response.message || 'Failed to fetch organization members');
+        setMembers([]);
+        return [];
+      }
+    } catch (error: any) {
+      console.error('Error fetching GitHub organization members:', error);
+      const githubError = error as GitHubError;
+      setError(githubError.message || 'Failed to fetch organization members');
+      setMembers([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clearError]);
+
+  // Fetch organization members with email mapping
+  const fetchMembersWithEmails = useCallback(async (orgLogin: string): Promise<GitHubMember[]> => {
+    try {
+      setIsLoading(true);
+      clearError();
+      
+      const response = await GitHubService.getOrganizationMembersWithEmails(orgLogin);
+      
+      if (response.success && response.data) {
+        // Handle nested structure: { organization: org, members: [...] }
+        const membersData = response.data.members || response.data;
+        const membersArray = Array.isArray(membersData) ? membersData : [];
+        setMembers(membersArray);
+        return membersArray;
+      } else {
+        setError(response.message || 'Failed to fetch organization members with emails');
+        setMembers([]);
+        return [];
+      }
+    } catch (error: any) {
+      console.error('Error fetching GitHub organization members with emails:', error);
+      const githubError = error as GitHubError;
+      setError(githubError.message || 'Failed to fetch organization members with emails');
+      setMembers([]);
       return [];
     } finally {
       setIsLoading(false);
@@ -139,8 +200,11 @@ export const useGitHub = (): UseGitHubReturn => {
       const response = await GitHubService.syncData();
       
       if (response.success) {
-        // Refresh status after sync
-        await checkGitHubStatus();
+        // Refresh all data after sync
+        await Promise.all([
+          checkGitHubStatus(),
+          fetchOrganizations()
+        ]);
         return true;
       } else {
         setError(response.message || 'Failed to sync GitHub data');
@@ -154,7 +218,7 @@ export const useGitHub = (): UseGitHubReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [clearError, checkGitHubStatus]);
+  }, [checkGitHubStatus, fetchOrganizations, clearError]);
 
   // Unlink GitHub account
   const unlinkGitHubAccount = useCallback(async (): Promise<boolean> => {
@@ -170,6 +234,7 @@ export const useGitHub = (): UseGitHubReturn => {
         setOrganizations([]);
         setRepositories([]);
         setBranches([]);
+        setMembers([]);
         return true;
       } else {
         setError(response.message || 'Failed to unlink GitHub account');
@@ -196,6 +261,63 @@ export const useGitHub = (): UseGitHubReturn => {
     window.location.href = oauthUrl;
   }, []);
 
+  // Link GitHub account via popup (for settings page)
+  const linkGitHubAccountPopup = useCallback((): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+      const oauthUrl = GitHubService.generatePopupOAuthUrl({
+        clientId: env.GITHUB_CLIENT_ID,
+        scope: 'user:email read:org repo',
+        state: 'popup-oauth'
+      });
+      
+      // Open popup window
+      const popup = window.open(
+        oauthUrl,
+        'github-oauth',
+        'width=600,height=700,scrollbars=yes,resizable=yes'
+      );
+      
+      if (!popup) {
+        reject(new Error('Popup blocked. Please allow popups for this site.'));
+        return;
+      }
+
+      // Listen for popup messages
+      const messageHandler = async (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data.type === 'GITHUB_OAUTH_SUCCESS') {
+          window.removeEventListener('message', messageHandler);
+          popup.close();
+          
+          // Refresh GitHub status after successful OAuth
+          try {
+            await checkGitHubStatus();
+          } catch (error) {
+            console.error('Failed to refresh GitHub status after OAuth:', error);
+          }
+          
+          resolve(true);
+        } else if (event.data.type === 'GITHUB_OAUTH_ERROR') {
+          window.removeEventListener('message', messageHandler);
+          popup.close();
+          reject(new Error(event.data.error || 'OAuth failed'));
+        }
+      };
+
+      window.addEventListener('message', messageHandler);
+
+      // Check if popup was closed manually
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', messageHandler);
+          reject(new Error('OAuth cancelled by user'));
+        }
+      }, 1000);
+    });
+  }, [checkGitHubStatus]);
+
   // Force re-authentication
   const forceReAuth = useCallback(async (): Promise<boolean> => {
     try {
@@ -210,9 +332,7 @@ export const useGitHub = (): UseGitHubReturn => {
         setOrganizations([]);
         setRepositories([]);
         setBranches([]);
-        
-        // Redirect to GitHub authentication
-        linkGitHubAccount();
+        setMembers([]);
         return true;
       } else {
         setError(response.message || 'Failed to force re-authentication');
@@ -226,19 +346,12 @@ export const useGitHub = (): UseGitHubReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [clearError, linkGitHubAccount]);
+  }, [clearError]);
 
-  // Initialize GitHub status on mount
+  // Auto-check GitHub status on mount
   useEffect(() => {
     checkGitHubStatus();
   }, [checkGitHubStatus]);
-
-  // Fetch organizations when GitHub is linked
-  useEffect(() => {
-    if (githubStatus?.linked) {
-      fetchOrganizations();
-    }
-  }, [githubStatus?.linked, fetchOrganizations]);
 
   return {
     // State
@@ -246,19 +359,23 @@ export const useGitHub = (): UseGitHubReturn => {
     organizations,
     repositories,
     branches,
+    members,
     isLoading,
     error,
-    
+
     // Actions
     checkGitHubStatus,
     fetchOrganizations,
     fetchRepositories,
     fetchBranches,
+    fetchMembers,
+    fetchMembersWithEmails,
     syncGitHubData,
     linkGitHubAccount,
+    linkGitHubAccountPopup,
     unlinkGitHubAccount,
     forceReAuth,
-    
+
     // Utilities
     clearError
   };

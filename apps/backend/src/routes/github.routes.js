@@ -45,6 +45,22 @@ router.get('/repos/:org/:repo/branches',
     githubController.getRepositoryBranches
 );
 
+// Get members of a specific organization - Requires GitHub connection
+router.get('/orgs/:org/members',
+    authMiddleware,
+    requireGitHubLinked, // Ensures user has GitHub connected
+    validateMiddleware.validateParams(githubSchemas.orgParamSchema),
+    githubController.getOrganizationMembers
+);
+
+// Get organization members with email mapping - Requires GitHub connection
+router.get('/orgs/:org/members-with-emails',
+    authMiddleware,
+    requireGitHubLinked, // Ensures user has GitHub connected
+    validateMiddleware.validateParams(githubSchemas.orgParamSchema),
+    githubController.getOrganizationMembersWithEmails
+);
+
 // Sync GitHub data (refresh orgs, repos, branches) - Requires GitHub connection
 router.post('/sync',
     authMiddleware,

@@ -56,39 +56,14 @@ function SpaceHeaderComp({ space, onCreateBoard, onSettings, onMembers, onBackTo
 
   if (!space) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.loadingContent}>
-          <View style={[styles.loadingIcon, { backgroundColor: colors.muted }]} />
-          <View style={styles.loadingText}>
-            <View style={[styles.loadingLine, { backgroundColor: colors.muted, width: '60%' }]} />
-            <View style={[styles.loadingLine, { backgroundColor: colors.muted, width: '40%', marginTop: 4 }]} />
-          </View>
-        </View>
+      <View style={{ padding: 16, backgroundColor: colors.card, borderBottomColor: colors.border, borderBottomWidth: 1 }}>
+        <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>Loading space...</Text>
       </View>
     );
   }
 
-  const bgTint = `${space.color || '#3B82F6'}15`;
-  const members = Array.isArray(space.members) ? space.members.filter((m: any) => !!m) : [];
-  const membersCount =
-    (typeof membersCountProp === 'number' ? membersCountProp : undefined) ??
-    (Array.isArray(members) ? members.length : 0);
-  const boardCount =
-    (typeof boardCountProp === 'number' ? boardCountProp : undefined) ??
-    (typeof space?.totalBoards === 'number' ? space.totalBoards : undefined) ??
-    (typeof space?.stats?.totalBoards === 'number' ? space.stats.totalBoards : undefined) ??
-    (Array.isArray((space as any)?.boards) ? (space as any).boards.length : 0);
-
-  // Tasks count across all boards
-  const tasksCount =
-    (typeof tasksCountProp === 'number' ? tasksCountProp : undefined) ??
-    (typeof (space as any)?.totalTasks === 'number' ? (space as any).totalTasks : undefined) ??
-    (typeof space?.stats?.totalTasks === 'number' ? space.stats.totalTasks : undefined) ??
-    (Array.isArray((space as any)?.boards)
-      ? ((space as any).boards as any[]).reduce((sum, b) => sum + (Number((b as any)?.tasksCount || (b as any)?.totalTasks || 0) || 0), 0)
-      : 0);
-  const taskCount = space.totalTasks || 0;
-  const progress = getProgressPercentage(space.completedTasks || 0, taskCount);
+  const bgTint = `${space.color || '#3B82F6'}20`;
+  const members = Array.isArray(space.members) ? space.members.filter((m: any) => !!m && !!m.name) : [];
 
   return (
     <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border, paddingTop: 28 + topInset, paddingBottom: 16 }]}>
@@ -133,12 +108,20 @@ function SpaceHeaderComp({ space, onCreateBoard, onSettings, onMembers, onBackTo
                 {boardCount}
               </Text>
             </View>
-            {tasksCount > 0 && (
-              <View style={[styles.statBadge, { backgroundColor: colors.background }]}> 
-                <FontAwesome name="tasks" size={12} color={colors.primary} />
-                <Text style={[TextStyles.caption.small, { color: colors.foreground, marginLeft: 4, fontWeight: '500' }]}> 
-                  {tasksCount}
-                </Text>
+
+            {/* Right sidebar */}
+            <View style={{ width: 300, paddingLeft: 12 }}>
+              {/* Actions */}
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginBottom: 12 }}>
+                <TouchableOpacity onPress={onSettings} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
+                  <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>⚙️ Settings</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={onMembers} style={[styles.ghostBtn, { borderColor: colors.border }]}> 
+                  <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>👥 Members</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={onCreateBoard} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}> 
+                  <Text style={{ color: colors['primary-foreground'], fontWeight: '600' }}>➕ New Board</Text>
+                </TouchableOpacity>
               </View>
             )}
             {taskCount > 0 && (
@@ -194,129 +177,13 @@ function SpaceHeaderComp({ space, onCreateBoard, onSettings, onMembers, onBackTo
 export default memo(SpaceHeaderComp);
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    minHeight: 72,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 16,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  loadingContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    minHeight: 72,
-  },
-  loadingContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-  },
-  loadingText: {
-    flex: 1,
-  },
-  loadingLine: {
-    height: 12,
-    borderRadius: 6,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  iconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  spaceIcon: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  spaceInfo: {
-    flex: 1,
-    gap: 8,
-  },
-  spaceStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  statBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  actionButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  primaryButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  iconBox: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  ghostBtn: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
+  backIconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  primaryBtn: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  statCard: { flexBasis: '48%', padding: 12, borderRadius: 12 },
+  iconSmall: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 32, height: 32, borderRadius: 16 },
 });

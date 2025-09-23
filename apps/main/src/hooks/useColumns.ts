@@ -41,7 +41,8 @@ export const useColumns = () => {
         throw new Error('boardId is required to create a column');
       }
       console.log('🔄 useColumns: Creating column with data:', { boardId, columnData: columnDataWithoutBoardId });
-      await dispatch(createColumn({ boardId, columnData: columnDataWithoutBoardId }) as any).unwrap();
+      const result = await dispatch(createColumn({ boardId, columnData: columnDataWithoutBoardId }) as any).unwrap();
+      return result; // Return the created column
     } catch (error) {
       console.error('Failed to create column:', error);
       throw error;

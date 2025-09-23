@@ -41,11 +41,10 @@ const templateRoutes = require('./routes/template.routes');
 const boardTemplateRoutes = require('./routes/boardTemplate.routes');
 const powerbiRoutes = require('./routes/powerbi.routes');
 const integrationRoutes = require('./routes/integration.routes');
+const aiTokenRoutes = require('./routes/aiToken.routes');
 const chatRoutes = require('./routes/chat.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
 const githubRoutes = require('./routes/github.routes');
-const githubAppRoutes = require('./routes/github-app.routes');
-const cleanupRoutes = require('./routes/cleanup.routes');
 const app = express();
 
 
@@ -241,10 +240,9 @@ app.use('/api/board-templates', boardTemplateRoutes);
 
 app.use('/api/powerbi', authMiddleware, powerbiRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/admin/ai-tokens', aiTokenRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/github', githubRoutes);
-app.use('/api/github-app', githubAppRoutes);
-app.use('/api/cleanup', cleanupRoutes);
 
 // 404 handler - using catch-all middleware instead of wildcard
 app.use((req, res) => {

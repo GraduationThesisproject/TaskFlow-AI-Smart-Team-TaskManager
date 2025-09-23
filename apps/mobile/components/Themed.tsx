@@ -166,7 +166,7 @@ export function Button(props: ViewProps & { variant?: 'primary' | 'secondary' | 
   const buttonColors = getButtonColors();
   
   return (
-    <TouchableOpacity 
+    <TouchableOpacity  
       style={[
         {
           backgroundColor: buttonColors.backgroundColor,

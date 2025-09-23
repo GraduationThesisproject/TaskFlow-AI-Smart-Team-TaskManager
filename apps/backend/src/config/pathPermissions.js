@@ -108,11 +108,6 @@ const SPACE_PERMISSIONS = {
         PUT: ['owner', 'admin'],
         DELETE: ['owner', 'admin']
     },
-    '/space/:id/members/:memberId': {
-        GET: ['owner', 'admin', 'member', 'viewer'],
-        PUT: ['owner', 'admin'],
-        DELETE: ['owner', 'admin']
-    },
     '/space/:id/boards': {
         GET: ['owner', 'admin', 'member', 'viewer'],
         POST: ['owner', 'admin', 'member']
@@ -348,6 +343,41 @@ const INTEGRATION_PERMISSIONS = {
     }
 };
 
+// AI permissions
+const AI_PERMISSIONS = {
+    '/ai/generate': {
+        POST: ['owner', 'admin', 'member']
+    },
+    '/ai/suggestions': {
+        POST: ['owner', 'admin', 'member']
+    },
+    '/ai/auto-complete': {
+        POST: ['owner', 'admin', 'member']
+    },
+    '/ai/smart-suggestions': {
+        POST: ['owner', 'admin', 'member']
+    },
+    '/ai/templates': {
+        GET: ['owner', 'admin', 'member'],
+        POST: ['owner', 'admin', 'member']
+    },
+    '/ai/tasks': {
+        POST: ['owner', 'admin', 'member']
+    },
+    '/ai/improvements': {
+        POST: ['owner', 'admin', 'member']
+    },
+    '/ai/moderate': {
+        POST: ['owner', 'admin', 'member']
+    },
+    '/ai/model-info': {
+        GET: ['owner', 'admin', 'member', 'viewer']
+    },
+    '/ai/board': {
+        GET: ['owner', 'admin', 'member', 'viewer']
+    }
+};
+
 // Combine all permissions
 const ALL_PATH_PERMISSIONS = {
     ...WORKSPACE_PERMISSIONS,
@@ -359,7 +389,8 @@ const ALL_PATH_PERMISSIONS = {
     ...ORGANIZATION_PERMISSIONS,
     ...NOTIFICATION_PERMISSIONS,
     ...REPORT_PERMISSIONS,
-    ...INTEGRATION_PERMISSIONS
+    ...INTEGRATION_PERMISSIONS,
+    ...AI_PERMISSIONS
 };
 
 // Helper functions
@@ -418,6 +449,7 @@ module.exports = {
     NOTIFICATION_PERMISSIONS,
     REPORT_PERMISSIONS,
     INTEGRATION_PERMISSIONS,
+    AI_PERMISSIONS,
     getPathPermission,
     hasRolePermission,
     hasPermission,

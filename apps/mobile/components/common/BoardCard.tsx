@@ -1,7 +1,5 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Card, Text } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
@@ -10,65 +8,12 @@ export interface BoardCardProps {
   board: any;
   onPress?: () => void;
   style?: any;
-  onToggleArchive?: (board: any) => void;
 }
 
-export default function BoardCard({ board, onPress, style, onToggleArchive }: BoardCardProps) {
+export default function BoardCard({ board, onPress, style }: BoardCardProps) {
   const colors = useThemeColors();
   const themeColor = board?.theme?.color || colors.primary;
   const bgImage = board?.theme?.background?.url;
-  const boardType = board?.type || 'kanban';
-  const status = String(board?.status || '').toLowerCase();
-  const isArchived = board?.archived === true || board?.isArchived === true || status === 'archived' || status === 'inactive';
-  
-  const getBoardIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'kanban': return 'columns';
-      case 'scrum': return 'tasks';
-      case 'gantt': return 'calendar';
-      case 'timeline': return 'clock-o';
-      default: return 'th-large';
-    }
-  };
-
-  const getBoardTypeLabel = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'kanban': return 'Kanban Board';
-      case 'scrum': return 'Scrum Board';
-      case 'gantt': return 'Gantt Chart';
-      case 'timeline': return 'Timeline';
-      default: return 'Board';
-    }
-  };
-
-  const formatCreatedDate = (dateString: string) => {
-    if (!dateString) return '';
-    
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (diffInDays === 0) {
-        return 'Today';
-      } else if (diffInDays === 1) {
-        return 'Yesterday';
-      } else if (diffInDays < 7) {
-        return `${diffInDays} days ago`;
-      } else if (diffInDays < 30) {
-        const weeks = Math.floor(diffInDays / 7);
-        return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
-      } else if (diffInDays < 365) {
-        const months = Math.floor(diffInDays / 30);
-        return months === 1 ? '1 month ago' : `${months} months ago`;
-      } else {
-        const years = Math.floor(diffInDays / 365);
-        return years === 1 ? '1 year ago' : `${years} years ago`;
-      }
-    } catch (error) {
-      return '';
-    }
-  };
 
   return (
     <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={style}>

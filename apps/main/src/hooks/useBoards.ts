@@ -32,7 +32,8 @@ export const useBoards = () => {
 
   const addBoard = async (boardData: any) => {
     try {
-      await dispatch(createBoard(boardData) as any).unwrap();
+      const result = await dispatch(createBoard(boardData) as any).unwrap();
+      return result;
     } catch (error) {
       console.error('Failed to create board:', error);
       throw error;

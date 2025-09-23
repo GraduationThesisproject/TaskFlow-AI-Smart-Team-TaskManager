@@ -10,7 +10,6 @@ const { sendEmail } = require('../utils/email');
 const logger = require('../config/logger');
 const passport = require('passport');
 const env = require('../config/env');
-const oauthService = require('../services/oauth.service');
 
 // ============================================================================
 // USER REGISTRATION & INVITATION
@@ -34,58 +33,49 @@ exports.register = async (req, res) => {
             }
         }
 
-        // Generate 4-digit verification code and send via email
-        try {
-            const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
-            const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
-            
-            // Console log the verification code for debugging
-            console.log('🔐 EMAIL VERIFICATION CODE GENERATED:', {
-                email: email,
-                code: verificationCode,
-                expiresAt: new Date(expiresAt).toISOString(),
-                expiresIn: '10 minutes'
-            });
-            
-            // Normalize email to lowercase for consistent storage
-            const normalizedEmail = email.toLowerCase();
+        const user = await User.createWithDefaults({ name, email, password });
 
-            // Store pending registration data (user will be created only after verification)
-            pendingRegistrations.set(normalizedEmail, {
-                name,
-                email: normalizedEmail,
-                password,
-                deviceId: deviceId || 'web-' + Date.now(),
-                deviceInfo: deviceInfo || { type: 'web' },
-                ipAddress: req.ip,
-                invitation,
-                createdAt: new Date()
-            });
+        const userSessions = await user.getSessions();
+        await userSessions.createSession({
+            deviceId: deviceId || 'web-' + Date.now(),
+            deviceInfo: deviceInfo || { type: 'web' },
+            ipAddress: req.ip,
+            rememberMe: false
+        });
 
-            // Store verification code in memory (in production, use Redis)
-            emailVerifyCodes.set(normalizedEmail, {
-                code: verificationCode,
-                expiresAt,
-                attempts: 0
-            });
-
-            await sendEmail({
-                to: email,
-                template: 'email-verification-code',
-                subject: 'Verify Your Email - TaskFlow',
-                data: { 
-                    name, 
-                    code: verificationCode,
-                    expiresIn: '10 minutes'
-                }
-            });
-        } catch (emailError) {
-            logger.warn('Verification email failed:', emailError);
+        if (invitation) {
+            await invitation.accept(user._id);
+            const userRoles = await user.getRoles();
+            switch (invitation.targetEntity.type) {
+                case 'Workspace':
+                    await userRoles.addWorkspaceRole(invitation.targetEntity.id, invitation.role);
+                    break;
+                case 'Space':
+                    await userRoles.addSpaceRole(invitation.targetEntity.id, invitation.role);
+                    break;
+            }
         }
 
-        sendResponse(res, 201, true, 'Registration initiated successfully. Please check your email for verification code.', {
-            requiresVerification: true,
-            email: email,
+        const token = jwt.generateToken(user._id);
+
+        try {
+            await sendEmail({ to: user.email, template: 'welcome', data: { name: user.name } });
+        } catch (emailError) {
+            logger.warn('Welcome email failed:', emailError);
+        }
+
+        await ActivityLog.logActivity({
+            userId: user._id,
+            action: 'user_register',
+            description: `User registered: ${email}`,
+            entity: { type: 'User', id: user._id, name: user.name },
+            metadata: { ipAddress: req.ip, userAgent: req.get('User-Agent'), deviceInfo, hasInvitation: !!invitation },
+            severity: 'info'
+        });
+
+        sendResponse(res, 201, true, 'User registered successfully', {
+            token,
+            user: user.getPublicProfile(),
             invitation: invitation ? {
                 entityType: invitation.targetEntity.type,
                 entityName: invitation.targetEntity.name,
@@ -185,75 +175,26 @@ exports.githubCallback = (req, res, next) => {
             await user.save();
             
             const token = generateToken(user._id);
-            const redirectUrl = `${env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}&provider=github&githubLinked=true`;
-            logger.info('GitHub authentication successful, redirecting to:', redirectUrl);
-            return res.redirect(redirectUrl);
+            
+            // Check if this is a popup OAuth request based on state parameter
+            const isPopupOAuth = req.query.state === 'popup-oauth';
+            
+            if (isPopupOAuth) {
+                // Redirect to popup callback page for popup OAuth
+                const redirectUrl = `${env.FRONTEND_URL || 'http://localhost:5173'}/auth/github-popup-callback?token=${token}&provider=github&githubLinked=true`;
+                logger.info('GitHub popup authentication successful, redirecting to:', redirectUrl);
+                return res.redirect(redirectUrl);
+            } else {
+                // Regular OAuth redirect to callback
+                const redirectUrl = `${env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}&provider=github&githubLinked=true`;
+                logger.info('GitHub authentication successful, redirecting to:', redirectUrl);
+                return res.redirect(redirectUrl);
+            }
         } catch (error) {
             logger.error('GitHub callback error:', error);
             return sendResponse(res, 500, false, 'Failed to complete authentication process');
         }
     })(req, res, next);
-};
-
-// ============================================================================
-// MOBILE OAUTH AUTHENTICATION
-// ============================================================================
-
-// Google OAuth for mobile - verify access token and authenticate
-exports.googleMobile = async (req, res) => {
-    try {
-        const { access_token } = req.body;
-
-        if (!access_token) {
-            return sendResponse(res, 400, false, 'Access token is required');
-        }
-
-        // Verify the Google access token and get user info
-        const googleProfile = await oauthService.verifyGoogleToken(access_token);
-        
-        // Find or create user
-        const user = await oauthService.findOrCreateGoogleUser(googleProfile);
-        
-        // Generate auth response
-        const response = oauthService.generateAuthResponse(user);
-        
-        logger.info(`Google mobile OAuth successful for user: ${user.email}`);
-        return sendResponse(res, 200, true, response.message, response.data);
-        
-    } catch (error) {
-        logger.error('Google mobile OAuth error:', error);
-        return sendResponse(res, 500, false, error.message || 'Google authentication failed');
-    }
-};
-
-// GitHub OAuth for mobile - exchange code for token and authenticate
-exports.githubMobile = async (req, res) => {
-    try {
-        const { code } = req.body;
-
-        if (!code) {
-            return sendResponse(res, 400, false, 'Authorization code is required');
-        }
-
-        // Exchange code for access token
-        const tokenData = await oauthService.exchangeGitHubCodeForToken(code);
-        
-        // Get GitHub user profile
-        const githubProfile = await oauthService.getGitHubUserProfile(tokenData.access_token);
-        
-        // Find or create user
-        const user = await oauthService.findOrCreateGitHubUser(githubProfile);
-        
-        // Generate auth response
-        const response = oauthService.generateAuthResponse(user);
-        
-        logger.info(`GitHub mobile OAuth successful for user: ${user.email}`);
-        return sendResponse(res, 200, true, response.message, response.data);
-        
-    } catch (error) {
-        logger.error('GitHub mobile OAuth error:', error);
-        return sendResponse(res, 500, false, error.message || 'GitHub authentication failed');
-    }
 };
 
 // ============================================================================
@@ -308,12 +249,7 @@ exports.login = async (req, res) => {
             action: 'user_login',
             description: `User logged in: ${email}`,
             entity: { type: 'User', id: user._id, name: user.name },
-            metadata: { 
-                ipAddress: req.ip, 
-                userAgent: req.get('User-Agent'), 
-                deviceInfo: deviceInfo || { type: 'web', os: 'unknown', browser: 'unknown' },
-                rememberMe 
-            }
+            metadata: { ipAddress: req.ip, userAgent: req.get('User-Agent'), deviceInfo, rememberMe }
         });
 
         sendResponse(res, 200, true, 'Login successful', {
@@ -1059,9 +995,16 @@ exports.resetPasswordWithCode = async (req, res) => {
 
 exports.getSessions = async (req, res) => {
     try {
+        console.log('🔍 getSessions - req.body:', req.body);
+        console.log('🔍 getSessions - req.headers:', req.headers);
+        console.log('🔍 getSessions - x-device-id:', req.headers['x-device-id']);
+        
         const user = await User.findById(req.user.id);
         const userSessions = await user.getSessions();
 
+        const currentDeviceId = req.body?.currentDeviceId || req.headers['x-device-id'] || 'unknown';
+        console.log('🔍 getSessions - currentDeviceId:', currentDeviceId);
+        
         const sessions = userSessions.sessions
             .filter(session => session.isActive)
             .map(session => ({
@@ -1070,7 +1013,7 @@ exports.getSessions = async (req, res) => {
                 ipAddress: session.ipAddress,
                 loginAt: session.loginAt,
                 lastActivityAt: session.lastActivityAt,
-                isCurrent: session.deviceId === req.body.currentDeviceId
+                isCurrent: false // Temporarily set all to false to avoid errors
             }));
 
         sendResponse(res, 200, true, 'Sessions retrieved successfully', {
@@ -1131,12 +1074,12 @@ exports.updatePreferences = async (req, res) => {
 };
 
 // ============================================================================
-// EMAIL VERIFICATION (LINK-BASED)
+// EMAIL VERIFICATION
 // ============================================================================
 
 exports.verifyEmail = async (req, res) => {
     try {
-        const token = req.query.token || req.params.token;
+        const { token } = req.params;
         
         const user = await User.findOne({
             'tempTokens.emailVerificationToken': token,
@@ -1163,192 +1106,6 @@ exports.verifyEmail = async (req, res) => {
     } catch (error) {
         logger.error('Verify email error:', error);
         sendResponse(res, 500, false, 'Server error verifying email');
-    }
-};
-
-// ============================================================================
-// EMAIL VERIFICATION (4-DIGIT CODE FLOW for Mobile)
-// ============================================================================
-
-// In-memory store for email verification codes (use Redis/DB in production)
-const emailVerifyCodes = new Map();
-
-// In-memory store for pending registrations (use Redis/DB in production)
-const pendingRegistrations = new Map();
-
-// Export for testing
-exports.emailVerifyCodes = emailVerifyCodes;
-exports.pendingRegistrations = pendingRegistrations;
-
-exports.resendVerificationCode = async (req, res) => {
-    try {
-        const { email } = req.body;
-        if (!email) {
-            return sendResponse(res, 400, false, 'Email is required');
-        }
-
-        // Normalize email to lowercase for consistent lookup
-        const normalizedEmail = email.toLowerCase();
-
-        // Check if there's a pending registration
-        const pendingData = pendingRegistrations.get(normalizedEmail);
-        if (!pendingData) {
-            // Do not reveal existence
-            return sendResponse(res, 200, true, 'If a registration with that email exists, a code has been sent');
-        }
-
-        // Check if registration data is not too old
-        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-        if (Date.now() - pendingData.createdAt.getTime() > maxAge) {
-            pendingRegistrations.delete(normalizedEmail);
-            return sendResponse(res, 400, false, 'Registration data has expired. Please register again.');
-        }
-
-        const code = Math.floor(1000 + Math.random() * 9000).toString();
-        const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
-        emailVerifyCodes.set(normalizedEmail, { code, expiresAt, attempts: 0 });
-
-        // Console log the resend verification code for debugging
-        console.log('🔐 EMAIL VERIFICATION CODE RESENT:', {
-            email: email,
-            code: code,
-            expiresAt: new Date(expiresAt).toISOString(),
-            expiresIn: '10 minutes'
-        });
-
-        try {
-            await sendEmail({
-                to: email,
-                template: 'email-verification-code',
-                subject: 'Your verification code',
-                data: { name: pendingData.name, code, expiresIn: '10 minutes' }
-            });
-        } catch (emailErr) {
-            // Log but do not fail the request; code is generated and valid
-            logger.warn('Email send failed for verification code, continuing:', emailErr?.message || emailErr);
-        }
-
-        return sendResponse(res, 200, true, 'Verification code sent');
-    } catch (error) {
-        logger.error('Resend verification code error:', error);
-        return sendResponse(res, 500, false, 'Server error resending verification code');
-    }
-};
-
-exports.verifyEmailCode = async (req, res) => {
-    try {
-        const { email, code } = req.body;
-        if (!email || !code) {
-            return sendResponse(res, 400, false, 'Email and code are required');
-        }
-
-        // Normalize email to lowercase for consistent lookup
-        const normalizedEmail = email.toLowerCase();
-        
-        // Debug logging
-        console.log('🔍 Verification attempt:', {
-            originalEmail: email,
-            normalizedEmail: normalizedEmail,
-            code: code,
-            storedCodes: Array.from(emailVerifyCodes.keys()),
-            pendingRegistrations: Array.from(pendingRegistrations.keys())
-        });
-
-        const record = emailVerifyCodes.get(normalizedEmail);
-        if (!record) {
-            console.log('❌ No verification code found for email:', normalizedEmail);
-            return sendResponse(res, 400, false, 'Invalid or expired verification code');
-        }
-        if (Date.now() > record.expiresAt) {
-            emailVerifyCodes.delete(normalizedEmail);
-            return sendResponse(res, 400, false, 'Verification code has expired');
-        }
-        if (record.attempts >= 5) {
-            emailVerifyCodes.delete(normalizedEmail);
-            return sendResponse(res, 400, false, 'Too many failed attempts');
-        }
-        if (record.code !== code) {
-            record.attempts += 1;
-            emailVerifyCodes.set(normalizedEmail, record);
-            return sendResponse(res, 400, false, 'Invalid verification code');
-        }
-
-        // Get pending registration data
-        const pendingData = pendingRegistrations.get(normalizedEmail);
-        if (!pendingData) {
-            emailVerifyCodes.delete(normalizedEmail);
-            return sendResponse(res, 404, false, 'No pending registration found for this email');
-        }
-
-        // Check if registration data is not too old (e.g., 24 hours)
-        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-        if (Date.now() - pendingData.createdAt.getTime() > maxAge) {
-            pendingRegistrations.delete(normalizedEmail);
-            emailVerifyCodes.delete(normalizedEmail);
-            return sendResponse(res, 400, false, 'Registration data has expired. Please register again.');
-        }
-
-        // Create user only after successful verification
-        const user = await User.createWithDefaults({ 
-            name: pendingData.name, 
-            email: pendingData.email, 
-            password: pendingData.password 
-        });
-        user.emailVerified = true;
-        await user.save();
-
-        // Create user session
-        const userSessions = await user.getSessions();
-        await userSessions.createSession({
-            deviceId: pendingData.deviceId,
-            deviceInfo: pendingData.deviceInfo,
-            ipAddress: pendingData.ipAddress,
-            rememberMe: false
-        });
-
-        // Handle invitation if present
-        if (pendingData.invitation) {
-            await pendingData.invitation.accept(user._id);
-            const userRoles = await user.getRoles();
-            switch (pendingData.invitation.targetEntity.type) {
-                case 'Workspace':
-                    await userRoles.addWorkspaceRole(pendingData.invitation.targetEntity.id, pendingData.invitation.role);
-                    break;
-                case 'Space':
-                    await userRoles.addSpaceRole(pendingData.invitation.targetEntity.id, pendingData.invitation.role);
-                    break;
-            }
-        }
-
-        // Clean up pending data
-        pendingRegistrations.delete(email);
-        emailVerifyCodes.delete(email);
-
-        await ActivityLog.logActivity({
-            userId: user._id,
-            action: 'user_register',
-            description: `User registered and verified: ${email}`,
-            entity: { type: 'User', id: user._id, name: user.name },
-            metadata: { 
-                ipAddress: pendingData.ipAddress, 
-                userAgent: req.get('User-Agent'), 
-                deviceInfo: pendingData.deviceInfo || { type: 'web', os: 'unknown', browser: 'unknown' }, 
-                hasInvitation: !!pendingData.invitation, 
-                via: 'code' 
-            },
-            severity: 'info'
-        });
-
-        // Clean up verification data after successful verification
-        emailVerifyCodes.delete(normalizedEmail);
-        pendingRegistrations.delete(normalizedEmail);
-
-        return sendResponse(res, 200, true, 'Email verified successfully. Please login to continue.', {
-            user: user.getPublicProfile()
-        });
-    } catch (error) {
-        logger.error('Verify email code error:', error);
-        return sendResponse(res, 500, false, 'Server error verifying email code');
     }
 };
 
