@@ -12,6 +12,7 @@ import SpacePage from "./pages/SpacePage";
 import { BoardPage } from "./pages/board.page";
 import LandingPage  from "./pages/LandingPage";
 import OAuthCallback from "./components/auth/OAuthCallback";
+import GitHubPopupCallback from "./components/auth/GitHubPopupCallback";
 import { LogoutConfirmDialog, AppLayout } from "./components";
 import { ProtectedRoute, PublicOnlyRoute } from "./components/common";
 import UniversalNavbar from "./components/common/navbar/UniversalNavbar";
@@ -20,12 +21,15 @@ import InviteLanding from "./pages/InviteLanding";
 import JoinWorkspace from "./pages/JoinWorkspace";
 import { NoAccessPage } from "./pages/NoAccessPage";
 import ChatPage from "./pages/ChatPage";
+import NotificationsPage from "./pages/NotificationsPage";
 import ChatWidget from "./components/chat/ChatWidget";
 import { MessageCircle, X } from "lucide-react";
 import Cancel from "./layouts/workSpace/Cancel";
 import Success from "./layouts/workSpace/Success";
 import { Loading } from "@taskflow/ui";
 import { ToastProvider } from "./hooks/useToast";
+import { SignInModal } from "./components/auth/SignInModal";
+import { SignUpModal } from "./components/auth/SignUpModal";
 
 
 
@@ -34,6 +38,10 @@ function App() {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  
+  // Modal state
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
   useEffect(() => {
     dispatch(checkAuthStatus());
   }, [dispatch]);
@@ -56,6 +64,33 @@ function App() {
     setIsChatOpen(!isChatOpen);
   };
 
+  // Modal handlers with smooth transitions
+  const handleSignInClick = () => {
+    setIsSignInModalOpen(true);
+  };
+
+  const handleSignUpClick = () => {
+    setIsSignUpModalOpen(true);
+  };
+
+  const handleCloseSignInModal = () => {
+    setIsSignInModalOpen(false);
+  };
+
+  const handleCloseSignUpModal = () => {
+    setIsSignUpModalOpen(false);
+  };
+
+  const handleSwitchToSignUp = () => {
+    setIsSignInModalOpen(false);
+    setIsSignUpModalOpen(true);
+  };
+
+  const handleSwitchToSignIn = () => {
+    setIsSignUpModalOpen(false);
+    setIsSignInModalOpen(true);
+  };
+
   return (
       <AppLayout>
         {/* Universal Navbar - hidden on auth pages (signin/signup) */}
@@ -64,6 +99,8 @@ function App() {
             onLogout={handleLogout}
             className="sticky top-0 z-50"
             onChatClick={toggleChat}
+            onSignInClick={handleSignInClick}
+            onSignUpClick={handleSignUpClick}
           />
 
         {/* Main Content */}
@@ -74,18 +111,21 @@ function App() {
               path="/*" 
               element={
                 <PublicOnlyRoute redirectTo="/dashboard">
-                  <LandingPage />
+                  <LandingPage 
+                    onSignUpClick={handleSignUpClick}
+                  />
                 </PublicOnlyRoute>
               } 
             />
           
           <Route 
             path="/auth/callback" 
-            element={
-              <PublicOnlyRoute redirectTo="/dashboard">
-                <OAuthCallback />
-              </PublicOnlyRoute>
-            } 
+            element={<OAuthCallback />}
+          />
+          
+          <Route 
+            path="/auth/github-popup-callback" 
+            element={<GitHubPopupCallback />}
           />
           
           <Route 
@@ -175,6 +215,15 @@ function App() {
             } 
           />
 
+          <Route 
+            path="/notifications" 
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
+              </ProtectedRoute>
+            } 
+          />
+
           {/* Fallback Route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -213,6 +262,18 @@ function App() {
         userName={user?.user?.name || "User"}
       />
       )}
+
+      {/* Auth Modals */}
+      <SignInModal
+        isOpen={isSignInModalOpen}
+        onClose={handleCloseSignInModal}
+        onSwitchToSignUp={handleSwitchToSignUp}
+      />
+      <SignUpModal
+        isOpen={isSignUpModalOpen}
+        onClose={handleCloseSignUpModal}
+        onSwitchToSignIn={handleSwitchToSignIn}
+      />
       </AppLayout>
   );
 }

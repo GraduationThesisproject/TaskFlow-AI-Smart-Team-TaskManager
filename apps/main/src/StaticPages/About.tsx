@@ -358,7 +358,7 @@ const About = () => {
         description="Be part of the revolution that's transforming how teams collaborate and succeed"
         primaryButton={{
           text: "Start Free Trial",
-          href: "/signup"
+          onClick: () => console.log("Start Free Trial clicked - handled by parent")
         }}
         secondaryButton={{
           text: "Learn More",

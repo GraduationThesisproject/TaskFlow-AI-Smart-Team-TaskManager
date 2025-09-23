@@ -10,8 +10,6 @@ import {
   getSpaceMembers,
   addSpaceMember,
   removeSpaceMember,
-  archiveSpace as archiveSpaceThunk,
-  unarchiveSpace as unarchiveSpaceThunk,
   setCurrentSpace
 } from '../store/slices/spaceSlice';
 
@@ -58,24 +56,6 @@ export const useSpaces = () => {
       await dispatch(deleteSpace(spaceId) as any).unwrap();
     } catch (error) {
       console.error('Failed to delete space:', error);
-      throw error;
-    }
-  };
-
-  const archiveSpace = async (spaceId: string) => {
-    try {
-      await dispatch(archiveSpaceThunk(spaceId) as any).unwrap();
-    } catch (error) {
-      console.error('Failed to archive space:', error);
-      throw error;
-    }
-  };
-
-  const unarchiveSpace = async (spaceId: string) => {
-    try {
-      await dispatch(unarchiveSpaceThunk(spaceId) as any).unwrap();
-    } catch (error) {
-      console.error('Failed to unarchive space:', error);
       throw error;
     }
   };
@@ -138,8 +118,6 @@ export const useSpaces = () => {
     addSpace,
     editSpace,
     removeSpace,
-    archiveSpace,
-    unarchiveSpace,
     loadSpaceMembers,
     addMember,
     removeMember,

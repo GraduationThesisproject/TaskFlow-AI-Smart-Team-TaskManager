@@ -111,7 +111,7 @@ const Contact = () => {
         description="Have questions about TaskFlow? Want to learn more about our features? Need help with your account? We're here to help."
         primaryButton={{
           text: "Start Free Trial",
-          href: "/signup"
+          onClick: () => console.log("Start Free Trial clicked - handled by parent")
         }}
         secondaryButton={{
           text: "View Documentation",
@@ -369,7 +369,7 @@ const Contact = () => {
         description="Join thousands of teams who've already transformed their workflow with TaskFlow"
         primaryButton={{
           text: "Start Free Trial",
-          href: "/signup"
+          onClick: () => console.log("Start Free Trial clicked - handled by parent")
         }}
         secondaryButton={{
           text: "Schedule Demo",

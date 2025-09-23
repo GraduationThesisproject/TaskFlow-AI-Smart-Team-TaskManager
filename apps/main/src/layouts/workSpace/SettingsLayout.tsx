@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import type { Workspace } from '../../types/workspace.types';
 
-import { Github, Link, Unlink, RefreshCw, ExternalLink } from 'lucide-react';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Select, Badge, Separator, Alert } from '@taskflow/ui'
+import { Github, Link, Unlink, RefreshCw, ExternalLink, CheckCircle } from 'lucide-react';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Separator, Alert } from '@taskflow/ui'
 import { useGitHub } from '../../hooks/useGitHub';
 import { useWorkspace } from '../../hooks/useWorkspace';
 
@@ -19,7 +19,6 @@ const WorkspaceSettingsHeader: React.FC = () => (
 );
 
 const GitHubIntegrationCard: React.FC<{ workspace: Workspace; onWorkspaceUpdate?: (updatedWorkspace: Workspace) => void }> = ({ workspace, onWorkspaceUpdate }) => {
-  const [selectedOrg, setSelectedOrg] = useState<string>('');
   const [isLinking, setIsLinking] = useState(false);
   const [showConnectPrompt, setShowConnectPrompt] = useState(false);
   
@@ -28,8 +27,11 @@ const GitHubIntegrationCard: React.FC<{ workspace: Workspace; onWorkspaceUpdate?
     organizations,
     isLoading,
     error,
+    checkGitHubStatus,
+    fetchOrganizations,
     syncGitHubData,
     linkGitHubAccount,
+    linkGitHubAccountPopup,
     unlinkGitHubAccount,
     forceReAuth,
     clearError
@@ -37,15 +39,38 @@ const GitHubIntegrationCard: React.FC<{ workspace: Workspace; onWorkspaceUpdate?
 
   const { updateWorkspaceData } = useWorkspace();
 
+  // No need to track selectedOrg state since we're using individual buttons
+
+  // Check GitHub status on component mount
   useEffect(() => {
-    // Only set selectedOrg if the workspace is already linked to a GitHub org
-    if (workspace.githubOrg?.login) {
-      setSelectedOrg(workspace.githubOrg.login);
-    } else {
-      // Reset selectedOrg if no GitHub org is linked
-      setSelectedOrg('');
+    if (!githubStatus) {
+      checkGitHubStatus();
     }
-  }, [workspace]);
+  }, [checkGitHubStatus, githubStatus]);
+
+  // Fetch organizations if GitHub is linked but no organizations are loaded
+  useEffect(() => {
+    if (githubStatus?.linked && organizations.length === 0 && !isLoading) {
+      fetchOrganizations();
+    }
+  }, [githubStatus?.linked, organizations.length, isLoading, fetchOrganizations]);
+
+  // Listen for window focus to refresh GitHub status when popup closes
+  useEffect(() => {
+    const handleWindowFocus = async () => {
+      // Small delay to ensure OAuth process is complete
+      setTimeout(async () => {
+        try {
+          await checkGitHubStatus();
+        } catch (error) {
+          console.error('Failed to refresh GitHub status on window focus:', error);
+        }
+      }, 500);
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    return () => window.removeEventListener('focus', handleWindowFocus);
+  }, [checkGitHubStatus]);
 
 
   // Handle GitHub API responses with middleware redirects
@@ -84,23 +109,58 @@ const GitHubIntegrationCard: React.FC<{ workspace: Workspace; onWorkspaceUpdate?
     }
   };
 
-  const handleLinkGitHub = () => {
-    // linkGitHubAccount redirects immediately, so handle differently
-    return linkGitHubAccount();
+  const handleLinkGitHub = async () => {
+    try {
+      setIsLinking(true);
+      clearError();
+      
+      // Use popup-based OAuth for better UX
+      await linkGitHubAccountPopup();
+      
+      // Multiple refresh attempts to ensure status is updated
+      const refreshAttempts = [500, 1000, 2000];
+      refreshAttempts.forEach(delay => {
+        setTimeout(async () => {
+          try {
+            await checkGitHubStatus();
+            console.log('GitHub status refreshed after OAuth');
+          } catch (error) {
+            console.error('Failed to refresh GitHub status:', error);
+          }
+        }, delay);
+      });
+      
+    } catch (error: any) {
+      console.error('GitHub OAuth error:', error);
+      setError(error.message || 'Failed to connect GitHub account');
+    } finally {
+      setIsLinking(false);
+    }
   };
 
   const handleSyncGitHub = () => {
     return handleGitHubAction(syncGitHubData);
   };
 
-  const linkWorkspaceToOrg = async () => {
-    if (!selectedOrg) return;
+  const handleFetchOrganizations = async () => {
+    try {
+      await fetchOrganizations();
+    } catch (error) {
+      console.error('Failed to fetch organizations:', error);
+    }
+  };
+
+  const linkWorkspaceToOrg = async (orgLogin: string) => {
+    if (!orgLogin) return;
     
     try {
       setIsLinking(true);
       clearError();
-      const org = organizations.find(o => o.login === selectedOrg);
-      if (!org) return;
+      const org = organizations.find(o => o.login === orgLogin);
+      if (!org) {
+        setError('Selected organization not found');
+        return;
+      }
 
       // Update workspace with GitHub organization using Redux action
       const githubOrgData = {
@@ -126,8 +186,7 @@ const GitHubIntegrationCard: React.FC<{ workspace: Workspace; onWorkspaceUpdate?
     } catch (error: any) {
       console.error('Error linking workspace to organization:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to link workspace to organization';
-      // Show error in console and could add toast notification here
-      console.error('❌ Error:', errorMessage);
+      setError(errorMessage);
     } finally {
       setIsLinking(false);
     }
@@ -151,8 +210,7 @@ const GitHubIntegrationCard: React.FC<{ workspace: Workspace; onWorkspaceUpdate?
     } catch (error: any) {
       console.error('Error unlinking workspace from organization:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to unlink workspace from organization';
-      // Show error in console and could add toast notification here
-      console.error('❌ Error:', errorMessage);
+      setError(errorMessage);
     } finally {
       setIsLinking(false);
     }
@@ -257,6 +315,16 @@ const GitHubIntegrationCard: React.FC<{ workspace: Workspace; onWorkspaceUpdate?
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={checkGitHubStatus}
+                  disabled={isLoading}
+                  title="Refresh GitHub status"
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Refresh
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={unlinkGitHubAccount}
                   disabled={isLoading}
                 >
@@ -280,18 +348,30 @@ const GitHubIntegrationCard: React.FC<{ workspace: Workspace; onWorkspaceUpdate?
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="font-medium">Link to GitHub Organization</h4>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSyncGitHub}
-                  disabled={isLoading}
-                >
-                  <RefreshCw className="h-4 w-4 mr-1" />
-                  Refresh
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleFetchOrganizations}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Load Organizations
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSyncGitHub}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Sync All
+                  </Button>
+                </div>
               </div>
 
-                             {workspace.githubOrg ? (
+              {/* Show linked organization if exists */}
+              {workspace.githubOrg && (
                 <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
                   <div className="flex items-center gap-3">
                     {workspace.githubOrg.avatar && (
@@ -324,32 +404,75 @@ const GitHubIntegrationCard: React.FC<{ workspace: Workspace; onWorkspaceUpdate?
                     </Button>
                   </div>
                 </div>
-              ) : (
+              )}
+
+              {/* Always show organizations list */}
+              {!workspace.githubOrg && (
                 <div className="space-y-3">
-                  {organizations.length > 0 ? (
+                  {isLoading ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                      <p className="text-sm text-muted-foreground">Loading organizations...</p>
+                    </div>
+                  ) : organizations.length > 0 ? (
                     <>
-                      <div className="text-sm text-muted-foreground mb-2">
-                        Select a GitHub organization to link with this workspace:
+                      <div className="text-sm text-muted-foreground mb-3">
+                        Choose a GitHub organization to link with this workspace:
                       </div>
-                      <Select 
-                        value={selectedOrg} 
-                        onValueChange={setSelectedOrg}
-                        options={organizations.map((org) => ({
-                          value: org.login,
-                          label: `${org.name || org.login}${org.isPrivate ? ' (Private)' : ''}`
-                        }))}
-                      />
-                      
-                      {selectedOrg && (
-                        <Button
-                          onClick={linkWorkspaceToOrg}
-                          disabled={isLinking}
-                          className="w-full"
-                        >
-                          <Link className="h-4 w-4 mr-1" />
-                          Link Workspace to {selectedOrg}
-                        </Button>
-                      )}
+                      <div className="space-y-2">
+                        {organizations.map((org) => {
+                          const isLinked = workspace.githubOrg && workspace.githubOrg.login === org.login;
+                          return (
+                            <div
+                              key={org.id}
+                              className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
+                                isLinked 
+                                  ? 'bg-green-50 border-green-200 hover:bg-green-100' 
+                                  : 'hover:bg-muted/50'
+                              }`}
+                            >
+                            <div className="flex items-center gap-3">
+                              {org.avatar && (
+                                <img 
+                                  src={org.avatar} 
+                                  alt={`${org.name || org.login} avatar`} 
+                                  className="w-8 h-8 rounded-full" 
+                                />
+                              )}
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-sm">
+                                    {org.name || org.login}
+                                  </p>
+                                  {isLinked && (
+                                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Linked
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  @{org.login}
+                                  {org.isPrivate && ' • Private'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => linkWorkspaceToOrg(org.login)}
+                                disabled={isLinking || (workspace.githubOrg && workspace.githubOrg.login !== org.login)}
+                                className="min-w-[80px]"
+                              >
+                                <Link className="h-4 w-4 mr-1" />
+                                {workspace.githubOrg && workspace.githubOrg.login === org.login ? 'Linked' : 'Link'}
+                              </Button>
+                            </div>
+                          </div>
+                          );
+                        })}
+                      </div>
                     </>
                   ) : (
                     <div className="text-center py-4 text-muted-foreground">

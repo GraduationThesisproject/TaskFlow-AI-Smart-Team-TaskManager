@@ -12,7 +12,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
-  redirectTo = '/signin',
+  redirectTo = '/',
   showLoading = true,
 }) => {
   const location = useLocation();

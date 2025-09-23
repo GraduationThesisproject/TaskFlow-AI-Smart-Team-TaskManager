@@ -37,7 +37,7 @@ if (GoogleStrategy && googleConfig.available) {
     passport.use(new GoogleStrategy({
         clientID: env.GOOGLE_CLIENT_ID,
         clientSecret: env.GOOGLE_CLIENT_SECRET,
-        callbackURL: env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
+        callbackURL: env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/api/auth/google/callback',
         scope: ['profile', 'email']
     }, async (accessToken, refreshToken, profile, done) => {
         console.log('🔵 Google OAuth Strategy - Profile received');

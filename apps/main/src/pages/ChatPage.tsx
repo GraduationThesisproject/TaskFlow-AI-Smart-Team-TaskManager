@@ -274,8 +274,8 @@ const ChatPage: React.FC = () => {
           <Typography variant="heading-large" className="mb-4">
             Please sign in to access chat support
           </Typography>
-          <Button onClick={() => navigate('/signin')}>
-            Sign In
+          <Button onClick={() => navigate('/dashboard')}>
+            Go to Dashboard
           </Button>
         </div>
       </div>

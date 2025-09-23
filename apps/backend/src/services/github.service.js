@@ -1,27 +1,26 @@
 const axios = require('axios');
-const jwt = require('jsonwebtoken');
 const logger = require('../config/logger');
 const env = require('../config/env');
+const User = require('../models/User');
 
 class GitHubService {
   constructor() {
     this.baseURL = 'https://api.github.com';
     this.clientId = env.GITHUB_CLIENT_ID;
     this.clientSecret = env.GITHUB_CLIENT_SECRET;
-    
-    // GitHub App configuration
-    this.appId = env.GITHUB_APP_ID;
-    this.privateKey = env.GITHUB_PRIVATE_KEY;
   }
 
-  // Get user's GitHub organizations
-  async getUserOrganizations(accessToken) {
+  // Get organizations for the authenticated user
+  async getOrganizations(accessToken) {
     try {
       const response = await axios.get(`${this.baseURL}/user/orgs`, {
         headers: {
           'Authorization': `token ${accessToken}`,
           'Accept': 'application/vnd.github.v3+json',
           'User-Agent': 'TaskFlow-AI'
+        },
+        params: {
+          per_page: 100
         }
       });
 
@@ -29,10 +28,12 @@ class GitHubService {
         id: org.id,
         login: org.login,
         name: org.name || org.login,
-        url: org.url,
-        avatar: org.avatar_url,
         description: org.description,
-        isPrivate: org.type === 'Organization'
+        url: org.url,
+        htmlUrl: org.html_url,
+        avatar: org.avatar_url,
+        type: org.type,
+        siteAdmin: org.site_admin
       }));
     } catch (error) {
       logger.error('Error fetching GitHub organizations:', error.response?.data || error.message);
@@ -41,7 +42,7 @@ class GitHubService {
   }
 
   // Get repositories for a specific organization
-  async getOrganizationRepositories(accessToken, orgLogin) {
+  async getRepositories(accessToken, orgLogin) {
     try {
       const response = await axios.get(`${this.baseURL}/orgs/${orgLogin}/repos`, {
         headers: {
@@ -50,8 +51,6 @@ class GitHubService {
           'User-Agent': 'TaskFlow-AI'
         },
         params: {
-          type: 'all', // Include both public and private repos
-          sort: 'updated',
           per_page: 100
         }
       });
@@ -103,8 +102,45 @@ class GitHubService {
         }
       }));
     } catch (error) {
-      logger.error('Error fetching GitHub branches:', error.response?.data || error.message);
-      throw new Error(`Failed to fetch GitHub branches: ${error.response?.data?.message || error.message}`);
+      logger.error('Error fetching GitHub repository branches:', error.response?.data || error.message);
+      throw new Error(`Failed to fetch repository branches: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  // Get members of a specific organization
+  async getOrganizationMembers(accessToken, orgLogin) {
+    try {
+      const membersResponse = await axios.get(`${this.baseURL}/orgs/${orgLogin}/members`, {
+        headers: {
+          'Authorization': `token ${accessToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'TaskFlow-AI'
+        },
+        params: {
+          per_page: 100
+        }
+      });
+
+      // GitHub API doesn't provide email addresses for organization members due to privacy
+      // Return basic member information without trying to fetch emails
+      const members = membersResponse.data.map(member => ({
+        id: member.id,
+        login: member.login,
+        name: member.login, // Use login as name since we can't get real name without additional API calls
+        email: null, // GitHub doesn't provide emails for org members due to privacy
+        avatar: member.avatar_url,
+        url: member.url,
+        htmlUrl: member.html_url,
+        type: member.type,
+        siteAdmin: member.site_admin
+      }));
+
+      logger.info(`Fetched ${members.length} GitHub organization members (emails not available due to privacy settings)`);
+      
+      return members;
+    } catch (error) {
+      logger.error('Error fetching GitHub organization members:', error.response?.data || error.message);
+      throw new Error(`Failed to fetch GitHub organization members: ${error.response?.data?.message || error.message}`);
     }
   }
 
@@ -134,6 +170,71 @@ class GitHubService {
     }
   }
 
+  // Get GitHub user emails (private emails if user:email scope is granted)
+  async getUserEmails(accessToken) {
+    try {
+      const response = await axios.get(`${this.baseURL}/user/emails`, {
+        headers: {
+          'Authorization': `token ${accessToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'TaskFlow-AI'
+        }
+      });
+
+      return response.data.map(email => ({
+        email: email.email,
+        primary: email.primary,
+        verified: email.verified,
+        visibility: email.visibility
+      }));
+    } catch (error) {
+      logger.error('Error fetching GitHub user emails:', error.response?.data || error.message);
+      throw new Error(`Failed to fetch GitHub user emails: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  // Map GitHub usernames to emails for organization members
+  async mapOrgMembersToEmails(accessToken, orgLogin) {
+    try {
+      // Get organization members (usernames only)
+      const members = await this.getOrganizationMembers(accessToken, orgLogin);
+      
+      // Get all users in your database who have GitHub OAuth
+      const users = await User.find({ 
+        'github.accessToken': { $exists: true },
+        'github.username': { $in: members.map(m => m.login) }
+      }).select('github.username github.email email name _id');
+
+      // Create mapping
+      const usernameToEmailMap = {};
+      users.forEach(user => {
+        if (user.github?.username) {
+          usernameToEmailMap[user.github.username] = {
+            email: user.github.email || user.email,
+            name: user.name,
+            userId: user._id
+          };
+        }
+      });
+
+      // Enhance members with email data
+      const enhancedMembers = members.map(member => ({
+        ...member,
+        email: usernameToEmailMap[member.login]?.email || null,
+        name: usernameToEmailMap[member.login]?.name || member.login,
+        userId: usernameToEmailMap[member.login]?.userId || null,
+        isAppUser: !!usernameToEmailMap[member.login]
+      }));
+
+      logger.info(`Mapped ${enhancedMembers.filter(m => m.isAppUser).length} of ${enhancedMembers.length} org members to app users`);
+      
+      return enhancedMembers;
+    } catch (error) {
+      logger.error('Error mapping org members to emails:', error);
+      throw new Error(`Failed to map organization members to emails: ${error.message}`);
+    }
+  }
+
   // Validate GitHub access token
   async validateToken(accessToken) {
     try {
@@ -144,6 +245,7 @@ class GitHubService {
           'User-Agent': 'TaskFlow-AI'
         }
       });
+
       return response.status === 200;
     } catch (error) {
       return false;
@@ -198,24 +300,19 @@ class GitHubService {
         return {
           isValid: false,
           reason: 'insufficient_scopes',
-          message: 'Insufficient GitHub permissions',
-          missingScopes: scopeCheck.missingScopes,
-          userScopes: scopeCheck.userScopes
+          message: 'GitHub token lacks required scopes',
+          missingScopes: scopeCheck.missingScopes
         };
       }
 
-      // Test organization access
-      try {
-        await this.getUserOrganizations(accessToken);
-      } catch (orgError) {
-        if (orgError.message.includes('read:org scope')) {
-          return {
-            isValid: false,
-            reason: 'org_access_denied',
-            message: 'Cannot access GitHub organizations',
-            missingScopes: ['read:org']
-          };
-        }
+      // Check if user has organizations
+      const orgs = await this.getOrganizations(accessToken);
+      if (orgs.length === 0) {
+        return {
+          isValid: false,
+          reason: 'no_organizations',
+          message: 'User is not a member of any GitHub organizations'
+        };
       }
 
       return {
@@ -258,64 +355,6 @@ class GitHubService {
     } catch (error) {
       logger.error('Error exchanging code for token:', error.response?.data || error.message);
       throw new Error(`Failed to exchange code for token: ${error.response?.data?.error_description || error.message}`);
-    }
-  }
-
-  // GitHub App Installation Methods
-  async getInstallation(installationId) {
-    try {
-      const response = await axios.get(`${this.baseURL}/app/installations/${installationId}`, {
-        headers: {
-          'Authorization': `Bearer ${await this.getAppToken()}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-      return response.data;
-    } catch (error) {
-      logger.error('Error getting installation:', error.response?.data || error.message);
-      throw new Error(`Failed to get installation: ${error.message}`);
-    }
-  }
-
-  async getAppToken() {
-    try {
-      // Generate JWT token for GitHub App
-      const now = Math.floor(Date.now() / 1000);
-      const payload = {
-        iat: now - 60, // Issued at time (1 minute ago)
-        exp: now + (10 * 60), // Expires in 10 minutes
-        iss: this.appId // GitHub App ID
-      };
-
-      const token = jwt.sign(payload, this.privateKey, { algorithm: 'RS256' });
-      return token;
-    } catch (error) {
-      logger.error('Error generating app token:', error);
-      throw new Error('Failed to generate app token');
-    }
-  }
-
-  async sendInstallationNotification(installationId, notification) {
-    try {
-      const appToken = await this.getAppToken();
-      
-      // Create an issue or comment in the repository/organization
-      const response = await axios.post(`${this.baseURL}/repos/${notification.repository}/issues`, {
-        title: `TaskFlow Integration: ${notification.type}`,
-        body: notification.message,
-        labels: ['taskflow', 'integration']
-      }, {
-        headers: {
-          'Authorization': `Bearer ${appToken}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-
-      return response.data;
-    } catch (error) {
-      logger.error('Error sending installation notification:', error.response?.data || error.message);
-      // Don't throw error for notification failures
-      logger.warn('Installation notification failed, but installation was successful');
     }
   }
 }

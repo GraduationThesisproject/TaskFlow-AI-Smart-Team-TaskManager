@@ -47,7 +47,7 @@ export const useProtectedRoute = () => {
       navigate(routeConfig.path, options);
     } else {
       // Redirect to login if not authenticated
-      navigate('/signin', { 
+      navigate('/', { 
         state: { from: location },
         replace: true 
       });

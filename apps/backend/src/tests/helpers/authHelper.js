@@ -7,54 +7,21 @@ const { createTestUser } = require('./testData');
 const createAuthenticatedUser = async (app, userData = {}) => {
   const testUserData = createTestUser(userData);
   
-  // Register user to create pending registration
-  const registerResponse = await request(app)
+  const response = await request(app)
     .post('/api/auth/register')
     .send(testUserData);
-
-  if (registerResponse.status !== 201) {
-    throw new Error(`Failed to register user: ${registerResponse.body.message}`);
-  }
-
-  // Set verification code and pending registration for testing
-  const { emailVerifyCodes, pendingRegistrations } = require('../controllers/auth.controller');
-  emailVerifyCodes.set(testUserData.email, {
-    code: '1234',
-    expiresAt: Date.now() + 10 * 60 * 1000,
-    attempts: 0
-  });
-
-  // Verify email to create user
-  const verifyResponse = await request(app)
-    .post('/api/auth/verify-email')
-    .send({
-      email: testUserData.email,
-      code: '1234'
-    });
-
-  if (verifyResponse.status !== 200) {
-    throw new Error(`Failed to verify email: ${verifyResponse.body.message}`);
-  }
-
-  // Login to get token
-  const loginResponse = await request(app)
-    .post('/api/auth/login')
-    .send({
-      email: testUserData.email,
-      password: testUserData.password
-    });
-
-  if (loginResponse.status !== 200) {
-    throw new Error(`Failed to login user: ${loginResponse.body.message}`);
+    
+  if (response.status !== 201) {
+    throw new Error(`Failed to create user: ${response.body.message}`);
   }
   
   // Normalize user object to include "id" alias for _id
-  const apiUser = loginResponse.body.data.user || {};
+  const apiUser = response.body.data.user || {};
   const normalizedUser = { ...apiUser, id: apiUser._id };
   
   return {
     user: normalizedUser,
-    token: loginResponse.body.data.token,
+    token: response.body.data.token,
     password: testUserData.password
   };
 };

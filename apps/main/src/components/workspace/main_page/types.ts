@@ -1,4 +1,5 @@
 import type { Space } from '../../../types/space.types';
+import type { Workspace } from '../../../types/workspace.types';
 
 export type Member = {
   id: string;
@@ -60,6 +61,7 @@ export interface ConfirmRemoveMemberDialogProps {
 export interface InviteSectionProps {
   onGenerateInvite: () => Promise<{ link?: string; enabled: boolean }>;
   onInviteUser: (email: string, role: 'member' | 'admin') => Promise<{ success: boolean; error?: unknown }>;
+  workspace?: Workspace;
 }
 
 export interface InfoBannerProps {

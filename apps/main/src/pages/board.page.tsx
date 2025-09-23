@@ -7,8 +7,9 @@ import { SubNavigationTest as SubNavigation } from "../components/board/SubNavig
 import { BoardHeader } from "../components/board/BoardHeader";
 import { TaskDetailModal } from "../components/board/TaskDetailModal";
 import { DeleteColumnModal } from "../components/board/DeleteColumnModal";
-import { useBoard, useTasks, useColumns, useSpaceManager } from "../hooks";
+import { useBoard, useTasks, useColumns, useSpaceManager, useBoardGenerator } from "../hooks";
 import { useSocketContext } from '../contexts/SocketContext';
+import { AIChat } from '../components/ai/AIChat';
 import type { Task } from "../types/task.types";
 import type { Column } from "../types/board.types";
 import backgroundImage from "../assets/backgound-2.jpg";
@@ -25,6 +26,9 @@ export const BoardPage = () => {
     
     // Board data
     const { currentBoard, loading: boardLoading, error: boardError, createBoardTag, deleteTag } = useBoard();
+    
+    // Space manager for archive functionality
+    const { archiveBoardById, unarchiveBoardById } = useSpaceManager();
     
     // Tasks data
     const {
@@ -46,9 +50,13 @@ export const BoardPage = () => {
 
     // Space manager data
     const {
+        currentSpace,
         boardLoading: spaceBoardLoading,
         boardError: spaceBoardError
     } = useSpaceManager();
+
+    // Board generator for AI-created boards
+    const { generateBoardWithConfirmation } = useBoardGenerator();
     
     // Combined loading and error states
     const loading = boardLoading || tasksLoading || spaceBoardLoading;
@@ -392,6 +400,41 @@ export const BoardPage = () => {
         setSelectedTask(null);
     };
 
+    // AI Board Generation Handler
+    const handleAIBoardGenerated = async (boardData: any) => {
+        try {
+            // Get current space ID if available
+            const spaceId = currentSpace?._id;
+            
+            if (!spaceId) {
+                console.error('No current space available for board creation');
+                return;
+            }
+            
+            const result = await generateBoardWithConfirmation(boardData, spaceId);
+            
+            if (result) {
+                // Optionally redirect to the new board or refresh the current view
+                console.log('AI Board created successfully:', result);
+            }
+        } catch (error) {
+            console.error('Failed to create AI board:', error);
+        }
+    };
+
+    // Archive Board Handler
+    const handleArchiveBoard = async () => {
+        try {
+            if (!currentBoard?._id) return;
+            
+            await archiveBoardById(currentBoard._id);
+            // Navigate back to space after archiving
+            window.history.back();
+        } catch (error) {
+            console.error('Failed to archive board:', error);
+        }
+    };
+
     // Get tasks from columns (tasks are now stored within columns)
     const tasksByColumn = (sortedColumns as Column[]).reduce((acc: Record<string, Task[]>, column: Column) => {
         acc[column._id] = column.tasks || [];
@@ -553,12 +596,13 @@ export const BoardPage = () => {
                 className="z-20"
                 currentBoard={currentBoard}
                 loading={boardLoading}
+                onArchiveBoard={handleArchiveBoard}
             />
 
             {/* Board Content */}
-            <div className="flex-1 overflow-hidden relative  p-4 ">
+            <div className="flex-1 overflow-hidden relative p-4">
                 <div 
-                    className={`h-full transition-all duration-300 ease-in-out border-2 border-white/5 rounded-2xl shadow-xl ${
+                    className={`h-full transition-all duration-300 ease-in-out border-2 border-white/5 rounded-2xl shadow-xl bg-white/90 backdrop-blur-sm ${
                         isTransitioning 
                             ? 'opacity-0 transform scale-95' 
                             : 'opacity-100 transform scale-100'
@@ -599,6 +643,14 @@ export const BoardPage = () => {
                 column={deletingColumn}
                 taskCount={deletingColumn?.tasks?.length || 0}
                 isLastColumn={deletingColumn ? sortedColumns.filter(col => col._id !== deletingColumn._id).length === 0 : false}
+            />
+
+            {/* AI Chat Component for Board Modifications */}
+            <AIChat 
+                onBoardGenerated={handleAIBoardGenerated}
+                className="z-40"
+                context="board-modification"
+                currentBoard={currentBoard}
             />
 
         </div>

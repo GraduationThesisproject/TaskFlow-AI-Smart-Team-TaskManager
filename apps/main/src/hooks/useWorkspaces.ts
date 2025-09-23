@@ -128,7 +128,7 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
       console.error('Failed to create workspace:', error);
       throw error;
     }
-  }, [dispatch, refetchWorkspaces]);
+  }, [dispatch]); // Remove refetchWorkspaces dependency
 
   const deleteWorkspaceById = useCallback(async (id: string) => {
     
@@ -143,9 +143,10 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
   // Auto-fetch all workspaces on mount
   useEffect(() => {
     if (autoFetch) {
+      console.log('🔄 useWorkspaces: Fetching workspaces', { workspacesLength: workspaces.length, loading, isLoading });
       refetchWorkspaces();
     }
-  }, [autoFetch, refetchWorkspaces]);
+  }, [autoFetch]); // Remove refetchWorkspaces from dependencies to prevent infinite loop
 
   // Load workspace data when workspaceId changes
   useEffect(() => {
@@ -153,7 +154,7 @@ export const useWorkspaces = (params?: UseWorkspacesParams | string): UseWorkspa
       loadWorkspace(workspaceId);
       loadSpaces(workspaceId);
     }
-  }, [autoFetch, workspaceId, loadWorkspace, loadSpaces]);
+  }, [autoFetch, workspaceId]); // Remove function dependencies to prevent infinite loop
 
   return {
     workspaces,
