@@ -160,6 +160,9 @@ const WorkspacesSection: React.FC = () => {
   const [creatingWs, setCreatingWs] = useState(false);
 
   const handleSubmitCreateWorkspace = async ({ name, description }: { name: string; description?: string }) => {
+    // Check plan limits for workspace creation (free plan has no limit, but we can add one later)
+    // For now, just proceed with creation
+    
     try {
       setCreatingWs(true);
       const action: any = await dispatch(createWorkspace({ name, description, isPublic: false } as any));

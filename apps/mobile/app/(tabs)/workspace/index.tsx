@@ -279,8 +279,14 @@ export default function WorkspaceScreen() {
 
   const handleSubmitCreate = async ({ name, description }: { name: string; description?: string }) => {
     if (!workspaceId) return;
-    if (!name || !name.trim()) {
-      Alert.alert('Error', 'Space name is required.');
+    
+    // Check plan limits
+    const { canCreateSpace } = await import('@/utils/planLimits');
+    const currentSpacesCount = processedSpaces?.length || 0;
+    const canCreateMoreSpaces = canCreateSpace(user, currentSpacesCount);
+    
+    if (!canCreateMoreSpaces) {
+      setShowPremiumSpaceModal(true);
       return;
     }
     try {
