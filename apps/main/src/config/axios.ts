@@ -79,11 +79,13 @@ axiosInstance.interceptors.response.use(
       
       switch (status) {
         case 401:
-          // Unauthorized - clear all data and redirect to login
+          // Unauthorized - only redirect if we have a token (to avoid redirect loops)
           console.error('Unauthorized access - Token may be invalid or expired');
-          // Use comprehensive logout helper to clear all data
-          if (typeof window !== 'undefined') {
-            // Import and use logoutHelper
+          const token = localStorage.getItem('token');
+          if (token && typeof window !== 'undefined') {
+            // Only redirect if we actually had a token
+            console.log('Token found, redirecting to login...');
+            // Use comprehensive logout helper to clear all data
             import('../utils/logoutHelper').then(({ logoutHelper }) => {
               logoutHelper();
             }).catch(() => {
@@ -91,6 +93,9 @@ axiosInstance.interceptors.response.use(
               localStorage.removeItem('token');
               window.location.href = '/';
             });
+          } else {
+            // No token found, just log the error but don't redirect
+            console.log('No token found, not redirecting to avoid loops');
           }
           break;
         case 403:

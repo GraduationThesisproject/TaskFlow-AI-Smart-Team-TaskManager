@@ -85,15 +85,24 @@ const emitSuccess = (socket, event, data, message = 'Success') => {
  * Handles real-time AI functionality including board generation, auto-completion, and suggestions
  */
 const aiSocket = (io) => {
+    console.log('🔌 Initializing AI Socket Handler...');
     const aiNamespace = io.of('/ai');
+    console.log('🔌 AI Namespace created:', aiNamespace.name);
     
     // Middleware for authentication
     aiNamespace.use(async (socket, next) => {
         try {
             const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
             
+            console.log('🔌 AI socket auth attempt:', {
+                hasToken: !!token,
+                tokenLength: token?.length,
+                authSource: socket.handshake.auth.token ? 'auth' : 'headers',
+                socketId: socket.id
+            });
             
             if (!token) {
+                console.log('❌ AI socket auth failed: No token provided');
                 return next(new Error('Authentication token required'));
             }
 
@@ -101,19 +110,23 @@ const aiSocket = (io) => {
             // Handle both 'userId' and 'id' fields in JWT payload
             const userId = decoded?.userId || decoded?.id;
             if (!decoded || !userId) {
+                console.log('❌ AI socket auth failed: Invalid token or no userId');
                 return next(new Error('Invalid token'));
             }
 
             // Verify user exists
             const user = await User.findById(userId);
             if (!user) {
+                console.log('❌ AI socket auth failed: User not found');
                 return next(new Error('User not found'));
             }
 
+            console.log('✅ AI socket auth successful:', { userId, userName: user.name });
             socket.userId = userId;
             socket.user = user;
             next();
         } catch (error) {
+            console.log('❌ AI socket auth error:', error.message);
             logger.error('AI socket authentication error:', error);
             next(new Error('Authentication failed'));
         }
@@ -121,7 +134,8 @@ const aiSocket = (io) => {
 
     // Connection handler
     aiNamespace.on('connection', async (socket) => {
-        logger.info(`AI socket connected: ${socket.id} (User: ${socket.userId})`);
+        logger.info(`🔌 AI socket connected: ${socket.id} (User: ${socket.userId})`);
+        console.log(`🔌 AI socket connected: ${socket.id} (User: ${socket.userId})`);
 
         // Join user to their personal room
         socket.join(`user_${socket.userId}`);
@@ -138,9 +152,17 @@ const aiSocket = (io) => {
          */
         socket.on('generate_board', async (data) => {
             try {
+                console.log('🔌 AI socket received generate_board event:', { 
+                    socketId: socket.id, 
+                    userId: socket.userId,
+                    prompt: data?.prompt?.substring(0, 50) + '...',
+                    hasOptions: !!data?.options
+                });
+                
                 const { prompt, options = {} } = data;
                 
                 if (!prompt || typeof prompt !== 'string') {
+                    console.log('❌ AI socket generate_board failed: Invalid prompt');
                     return emitError(socket, 'board_generation_error', 
                         new Error('Prompt is required'), 'Invalid prompt provided');
                 }

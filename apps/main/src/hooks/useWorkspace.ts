@@ -1,5 +1,8 @@
 import { useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
+import { useWorkspaceSocket } from '../contexts/SocketContext';
+import { handleRealTimeUpdate } from '../utils/realTimePersistence';
+import { useToast } from './useToast';
 import { 
   fetchWorkspaces,
   fetchWorkspace, 
@@ -13,6 +16,9 @@ import {
   updateWorkspaceSettings,
   uploadWorkspaceAvatar,
   removeWorkspaceAvatar,
+  updateMemberRole as updateMemberRoleAction,
+  transferOwnership as transferOwnershipAction,
+  removeMember as removeMemberAction,
   forceOwnerDev,
   setCurrentWorkspaceId,
   clearError,
@@ -71,6 +77,8 @@ interface UseWorkspaceReturn {
   // Member management
   inviteNewMember: (email: string, role: WorkspaceRole) => Promise<{ success: boolean; error?: unknown }>;
   removeWorkspaceMember: (memberId: string) => Promise<void>;
+  updateMemberRole: (memberId: string, role: string) => Promise<void>;
+  transferOwnership: (newOwnerId: string) => Promise<void>;
   getWorkspaceMembers: (id: string) => Promise<void>;
   
   // Invite link management
@@ -322,14 +330,34 @@ export const useWorkspace = (params?: UseWorkspaceParams | string): UseWorkspace
     if (!workspaceId) throw new Error('No workspace selected');
     
     try {
-      // This would need to be implemented in the service/slice
-      console.warn('removeWorkspaceMember not yet implemented');
-      throw new Error('Not implemented');
+      await dispatch(removeMemberAction({ workspaceId, memberId })).unwrap();
     } catch (error) {
       console.error('Failed to remove member:', error);
       throw error;
     }
-  }, [workspaceId]);
+  }, [dispatch, workspaceId]);
+
+  const updateMemberRole = useCallback(async (memberId: string, role: string) => {
+    if (!workspaceId) throw new Error('No workspace selected');
+    
+    try {
+      await dispatch(updateMemberRoleAction({ workspaceId, memberId, role })).unwrap();
+    } catch (error) {
+      console.error('Failed to update member role:', error);
+      throw error;
+    }
+  }, [dispatch, workspaceId]);
+
+  const transferOwnership = useCallback(async (newOwnerId: string) => {
+    if (!workspaceId) throw new Error('No workspace selected');
+    
+    try {
+      await dispatch(transferOwnershipAction({ workspaceId, newOwnerId })).unwrap();
+    } catch (error) {
+      console.error('Failed to transfer ownership:', error);
+      throw error;
+    }
+  }, [dispatch, workspaceId]);
 
   const getWorkspaceMembers = useCallback(async (id: string) => {
     try {
@@ -509,6 +537,222 @@ export const useWorkspace = (params?: UseWorkspaceParams | string): UseWorkspace
     }
   }, [autoFetch, workspaceId, currentWorkspace?._id, loading, isLoading]); // Remove function dependencies to prevent infinite loop
 
+  // Socket handling for real-time workspace updates
+  const workspaceSocket = useWorkspaceSocket();
+  const { success, warning } = useToast();
+  
+  // Test socket connection
+  useEffect(() => {
+    if (workspaceSocket?.socket) {
+      console.log('🔌 useWorkspace: Socket object available:', {
+        connected: workspaceSocket.socket.connected,
+        id: workspaceSocket.socket.id,
+        readyState: workspaceSocket.socket.readyState,
+        transport: workspaceSocket.socket.io?.engine?.transport?.name
+      });
+    }
+  }, [workspaceSocket?.socket]);
+  
+  // Create stable references to avoid dependency issues
+  const stableLoadWorkspace = useCallback((id: string) => {
+    dispatch(fetchWorkspace(id) as any);
+  }, [dispatch]);
+  
+  // Create stable reference for loading spaces
+  const stableLoadSpaces = useCallback((id: string) => {
+    // Import the spaces action dynamically to avoid circular dependency
+    import('../store/slices/spaceSlice').then(({ fetchSpacesByWorkspace }) => {
+      dispatch(fetchSpacesByWorkspace(id) as any);
+    });
+  }, [dispatch]);
+  
+  useEffect(() => {
+    console.log('🔌 useWorkspace: Setting up socket listeners', {
+      hasWorkspaceSocket: !!workspaceSocket,
+      workspaceId,
+      isConnected: workspaceSocket?.isConnected,
+      socketId: workspaceSocket?.socket?.id,
+      hasOnMethod: typeof workspaceSocket?.on === 'function',
+      hasEmitMethod: typeof workspaceSocket?.emit === 'function',
+      socketReadyState: workspaceSocket?.socket?.readyState,
+      socketConnected: workspaceSocket?.socket?.connected
+    });
+    
+    if (!workspaceSocket || !workspaceId) {
+      console.log('🔌 useWorkspace: Missing socket or workspaceId, skipping setup');
+      return;
+    }
+
+    if (typeof workspaceSocket.on !== 'function') {
+      console.error('🔌 useWorkspace: Socket does not have on method', workspaceSocket);
+      return;
+    }
+
+    // Wait for socket to be connected before joining room
+    if (!workspaceSocket.isConnected) {
+      console.log('🔌 useWorkspace: Socket not connected yet, waiting...');
+      return;
+    }
+
+    // Join workspace room when workspaceId changes
+    console.log('🔌 useWorkspace: Joining workspace room:', workspaceId);
+    try {
+      workspaceSocket.emit('join_workspace', workspaceId);
+      console.log('🔌 useWorkspace: Successfully emitted join_workspace event');
+      
+      // Test if socket is working by emitting a test event
+      workspaceSocket.emit('workspace_update', { test: true, workspaceId });
+      console.log('🔌 useWorkspace: Emitted test workspace_update event');
+    } catch (error) {
+      console.error('🔌 useWorkspace: Error joining workspace room:', error);
+    }
+
+    // Listen for workspace updated events
+    const handleWorkspaceUpdated = (data: any) => {
+      console.log('🔔 Workspace updated event received in hook:', data);
+      if (data.workspaceId === workspaceId) {
+        success(`Workspace updated by ${data.updatedBy?.name || 'Unknown'}`);
+        handleRealTimeUpdate(() => {
+          // Update Redux state with new workspace data
+          dispatch(updateWorkspace({ id: workspaceId, data: data.workspace }) as any);
+        }, 'Workspace Updated');
+      }
+    };
+
+    // Listen for space created events
+    const handleSpaceCreated = (data: any) => {
+      console.log('🔔 Space created event received in hook:', data);
+      if (data.workspaceId === workspaceId) {
+        success(`New space "${data.space?.name || 'Untitled'}" created by ${data.createdBy?.name || 'Unknown'}`);
+        handleRealTimeUpdate(() => {
+          // Refresh spaces data
+          stableLoadSpaces(workspaceId);
+        }, 'Space Created');
+      }
+    };
+
+    // Listen for space updated events (including archiving/unarchiving)
+    const handleSpaceUpdated = (data: any) => {
+      console.log('🔔 Space updated event received in hook:', data);
+      if (data.workspaceId === workspaceId) {
+        const spaceName = data.space?.name || 'Untitled';
+        const action = data.changes?.isArchived ? 
+          (data.changes.isArchived.new ? 'archived' : 'unarchived') : 
+          'updated';
+        success(`Space "${spaceName}" ${action} by ${data.updatedBy?.name || 'Unknown'}`);
+        
+        handleRealTimeUpdate(() => {
+          // Refresh spaces data to show updated space status
+          stableLoadSpaces(workspaceId);
+        }, 'Space Updated');
+      }
+    };
+
+    // Listen for member role changed events
+    const handleMemberRoleChanged = (data: any) => {
+      console.log('🔔 Member role changed event received in hook:', data);
+      if (data.workspaceId === workspaceId) {
+        success(`${data.memberName || 'Member'}'s role changed to ${data.newRole}`);
+        handleRealTimeUpdate(() => {
+          // Update Redux state immediately for real-time UI update
+          dispatch(updateMemberRoleAction({
+            memberId: data.memberId,
+            newRole: data.newRole,
+            workspaceId: data.workspaceId
+          }) as any);
+        }, 'Member Role Changed');
+      }
+    };
+
+    // Listen for member added events
+    const handleMemberAdded = (data: any) => {
+      console.log('🔔 Member added event received in hook:', data);
+      if (data.workspaceId === workspaceId) {
+        success(`${data.member?.name || 'New member'} joined the workspace!`);
+        handleRealTimeUpdate(() => {
+          // Refresh workspace data
+          stableLoadWorkspace(workspaceId);
+        }, 'Member Added');
+      }
+    };
+
+    // Listen for member removed events
+    const handleMemberRemoved = (data: any) => {
+      console.log('🔔 Member removed event received in hook:', data);
+      if (data.workspaceId === workspaceId) {
+        success(`${data.memberName || 'Member'} was removed from the workspace`);
+        handleRealTimeUpdate(() => {
+          // Refresh workspace data
+          stableLoadWorkspace(workspaceId);
+        }, 'Member Removed');
+      }
+    };
+
+    // Listen for ownership transferred events
+    const handleOwnershipTransferred = (data: any) => {
+      console.log('🔔 Ownership transferred event received in hook:', data);
+      if (data.workspaceId === workspaceId) {
+        success(`Ownership transferred to ${data.newOwner?.name || 'Unknown'}`);
+        handleRealTimeUpdate(() => {
+          // Refresh workspace data
+          stableLoadWorkspace(workspaceId);
+        }, 'Ownership Transferred');
+      }
+    };
+
+    // Register event listeners
+    console.log('🔌 useWorkspace: Registering event listeners');
+    try {
+      // Test listener to see if socket is working
+      workspaceSocket.on('workspace_update', (data: any) => {
+        console.log('🔔 Test workspace_update event received:', data);
+      });
+      
+      // Listen for workspace join confirmation
+      workspaceSocket.on('workspace_joined', (data: any) => {
+        console.log('🔔 Workspace join confirmation received:', data);
+      });
+      
+      workspaceSocket.on('workspace:updated', handleWorkspaceUpdated);
+      workspaceSocket.on('workspace:space_created', handleSpaceCreated);
+      workspaceSocket.on('workspace:space_updated', handleSpaceUpdated);
+      workspaceSocket.on('workspace:member_role_changed', handleMemberRoleChanged);
+      workspaceSocket.on('workspace:member_added', handleMemberAdded);
+      workspaceSocket.on('workspace:member_removed', handleMemberRemoved);
+      workspaceSocket.on('workspace:ownership_transferred', handleOwnershipTransferred);
+      
+      console.log('🔌 useWorkspace: All event listeners registered successfully');
+    } catch (error) {
+      console.error('🔌 useWorkspace: Error registering event listeners:', error);
+    }
+    
+    // Debug: Log socket connection status
+    console.log('🔌 useWorkspace: Socket connection status', {
+      isConnected: workspaceSocket.isConnected,
+      hasSocket: !!workspaceSocket.socket,
+      socketId: workspaceSocket.socket?.id
+    });
+
+    // Cleanup
+    return () => {
+      console.log('🔌 useWorkspace: Cleaning up socket listeners for workspace:', workspaceId);
+      try {
+        workspaceSocket.off('workspace_update');
+        workspaceSocket.off('workspace_joined');
+        workspaceSocket.off('workspace:updated', handleWorkspaceUpdated);
+        workspaceSocket.off('workspace:space_created', handleSpaceCreated);
+        workspaceSocket.off('workspace:space_updated', handleSpaceUpdated);
+        workspaceSocket.off('workspace:member_role_changed', handleMemberRoleChanged);
+        workspaceSocket.off('workspace:member_added', handleMemberAdded);
+        workspaceSocket.off('workspace:member_removed', handleMemberRemoved);
+        workspaceSocket.off('workspace:ownership_transferred', handleOwnershipTransferred);
+        workspaceSocket.emit('leave_workspace', workspaceId);
+      } catch (error) {
+        console.error('🔌 useWorkspace: Error during cleanup:', error);
+      }
+    };
+  }, [workspaceId, dispatch, success, warning, stableLoadWorkspace, workspaceSocket?.isConnected]);
+
   return {
     // State
     workspaces,
@@ -544,6 +788,8 @@ export const useWorkspace = (params?: UseWorkspaceParams | string): UseWorkspace
     // Member management
     inviteNewMember,
     removeWorkspaceMember,
+    updateMemberRole,
+    transferOwnership,
     getWorkspaceMembers,
     
     // Invite link management

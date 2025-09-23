@@ -405,18 +405,24 @@ class InvitationService {
             await invitation.save();
 
             // Create notification for inviter
-            await NotificationService.createNotification({
-                title: `Invitation declined: ${invitation.targetEntity.name}`,
-                message: `${user.name} declined your invitation to join ${invitation.targetEntity.name}`,
-                type: 'invitation_declined',
-                recipient: invitation.invitedBy,
-                sender: userId,
-                relatedEntity: {
-                    entityType: invitation.targetEntity.type.toLowerCase(),
-                    entityId: invitation.targetEntity.id
-                },
-                deliveryMethods: { inApp: true }
-            });
+            try {
+                await NotificationService.createNotification({
+                    title: `Invitation declined: ${invitation.targetEntity.name}`,
+                    message: `${user.name} declined your invitation to join ${invitation.targetEntity.name}`,
+                    type: 'invitation_declined',
+                    recipient: invitation.invitedBy,
+                    sender: userId,
+                    relatedEntity: {
+                        entityType: invitation.targetEntity.type.toLowerCase(),
+                        entityId: invitation.targetEntity.id
+                    },
+                    deliveryMethods: { inApp: true }
+                });
+                console.log('Notification created for declined invitation');
+            } catch (notifyError) {
+                console.error('Failed to create notification for declined invitation:', notifyError);
+                // Don't fail the entire operation if notification fails
+            }
 
             return invitation;
 
@@ -437,7 +443,10 @@ class InvitationService {
             }
 
             const query = {
-                'invitedUser.email': user.email,
+                $or: [
+                    { 'invitedUser.email': user.email },
+                    { 'invitedBy': userId }
+                ],
                 status
             };
 

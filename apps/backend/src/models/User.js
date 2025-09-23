@@ -193,6 +193,12 @@ const userSchema = new mongoose.Schema({
     default: []
   }],
   
+  // Google OAuth Integration
+  googleId: {
+    type: String,
+    default: null
+  },
+  
   // Metadata and audit trail
   metadata: {
     type: Map,

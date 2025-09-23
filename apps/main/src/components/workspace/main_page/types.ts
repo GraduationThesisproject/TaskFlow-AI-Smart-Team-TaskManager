@@ -36,6 +36,8 @@ export interface SpaceTableProps {
   onUnarchive?: (spaceId: string) => Promise<void>;
   onPermanentDelete?: (spaceId: string) => Promise<void>;
   showArchiveActions?: boolean;
+  canEditSpace?: (space: Space) => boolean;
+  canViewSpace?: (space: Space) => boolean;
   onSpaceClick?: (space: Space) => void;
   viewMode?: 'cards' | 'list' | 'list-detail';
 }
@@ -51,11 +53,8 @@ export interface ConfirmRemoveMemberDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (password: string) => Promise<void>;
-  member: {
-    id: string;
-    role: string;
-    name: string;
-  } | null;
+  memberName: string;
+  isOwner?: boolean;
 }
 
 export interface InviteSectionProps {
