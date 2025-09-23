@@ -391,6 +391,16 @@ function SpaceBoardsScreenContent() {
   const handleCreateSpace = useCallback(async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
     if (!space?.workspace) return;
     
+    // Check plan limits for space creation
+    const { canCreateSpace } = await import('@/utils/planLimits');
+    const currentSpacesCount = spaces?.length || 0;
+    const canCreateMoreSpaces = canCreateSpace(user, currentSpacesCount);
+    
+    if (!canCreateMoreSpaces) {
+      showBannerError('You\'ve reached your limit of 5 spaces per workspace. Upgrade to Premium for unlimited spaces.');
+      return;
+    }
+    
     try {
       setCreatingSpace(true);
       const workspaceId = space.workspace;
@@ -426,6 +436,16 @@ function SpaceBoardsScreenContent() {
     visibility: 'private' | 'public' 
   }) => {
     if (!space?._id) return;
+    
+    // Check plan limits for board creation
+    const { canCreateBoard } = await import('@/utils/planLimits');
+    const currentBoardsCount = boards?.length || 0;
+    const canCreateMoreBoards = canCreateBoard(user, currentBoardsCount);
+    
+    if (!canCreateMoreBoards) {
+      showBannerError('You\'ve reached your limit of 10 boards per space. Upgrade to Premium for unlimited boards.');
+      return;
+    }
     
     try {
       setCreating(true);

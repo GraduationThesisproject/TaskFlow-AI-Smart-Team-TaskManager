@@ -275,8 +275,12 @@ function WorkspaceScreenContent() {
 
   const handleSubmitCreate = useCallback(async ({ name, description, visibility }: { name: string; description?: string; visibility: 'private' | 'public' }) => {
     if (!workspaceId) return;
-    const MAX_SPACES = 5;
-    const canCreateMoreSpaces = (processedSpaces?.length || 0) < MAX_SPACES;
+    
+    // Check plan limits
+    const { canCreateSpace } = await import('@/utils/planLimits');
+    const currentSpacesCount = processedSpaces?.length || 0;
+    const canCreateMoreSpaces = canCreateSpace(user, currentSpacesCount);
+    
     if (!canCreateMoreSpaces) {
       setShowPremiumSpaceModal(true);
       return;

@@ -223,8 +223,29 @@ export class AuthService {
     }
   }
 
-//------------------- Secure Profile & Preferences -------------------
+//------------------- Basic Profile Update (No Password Required) -------------------
 static async updateProfile({
+  name,
+  avatar,
+}: {
+  name?: string;
+  avatar?: File | null;
+}) {
+  const formData = new FormData();
+
+  if (name) formData.append('name', name);
+  if (avatar) formData.append('avatar', avatar);
+
+  const response = await axiosInstance.put('/auth/profile', formData, {
+    withCredentials: true,
+    timeout: 30000,
+    validateStatus: (status) => status < 500,
+  });
+  return response.data;
+}
+
+//------------------- Secure Profile Update (Password Required) -------------------
+static async updateProfileSecure({
   name,
   currentPassword,
   avatar,
