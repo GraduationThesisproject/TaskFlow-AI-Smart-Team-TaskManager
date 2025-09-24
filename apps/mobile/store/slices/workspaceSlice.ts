@@ -360,7 +360,7 @@ const workspaceSlice = createSlice({
         const invitedEmail = inv?.invitedUser?.email || inv?.email || null;
         const invitedUserId = inv?.invitedUser?.userId ? String(inv.invitedUser.userId) : null;
         if (invitedUserId && memberIds.has(invitedUserId)) return false;
-        if (invitedEmail && memberEmails.has(invitedEmail)) return false;
+        if (invitedEmail && memberEmails .has(invitedEmail)) return false;
         return true;
       });
     },

@@ -14,7 +14,7 @@ export default function AnalyticsScreen() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: analytics, loading, error } = useAppSelector(state => state.analytics);
+  const { data: analytics, loading, error } = useAppSelector((state: any) => state.analytics);
   const { workspaces, currentWorkspaceId } = useAppSelector(state => state.workspace);
 
   useEffect(() => {
@@ -153,19 +153,19 @@ export default function AnalyticsScreen() {
                 <View style={styles.metricRow}>
                   <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Average Completion Time</Text>
                   <Text style={[TextStyles.body.medium, { color: colors.primary }]}>
-                    {analytics?.performanceMetrics?.averageCompletionTime || 'N/A'}
+                    {(analytics as any)?.performanceMetrics?.averageCompletionTime || 'N/A'}
                   </Text>
                 </View>
                 <View style={styles.metricRow}>
                   <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Productivity Score</Text>
                   <Text style={[TextStyles.body.medium, { color: colors.primary }]}>
-                    {analytics?.performanceMetrics?.productivityScore || 'N/A'}
+                    {(analytics as any)?.performanceMetrics?.productivityScore || 'N/A'}
                   </Text>
                 </View>
                 <View style={styles.metricRow}>
                   <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Team Efficiency</Text>
                   <Text style={[TextStyles.body.medium, { color: colors.primary }]}>
-                    {analytics?.performanceMetrics?.teamEfficiency || 'N/A'}
+                    {(analytics as any)?.performanceMetrics?.teamEfficiency || 'N/A'}
                   </Text>
                 </View>
               </View>
@@ -175,7 +175,7 @@ export default function AnalyticsScreen() {
             <Card style={[styles.activityCard, { backgroundColor: colors.card }]}>
               <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>Recent Activity</Text>
               <View style={styles.activityList}>
-                {analytics?.recentActivity?.map((activity, index) => (
+                {(analytics as any)?.recentActivity?.map((activity: any, index: number) => (
                   <View key={index} style={styles.activityItem}>
                     <FontAwesome name="circle" size={8} color={colors.primary} />
                     <Text style={[TextStyles.body.small, { color: colors.foreground }]}>

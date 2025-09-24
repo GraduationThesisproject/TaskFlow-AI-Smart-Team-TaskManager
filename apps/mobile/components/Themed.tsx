@@ -4,10 +4,9 @@
  */
 
 import React from 'react';
-import { Text as DefaultText, View as DefaultView, TextInput as DefaultTextInput, ScrollView as DefaultScrollView, TouchableOpacity } from 'react-native';
+import { Text as DefaultText, View as DefaultView, TextInput as DefaultTextInput, ScrollView as DefaultScrollView, TouchableOpacity, type TouchableOpacityProps } from 'react-native';
 import { useTheme, useThemeColors } from './ThemeProvider';
 import { ThemeColors } from '@/constants/Colors';
-
 type ThemeProps = {
   lightColor?: string;
   darkColor?: string;
@@ -134,8 +133,10 @@ export function Card(props: ViewProps) {
 /**
  * Button component with themed styling
  */
-export function Button(props: ViewProps & { variant?: 'primary' | 'secondary' | 'destructive'; disabled?: boolean; onPress?: () => void }) {
-  const { style, variant = 'primary', ...otherProps } = props;
+type ThemedButtonProps = TouchableOpacityProps & ThemeProps & { variant?: 'primary' | 'secondary' | 'destructive' };
+
+export function Button(props: ThemedButtonProps) {
+  const { style, lightColor, darkColor, colorKey, variant = 'primary', ...touchableProps } = props;
   const colors = useThemeColors();
   
   const getButtonColors = () => {
@@ -166,7 +167,7 @@ export function Button(props: ViewProps & { variant?: 'primary' | 'secondary' | 
   const buttonColors = getButtonColors();
   
   return (
-    <TouchableOpacity 
+    <TouchableOpacity  
       style={[
         {
           backgroundColor: buttonColors.backgroundColor,
@@ -175,12 +176,12 @@ export function Button(props: ViewProps & { variant?: 'primary' | 'secondary' | 
           paddingVertical: 12,
           alignItems: 'center',
           justifyContent: 'center',
-          opacity: otherProps.disabled ? 0.6 : 1,
+          opacity: touchableProps.disabled ? 0.6 : 1,
         },
         style
       ]} 
-      disabled={otherProps.disabled}
-      {...otherProps} 
+      disabled={touchableProps.disabled}
+      {...touchableProps} 
     />
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, TextInput } from 'react-native';
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
@@ -19,7 +19,22 @@ export default function WorkspacesScreen() {
   const [isCreating, setIsCreating] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
 
-  const { workspaces, loading, error } = useAppSelector(state => state.workspace);
+  const { workspaces: rawWorkspaces, loading, error } = useAppSelector(state => state.workspace);
+
+  // Deduplicate workspaces by id to avoid duplicate renders
+  const workspaces = useMemo(() => {
+    if (!Array.isArray(rawWorkspaces)) return [];
+    
+    const seen = new Set<string>();
+    const uniqueWorkspaces: any[] = [];
+    for (const workspace of rawWorkspaces) {
+      const id = String((workspace as any)?._id || (workspace as any)?.id || '');
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      uniqueWorkspaces.push(workspace);
+    }
+    return uniqueWorkspaces;
+  }, [rawWorkspaces]);
 
   useEffect(() => {
     loadWorkspaces();

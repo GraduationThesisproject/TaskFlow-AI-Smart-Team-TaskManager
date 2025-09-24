@@ -23,6 +23,7 @@ import notificationReducer from './slices/notificationSlice';
 import templatesReducer from './slices/templatesSlice';
 import analyticsReducer from './slices/analyticsSlice';
 import permissionReducer from './slices/permissionSlice';
+import dragBoardReducer from './slices/dragBoardSlice';
 
 const rootReducer = combineReducers({
   app: appReducer,
@@ -37,6 +38,7 @@ const rootReducer = combineReducers({
   templates: templatesReducer,
   analytics: analyticsReducer,
   permissions: permissionReducer,
+  dragBoard: dragBoardReducer,
 });
 
 const persistConfig = {
@@ -86,15 +88,6 @@ export const store = configureStore({
 });
 
 export const persistor = persistStore(store);
-
-// Listen for rehydration completion to handle archived workspace persistence
-persistor.subscribe(() => {
-  const state = persistor.getState();
-  if (state.bootstrapped) {
-    // Dispatch rehydration handler to preserve archived workspace status
-    store.dispatch({ type: 'workspace/handleRehydration' });
-  }
-});
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
