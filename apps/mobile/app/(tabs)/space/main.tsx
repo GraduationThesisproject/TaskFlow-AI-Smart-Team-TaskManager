@@ -515,7 +515,19 @@ function SpaceMainScreenContent() {
     visibility: 'private' | 'public' 
   }) => {
     if (!space?._id) return;
-    
+    // Enforce free plan limit: max 10 boards per space
+    try {
+      const MAX_BOARDS = 10;
+      const currentBoardsCount = Array.isArray(boardsFromHook) && boardsFromHook.length > 0
+        ? boardsFromHook.length
+        : (Array.isArray(boards) ? boards.length : 0);
+      if (currentBoardsCount >= MAX_BOARDS) {
+        showBannerWarning('Free plan limit reached (10 boards). Upgrade to create more.');
+        router.push('/(tabs)/settings?section=upgrade');
+        return;
+      }
+    } catch {}
+
     try {
       setCreating(true);
       const spaceId = space._id;
