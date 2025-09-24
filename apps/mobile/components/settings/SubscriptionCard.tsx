@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { Text, View, Card } from '@/components/Themed';
+import { StyleSheet, ScrollView, TouchableOpacity, Alert, Linking, ActivityIndicator } from 'react-native';
+import { Text, View } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAuth } from '@/hooks/useAuth';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { SubscriptionService } from '@/services/subscriptionService';
 
 const SubscriptionCard: React.FC = () => {
   const colors = useThemeColors();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annually">("monthly");
+  const [isProcessing, setIsProcessing] = useState(false);
   const { user } = useAuth();
 
   // Get user's current plan from subscription data
@@ -20,103 +21,168 @@ const SubscriptionCard: React.FC = () => {
   };
 
   const currentUserPlan = getCurrentUserPlan();
+  const plans = SubscriptionService.getSubscriptionPlans(billingCycle);
 
-  // Base monthly prices
-  const basePlans = [
-    {
-      key: "free",
-      name: "Free",
-      monthlyPrice: 0,
-      desc: "For individuals or small teams looking to keep work organized.",
-      cta: "Current",
-      ctaVariant: "secondary" as const,
-      highlighted: false,
-    },
-    {
-      key: "standard",
-      name: "Standard",
-      monthlyPrice: 5,
-      desc: "Get more done with unlimited boards, card mirroring, and more automation.",
-      cta: "Upgrade",
-      ctaVariant: "default" as const,
-      highlighted: false,
-    },
-    {
-      key: "premium",
-      name: "Premium",
-      monthlyPrice: 10,
-      desc: "Add AI to your boards and admin controls to your toolkit. Plus, get more perspective with views.",
-      cta: "Upgrade",
-      ctaVariant: "default" as const,
-      highlighted: true,
-    },
-    {
-      key: "enterprise",
-      name: "Enterprise",
-      monthlyPrice: 17.5,
-      desc: "Add enterprise‑grade security and controls to your toolkit.",
-      cta: "Contact Sales",
-      ctaVariant: "accent" as const,
-      highlighted: false,
-    },
-  ];
+  // Enhanced plans with calculated pricing
+  const enhancedPlans = plans.map(plan => {
+    const price = SubscriptionService.calculatePrice(plan.monthlyPrice, billingCycle);
+    const period = SubscriptionService.getPeriodText(plan.key, billingCycle);
+    const annualSavings = SubscriptionService.getAnnualSavings(plan.monthlyPrice, billingCycle);
+    const isCurrent = plan.key === currentUserPlan;
 
-  // Calculate dynamic pricing based on billing cycle
-  const calculatePrice = (monthlyPrice: number) => {
-    if (billingCycle === "annually") {
-      const annualPrice = monthlyPrice * 12 * 0.83; // 17% discount
-      return annualPrice;
-    }
-    return monthlyPrice;
-  };
+    return {
+      ...plan,
+      price: SubscriptionService.formatPrice(price),
+      period,
+      annualSavings,
+      isCurrent,
+    };
+  });
 
-  const formatPrice = (price: number) => {
-    if (price === 0) return "$0 USD";
-    return `$${price.toFixed(2)} USD`;
-  };
-
-  const getPeriodText = (planKey: string) => {
-    if (planKey === "free") return "";
-    if (billingCycle === "monthly") {
-      return "per user/month";
-    } else {
-      return "per user/year (billed annually)";
-    }
-  };
-
-  // Generate plans with dynamic pricing
-  const plans = basePlans.map(plan => ({
-    ...plan,
-    price: formatPrice(calculatePrice(plan.monthlyPrice)),
-    period: getPeriodText(plan.key),
-    annualSavings: billingCycle === "annually" && plan.monthlyPrice > 0 
-      ? `Save $${(plan.monthlyPrice * 12 * 0.17).toFixed(2)}/year`
-      : null,
-    isCurrent: plan.key === currentUserPlan
-  }));
-
-  const handlePlanAction = (plan: any) => {
-    if (plan.key === "free") return;
+  const handlePlanAction = async (plan: any) => {
+    if (plan.key === 'free') return;
     
-    if (plan.cta === "Contact Sales") {
-      Alert.alert(
-        'Contact Sales',
-        'Please email sales@taskflow.com for enterprise plan inquiries.',
-        [{ text: 'OK' }]
-      );
-    } else {
-      Alert.alert(
-        'Upgrade Plan',
-        `Upgrade to ${plan.name} plan for ${plan.price} ${plan.period}`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => {
-            // In a real implementation, this would integrate with payment processing
-            Alert.alert('Payment', 'Payment integration would be implemented here');
-          }}
-        ]
-      );
+    if (plan.cta === 'Contact Sales') {
+      // Open email client for enterprise inquiries
+      const emailUrl = `mailto:sales@taskflow.com?subject=Enterprise Plan Inquiry&body=Hello, I'm interested in learning more about the Enterprise plan for TaskFlow.`;
+      try {
+        await Linking.openURL(emailUrl);
+      } catch (error) {
+        Alert.alert('Error', 'Could not open email client');
+      }
+      return;
     }
+
+    // Handle payment for standard/premium plans
+    setIsProcessing(true);
+    try {
+      const paymentBody = SubscriptionService.generatePaymentBody(plan, billingCycle);
+      const session = await SubscriptionService.createCheckoutSession(paymentBody);
+      
+      // Open Stripe checkout in browser
+      await Linking.openURL(session.url);
+      
+    } catch (error: any) {
+      Alert.alert('Payment Error', error.message || 'Failed to process payment');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const PlanCard: React.FC<{ plan: any }> = ({ plan }) => {
+    const isHighlighted = plan.highlighted;
+    const isCurrent = plan.isCurrent;
+
+    return (
+      <TouchableOpacity
+        style={{
+          backgroundColor: isHighlighted ? colors.primary : colors.card,
+          borderWidth: 1,
+          borderColor: isHighlighted ? colors.primary : colors.border,
+          borderRadius: 12,
+          padding: 16,
+          marginBottom: 12,
+          shadowColor: isHighlighted ? colors.primary : colors.shadow,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isHighlighted ? 0.3 : 0.1,
+          shadowRadius: 4,
+          elevation: isHighlighted ? 6 : 2,
+        }}
+        onPress={() => handlePlanAction(plan)}
+        disabled={plan.key === 'free' || isProcessing}
+      >
+        {/* Plan Header */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <Text style={[
+            TextStyles.heading.h3,
+            { color: isHighlighted ? colors.onPrimary : colors.foreground }
+          ]}>
+            {plan.name}
+          </Text>
+          {isCurrent && (
+            <View style={{
+              backgroundColor: colors.accent,
+              paddingHorizontal: 8,
+              paddingVertical: 4,
+              borderRadius: 12,
+            }}>
+              <Text style={[TextStyles.body.small, { color: colors.onAccent }]}>
+                Current
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Price */}
+        <View style={{ marginBottom: 8 }}>
+          <Text style={[
+            TextStyles.heading.h1,
+            { 
+              color: isHighlighted ? colors.onPrimary : colors.foreground,
+              fontSize: 28,
+              fontWeight: 'bold'
+            }
+          ]}>
+            {plan.price}
+          </Text>
+          {plan.period && (
+            <Text style={[
+              TextStyles.body.small,
+              { color: isHighlighted ? colors.onPrimary : colors['muted-foreground'], opacity: 0.8 }
+            ]}>
+              {plan.period}
+            </Text>
+          )}
+          {plan.annualSavings && (
+            <Text style={[
+              TextStyles.body.small,
+              { color: isHighlighted ? '#4ade80' : colors.success }
+            ]}>
+              {plan.annualSavings}
+            </Text>
+          )}
+        </View>
+
+        {/* Description */}
+        <Text style={[
+          TextStyles.body.medium,
+          { 
+            color: isHighlighted ? colors.onPrimary : colors['muted-foreground'],
+            marginBottom: 16,
+            lineHeight: 20
+          }
+        ]}>
+          {plan.desc}
+        </Text>
+
+        {/* CTA Button */}
+        {plan.key !== 'free' && (
+          <TouchableOpacity
+            style={{
+              backgroundColor: isHighlighted ? colors.onPrimary : colors.primary,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 8,
+              alignItems: 'center',
+              opacity: isProcessing ? 0.6 : 1,
+            }}
+            onPress={() => handlePlanAction(plan)}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <ActivityIndicator size="small" color={isHighlighted ? colors.primary : colors.onPrimary} />
+            ) : (
+              <Text style={[
+                TextStyles.body.medium,
+                { color: isHighlighted ? colors.primary : colors.onPrimary, fontWeight: '600' }
+              ]}>
+                {plan.cta}
+              </Text>
+            )}
+          </TouchableOpacity>
+        )}
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -171,7 +237,7 @@ const SubscriptionCard: React.FC = () => {
             </TouchableOpacity>
           </View>
           <View style={[styles.savingsBadge, { backgroundColor: colors.accent }]}>
-            <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'] }]}>
+            <Text style={[TextStyles.body.small, { color: colors.onAccent }]}>
               Save 17%
             </Text>
           </View>
@@ -180,157 +246,78 @@ const SubscriptionCard: React.FC = () => {
 
       {/* Plans */}
       <View style={styles.plansContainer}>
-        {plans.map((plan) => (
-          <Card 
-            key={plan.key} 
-            style={[
-              styles.planCard,
-              {
-                backgroundColor: plan.highlighted ? colors.primary : colors.card,
-                borderColor: plan.highlighted ? colors.primary : colors.border,
-              }
-            ]}
-          >
-            <View style={styles.planHeader}>
-              <Text style={[
-                TextStyles.heading.h3,
-                { 
-                  color: plan.highlighted ? colors['primary-foreground'] : colors.foreground,
-                  fontWeight: 'bold'
-                }
-              ]}>
-                {plan.name}
-              </Text>
-              {plan.isCurrent && (
-                <View style={[styles.currentBadge, { backgroundColor: colors.accent }]}>
-                  <Text style={[TextStyles.caption.small, { color: colors['primary-foreground'] }]}>
-                    Current
-                  </Text>
-                </View>
-              )}
-            </View>
-            
-            <View style={styles.planPricing}>
-              <Text style={[
-                TextStyles.heading.h2,
-                { 
-                  color: plan.highlighted ? colors['primary-foreground'] : colors.foreground,
-                  fontWeight: 'bold'
-                }
-              ]}>
-                {plan.price}
-              </Text>
-              {plan.period && (
-                <Text style={[
-                  TextStyles.caption.small,
-                  { color: plan.highlighted ? colors['primary-foreground'] + 'CC' : colors['muted-foreground'] }
-                ]}>
-                  {plan.period}
-                </Text>
-              )}
-              {plan.annualSavings && (
-                <Text style={[
-                  TextStyles.caption.small,
-                  { color: plan.highlighted ? '#90EE90' : colors.success }
-                ]}>
-                  {plan.annualSavings}
-                </Text>
-              )}
-            </View>
-            
-            <Text style={[
-              TextStyles.body.small,
-              { 
-                color: plan.highlighted ? colors['primary-foreground'] + 'CC' : colors['muted-foreground'],
-                textAlign: 'center',
-                marginBottom: 16
-              }
-            ]}>
-              {plan.desc}
-            </Text>
-            
-            {plan.key !== "free" && (
-              <TouchableOpacity
-                style={[
-                  styles.upgradeButton,
-                  {
-                    backgroundColor: plan.highlighted 
-                      ? colors['primary-foreground'] 
-                      : plan.ctaVariant === 'accent' 
-                        ? colors.accent 
-                        : colors.primary,
-                  }
-                ]}
-                onPress={() => handlePlanAction(plan)}
-              >
-                <Text style={[
-                  TextStyles.body.medium,
-                  { 
-                    color: plan.highlighted 
-                      ? colors.primary 
-                      : colors['primary-foreground'],
-                    fontWeight: '600'
-                  }
-                ]}>
-                  {plan.cta}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </Card>
+        {enhancedPlans.map((plan) => (
+          <PlanCard key={plan.key} plan={plan} />
         ))}
       </View>
 
       {/* Features Comparison */}
-      <Card style={styles.featuresCard}>
-        <Text style={[TextStyles.body.medium, { color: colors.foreground, fontWeight: '600', marginBottom: 16 }]}>
+      <View style={styles.featuresContainer}>
+        <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 16 }]}>
           Features Comparison
         </Text>
         
-        <View style={styles.featuresTable}>
-          {/* Header */}
-          <View style={styles.tableHeader}>
-            <Text style={[TextStyles.body.small, { color: colors.foreground, fontWeight: '600', flex: 2 }]}>
-              FEATURES
-            </Text>
-            {plans.map((plan) => (
-              <Text key={plan.key} style={[TextStyles.body.small, { color: colors.foreground, fontWeight: '600', flex: 1, textAlign: 'center' }]}>
-                {plan.name}
+        <View style={[styles.featuresTable, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {/* Header Row */}
+          <View style={[styles.tableHeader, { backgroundColor: colors.muted }]}>
+            <View style={{ flex: 2 }}>
+              <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], fontWeight: '600' }]}>
+                FEATURES
               </Text>
+            </View>
+            {enhancedPlans.map((plan) => (
+              <View key={plan.key} style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={[TextStyles.body.small, { color: colors.foreground, fontWeight: '600' }]}>
+                  {plan.name}
+                </Text>
+              </View>
             ))}
           </View>
-          
-          {/* Features */}
+
+          {/* Feature Rows */}
           {[
-            { label: "Unlimited cards", values: [true, true, true, true] },
-            { label: "Boards per Workspace", values: ["Up to 10", "∞", "∞", "∞"] },
-            { label: "Storage", values: ["10MB/file", "250MB/file", "250MB/file", "∞"] },
-            { label: "Workspace command runs", values: ["250/month", "1,000/month", "∞", "∞"] },
-            { label: "Advanced checklists", values: [false, true, true, true] },
-            { label: "Calendar, Timeline, Table, Dashboard", values: [false, false, true, true] },
-          ].map((feature, index) => (
-            <View key={index} style={styles.tableRow}>
-              <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], flex: 2 }]}>
-                {feature.label}
-              </Text>
-              {feature.values.map((value, idx) => (
-                <View key={idx} style={styles.tableCell}>
-                  {typeof value === "boolean" ? (
+            { label: 'Boards per Workspace', values: ['Up to 10', '∞', '∞', '∞'] },
+            { label: 'Storage', values: ['10MB/file', '250MB/file', '250MB/file', '∞'] },
+            { label: 'Workspace command runs', values: ['250/month', '1,000/month', '∞', '∞'] },
+            { label: 'Advanced checklists', values: [false, true, true, true] },
+            { label: 'Calendar, Timeline, Table views', values: [false, false, true, true] },
+          ].map((feature, featureIndex) => (
+            <View
+              key={featureIndex}
+              style={[styles.tableRow, { borderTopColor: colors.border }]}
+            >
+              <View style={{ flex: 2 }}>
+                <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>
+                  {feature.label}
+                </Text>
+              </View>
+              {feature.values.map((value, valueIndex) => (
+                <View key={valueIndex} style={{ flex: 1, alignItems: 'center' }}>
+                  {typeof value === 'boolean' ? (
                     value ? (
-                      <FontAwesome name="check" size={16} color={colors.accent} />
+                      <Text style={[TextStyles.body.medium, { color: colors.accent, fontSize: 18 }]}>✓</Text>
                     ) : (
-                      <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>—</Text>
+                      <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>—</Text>
                     )
-                  ) : value === "∞" ? (
-                    <Text style={[TextStyles.body.small, { color: colors.accent }]}>{value}</Text>
+                  ) : value === '∞' ? (
+                    <Text style={[TextStyles.body.medium, { color: colors.accent }]}>∞</Text>
                   ) : (
-                    <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>{value}</Text>
+                    <Text style={[TextStyles.body.medium, { color: colors['muted-foreground'] }]}>{value}</Text>
                   )}
                 </View>
               ))}
             </View>
           ))}
         </View>
-      </Card>
+      </View>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], textAlign: 'center', lineHeight: 18 }]}>
+          All plans include 14-day free trial. No credit card required to start.{'\n'}
+          You can upgrade or downgrade your plan at any time.
+        </Text>
+      </View>
     </ScrollView>
   );
 };
@@ -338,89 +325,63 @@ const SubscriptionCard: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: 'transparent',
   },
   header: {
-    marginBottom: 24,
+    padding: 16,
+    paddingBottom: 8,
   },
   billingToggle: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 16,
     gap: 12,
-    marginTop: 12,
   },
   toggleContainer: {
     flexDirection: 'row',
     borderRadius: 12,
+    padding: 4,
     borderWidth: 1,
-    padding: 2,
   },
   toggleButton: {
-    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: 'center',
   },
   savingsBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   plansContainer: {
-    gap: 16,
-    marginBottom: 24,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
-  planCard: {
-    padding: 20,
-    borderRadius: 12,
-    borderWidth: 2,
-    alignItems: 'center',
-  },
-  planHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  currentBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  planPricing: {
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 4,
-  },
-  upgradeButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    width: '100%',
-    alignItems: 'center',
-  },
-  featuresCard: {
-    padding: 20,
-    borderRadius: 12,
+  featuresContainer: {
+    padding: 16,
+    paddingTop: 0,
   },
   featuresTable: {
-    gap: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   tableHeader: {
     flexDirection: 'row',
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    paddingHorizontal: 16,
   },
   tableRow: {
     flexDirection: 'row',
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
   },
-  tableCell: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  footer: {
+    padding: 16,
+    paddingBottom: 32,
   },
 });
 

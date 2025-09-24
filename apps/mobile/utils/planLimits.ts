@@ -2,8 +2,6 @@
  * Utility functions for enforcing free plan limits
  */
 
-import { useAuth } from '@/hooks/useAuth';
-
 // Free plan limits
 export const FREE_PLAN_LIMITS = {
   MAX_SPACES_PER_WORKSPACE: 5,
@@ -11,6 +9,15 @@ export const FREE_PLAN_LIMITS = {
   MAX_MEMBERS_PER_WORKSPACE: 10,
   MAX_FILE_SIZE_MB: 10,
   MAX_COMMAND_RUNS_PER_MONTH: 250,
+} as const;
+
+// Standard plan limits
+export const STANDARD_PLAN_LIMITS = {
+  MAX_SPACES_PER_WORKSPACE: Infinity,
+  MAX_BOARDS_PER_SPACE: Infinity,
+  MAX_MEMBERS_PER_WORKSPACE: 25,
+  MAX_FILE_SIZE_MB: 250,
+  MAX_COMMAND_RUNS_PER_MONTH: 1000,
 } as const;
 
 // Premium plan limits (unlimited)
@@ -22,6 +29,15 @@ export const PREMIUM_PLAN_LIMITS = {
   MAX_COMMAND_RUNS_PER_MONTH: Infinity,
 } as const;
 
+// Enterprise plan limits (unlimited)
+export const ENTERPRISE_PLAN_LIMITS = {
+  MAX_SPACES_PER_WORKSPACE: Infinity,
+  MAX_BOARDS_PER_SPACE: Infinity,
+  MAX_MEMBERS_PER_WORKSPACE: Infinity,
+  MAX_FILE_SIZE_MB: Infinity,
+  MAX_COMMAND_RUNS_PER_MONTH: Infinity,
+} as const;
+
 /**
  * Get user's current plan limits
  */
@@ -29,11 +45,20 @@ export const getUserPlanLimits = (user: any) => {
   const plan = user?.subscription?.plan?.toLowerCase() || 'free';
   const isActiveSubscription = user?.subscription?.status === 'active';
   
-  if (plan !== 'free' && isActiveSubscription) {
-    return PREMIUM_PLAN_LIMITS;
+  if (!isActiveSubscription) {
+    return FREE_PLAN_LIMITS;
   }
-  
-  return FREE_PLAN_LIMITS;
+
+  switch (plan) {
+    case 'standard':
+      return STANDARD_PLAN_LIMITS;
+    case 'premium':
+      return PREMIUM_PLAN_LIMITS;
+    case 'enterprise':
+      return ENTERPRISE_PLAN_LIMITS;
+    default:
+      return FREE_PLAN_LIMITS;
+  }
 };
 
 /**
@@ -80,6 +105,31 @@ export const getUpgradeMessage = (limitType: keyof typeof FREE_PLAN_LIMITS): str
     default:
       return 'Upgrade to Premium for unlimited access to this feature.';
   }
+};
+
+/**
+ * Get plan display name
+ */
+export const getPlanDisplayName = (plan: string): string => {
+  switch (plan?.toLowerCase()) {
+    case 'standard':
+      return 'Standard';
+    case 'premium':
+      return 'Premium';
+    case 'enterprise':
+      return 'Enterprise';
+    default:
+      return 'Free';
+  }
+};
+
+/**
+ * Check if user has active premium subscription
+ */
+export const hasActivePremiumSubscription = (user: any): boolean => {
+  const plan = user?.subscription?.plan?.toLowerCase();
+  const isActive = user?.subscription?.status === 'active';
+  return isActive && (plan === 'standard' || plan === 'premium' || plan === 'enterprise');
 };
 
 /**
