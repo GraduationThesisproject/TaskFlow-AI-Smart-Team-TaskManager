@@ -29,13 +29,7 @@ const WelcomeHeader: React.FC<{ displayName: string }> = ({ displayName }) => {
   const { workspaces, loading: workspacesLoading, error: workspacesError } = useAppSelector(state => state.workspace);
   const { data: analytics, loading: analyticsLoading, error: analyticsError } = useAppSelector(state => state.analytics);
 
-  // Debug logging
-  console.log('🔧 [Dashboard] User data from Redux:', {
-    hasUser: !!user,
-    userEmail: user?.user?.email,
-    userName: user?.user?.name,
-    userStructure: user ? Object.keys(user) : 'No user'
-  });
+  // Removed noisy debug logging
 
   const getTaskStats = () => {
     const totalTasks = analytics?.coreMetrics?.totalTasks || 0;

@@ -19,6 +19,9 @@ import {
   TaskPriority,
   TaskStatus,
 } from '../../types/dragBoard.types';
+import { TaskService } from '../../services/taskService';
+import { BoardService } from '../../services/boardService';
+import type { Task } from '../../types/task.types';
 
 // Initial state
 const initialDragState: DragState = {
@@ -48,69 +51,165 @@ const initialState: DragBoardState = {
 export const fetchBoard = createAsyncThunk(
   'dragBoard/fetchBoard',
   async (boardId: string) => {
-    // Mock data for now - replace with actual API call
-    const mockBoard: DragBoard = {
-      _id: boardId,
-      name: 'Task Board',
-      description: 'Project task management board',
-      spaceId: 'space-1',
-      viewMode: 'kanban',
+    const boardRes = await BoardService.getBoard(boardId);
+    const columnsRes = await BoardService.getColumnsByBoard(boardId);
+    const tasksRes = await TaskService.getTasks({ boardId });
+
+    // Unwrap board
+    const boardData = (boardRes as any)?.data?.data?.board
+      ?? (boardRes as any)?.data?.data
+      ?? (boardRes as any)?.data
+      ?? {};
+
+    // Unwrap columns
+    const columnsContainer = (columnsRes as any)?.data?.columns
+      ?? (columnsRes as any)?.data?.data?.columns
+      ?? (columnsRes as any)?.data
+      ?? (boardData?.columns ?? []);
+    const columnsData: any[] = Array.isArray(columnsContainer)
+      ? (columnsContainer as any[])
+      : Array.isArray((columnsContainer as any)?.items)
+      ? ((columnsContainer as any).items as any[])
+      : Array.isArray((columnsContainer as any)?.columns)
+      ? ((columnsContainer as any).columns as any[])
+      : [];
+
+    // Unwrap tasks
+    const tasksContainer = (tasksRes as any)?.data?.tasks
+      ?? (tasksRes as any)?.data?.data?.tasks
+      ?? (tasksRes as any)?.data
+      ?? [];
+    const tasksData: Task[] = Array.isArray(tasksContainer)
+      ? (tasksContainer as Task[])
+      : Array.isArray((tasksContainer as any)?.items)
+      ? ((tasksContainer as any).items as Task[])
+      : [];
+
+    const columns: DragColumn[] = columnsData
+      .sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))
+      .map((c: any) => ({
+        _id: String(c._id || c.id),
+        name: c.name,
+        boardId: String(c.board || c.boardId || boardId),
+        position: c.position ?? 0,
+        color: c.color || '#DBEAFE',
+        tasks: [],
+      }));
+
+    const tasksByColumn: Record<string, DragTask[]> = {};
+    for (const t of tasksData) {
+      const rawColumn = (t as any).column;
+      const colId = typeof rawColumn === 'object' && rawColumn
+        ? String(rawColumn._id || rawColumn.id)
+        : String(rawColumn);
+      const dragTask: DragTask = {
+        _id: String(t._id),
+        title: t.title,
+        description: t.description,
+        status: (t.status as any) as TaskStatus,
+        priority: (t.priority as any) as TaskPriority,
+        dueDate: t.dueDate,
+        assignees: (t.assignees || []).map((uid: string) => ({ id: uid, name: '' })),
+        columnId: colId,
+        position: t.position ?? 0,
+        tags: t.tags || [],
+        attachments: (t.attachments || []).length,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+      };
+      if (!tasksByColumn[colId]) tasksByColumn[colId] = [];
+      tasksByColumn[colId].push(dragTask);
+    }
+
+    Object.keys(tasksByColumn).forEach((cid) => {
+      tasksByColumn[cid].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    });
+
+    const board: DragBoard = {
+      _id: String(boardData._id || boardId),
+      name: boardData.name || 'Task Board',
+      description: boardData.description,
+      spaceId: String(boardData.space || boardData.spaceId || ''),
       columns: [],
-    };
-    
-    const mockColumns: DragColumn[] = [
-      {
-        _id: 'col-1',
-        name: 'To Do',
-        boardId: boardId,
-        position: 0,
-        color: '#FEF3C7',
-        tasks: [],
-      },
-      {
-        _id: 'col-2',
-        name: 'In Progress',
-        boardId: boardId,
-        position: 1,
-        color: '#DBEAFE',
-        tasks: [],
-      },
-      {
-        _id: 'col-3',
-        name: 'Review',
-        boardId: boardId,
-        position: 2,
-        color: '#F3E8FF',
-        tasks: [],
-      },
-      {
-        _id: 'col-4',
-        name: 'Done',
-        boardId: boardId,
-        position: 3,
-        color: '#D1FAE5',
-        tasks: [],
-      },
-    ];
-
-    // Initialize with empty tasks for all columns
-    const mockTasks: Record<string, DragTask[]> = {
-      'col-1': [],
-      'col-2': [],
-      'col-3': [],
-      'col-4': [],
+      viewMode: 'kanban',
     };
 
-    return { board: mockBoard, columns: mockColumns, tasks: mockTasks };
+    return { board, columns, tasks: tasksByColumn };
   }
 );
 
 export const saveTaskMove = createAsyncThunk(
   'dragBoard/saveTaskMove',
   async (payload: MoveTaskPayload) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // Guard: skip server call for temporary client-only IDs or invalid payloads
+    const isTempId = typeof payload.taskId === 'string' && payload.taskId.startsWith('task-');
+    const hasValidTarget = typeof payload.targetColumnId === 'string' && payload.targetColumnId.length > 0;
+    const looksLikeObjectId = /^[a-fA-F0-9]{24}$/.test(String(payload.taskId));
+
+    if (!hasValidTarget || isTempId || !looksLikeObjectId) {
+      // Return optimistically without hitting the backend
+      return payload;
+    }
+
+    await TaskService.moveTask(payload.taskId, {
+      columnId: payload.targetColumnId,
+      position: payload.targetIndex,
+    });
     return payload;
+  }
+);
+
+export const addTaskAsync = createAsyncThunk(
+  'dragBoard/addTaskAsync',
+  async ({ boardId, columnId, title, priority = 'medium' as TaskPriority, position = 0 }: { boardId: string; columnId: string; title: string; priority?: TaskPriority; position?: number }) => {
+    const res = await TaskService.createTask({
+      title,
+      description: '',
+      boardId,
+      columnId,
+      priority: priority as any,
+      assignees: [],
+      tags: [],
+      position,
+    });
+    const t = res.data as any as Task;
+    const dragTask: DragTask = {
+      _id: String(t._id),
+      title: t.title,
+      description: t.description,
+      status: (t.status as any) as TaskStatus,
+      priority: (t.priority as any) as TaskPriority,
+      dueDate: t.dueDate,
+      assignees: (t.assignees || []).map((uid: string) => ({ id: uid, name: '' })),
+      columnId: (() => {
+        const rawCol = (t as any).column;
+        if (typeof rawCol === 'object' && rawCol) return String(rawCol._id || rawCol.id || columnId);
+        return String(rawCol || columnId);
+      })(),
+      position: t.position ?? position,
+      tags: t.tags || [],
+      attachments: (t.attachments || []).length,
+      createdAt: t.createdAt,
+      updatedAt: t.updatedAt,
+    };
+    return { columnId: dragTask.columnId, task: dragTask };
+  }
+);
+
+export const createColumnAsync = createAsyncThunk(
+  'dragBoard/createColumnAsync',
+  async ({ boardId, name, position, color }: { boardId: string; name: string; position: number; color?: string }) => {
+    const res = await BoardService.createColumn({ name, boardId, position, color });
+    const colRaw = (res as any)?.data?.data ?? (res as any)?.data ?? res;
+    const column: DragColumn = {
+      _id: String(colRaw._id || colRaw.id),
+      name: colRaw.name || name,
+      boardId: String(colRaw.board || colRaw.boardId || boardId),
+      position: colRaw.position ?? position,
+      color: colRaw.color || color || '#DBEAFE',
+      tasks: [],
+    };
+    return column;
   }
 );
 
@@ -338,6 +437,42 @@ const dragBoardSlice = createSlice({
         state.tasks = action.payload.tasks;
         state.error = null;
       })
+      // Add task async
+      .addCase(addTaskAsync.fulfilled, (state, action) => {
+        const { columnId, task } = action.payload as any;
+        if (!state.tasks[columnId]) state.tasks[columnId] = [];
+        // Avoid duplicates if the same task already exists
+        const exists = state.tasks[columnId].some(t => t._id === task._id);
+        if (!exists) {
+          const dragTask: DragTask = {
+            _id: String(task._id),
+            title: task.title,
+            description: task.description,
+            status: ((task.status as any) ?? 'todo') as TaskStatus,
+            priority: ((task.priority as any) ?? 'medium') as TaskPriority,
+            dueDate: task.dueDate,
+            assignees: (task.assignees || []).map((uid: any) => {
+              const id = String(uid?.id || uid?._id || uid);
+              const name: string = (uid?.name as string) || id?.slice(0, 2)?.toUpperCase() || 'U';
+              return { id, name };
+            }),
+            columnId: (() => {
+              const rawCol = (task as any).column;
+              if (typeof rawCol === 'object' && rawCol) return String(rawCol._id || rawCol.id || columnId);
+              return String(rawCol || columnId);
+            })(),
+            position: task.position ?? state.tasks[columnId].length,
+            tags: task.tags || [],
+            attachments: (task.attachments || []).length,
+            createdAt: task.createdAt,
+            updatedAt: task.updatedAt,
+          };
+          const targetCol = dragTask.columnId;
+          if (!state.tasks[targetCol]) state.tasks[targetCol] = [];
+          state.tasks[targetCol].push(dragTask);
+          state.tasks[targetCol].forEach((t, idx) => { t.position = idx; });
+        }
+      })
       .addCase(fetchBoard.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch board';
@@ -354,6 +489,12 @@ const dragBoardSlice = createSlice({
         // Rollback on failure
         state.error = 'Failed to save task move';
         // In a real app, you'd rollback the optimistic update here
+      })
+      .addCase(createColumnAsync.fulfilled, (state, action) => {
+        const column = action.payload;
+        state.columns.push(column);
+        state.tasks[column._id] = [];
+        state.columns.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
       });
   },
 });

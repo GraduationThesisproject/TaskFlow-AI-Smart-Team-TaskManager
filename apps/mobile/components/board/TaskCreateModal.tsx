@@ -12,12 +12,7 @@ import {
   Alert,
   SafeAreaView,
 } from 'react-native';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  SlideInDown,
-  SlideOutDown,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import {
   X,
   CheckSquare,
@@ -314,13 +309,13 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
           >
             <Animated.View
-              entering={SlideInDown.duration(300).springify()}
-              exiting={SlideOutDown.duration(300).springify()}
+              entering={FadeIn.duration(150)}
+              exiting={FadeOut.duration(150)}
               style={[
                 styles.modal,
                 {
                   backgroundColor: colors.card,
-                  borderTopColor: colors.border,
+                  borderColor: colors.border,
                 },
               ]}
             >
@@ -828,30 +823,32 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   safeArea: {
-    flex: 1,
-    justifyContent: 'flex-end',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   keyboardAvoid: {
-    flex: 1,
-    justifyContent: 'flex-end',
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modal: {
+    width: '92%',
+    maxWidth: 520,
     maxHeight: MODAL_HEIGHT,
     minHeight: SCREEN_HEIGHT * 0.5,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderTopWidth: 1,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 6,
+    elevation: 8,
     paddingBottom: Platform.OS === 'ios' ? 20 : 10,
   },
   header: {

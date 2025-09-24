@@ -9,7 +9,7 @@ import * as Sharing from 'expo-sharing';
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
-import { useAppSelector } from '@/store';
+import { useAppSelector } from '@/store/index';
 import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
 const RULES_FILE = `${((FileSystem as any).documentDirectory || (FileSystem as any).cacheDirectory || '')}workspace_rules.txt`;

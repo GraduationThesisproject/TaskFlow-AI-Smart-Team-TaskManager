@@ -5,7 +5,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Text, View, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
-import { useAppSelector } from '@/store';
+import { useAppSelector } from '@/store/index';
 import { useWorkspaceAnalytics } from '@/hooks/useAnalytics';
 import { useRouter } from 'expo-router';
 import { BannerProvider } from '@/components/common/BannerProvider';

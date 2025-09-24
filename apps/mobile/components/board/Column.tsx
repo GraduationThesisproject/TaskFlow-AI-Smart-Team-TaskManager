@@ -9,6 +9,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  Alert,
   ListRenderItemInfo,
 } from 'react-native';
 import Animated, {
@@ -29,9 +30,10 @@ import { View, Text } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TaskCard } from './TaskCard';
 import { TaskCreateModal } from './TaskCreateModal';
-import { ColumnProps, DragTask, LayoutInfo } from '@/types/dragBoard.types';
-import { useAppDispatch } from '@/store/index';
-import { addTask } from '@/store/slices/dragBoardSlice';
+import { ColumnProps, DragTask } from '@/types/dragBoard.types';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { addTask, addTaskAsync, selectBoard, deleteColumn as deleteColumnAction, fetchBoard } from '@/store/slices/dragBoardSlice';
+import { BoardService } from '@/services/boardService';
 
 const COLUMN_WIDTH = Dimensions.get('window').width - 32;
 const TASK_HEIGHT = 88; // TaskCard height + margin
@@ -48,7 +50,14 @@ export const Column = memo<ColumnProps>(({
 }) => {
   const colors = useThemeColors();
   const dispatch = useAppDispatch();
+  const board = useAppSelector(selectBoard);
   const flatListRef = useRef<FlatList<DragTask>>(null);
+  const [hoverIndex, setHoverIndex] = React.useState<number | null>(null);
+  const scrollYRef = React.useRef(0);
+  const [headerH, setHeaderH] = React.useState(0);
+  const [statsH, setStatsH] = React.useState(0);
+  const [columnTopY, setColumnTopY] = React.useState(0);
+  const headerSpacerH = 8; // matches styles.headerSpacer
   
   // Animation values
   const columnScale = useSharedValue(1);
@@ -56,6 +65,7 @@ export const Column = memo<ColumnProps>(({
   const borderWidth = useSharedValue(1);
   const [isCollapsed, setIsCollapsed] = React.useState(column.collapsed || false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Handle drag over animation
   React.useEffect(() => {
@@ -77,12 +87,15 @@ export const Column = memo<ColumnProps>(({
     borderWidth: borderWidth.value,
   }));
 
-  // Key extractor for FlatList
-  const keyExtractor = useCallback((item: DragTask) => item._id, []);
+  // Key extractor for FlatList with safe fallback to index
+  const keyExtractor = useCallback((item: DragTask, index?: number) => {
+    const key = (item as any)?._id || (item as any)?.id;
+    return key ? String(key) : `idx-${index}`;
+  }, []);
 
   // Get item layout for optimization
   const getItemLayout = useCallback(
-    (_: any, index: number): LayoutInfo => ({
+    (_: any, index: number) => ({
       length: TASK_HEIGHT,
       offset: TASK_HEIGHT * index,
       index,
@@ -101,11 +114,35 @@ export const Column = memo<ColumnProps>(({
           // Handled by parent board
         }}
         onDragEnd={(targetColumnId, targetIndex) => {
-          onTaskMove(item, targetColumnId, targetIndex);
+          const safeIndex = Math.min(Math.max(targetIndex, 0), Math.max(0, tasks.length - 1));
+          console.log('[Drop]', { taskId: item._id, from: column._id, to: targetColumnId, index: safeIndex });
+          onTaskMove(item, targetColumnId || column._id, safeIndex);
         }}
         onPress={() => onTaskSelect(item)}
-        isDragging={false}
+        isDragging={true}
         isPlaceholder={false}
+        // @ts-ignore - extra debug/indicator callback for live hover index
+        onDragMoveForIndicator={(absX: number, absY: number) => {
+          const slot = TASK_HEIGHT;
+          // Convert absolute Y to list-local Y: subtract column's top Y and header/stat heights, add scroll offset
+          const localY = absY - columnTopY - headerH - (statsH || 0) - headerSpacerH + scrollYRef.current;
+          const idx = Math.max(0, Math.round(localY / slot));
+          const clamped = Math.min(idx, Math.max(0, (tasks?.length ?? 0)));
+          setHoverIndex(clamped);
+          // Log for debugging across devices
+          console.log('[DragMove]', {
+            columnId: column._id,
+            index,
+            absX,
+            absY,
+            columnTopY,
+            headerH,
+            statsH,
+            scrollY: scrollYRef.current,
+            hoverIndex: clamped,
+            slotHeight: slot,
+          });
+        }}
       />
     ),
     [column._id, onTaskMove, onTaskSelect]
@@ -136,17 +173,72 @@ export const Column = memo<ColumnProps>(({
   }, []);
 
   const handleSaveTask = useCallback((task: Partial<DragTask>) => {
-    dispatch(addTask({
-      columnId: column._id,
-      task : {
-        ...task,
-        columnId: column._id,
-        position: tasks.length,
-        status: 'todo',
-      },
-    }));
+    const title = (task.title ?? '').trim() || 'Untitled Task';
+    const priority = (task.priority as any) ?? 'medium';
+    const position = tasks.length;
+
+    if (board?._id) {
+      // Persist to backend
+      dispatch(
+        addTaskAsync({
+          boardId: String(board._id),
+          columnId: column._id,
+          title,
+          priority: priority as any,
+          position,
+        })
+      );
+      // Ensure state matches server ordering right away
+      dispatch(fetchBoard(String(board._id)) as any);
+    } else {
+      // Fallback to local optimistic add if board is missing
+      dispatch(
+        addTask({
+          columnId: column._id,
+          task: {
+            title,
+            description: task.description ?? '',
+            priority: priority as any,
+            assignees: task.assignees ?? [],
+            tags: (task as any)?.tags ?? [],
+            columnId: column._id,
+            position,
+            status: 'todo' as const,
+            dueDate: task.dueDate,
+          } as any,
+        })
+      );
+    }
+
     setShowCreateModal(false);
-  }, [dispatch, column._id, tasks.length]);
+  }, [dispatch, board?._id, column._id, tasks.length]);
+
+  const handleDeleteColumn = useCallback(() => {
+    if (!board?._id) return;
+    if (deleting) return;
+    Alert.alert(
+      'Delete column',
+      `Are you sure you want to delete "${column.name}" and all its tasks?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeleting(true);
+              await BoardService.deleteColumn(column._id, String(board._id));
+              dispatch(deleteColumnAction(column._id));
+            } catch (err) {
+              console.error('Failed to delete column:', err);
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  }, [board?._id, column._id, column.name, dispatch, deleting]);
 
   // List header component
   const ListHeaderComponent = useMemo(() => (
@@ -168,8 +260,8 @@ export const Column = memo<ColumnProps>(({
           onPress={handleOpenCreateModal}
         >
           <Plus size={16} color={colors['muted-foreground']} />
-          <Text style={[styles.addTaskText, { color: colors['muted-foreground'] }]}>
-            Add Task
+          <Text style={[styles.addTaskText, { color: colors['muted-foreground'] }]}> 
+            {String('Add Task')}
           </Text>
         </TouchableOpacity>
       )}
@@ -180,8 +272,8 @@ export const Column = memo<ColumnProps>(({
   // Empty component
   const ListEmptyComponent = useMemo(() => (
     <View style={styles.emptyContainer}>
-      <Text style={[styles.emptyText, { color: colors['muted-foreground'] }]}>
-        No tasks yet
+      <Text style={[styles.emptyText, { color: colors['muted-foreground'] }]}> 
+        {String('No tasks yet')}
       </Text>
       {editable && (
         <TouchableOpacity
@@ -189,7 +281,7 @@ export const Column = memo<ColumnProps>(({
           onPress={handleOpenCreateModal}
         >
           <Plus size={18} color="white" />
-          <Text style={styles.emptyAddText}>Add First Task</Text>
+          <Text style={styles.emptyAddText}>{String('Add First Task')}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -208,9 +300,15 @@ export const Column = memo<ColumnProps>(({
           width: COLUMN_WIDTH,
         },
       ]}
+      onLayout={(e) => {
+        setColumnTopY(e.nativeEvent.layout.y);
+      }}
     >
       {/* Column Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+      <View
+        style={[styles.header, { borderBottomColor: colors.border }]}
+        onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)}
+      >
         <TouchableOpacity 
           style={styles.headerLeft}
           onPress={toggleCollapse}
@@ -232,14 +330,17 @@ export const Column = memo<ColumnProps>(({
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuButton}>
+        <TouchableOpacity style={styles.menuButton} onPress={handleDeleteColumn} disabled={deleting}>
           <MoreVertical size={18} color={colors['muted-foreground']} />
         </TouchableOpacity>
       </View>
 
       {/* Column Stats */}
       {!isCollapsed && stats.total > 0 && (
-        <View style={[styles.stats, { backgroundColor: colors.muted }]}>
+        <View
+          style={[styles.stats, { backgroundColor: colors.muted }]}
+          onLayout={(e) => setStatsH(e.nativeEvent.layout.height)}
+        >
           {stats.overdue > 0 && (
             <View style={styles.statItem}>
               <View style={[styles.statDot, { backgroundColor: '#ef4444' }]} />
@@ -265,6 +366,7 @@ export const Column = memo<ColumnProps>(({
           ref={flatListRef}
           data={tasks}
           renderItem={renderTask}
+          // @ts-ignore - RN types allow (item, index)
           keyExtractor={keyExtractor}
           getItemLayout={getItemLayout}
           ListHeaderComponent={ListHeaderComponent}
@@ -278,8 +380,14 @@ export const Column = memo<ColumnProps>(({
           initialNumToRender={5}
           contentContainerStyle={styles.listContent}
           style={styles.list}
+          onScroll={(e) => {
+            scrollYRef.current = e.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
         />
       )}
+
+      {/* Drop Indicator Line removed as requested */}
 
       {/* WIP Limit Warning */}
       {column.wipLimit && tasks.length >= column.wipLimit && !isCollapsed && (

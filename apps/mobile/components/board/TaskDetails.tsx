@@ -388,11 +388,11 @@ export const TaskDetails = memo<TaskDetailsProps>(({
                         style={[styles.assigneeAvatar, { backgroundColor: colors.primary }]}
                       >
                         <Text style={styles.assigneeAvatarText}>
-                          {assignee.name[0].toUpperCase()}
+                          {String(assignee.name ?? assignee.id ?? '?').charAt(0).toUpperCase() || '?'}
                         </Text>
                       </View>
                       <Text style={[styles.assigneeName, { color: colors.foreground }]}>
-                        {assignee.name}
+                        {String(assignee.name ?? assignee.id ?? '')}
                       </Text>
                     </View>
                   ))}
@@ -424,7 +424,7 @@ export const TaskDetails = memo<TaskDetailsProps>(({
                       >
                         <Tag size={12} color={colors.primary} />
                         <Text style={[styles.tagText, { color: colors.primary }]}>
-                          {tag}
+                          {String(tag)}
                         </Text>
                       </View>
                     ))}

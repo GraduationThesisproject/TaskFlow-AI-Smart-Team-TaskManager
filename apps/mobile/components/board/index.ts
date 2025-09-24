@@ -8,6 +8,7 @@ export { Column } from './Column';
 export { TaskCard } from './TaskCard';
 export { TaskDetails } from './TaskDetails';
 export { TaskCreateModal } from './TaskCreateModal';
+export { ColumnCreateModal } from './ColumnCreateModal';
 
 // Re-export types for convenience
 export type {

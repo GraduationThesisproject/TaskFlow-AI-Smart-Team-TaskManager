@@ -49,7 +49,7 @@ const getPriorityColor = (priority: TaskPriority): string => {
 };
 
 // Memoized TaskCard component for performance
-export const TaskCard = memo<TaskCardProps>(({
+export const TaskCard = memo<TaskCardProps & { onDragMoveForIndicator?: (absX: number, absY: number) => void }>(({ 
   task,
   columnId,
   index,
@@ -58,6 +58,7 @@ export const TaskCard = memo<TaskCardProps>(({
   onPress,
   isDragging,
   isPlaceholder,
+  onDragMoveForIndicator,
 }) => {
   const colors = useThemeColors();
   
@@ -92,13 +93,9 @@ export const TaskCard = memo<TaskCardProps>(({
   // End drag handler
   const handleDragEnd = useCallback((absoluteX: number, absoluteY: number) => {
     'worklet';
-    const screenWidth = Dimensions.get('window').width;
-    const columnWidth = screenWidth - 32;
-    
-    // Calculate target column based on X position
-    const columnIndex = Math.floor((absoluteX + translateX.value) / (columnWidth + 16));
-    const targetColumnId = `col-${Math.min(Math.max(1, columnIndex + 1), 4)}`;
-    
+    // Always drop back into the originating column; the parent decides cross-column moves
+    const targetColumnId = columnId;
+
     // Calculate drop index based on Y position
     const dropIndex = Math.max(0, Math.floor((absoluteY + translateY.value) / CARD_HEIGHT));
     
@@ -140,6 +137,9 @@ export const TaskCard = memo<TaskCardProps>(({
         rotateZ.value = withSpring(2 + velocityRotation, {
           damping: 20,
         });
+        if (onDragMoveForIndicator) {
+          runOnJS(onDragMoveForIndicator)(event.absoluteX, event.absoluteY);
+        }
       }
     })
     .onEnd((event) => {
@@ -171,10 +171,12 @@ export const TaskCard = memo<TaskCardProps>(({
     ),
   }));
 
+  // Priority with safe fallback
+  const safePriority = (task.priority || 'medium') as TaskPriority;
   // Priority badge style
   const priorityBadgeStyle = useMemo(() => ({
-    backgroundColor: getPriorityColor(task.priority),
-  }), [task.priority]);
+    backgroundColor: getPriorityColor(safePriority),
+  }), [safePriority]);
 
   // Format due date
   const formattedDueDate = useMemo(() => {
@@ -218,29 +220,29 @@ export const TaskCard = memo<TaskCardProps>(({
                 style={[styles.title, { color: colors.foreground }]} 
                 numberOfLines={2}
               >
-                {task.title}
+                {String(task.title ?? '')}
               </Text>
               <View style={[styles.priorityBadge, priorityBadgeStyle]}>
                 <Text style={styles.priorityText}>
-                  {task.priority === 'urgent' ? '!' : task.priority[0].toUpperCase()}
+                  {safePriority === 'urgent' ? '!' : String(safePriority).charAt(0).toUpperCase()}
                 </Text>
               </View>
             </View>
 
             {/* Description */}
-            {task.description && (
+            {Boolean(task.description) && (
               <Text 
                 style={[styles.description, { color: colors['muted-foreground'] }]} 
                 numberOfLines={1}
               >
-                {task.description}
+                {String(task.description ?? '')}
               </Text>
             )}
 
             {/* Footer */}
             <View style={styles.footer}>
               {/* Assignees */}
-              {task.assignees.length > 0 && (
+              {Array.isArray(task.assignees) && task.assignees.length > 0 && (
                 <View style={styles.assignees}>
                   {task.assignees.slice(0, 3).map((assignee, idx) => (
                     <View
@@ -255,13 +257,13 @@ export const TaskCard = memo<TaskCardProps>(({
                       ]}
                     >
                       <Text style={styles.avatarText}>
-                        {assignee.name[0].toUpperCase()}
+                        {String(assignee.name ?? assignee.id ?? '?').charAt(0).toUpperCase() || '?'}
                       </Text>
                     </View>
                   ))}
                   {task.assignees.length > 3 && (
                     <Text style={[styles.moreAssignees, { color: colors['muted-foreground'] }]}>
-                      +{task.assignees.length - 3}
+                      {`+${task.assignees.length - 3}`}
                     </Text>
                   )}
                 </View>

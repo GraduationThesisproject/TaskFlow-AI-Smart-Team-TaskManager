@@ -29,7 +29,7 @@ import {
 import { useRouter } from 'expo-router';
 import { View, Text } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
-import { useAppDispatch, useAppSelector } from '@/store/index';
+import { useAppDispatch, useAppSelector } from '@/store';
 import {
   fetchBoard,
   moveTaskOptimistic,
@@ -39,6 +39,7 @@ import {
   updateTask,
   deleteTask,
   addTask,
+  addTaskAsync,
   setViewMode,
   selectBoard,
   selectColumns,
@@ -52,6 +53,7 @@ import {
   endDrag,
 } from '@/store/slices/dragBoardSlice';
 import { Column } from './Column';
+import { ColumnCreateModal } from './ColumnCreateModal';
 import { TaskDetails } from './TaskDetails';
 import { BoardProps, DragTask, BoardViewMode } from '@/types/dragBoard.types';
 
@@ -80,6 +82,7 @@ export const Board: React.FC<BoardProps> = ({
   const error = useAppSelector(selectError);
 
   const [refreshing, setRefreshing] = React.useState(false);
+  const [showCreateColumn, setShowCreateColumn] = React.useState(false);
   const [localViewMode, setLocalViewMode] = React.useState<BoardViewMode>('kanban');
 
   // Load board data on mount
@@ -174,19 +177,8 @@ export const Board: React.FC<BoardProps> = ({
             text: 'Add',
             onPress: (title?: string) => {
               if (typeof title === 'string' && title.trim().length > 0) {
-                dispatch(
-                  addTask({
-                    columnId,
-                    task: {
-                      title: title.trim(),
-                      status: 'todo',
-                      priority: 'medium',
-                      assignees: [],
-                      columnId,
-                      position: tasks[columnId]?.length || 0,
-                    },
-                  })
-                );
+                const position = tasks[columnId]?.length || 0;
+                dispatch(addTaskAsync({ boardId: boardId, columnId, title: title.trim(), position }));
               }
             },
           },
@@ -194,7 +186,7 @@ export const Board: React.FC<BoardProps> = ({
         'plain-text'
       );
     },
-    [dispatch, tasks]
+    [dispatch, tasks, boardId]
   );
 
   // Handle view mode change
@@ -284,7 +276,7 @@ export const Board: React.FC<BoardProps> = ({
           </View>
 
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.iconButton} onPress={() => router.replace('/(tabs)/space/main')} accessibilityLabel="Back to space">
+            <TouchableOpacity style={styles.iconButton} onPress={() => router.back()} accessibilityLabel="Back to space">
               <ArrowLeft size={20} color={colors['muted-foreground']} />
             </TouchableOpacity>
             {showFilters && (
@@ -296,6 +288,16 @@ export const Board: React.FC<BoardProps> = ({
             <TouchableOpacity style={styles.iconButton}>
               <Search size={20} color={colors['muted-foreground']} />
             </TouchableOpacity>
+
+            {editable && (
+              <TouchableOpacity
+                style={[styles.iconButton, { backgroundColor: colors.muted }]}
+                onPress={() => setShowCreateColumn(true)}
+                accessibilityLabel="Add Column"
+              >
+                <Plus size={18} color={colors['muted-foreground']} />
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={[styles.viewModeButton, { backgroundColor: colors.primary }]}
@@ -314,49 +316,51 @@ export const Board: React.FC<BoardProps> = ({
         </Animated.View>
 
         {/* Board Content */}
-        <ScrollView
-          ref={scrollViewRef}
-          horizontal={localViewMode === 'kanban'}
-          showsHorizontalScrollIndicator={false}
-          showsVerticalScrollIndicator={false}
-          style={styles.boardContainer}
-          contentContainerStyle={[
-            styles.boardContent,
-            localViewMode === 'list' && styles.listContent,
-          ]}
-          pagingEnabled={localViewMode === 'kanban'}
-          snapToInterval={localViewMode === 'kanban' ? COLUMN_WIDTH + 16 : undefined}
-          decelerationRate="fast"
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[colors.primary]}
-              tintColor={colors.primary}
-            />
-          }
-        >
-          {renderColumns}
+        {localViewMode === 'kanban' ? (
+          <ScrollView
+            ref={scrollViewRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
+            style={styles.boardContainer}
+            contentContainerStyle={[styles.boardContent]}
+            pagingEnabled
+            snapToInterval={COLUMN_WIDTH + 16}
+            decelerationRate="fast"
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
+              />
+            }
+          >
+            {renderColumns}
 
-          {/* Add Column Button */}
-          {editable && localViewMode === 'kanban' && (
-            <TouchableOpacity
-              style={[
-                styles.addColumnButton,
-                {
-                  backgroundColor: colors.muted,
-                  borderColor: colors.border,
-                  width: COLUMN_WIDTH,
-                },
-              ]}
-            >
-              <Plus size={20} color={colors['muted-foreground']} />
-              <Text style={[styles.addColumnText, { color: colors['muted-foreground'] }]}>
-                Add Column
-              </Text>
-            </TouchableOpacity>
-          )}
-        </ScrollView>
+            {/* Add Column Button */}
+            {editable && (
+              <TouchableOpacity
+                style={[
+                  styles.addColumnButton,
+                  {
+                    backgroundColor: colors.muted,
+                    borderColor: colors.border,
+                    width: COLUMN_WIDTH,
+                  },
+                ]}
+                onPress={() => setShowCreateColumn(true)}
+              >
+                <Plus size={20} color={colors['muted-foreground']} />
+                <Text style={[styles.addColumnText, { color: colors['muted-foreground'] }]}>Add Column</Text>
+              </TouchableOpacity>
+            )}
+          </ScrollView>
+        ) : (
+          <View style={styles.boardContainer}>
+            {renderColumns}
+          </View>
+        )}
 
         {/* Task Details Modal */}
         <TaskDetails
@@ -365,6 +369,16 @@ export const Board: React.FC<BoardProps> = ({
           onClose={handleCloseTaskDetails}
           onUpdate={handleTaskUpdate}
           onDelete={editable ? handleTaskDelete : undefined}
+        />
+
+        {/* Create Column Modal */}
+        <ColumnCreateModal
+          visible={showCreateColumn}
+          onClose={() => setShowCreateColumn(false)}
+          onSave={({ name, color }) => {
+            const position = columns.length;
+            dispatch((require('@/store/slices/dragBoardSlice') as any).createColumnAsync({ boardId, name, position, color }));
+          }}
         />
       </View>
     </GestureHandlerRootView>
