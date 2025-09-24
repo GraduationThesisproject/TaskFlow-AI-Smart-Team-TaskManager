@@ -92,6 +92,16 @@ function SpacesScreenContent() {
       alert('Name is required.');
       return;
     }
+    // Enforce free plan limit: max 5 spaces per workspace
+    try {
+      const MAX_SPACES = 5;
+      const currentSpacesCount = Array.isArray(spaces) ? spaces.length : 0;
+      if (currentSpacesCount >= MAX_SPACES) {
+        alert("You've reached your limit of 5 spaces on the Free plan. Upgrade to create more.");
+        router.push('/(tabs)/settings?section=upgrade');
+        return;
+      }
+    } catch {}
     try {
       setCreating(true);
       await SpaceService.createSpace({
