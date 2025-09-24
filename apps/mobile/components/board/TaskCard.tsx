@@ -173,7 +173,7 @@ export const TaskCard = memo<TaskCardProps>(({
 
   // Priority badge style
   const priorityBadgeStyle = useMemo(() => ({
-    backgroundColor: getPriorityColor(task.priority),
+    backgroundColor: getPriorityColor(task.priority as TaskPriority),
   }), [task.priority]);
 
   // Format due date
@@ -222,7 +222,7 @@ export const TaskCard = memo<TaskCardProps>(({
               </Text>
               <View style={[styles.priorityBadge, priorityBadgeStyle]}>
                 <Text style={styles.priorityText}>
-                  {task.priority === 'urgent' ? '!' : task.priority[0].toUpperCase()}
+                  {task.priority === 'urgent' ? '!' : task.priority?.[0].toUpperCase()}
                 </Text>
               </View>
             </View>
@@ -242,7 +242,7 @@ export const TaskCard = memo<TaskCardProps>(({
               {/* Assignees */}
               {task.assignees.length > 0 && (
                 <View style={styles.assignees}>
-                  {task.assignees.slice(0, 3).map((assignee, idx) => (
+                  {task.assignees?.slice(0, 3).map((assignee, idx) => (
                     <View
                       key={assignee.id}
                       style={[
