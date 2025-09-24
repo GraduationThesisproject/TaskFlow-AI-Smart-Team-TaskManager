@@ -9,7 +9,6 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { updateWorkspaceSettings } from '@/store/slices/workspaceSlice';
 import { useAuth } from '@/hooks/useAuth';
-import { useAuthToken } from '@/hooks/useLocalStorage';
 import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
 function WorkspaceSettingsScreenContent() {

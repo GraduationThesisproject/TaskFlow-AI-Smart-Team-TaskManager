@@ -1,8 +1,6 @@
-// services/googleAIService.js
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { GoogleAIFileManager } from "@google/generative-ai/server";
-import db from "../config/db.js";
-import logger from "../config/logger.js";
+// services/googleAIService.js (CommonJS with dynamic ESM imports)
+const db = require("../config/db");
+const logger = require("../config/logger");
 
 // Custom error classes for better error handling
 class GoogleAIError extends Error {
@@ -64,6 +62,10 @@ class GoogleAIService {
           logger.error('Google API key not found in database or environment');
           throw new APIKeyError();
         }
+
+        // Dynamic import of ESM-only modules so they work in CommonJS
+        const { GoogleGenerativeAI } = await import("@google/generative-ai");
+        const { GoogleAIFileManager } = await import("@google/generative-ai/server");
 
         this.client = new GoogleGenerativeAI(this.apiKey);
         this.fileManager = new GoogleAIFileManager(this.apiKey);
@@ -612,6 +614,10 @@ class GoogleAIService {
   }
 }
 
-// Export both the class and the singleton instance
-export { GoogleAIService, GoogleAIError, APIKeyError, ModerationError, RateLimitError };
-export default new GoogleAIService();
+// Export for CommonJS consumers
+module.exports = new GoogleAIService();
+module.exports.GoogleAIService = GoogleAIService;
+module.exports.GoogleAIError = GoogleAIError;
+module.exports.APIKeyError = APIKeyError;
+module.exports.ModerationError = ModerationError;
+module.exports.RateLimitError = RateLimitError;
