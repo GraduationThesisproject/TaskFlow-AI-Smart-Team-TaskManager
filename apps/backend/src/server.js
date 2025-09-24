@@ -104,20 +104,10 @@ testNamespace.on('connection', (socket) => {
 
 // Start server
 server.listen(PORT, '0.0.0.0', () => {
-    // Compute local IP inline to avoid dependency on utils/network-detector
-    const os = require('os');
-    const ifaces = os.networkInterfaces();
-    const ips = [];
-    for (const name in ifaces) {
-        for (const alias of ifaces[name] || []) {
-            if (alias && alias.family === 'IPv4' && !alias.internal) ips.push(alias.address);
-        }
-    }
-    const localIP = ips.find(ip => /^192\.168\./.test(ip)) || ips.find(ip => /^10\./.test(ip)) || ips[0] || 'localhost';
     logger.info(`🚀 TaskFlow API server running on port ${PORT}`);
     logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
     logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
-    logger.info(`🌐 Network access: http://${localIP}:${PORT}/health`);
+    logger.info(`🌐 Network access: http://10.208.47.13:${PORT}/health`);
 });
 
 // Periodic cleanup: permanently delete archived workspaces whose countdown reached 0

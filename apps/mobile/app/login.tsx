@@ -9,7 +9,6 @@ import { router } from 'expo-router';
 
 export default function LoginScreen() {
   const colors = useThemeColors();
-  const { loginWithOAuth } = useOAuth();
 
   const handleForgotPassword = () => {
     router.push('/forgot-password');

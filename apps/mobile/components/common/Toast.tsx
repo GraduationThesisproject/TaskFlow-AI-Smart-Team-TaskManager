@@ -46,7 +46,7 @@ export default function Toast({
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
     if (visible) {
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -109,4 +109,8 @@ const styles = StyleSheet.create({
     elevation: 5,
     zIndex: 1000,
   },
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> 32d51b586879fb337c0bdc120d266345058d0fc6
