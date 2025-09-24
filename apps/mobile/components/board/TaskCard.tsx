@@ -45,19 +45,19 @@ const getPriorityColor = (priority: TaskPriority): string => {
     medium: '#eab308',
     low: '#22c55e',
   };
-  return colors[priority as keyof typeof colors];
+  return colors[priority];
 };
 
 // Memoized TaskCard component for performance
 export const TaskCard = memo<TaskCardProps>(({
-  task = {},
-  columnId = '',
-  index = 0,
-  onDragStart = () => {},
-  onDragEnd = () => {},
-  onPress = () => {},
-  isDragging = false,
-  isPlaceholder = false,
+  task,
+  columnId,
+  index,
+  onDragStart,
+  onDragEnd,
+  onPress,
+  isDragging,
+  isPlaceholder,
 }) => {
   const colors = useThemeColors();
   
@@ -173,7 +173,7 @@ export const TaskCard = memo<TaskCardProps>(({
 
   // Priority badge style
   const priorityBadgeStyle = useMemo(() => ({
-    backgroundColor: getPriorityColor(task.priority as TaskPriority),
+    backgroundColor: getPriorityColor(task.priority),
   }), [task.priority]);
 
   // Format due date
@@ -222,7 +222,7 @@ export const TaskCard = memo<TaskCardProps>(({
               </Text>
               <View style={[styles.priorityBadge, priorityBadgeStyle]}>
                 <Text style={styles.priorityText}>
-                  {task.priority === 'urgent' ? '!' : task.priority?.[0].toUpperCase()}
+                  {task.priority === 'urgent' ? '!' : task.priority[0].toUpperCase()}
                 </Text>
               </View>
             </View>
@@ -242,7 +242,7 @@ export const TaskCard = memo<TaskCardProps>(({
               {/* Assignees */}
               {task.assignees.length > 0 && (
                 <View style={styles.assignees}>
-                  {task.assignees?.slice(0, 3).map((assignee, idx) => (
+                  {task.assignees.slice(0, 3).map((assignee, idx) => (
                     <View
                       key={assignee.id}
                       style={[

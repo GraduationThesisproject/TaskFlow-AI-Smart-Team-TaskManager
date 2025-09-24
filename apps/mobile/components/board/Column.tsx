@@ -30,7 +30,7 @@ import { useThemeColors } from '@/components/ThemeProvider';
 import { TaskCard } from './TaskCard';
 import { TaskCreateModal } from './TaskCreateModal';
 import { ColumnProps, DragTask, LayoutInfo } from '@/types/dragBoard.types';
-import { useAppDispatch } from '@/store';
+import { useAppDispatch } from '@/store/index';
 import { addTask } from '@/store/slices/dragBoardSlice';
 
 const COLUMN_WIDTH = Dimensions.get('window').width - 32;
@@ -138,7 +138,7 @@ export const Column = memo<ColumnProps>(({
   const handleSaveTask = useCallback((task: Partial<DragTask>) => {
     dispatch(addTask({
       columnId: column._id,
-      task: {
+      task : {
         ...task,
         columnId: column._id,
         position: tasks.length,

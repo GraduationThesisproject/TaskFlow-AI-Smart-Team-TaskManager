@@ -29,7 +29,7 @@ import {
 import { useRouter } from 'expo-router';
 import { View, Text } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
-import { useAppDispatch, useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store/index';
 import {
   fetchBoard,
   moveTaskOptimistic,

@@ -80,7 +80,10 @@ function AllBoardsContent() {
   }, [boardSearch, boards]);
 
   const handlePressBoard = useCallback((board: any) => {
-    router.push(`/(tabs)/board?boardId=${board._id || board.id}&boardName=${encodeURIComponent(board.name || 'Board')}`);
+    const id = board?._id || board?.id;
+    const name = board?.name || 'Board';
+    if (!id) return;
+    router.push({ pathname: '/(tabs)/board', params: { boardId: String(id), boardName: name } });
   }, [router]);
 
   const isBoardArchived = useCallback((b: any): boolean => {
