@@ -3,7 +3,7 @@ import { StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Switch, Mod
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 
-import { Text, View, Card } from '@/components/Themed';
+import { Text, View, Card } from '@/components/Themed' ;
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
 import { useAppDispatch, useAppSelector } from '@/store';

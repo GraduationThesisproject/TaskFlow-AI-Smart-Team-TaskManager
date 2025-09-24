@@ -82,9 +82,7 @@ function SpacesScreenContent() {
     // Navigate to the space screen; also pass id as a param for deep-link robustness
     const id = space?._id || space?.id;
     if (id) {
-      router.push({ pathname: '/workspace/space/boards', params: { id } });
-    } else {
-      router.push('/workspace/space/boards');
+      router.push({ pathname: '/workspace/space/allboards', params: { id } });
     }
   };
 

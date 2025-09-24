@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, View as RNView, Text as RNText } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
@@ -12,7 +12,7 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector } from '@/store';
 import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
-const RULES_FILE = FileSystem.documentDirectory + 'workspace_rules.txt';
+const RULES_FILE = `${((FileSystem as any).documentDirectory || (FileSystem as any).cacheDirectory || '')}workspace_rules.txt`;
 
 const DEFAULT_RULES = `📌 Task Management Rules
 
@@ -146,7 +146,7 @@ function WorkspaceRulesScreenContent() {
         } else {
           // Prefill with default and persist once
           setRules(DEFAULT_RULES);
-          await FileSystem.writeAsStringAsync(RULES_FILE, DEFAULT_RULES, { encoding: FileSystem.EncodingType.UTF8 });
+          await FileSystem.writeAsStringAsync(RULES_FILE, DEFAULT_RULES);
         }
       } catch (e) {
         console.warn('Failed to load rules file, using defaults.', e);
@@ -160,7 +160,7 @@ function WorkspaceRulesScreenContent() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await FileSystem.writeAsStringAsync(RULES_FILE, rules, { encoding: FileSystem.EncodingType.UTF8 });
+      await FileSystem.writeAsStringAsync(RULES_FILE, rules);
       showSuccess('Workspace rules saved successfully.');
       setEditing(false);
     } catch (e: any) {

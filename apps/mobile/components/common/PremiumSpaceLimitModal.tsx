@@ -48,7 +48,7 @@ export default function PremiumSpaceLimitModal({
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
-              <FontAwesome  name="folder-plus" size={24} color={colors.primary} />
+              <FontAwesome name="folder-plus" size={24} color={colors.primary} />
             </View>
             <Text style={[TextStyles.heading.h2, { color: colors.foreground }]}>
               Space Limit Reached

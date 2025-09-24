@@ -20,7 +20,7 @@ export interface AlertProps {
   cancelText?: string;
 }
 
-export default function Alert({
+export default function MobileAlert({
   variant = 'info',
   title,
   description,
