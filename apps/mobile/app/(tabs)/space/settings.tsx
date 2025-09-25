@@ -303,7 +303,7 @@ export default function SpaceSettingsScreen() {
         <View style={styles.headerLeft}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => router.push('/(tabs)/space/main')}
           >
             <Text style={{ color: colors.primary, fontWeight: '600' }}>{'<'}</Text>
           </TouchableOpacity>

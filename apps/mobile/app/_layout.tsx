@@ -1,4 +1,5 @@
 import 'react-native-get-random-values';
+import { LogBox } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -8,6 +9,57 @@ import 'react-native-reanimated';
 import { Provider } from 'react-redux';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PersistGate } from 'redux-persist/integration/react';
+
+// Configure LogBox to hide warnings/errors for demo purposes
+LogBox.ignoreAllLogs(true); // Hide all logs for clean demo
+
+// Alternatively, you can hide specific warnings:
+LogBox.ignoreLogs([
+  // Network and API related warnings
+  'Network request failed',
+  'Request failed with status code',
+  'Possible Unhandled Promise Rejection',
+  'Warning: Failed prop type',
+  
+  // React Navigation warnings
+  'Non-serializable values were found in the navigation state',
+  'The action',
+  
+  // Redux warnings
+  'A non-serializable value was detected in an action',
+  'A non-serializable value was detected in the state',
+  
+  // Expo/React Native warnings
+  'Expo pwa is not supported in the Expo client',
+  'Constants.platform.ios.model has been deprecated',
+  'VirtualizedLists should never be nested',
+  'componentWillReceiveProps has been renamed',
+  'componentWillMount has been renamed',
+  
+  // AsyncStorage warnings
+  'AsyncStorage has been extracted from react-native',
+  
+  // Font and styling warnings
+  'fontFamily',
+  'fontWeight',
+  'Require cycle',
+  
+  // Development warnings
+  'Remote debugger',
+  'Setting a timer for a long period of time',
+  
+  // Third-party library warnings
+  'react-native-gesture-handler',
+  'react-native-reanimated',
+  'expo-file-system',
+  
+  // Custom app warnings that might appear during demo
+  'Failed to save rules',
+  'Method writeAsStringAsync',
+  'Failed to load',
+  'Connection error',
+  'Authentication failed',
+]);
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { FontConfig } from '@/constants/Fonts';
