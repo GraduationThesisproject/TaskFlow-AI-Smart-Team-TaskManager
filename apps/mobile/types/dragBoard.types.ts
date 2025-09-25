@@ -25,7 +25,7 @@ export interface DragTask {
 }
 
 export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done';
-export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
 
 export interface TaskAssignee {
   id: string;

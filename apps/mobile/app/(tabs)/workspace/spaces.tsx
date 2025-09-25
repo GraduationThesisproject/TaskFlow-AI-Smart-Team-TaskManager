@@ -1,9 +1,8 @@
-import React, { useMemo, useState, useEffect } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl, View, Alert, Modal } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-
+import React, { useMemo, useState, useEffect } from 'react';
 import { Text, Card } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
@@ -82,7 +81,9 @@ function SpacesScreenContent() {
     // Navigate to the space screen; also pass id as a param for deep-link robustness
     const id = space?._id || space?.id;
     if (id) {
-      router.push({ pathname: '/(tabs)/space/allboards', params: { id } });
+      router.push({ pathname : '/(tabs)/space/allboards', params: { id } });
+    } else {
+      router.push('/(tabs)/space/allboards');
     }
   };
 
@@ -92,16 +93,6 @@ function SpacesScreenContent() {
       alert('Name is required.');
       return;
     }
-    // Enforce free plan limit: max 5 spaces per workspace
-    try {
-      const MAX_SPACES = 5;
-      const currentSpacesCount = Array.isArray(spaces) ? spaces.length : 0;
-      if (currentSpacesCount >= MAX_SPACES) {
-        alert("You've reached your limit of 5 spaces on the Free plan. Upgrade to create more.");
-        router.push('/(tabs)/settings?section=upgrade');
-        return;
-      }
-    } catch {}
     try {
       setCreating(true);
       await SpaceService.createSpace({

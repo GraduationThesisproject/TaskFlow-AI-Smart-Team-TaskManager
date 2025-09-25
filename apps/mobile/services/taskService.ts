@@ -98,7 +98,11 @@ export class TaskService {
   // Move task to different column/position
   static async moveTask(id: string, data: MoveTaskForm): Promise<ApiResponse<Task>> {
     try {
-      const response = await axiosInstance.patch(`/tasks/${id}/move`, data);
+      // Use the dedicated move endpoint that exists in the backend
+      const response = await axiosInstance.patch(`/tasks/${id}/move`, {
+        columnId: data.columnId,
+        position: data.position,
+      });
       return response.data;
     } catch (error) {
       console.error('Error moving task:', error);

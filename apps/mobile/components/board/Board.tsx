@@ -87,8 +87,22 @@ export const Board: React.FC<BoardProps> = ({
 
   // Load board data on mount
   useEffect(() => {
+    console.log('[Board] Fetching board with ID:', boardId);
     dispatch(fetchBoard(boardId));
   }, [boardId, dispatch]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[Board] State update:', {
+      boardId,
+      columnsCount: columns.length,
+      tasksKeys: Object.keys(tasks),
+      tasksCount: Object.values(tasks).reduce((sum, arr) => sum + arr.length, 0),
+      loading,
+      error,
+      board: board ? { id: board._id, name: board.name } : null
+    });
+  }, [boardId, columns, tasks, loading, error, board]);
 
   // Handle refresh
   const onRefresh = useCallback(() => {
@@ -256,6 +270,23 @@ export const Board: React.FC<BoardProps> = ({
     );
   }
 
+  // Debug: Show if no columns or tasks
+  if (!loading && columns.length === 0) {
+    return (
+      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.destructive }]}>
+          No columns found for board {boardId}
+        </Text>
+        <TouchableOpacity
+          style={[styles.retryButton, { backgroundColor: colors.primary }]}
+          onPress={onRefresh}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={styles.flex}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -320,6 +351,8 @@ export const Board: React.FC<BoardProps> = ({
           <ScrollView
             ref={scrollViewRef}
             horizontal
+            nestedScrollEnabled
+            directionalLockEnabled
             showsHorizontalScrollIndicator={false}
             showsVerticalScrollIndicator={false}
             style={styles.boardContainer}
@@ -357,9 +390,26 @@ export const Board: React.FC<BoardProps> = ({
             )}
           </ScrollView>
         ) : (
-          <View style={styles.boardContainer}>
-            {renderColumns}
-          </View>
+          <ScrollView
+            style={styles.boardContainer}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {columns.map((column) => (
+              <View key={column._id} style={{ marginBottom: 16 }}>
+                <Column
+                  column={column}
+                  tasks={tasks[column._id] || []}
+                  onTaskMove={handleTaskMove}
+                  onTaskSelect={handleTaskSelect}
+                  onAddTask={() => handleAddTask(column._id)}
+                  isDraggedOver={dragState.targetColumnId === column._id}
+                  editable={editable}
+                  fullWidth
+                />
+              </View>
+            ))}
+          </ScrollView>
         )}
 
         {/* Task Details Modal */}

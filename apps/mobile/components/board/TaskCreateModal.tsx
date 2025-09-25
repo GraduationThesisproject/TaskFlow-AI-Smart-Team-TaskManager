@@ -125,7 +125,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     low: '#22c55e',
     medium: '#eab308',
     high: '#f97316',
-    urgent: '#ef4444',
+    critical: '#ef4444',
   };
 
   const handleSave = () => {
@@ -549,7 +549,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                   Priority
                 </Text>
                 <View style={styles.priorityOptions}>
-                  {(['low', 'medium', 'high', 'urgent'] as const).map((p) => (
+                  {(['low', 'medium', 'high', 'critical'] as const).map((p) => (
                     <TouchableOpacity
                       key={p}
                       style={[
@@ -1207,7 +1207,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'inherit',
+    backgroundColor: '#0000',
   },
   saveButton: {
     paddingVertical: 12,

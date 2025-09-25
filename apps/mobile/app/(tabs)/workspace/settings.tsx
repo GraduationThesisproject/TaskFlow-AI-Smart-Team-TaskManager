@@ -457,64 +457,39 @@ function WorkspaceSettingsScreenContent() {
             </Card>
 
             {/* GitHub Integration */}
-            <Card style={[styles.sectionCard, { backgroundColor: colors.card }]}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionTitleContainer}>
-                  <View style={[styles.sectionIcon, { backgroundColor: colors.warning + '15' }]}>
-                    <FontAwesome name="github" size={16} color={colors.warning} />
-                  </View>
-                  <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>GitHub Integration</Text>
-                </View>
-              </View>
-              
-              {githubConnected ? (
-                <View style={[styles.githubConnected, { backgroundColor: colors.background }]}>
-                  <View style={styles.githubInfo}>
-                    <View style={[styles.githubIcon, { backgroundColor: colors.warning + '15' }]}>
-                      <FontAwesome name="github" size={20} color={colors.warning} />
-                    </View>
-                    <View style={styles.githubDetails}>
-                      <Text style={[TextStyles.body.medium, { color: colors.foreground, fontWeight: '500' }]}>
-                        Connected to GitHub
-                      </Text>
-                      <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>
-                        Organization: {githubOrganization || 'Not specified'}
-                      </Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity
-                    style={[styles.disconnectButton, { backgroundColor: colors.destructive }]}
-                    onPress={handleGithubDisconnect}
-                  >
-                    <FontAwesome name="times" size={14} color={colors['destructive-foreground']} />
-                    <Text style={[TextStyles.body.small, { color: colors['destructive-foreground'], marginLeft: 6, fontWeight: '500' }]}>
-                      Disconnect
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View style={styles.githubDisconnected}>
-                  <View style={[styles.githubIconLarge, { backgroundColor: colors.muted + '15' }]}>
-                    <FontAwesome name="github" size={32} color={colors['muted-foreground']} />
-                  </View>
-                  <Text style={[TextStyles.body.medium, { color: colors.foreground, fontWeight: '500' }]}>
-                    Connect to GitHub
-                  </Text>
-                  <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], textAlign: 'center' }]}>
-                    Link your workspace to a GitHub organization to sync repositories and manage issues
-                  </Text>
-                  <TouchableOpacity
-                    style={[styles.connectButton, { backgroundColor: colors.primary }]}
-                    onPress={() => setShowGithubModal(true)}
-                  >
-                    <FontAwesome name="github" size={16} color={colors['primary-foreground']} />
-                    <Text style={[TextStyles.body.small, { color: colors['primary-foreground'], marginLeft: 8, fontWeight: '600' }]}>
-                      Connect GitHub
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </Card>
+ {/* GitHub Integration (Locked for now) */}
+<Card style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+  <View style={styles.sectionHeader}>
+    <View style={styles.sectionTitleContainer}>
+      <View style={[styles.sectionIcon, { backgroundColor: colors.muted + '15' }]}>
+        <FontAwesome name="lock" size={16} color={colors['muted-foreground']} />
+      </View>
+      <Text style={[TextStyles.heading.h3, { color: colors.foreground }]}>GitHub Integration</Text>
+    </View>
+  </View>
+
+  <View style={styles.githubDisconnected}>
+    <View style={[styles.githubIconLarge, { backgroundColor: colors.muted + '15' }]}>
+      <FontAwesome name="github" size={32} color={colors['muted-foreground']} />
+    </View>
+    <Text style={[TextStyles.body.medium, { color: colors.foreground, fontWeight: '500' }]}>
+      Coming Soon
+    </Text>
+    <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], textAlign: 'center' }]}>
+      You’ll soon be able to link your workspace to GitHub organizations to sync repositories and manage issues.
+    </Text>
+    <TouchableOpacity
+      disabled
+      style={[styles.connectButton, { backgroundColor: colors.border, opacity: 0.5 }]}
+    >
+      <FontAwesome name="lock" size={16} color={colors['muted-foreground']} />
+      <Text style={[TextStyles.body.small, { color: colors['muted-foreground'], marginLeft: 8, fontWeight: '600' }]}>
+        Coming Soon
+      </Text>
+    </TouchableOpacity>
+  </View>
+</Card>
+
 
           </>
         )}
