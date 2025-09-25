@@ -24,22 +24,14 @@ const generateAdminToken = (userId, expiresIn = env.JWT_EXPIRES_IN) => {
 // Verify JWT token
 const verifyToken = (token) => {
     try {
-        console.log('JWT: Verifying token with secret:', env.JWT_SECRET ? 'Present' : 'Missing');
-        console.log('JWT: Token to verify:', token.substring(0, 20) + '...');
-        
         const decoded = jwt.verify(token, env.JWT_SECRET, {
             issuer: 'taskflow-api',
             audience: 'taskflow-users'
         });
-        
-        console.log('JWT: Token verified successfully:', decoded);
         return decoded;
     } catch (error) {
-        console.error('JWT: Token verification failed:', error.message);
-        console.error('JWT: Error details:', {
-            name: error.name,
-            message: error.message
-        });
+        // Keep a single concise error for debugging without spamming logs
+        console.error('JWT verification failed:', error.message);
         throw error;
     }
 };

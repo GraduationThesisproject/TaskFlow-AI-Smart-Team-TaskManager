@@ -11,7 +11,7 @@ exports.getNotifications = async (req, res) => {
         const { limit = 50, page = 1, isRead, types, priority, entityType, entityId} = req.query;
         const userId = req.user.id;
 
-        console.log(' [getNotifications] userId:', userId, 'query:', { limit, page, isRead, types, priority, entityType, entityId });
+        // Reduced noisy logs; keep minimal in debug if needed
 
         let query = { recipient: userId };
         
@@ -46,7 +46,7 @@ exports.getNotifications = async (req, res) => {
         const total = await Notification.countDocuments(query);
         const unreadCount = await Notification.countDocuments({ recipient: userId, isRead: false });
 
-        console.log(' [getNotifications] found:', notifications.length, 'total:', total, 'unread:', unreadCount);
+        // Optionally log with proper logger at debug level instead of console
 
         sendResponse(res, 200, true, 'Notifications retrieved successfully', {
             notifications,
@@ -72,18 +72,18 @@ exports.markAsRead = async (req, res) => {
         const { id: notificationId } = req.params;
         const userId = req.user.id;
 
-        console.log(' [markAsRead] notificationId:', notificationId, 'userId:', userId);
+        // logger.debug(`[markAsRead] notificationId: ${notificationId} userId: ${userId}`);
 
         const notification = await Notification.findById(notificationId);
 
         if (!notification) {
-            console.log(' [markAsRead] notification not found:', notificationId);
+            // logger.debug(`[markAsRead] notification not found: ${notificationId}`);
             return sendResponse(res, 404, false, 'Notification not found');
         }
 
         // Check if user owns the notification
         if (notification.recipient.toString() !== userId.toString()) {
-            console.log(' [markAsRead] access denied - wrong owner:', notification.recipient.toString(), 'vs', userId.toString());
+            // logger.debug(`[markAsRead] access denied - wrong owner: ${notification.recipient.toString()} vs ${userId.toString()}`);
             return sendResponse(res, 403, false, 'Access denied - not notification owner');
         }
 
@@ -91,7 +91,7 @@ exports.markAsRead = async (req, res) => {
             notification.isRead = true;
             notification.readAt = new Date();
             await notification.save();
-            console.log(' [markAsRead] marked as read:', notificationId);
+            // logger.debug(`[markAsRead] marked as read: ${notificationId}`);
         }
 
         // Emit unread count update so clients refresh state
@@ -99,7 +99,7 @@ exports.markAsRead = async (req, res) => {
             const io = req.app.get('io') || global.io;
             if (io) {
                 io.notifyUser(userId, 'notifications:unreadCount', {});
-                console.log(' [markAsRead] emitted unreadCount to:', userId);
+                // logger.debug(`[markAsRead] emitted unreadCount to: ${userId}`);
             }
         } catch (e) {
             logger.warn('Socket emit failed (markAsRead unreadCount):', e);

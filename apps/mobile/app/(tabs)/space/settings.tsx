@@ -430,45 +430,25 @@ export default function SpaceSettingsScreen() {
 
         {/* GitHub Integration */}
         <Card style={[styles.sectionCard, { backgroundColor: colors.card }]}>
-          <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 10 }]}>GitHub Integration</Text>
-          
-          {githubConnected ? (
-            <View style={styles.githubConnected as any}>
-              <View style={styles.githubInfo}>
-                <FontAwesome name="github" size={24} color={colors.foreground} />
-                <View style={styles.githubDetails}>
-                  <Text style={[TextStyles.body.medium, { color: colors.foreground }]}>Connected to GitHub</Text>
-                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                    Repository: {githubRepository || 'Not specified'}
-                  </Text>
-                  <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'] }]}>
-                    Branch: {githubBranch || 'main'}
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={[styles.disconnectButton, { backgroundColor: colors.destructive }]}
-                onPress={handleGithubDisconnect}
-              >
-                <Text style={[TextStyles.body.small, { color: colors['destructive-foreground'] }]}>Disconnect</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.githubDisconnected}>
-              <FontAwesome name="github" size={32} color={colors['muted-foreground']} />
-              <Text style={[TextStyles.body.medium, { color: colors.foreground, marginTop: 8 }]}>Link to GitHub Repository</Text>
-              <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], textAlign: 'center', marginTop: 4 }]}>
-                Connect this space to a GitHub repository to sync issues and manage development tasks
-              </Text>
-              <TouchableOpacity
-                style={[styles.connectButton, { backgroundColor: colors.primary }]}
-                onPress={() => setShowGithubModal(true)}
-              >
-                <Text style={[TextStyles.body.small, { color: colors['primary-foreground'] }]}>Link Repository</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </Card>
+  <Text style={[TextStyles.heading.h3, { color: colors.foreground, marginBottom: 10 }]}>GitHub Integration</Text>
+  
+  <View style={styles.githubDisconnected}>
+    <FontAwesome name="lock" size={28} color={colors['muted-foreground']} />
+    <Text style={[TextStyles.body.medium, { color: colors.foreground, marginTop: 8 }]}>
+      GitHub Integration
+    </Text>
+    <Text style={[TextStyles.caption.small, { color: colors['muted-foreground'], textAlign: 'center', marginTop: 4 }]}>
+      This feature is coming soon. You’ll be able to link repositories and sync issues in a future update.
+    </Text>
+    <TouchableOpacity
+      disabled
+      style={[styles.connectButton, { backgroundColor: colors.border, opacity: 0.5 }]}
+    >
+      <Text style={[TextStyles.body.small, { color: colors['muted-foreground'] }]}>Coming Soon</Text>
+    </TouchableOpacity>
+  </View>
+</Card>
+
 
         {/* Danger Zone */}
         <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.destructive, borderWidth: 1 }]}> 

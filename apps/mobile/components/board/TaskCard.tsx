@@ -40,12 +40,34 @@ const CARD_HEIGHT = 80;
 // Priority color mapping
 const getPriorityColor = (priority: TaskPriority): string => {
   const colors = {
-    urgent: '#ef4444',
+    critical: '#ef4444',
     high: '#f97316',
     medium: '#eab308',
     low: '#22c55e',
   };
   return colors[priority];
+};
+
+// Status color mapping
+const getStatusColor = (status: string): string => {
+  const colors = {
+    todo: '#6b7280',
+    in_progress: '#3b82f6',
+    review: '#f59e0b',
+    done: '#10b981',
+  };
+  return colors[status as keyof typeof colors] || colors.todo;
+};
+
+// Status display names
+const getStatusDisplayName = (status: string): string => {
+  const names = {
+    todo: 'To Do',
+    in_progress: 'In Progress',
+    review: 'Review',
+    done: 'Done',
+  };
+  return names[status as keyof typeof names] || status;
 };
 
 // Memoized TaskCard component for performance
@@ -171,16 +193,22 @@ export const TaskCard = memo<TaskCardProps & { onDragMoveForIndicator?: (absX: n
     ),
   }));
 
-  // Priority with safe fallback
+  // Priority and Status with safe fallbacks
   const safePriority = (task.priority || 'medium') as TaskPriority;
-  // Priority badge style
+  const safeStatus = task.status || 'todo';
+  
+  // Badge styles
   const priorityBadgeStyle = useMemo(() => ({
     backgroundColor: getPriorityColor(safePriority),
   }), [safePriority]);
+  
+  const statusBadgeStyle = useMemo(() => ({
+    backgroundColor: getStatusColor(safeStatus),
+  }), [safeStatus]);
 
   // Format due date
   const formattedDueDate = useMemo(() => {
-    if (!task.dueDate) return null;
+    if (!task.dueDate) return '';
     const date = new Date(task.dueDate);
     return date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
   }, [task.dueDate]);
@@ -212,7 +240,7 @@ export const TaskCard = memo<TaskCardProps & { onDragMoveForIndicator?: (absX: n
             <GripVertical size={16} color={colors['muted-foreground']} />
           </View>
 
-          {/* Task Content */}
+          {/* Task Content - Simplified and Safe */}
           <View style={styles.content}>
             {/* Header */}
             <View style={styles.header}>
@@ -220,92 +248,55 @@ export const TaskCard = memo<TaskCardProps & { onDragMoveForIndicator?: (absX: n
                 style={[styles.title, { color: colors.foreground }]} 
                 numberOfLines={2}
               >
-                {String(task.title ?? '')}
+                {String(task?.title || 'Untitled Task')}
               </Text>
-              <View style={[styles.priorityBadge, priorityBadgeStyle]}>
-                <Text style={styles.priorityText}>
-                  {safePriority === 'urgent' ? '!' : String(safePriority).charAt(0).toUpperCase()}
-                </Text>
+              <View style={styles.badges}>
+                <View style={[styles.statusBadge, statusBadgeStyle]}>
+                  <Text style={styles.badgeText}>
+                    {getStatusDisplayName(safeStatus)}
+                  </Text>
+                </View>
+                <View style={[styles.priorityBadge, priorityBadgeStyle]}>
+                  <Text style={styles.badgeText}>
+                    {String(safePriority).charAt(0).toUpperCase()}
+                  </Text>
+                </View>
               </View>
             </View>
 
-            {/* Description */}
-            {Boolean(task.description) && (
+            {/* Description - Only if exists */}
+            {task?.description && String(task.description).length > 0 && (
               <Text 
                 style={[styles.description, { color: colors['muted-foreground'] }]} 
                 numberOfLines={1}
               >
-                {String(task.description ?? '')}
+                {String(task.description)}
               </Text>
             )}
 
-            {/* Footer */}
+            {/* Footer - Enhanced */}
             <View style={styles.footer}>
-              {/* Assignees */}
-              {Array.isArray(task.assignees) && task.assignees.length > 0 && (
-                <View style={styles.assignees}>
-                  {task.assignees.slice(0, 3).map((assignee, idx) => (
-                    <View
-                      key={assignee.id}
-                      style={[
-                        styles.avatar,
-                        {
-                          backgroundColor: colors.primary,
-                          marginLeft: idx > 0 ? -8 : 0,
-                          zIndex: 3 - idx,
-                        },
-                      ]}
-                    >
-                      <Text style={styles.avatarText}>
-                        {String(assignee.name ?? assignee.id ?? '?').charAt(0).toUpperCase() || '?'}
-                      </Text>
-                    </View>
-                  ))}
-                  {task.assignees.length > 3 && (
-                    <Text style={[styles.moreAssignees, { color: colors['muted-foreground'] }]}>
-                      {`+${task.assignees.length - 3}`}
-                    </Text>
-                  )}
+              <View style={styles.meta}>
+                <Text style={[styles.metaText, { color: colors['muted-foreground'] }]}>
+                  {String(safePriority).charAt(0).toUpperCase() + String(safePriority).slice(1)} Priority
+                </Text>
+                <Text style={[styles.metaText, { color: colors['muted-foreground'] }]}>
+                  •
+                </Text>
+                <Text style={[styles.metaText, { color: getStatusColor(safeStatus) }]}>
+                  {getStatusDisplayName(safeStatus)}
+                </Text>
+              </View>
+              {formattedDueDate && (
+                <View style={styles.metaItem}>
+                  <Calendar size={12} color={isOverdue ? '#ef4444' : colors['muted-foreground']} />
+                  <Text style={[styles.metaText, { 
+                    color: isOverdue ? '#ef4444' : colors['muted-foreground'] 
+                  }]}>
+                    {formattedDueDate}
+                  </Text>
                 </View>
               )}
-
-              {/* Meta Info */}
-              <View style={styles.meta}>
-                {formattedDueDate && (
-                  <View style={styles.metaItem}>
-                    <Calendar 
-                      size={12} 
-                      color={isOverdue ? '#ef4444' : colors['muted-foreground']} 
-                    />
-                    <Text 
-                      style={[
-                        styles.metaText, 
-                        { color: isOverdue ? '#ef4444' : colors['muted-foreground'] }
-                      ]}
-                    >
-                      {formattedDueDate}
-                    </Text>
-                  </View>
-                )}
-                
-                {task.comments && task.comments > 0 && (
-                  <View style={styles.metaItem}>
-                    <MessageSquare size={12} color={colors['muted-foreground']} />
-                    <Text style={[styles.metaText, { color: colors['muted-foreground'] }]}>
-                      {task.comments}
-                    </Text>
-                  </View>
-                )}
-                
-                {task.attachments && task.attachments > 0 && (
-                  <View style={styles.metaItem}>
-                    <Paperclip size={12} color={colors['muted-foreground']} />
-                    <Text style={[styles.metaText, { color: colors['muted-foreground'] }]}>
-                      {task.attachments}
-                    </Text>
-                  </View>
-                )}
-              </View>
             </View>
           </View>
         </TouchableOpacity>
@@ -356,12 +347,28 @@ const styles = StyleSheet.create({
     marginRight: 8,
     lineHeight: 18,
   },
+  badges: {
+    flexDirection: 'row',
+    gap: 4,
+    alignItems: 'center',
+  },
+  statusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
   priorityBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
     minWidth: 20,
     alignItems: 'center',
+  },
+  badgeText: {
+    fontSize: 10,
+    color: 'white',
+    fontWeight: '700',
   },
   priorityText: {
     fontSize: 10,

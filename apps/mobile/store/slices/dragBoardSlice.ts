@@ -98,27 +98,30 @@ export const fetchBoard = createAsyncThunk(
 
     const tasksByColumn: Record<string, DragTask[]> = {};
     for (const t of tasksData) {
-      const rawColumn = (t as any).column;
+      const rawColumn = (t as any).column ?? (t as any).columnId;
       const colId = typeof rawColumn === 'object' && rawColumn
         ? String(rawColumn._id || rawColumn.id)
-        : String(rawColumn);
+        : String(rawColumn || '');
       const dragTask: DragTask = {
         _id: String(t._id),
         title: t.title,
-        description: t.description,
+        description: t.description || '',
         status: (t.status as any) as TaskStatus,
         priority: (t.priority as any) as TaskPriority,
-        dueDate: t.dueDate,
+        dueDate: t.dueDate || undefined,
         assignees: (t.assignees || []).map((uid: string) => ({ id: uid, name: '' })),
         columnId: colId,
         position: t.position ?? 0,
         tags: t.tags || [],
-        attachments: (t.attachments || []).length,
-        createdAt: t.createdAt,
-        updatedAt: t.updatedAt,
+        attachments: Array.isArray(t.attachments) ? t.attachments.length : Number(t.attachments ?? 0),
+        comments: Array.isArray((t as any).comments) ? (t as any).comments.length : Number((t as any).comments ?? 0),
+        createdAt: t.createdAt || new Date().toISOString(),
+        updatedAt: t.updatedAt || new Date().toISOString(),
       };
-      if (!tasksByColumn[colId]) tasksByColumn[colId] = [];
-      tasksByColumn[colId].push(dragTask);
+      if (colId) {
+        if (!tasksByColumn[colId]) tasksByColumn[colId] = [];
+        tasksByColumn[colId].push(dragTask);
+      }
     }
 
     Object.keys(tasksByColumn).forEach((cid) => {
@@ -151,11 +154,18 @@ export const saveTaskMove = createAsyncThunk(
       return payload;
     }
 
-    await TaskService.moveTask(payload.taskId, {
-      columnId: payload.targetColumnId,
-      position: payload.targetIndex,
-    });
-    return payload;
+    try {
+      await TaskService.moveTask(payload.taskId, {
+        columnId: payload.targetColumnId,
+        position: payload.targetIndex,
+      });
+      console.log('[saveTaskMove] Successfully saved task move to backend');
+      return payload;
+    } catch (error) {
+      console.error('[saveTaskMove] Failed to save to backend:', error);
+      // Still return payload to keep optimistic update
+      return payload;
+    }
   }
 );
 
@@ -172,14 +182,16 @@ export const addTaskAsync = createAsyncThunk(
       tags: [],
       position,
     });
-    const t = res.data as any as Task;
+    console.log('[addTaskAsync] API response:', res);
+    const t = ((res as any)?.data?.task ?? (res as any)?.data?.data ?? (res as any)?.data ?? res) as any as Task;
+    console.log('[addTaskAsync] Parsed task:', t);
     const dragTask: DragTask = {
-      _id: String(t._id),
-      title: t.title,
-      description: t.description,
-      status: (t.status as any) as TaskStatus,
-      priority: (t.priority as any) as TaskPriority,
-      dueDate: t.dueDate,
+      _id: String(t._id || `temp-${Date.now()}`),
+      title: t.title || title,
+      description: t.description || '',
+      status: (t.status as any) as TaskStatus || 'todo',
+      priority: (t.priority as any) as TaskPriority || priority,
+      dueDate: t.dueDate || undefined,
       assignees: (t.assignees || []).map((uid: string) => ({ id: uid, name: '' })),
       columnId: (() => {
         const rawCol = (t as any).column;
@@ -188,9 +200,10 @@ export const addTaskAsync = createAsyncThunk(
       })(),
       position: t.position ?? position,
       tags: t.tags || [],
-      attachments: (t.attachments || []).length,
-      createdAt: t.createdAt,
-      updatedAt: t.updatedAt,
+      attachments: Array.isArray((t as any).attachments) ? (t as any).attachments.length : Number((t as any).attachments ?? 0),
+      comments: Array.isArray((t as any).comments) ? (t as any).comments.length : Number((t as any).comments ?? 0),
+      createdAt: t.createdAt || new Date().toISOString(),
+      updatedAt: t.updatedAt || new Date().toISOString(),
     };
     return { columnId: dragTask.columnId, task: dragTask };
   }
@@ -434,7 +447,33 @@ const dragBoardSlice = createSlice({
         state.loading = false;
         state.board = action.payload.board;
         state.columns = action.payload.columns;
-        state.tasks = action.payload.tasks;
+        
+        // Merge tasks instead of overwriting to preserve locally created tasks
+        const backendTasks = action.payload.tasks || {};
+        const currentTasks = state.tasks || {};
+        
+        // Start with backend tasks as the base
+        const mergedTasks: Record<string, DragTask[]> = { ...backendTasks };
+        
+        // Add any local tasks that aren't in the backend response
+        Object.keys(currentTasks).forEach(columnId => {
+          if (!mergedTasks[columnId]) {
+            mergedTasks[columnId] = [];
+          }
+          
+          // Add local tasks that don't exist in backend
+          currentTasks[columnId].forEach(localTask => {
+            const existsInBackend = mergedTasks[columnId].some(backendTask => 
+              backendTask._id === localTask._id
+            );
+            if (!existsInBackend) {
+              console.log('[fetchBoard] Preserving local task:', localTask._id, localTask.title);
+              mergedTasks[columnId].push(localTask);
+            }
+          });
+        });
+        
+        state.tasks = mergedTasks;
         state.error = null;
       })
       // Add task async
@@ -447,10 +486,10 @@ const dragBoardSlice = createSlice({
           const dragTask: DragTask = {
             _id: String(task._id),
             title: task.title,
-            description: task.description,
+            description: task.description || '',
             status: ((task.status as any) ?? 'todo') as TaskStatus,
             priority: ((task.priority as any) ?? 'medium') as TaskPriority,
-            dueDate: task.dueDate,
+            dueDate: task.dueDate || undefined,
             assignees: (task.assignees || []).map((uid: any) => {
               const id = String(uid?.id || uid?._id || uid);
               const name: string = (uid?.name as string) || id?.slice(0, 2)?.toUpperCase() || 'U';
@@ -463,9 +502,10 @@ const dragBoardSlice = createSlice({
             })(),
             position: task.position ?? state.tasks[columnId].length,
             tags: task.tags || [],
-            attachments: (task.attachments || []).length,
-            createdAt: task.createdAt,
-            updatedAt: task.updatedAt,
+            attachments: Array.isArray(task.attachments) ? task.attachments.length : Number(task.attachments ?? 0),
+            comments: Array.isArray((task as any).comments) ? (task as any).comments.length : Number((task as any).comments ?? 0),
+            createdAt: task.createdAt || new Date().toISOString(),
+            updatedAt: task.updatedAt || new Date().toISOString(),
           };
           const targetCol = dragTask.columnId;
           if (!state.tasks[targetCol]) state.tasks[targetCol] = [];
