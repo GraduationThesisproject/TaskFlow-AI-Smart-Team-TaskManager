@@ -57,6 +57,7 @@ function WorkspaceScreenContent() {
   useEffect(() => {
     if (workspaceId && currentWorkspaceId && workspaceId !== currentWorkspaceId) {
       // Clear spaces data when switching workspaces
+      console.log('Clearing workspace data due to workspace change:', { from: currentWorkspaceId, to: workspaceId });
       dispatch(clearWorkspaceData());
     }
   }, [workspaceId, currentWorkspaceId, dispatch]);
@@ -90,10 +91,16 @@ function WorkspaceScreenContent() {
       spacesSource = Array.isArray(wsSpaces) ? wsSpaces : [];
     }
 
+    // Additional safety check: ensure spaces belong to the current workspace
+    const filteredSpaces = spacesSource.filter((space: any) => {
+      const spaceWorkspaceId = space?.workspace || space?.workspaceId;
+      return !spaceWorkspaceId || String(spaceWorkspaceId) === String(workspaceId);
+    });
+
     // Deduplicate spaces by id to avoid duplicate renders when multiple fetches race
     const seen = new Set<string>();
     const uniqueSpaces: any[] = [];
-    for (const s of spacesSource) {
+    for (const s of filteredSpaces) {
       const id = String((s as any)?._id || (s as any)?.id || '');
       if (!id || seen.has(id)) continue;
       seen.add(id);
@@ -107,6 +114,7 @@ function WorkspaceScreenContent() {
     };
     uniqueSpaces.sort((a, b) => Number(isArchived(a)) - Number(isArchived(b)));
 
+    console.log('Processed spaces for workspace:', workspaceId, 'count:', uniqueSpaces.length);
     return uniqueSpaces;
   }, [spaces, ws, workspaceId]);
 
@@ -167,21 +175,37 @@ function WorkspaceScreenContent() {
       const only = workspaces[0];
       const id = (only as any)?._id || (only as any)?.id;
       if (id) {
+        console.log('Auto-selecting single workspace:', id);
         // Clear previous workspace data before auto-selecting
         dispatch(clearWorkspaceData());
         dispatch(setCurrentWorkspaceId(id));
-        loadSpaces(id);
+        // Add small delay before loading spaces
+        setTimeout(() => {
+          loadSpaces(id);
+        }, 100);
       }
     }
   }, [selectedWorkspaceId, workspaces]); // Remove dispatch and loadSpaces to prevent infinite loops
 
-  const handleSelectWorkspace = useCallback((ws: any) => {
+  const handleSelectWorkspace = useCallback(async (ws: any) => {
     const id = ws?._id || ws?.id;
     if (!id) return;
-    // Clear previous workspace data before switching
-    dispatch(clearWorkspaceData());
-    dispatch(setCurrentWorkspaceId(id));
-    loadSpaces(id);
+    
+    try {
+      // Clear previous workspace data before switching
+      dispatch(clearWorkspaceData());
+      
+      // Set the new workspace ID
+      dispatch(setCurrentWorkspaceId(id));
+      
+      // Add a small delay to ensure state is cleared before loading new data
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Load spaces for the new workspace
+      loadSpaces(id);
+    } catch (error) {
+      console.error('Error switching workspace:', error);
+    }
   }, [dispatch, loadSpaces]);
 
   const handleOpenSpace = useCallback((space: any) => {
@@ -645,14 +669,16 @@ function WorkspaceScreenContent() {
                   </View>
                 ) : (Array.isArray(uniqueMembers) && uniqueMembers.length > 0 ? (
                   <View style={styles.membersList}>
-                    {uniqueMembers.map((m: any) => {
+                    {uniqueMembers.map((m: any, index: number) => {
                       const displayName = m?.user?.name || m?.name || m?.user?.email || m?.email || 'Member';
                       const email = m?.user?.email || m?.email || '';
                       const avatarUrl = m?.avatar || m?.profile?.avatar || m?.user?.avatar;
                       const letter = String(displayName).charAt(0).toUpperCase();
                       const isOwner = m.role === 'owner';
+                      // Generate a more robust unique key
+                      const uniqueKey = m._id || m.id || m.user?._id || m.user?.id || m.email || `member-${index}`;
                       return (
-                        <View key={m._id || m.id || m.email} style={[styles.sidebarMemberItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                        <View key={uniqueKey} style={[styles.sidebarMemberItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
                           {avatarUrl ? (
                             <Image source={{ uri: avatarUrl }} style={styles.sidebarMemberAvatar} />
                           ) : (

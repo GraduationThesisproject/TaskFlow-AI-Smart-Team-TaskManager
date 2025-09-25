@@ -398,9 +398,18 @@ function SpaceMainScreenContent() {
 
   const preventOpenIfArchived = useCallback((board: any) => {
     if (isBoardArchived(board)) {
-      showWarning('This board is archived. Restore it to access.');
+      showBannerWarning(
+        `Access to "${board?.name || 'this board'}" is blocked because it's archived. Restore the board to access its content.`,
+        { 
+          title: 'Board Access Blocked',
+          duration: 4000,
+          position: 'bottom'
+        }
+      );
+      return true; // Return true to indicate access was blocked
     }
-  }, [isBoardArchived, showWarning]);
+    return false; // Return false to indicate access is allowed
+  }, [isBoardArchived, showBannerWarning]);
 
   // Create Board modal state
   const [createVisible, setCreateVisible] = useState(false);
@@ -1037,11 +1046,11 @@ function SpaceMainScreenContent() {
                   boards={filteredBoards}
                   itemWidth={itemWidth}
                   onPressBoard={(b: any) => {
-                    const archived = isBoardArchived(b);
-                    if (archived) {
-                      showWarning('This board is archived. Restore it to access.');
-                      return;
+                    // Check if board is archived and show banner if blocked
+                    if (preventOpenIfArchived(b)) {
+                      return; // Access was blocked, banner was shown
                     }
+                    // Board is not archived, proceed with navigation
                     router.push(`/(tabs)/board?boardId=${b._id || b.id}&boardName=${encodeURIComponent(b.name || 'Board')}`);
                   }}
                   onToggleArchive={handleArchiveBoard}

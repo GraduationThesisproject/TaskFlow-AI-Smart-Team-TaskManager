@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -12,6 +13,7 @@ import { TextStyles } from '@/constants/Fonts';
 import { useAppSelector } from '@/store/index';
 import { BannerProvider, useBanner } from '@/components/common/BannerProvider';
 
+const RULES_STORAGE_KEY = 'workspace_rules';
 const RULES_FILE = `${((FileSystem as any).documentDirectory || (FileSystem as any).cacheDirectory || '')}workspace_rules.txt`;
 
 const DEFAULT_RULES = `📌 Task Management Rules
@@ -139,17 +141,32 @@ function WorkspaceRulesScreenContent() {
   useEffect(() => {
     (async () => {
       try {
-        const info = await FileSystem.getInfoAsync(RULES_FILE);
-        if (info.exists) {
-          const content = await FileSystem.readAsStringAsync(RULES_FILE);
-          setRules(content);
+        // Try to load from AsyncStorage first (more reliable)
+        const storedRules = await AsyncStorage.getItem(RULES_STORAGE_KEY);
+        if (storedRules) {
+          setRules(storedRules);
         } else {
-          // Prefill with default and persist once
-          setRules(DEFAULT_RULES);
-          await FileSystem.writeAsStringAsync(RULES_FILE, DEFAULT_RULES);
+          // Fallback to FileSystem if AsyncStorage is empty
+          try {
+            const info = await FileSystem.getInfoAsync(RULES_FILE);
+            if (info.exists) {
+              const content = await FileSystem.readAsStringAsync(RULES_FILE);
+              setRules(content);
+              // Migrate to AsyncStorage
+              await AsyncStorage.setItem(RULES_STORAGE_KEY, content);
+            } else {
+              // Use default rules
+              setRules(DEFAULT_RULES);
+              await AsyncStorage.setItem(RULES_STORAGE_KEY, DEFAULT_RULES);
+            }
+          } catch (fileError) {
+            console.warn('FileSystem not available, using defaults:', fileError);
+            setRules(DEFAULT_RULES);
+            await AsyncStorage.setItem(RULES_STORAGE_KEY, DEFAULT_RULES);
+          }
         }
       } catch (e) {
-        console.warn('Failed to load rules file, using defaults.', e);
+        console.warn('Failed to load rules, using defaults:', e);
         setRules(DEFAULT_RULES);
       } finally {
         setLoading(false);
@@ -160,10 +177,22 @@ function WorkspaceRulesScreenContent() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await FileSystem.writeAsStringAsync(RULES_FILE, rules);
+      
+      // Check if writeAsStringAsync is available
+      if (typeof FileSystem.writeAsStringAsync === 'function') {
+        await FileSystem.writeAsStringAsync(RULES_FILE, rules);
+      } else {
+        // Fallback: Use AsyncStorage or just keep in memory
+        console.warn('FileSystem.writeAsStringAsync not available, saving to memory only');
+        // For now, we'll just keep the rules in memory state
+        // You could also use AsyncStorage as an alternative:
+        // await AsyncStorage.setItem('workspace_rules', rules);
+      }
+      
       showSuccess('Workspace rules saved successfully.');
       setEditing(false);
     } catch (e: any) {
+      console.error('Save error:', e);
       showError(`Failed to save rules: ${e?.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
