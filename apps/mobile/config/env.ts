@@ -8,9 +8,9 @@ const getNetworkConfig = () => {
   const isIOS = Platform.OS === 'ios';
 
  
-  const IPS = ['10.76.16.1','192.168.1.115','192.168.1.14','192.168.1.64'];
+  const IPS = ['10.76.16.1',"10.72.191.13",'192.168.1.115','192.168.1.14','192.168.1.64'];
   // Force use the correct IP for now
-  const CURRENT_IP = '192.168.1.14';
+  const CURRENT_IP = '10.72.191.13';
   
   // Debug logging
   if (__DEV__) {

@@ -109,13 +109,24 @@ export class InvitationService {
     }
   }
 
-  // Accept invitation
-  static async acceptInvitation(invitationId: string): Promise<ApiResponse<Invitation>> {
+  // Accept invitation by token
+  static async accept(token: string): Promise<ApiResponse<Invitation>> {
     try {
-      const response = await axiosInstance.post(`/invitations/${invitationId}/accept`);
+      const response = await axiosInstance.post(`/invitations/token/${token}/accept`);
       return response.data;
     } catch (error: any) {
-      console.error('Error accepting invitation:', error);
+      console.error('Error accepting invitation by token:', error);
+      throw this.handleError(error);
+    }
+  }
+
+  // Decline invitation by token
+  static async decline(token: string): Promise<ApiResponse<Invitation>> {
+    try {
+      const response = await axiosInstance.post(`/invitations/token/${token}/decline`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error declining invitation by token:', error);
       throw this.handleError(error);
     }
   }

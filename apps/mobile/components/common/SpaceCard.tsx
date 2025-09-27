@@ -48,7 +48,7 @@ const SpaceCard: React.FC<SpaceCardProps> = ({
 
   const displayName = useMemo(() => {
     if (typeof name !== 'string') return '';
-    return name.length > 5 ? name.slice(0, 5) : name;
+    return name;
   }, [name]);
 
   return (

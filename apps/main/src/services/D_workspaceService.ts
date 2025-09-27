@@ -118,15 +118,6 @@ export class WorkspaceService {
     }
   }
 
-  static async removeMember(workspaceId: string, memberId: string): Promise<any> {
-    try {
-      const response = await axiosInstance.delete(`/workspaces/${workspaceId}/members/${memberId}`);
-      return response.data.data;
-    } catch (error) {
-      console.error('Error removing member:', error);
-      throw error;
-    }
-  }
 
   // Analytics
   static async getWorkspaceAnalytics(id: string): Promise<any> {

@@ -369,46 +369,57 @@ export const notificationsSocketMiddleware: Middleware = (store) => {
       }
     });
 
-    // Invitation accepted alias (if backend uses invitation namespace)
-    socket.on('invitation:accepted', ({ workspaceId, userId }) => {
+    // Invitation received - when user receives a new invitation
+    socket.on('invitation:received', ({ invitation }) => {
       try {
         const stateNow = store.getState() as any;
         if (!isRealTimeEnabled(stateNow)) return;
-        if (workspaceId) {
-          console.log('✅ [notificationsSocketMiddleware] invitation:accepted', { workspaceId, userId });
-          store.dispatch(fetchMembers({ id: workspaceId }) as any);
-        }
+        console.log('📨 [notificationsSocketMiddleware] invitation:received', { 
+          id: invitation?.id, 
+          type: invitation?.targetEntity?.type,
+          name: invitation?.targetEntity?.name 
+        });
+        
+        // Handle invitation received logic here if needed
+        // store.dispatch(someInvitationAction(invitation));
       } catch (e) {
-        console.warn('⚠️ Failed to process invitation:accepted', e);
+        console.warn('⚠️ Failed to process invitation:received', e);
       }
     });
     socket.on('notifications:deleted', ({ notificationId }) => {
-      const stateNow = store.getState() as any;
-      if (!isRealTimeEnabled(stateNow)) return;
-      console.log('🗑️ [notificationsSocketMiddleware] notifications:deleted received', { notificationId });
-      
-      // Remove the notification from local state
-      const currentNotifications = stateNow.notifications.notifications;
-      const notificationExists = currentNotifications.find(n => n._id === notificationId);
-      
-      if (notificationExists) {
-        // Dispatch a local action to remove the notification
-        store.dispatch({
-          type: 'notifications/removeNotification',
-          payload: notificationId
-        });
-        console.log('🗑️ [notificationsSocketMiddleware] Removed notification from local state:', notificationId);
-      } else {
-        console.log('🗑️ [notificationsSocketMiddleware] Notification not found in local state:', notificationId);
-
+      try {
+        const stateNow = store.getState() as any;
+        if (!isRealTimeEnabled(stateNow)) return;
+        console.log('🗑️ [notificationsSocketMiddleware] notifications:deleted received', { notificationId });
+        
+        // Remove the notification from local state
+        const currentNotifications = stateNow.notifications.notifications;
+        const notificationExists = currentNotifications.find(n => n._id === notificationId);
+        
+        if (notificationExists) {
+          // Dispatch a local action to remove the notification
+          store.dispatch({
+            type: 'notifications/removeNotification',
+            payload: notificationId
+          });
+          console.log('🗑️ [notificationsSocketMiddleware] Removed notification from local state:', notificationId);
+        } else {
+          console.log('🗑️ [notificationsSocketMiddleware] Notification not found in local state:', notificationId);
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to process notifications:deleted', e);
       }
     });
 
     socket.on('notifications:unreadCount', () => {
-      const stateNow = store.getState() as any;
-      if (!isRealTimeEnabled(stateNow)) return;
-      console.log('🔄 [notificationsSocketMiddleware] notifications:unreadCount received -> refetch');
-      store.dispatch(fetchNotifications() as any);
+      try {
+        const stateNow = store.getState() as any;
+        if (!isRealTimeEnabled(stateNow)) return;
+        console.log('🔄 [notificationsSocketMiddleware] notifications:unreadCount received -> refetch');
+        store.dispatch(fetchNotifications() as any);
+      } catch (e) {
+        console.warn('⚠️ Failed to process notifications:unreadCount', e);
+      }
     });
 
     socket.on('disconnect', (reason) => {

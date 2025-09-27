@@ -252,16 +252,9 @@ const WorkspacesSection: React.FC = () => {
                       </Text>
                     </View>
                     <View style={[styles.badge, { backgroundColor: colors.muted }]}>
-                      {(() => {
-                        const memberLen = Array.isArray(workspace.members) ? workspace.members.length : 0;
-                        const ownerIncluded = workspace.owner ? 1 : 0;
-                        const totalMembers = memberLen + ownerIncluded;
-                        return (
-                          <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>
-                            {totalMembers} members
-                          </Text>
-                        );
-                      })()}
+                      <Text style={[TextStyles.caption.small, { color: colors.foreground }]}>
+                        {workspace.members?.length || 0} members
+                      </Text>
                     </View>
                   </View>
                 </View>

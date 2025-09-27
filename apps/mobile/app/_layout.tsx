@@ -56,6 +56,8 @@ LogBox.ignoreLogs([
   // Custom app warnings that might appear during demo
   'Failed to save rules',
   'Method writeAsStringAsync',
+  'writeAsStringAsync imported from expo-file-system is deprecated',
+  'expo-file-system is deprecated',
   'Failed to load',
   'Connection error',
   'Authentication failed',

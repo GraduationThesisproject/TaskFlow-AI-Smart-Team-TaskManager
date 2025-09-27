@@ -474,7 +474,9 @@ exports.getByToken = async (req, res) => {
                 message: invitation.message,
                 status: invitation.status,
                 createdAt: invitation.createdAt,
-                expiresAt: invitation.expiresAt
+                expiresAt: invitation.expiresAt,
+                acceptedAt: invitation.acceptedAt,
+                declinedAt: invitation.declinedAt
             }
         });
 
@@ -484,6 +486,64 @@ exports.getByToken = async (req, res) => {
             sendResponse(res, 404, false, error.message);
         } else {
             sendResponse(res, 500, false, 'Server error retrieving invitation');
+        }
+    }
+};
+
+// Accept invitation by token
+exports.acceptInvitationByToken = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const userId = req.user.id;
+
+        // First find the invitation by token
+        const invitation = await Invitation.findByToken(token);
+        if (!invitation) {
+            return sendResponse(res, 404, false, 'Invitation not found');
+        }
+
+        // Use the existing acceptInvitation service method with the invitation ID
+        const acceptedInvitation = await InvitationService.acceptInvitation(invitation._id.toString(), userId);
+
+        sendResponse(res, 200, true, 'Invitation accepted successfully', {
+            invitation: acceptedInvitation
+        });
+
+    } catch (error) {
+        logger.error('Accept invitation by token error:', error);
+        if (error.message.includes('not found')) {
+            sendResponse(res, 404, false, error.message);
+        } else {
+            sendResponse(res, 500, false, 'Server error accepting invitation');
+        }
+    }
+};
+
+// Decline invitation by token
+exports.declineInvitationByToken = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const userId = req.user.id;
+
+        // First find the invitation by token
+        const invitation = await Invitation.findByToken(token);
+        if (!invitation) {
+            return sendResponse(res, 404, false, 'Invitation not found');
+        }
+
+        // Use the existing declineInvitation service method with the invitation ID
+        const declinedInvitation = await InvitationService.declineInvitation(invitation._id.toString(), userId);
+
+        sendResponse(res, 200, true, 'Invitation declined successfully', {
+            invitation: declinedInvitation
+        });
+
+    } catch (error) {
+        logger.error('Decline invitation by token error:', error);
+        if (error.message.includes('not found')) {
+            sendResponse(res, 404, false, error.message);
+        } else {
+            sendResponse(res, 500, false, 'Server error declining invitation');
         }
     }
 };

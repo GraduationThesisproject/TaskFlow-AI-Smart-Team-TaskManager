@@ -9,14 +9,13 @@ const router = express.Router();
 
 // Protected routes that require authentication
 router.get('/token/:token', authMiddleware, invitationController.getByToken);
-router.post('/token/:token/accept', authMiddleware, invitationController.acceptInvitation);
-router.post('/token/:token/decline', authMiddleware, invitationController.declineInvitation);
+router.post('/token/:token/accept', authMiddleware, invitationController.acceptInvitationByToken);
+router.post('/token/:token/decline', authMiddleware, invitationController.declineInvitationByToken);
 
 // Protected routes
 router.post('/', 
     authMiddleware,
     validateMiddleware.validateBody(invitationSchemas.createInvitationSchema),
-    invitationController.createInvitation
 );
 
 router.get('/', authMiddleware, invitationController.getUserInvitations);

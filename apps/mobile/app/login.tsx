@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, StatusBar, Platform } from 'react-native';
 import { Text, View, Card, Button, ButtonText } from '@/components/Themed';
 import { useThemeColors } from '@/components/ThemeProvider';
 import { TextStyles } from '@/constants/Fonts';
@@ -18,6 +18,11 @@ export default function LoginScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar 
+        barStyle={colors.background === '#000000' || colors.background === '#1a1a1a' ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background}
+        translucent={false}
+      />
       <ScrollView 
         contentContainerStyle={{ flexGrow: 1 }} 
         style={{ flex: 1 }}

@@ -46,7 +46,7 @@ export default function WorkspaceHeader({ title, onBack, onOpenSidebar, onOpenMe
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View>
             <Text style={[TextStyles.heading.h1, { color: colors.foreground }]} numberOfLines={1}>
-              {String(title || '').slice(0, 5)}
+              {String(title || '')}
             </Text>
           </View>
         </View>

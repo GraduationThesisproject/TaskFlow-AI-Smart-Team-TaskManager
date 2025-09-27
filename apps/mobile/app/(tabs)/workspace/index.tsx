@@ -449,7 +449,7 @@ function WorkspaceScreenContent() {
 
         {/* Header */}
         <WorkspaceHeader
-          title={String(effectiveWorkspace?.name || 'Workspace').slice(0, 5)}
+          title={String(effectiveWorkspace?.name || 'Workspace')}
           onBack={() => router.push('/(tabs)')}
           onOpenSidebar={() => setSidebarVisible(true)}
           onOpenMembers={() => setMembersSidebarOpen(true)}

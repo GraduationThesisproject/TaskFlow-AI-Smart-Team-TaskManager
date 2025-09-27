@@ -117,7 +117,7 @@ export default function BoardCard({ board, onPress, style, onToggleArchive }: Bo
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {(board?.name ? String(board.name) : 'Untitled Board').slice(0, 5)}{(board?.name && String(board.name).length > 5) ? '…' : ''}
+              {board?.name ? String(board.name) : 'Untitled Board'}
             </Text>
             <RNView style={[styles.statusChipInline, { backgroundColor: (isArchived ? colors.warning : colors.success) + '15' }]}> 
               <FontAwesome

@@ -178,15 +178,17 @@ function WorkspaceRulesScreenContent() {
     try {
       setSaving(true);
       
-      // Check if writeAsStringAsync is available
-      if (typeof FileSystem.writeAsStringAsync === 'function') {
-        await FileSystem.writeAsStringAsync(RULES_FILE, rules);
-      } else {
-        // Fallback: Use AsyncStorage or just keep in memory
-        console.warn('FileSystem.writeAsStringAsync not available, saving to memory only');
-        // For now, we'll just keep the rules in memory state
-        // You could also use AsyncStorage as an alternative:
-        // await AsyncStorage.setItem('workspace_rules', rules);
+      // Save to AsyncStorage (primary storage - more reliable)
+      await AsyncStorage.setItem(RULES_STORAGE_KEY, rules);
+      
+      // Try to save to file system as backup (suppress deprecation warnings)
+      try {
+        if (FileSystem.writeAsStringAsync) {
+          await FileSystem.writeAsStringAsync(RULES_FILE, rules);
+        }
+      } catch (fileError) {
+        console.warn('FileSystem save failed, but AsyncStorage succeeded:', fileError);
+        // Don't throw error since AsyncStorage succeeded
       }
       
       showSuccess('Workspace rules saved successfully.');
